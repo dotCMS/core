@@ -1,330 +1,399 @@
 {
-  "info": {
-    "_postman_id": "7df3dec7-9eb1-4b26-b88a-45284a185654",
-    "name": "ESIndexResource",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "item": [
-    {
-      "name": "GetActiveIndexes",
-      "item": [
-        {
-          "name": "GetActiveLive",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "id": "8a82f312-2f3c-46a5-ae30-2e2b036c871a",
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
-                  "",
-                  "pm.test(\"Active Live index returned\", function () {",
-                  "    pm.expect(pm.response.text()).to.include(\"live\");",
-                  "});",
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "basic",
-              "basic": [
-                {
-                  "key": "username",
-                  "value": "admin@dotcms.com",
-                  "type": "string"
-                },
-                {
-                  "key": "password",
-                  "value": "admin",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/esindex/active/type/live",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "esindex",
-                "active",
-                "type",
-                "live"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GetActiveWorking",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "id": "ab4e54d6-d791-4064-a612-159e70e294a5",
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
-                  "",
-                  "pm.test(\"Active Working index returned\", function () {",
-                  "    pm.expect(pm.response.text()).to.include(\"working\");",
-                  "});",
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "basic",
-              "basic": [
-                {
-                  "key": "username",
-                  "value": "admin@dotcms.com",
-                  "type": "string"
-                },
-                {
-                  "key": "password",
-                  "value": "admin",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/esindex/active/type/working",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "esindex",
-                "active",
-                "type",
-                "working"
-              ]
-            }
-          },
-          "response": []
-        }
-      ],
-      "protocolProfileBehavior": {}
-    },
-    {
-      "name": "GetIndexDocumentCount",
-      "item": [
-        {
-          "name": "Pre-test-GetActiveLiveIndex",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "id": "3b06a06f-e2a0-434c-91f8-b502c1f6829f",
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
-                  "",
-                  "pm.test(\"Active Live index returned\", function () {",
-                  "    pm.expect(pm.response.text()).to.include(\"live\");",
-                  "});",
-                  "",
-                  "pm.collectionVariables.set(\"indexName\", pm.response.text());"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "basic",
-              "basic": [
-                {
-                  "key": "username",
-                  "value": "admin@dotcms.com",
-                  "type": "string"
-                },
-                {
-                  "key": "password",
-                  "value": "admin",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/esindex/active/type/live",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "esindex",
-                "active",
-                "type",
-                "live"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GetLiveDocumentCountSuccess",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "id": "d91fc055-762d-4339-861d-78732ed8c889",
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "id": "4d9caec7-9b67-4541-820c-1a50139e6acb",
-                "exec": [
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "basic",
-              "basic": [
-                {
-                  "key": "username",
-                  "value": "admin@dotcms.com",
-                  "type": "string"
-                },
-                {
-                  "key": "password",
-                  "value": "admin",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/esindex/docscount/index/{{indexName}}",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "esindex",
-                "docscount",
-                "index",
-                "{{indexName}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GetDocumentCountWithInvalidIndexFails",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "id": "75accc22-7c7e-4f9b-86f0-84750a30fd8e",
-                "exec": [
-                  "pm.test(\"Status code is 404\", function () { pm.response.to.have.status(404) });",
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "basic",
-              "basic": [
-                {
-                  "key": "username",
-                  "value": "admin@dotcms.com",
-                  "type": "string"
-                },
-                {
-                  "key": "password",
-                  "value": "admin",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/esindex/docscount/index/invalidIndex",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "esindex",
-                "docscount",
-                "index",
-                "invalidIndex"
-              ]
-            }
-          },
-          "response": []
-        }
-      ],
-      "protocolProfileBehavior": {}
-    }
-  ],
-  "protocolProfileBehavior": {}
+	"info": {
+		"_postman_id": "396ab62e-e19b-418d-a5dc-bef6061e5620",
+		"name": "ESIndexResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GetActiveIndexes",
+			"item": [
+				{
+					"name": "GetActiveLive",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8a82f312-2f3c-46a5-ae30-2e2b036c871a",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"Active Live index returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"live\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/active/type/live",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"active",
+								"type",
+								"live"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetActiveWorking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ab4e54d6-d791-4064-a612-159e70e294a5",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"Active Working index returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"working\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/active/type/working",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"active",
+								"type",
+								"working"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ValidateCredentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8a82f312-2f3c-46a5-ae30-2e2b036c871a",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"Active Live index returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"live\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/active/type/live",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"active",
+								"type",
+								"live"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "GetIndexDocumentCount",
+			"item": [
+				{
+					"name": "Pre-test-GetActiveLiveIndex",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3b06a06f-e2a0-434c-91f8-b502c1f6829f",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"Active Live index returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"live\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"indexName\", pm.response.text());"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/active/type/live",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"active",
+								"type",
+								"live"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetLiveDocumentCountSuccess",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d91fc055-762d-4339-861d-78732ed8c889",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "4d9caec7-9b67-4541-820c-1a50139e6acb",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/docscount/index/{{indexName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"docscount",
+								"index",
+								"{{indexName}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetDocumentCountWithInvalidIndexFails",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "75accc22-7c7e-4f9b-86f0-84750a30fd8e",
+								"exec": [
+									"pm.test(\"Status code is 500\", function () { pm.response.to.have.status(500) });",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/docscount/index/invalidIndex",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"docscount",
+								"index",
+								"invalidIndex"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"variable": [
+		{
+			"id": "ba4532fd-c234-4ef5-9712-b668bfe9dad4",
+			"key": "indexName",
+			"value": "live_20200422144836",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
 }

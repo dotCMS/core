@@ -1620,7 +1620,7 @@
                         showDeleted = true;
                 }
 
-                dijit.byId("searchButton").attr("disabled", true);
+                //dijit.byId("searchButton").attr("disabled", true);
                 //dijit.byId("clearButton").attr("disabled", false);
 
                 document.getElementById('fieldsValues').value = fieldsValues;
