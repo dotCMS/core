@@ -115,7 +115,7 @@ public class VanityUrlUtilTest extends UnitTestBase {
         final CachedVanityUrl cachedVanityUrl = new CachedVanityUrl(vanityUrl);
         final String [] matches = new String[] { "hello", "world", "dot"};
 
-        final CachedVanityUrl newCachedVanityUrl =
+        final CachedVanityUrl newCachedVanityUrl = 
                 VanityUrlUtil.processExpressions(cachedVanityUrl, matches);
 
         assertNotNull(newCachedVanityUrl);

@@ -1,11 +1,14 @@
 package com.dotcms.vanityurl.model;
 
-import static com.dotcms.vanityurl.business.VanityUrlAPI.CACHE_404_VANITY_URL;
-
-import com.dotcms.util.VanityUrlUtil;
-import com.liferay.util.StringPool;
+import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
 import java.io.Serializable;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.dotcms.vanityurl.util.VanityUrlUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 
 /**
  * This class construct a reduced version of the {@link VanityUrl}
@@ -32,11 +35,12 @@ public class CachedVanityUrl implements Serializable {
      *
      * @param vanityUrl The vanityurl Url to cache
      */
+
     public CachedVanityUrl(final VanityUrl vanityUrl) {
         //if the VanityUrl URI is not a valid regex
-        this.vanityUrlId = vanityUrl.getIdentifier();
-        final String regex = normalize(vanityUrl.getURI(), CACHE_404_VANITY_URL.equals(this.vanityUrlId));
+        final String regex = normalize(vanityUrl.getURI());
         this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        this.vanityUrlId = vanityUrl.getIdentifier();
         this.url = vanityUrl.getURI();
         this.languageId = vanityUrl.getLanguageId();
         this.siteId = vanityUrl.getSite();
@@ -44,6 +48,7 @@ public class CachedVanityUrl implements Serializable {
         this.response = vanityUrl.getAction();
         this.order    = vanityUrl.getOrder();
     }
+
 
     /**
      * Generates a CachedVanityUrl from another given CachedVanityUrl
@@ -53,10 +58,11 @@ public class CachedVanityUrl implements Serializable {
      */
     public CachedVanityUrl(CachedVanityUrl fromCachedVanityUrl, String url) {
 
-        this.vanityUrlId = fromCachedVanityUrl.getVanityUrlId();
         //if the VanityUrl URI is not a valid regex
-        final String regex = normalize(url, CACHE_404_VANITY_URL.equals(this.vanityUrlId));
+        final String regex = normalize(url);
+
         this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        this.vanityUrlId = fromCachedVanityUrl.getVanityUrlId();
         this.url = url;
         this.languageId = fromCachedVanityUrl.getLanguageId();
         this.siteId = fromCachedVanityUrl.getSiteId();
@@ -65,26 +71,7 @@ public class CachedVanityUrl implements Serializable {
         this.order    = fromCachedVanityUrl.getOrder();
     }
 
-    /**
-     * Generates a CachedVanityUrl from another given CachedVanityUrl
-     *
-     * @param forwardTo replace the forward.
-     * @param fromCachedVanityUrl VanityURL to copy
-     *
-     */
-    public CachedVanityUrl(final String forwardTo,
-                           final CachedVanityUrl fromCachedVanityUrl) {
 
-
-        this.pattern     = fromCachedVanityUrl.pattern;
-        this.vanityUrlId = fromCachedVanityUrl.getVanityUrlId();
-        this.url         = fromCachedVanityUrl.url;
-        this.languageId  = fromCachedVanityUrl.getLanguageId();
-        this.siteId      = fromCachedVanityUrl.getSiteId();
-        this.forwardTo   = forwardTo;
-        this.response    = fromCachedVanityUrl.getResponse();
-        this.order       = fromCachedVanityUrl.getOrder();
-    }
 
     public int getOrder() {
         return order;
@@ -144,6 +131,30 @@ public class CachedVanityUrl implements Serializable {
         return pattern;
     }
 
+    
+    public Tuple2<String, String> processForward(final String url) {
+      String newForward = this.forwardTo;
+      String queryString = null;
+      if(pattern!=null) {
+        Matcher matcher = pattern.matcher(url);
+        if (matcher.matches() && forwardTo.indexOf(GROUP_REPLACEMENT_PREFIX)>-1) {
+          for(int i=1;i<matcher.groupCount();i++) {
+            newForward=newForward.replace("$"+i, matcher.group(i));
+          }
+        }
+      }
+      if (UtilMethods.isSet(newForward) && newForward.contains("?")) {
+          String[] arr = newForward.split("\\?", 2);
+          newForward = arr[0];
+          if (arr.length > 1) {
+              queryString = arr[1];
+          }
+      }
+      return Tuple.of(newForward, queryString);
+    }
+    
+    
+
     /**
      * get the Vanitu Url Identifier
      *
@@ -172,11 +183,10 @@ public class CachedVanityUrl implements Serializable {
     /**
      * This takes the uir that was originally stored in the contentlet adds validates it.
      * @param uri the uri stored in the contentlet.
-     * @param cache404VanityUrl whether or not this is a 404 cache entry
      * @return normalized uri.
      */
-    private String normalize(final String uri, final boolean cache404VanityUrl){
-        final String uriRegEx = cache404VanityUrl ? uri : addOptionalForwardSlashSupport(uri);
+    private String normalize(final String uri){
+        final String uriRegEx = addOptionalForwardSlashSupport(uri);
         return VanityUrlUtil.isValidRegex(uriRegEx) ? uriRegEx : StringPool.BLANK;
     }
 
@@ -194,4 +204,6 @@ public class CachedVanityUrl implements Serializable {
                 ", order=" + order +
                 '}';
     }
+    
+    
 }
