@@ -10,12 +10,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -23,6 +23,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+/**
+ * Expose the Browser functionality such as get the contents in a folder
+ * @author jsanca
+ */
 @Path("/v1/browser")
 public class BrowserResource {
 
@@ -39,6 +43,17 @@ public class BrowserResource {
         this.browserAPI = browserAPI;
     }
 
+    /**
+     * Get the folder contents
+     * Can get a host or specific folder, retrieve archive, working, include folders, pages, files and dotAsset
+     * Can filter by extensions and mime type
+     * @param request  {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param browserQueryForm {@link BrowserQueryForm}
+     * @return Response
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @POST
     @JSONP
     @NoCache
@@ -46,7 +61,6 @@ public class BrowserResource {
     public Response getFolderContent(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
                                                 final BrowserQueryForm browserQueryForm) throws DotSecurityException, DotDataException {
-
 
         final InitDataObject initData = new WebResource.InitBuilder()
                 .requiredBackendUser(true)
@@ -57,6 +71,7 @@ public class BrowserResource {
         final long languageId = browserQueryForm.getLanguageId() > 0?
                 browserQueryForm.getLanguageId(): WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
+        Logger.debug(this, "Getting folder contents, browser query form: " + browserQueryForm);
 
         return Response.ok(new ResponseEntityView(this.browserAPI.getFolderContent(
                 BrowserQuery.builder()

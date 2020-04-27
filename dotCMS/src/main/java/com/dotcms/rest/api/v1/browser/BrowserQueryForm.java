@@ -1,12 +1,9 @@
 package com.dotcms.rest.api.v1.browser;
 
-import com.dotcms.browser.BrowserQuery;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,6 +99,28 @@ public class BrowserQueryForm {
 
     public List<String> getMimeTypes() {
         return mimeTypes;
+    }
+
+    @Override
+    public String toString() {
+        return "BrowserQueryForm{" +
+                "hostFolderId='" + hostFolderId + '\'' +
+                ", filter='" + filter + '\'' +
+                ", sortBy='" + sortBy + '\'' +
+                ", offset=" + offset +
+                ", maxResults=" + maxResults +
+                ", showWorking=" + showWorking +
+                ", showArchived=" + showArchived +
+                ", showFolders=" + showFolders +
+                ", showFiles=" + showFiles +
+                ", showPages=" + showPages +
+                ", sortByDesc=" + sortByDesc +
+                ", showLinks=" + showLinks +
+                ", showDotAssets=" + showDotAssets +
+                ", languageId=" + languageId +
+                ", extensions=" + extensions +
+                ", mimeTypes=" + mimeTypes +
+                '}';
     }
 
     public static final class Builder {
