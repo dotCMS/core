@@ -34,7 +34,7 @@ public interface AppsAPI {
      * Conforms a map where the Elements are lists of app unique names, organized by host as key.
      * @return
      */
-    Map<String, Set<String>> appKeysByHost();
+    Map<String, Set<String>> appKeysByHost() throws DotSecurityException, DotDataException;
 
     /**
      * This returns a json object read from the secret store that contains the apps integration configuration and secret.
@@ -153,6 +153,15 @@ public interface AppsAPI {
             throws DotSecurityException, DotDataException;
 
     /**
+     * Method meant to to be consumed from a site delete event.
+     * @param host
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void removeSecretsForSite(Host host, User user)
+                    throws DotDataException, DotSecurityException;
+    /**
      * Warnings are any secrets missing required values stated on the AppDescriptor
      * @param appDescriptor
      * @param sitesWithConfigurations
@@ -176,6 +185,7 @@ public interface AppsAPI {
      */
     Map<String, List<String>> computeSecretWarnings(final AppDescriptor appDescriptor, final Host site, final User user)
             throws DotSecurityException, DotDataException;
+
 
     enum INSTANCE {
         INSTANCE;

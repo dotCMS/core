@@ -27,6 +27,7 @@ import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -481,8 +482,8 @@ public class AppsAPIImplTest {
 
     /**
      * Test computeSecretWarnings.
-     * Given scenario: You create a descriptor that states a param to be required. Then you set a Param that has no value on the expected required param.
-     * Expected Result: Such situation should NOT generate no warning.
+     * Given scenario: You create a descriptor that states a param is required. Then you set a Param that has a value on the expected required param.
+     * Expected Result: Such situation should NOT generate a warning.
      */
     @Test
     public void Test_Secret_Integrity_Check_Expect_No_Warning()
@@ -683,6 +684,36 @@ public class AppsAPIImplTest {
             portlet = portletDataGen.portletId(integrationsPortletId).nextPersisted();
         }
         return portlet;
+    }
+
+    @Test
+    public void Test_Delete_Secrets_On_Site_Delete()
+            throws DotDataException, DotSecurityException {
+        final AppsAPI api = APILocator.getAppsAPI();
+        final User admin = TestUserUtils.getAdminUser();
+
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final String appKey ="appKeyHost";
+        //Let's create a set of secrets for a service
+        final AppSecrets secrets1 = builder1.withKey(appKey)
+                .withHiddenSecret("test:secret1", "secret-1")
+                .withHiddenSecret("test:secret2", "secret-2")
+                .build();
+        final Host newSite = new SiteDataGen().nextPersisted();
+        //Save it
+        api.saveSecrets(secrets1, newSite, admin);
+
+        final Optional<AppSecrets> secrets = api.getSecrets(appKey, newSite, admin);
+        assertTrue(secrets.isPresent());
+
+        //Now delete the site
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        hostAPI.archive(newSite, admin, false);
+        hostAPI.delete(newSite, admin, false);
+
+        final Optional<AppSecrets> secretsAfterSiteDelete = api.getSecrets(appKey, newSite, admin);
+        assertFalse(secretsAfterSiteDelete.isPresent());
+
     }
 
 }

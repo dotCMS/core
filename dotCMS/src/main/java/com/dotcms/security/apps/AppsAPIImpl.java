@@ -4,7 +4,6 @@ import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.google.common.collect.ImmutableList.of;
 import static java.util.Collections.emptyMap;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -16,6 +15,7 @@ import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -25,6 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
@@ -49,6 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This API serves as the bridge between the secrets safe repository
@@ -134,14 +136,38 @@ public class AppsAPIImpl implements AppsAPI {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Override
-    public Map<String, Set<String>> appKeysByHost() {
-        return secretsStore.listKeys().stream()
+    public Map<String, Set<String>> appKeysByHost() throws DotSecurityException, DotDataException{
+      return appKeysByHost(true);
+    }
+
+    /**
+     * This private version basically adds the possibility to filter sites that exist in our db
+     * This becomes handy when people has secrets associated to a site and then for some reason decides to remove the site.
+     * @param filterNonExisting
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Map<String, Set<String>> appKeysByHost(final boolean filterNonExisting)
+            throws DotSecurityException, DotDataException {
+        Stream<String[]> stream = secretsStore.listKeys().stream()
                 .filter(s -> s.contains(HOST_SECRET_KEY_SEPARATOR))
                 .map(s -> s.split(HOST_SECRET_KEY_SEPARATOR))
-                .filter(strings -> strings.length == 2)
-                .collect(Collectors.groupingBy(strings -> strings[0],
-                        Collectors.mapping(strings -> strings[1], Collectors.toSet())));
+                .filter(strings -> strings.length == 2);
+        if (filterNonExisting) {
+            final Set<String> validSites = hostAPI.findAll(APILocator.systemUser(), false).stream()
+                    .map(Contentlet::getIdentifier).map(String::toLowerCase).collect(Collectors.toSet());
+            stream = stream.filter(strings -> validSites.contains(strings[0]));
+        }
+        return stream.collect(Collectors.groupingBy(strings -> strings[0],
+                Collectors.mapping(strings -> strings[1], Collectors.toSet())));
     }
 
     @Override
@@ -299,12 +325,18 @@ public class AppsAPIImpl implements AppsAPI {
     @Override
     public void deleteSecrets(final String key, final Host host, final User user)
             throws DotDataException, DotSecurityException {
+        deleteSecrets(key, host.getIdentifier(), user);
+    }
+
+
+    private void deleteSecrets(final String key, final String siteIdentifier, final User user)
+            throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid service delete attempt on `%s` for host `%s` performed by user with id `%s`",
-                    key, host.getIdentifier(), user.getUserId()));
+                    key, siteIdentifier, user.getUserId()));
         } else {
-            secretsStore.deleteValue(internalKey(key, host));
+            secretsStore.deleteValue(internalKey(key, siteIdentifier));
         }
     }
 
@@ -416,7 +448,7 @@ public class AppsAPIImpl implements AppsAPI {
         }else{
             // if we succeed trying to find the descriptor.
             // Lets get all the service-keys and organized by host-id
-            final Map<String, Set<String>> appKeysByHost = appKeysByHost();
+            final Map<String, Set<String>> appKeysByHost = appKeysByHost(true);
             for (final Entry<String, Set<String>> entry : appKeysByHost.entrySet()) {
                 final String hostId = entry.getKey();
                 final Set<String> appKeys = entry.getValue();
@@ -715,7 +747,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     * Verifies if a string can be parsed to boolean safely
+     * Verifies if a string can be parsed to boolean safely.
      * @param value
      * @return
      */
@@ -732,6 +764,28 @@ public class AppsAPIImpl implements AppsAPI {
                             serviceDescriptor.getKey()));
         }
         return true;
+    }
+
+    /**
+     * Method meant to to be consumed from a delete site event.
+     * @param host
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Override
+    public void removeSecretsForSite(final Host host, final User user)
+            throws DotDataException, DotSecurityException {
+        Logger.info(AppsAPIImpl.class, () -> String.format(" Removing secrets under site `%s` ", host.getName()));
+        //This must be called with param filterNonExisting in false since the first thing that delete-site does is clear cache.
+        final Map<String, Set<String>> keysByHost = appKeysByHost(false);
+        final Set<String> secretKeys = keysByHost.get(host.getIdentifier().toLowerCase());
+        if (null != secretKeys) {
+            for (final String secretKey : secretKeys) {
+                deleteSecrets(secretKey, host.getIdentifier(), user);
+                Logger.info(AppsAPIImpl.class, () -> String.format(" Secret with `%s` has been removed. ", secretKey));
+            }
+        }
     }
 
 }
