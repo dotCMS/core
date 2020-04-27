@@ -3,6 +3,7 @@
 
 <div id="${id}" style="display: none;">
     <div dojoAttachPoint="dialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Select-a-file")%>" class="file-selector-tree">
+        <dot-asset-drop-zone dojoAttachPoint="dropzone">
         <form dojoAttachPoint="search_form" onsubmit="return false;">
             <div dojotype="dijit.layout.BorderContainer" design="sidebar" gutters="false" livesplitters="false" class="file-selector-tree__container">
                 <div dojotype="dijit.layout.ContentPane" dojoAttachPoint="foldersContentPane" splitter="false" region="leading" title="<%= LanguageUtil.get(pageContext, "Folders")%>" class="portlet-sidebar-wrapper">
@@ -85,6 +86,7 @@
                 </div>
             </div>
         </form>
+        </dot-asset-drop-zone>
     </div>
 
     <div dojoAttachPoint="addFileDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Upload-file(s)")%>" style="width: 700px; height: 450px;">
