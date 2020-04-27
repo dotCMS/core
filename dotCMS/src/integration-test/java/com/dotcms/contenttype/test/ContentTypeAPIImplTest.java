@@ -985,17 +985,22 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	public void testSave_GivenTypeWithReservedVarMarkedAsSystem_ShouldSaveWithGivenVar(final String varname)
 			throws DotSecurityException, DotDataException {
 
-		ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser())
-				.save(ContentTypeBuilder
-						.builder(SimpleContentType.class)
-						.folder(FolderAPI.SYSTEM_FOLDER)
-						.host(Host.SYSTEM_HOST)
-						.variable(varname)
-						.name(varname)
-						.system(true)  // system true!
-						.owner(user.getUserId())
-						.build());
-		Assert.assertEquals(varname, type.variable());
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable(varname)
+							.name(varname)
+							.system(true)  // system true!
+							.owner(user.getUserId())
+							.build());
+			Assert.assertEquals(varname, type.variable());
+		} finally {
+			ContentTypeDataGen.remove(type);
+		}
 	}
 
 	/**
