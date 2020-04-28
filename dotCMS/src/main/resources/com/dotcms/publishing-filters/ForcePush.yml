@@ -14,5 +14,5 @@ filters:
        excludeDependencyClasses: []
        ## force push as always worked, if true will push regardless the pushed asset history
        forcePush:                true
-       ## check for content relationships
+       ## check for relationships (if false neither the Relationship object nor the related content nor the related content type will be pushed)
        relationships:            true
