@@ -98,7 +98,7 @@ public class SecretView {
             map.put("dynamic", value.isDynamic());
             final List<String> warnings = value.getWarnings();
             if(UtilMethods.isSet(warnings)) {
-               map.put("warnings", String.join(",", warnings));
+               map.put("warnings", warnings);
             }
             final Secret secret = value.getSecret();
             final ParamDescriptor paramDescriptor = value.getParamDescriptor();

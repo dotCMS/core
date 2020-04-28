@@ -17,6 +17,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.security.apps.ExportContext.Builder;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -34,12 +35,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import com.liferay.util.EncryptorException;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -713,6 +716,19 @@ public class AppsAPIImplTest {
 
         final Optional<AppSecrets> secretsAfterSiteDelete = api.getSecrets(appKey, newSite, admin);
         assertFalse(secretsAfterSiteDelete.isPresent());
+
+    }
+
+    @Test
+    public void Test_Export_Apps()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException {
+        final AppsAPI api = APILocator.getAppsAPI();
+        final User admin = TestUserUtils.getAdminUser();
+        final ExportContext context = new Builder().withPassword(new char[]{'1', '2', '3', '4'})
+                .doExportAll(true).build();
+        try(final OutputStream outputStream = api.export(context, admin)){
+           System.out.println(outputStream);
+        }
 
     }
 

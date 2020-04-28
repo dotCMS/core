@@ -4,6 +4,8 @@ import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.google.common.collect.ImmutableList.of;
 import static java.util.Collections.emptyMap;
+
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -25,17 +27,24 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
+import com.liferay.util.Base64;
+import com.liferay.util.EncryptorException;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -787,5 +796,42 @@ public class AppsAPIImpl implements AppsAPI {
             }
         }
     }
+
+
+    public OutputStream export(final ExportContext context, final User user)
+            throws DotSecurityException, DotDataException, IOException, EncryptorException {
+        final Map<String, Set<String>> keysByHost = appKeysByHost(true);
+        final ImmutableMap.Builder<String, Set<AppSecrets>> export = ImmutableMap.builder();
+        for (Entry<String,Set<String>> entry : keysByHost.entrySet()) {
+                    final Host host = hostAPI.find(entry.getKey(), user, false);
+                    final Set<AppSecrets> exportSecrets = new HashSet<>();
+                    for (final String appKey : entry.getValue()) {
+                        if(!context.isExportAll()){
+                            if(!context.getApplicationKeys().contains(appKey)){
+                              continue;
+                            }
+                        }
+                            final Optional<AppSecrets> secretsOptional = getSecrets(appKey, host, user);
+                            if (secretsOptional.isPresent()) {
+                                final AppSecrets secrets = secretsOptional.get();
+                                exportSecrets.add(secrets);
+                            }
+                    }
+                    export.put(host.getIdentifier(), exportSecrets);
+        }
+
+        final Key key = (Key) Base64.stringToObject(new String(context.getPassword()));
+        final byte[] bytes = DotObjectMapperProvider.createDefaultMapper().writeValueAsBytes(export.build());
+        final char[] chars = AppsUtil.bytesToCharArrayUTF(bytes);
+        final char[] encrypt = AppsUtil.encrypt(key, chars);
+
+        final File file = File.createTempFile("export", "dot");
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(Paths.get(file.getPath())), StandardCharsets.UTF_8))) {
+            writer.write(encrypt,0,encrypt.length);
+        }
+        return new FileOutputStream(file);
+
+    }
+
 
 }

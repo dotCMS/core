@@ -5,10 +5,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
+import com.liferay.util.EncryptorException;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -185,6 +187,20 @@ public interface AppsAPI {
      */
     Map<String, List<String>> computeSecretWarnings(final AppDescriptor appDescriptor, final Host site, final User user)
             throws DotSecurityException, DotDataException;
+
+
+    /**
+     *
+     * @param context
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     * @throws EncryptorException
+     */
+    OutputStream export(final ExportContext context, final User user)
+            throws DotSecurityException, DotDataException, IOException, EncryptorException;
 
 
     enum INSTANCE {
