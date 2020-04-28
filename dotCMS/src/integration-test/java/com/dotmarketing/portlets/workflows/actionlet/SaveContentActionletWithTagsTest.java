@@ -147,7 +147,7 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
                 workflowAPI.fireContentWorkflow(contentletSaved2,
                         new ContentletDependencies.Builder()
                                 .modUser(APILocator.systemUser())
-                                .workflowActionId(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID)
+                                .workflowActionId(SystemWorkflowConstants.WORKFLOW_SAVE_PUBLISH_ACTION_ID)
                                 .build());
 
         Assert.assertNotNull(contentletSaved3);
