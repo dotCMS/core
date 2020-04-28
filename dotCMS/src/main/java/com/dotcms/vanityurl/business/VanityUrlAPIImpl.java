@@ -168,8 +168,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   public Optional<CachedVanityUrl> resolveVanityUrl(final String url, final Host host, final Language lang) {
 
     // 404 short circuit
-    if (cache.is404(host, lang, url)) {
-      return Optional.empty();
+    final Optional<CachedVanityUrl> shortCircuit = cache.getDirectMapping(url, host, lang);
+    if(shortCircuit!=null) {
+        return shortCircuit;
     }
 
 

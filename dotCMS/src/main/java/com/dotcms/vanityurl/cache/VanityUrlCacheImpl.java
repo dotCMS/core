@@ -116,18 +116,12 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public Optional<CachedVanityUrl> getDirectMapping(final Host host, final Language lang, final String url) {
+    public Optional<CachedVanityUrl> getDirectMapping(final String url, final Host host, final Language lang) {
         Optional<CachedVanityUrl> cachedVanity = (Optional<CachedVanityUrl>) cache.getNoThrow(key(host, lang, url), VANITY_URL_DIRECT_GROUP);
-        return cachedVanity !=null? cachedVanity : Optional.empty();
+        return cachedVanity ;
     }
     
 
-    @Override
-    public boolean is404(final Host host, final Language lang, final String url) {
-
-        Optional<CachedVanityUrl> cachedVanity = (Optional<CachedVanityUrl>) cache.getNoThrow(key(host, lang, url), VANITY_URL_DIRECT_GROUP);
-        return cachedVanity !=null && !cachedVanity.isPresent();
-    }
 
 
     @Override

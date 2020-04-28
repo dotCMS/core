@@ -39,14 +39,6 @@ public abstract class VanityUrlCache implements Cachable {
      */
     public abstract List<CachedVanityUrl> getSiteMappings(final Host host, final Language lang);
 
-    /**
-     * Checks if there is a 404 response for the given url
-     * 
-     * @param host
-     * @param url
-     * @return
-     */
-    public abstract boolean is404(final Host host, final Language lang, final String url);
 
     /**
      * puts all a hosts vanity urls into cache at once
@@ -81,7 +73,17 @@ public abstract class VanityUrlCache implements Cachable {
     public abstract void putDirectMapping(Host host, Language lang, String url, final Optional<CachedVanityUrl> vanityUrl);
 
     
-    public abstract Optional<CachedVanityUrl> getDirectMapping(Host host, Language lang, String url) ;
+    /**
+     * This method will return 1 of 3 possible values:
+     * null - which means the cache does not know anything about the url
+     * Optional.empty() - which means there is no matching vanity URL, e.g. 404 cached response
+     * Optional<CachedVanityUrl> - the matching vanity url
+     * @param url
+     * @param host
+     * @param lang
+     * @return
+     */
+    public abstract Optional<CachedVanityUrl> getDirectMapping(String url, Host host, Language lang) ;
 
 
 

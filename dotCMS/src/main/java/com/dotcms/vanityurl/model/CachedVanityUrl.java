@@ -41,16 +41,7 @@ public class CachedVanityUrl implements Serializable {
      */
 
     public CachedVanityUrl(final VanityUrl vanityUrl) {
-        //if the VanityUrl URI is not a valid regex
-        final String regex = normalize(vanityUrl.getURI());
-        this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        this.vanityUrlId = vanityUrl.getIdentifier();
-        this.url = vanityUrl.getURI();
-        this.languageId = vanityUrl.getLanguageId();
-        this.siteId = vanityUrl.getSite();
-        this.forwardTo = vanityUrl.getForwardTo();
-        this.response = vanityUrl.getAction();
-        this.order    = vanityUrl.getOrder();
+        this(vanityUrl.getIdentifier(),vanityUrl.getURI(),vanityUrl.getLanguageId(),vanityUrl.getSite(),vanityUrl.getForwardTo(),vanityUrl.getAction());
     }
 
     public CachedVanityUrl(String vanityUrlId,String url, long languageId, String siteId,String forwardTo,int response) {
@@ -64,6 +55,7 @@ public class CachedVanityUrl implements Serializable {
         this.response = response;
         this.order    = 0;
     }
+    
     
     public Tuple2<String, String> processForward(final String url) {
       String newForward = this.forwardTo;
