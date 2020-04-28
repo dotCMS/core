@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="java.util.Optional"%>
 <%@page import="com.dotmarketing.util.PageMode"%>
 <%@page import="com.dotmarketing.util.Config"%>
@@ -13,9 +14,7 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.util.UtilMethods" %>
 <%@page import="com.dotmarketing.util.WebKeys"%>
-<%@page import="com.liferay.portal.language.LanguageUtil"%>
-
-<%
+<%@page import="com.liferay.portal.language.LanguageUtil"%><%
 out.clear();
 if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGES_FOR_BACKEND", true)){
     out.append(String.valueOf(response.getStatus()));
@@ -44,10 +43,11 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
     }
     final String errorPage = "/cms" + status + "Page";
     final Host site = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-    final Optional<CachedVanityUrl> vanityurl = APILocator.getVanityUrlAPI().resolveVanityUrl(errorPage, host, language);
+    final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+    final Optional<CachedVanityUrl> vanityurl = APILocator.getVanityUrlAPI().resolveVanityUrl(errorPage, site, language);
     if (vanityurl.isPresent()) {
       
-      final String uri = vanityurl.get().getForwardTo();
+      final String uri = vanityurl.get().forwardTo;
       if (uri.contains("://")) {
         response.setStatus(301);
         response.setHeader("Location", uri);
