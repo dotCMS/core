@@ -999,7 +999,13 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 							.build());
 			Assert.assertEquals(varname, type.variable());
 		} finally {
-			ContentTypeDataGen.remove(type);
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.from(type)
+							.system(false)  // system false in order to remove!
+							.build());
+			APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
 		}
 	}
 
