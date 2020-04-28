@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
@@ -29,7 +30,9 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
@@ -73,6 +76,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     this.contentletAPI = contentletAPI;
     this.languageAPI = languageAPI;
     this.cache = cache;
+   
 
   }
 
@@ -86,6 +90,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
    * @return A list of VanityURLs
    */
   private void populateVanityURLsCacheBySite(final Host host) {
+    if(host==null || host.getIdentifier()==null) {
+        throw new DotStateException("Host cannot be null. Got:" + host);
+    }
+    Logger.info(this.getClass(), "Populating Vanity URLS for :" + host.getHostname()); 
     for (Language lang : languageAPI.getLanguages()) {
       cache.putSiteMappings(host, lang, findInDb(host, lang));
     }
@@ -159,6 +167,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   @Override
   public Optional<CachedVanityUrl> resolveVanityUrl(final String url, final Host host, final Language lang) {
 
+    // 404 short circuit
     if (cache.is404(host, lang, url)) {
       return Optional.empty();
     }
@@ -168,30 +177,24 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     Optional<CachedVanityUrl> matched =load(host, lang).parallelStream().filter(vc -> vc.url.equalsIgnoreCase(url) || vc.pattern.matcher(url).find()).findFirst();
 
     
+    // try language fallback
+    if (!matched.isPresent()  && !languageAPI.getDefaultLanguage().equals(lang) && Config.getBooleanProperty("DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE", false) ) {
+      matched = resolveVanityUrl(url, host, languageAPI.getDefaultLanguage());
+    }
+    
     // tries SYSTEM_HOST
-    if (!matched.isPresent()) {
+    if (!matched.isPresent() && !APILocator.systemHost().equals(host)) {
       matched = load(APILocator.systemHost(), lang).parallelStream().filter(vc -> vc.pattern.matcher(url).find()).findFirst();
     }
-
+    
     // if this is the /cmsHomePage vanity
     if (!matched.isPresent() && StringPool.FORWARD_SLASH.equals(url)) {
         matched = resolveVanityUrl(LEGACY_CMS_HOME_PAGE, host, lang);
     }
     
     
-    
-    
-    // try language fallback
-    if (!matched.isPresent() && !languageAPI.getDefaultLanguage().equals(lang)) {
-      matched = resolveVanityUrl(url, host, languageAPI.getDefaultLanguage());
-    }
-    
-
-    
-    
-
     // whatever we have, stick it into the cache so it can be remembered
-    cache.putDirectMapping(host, lang, url,matched);
+    cache.putDirectMapping(host, lang, url, matched);
 
 
     return matched;
