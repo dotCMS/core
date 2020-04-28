@@ -25,17 +25,18 @@
             ></p-dropdown>
         </div>
 
-        <div class="form__group">
-            <label class="form__label"
-                >{{ dotMessageService.get('contenttypes.content.push_publish.filters') }}:
-            </label>
-            <p-dropdown
-                [style]="{ width: '100%' }"
-                [options]="filterOptions"
-                formControlName="filterKey"
-                appendTo="body"
-            ></p-dropdown>
-        </div>
+        <!-- Commenting this until filter service is ready-->
+<!--        <div class="form__group">-->
+<!--            <label class="form__label"-->
+<!--                >{{ dotMessageService.get('contenttypes.content.push_publish.filters') }}:-->
+<!--            </label>-->
+<!--            <p-dropdown-->
+<!--                [style]="{ width: '100%' }"-->
+<!--                [options]="filterOptions"-->
+<!--                formControlName="filterKey"-->
+<!--                appendTo="body"-->
+<!--            ></p-dropdown>-->
+<!--        </div>-->
 
         <div
             class="form__group push-publish-dialog__publish-date"
