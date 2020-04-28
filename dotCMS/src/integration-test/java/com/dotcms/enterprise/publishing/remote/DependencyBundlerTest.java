@@ -2,6 +2,9 @@ package com.dotcms.enterprise.publishing.remote;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -22,14 +25,18 @@ import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
@@ -191,8 +198,7 @@ public class DependencyBundlerTest extends IntegrationTestBase {
     public void testGenerateBundleWithFilter_ExcludeDependencyClasses_ContentTypeWorkflow_NotAdded()
             throws DotDataException, IllegalAccessException, DotBundleException, DotPublishingException, InstantiationException, DotPublisherException, IOException {
         //Create ContentType
-        final ContentType contentType = TestDataUtils.
-                getWikiLikeContentType("TestWikiCTDependecyBundler"+System.currentTimeMillis(), null);
+        final ContentType contentType = TestDataUtils.getWikiLikeContentType();
         //Create Content
         final Contentlet content = TestDataUtils.getWikiContent(true,APILocator.getLanguageAPI().getDefaultLanguage().getId(),contentType.id());
 
@@ -233,7 +239,7 @@ public class DependencyBundlerTest extends IntegrationTestBase {
      * This test creates a Template and a Container, and generates the bundle using the default Filter (this one does not have any exclude filter set),
      * so the Template and the Container will be added (both assets added manually).
      * After this using the same Template and Container generates another bundle but using a new created filter that exclude Template and Container to be pushed,
-     * so in the bundle the Template nor the Container will be added.
+     * so in the bundle neither the Template nor the Container will be added.
      */
     @Test
     public void testGenerateBundleWithFilter_ExcludeClasses_TemplateContainer_NotAdded()
@@ -282,47 +288,65 @@ public class DependencyBundlerTest extends IntegrationTestBase {
      * generates the bundle using the default Filter (this one does not have any exclude filter set),
      * so the both ContentTypes and content will be added (Content Types and child content as a dependency since only pushing the parent content).
      * After this using the same assets generates another bundle but using a new created filter that exclude content from the child Content Type to be pushed,
-     * so in the bundle will be the parent Content Type and the parent content.
+     * so in the bundle will be the parent and child Content Type and the parent content.
      */
     @Test
     public void testGenerateBundleWithFilter_ExcludeDependencyQuery_ContentFromChildContentType_NotAdded()
-            throws DotDataException, IllegalAccessException, DotBundleException, DotPublishingException, InstantiationException, DotPublisherException, IOException {
+            throws DotDataException, IllegalAccessException, DotBundleException, DotPublishingException, InstantiationException, DotPublisherException, IOException, DotSecurityException {
         //Create child Content Type
+        final ContentType childContentType = TestDataUtils.getNewsLikeContentType();
         //Create parent Content Type
+        final ContentType parentContentType = TestDataUtils.getWikiLikeContentType();
         //Relate Content Types
+        Field newField = FieldBuilder.builder(RelationshipField.class).name("chilCT_parentCT" + System.currentTimeMillis())
+                .contentTypeId(parentContentType.id()).values(String.valueOf(
+                        RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childContentType.variable()).build();
+        newField = APILocator.getContentTypeFieldAPI().save(newField, systemUser);
         //Create child content
+        final Contentlet childContentlet = TestDataUtils.getNewsContent(true,APILocator.getLanguageAPI().getDefaultLanguage().getId(),childContentType.id());
         //Create parent content
+        Contentlet parentContentlet = TestDataUtils.getWikiContent(false,APILocator.getLanguageAPI().getDefaultLanguage().getId(),parentContentType.id());
         //Relate contents
+        final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(newField,systemUser);
+        parentContentlet = APILocator.getContentletAPI().checkin(parentContentlet,
+                CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)), systemUser,
+                false);
 
         //Create bundle with DefaultFilter
         final Bundle bundleWithDefaultFilter = createBundle("TestBundle"+System.currentTimeMillis(),false,defaultFilterKey);
         //Add assets to the bundle
-        PublisherAPI.getInstance().saveBundleAssets(Arrays.asList(parentContent.getIdentifier()),bundleWithDefaultFilter.getId(),
+        PublisherAPI.getInstance().saveBundleAssets(Arrays.asList(parentContentlet.getIdentifier()),bundleWithDefaultFilter.getId(),
                 systemUser);
         //Generate Bundle, will return several dependencySet with the assets that will be added to the bundle
         final PushPublisherConfig listOfAssetsWithDefaultFilter = generateBundle(bundleWithDefaultFilter.getId(), Operation.PUBLISH);
         Assert.assertNotNull(listOfAssetsWithDefaultFilter);
-        Assert.assertFalse(listOfAssetsWithDefaultFilter.getTemplates().isEmpty());
-        Assert.assertFalse(listOfAssetsWithDefaultFilter.getContainers().isEmpty());
-        Assert.assertTrue(listOfAssetsWithDefaultFilter.getTemplates().contains(template.getIdentifier()));
-        Assert.assertTrue(listOfAssetsWithDefaultFilter.getContainers().contains(container.getIdentifier()));
+        Assert.assertFalse(listOfAssetsWithDefaultFilter.getStructures().isEmpty());
+        Assert.assertTrue(listOfAssetsWithDefaultFilter.getStructures().contains(parentContentType.id()));
+        Assert.assertTrue(listOfAssetsWithDefaultFilter.getStructures().contains(childContentType.id()));
+        Assert.assertFalse(listOfAssetsWithDefaultFilter.getContentlets().isEmpty());
+        Assert.assertTrue(listOfAssetsWithDefaultFilter.getContentlets().contains(parentContentlet.getIdentifier()));
+        Assert.assertTrue(listOfAssetsWithDefaultFilter.getContentlets().contains(childContentlet.getIdentifier()));
 
         //Create filter
-        final String filterKey = "TestFilterWithExcludeClasses.yml";
-        final List<Object> excludeClassesList = new ArrayList<>();
-        excludeClassesList.add("Template");
-        excludeClassesList.add("Containers");
+        final String filterKey = "TestFilterWithExcludeDependencyQuery.yml";
+        final String excludeDependencyQuery = "+contentType:"+childContentType.variable();
         createFilterDescriptor(filterKey,true,true,false,
-                excludeClassesList,null,null,null,false);
+                null,null,null,excludeDependencyQuery,false);
         //Create bundle with New filter
         final Bundle bundleWithNewFilter = createBundle("TestBundle"+System.currentTimeMillis(),false,filterKey);
         //Add assets to the bundle
-        PublisherAPI.getInstance().saveBundleAssets(Arrays.asList(template.getIdentifier(),container.getIdentifier()),bundleWithNewFilter.getId(),
+        PublisherAPI.getInstance().saveBundleAssets(Arrays.asList(parentContentlet.getIdentifier()),bundleWithNewFilter.getId(),
                 systemUser);
         //Generate Bundle, will return several dependencySet with the assets that will be added to the bundle
         final PushPublisherConfig listOfAssetsWithNewFilter = generateBundle(bundleWithNewFilter.getId(), Operation.PUBLISH);
         Assert.assertNotNull(listOfAssetsWithNewFilter);
-        Assert.assertTrue(listOfAssetsWithNewFilter.getTemplates().isEmpty());
-        Assert.assertTrue(listOfAssetsWithNewFilter.getContainers().isEmpty());
+        Assert.assertFalse(listOfAssetsWithNewFilter.getStructures().isEmpty());
+        Assert.assertTrue(listOfAssetsWithNewFilter.getStructures().contains(parentContentType.id()));
+        Assert.assertTrue(listOfAssetsWithNewFilter.getStructures().contains(childContentType.id()));
+        Assert.assertFalse(listOfAssetsWithNewFilter.getContentlets().isEmpty());
+        Assert.assertTrue(listOfAssetsWithNewFilter.getContentlets().contains(parentContentlet.getIdentifier()));
+        Assert.assertFalse(listOfAssetsWithNewFilter.getContentlets().contains(childContentlet.getIdentifier()));
+
     }
 }
