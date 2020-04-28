@@ -51,6 +51,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
     widgetsInTemplate: true,
 
     resourceLink: '',
+    resourceLinkUri: '',
     resourceLinkLabel: '',
     versionPath: '',
     versionPathLabel: '',
@@ -100,7 +101,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
     
 
     _fileInfoTemplate: function ({resourceLink, versionPath, idPath}) {
-        const resourceLinkRow = resourceLink && "<tr><td><b>{resourceLinkLabel}</b></td><td><a target=\"_blank\" href=\"{resourceLink}\">{resourceLink}</a></td></tr>";
+        const resourceLinkRow = resourceLink && "<tr><td><b>{resourceLinkLabel}</b></td><td><a target=\"_blank\" href=\"{resourceLink}\">{resourceLinkUri}</a></td></tr>";
 
         const versionPathRow = versionPath && "<tr><td><b>{versionPathLabel}</b></td><td><a target=\"_blank\" href=\"{versionPath}\">{versionPath}</a></td></tr>";
         
@@ -282,11 +283,12 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
         fileInfo['path'] += this.identifier != '0' ? this.idShorty : this.inodeShorty;
         fileInfo['path'] += this.id != 'fileAsset' ? '/' + this.id : '';
         fileInfo['path'] += '/' + this.fileName + '?language_id=' + this.lang;
-        fileInfo['versionPath'] = host + this.versionPath;
-        fileInfo['idPath'] = host + this.idPath;
+        fileInfo['versionPath'] = this.versionPath;
+        fileInfo['idPath'] = this.idPath;
         fileInfo['versionPathLabel'] = this.versionPathLabel
         fileInfo['idPathLabel'] = this.idPathLabel
         fileInfo['resourceLink'] = this.resourceLink
+        fileInfo['resourceLinkUri'] = this.resourceLinkUri
         fileInfo['resourceLinkLabel'] = this.resourceLinkLabel
 
         var html = dojo.replace(this._fileInfoTemplate({
