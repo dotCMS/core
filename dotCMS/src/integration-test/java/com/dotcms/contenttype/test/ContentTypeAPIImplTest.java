@@ -981,7 +981,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	 * Note: not deleting the type in a finally block because system types can't be deleted
 	 */
 	@Test
-	@UseDataProvider("getReservedTypeVariables")
+	@UseDataProvider("getReservedTypeVariablesExcludingHost")
 	public void testSave_GivenTypeWithReservedVarMarkedAsSystem_ShouldSaveWithGivenVar(final String varname)
 			throws DotSecurityException, DotDataException {
 
