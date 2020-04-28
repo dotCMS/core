@@ -5,12 +5,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 public abstract class FieldSql {
 
 
-		static FieldSql instance = DbConnectionFactory.isH2() 
-				? new FieldSqlMysql() : DbConnectionFactory.isMySql() 
-						? new FieldSqlMysql() : DbConnectionFactory.isPostgres() 
-								? new FieldSqlMysql()
-									: DbConnectionFactory.isMsSql() 
-										? new FieldSqlMysql() : new FieldSqlMysql();
+		static FieldSql instance = new FieldSqlMysql();
 
 		public static FieldSql getInstance() {
 			return instance;
