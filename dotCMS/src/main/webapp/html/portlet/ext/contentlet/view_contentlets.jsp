@@ -838,7 +838,7 @@
     <script>
         var dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
         dotAssetDropZone.addEventListener('uploadComplete', function() {
-            setTimeout(()=>{doSearch()}, 3000);
+            doSearch();
         });
     </script>
 
