@@ -30,7 +30,14 @@ node {
     distBaseUrl = 'https://nodejs.org/dist'
     // If true, it will download node using above parameters.
     // If false, it will try to use globally installed node.
-    download = false
+
+    if (project.hasProperty('useGradleNode')){
+        download = project.useGradleNode.toBoolean()
+        println "\nUsing Gradle node version as property useGradleNode=$project.useGradleNode"
+    } else{
+        download = true
+    }
+
 }
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 

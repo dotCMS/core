@@ -63,12 +63,45 @@ dojo.require("dijit.Tree")
 dojo.require("dijit.Dialog")
 dojo.require("dotcms.dijit.tree.HostFolderTreeReadStoreModel")
 
+function getItemImage(data) {
+    return data.thumbnail ? 
+    `<div class="thumbnail" style="background-image: url('{thumbnail}');">
+        <img src="{thumbnail}" alt="{name}" aria-label="{name}">
+    </div>`
+    :
+    `<div class="icon"><div class="${data.icon}"></div></div>`
+}
+
 dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", "dijit/FileBrowserDialog.jsp"),
-	detailsRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{name}</a></td><td>{description}</td><td>{modUser}</td><td>{modDate}</td>',
-	listRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{name}</a></td>',
-	thumbRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img width="100" height="100" src="{thumbnail}"><br/>{name}</a></td>',
+	detailsRowTemplate: (data) => {
+        var image = getItemImage(data)
+
+        return `
+            <td id="file-{id}" nowrap>
+                <a class="selectableFile">
+                    ${image}
+                    <div style="margin:5px;">{name}</div>
+                </a>
+
+            </td>
+            <td>{description}</td>
+            <td>{modUser}</td>
+            <td>{modDate}</td>
+        `
+    },
+
+	cardTemplate: (data) => {
+        var image = getItemImage(data)
+        return `
+            <div id="file-{id}" class="file-selector-tree__card">
+                ${image}
+                <div class="label">{name}</div>
+            </div>
+       `
+       
+    },
 	widgetsInTemplate: true,
 	style: "width: 1000px; height: 500px;",
 	currentView: 'details',
@@ -82,17 +115,21 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	sortBy: "modDate",
 	sortByDesc: true,
 	_browserFolderTree: null,
-
+	includeDotAssets:true,
 	postCreate: function () {
 
-		dojo.connect(this.listViewIcon, 'click', dojo.hitch(this, this._changeView, 'list'));
+
 		dojo.connect(this.detailViewIcon, 'click', dojo.hitch(this, this._changeView, 'details'));
 		dojo.connect(this.thumbnailViewIcon, 'click', dojo.hitch(this, this._changeView, 'thumbnails'));
+
 
 	},
 
 	initializeTree: function() {
-
+        this.dropzone.addEventListener('uploadComplete', (e) => {
+            this._loadFolder()
+        })
+	    this.currentView = (this.currentView=="list") ? "details" : this.currentView;
 
 
 	    var treeStore = new dotcms.dijit.tree.HostFolderTreeReadStoreModel();
@@ -188,6 +225,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
 	_changeView: function(newView) {
 		this.currentView = newView;
+		this.currentView = (this.currentView=="list") ? "details" : this.currentView;
 		if(this.currentFolder)
 			this._selectFolder (this.currentFolder);
 	},
@@ -199,11 +237,13 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	_currentFilter: '',
 
 	_getRootFiles: function(hostId){
-		this.currentFolder= hostId;
+        this.currentFolder= hostId;
+        this.dropzone.folder = hostId;
 		this._loadFolder();
     },
 
 	_selectFolder: function(item) {
+        this.dropzone.folder = item.id;
 
 		this.currentFolder = item;
 		this._currentOffset = 0;
@@ -245,11 +285,10 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this._hide(this.listTable);
 		this._hide(this.thumbnailsTable);
 		this._removeRows(this.detailsTableBody);
-		this._removeRows(this.listTableBody);
-		this._removeRows(this.thumbnailsTableBody);
+		this._removeRows(this.thumbnailsTable);
 
-		BrowserAjax.getFolderContent(this._norm(this.currentFolder.id), this._currentOffset, this._maxNumberOfAssets, this._currentFilter, this.mimeTypes,
-			this.fileExtensions, false, true, this.onlyFiles, this.sortBy, this.sortByDesc, true, dojo.hitch(this, this._selectFolderCallback));
+		BrowserAjax.getFolderContentWithDotAssets(this._norm(this.currentFolder.id), this._currentOffset, this._maxNumberOfAssets, this._currentFilter, this.mimeTypes,
+			this.fileExtensions, false, true, this.onlyFiles, this.sortBy, this.sortByDesc, true, this.includeDotAssets, dojo.hitch(this, this._selectFolderCallback));
 
 	},
 
@@ -257,24 +296,20 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
 		var assets = assetsInfo.list;
 		this._totalResults = assetsInfo.total;
-
+		this.currentView = (this.currentView=="list") ? "details" : this.currentView;
 		switch (this.currentView) {
 			case 'details':
 				var table = this.detailsTable;
 				var tableBody = this.detailsTableBody;
 				break;
-			case 'list':
-				var table = this.listTable;
-				var tableBody = this.listTableBody;
-				break;
 			case 'thumbnails':
 				var table = this.thumbnailsTable;
-				var tableBody = this.thumbnailsTableBody;
+				var tableBody = this.thumbnailsTable;
 				break;
 		}
-
+		
 		var className = 'alternate_1';
-		var template = this.currentView == 'details'?this.detailsRowTemplate:this.currentView == 'list'?this.listRowTemplate:this.thumbRowTemplate;
+		var template = this.currentView == 'details' ? this.detailsRowTemplate : this.cardTemplate;
 
 		var columnNumber = 0;
 		var tableHTML = '';
@@ -282,30 +317,27 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 			var asset = assets[i];
 			this._normalizeAssetData(asset);
             // Shorten 'name' and 'title' values to 30 chars max, for display purposes ONLY. Leave original values as they are
-			var rowHTML = dojo.replace(template, { id: asset.identifier, name: shortenString(asset.title, 30), description: asset.friendlyName,
-					modUser: asset.modUserName, modDate: asset.modDateFormatted, className: className, icon: asset.icon, thumbnail: asset.thumbnail, title: shortenString(asset.title, 30) });
+            var data = {
+                id: asset.identifier,
+                firstLetter: shortenString(asset.title, 1),
+                name: shortenString(asset.title, 30),
+                description: (asset.friendlyName) ? asset.friendlyName : "",
+                modUser: asset.modUserName,
+                modDate: asset.modDateFormatted,
+                className: className, icon: asset.icon,
+                thumbnail: asset.thumbnail,
+                title: shortenString(asset.title, 30)
+            }
+			var rowHTML = dojo.replace(template(data), data);
 
 			if(columnNumber == 0) {
 				if(this.currentView == 'details')
-					rowHTML = 	'<tr class="' + className + '">' + rowHTML;
+					rowHTML = '<tr class="' + className + '">' + rowHTML;
 				else
-					rowHTML = 	'<tr>' + rowHTML;
+					rowHTML = '' + rowHTML;
 			}
 
-			switch (this.currentView) {
-				case 'details':
-					break;
-				case 'list':
-					columnNumber++;
-					columnNumber = columnNumber == 3 ? 0 : columnNumber;
-					break;
-				case 'thumbnails':
-					columnNumber++;
-					columnNumber = columnNumber == 3 ? 0 : columnNumber;
-					break;
-			}
-			if(columnNumber == 0)
-				rowHTML += 	"</tr>";
+
 			className = className == 'alternate_1'?'alternate_2':'alternate_1';
 			tableHTML += rowHTML;
 
@@ -320,10 +352,8 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 			var asset = assets[i];
 			var file = dojo.byId('file-' + asset.identifier);
 			file.id+=i;
-			var elements = file.getElementsByTagName("a");
-			var anchor = elements[0];
-			if(anchor.onclick==undefined){
-			   anchor.onclick = dojo.hitch(this, selected, this, asset);
+			if(file.onclick==undefined){
+                file.onclick = dojo.hitch(this, selected, this, asset);
 			}
 		}
 
@@ -372,6 +402,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	},
 
 	_assetSelected: function (asset) {
+	   
 		this.onFileSelected(asset);
 		this.dialog.hide();
 	},
@@ -389,33 +420,30 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
 	_normalizeAssetData: function(asset) {
 
+        var iconMap = {
+            file_asset: 'fileIcon',
+            dotasset: 'dotAssetIcon',
+            htmlpage: 'pageIcon',
+            links: 'linkIcon',
+        }
+
         var name = asset.title;
-   		var assetIcon = '/icon?i=' + asset.extension;
-   		var assetThumbnail = '/icon?i=' + asset.extension;
+   		var assetIcon = iconMap[asset.type]
+   		let assetThumbnail;
 
-   		if (asset.type == 'file_asset') {
+   		if (asset.type == 'file_asset' || asset.type == 'dotasset') {
    			name = asset.fileName;
-            assetIcon = '/html/images/icons/' + asset.extension + '.png';
 
-   			if(asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
-
-				if(asset.mimeType.indexOf('image/svg') <0 && asset.mimeType.indexOf('image/x-icon')<0){
-					assetThumbnail = '/contentAsset/image/' + asset.identifier + '/fileAsset/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/r/'+asset.inode+'?language_id='+asset.languageId;
-				}
-				else{
-					assetThumbnail= '/contentAsset/image/' + asset.identifier + '/fileAsset/'+asset.inode+'?language_id='+asset.languageId;
-				}
+   			if (asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
+				assetThumbnail = '/dA/' + asset.inode + '/200w/30q/' + asset.name;
    			}
-   		}
+        }
+           
    		if (asset.type == 'htmlpage') {
    			name = asset.pageUrl;
-   			assetIcon = '/html/images/icons/blog-blue.png';
-   			assetThumbnail = assetIcon;
-   		}
-   		if (asset.type == 'links') {
-   			assetIcon = '/icon?i=entry16';
-   			assetThumbnail = assetIcon;
-		}
+        }
+
+
 
 		if(asset.modDate) {
 			var hours = asset.modDate.getHours() < 10?"0" + asset.modDate.getHours():asset.modDate.getHours();
@@ -428,7 +456,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
 		}
 		else
-			var modDate = "";
+        var modDate = "";
 
 		asset.name = name;
 		asset.icon = assetIcon;
@@ -438,25 +466,31 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	},
 
 	_show: function(elem) {
+	    if(elem){
 		dojo.style(elem, { display: "" });
+	    }
 	},
 
 	_hide: function(elem) {
-		dojo.style(elem, { display: "none" });
+	    if(elem){
+	        dojo.style(elem, { display: "none" });
+	    }
 	},
 
 	_removeRows: function(table) {
-		if(dojo.isIE) {
-			try {
-				while(table.hasChildNodes()) {
-					table.deleteRow(0);
-				}
-			} catch(e) {
-				// not supported by broswer
-			}
-		} else {
-			table.innerHTML = '';
-		}
+	    if(table){
+    		if(dojo.isIE) {
+    			try {
+    				while(table.hasChildNodes()) {
+    					table.deleteRow(0);
+    				}
+    			} catch(e) {
+    				// not supported by broswer
+    			}
+    		} else {
+    			table.innerHTML = '';
+    		}
+	    }
 	},
 
 	_addNewFile: function () {
@@ -521,8 +555,8 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this._hide(this.listTable);
 		this._hide(this.thumbnailsTable);
 		this._removeRows(this.detailsTableBody);
-		this._removeRows(this.listTableBody);
-		this._removeRows(this.thumbnailsTableBody);
+		this._removeRows(this.thumbnailsTable);
+
 
 		showDotCMSSystemMessage(waitMsg,true);
 		if(numOfFiles < 5)
