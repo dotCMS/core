@@ -59,7 +59,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   private final ContentletAPI contentletAPI;
   private final VanityUrlCache cache;
   private final LanguageAPI languageAPI;
-
+  private final boolean languageFallback = Config.getBooleanProperty("DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE", false) ;
 
   public VanityUrlAPIImpl()  {
     this(APILocator.getContentletAPI(),
@@ -161,14 +161,14 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
   }
   
-  
+
   
   @CloseDBIfOpened
   @Override
   public Optional<CachedVanityUrl> resolveVanityUrl(final String url, final Host host, final Language lang) {
 
     // 404 short circuit
-    final Optional<CachedVanityUrl> shortCircuit = cache.getDirectMapping(url, host, lang);
+    Optional<CachedVanityUrl> shortCircuit = cache.getDirectMapping(url, host, lang);
     if(shortCircuit!=null) {
         return shortCircuit;
     }
@@ -179,7 +179,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     
     // try language fallback
-    if (!matched.isPresent()  && !languageAPI.getDefaultLanguage().equals(lang) && Config.getBooleanProperty("DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE", false) ) {
+    if (!matched.isPresent()  && !languageAPI.getDefaultLanguage().equals(lang) && languageFallback ) {
       matched = resolveVanityUrl(url, host, languageAPI.getDefaultLanguage());
     }
     

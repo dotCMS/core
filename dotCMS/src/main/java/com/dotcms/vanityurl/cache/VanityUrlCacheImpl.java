@@ -7,6 +7,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.util.StringPool;
@@ -101,7 +102,6 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             return;
         }
         cache.put(key(host, lang), vanityURLs, VANITY_URL_SITE_GROUP);
-        cache.flushGroup(VANITY_URL_DIRECT_GROUP);
     }
 
     @Override
@@ -117,8 +117,9 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     @Override
     public Optional<CachedVanityUrl> getDirectMapping(final String url, final Host host, final Language lang) {
-        Optional<CachedVanityUrl> cachedVanity = (Optional<CachedVanityUrl>) cache.getNoThrow(key(host, lang, url), VANITY_URL_DIRECT_GROUP);
-        return cachedVanity ;
+
+        return (Optional<CachedVanityUrl>) cache.getNoThrow(key(host, lang, url), VANITY_URL_DIRECT_GROUP);
+
     }
     
 
@@ -126,7 +127,9 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     @Override
     public void putDirectMapping(final Host host, final Language lang, final String url, final Optional<CachedVanityUrl> vanityUrl) {
-
+        if(vanityUrl==null) {
+            throw new DotRuntimeException("Unable to put null value in cache:" + key(host, lang, url));
+        }
         cache.put(key(host, lang, url), vanityUrl, VANITY_URL_DIRECT_GROUP);
 
     }
@@ -139,10 +142,13 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
 
     String key(final Host host, final Language lang, final String url) {
-
-        return (host != null ? host.getIdentifier() : StringPool.BLANK) + StringPool.UNDERLINE
-                        + (lang != null ? String.valueOf(lang.getId()) : StringPool.BLANK) + StringPool.UNDERLINE
-                        + (url != null ? url : StringPool.BLANK);
+        if(host==null || lang==null) {
+            throw new DotRuntimeException("Host or language are null - host:" + host  + " lang:" + lang);
+        }
+        String key = host.getIdentifier() + StringPool.UNDERLINE
+                        +  String.valueOf(lang.getId()) + StringPool.UNDERLINE
+                        + (url != null ? url : "");
+        return key;
     }
 
 
