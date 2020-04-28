@@ -442,9 +442,10 @@ public class UtilHTML {
                 return IconType.VANITY_URL.iconName();
             case DOTASSET:
 
-                return "uknIcon " + UtilMethods.getFileExtension(
-                		Try.of(()-> contentlet.getBinary("asset").getName())
-								.getOrElse("ukn") )+ "Icon";
+            	final String dotUri  = Try.of(()-> contentlet.getBinary("asset").getName()).getOrElse("ukn");
+            	final String dotIcon = UtilMethods.getFileExtension(dotUri);
+
+				return dotUri.equals(dotIcon)? "uknIcon": dotIcon + "Icon";
             default:
                 return IconType.UNKNOWN.iconName();
         }
