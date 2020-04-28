@@ -4,10 +4,9 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
+import com.dotcms.browser.BrowserAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.rendering.velocity.viewtools.BrowserAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -88,7 +87,7 @@ public class BrowserAjax {
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 	private ContentletAPI contentletAPI = APILocator.getContentletAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
-	private BrowserAPI browserAPI = new BrowserAPI();
+	private BrowserAPI browserAPI = APILocator.getBrowserAPI();
 	private VersionableAPI versionAPI = APILocator.getVersionableAPI();
 	private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
@@ -343,6 +342,25 @@ public class BrowserAjax {
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
 	}
+
+	   public Map<String, Object> getFolderContentWithDotAssets(final String folderId, final int offset,
+																final int maxResults, final String filter, final List<String> mimeTypes,
+																final List<String> extensions, final boolean showArchived, final boolean noFolders,
+																final boolean onlyFiles, final String sortBy, final boolean sortByDesc,
+																final boolean excludeLinks, final boolean dotAssets) throws DotSecurityException, DotDataException {
+
+	        final WebContext webContext  = WebContextFactory.get();
+	        final HttpServletRequest req = webContext.getHttpServletRequest();
+	        final User user              = getUser(req);
+	        final long getAllLanguages   = 0;
+
+	        final Map<String, Object> results = browserAPI.getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions,
+					true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, getAllLanguages, dotAssets);
+
+	        listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
+
+	        return results;
+	   }
 
 	/**
 	 * Retrieves the list of contents under the specified folder. This specific

@@ -10,6 +10,7 @@ import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
 import com.dotcms.rest.api.v1.authentication.LoginFormResource;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
+import com.dotcms.rest.api.v1.browser.BrowserResource;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
@@ -161,6 +162,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(UpgradeTaskResource.class);
 
 					REST_CLASSES.add(AppsResource.class);
+
+					REST_CLASSES.add(BrowserResource.class);
 				}
 			}
 		}

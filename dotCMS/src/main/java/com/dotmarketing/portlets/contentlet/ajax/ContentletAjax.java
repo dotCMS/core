@@ -1203,8 +1203,8 @@ public class ContentletAjax {
 				} else {
 					searchResult.put("mimeType", "");
 				}
-				final String icon = spanClass.startsWith("uknIcon") ? spanClass.replaceAll("uknIcon","").trim() : spanClass;
-				searchResult.put("__icon__",icon);
+			
+				searchResult.put("__icon__",UtilHTML.getIconClass(con ));
 			} catch (DotSecurityException e) {
 
 				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
