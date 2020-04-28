@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -118,8 +117,10 @@ class AppsHelper {
     private int computeWarningsBySite(final AppDescriptor appDescriptor,
             final Set<String> sitesWithConfigurations, final User user)
             throws DotDataException, DotSecurityException {
-        final Map<String, Map<String, List<String>>> warningsBySite = appsAPI.computeWarningsBySite(appDescriptor, sitesWithConfigurations, user);
-        return warningsBySite.values().stream().map(Map::values).mapToInt(Collection::size).sum();
+        final Map<String, Map<String, List<String>>> warningsBySite = appsAPI
+                .computeWarningsBySite(appDescriptor, sitesWithConfigurations, user);
+        return (int) warningsBySite.values().stream().map(Map::values).filter(lists -> !lists.isEmpty())
+                .count();
     }
 
     /**
@@ -632,7 +633,7 @@ class AppsHelper {
                 appViews.add(new AppView(appDescriptor,0, 0));
             }catch (Exception e){
                Logger.error(AppsHelper.class, e);
-               throw new DotDataException(e);
+               throw new DotDataException(e.getMessage(), e);
             }
         }
         return appViews;
