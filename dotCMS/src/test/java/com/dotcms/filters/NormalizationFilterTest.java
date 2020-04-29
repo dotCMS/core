@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.UnitTestBase;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -50,9 +51,9 @@ public class NormalizationFilterTest extends UnitTestBase {
         String expectedNormalizedURI = "/folder/important/secret_file.dat";
         compare(originalURI, expectedNormalizedURI);
 
-        // A ".." segment is removed only if it is preceded by a non-".." segment
+        // A ".." segment is removed only if it is preceded by a non-".." segment  (query strings are not part of URI)
         originalURI = "/test/../folder/folder1/forward_jsp.jsp?FORWARD_URL=http://google.com";
-        expectedNormalizedURI = "/folder/folder1/forward_jsp.jsp?FORWARD_URL=http://google.com";
+        expectedNormalizedURI = "/folder/folder1/forward_jsp.jsp";
         compare(originalURI, expectedNormalizedURI);
 
         // A ".." segment is removed only if it is preceded by a non-".." segment
@@ -62,18 +63,40 @@ public class NormalizationFilterTest extends UnitTestBase {
 
         // Each "." segment is simply removed
         originalURI = "./folder/folder1/file.dat";
-        expectedNormalizedURI = "folder/folder1/file.dat";
+        expectedNormalizedURI = "/folder/folder1/file.dat";
         compare(originalURI, expectedNormalizedURI);
 
         // Each "." segment is simply removed
         originalURI = "./folder/./folder1/file.dat";
-        expectedNormalizedURI = "folder/folder1/file.dat";
-        compare(originalURI, expectedNormalizedURI);
-
-        // Each "." segment is simply removed
-        originalURI = "/folder/./folder1/file.dat";
         expectedNormalizedURI = "/folder/folder1/file.dat";
         compare(originalURI, expectedNormalizedURI);
+
+        // multiple ../../
+        originalURI = "../../../folder/./folder1/file.dat";
+        expectedNormalizedURI = "/folder/folder1/file.dat";
+        compare(originalURI, expectedNormalizedURI);
+        
+        // testing double dots
+        originalURI = "..";
+        expectedNormalizedURI = "/";
+        compare(originalURI, expectedNormalizedURI);
+        
+        // testing double dots, slash
+        originalURI = "../";
+        expectedNormalizedURI = "/";
+        compare(originalURI, expectedNormalizedURI);
+        
+        // testing double dots, slash,double dots 
+        originalURI = "../..";
+        expectedNormalizedURI = "/";
+        compare(originalURI, expectedNormalizedURI);
+        
+        
+        // testing double dots, slash,double dots , slash
+        originalURI = "../../";
+        expectedNormalizedURI = "/";
+        compare(originalURI, expectedNormalizedURI);
+        
     }
 
     /**
@@ -86,15 +109,16 @@ public class NormalizationFilterTest extends UnitTestBase {
         String originalURI = "/folder/important/secret_file.dat";
         compare(originalURI, originalURI);
 
+        // (query strings are not part of URI)
         originalURI = "/folder/folder1/forward_jsp.jsp?FORWARD_URL=http://google.com";
-        compare(originalURI, originalURI);
+        compare(originalURI, originalURI.substring(0,originalURI.indexOf("?")));
 
         originalURI = "folder/folder1/file.dat";
-        compare(originalURI, originalURI);
+        compare(originalURI, StringPool.SLASH + originalURI);
 
-        // A ".." segment is removed only if it is preceded by a non-".." segment
+        // remove all .. segments
         originalURI = "../folder/folder1/file.dat";
-        compare(originalURI, originalURI);
+        compare(originalURI, originalURI.replace("..", ""));
     }
 
     private void compare(final String originalURI, final String expectedNormalizedURI)
@@ -111,5 +135,73 @@ public class NormalizationFilterTest extends UnitTestBase {
         assertNotNull(normalizedValueByFilter);
         assertEquals(expectedNormalizedURI, normalizedValueByFilter);
     }
+    
+    /**
+     * Test to verify the {@link NormalizationFilter} is applying properly the normalization on
+     * invalids URIs
+     */
+    @Test
+    public void test_uri_normalizer_fixes_double_slashes() throws IOException, ServletException {
+
+        
+        // remove all //, replace with /
+        String originalURI = "//folder/important/secret_file.dat";
+        String expectedNormalizedURI = "/folder/important/secret_file.dat";
+        compare(originalURI, expectedNormalizedURI);
+
+        // testing ///
+        originalURI = "///folder/important/secret_file.dat";
+        compare(originalURI, expectedNormalizedURI);
+
+        // testing ////
+        originalURI = "////folder/important/secret_file.dat";
+        compare(originalURI, expectedNormalizedURI);
+        
+
+        
+        // testing multiple ////
+        originalURI = "////folder/important///secret_file.dat";
+        compare(originalURI, expectedNormalizedURI);
+        
+        // testing // not at the root (query strings are not part of URI)
+        originalURI = "/test//folder/folder1//forward_jsp.jsp?FORWARD_URL=http://google.com";
+        expectedNormalizedURI = "/test/folder/folder1/forward_jsp.jsp";
+        compare(originalURI, expectedNormalizedURI);
+
+        // A ".." segment is removed only if it is preceded by a non-".." segment
+        originalURI = "///test/../folder/important//../secret_file.dat";
+        expectedNormalizedURI = "/folder/secret_file.dat";
+        compare(originalURI, expectedNormalizedURI);
+
+        // Each "." segment is simply removed
+        originalURI = "./f/older//folder1//file.dat";
+        expectedNormalizedURI = "/f/older/folder1/file.dat";
+        compare(originalURI, expectedNormalizedURI);
+
+        // Each "." segment is simply removed
+        originalURI = "./folder/./folder1/file.dat//..//";
+        expectedNormalizedURI = "/folder/folder1/";
+        compare(originalURI, expectedNormalizedURI);
+
+        // starts with ..//
+        originalURI = "..//folder/./folder1//file.dat";
+        expectedNormalizedURI = "/folder/folder1/file.dat";
+        compare(originalURI, expectedNormalizedURI);
+    }
+    
+    
+    /**
+     * Test to verify the {@link NormalizationFilter} is applying properly the normalization on
+     * invalids URIs
+     */
+    @Test
+    public void test_uri_normalizer_invalid_uris() throws IOException, ServletException {
+        // testing escaped slashes - Filter barfs and returns /
+        String originalURI = "/\\///folder//important////secret_file.dat";
+        compare(originalURI, "/");
+        
+        
+    }
+    
 
 }
