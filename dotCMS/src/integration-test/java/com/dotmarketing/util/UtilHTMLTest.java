@@ -20,8 +20,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * Unit test for {@link UtilHTML}
+ */
 public class UtilHTMLTest {
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given an unknown base type
+     * ExpectedResult: Unknown icon should be returned
+     */
     @Test
     public void test_getIconClass_unknown () throws DotDataException {
 
@@ -36,6 +44,11 @@ public class UtilHTMLTest {
         assertEquals("uknIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a contentlet base type
+     * ExpectedResult: contentIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_content () throws DotDataException {
 
@@ -50,6 +63,11 @@ public class UtilHTMLTest {
         assertEquals("contentIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a widget base type
+     * ExpectedResult: gearIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_widget () throws DotDataException {
 
@@ -64,6 +82,11 @@ public class UtilHTMLTest {
         assertEquals("gearIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a form base type
+     * ExpectedResult: formIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_form () throws DotDataException {
 
@@ -78,6 +101,11 @@ public class UtilHTMLTest {
         assertEquals("formIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a file  base type and txt file
+     * ExpectedResult: txtIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_txt_file () throws DotDataException, IOException, DotSecurityException {
 
@@ -89,6 +117,11 @@ public class UtilHTMLTest {
         assertEquals("txtIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a file  base type and vtl file
+     * ExpectedResult: vtlIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_vtl_file () throws DotDataException, IOException, DotSecurityException {
 
@@ -100,6 +133,11 @@ public class UtilHTMLTest {
         assertEquals("vtlIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a page base type
+     * ExpectedResult: pageIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_page () throws DotDataException {
 
@@ -114,6 +152,11 @@ public class UtilHTMLTest {
         assertEquals("pageIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a key value base type
+     * ExpectedResult: keyValueIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_keyvalue () throws DotDataException {
 
@@ -128,6 +171,11 @@ public class UtilHTMLTest {
         assertEquals("keyValueIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a persona base type
+     * ExpectedResult: personaIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_persona () throws DotDataException {
 
@@ -142,6 +190,11 @@ public class UtilHTMLTest {
         assertEquals("personaIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a vanity url base type
+     * ExpectedResult: vanityIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_vanity () throws DotDataException {
 
@@ -156,6 +209,11 @@ public class UtilHTMLTest {
         assertEquals("vanityIcon", iconClass);
     }
 
+    /**
+     * Method to test: getIconClass
+     * Given Scenario: Given a dotasset base type and txt file
+     * ExpectedResult: txtIcon icon should be returned
+     */
     @Test
     public void test_getIconClass_dotasset_txt () throws DotDataException, IOException {
 
