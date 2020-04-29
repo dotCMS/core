@@ -351,6 +351,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     if (oldContentType == null) {
     	if (UtilMethods.isSet(saveType.variable())) {
+            if(doesTypeWithVariableExist(saveType.variable())) {
+              throw new IllegalArgumentException("Invalid content type variable: " + saveType.variable());
+            }
     		builder.variable(saveType.variable());
     	} else {
     		final String generatedVar = suggestVelocityVar(saveType.name());
@@ -414,6 +417,19 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     return retType;
+  }
+
+  private boolean doesTypeWithVariableExist(String variable) throws DotDataException {
+    boolean typeWithVariableExists = false;
+
+    try {
+      ContentType typeWithVariable = dbByVar(variable);
+      typeWithVariableExists = UtilMethods.isSet(typeWithVariable);
+    } catch(NotFoundInDbException e) {
+      // nothing to do - moving on
+    }
+
+    return typeWithVariableExists;
   }
 
   private void dbInodeUpdate(final ContentType type) throws DotDataException {
