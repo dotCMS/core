@@ -25,6 +25,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     form: FormGroup;
     pushActions: SelectItem[];
     filterOptions: SelectItem[] = [];
+    eventData: DotPushPublishDialogData = { assetIdentifier: '', title: '' };
 
     @Input() assetIdentifier: string;
 
@@ -34,7 +35,6 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     @ViewChild('customCode') customCodeContainer: ElementRef;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private eventData: DotPushPublishDialogData = { assetIdentifier: '', title: '' };
     private defaultFilterKey: string;
     private i18nMessages: { [key: string]: string } = null;
 
