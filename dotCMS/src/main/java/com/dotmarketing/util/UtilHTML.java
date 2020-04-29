@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.IconType;
 import com.dotmarketing.beans.Identifier;
@@ -442,7 +443,7 @@ public class UtilHTML {
                 return IconType.VANITY_URL.iconName();
             case DOTASSET:
 
-            	final String dotUri  = Try.of(()-> contentlet.getBinary("asset").getName()).getOrElse("ukn");
+            	final String dotUri  = Try.of(()-> contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName()).getOrElse("ukn");
             	final String dotIcon = UtilMethods.getFileExtension(dotUri);
 
 				return dotUri.equals(dotIcon)? "uknIcon": dotIcon + "Icon";
