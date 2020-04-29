@@ -1,0 +1,22 @@
+steps:
+
+  # Run the integration tests image
+  - name: 'docker/compose:1.24.1'
+    env:
+      - 'IMAGE_BASE_NAME=gcr.io/$PROJECT_ID/curl-tests-image:$_CUSTOM_RUN_ID'
+      - 'databaseType=$_DB_TYPE'
+      - 'EXPORT_REPORTS=true'
+      - 'GOOGLE_CREDENTIALS_BASE64=$_GOOGLE_CREDENTIALS_BASE64'
+      - 'PULL_REQUEST=$_PULL_REQUEST'
+      - 'GITHUB_USER=$_GITHUB_USER'
+      - 'GITHUB_USER_TOKEN=$_GITHUB_USER_TOKEN'
+    args: ['-f', './docker/tests/curl/travis-curl-service.yml',
+           '-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml',
+           '-f', './docker/tests/integration/open-distro-docker-compose.yml',
+           'up',
+           '--abort-on-container-exit']
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+
+timeout: 4800s
