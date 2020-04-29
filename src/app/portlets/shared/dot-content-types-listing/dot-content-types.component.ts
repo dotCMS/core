@@ -284,7 +284,10 @@ export class DotContentTypesPortletComponent implements OnInit {
     }
 
     private pushPublishContentType(item: any) {
-        this.dotPushPublishDialogService.open({ assetIdentifier: item.id });
+        this.dotPushPublishDialogService.open({
+            assetIdentifier: item.id,
+            title: this.dotMessageService.get('contenttypes.content.push_publish')
+        });
     }
 
     private addToBundleContentType(item: any) {

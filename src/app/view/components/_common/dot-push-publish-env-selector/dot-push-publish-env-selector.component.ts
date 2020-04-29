@@ -20,6 +20,8 @@ import { Observable } from 'rxjs';
 export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAccessor {
     @Input()
     assetIdentifier: string;
+    @Input()
+    showList = false;
     pushEnvironments$: Observable<any>;
     selectedEnvironments: DotEnvironment[];
     selectedEnvironmentIds: string[] = [];

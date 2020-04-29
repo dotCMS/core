@@ -110,8 +110,8 @@ $selectbutton-hover-border: $button-border;
 $selectbutton-hover-shadow: $md-shadow-2;
 
 $selectbutton-button-hover-bgcolor: rgba($brand-secondary_rgb, 0.1);
-$selectbutton-button-active-bgcolor: $brand-primary_mod;
-$selectbutton-button-active-color: $white;
+$selectbutton-button-active-bgcolor: transparent;
+$selectbutton-button-active-color: $gray-dark;
 
 // DROPDOWN
 $dropdown-active-color: $field-active-color;

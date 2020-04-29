@@ -1,16 +1,16 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { DotPushPublishEvent } from '@models/push-publish-data/push-publish-data';
+import { DotPushPublishDialogData } from '@models/dot-push-publish-dialog-data/dot-push-publish-dialog-data.model';
 
 @Injectable()
 export class DotPushPublishDialogService {
-    private _showDialog: Subject<DotPushPublishEvent> = new Subject<DotPushPublishEvent>();
+    private data: Subject<DotPushPublishDialogData> = new Subject<DotPushPublishDialogData>();
 
-    get showDialog$(): Observable<DotPushPublishEvent> {
-        return this._showDialog.asObservable();
+    get showDialog$(): Observable<DotPushPublishDialogData> {
+        return this.data.asObservable();
     }
 
-    open(data: DotPushPublishEvent): void {
-        this._showDialog.next(data);
+    open(data: DotPushPublishDialogData): void {
+        this.data.next(data);
     }
 }

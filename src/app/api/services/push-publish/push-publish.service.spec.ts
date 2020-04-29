@@ -5,7 +5,7 @@ import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
-import { PushPublishData } from '@shared/models/push-publish-data/push-publish-data';
+import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 const mockResponse = {
     errorMessages: [],
@@ -14,7 +14,7 @@ const mockResponse = {
     errors: 0
 };
 
-const mockFormValue: PushPublishData = {
+const mockFormValue: DotPushPublishData = {
     pushActionSelected: 'publish',
     publishdate: '10/10/20',
     publishdatetime: '10:00',
@@ -42,7 +42,7 @@ describe('PushPublishService', () => {
             })
         );
 
-        const mockResponse = [
+        const response = [
             {
                 name: '',
                 id: '0'
@@ -62,7 +62,7 @@ describe('PushPublishService', () => {
         this.lastConnection.mockRespond(
             new Response(
                 new ResponseOptions({
-                    body: JSON.stringify(mockResponse)
+                    body: JSON.stringify(response)
                 })
             )
         );
@@ -71,7 +71,7 @@ describe('PushPublishService', () => {
         expect(this.lastConnection.request.url).toContain(
             'environment/loadenvironments/roleId/1234/name=0'
         );
-        expect(result).toEqual(mockResponse.splice(1));
+        expect(result).toEqual(response.splice(1));
     }));
 
     it('should do a post request and push publish an asset', fakeAsync(() => {

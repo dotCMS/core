@@ -4,58 +4,66 @@ p-calendar {
             @extend #inputtext-active-border;
         }
     }
+}
 
-    /* DatePicker */
-    .ui-datepicker.ui-widget {
-        padding: 0;
-        .ui-datepicker-header {
-            border-radius: 0;
-            border-top: none;
-            border-left: none;
-            border-right: none;
-        }
-        table {
-            margin: 0;
-        }
-        .ui-datepicker-calendar {
-            td {
-                border-bottom: 1px solid $gray-light;
-                padding: 0;
-            }
-            tr:last-child td {
-                border-bottom: none;
-            }
-            thead th {
-                background-color: $gray-bg;
-                padding: $basic-padding;
-            }
-            td {
-                a {
-                    border: none;
-                    text-align: center;
-                    padding: $basic-padding;
-                    &.ui-state-highlight {
-                        background-color: $gray-light;
-                        color: $gray-dark;
-                    }
-                    &.ui-state-active {
-                        background-color: $brand-primary;
-                        color: $white;
-                    }
-                }
+/* DatePicker */
+.ui-datepicker.ui-widget {
+    padding: 0;
+    .ui-datepicker-header {
+        border-radius: 0;
+        border-top: none;
+        border-left: none;
+        border-right: none;
 
-                span {
-                    padding: $basic-padding;
-                }
-            }
-        }
-        .ui-timepicker {
-            border-bottom: none;
-            border-left: none;
-            border-right: none;
+        a {
+            cursor: pointer;
         }
     }
+    table {
+        margin: 0;
+    }
+    .ui-datepicker-calendar {
+        td {
+            border-bottom: 1px solid $gray-light;
+            padding: 0;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        thead th {
+            background-color: $gray-bg;
+            padding: $basic-padding;
+        }
+        td {
+            a {
+                border: none;
+                text-align: center;
+                padding: $basic-padding;
+                cursor: pointer     ;
+                &.ui-state-default:hover {
+                    background-color: $gray-lighter;
+                    color: $gray-dark;
+                }
+                &.ui-state-highlight {
+                    background-color: transparent;
+                    color: black;
+                }
+                &.ui-state-active {
+                    background-color: $brand-primary;
+                    color: $white;
+                }
+            }
 
+            span {
+                padding: $basic-padding;
+            }
+        }
+    }
+    .ui-timepicker {
+        border-bottom: none;
+        border-left: none;
+        border-right: none;
+    }
 }
 
 // Validation

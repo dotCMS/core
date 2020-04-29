@@ -1,7 +1,6 @@
 import {
     Component,
     OnInit,
-    Renderer2,
     OnDestroy,
     ViewChildren,
     QueryList,
@@ -11,6 +10,7 @@ import { Subject, Observable } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotcmsEventsService } from 'dotcms-js';
+import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 
 interface DotLargeMessageDisplayParams {
     title: string;
@@ -36,14 +36,14 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private recentlyDialogAdded: boolean;
 
-    constructor(private renderer: Renderer2, private dotcmsEventsService: DotcmsEventsService) {}
+    constructor(
+        private dotcmsEventsService: DotcmsEventsService,
+        private dotParseHtmlService: DotParseHtmlService
+    ) {}
 
     ngAfterViewInit() {
         this.dialogs.changes
-            .pipe(
-                takeUntil(this.destroy$),
-                filter(() => this.recentlyDialogAdded)
-            )
+            .pipe(takeUntil(this.destroy$), filter(() => this.recentlyDialogAdded))
             .subscribe((dialogs: QueryList<DotDialogComponent>) => {
                 this.createContent(dialogs.last, this.messages[this.messages.length - 1]);
                 this.recentlyDialogAdded = false;
@@ -78,33 +78,11 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
         dialogComponent: DotDialogComponent,
         content: DotLargeMessageDisplayParams
     ): void {
-        const placeholder = document.createElement('div');
-        placeholder.innerHTML = content.body;
-
-        const body = dialogComponent.dialog.nativeElement.querySelector('.dialog-message__body');
-        Array.from(placeholder.childNodes).forEach((el: HTMLElement) => {
-            const parsedEl = this.isScriptElement(el.tagName)
-                ? this.createScriptEl(el.innerHTML)
-                : el;
-            this.renderer.appendChild(body, parsedEl);
-        });
-
+        const target = dialogComponent.dialog.nativeElement.querySelector('.dialog-message__body');
+        this.dotParseHtmlService.parse(content.body, target, true);
         if (content.script) {
-            this.renderer.appendChild(body, this.createScriptEl(content.script));
+            this.dotParseHtmlService.parse(`<script>${content.script}</script>`, target, false);
         }
-    }
-
-    private isScriptElement(tag: string): boolean {
-        return tag === 'SCRIPT';
-    }
-
-    private createScriptEl(content: string): HTMLScriptElement {
-        const script = this.renderer.createElement('script');
-        this.renderer.setAttribute(script, 'type', 'text/javascript');
-        const text = this.renderer.createText(content);
-        this.renderer.appendChild(script, text);
-
-        return script;
     }
 
     private getMessages(): Observable<DotLargeMessageDisplayParams> {

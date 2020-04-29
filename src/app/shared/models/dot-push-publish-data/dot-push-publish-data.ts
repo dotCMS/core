@@ -1,9 +1,9 @@
 /**
  * Data required for push publish
  * @export
- * @interface PushPublishData
+ * @interface DotPushPublishData
  */
-export interface PushPublishData {
+export interface DotPushPublishData {
     pushActionSelected: string;
     publishdate: string;
     publishdatetime: string;
@@ -12,11 +12,4 @@ export interface PushPublishData {
     environment: string[];
     forcePush: boolean;
     filterKey: string;
-}
-
-export interface DotPushPublishEvent {
-    assetIdentifier: string;
-    dateFilter?: boolean;
-    removeOnly?: boolean;
-    isBundle?: boolean;
 }

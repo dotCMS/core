@@ -1,22 +1,21 @@
 @import "variables";
 
-form {
+form, .custom-code {
     width: 400px;
 }
 
-.ui-calendar,
+.custom-code {
+    margin-bottom: $basic-padding * 4;
+
+    &.hidden {
+        display: none;
+    }
+}
+
 .ui-inputtext {
     width: 100%;
 }
 
 .push-publish-dialog__error-message {
     color: $error;
-}
-
-.push-publish-dialog__calendar {
-    display: flex;
-}
-
-.push-publish-dialog__calendar-date {
-    flex-grow: 1;
 }

@@ -2,6 +2,17 @@
 @import "mixins";
 @import "primeng-theme/components/button";
 
+[border] {
+    .ui-selectbutton {
+        height: auto;
+        border: 1px solid $gray-light;
+
+        &:hover {
+            border: 1px solid $gray-light;
+        }
+    }
+}
+
 .ui-selectbutton {
     @extend #button-basic;
     @extend #button-main;
@@ -12,36 +23,10 @@
     );
     height: 48px;
     white-space: nowrap;
+    box-shadow: none;
 
-    [secondary] & {
-        box-shadow: none;
-
-        &:hover {
-            background: none;
-        }
-
-        .ui-button {
-            border: none;
-            background-color: transparent;
-            border-bottom: solid 4px transparent;
-
-            &:hover {
-                background-color: $selectbutton-button-hover-bgcolor;
-            }
-
-            .ui-button-text {
-                color: $select-button-color;
-            }
-
-            &.ui-state-active {
-                background: none;
-                border-bottom: solid 5px $brand-secondary;
-
-                .ui-button-text {
-                    color: $brand-secondary;
-                }
-            }
-        }
+    &:hover {
+        background: none;
     }
 
     .ui-button {
@@ -49,13 +34,20 @@
         line-height: $tabview-nav-height;
         height: $tabview-nav-height;
         transition: background-color $field-animation-speed ease-in;
+        background-color: $selectbutton-button-active-bgcolor;
+        border: none;
+        border-bottom: solid 4px transparent;
 
         &:hover {
             background-color: $selectbutton-button-hover-bgcolor;
         }
 
+        .ui-button-text {
+            color: $select-button-color;
+        }
+
         &.ui-state-active {
-            background: $selectbutton-button-active-bgcolor;
+            border-bottom: solid 5px $brand-primary;
 
             .ui-button-text {
                 color: $selectbutton-button-active-color;
@@ -75,6 +67,14 @@
         .ui-button-text {
             display: inline;
             padding: 0 $basic-padding * 3;
+        }
+    }
+
+    [secondary] & {
+        .ui-button {
+            &.ui-state-active {
+                border-bottom: solid 5px $brand-secondary;
+            }
         }
     }
 }

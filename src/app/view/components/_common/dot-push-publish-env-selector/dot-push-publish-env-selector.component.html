@@ -13,7 +13,7 @@
 >
 </p-multiSelect>
 
-<ul class="environment-selector__list">
+<ul class="environment-selector__list" *ngIf="showList">
     <li *ngFor="let environment of selectedEnvironments" class="environment-selector__list-item">
         <button pButton icon="fa fa-trash" (click)="removeEnvironmentItem(environment)"></button>
         {{ environment.name }}

@@ -283,7 +283,8 @@ describe('DotContentTypesPortletComponent', () => {
         fixture.detectChanges();
         expect(de.query(By.css('p-dialog'))).toBeDefined();
         expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
-            assetIdentifier: mockContentType.id
+            assetIdentifier: mockContentType.id,
+            title: 'Push Publish'
         });
     });
 

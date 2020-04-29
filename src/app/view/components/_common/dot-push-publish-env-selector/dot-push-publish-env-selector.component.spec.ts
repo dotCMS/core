@@ -38,7 +38,7 @@ class PushPublishServiceMock {
 @Component({
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
-                    <dot-push-publish-env-selector formControlName="environment" ></dot-push-publish-env-selector>
+                    <dot-push-publish-env-selector showList="true" formControlName="environment" ></dot-push-publish-env-selector>
                 </form>`
 })
 class TestHostComponent {
@@ -131,7 +131,7 @@ describe('PushPublishEnvSelectorComponent', () => {
 
     it('should get environments from PushPublishService', () => {
         fixture.detectChanges();
-        comp.pushEnvironments$.subscribe((environments) => {
+        comp.pushEnvironments$.subscribe(environments => {
             expect(environments).toEqual([
                 {
                     id: '22e332',
@@ -177,5 +177,11 @@ describe('PushPublishEnvSelectorComponent', () => {
             }
         ]);
         expect(comp.propagateChange).toHaveBeenCalled();
+    });
+
+    it('should hide enviroment selector list', () => {
+        comp.showList = false;
+        fixture.detectChanges();
+        expect(document.querySelector('.environment-selector__list')).toBeNull();
     });
 });

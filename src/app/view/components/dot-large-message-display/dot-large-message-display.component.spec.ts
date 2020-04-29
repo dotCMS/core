@@ -8,6 +8,7 @@ import { DotcmsEventsService } from 'dotcms-js';
 import { DotcmsEventsServiceMock } from '@tests/dotcms-events-service.mock';
 
 import { DotLargeMessageDisplayComponent } from './dot-large-message-display.component';
+import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -30,7 +31,8 @@ describe('DotLargeMessageDisplayComponent', () => {
                 {
                     provide: DotcmsEventsService,
                     useClass: DotcmsEventsServiceMock
-                }
+                },
+                DotParseHtmlService
             ]
         }).compileComponents()));
 

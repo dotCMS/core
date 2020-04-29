@@ -5,10 +5,10 @@ import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { AjaxActionResponseView } from '@models/ajax-action-response/ajax-action-response';
-import { PushPublishData } from '@models/push-publish-data/push-publish-data';
 import * as moment from 'moment';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
+import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 /**
  * Provide method to push publish to content types
@@ -63,7 +63,7 @@ export class PushPublishService {
      */
     pushPublishContent(
         assetIdentifier: string,
-        pushPublishData: PushPublishData,
+        pushPublishData: DotPushPublishData,
         isBundle: boolean
     ): Observable<AjaxActionResponseView> {
         this._lastEnvironmentPushed = pushPublishData.environment;
@@ -79,7 +79,7 @@ export class PushPublishService {
 
     private getPublishEnvironmentData(
         assetIdentifier: string,
-        pushPublishData: PushPublishData
+        pushPublishData: DotPushPublishData
     ): string {
         let result = '';
         result += `assetIdentifier=${assetIdentifier}`;
