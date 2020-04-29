@@ -183,7 +183,11 @@ public class ContentletAjax {
 			result.put("iconClass", UtilHTML.getIconClass(contentlet));
 			result.put("identifier", contentlet.getIdentifier());
 			result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
+			
 			result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
+			if(contentlet.getTitleImage().isPresent()) {
+			    result.put("titleImage", contentlet.getTitleImage().get());
+			}
 			result.put("title", String.valueOf(contentlet.getTitle()));
 			result.put("inode", String.valueOf(contentlet.getInode()));
 			result.put("working", String.valueOf(contentlet.isWorking()));
@@ -1097,6 +1101,9 @@ public class ContentletAjax {
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
+	            if(contentlet.getTitleImage().isPresent()) {
+	                searchResult.put("titleImage", contentlet.getTitleImage().get().variable());
+	            }
 				searchResult.put("modDate", fieldValue);
 				String user = "";
 				User contentEditor = null;

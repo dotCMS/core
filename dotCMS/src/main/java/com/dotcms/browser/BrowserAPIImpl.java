@@ -362,6 +362,11 @@ public class BrowserAPIImpl implements BrowserAPI {
         pageMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(page));
         pageMap.put("statusIcons",   UtilHTML.getStatusIcons(page));
         pageMap.put("hasTitleImage", String.valueOf(((Contentlet)page).getTitleImage().isPresent()));
+        
+        if(page.getTitleImage().isPresent()) {
+            pageMap.put("titleImage", page.getTitleImage().get().variable());
+        }
+        
         pageMap.put("__icon__",      IconType.HTMLPAGE.iconName());
 
         return pageMap;
@@ -413,6 +418,11 @@ public class BrowserAPIImpl implements BrowserAPI {
         fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(fileAsset));
         fileMap.put("statusIcons",    UtilHTML.getStatusIcons(fileAsset));
         fileMap.put("hasTitleImage",  String.valueOf(fileAsset.getTitleImage().isPresent()));
+        if(fileAsset.getTitleImage().isPresent()) {
+            fileMap.put("titleImage", fileAsset.getTitleImage().get().variable());
+        }
+        
+        
         fileMap.put("__icon__",       UtilHTML.getIconClass(fileAsset ));
 
         return fileMap;
@@ -459,6 +469,11 @@ public class BrowserAPIImpl implements BrowserAPI {
         fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(dotAsset));
         fileMap.put("statusIcons",    UtilHTML.getStatusIcons(dotAsset));
         fileMap.put("hasTitleImage",  String.valueOf(dotAsset.getTitleImage().isPresent()));
+        if(dotAsset.getTitleImage().isPresent()) {
+            fileMap.put("titleImage", dotAsset.getTitleImage().get().variable());
+        }
+        
+        
         fileMap.put("__icon__",       UtilHTML.getIconClass(dotAsset));
 
         return fileMap;
