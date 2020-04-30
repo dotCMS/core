@@ -111,9 +111,7 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 					contentletDependencies.isRespectAnonymousPermissions() : user.isFrontendUser();
 
 			//Keeps existing relationships
-			if (contentletRelationships == null){
-                contentletRelationships = contentletAPI.getAllRelationships(contentlet);
-            }
+
 
 			if (categories == null) {
 				categories = this.categoryAPI.getParents(contentlet, user, respectFrontendPermission);
