@@ -278,7 +278,13 @@
         <in-memory-format>OBJECT</in-memory-format>
     </near-cache>
     
-    <near-cache name="virtuallinkscache">
+    <near-cache name="vanityurlcache">
+        <max-size>25000</max-size>
+        <eviction-policy>LFU</eviction-policy>
+        <in-memory-format>OBJECT</in-memory-format>
+    </near-cache>
+
+    <near-cache name="cachedvanityurlgroup">
         <max-size>25000</max-size>
         <eviction-policy>LFU</eviction-policy>
         <in-memory-format>OBJECT</in-memory-format>
@@ -562,8 +568,14 @@
         <in-memory-format>OBJECT</in-memory-format>
     </near-cache>
     
-    <near-cache name="virtuallinkscache">
-        <max-size>1000</max-size>
+    <near-cache name="vanityurlcache">
+        <max-size>25000</max-size>
+        <eviction-policy>LFU</eviction-policy>
+        <in-memory-format>OBJECT</in-memory-format>
+    </near-cache>
+
+    <near-cache name="cachedvanityurlgroup">
+        <max-size>25000</max-size>
         <eviction-policy>LFU</eviction-policy>
         <in-memory-format>OBJECT</in-memory-format>
     </near-cache>
