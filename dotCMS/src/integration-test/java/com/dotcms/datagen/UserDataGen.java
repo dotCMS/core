@@ -24,7 +24,7 @@ public class UserDataGen extends AbstractDataGen<User> {
     private String emailAddress = "testEmailAddress@" + currentTime + ".com";
     private String password = String.valueOf(currentTime);
     private String skinIdentifier = UUIDGenerator.generateUuid();
-    private String companyId = UUIDGenerator.generateUuid();
+    private String companyId = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany().getCompanyId();
     private List<Role> roles = new ArrayList<>();
 
     @SuppressWarnings("unused")

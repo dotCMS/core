@@ -6,6 +6,7 @@ import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
@@ -183,7 +184,11 @@ public class ContentletAjax {
 			result.put("iconClass", UtilHTML.getIconClass(contentlet));
 			result.put("identifier", contentlet.getIdentifier());
 			result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
+			
 			result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
+			if(contentlet.getTitleImage().isPresent()) {
+			    result.put("titleImage", contentlet.getTitleImage().get());
+			}
 			result.put("title", String.valueOf(contentlet.getTitle()));
 			result.put("inode", String.valueOf(contentlet.getInode()));
 			result.put("working", String.valueOf(contentlet.isWorking()));
@@ -1097,6 +1102,9 @@ public class ContentletAjax {
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
+	            if(contentlet.getTitleImage().isPresent()) {
+	                searchResult.put("titleImage", contentlet.getTitleImage().get().variable());
+	            }
 				searchResult.put("modDate", fieldValue);
 				String user = "";
 				User contentEditor = null;
@@ -1200,6 +1208,9 @@ public class ContentletAjax {
 							.getMimeType(APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName()));
 				} else if(type.baseType().getType() == BaseContentType.HTMLPAGE.getType()){
 					searchResult.put("mimeType", "application/dotpage");
+				} else if(type.baseType().getType() == BaseContentType.DOTASSET.getType()){
+					searchResult.put("mimeType", APILocator.getFileAssetAPI()
+							.getMimeType(con.getBinary(DotAssetContentType.ASSET_FIELD_VAR)));
 				} else {
 					searchResult.put("mimeType", "");
 				}
