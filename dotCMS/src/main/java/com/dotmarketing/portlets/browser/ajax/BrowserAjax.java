@@ -7,6 +7,8 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -61,6 +63,9 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -648,6 +653,23 @@ public class BrowserAjax {
 			    pageMap.put("mimeType", "application/dotpage");
 	            pageMap.put("pageURI", ident.getURI());
 	            return pageMap;
+			} else if(cont.getStructure().getStructureType()== BaseContentType.DOTASSET.getType()) {
+
+				final java.io.File file = Try.of(()->cont.getBinary(DotAssetContentType.ASSET_FIELD_VAR)).getOrNull();
+				if (null != file) {
+					final String fileName = file.getName();
+					final String mimeType = servletContext.getMimeType(fileName.toLowerCase());
+
+					final Map<String, Object> fileMap = cont.getMap();
+					fileMap.put("mimeType", mimeType);
+					fileMap.put("path",          "/dA/" + cont.getIdentifier() + StringPool.SLASH);
+					fileMap.put("type", "dotasset");
+					fileMap.put("type", "dotasset");
+					fileMap.put("name",     fileName);
+					fileMap.put("fileName", fileName);
+
+					return fileMap;
+				}
 			}
 		}
 

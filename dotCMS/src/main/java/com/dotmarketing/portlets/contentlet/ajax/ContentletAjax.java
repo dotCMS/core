@@ -6,6 +6,7 @@ import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
@@ -1207,6 +1208,9 @@ public class ContentletAjax {
 							.getMimeType(APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName()));
 				} else if(type.baseType().getType() == BaseContentType.HTMLPAGE.getType()){
 					searchResult.put("mimeType", "application/dotpage");
+				} else if(type.baseType().getType() == BaseContentType.DOTASSET.getType()){
+					searchResult.put("mimeType", APILocator.getFileAssetAPI()
+							.getMimeType(con.getBinary(DotAssetContentType.ASSET_FIELD_VAR)));
 				} else {
 					searchResult.put("mimeType", "");
 				}
