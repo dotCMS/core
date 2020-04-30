@@ -1053,6 +1053,53 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+	/**
+	 * Given scenario: Trying to save a content type whose variable already belongs to an existing type
+	 * but with different case
+	 * Expected result: An exception should be thrown upon attempting to save the content type
+	 */
+
+	@Test(expected = IllegalArgumentException.class)
+	public void test_saveContentTypeWithSameVariableOfExistingTypeButDifferentCase_ShouldThrowException()
+			throws DotSecurityException, DotDataException {
+
+		long time = System.currentTimeMillis();
+		ContentType type = null;
+		ContentType type2 = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable("mivariable" + time)
+							.name("mivariable" + time)
+							.system(false) // system true!
+							.owner(user.getUserId())
+							.build());
+
+			type2 = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable("Mivariable" + time) // same variable different case
+							.name("Mivariable" + time)
+							.system(false) // system true!
+							.owner(user.getUserId())
+							.build());
+
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+
+			if(type2!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type2);
+			}
+		}
+	}
+
 
 	@Test
 	@UseDataProvider("testCasesUpdateTypePermissions")

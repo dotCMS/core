@@ -443,7 +443,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         fileMap.put("friendyName", StringPool.BLANK);
 
         fileMap.put("extension",     UtilMethods.getFileExtension(fileName));
-        fileMap.put("path",          "/dA/" + identifier.getId() + "/" + fileName);
+        fileMap.put("path",          "/dA/" + identifier.getId() + StringPool.SLASH);
         fileMap.put("type",          "dotasset");
 
         final Host hoster = APILocator.getHostAPI().find(identifier.getHostId(), APILocator.systemUser(), false);
