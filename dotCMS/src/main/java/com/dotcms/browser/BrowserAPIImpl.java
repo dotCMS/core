@@ -17,6 +17,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.contentlet.transform.SingleDotAssetToMapViewTransformer;
+import com.dotmarketing.portlets.contentlet.transform.SingleFileToMapViewTransformer;
+import com.dotmarketing.portlets.contentlet.transform.SingleFolderToMapViewTransformer;
+import com.dotmarketing.portlets.contentlet.transform.SinglePageToMapViewTransformer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -318,17 +322,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, browserQuery.user);
                 if (permissions.contains(PERMISSION_READ)) {
 
-                    final Map<String, Object> folderMap = folder.getMap();
-                    folderMap.put("permissions", permissions);
-                    folderMap.put("parent", folder.getInode());
-                    folderMap.put("mimeType", "");
-                    folderMap.put("name", folder.getName());
-                    folderMap.put("title", folder.getName());
-                    folderMap.put("description", folder.getTitle());
-                    folderMap.put("extension", "folder");
-                    folderMap.put("hasTitleImage", StringPool.BLANK);
-                    folderMap.put("__icon__", IconType.FOLDER.iconName());
-                    returnList.add(folderMap);
+                    returnList.add(new SingleFolderToMapViewTransformer(folder, permissions).asMap());
                 }
             }
         }
@@ -339,144 +333,21 @@ public class BrowserAPIImpl implements BrowserAPI {
                                            final boolean showArchived,
                                            final long languageId) throws DotDataException, DotStateException, DotSecurityException {
 
-        final Map<String, Object> pageMap = new HashMap<>(page.getMap());
-
-        pageMap.put("mimeType",     "application/dotpage");
-        pageMap.put("name",         page.getPageUrl());
-        pageMap.put("description",  page.getFriendlyName());
-        pageMap.put("extension",    "page");
-        pageMap.put("isContentlet", true);
-        pageMap.put("title",        page.getPageUrl());
-
-        pageMap.put("identifier", page.getIdentifier());
-        pageMap.put("inode",      page.getInode());
-        pageMap.put("languageId", ((Contentlet)page).getLanguageId());
-
-        final Language lang = APILocator.getLanguageAPI().getLanguage(((Contentlet)page).getLanguageId());
-
-        pageMap.put("languageCode", lang.getLanguageCode());
-        pageMap.put("countryCode",  lang.getCountryCode());
-        pageMap.put("isLocked",     page.isLocked());
-        pageMap.put("languageFlag", LanguageUtil.getLiteralLocale(lang.getLanguageCode(), lang.getCountryCode()));
-
-        pageMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(page));
-        pageMap.put("statusIcons",   UtilHTML.getStatusIcons(page));
-        pageMap.put("hasTitleImage", String.valueOf(((Contentlet)page).getTitleImage().isPresent()));
-        
-        if(page.getTitleImage().isPresent()) {
-            pageMap.put("titleImage", page.getTitleImage().get().variable());
-        }
-        
-        pageMap.put("__icon__",      IconType.HTMLPAGE.iconName());
-
-        return pageMap;
+        return new SinglePageToMapViewTransformer(page).asMap();
     } // htmlPageMap.
 
     private Map<String,Object> fileAssetMap(final FileAsset fileAsset,
                                             final User user,
                                             final boolean showArchived) throws DotDataException, DotStateException, DotSecurityException {
 
-        final Map<String, Object> fileMap = new HashMap<>(fileAsset.getMap());
-        final Identifier identifier       = APILocator.getIdentifierAPI().find(fileAsset.getVersionId());
-
-        fileMap.put("mimeType",  APILocator.getFileAssetAPI().getMimeType(fileAsset.getUnderlyingFileName()));
-        fileMap.put("name",     identifier.getAssetName());
-        fileMap.put("title",    identifier.getAssetName());
-        fileMap.put("fileName", identifier.getAssetName());
-        fileMap.put("title",    fileAsset.getFriendlyName());
-        fileMap.put("description", fileAsset instanceof Contentlet ?
-                ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION)
-                : StringPool.BLANK);
-        fileMap.put("extension", UtilMethods.getFileExtension(fileAsset.getUnderlyingFileName()));
-        fileMap.put("path",      fileAsset.getPath());
-        fileMap.put("type",      "file_asset");
-
-        final Host hoster = APILocator.getHostAPI().find(identifier.getHostId(), APILocator.systemUser(), false);
-        fileMap.put("hostName", hoster.getHostname());
-
-        fileMap.put("size",        fileAsset.getFileSize());
-        fileMap.put("publishDate", fileAsset.getIDate());
-
-        // BEGIN GRAZIANO issue-12-dnd-template
-        fileMap.put(
-                "parent",
-                fileAsset.getParent() != null ? fileAsset
-                        .getParent() : StringPool.BLANK);
-
-        fileMap.put("identifier", fileAsset.getIdentifier());
-        fileMap.put("inode",      fileAsset.getInode());
-        fileMap.put("isLocked",   fileAsset.isLocked());
-        fileMap.put("isContentlet", true);
-
-        final Language language = langAPI.getLanguage(fileAsset.getLanguageId());
-
-        fileMap.put("languageId",   language.getId());
-        fileMap.put("languageCode", language.getLanguageCode());
-        fileMap.put("countryCode",  language.getCountryCode());
-        fileMap.put("languageFlag", LanguageUtil.getLiteralLocale(language.getLanguageCode(), language.getCountryCode()));
-
-        fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(fileAsset));
-        fileMap.put("statusIcons",    UtilHTML.getStatusIcons(fileAsset));
-        fileMap.put("hasTitleImage",  String.valueOf(fileAsset.getTitleImage().isPresent()));
-        if(fileAsset.getTitleImage().isPresent()) {
-            fileMap.put("titleImage", fileAsset.getTitleImage().get().variable());
-        }
-        
-        
-        fileMap.put("__icon__",       UtilHTML.getIconClass(fileAsset ));
-
-        return fileMap;
+        return new SingleFileToMapViewTransformer(fileAsset).asMap();
     } // fileAssetMap.
 
     private Map<String,Object> dotAssetMap(final Contentlet dotAsset,
                                            final User user,
                                            final boolean showArchived) throws DotDataException, DotStateException, DotSecurityException {
 
-        final Map<String, Object> fileMap = new ContentletToMapTransformer(dotAsset).toMaps().get(0);
-        final Identifier identifier       = APILocator.getIdentifierAPI().find(dotAsset.getVersionId());
-        final String fileName = Try.of(()->dotAsset.getBinary("asset").getName()).getOrElse("unknown");
-
-        fileMap.put("mimeType", APILocator.getFileAssetAPI().getMimeType(fileName));
-        fileMap.put("name",     fileName);
-        fileMap.put("fileName", fileName);
-        fileMap.put("title",    fileName);
-        fileMap.put("friendyName", StringPool.BLANK);
-
-        fileMap.put("extension",     UtilMethods.getFileExtension(fileName));
-        fileMap.put("path",          "/dA/" + identifier.getId() + StringPool.SLASH);
-        fileMap.put("type",          "dotasset");
-
-        final Host hoster = APILocator.getHostAPI().find(identifier.getHostId(), APILocator.systemUser(), false);
-        fileMap.put("hostName",      hoster.getHostname());
-
-        fileMap.put("size",          Try.of(()->dotAsset.getBinary("asset").length()).getOrElse(0l));
-        fileMap.put("publishDate",   dotAsset.getModDate());
-
-        fileMap.put("isContentlet",  true);
-
-        fileMap.put("identifier",   dotAsset.getIdentifier());
-        fileMap.put("inode",        dotAsset.getInode());
-        fileMap.put("isLocked",     dotAsset.isLocked());
-        fileMap.put("isContentlet", true);
-
-        final Language language = langAPI.getLanguage(dotAsset.getLanguageId());
-
-        fileMap.put("languageId",   language.getId());
-        fileMap.put("languageCode", language.getLanguageCode());
-        fileMap.put("countryCode",  language.getCountryCode());
-        fileMap.put("languageFlag", LanguageUtil.getLiteralLocale(language.getLanguageCode(), language.getCountryCode()));
-
-        fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(dotAsset));
-        fileMap.put("statusIcons",    UtilHTML.getStatusIcons(dotAsset));
-        fileMap.put("hasTitleImage",  String.valueOf(dotAsset.getTitleImage().isPresent()));
-        if(dotAsset.getTitleImage().isPresent()) {
-            fileMap.put("titleImage", dotAsset.getTitleImage().get().variable());
-        }
-        
-        
-        fileMap.put("__icon__",       UtilHTML.getIconClass(dotAsset));
-
-        return fileMap;
+        return new SingleDotAssetToMapViewTransformer(dotAsset).asMap();
     } // dotAssetMap.
 
     protected class WfData {
