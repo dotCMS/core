@@ -431,6 +431,7 @@
             }
 
             ResourceLink resourceLink = new ResourceLinkBuilder().build(request, user, contentlet, field.getVelocityVarName());
+
         %>
 
         <!--  display -->
@@ -538,6 +539,7 @@
 
     <div
             resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"
+            resourceLinkUri="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkUriAsString() : "" %>"
             resourceLinkLabel="<%= contentlet.isFileAsset() ? LanguageUtil.get(pageContext, "Resource-Link") : "" %>"
             versionPath="<%= !resourceLink.isDownloadRestricted() ? resourceLink.getVersionPath() : "" %>"
             versionPathLabel="<%= LanguageUtil.get(pageContext, "VersionPath") %>"
@@ -593,6 +595,7 @@
             <% if (resourceLink.isEditableAsText()) { %>
                 <%
                     if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
+
                 %>
                     <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
                 <%  } %>
@@ -964,7 +967,7 @@
 //END of CUSTOM_FIELD
 //KEY_VALUE Field
     else if(field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
-
+ 
     %>
     <script>
         dojo.ready(function () {
@@ -974,11 +977,14 @@
     </script>
     <%
 
-        java.util.Map<String, Object> keyValueMap = null;
+        java.util.Map<String, Object> keyValueMap = new HashMap<>();
         String JSONValue = UtilMethods.isSet(value)? (String)value:"";
         //Convert JSON to Table Display {key, value, order}
         if(UtilMethods.isSet(JSONValue)){
             keyValueMap =  com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap(JSONValue);
+            if(field.getVelocityVarName().equals("metaData")){
+               keyValueMap.put("content", "...");
+            }
         }
     %>
     <div class="key-value-form" style="display:<%=field.isReadOnly()?"none":"flex"%>">
@@ -1001,47 +1007,24 @@
     </div>
     <div id="mainHolder" class="key-value-items">
 
-        <%
-            String licenseMessage = LanguageUtil.get(pageContext, "Go-Enterprise-To-Access") + "!" ;
-            String licenseURL = "http://dotcms.com/buy-now";
-            List<Layout> layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
-            for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
-                List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-                if (portletIdsForLicenseManager.contains(PortletID.CONFIGURATION)) {
-                    licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id="+PortletID.CONFIGURATION+"&p_p_action=0&tab=licenseTab";
-                    break;
-                }
-            }
-
-            if(!field.getVelocityVarName().equals("metaData") || LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {  %>
         <table class="listingTable" id="<%=field.getFieldContentlet()%>_kvtable">
-            <%if(keyValueMap!=null && !keyValueMap.isEmpty()){
-                int k = 0;
-                for(String key : keyValueMap.keySet()){
-                    String str_style = "";
-                    if ((k%2)==0) {
-                        str_style = "class=\"dojoDndItem alternate_1\"";
-                    }else{
-                        str_style = "class=\"dojoDndItem alternate_2\"";
-                    }
-            %>
-            <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%= key %>" />
-            <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= keyValueMap.get(key) %>" />
-            <tr id="<%=field.getFieldContentlet()+"_"+key%>" <%=str_style %>>
-                <td>
-                    <%if(!field.isReadOnly()){ %>
-                    <a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=UtilMethods.escapeSingleQuotes(key)%>');"><span class="deleteIcon"></span></a>
-                    <%} %>
-                </td>
-                <td><span><%= key %></span></td>
-                <td><span><%= keyValueMap.get(key) %></span></td>
-            </tr>
-            <%k++;}
-            }%>
+            <% boolean showAlt=false;
+            for(String key : keyValueMap.keySet()){%>
+               <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%= key %>" />
+               <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(keyValueMap.get(key).toString())) %>" />
+               <tr id="<%=field.getFieldContentlet()+"_"+key%>" class="dojoDndItem <%=showAlt ?  "alternate_1" :"alternate_2"%>">
+                   <td>
+                       <%if(!field.isReadOnly()){ %>
+                        <a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=UtilMethods.escapeSingleQuotes(key)%>');"><span class="deleteIcon"></span></a>
+                       <%} %>
+                   </td>
+                   <td><span><%= key %></span></td>
+                   <td><span><%= UtilMethods.htmlifyString(keyValueMap.get(key).toString()) %></span></td>
+               </tr>
+                <%showAlt=!showAlt;%>
+            <%}%>
         </table>
-        <%} else  {%>
-        <a class="goEnterpriseLink" href="<%=licenseURL%>"><span class="keyIcon"></span><%=licenseMessage%></a>
-        <%} %>
+
     </div>
     <%if(!field.isReadOnly()){ %>
     <script>

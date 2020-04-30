@@ -1676,6 +1676,7 @@
                 var checkAll = dijit.byId("checkAll");
                 var check;
 
+	            getViewCardEl().value = ''
                 for (var i = 0; i < cbContentInodeList.length; ++i) {
                         check = dijit.byId("checkbox" + i);
                         if(check) {
