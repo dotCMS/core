@@ -471,13 +471,22 @@ public class AppsAPIImplTest {
                 .withHiddenSecret("requiredNoDefault", "") //Here's the offense.
                 .withHiddenSecret("requiredDefault", "secret-2")
                 .build();
+
         //Save it
         api.saveSecrets(secrets, site, admin);
-        final Map<String, List<String>> optionalAppWarning = api.computeSecretWarnings(descriptor, site, admin);
-        assertFalse(optionalAppWarning.isEmpty());
 
-        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier()), admin);
+        final Map<String, List<String>> optionalAppWarning1 = api.computeSecretWarnings(descriptor, site, admin);
+        assertFalse(optionalAppWarning1.isEmpty());
+
+        final Host systemHost = APILocator.systemHost();
+        api.saveSecrets(secrets, systemHost, admin);
+
+        final Map<String, List<String>> optionalAppWarning2 = api.computeSecretWarnings(descriptor, systemHost, admin);
+        assertFalse(optionalAppWarning2.isEmpty());
+
+        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier(), systemHost.getIdentifier()), admin);
         assertFalse(warningsBySite.get(site.getIdentifier()).isEmpty());
+        assertFalse(warningsBySite.get(Host.SYSTEM_HOST.toLowerCase()).isEmpty());
     }
 
     /**
@@ -504,6 +513,8 @@ public class AppsAPIImplTest {
         when(descriptor.getKey()).thenReturn(appKey);
 
         final Host site = new SiteDataGen().nextPersisted();
+        final Host systemHost = APILocator.systemHost();
+
         final User admin = TestUserUtils.getAdminUser();
 
         //Let's create a set of secrets for a service
@@ -514,11 +525,16 @@ public class AppsAPIImplTest {
                 .build();
         //Save it
         api.saveSecrets(secrets, site, admin);
-        final Map<String, List<String>> optionalAppWarning = api.computeSecretWarnings(descriptor, site, admin);
-        assertTrue(optionalAppWarning.isEmpty());
+        final Map<String, List<String>> optionalAppWarning1 = api.computeSecretWarnings(descriptor, site, admin);
+        assertTrue(optionalAppWarning1.isEmpty());
 
-        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier()), admin);
+        api.saveSecrets(secrets, systemHost, admin);
+        final Map<String, List<String>> optionalAppWarning2 = api.computeSecretWarnings(descriptor, systemHost, admin);
+        assertTrue(optionalAppWarning2.isEmpty());
+
+        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier(), systemHost.getIdentifier()), admin);
         assertTrue(warningsBySite.get(site.getIdentifier()).isEmpty());
+        assertTrue(warningsBySite.get(Host.SYSTEM_HOST.toLowerCase()).isEmpty());
     }
 
     private AppDescriptor evaluateAppTestCase(final AppTestCase testCase)
