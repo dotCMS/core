@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 
@@ -13,7 +15,7 @@ public class ImplClassFieldTransformer implements FieldTransformer {
 
   final List<Field> genericFields;
 
-  public ImplClassFieldTransformer(Field f) {
+  public ImplClassFieldTransformer(final Field f) {
     this.genericFields = ImmutableList.of(f);
   }
 
@@ -23,28 +25,39 @@ public class ImplClassFieldTransformer implements FieldTransformer {
 
   @Override
   public Field from() throws DotStateException {
-    if (this.genericFields.size() == 0)
-      throw new DotStateException("0 results");
-    Field field = impleClass(this.genericFields.get(0));
+    if (this.genericFields.size() == 0) {
+        throw new DotStateException("There are no fields to transform!");
+    }
+    final Field field = impleClass(this.genericFields.get(0));
     return field;
 
   }
 
   private static Field impleClass(final Field genericField) {
-    FieldBuilder builder = null;
+    FieldBuilder builder;
     try {
       builder = FieldBuilder.builder(genericField);
       return builder.build();
-    } catch (Exception e) {
-      throw new DotStateException(e.getMessage(), e);
+    } catch (final Exception e) {
+      String errorMsg;
+      if (null != genericField) {
+        final String fieldType = UtilMethods.isSet(genericField.typeName()) ? genericField.typeName() :
+                "unknown/invalid";
+        errorMsg = String.format("Unable to load data for Field '%s' of type '%s' with ID [%s]: %s", genericField
+                .name(), fieldType, genericField.id(), e.getMessage());
+      } else {
+        errorMsg = "The specified field is null: " + e.getMessage();
+      }
+      Logger.error(ImplClassFieldTransformer.class, errorMsg);
+      throw new DotStateException(errorMsg, e);
     }
   }
 
   @Override
   public List<Field> asList() throws DotStateException {
 
-    List<Field> list = new ArrayList<Field>();
-    for (Field field : this.genericFields) {
+    final List<Field> list = new ArrayList<>();
+    for (final Field field : this.genericFields) {
       list.add(impleClass(field));
     }
 

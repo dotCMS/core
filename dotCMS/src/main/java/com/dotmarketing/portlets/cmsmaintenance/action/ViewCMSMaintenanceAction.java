@@ -294,13 +294,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 				zipTempDirectoryToStream(bout);
 				message +=". Done.";
-
-//			}else if(cmd.equals("wipeOutDotCMSDatabase")) {
-//
-//				message = "Deleted dotCMS Database";
-//				deleteDotCMS();
-
-			}else if(cmd.equals("downloadZip")) {
+			} else if(cmd.equals("downloadZip")) {
 
 				message ="File Downloaded";
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
@@ -961,9 +955,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 *            - The {@link HttpServletResponse} object that allows to send
 	 *            the CSV file to the user.
 	 */
-	private void downloadRemainingRecordsAsCsv(HttpServletResponse response) {
-		String fileName = "failed_reindex_records" + new java.util.Date().getTime();
-		String[] fileColumns = new String[] { "ID", "Identifier To Index", "Priority", "Cause" };
+	@CloseDBIfOpened
+	private void downloadRemainingRecordsAsCsv(final HttpServletResponse response) {
+		final String fileName = "failed_reindex_records" + new java.util.Date().getTime();
+		final String[] fileColumns = new String[] { "ID", "Identifier To Index", "Priority", "Cause" };
 		PrintWriter pr = null;
 		try {
 			response.setContentType("application/octet-stream; charset=UTF-8");
@@ -971,45 +966,48 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			pr = response.getWriter();
 			pr.print(StringUtils.join(fileColumns, ","));
 			pr.print("\r\n");
-			DotConnect dc = new DotConnect();
-			StringBuilder sql = new StringBuilder();
+			final DotConnect dc = new DotConnect();
+			final StringBuilder sql = new StringBuilder();
 			sql.append("SELECT drj.id, drj.ident_to_index, drj.inode_to_index, drj.priority, drj.index_val ")
-					.append("FROM dist_reindex_journal drj WHERE drj.priority >= ")
+					.append("FROM dist_reindex_journal drj WHERE drj.priority > ")
 					.append(ReindexQueueFactory.Priority.REINDEX.dbValue());
 			dc.setSQL(sql.toString());
-			List<Map<String, Object>> failedRecords = dc.loadObjectResults();
+			final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
 			if (!failedRecords.isEmpty()) {
-				for (Map<String, Object> row : failedRecords) {
-					StringBuilder entry = new StringBuilder();
-					String id = null;
-					String priority = null;
+				for (final Map<String, Object> row : failedRecords) {
+					String id;
+					String priority;
 					if (DbConnectionFactory.isOracle()) {
 						BigDecimal rowVal = (BigDecimal) row.get("id");
 						id = new Long(rowVal.toPlainString()).toString();
 						rowVal = (BigDecimal) row.get("priority");
 						priority = new Long(rowVal.toPlainString()).toString();
 					} else {
-						Long rowVal = (Long) row.get("id");
+						final Long rowVal = (Long) row.get("id");
 						id = rowVal.toString();
-						priority = String.valueOf((Integer) row.get("priority"));
+						priority = String.valueOf(row.get("priority"));
 					}
+					final StringBuilder entry = new StringBuilder();
 					entry.append(id).append(", ");
 					entry.append(row.get("ident_to_index").toString()).append(", ");
-
-
 					entry.append(priority).append(",");
-					entry.append(row.get("index_val").toString());
+                    final String indexVal = UtilMethods.isSet(row.get("index_val")) ? String.class.cast(row.get
+                            ("index_val")) : StringUtils.EMPTY;
+                    entry.append(indexVal);
 					pr.print(entry.toString());
 					pr.print("\r\n");
 				}
 			} else {
-				Logger.debug(this, "Re-index table contained zero failed records. The CSV file will not be created.");
+				Logger.warn(this, "Re-index table contained zero failed records. The CSV file will not be created.");
 			}
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			Logger.error(this, "Download of CSV file with remaining non-indexed records failed.", e);
 		} finally {
-			pr.flush();
-			pr.close();
+		    if (null != pr) {
+				pr.flush();
+				pr.close();
+			}
 		}
 	}
+
 }
