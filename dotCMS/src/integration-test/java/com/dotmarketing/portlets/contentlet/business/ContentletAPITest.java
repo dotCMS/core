@@ -5124,6 +5124,12 @@ public class ContentletAPITest extends ContentletBaseTest {
             blogContent = contentletAPI.checkin(blogContent, (ContentletRelationships) null, categories,
                 null, user, false);
 
+            // let's check cats saved fine
+            List<Category> contentCats = APILocator.getCategoryAPI().getParents(blogContent, user,
+                    false);
+
+            assertTrue(contentCats.containsAll(categories));
+
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
