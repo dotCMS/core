@@ -27,9 +27,6 @@ ARG LICENSE_KEY
 
 WORKDIR /srv
 
-RUN pwd
-RUN ls -as .
-
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY setup/build-src/checkout.sh /build/checkout.sh
 RUN chmod 500 /build/checkout.sh && /build/checkout.sh ${BUILD_FROM} ${BUILD_ID}

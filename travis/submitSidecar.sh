@@ -13,6 +13,6 @@ scriptPah=$(dirname $0)
 
 bell &
 gcloud builds submit \
-  --config=travis/cloudbuild-curl.yaml \
-  --substitutions=_GIT_BRANCH_COMMIT=$CURRENT_BRANCH,COMMIT_SHA=$TRAVIS_COMMIT_SHORT,_LICENSE_KEY=$LICENSE,_CUSTOM_RUN_ID=$TRAVIS_COMMIT_SHORT .
+  --config=travis/cloudbuild-sidecar.yaml \
+  --substitutions=_GIT_BRANCH_COMMIT=$CURRENT_BRANCH,COMMIT_SHA=$TRAVIS_COMMIT_SHORT,_CUSTOM_RUN_ID=$TRAVIS_COMMIT_SHORT .
 exit $?

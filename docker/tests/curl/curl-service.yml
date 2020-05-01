@@ -14,14 +14,10 @@ services:
     environment:
       databaseType:
       EXTRA_PARAMS:
-      GOOGLE_CREDENTIALS_BASE64:
-      EXPORT_REPORTS:
-      PULL_REQUEST:
-      GITHUB_USER:
-      GITHUB_USER_TOKEN:
       PROVIDER_DB_USERNAME:
       PROVIDER_DB_PASSWORD:
       PROVIDER_DB_DNSNAME:
+      PROVIDER_DB_PORT:
       PROVIDER_ELASTICSEARCH_DNSNAMES: elasticsearch
       WAIT_SIDECAR_FOR: 100
     depends_on:

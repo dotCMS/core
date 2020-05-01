@@ -11,15 +11,15 @@ printUsage () {
   echo "============================================================================"
   echo "         Examples:"
   echo ""
-  echo "         ./curl.sh"
-  echo "         ./curl.sh -r"
-  echo "         ./curl.sh -c"
-  echo "         ./curl.sh -d mysql"
-  echo "         ./curl.sh -d mysql -b origin/master"
-  echo "         ./curl.sh -d mysql -b myBranchName"
-  echo '         ./curl.sh -e "--debug-jvm"'
-  echo '         ./curl.sh -e "--tests *HTMLPageAssetRenderedTest"'
-  echo '         ./curl.sh -e "--debug-jvm --tests *HTMLPageAssetRenderedTest"'
+  echo "         ./sidecar.sh"
+  echo "         ./sidecar.sh -r"
+  echo "         ./sidecar.sh -c"
+  echo "         ./sidecar.sh -d mysql"
+  echo "         ./sidecar.sh -d mysql -b origin/master"
+  echo "         ./sidecar.sh -d mysql -b myBranchName"
+  echo '         ./sidecar.sh -e "--debug-jvm"'
+  echo '         ./sidecar.sh -e "--tests *HTMLPageAssetRenderedTest"'
+  echo '         ./sidecar.sh -e "--debug-jvm --tests *HTMLPageAssetRenderedTest"'
   echo "============================================================================"
   echo "============================================================================"
   echo ""
@@ -32,7 +32,7 @@ printUsage () {
 buildImage=true
 useCache=false
 
-while getopts "d:b:g:rch" option; do
+while getopts "d:b:e:g:rch" option; do
   case ${option} in
 
   d) database=${OPTARG} ;;
@@ -52,7 +52,7 @@ while getopts "d:b:g:rch" option; do
 done
 
 echo ""
-BUILD_IMAGE_TAG="curl-tests"
+BUILD_IMAGE_TAG="dotcms-sidecar-image"
 
 #  One of ["postgres", "mysql", "oracle", "mssql"]
 if [ -z "${database}" ]; then
@@ -66,6 +66,7 @@ if [ -z "${gitHash}" ]; then
 fi
 
 if [ -z "${branchOrCommit}" ]; then
+
   foundBranchName=$(git symbolic-ref -q HEAD)
   foundBranchName=${foundBranchName##refs/heads/}
   foundBranchName=${foundBranchName:-HEAD}
@@ -99,32 +100,24 @@ if [ "$buildImage" = true ]; then
 
 fi
 
+if [ ! -z "${extra}" ]; then
+  echo ""
+  echo " >>> Running with extra parameters [${extra}]"
+  echo ""
+  export EXTRA_PARAMS=${extra}
+fi
+
 # Starting the container for the build image
 export databaseType=${database}
 export IMAGE_BASE_NAME=${BUILD_IMAGE_TAG}
-docker-compose -f curl-service.yml \
-  -f ../sidecar/side-docker-compose.yml \
+docker-compose -f sidecar-service-compose.yml \
+  -f ../shared/${database}-docker-compose.yml \
+  -f ../shared/open-distro-docker-compose.yml \
   up \
   --abort-on-container-exit
 
-# Required code, without it the script will exit and won't be able to down the containers properly
-testsReturnCode=$?
-
 # Cleaning up
-docker-compose -f integration-service.yml \
-   -f ../sidecar/side-docker-compose.yml \
+docker-compose -f sidecar-service-compose.yml \
+  -f ../shared/${database}-docker-compose.yml \
+  -f ../shared/open-distro-docker-compose.yml \
   down
-
-echo
-echo -e "\e[36m==========================================================================================================================\e[0m"
-echo -e "\e[36m==========================================================================================================================\e[0m"
-echo
-if [ ${testsReturnCode} == 0 ]
-then
-  echo -e "\e[1;32m                                 >>> Curl tests executed SUCCESSFULLY <<<\e[0m"
-else
-  echo -e "\e[1;31m                                       >>> Curl tests FAILED <<<\e[0m"
-fi
-echo
-echo -e "\e[36m==========================================================================================================================\e[0m"
-echo -e "\e[36m==========================================================================================================================\e[0m"

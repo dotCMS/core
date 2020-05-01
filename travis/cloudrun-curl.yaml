@@ -4,6 +4,7 @@ steps:
   - name: 'docker/compose:1.24.1'
     env:
       - 'IMAGE_BASE_NAME=gcr.io/$PROJECT_ID/curl-tests-image:$_CUSTOM_RUN_ID'
+      - 'SIDECAR_IMAGE_NAME=gcr.io/$PROJECT_ID/dotcms-sidecar-image:$_CUSTOM_RUN_ID'
       - 'databaseType=$_DB_TYPE'
       - 'EXPORT_REPORTS=true'
       - 'GOOGLE_CREDENTIALS_BASE64=$_GOOGLE_CREDENTIALS_BASE64'
@@ -11,8 +12,9 @@ steps:
       - 'GITHUB_USER=$_GITHUB_USER'
       - 'GITHUB_USER_TOKEN=$_GITHUB_USER_TOKEN'
     args: ['-f', './docker/tests/curl/travis-curl-service.yml',
-           '-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml',
-           '-f', './docker/tests/integration/open-distro-docker-compose.yml',
+           '-f', './docker/tests/sidecar/sidecar-service-compose.yml',
+           '-f', './docker/tests/shared/$_DB_TYPE-docker-compose.yml',
+           '-f', './docker/tests/shared/open-distro-docker-compose.yml',
            'up',
            '--abort-on-container-exit']
 

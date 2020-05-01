@@ -68,7 +68,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/build/src/curl-test/resources/app-descriptor.yml"
+									"src": "/build/src/core/dotCMS/src/curl-test/resources/app-descriptor.yml"
 								}
 							]
 						},
