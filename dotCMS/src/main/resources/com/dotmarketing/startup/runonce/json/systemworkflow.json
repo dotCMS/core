@@ -1,636 +1,907 @@
 {
+  "permissions": [
+    {
+      "bitPermission": false,
+      "id": 0,
+      "individualPermission": true,
+      "inode": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+      "permission": 1,
+      "roleId": "617f7300-5c7b-463f-9554-380b918520bc",
+      "type": "individual"
+    },
+    {
+      "bitPermission": false,
+      "id": 0,
+      "individualPermission": true,
+      "inode": "963f6a04-5320-42e7-ab74-6d876d199946",
+      "permission": 1,
+      "roleId": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "type": "individual"
+    },
+    {
+      "bitPermission": false,
+      "id": 0,
+      "individualPermission": true,
+      "inode": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
+      "permission": 1,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f",
+      "type": "individual"
+    },
+    {
+      "bitPermission": false,
+      "id": 0,
+      "individualPermission": true,
+      "inode": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
+      "permission": 1,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f",
+      "type": "individual"
+    },
+    {
+      "bitPermission": false,
+      "id": 0,
+      "individualPermission": true,
+      "inode": "b9d89c80-3d88-4311-8365-187323c96436",
+      "permission": 1,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f",
+      "type": "individual"
+    },
+    {
+      "bitPermission": false,
+      "id": 0,
+      "individualPermission": true,
+      "inode": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+      "permission": 1,
+      "roleId": "617f7300-5c7b-463f-9554-380b918520bc",
+      "type": "individual"
+    },
+    {
+      "bitPermission": false,
+      "id": 0,
+      "individualPermission": true,
+      "inode": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
+      "permission": 1,
+      "roleId": "617f7300-5c7b-463f-9554-380b918520bc",
+      "type": "individual"
+    },
+    {
+      "bitPermission": false,
+      "id": 0,
+      "individualPermission": true,
+      "inode": "38efc763-d78f-4e4b-b092-59cd8c579b93",
+      "permission": 1,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f",
+      "type": "individual"
+    }
+  ],
+  "actionClasses": [
+    {
+      "actionId": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet",
+        "howTo": "This actionlet will archive the content.",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet.howTo",
+        "localizedName": "Archive Content",
+        "name": "Archive content",
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet",
+      "id": "74c560b7-f71d-44cd-bb33-8016abb3f0f2",
+      "name": "Archive content",
+      "order": 0
+    },
+    {
+      "actionId": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
+        "howTo": "This actionlet will unlock the content.",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo",
+        "localizedName": "Unlock Content",
+        "name": "Unlock content",
+        "nextStep": null,
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
+      "id": "6bc6def5-0565-483d-a5bf-e42d4e424bf0",
+      "name": "Unlock content",
+      "order": 1
+    },
+    {
+      "actionId": "963f6a04-5320-42e7-ab74-6d876d199946",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet",
+        "howTo": "This workflow actionlet copies the edited contentlet ",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet.howTo",
+        "localizedName": "Copy Contentlet",
+        "name": "Copy Contentlet",
+        "parameters": [
+
+        ]
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet",
+      "id": "a0346612-62fe-4a8f-bdbc-528d25c71a13",
+      "name": "Copy Contentlet",
+      "order": 0
+    },
+    {
+      "actionId": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet",
+        "howTo": "This action will delete the content. Warning: this can't be undone!",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet.howTo",
+        "localizedName": "Delete content",
+        "name": "Delete content",
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet",
+      "id": "93f32847-87b7-4770-bd00-987446fd69b8",
+      "name": "Delete content",
+      "order": 0
+    },
+    {
+      "actionId": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet",
+        "howTo": "This will destroy the content in ALL languages that exist and cannot be undone",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet.howTo",
+        "localizedName": "Destroy content",
+        "name": "Destroy content",
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet",
+      "id": "74f42846-86b6-4660-bd00-789446fd67c8",
+      "name": "Destroy content",
+      "order": 0
+    },
+    {
+      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
+        "howTo": "This actionlet will checkin the content.",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo",
+        "localizedName": "Save content",
+        "name": "Save content",
+        "nextStep": null,
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
+      "id": "b84879e9-545f-4436-b4c5-e76c1743d168",
+      "name": "Save content",
+      "order": 0
+    },
+    {
+      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
+        "howTo": "This actionlet will publish the content.",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo",
+        "localizedName": "Publish Content",
+        "name": "Publish content",
+        "nextStep": null,
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
+      "id": "9aacba54-b6f4-424c-97f2-56019cbdbbc7",
+      "name": "Publish content",
+      "order": 1
+    },
+    {
+      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
+        "howTo": "This actionlet will unlock the content.",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo",
+        "localizedName": "Unlock Content",
+        "name": "Unlock content",
+        "nextStep": null,
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
+      "id": "6abcf2ab-16ae-4d84-9977-b6124d4d1f73",
+      "name": "Unlock content",
+      "order": 2
+    },
+    {
+      "actionId": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet",
+        "howTo": "This actionlet will do checkin as draft the content.",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet.howTo",
+        "localizedName": "Save Draft content",
+        "name": "Save Draft content",
+        "nextStep": null,
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet",
+      "id": "52c05cfd-5544-4fe1-9fa4-4e9d95059909",
+      "name": "Save Draft content",
+      "order": 0
+    },
+    {
+      "actionId": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
+        "howTo": "This actionlet will unlock the content.",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo",
+        "localizedName": "Unlock Content",
+        "name": "Unlock content",
+        "nextStep": null,
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
+      "id": "7e25aaa2-8371-479a-a978-01374c70decd",
+      "name": "Unlock content",
+      "order": 1
+    },
+    {
+      "actionId": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet",
+        "howTo": "This actionlet will un archive the content and return it to a working state",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet.howTo",
+        "localizedName": "Unarchive Content",
+        "name": "Unarchive content",
+        "nextStep": null,
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet",
+      "id": "a766e1a8-dd14-4b6a-b39e-98db6a258623",
+      "name": "Unarchive content",
+      "order": 0
+    },
+    {
+      "actionId": "38efc763-d78f-4e4b-b092-59cd8c579b93",
+      "actionlet": {
+        "actionClass": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet",
+        "howTo": "This actionlet will unpublish the content.",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet.howTo",
+        "localizedName": "Unpublish Content",
+        "name": "Unpublish content",
+        "nextStep": null,
+        "parameters": null
+      },
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet",
+      "id": "4132cee3-393d-42ee-84f7-1084a015c4b3",
+      "name": "Unpublish content",
+      "order": 0
+    }
+  ],
+  "actionSteps": [
+    {
+      "actionId": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+      "actionOrder": "0",
+      "stepId": "6cb7e3bd-1710-4eed-8838-d3db60f78f19"
+    },
+    {
+      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
+      "actionOrder": "1",
+      "stepId": "6cb7e3bd-1710-4eed-8838-d3db60f78f19"
+    },
+    {
+      "actionId": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
+      "actionOrder": "2",
+      "stepId": "6cb7e3bd-1710-4eed-8838-d3db60f78f19"
+    },
+    {
+      "actionId": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+      "actionOrder": "0",
+      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3"
+    },
+    {
+      "actionId": "38efc763-d78f-4e4b-b092-59cd8c579b93",
+      "actionOrder": "1",
+      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3"
+    },
+    {
+      "actionId": "963f6a04-5320-42e7-ab74-6d876d199946",
+      "actionOrder": "2",
+      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3"
+    },
+    {
+      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
+      "actionOrder": "3",
+      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3"
+    },
+    {
+      "actionId": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+      "actionOrder": "4",
+      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3"
+    },
+    {
+      "actionId": "963f6a04-5320-42e7-ab74-6d876d199946",
+      "actionOrder": "0",
+      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293"
+    },
+    {
+      "actionId": "38efc763-d78f-4e4b-b092-59cd8c579b93",
+      "actionOrder": "1",
+      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293"
+    },
+    {
+      "actionId": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+      "actionOrder": "2",
+      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293"
+    },
+    {
+      "actionId": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+      "actionOrder": "3",
+      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293"
+    },
+    {
+      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
+      "actionOrder": "4",
+      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293"
+    },
+    {
+      "actionId": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
+      "actionOrder": "0",
+      "stepId": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2"
+    },
+    {
+      "actionId": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
+      "actionOrder": "1",
+      "stepId": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2"
+    },
+    {
+      "actionId": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
+      "actionOrder": "2",
+      "stepId": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2"
+    }
+  ],
+  "actions": [
+    {
+      "assignable": false,
+      "commentable": false,
+      "condition": "",
+      "icon": "workflowIcon",
+      "id": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+      "name": "Archive",
+      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+      "nextStepCurrentStep": false,
+      "order": 0,
+      "owner": null,
+      "roleHierarchyForAssign": false,
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "showOn": [
+        "ARCHIVED",
+        "LISTING",
+        "UNPUBLISHED",
+        "UNLOCKED"
+      ]
+    },
+    {
+      "assignable": false,
+      "commentable": false,
+      "condition": "",
+      "icon": "workflowIcon",
+      "id": "963f6a04-5320-42e7-ab74-6d876d199946",
+      "name": "Copy",
+      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "nextStep": "currentstep",
+      "nextStepCurrentStep": true,
+      "order": 0,
+      "owner": null,
+      "roleHierarchyForAssign": false,
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "showOn": [
+        "LOCKED",
+        "LISTING",
+        "PUBLISHED",
+        "UNLOCKED"
+      ]
+    },
+    {
+      "assignable": false,
+      "commentable": false,
+      "condition": "",
+      "icon": "workflowIcon",
+      "id": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
+      "name": "Delete",
+      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+      "nextStepCurrentStep": false,
+      "order": 0,
+      "owner": null,
+      "roleHierarchyForAssign": false,
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "showOn": [
+        "EDITING",
+        "ARCHIVED",
+        "LOCKED",
+        "LISTING",
+        "UNLOCKED"
+      ]
+    },
+    {
+      "assignable": false,
+      "commentable": false,
+      "condition": "",
+      "icon": "workflowIcon",
+      "id": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
+      "name": "Destroy",
+      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+      "nextStepCurrentStep": false,
+      "order": 0,
+      "owner": null,
+      "roleHierarchyForAssign": false,
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "showOn": [
+        "EDITING",
+        "ARCHIVED",
+        "LOCKED",
+        "LISTING",
+        "UNLOCKED"
+      ]
+    },
+    {
+      "assignable": false,
+      "commentable": false,
+      "condition": "",
+      "icon": "workflowIcon",
+      "id": "b9d89c80-3d88-4311-8365-187323c96436",
+      "name": "Publish",
+      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "nextStep": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
+      "nextStepCurrentStep": false,
+      "order": 0,
+      "owner": null,
+      "roleHierarchyForAssign": false,
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "showOn": [
+        "EDITING",
+        "LOCKED",
+        "LISTING",
+        "PUBLISHED",
+        "NEW",
+        "UNPUBLISHED",
+        "UNLOCKED"
+      ]
+    },
+    {
+      "assignable": false,
+      "commentable": false,
+      "condition": "",
+      "icon": "workflowIcon",
+      "id": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+      "name": "Save",
+      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
+      "nextStepCurrentStep": false,
+      "order": 0,
+      "owner": null,
+      "roleHierarchyForAssign": false,
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "showOn": [
+        "EDITING",
+        "LOCKED",
+        "PUBLISHED",
+        "NEW",
+        "UNPUBLISHED"
+      ]
+    },
+    {
+      "assignable": false,
+      "commentable": false,
+      "condition": "",
+      "icon": "workflowIcon",
+      "id": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
+      "name": "Unarchive",
+      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
+      "nextStepCurrentStep": false,
+      "order": 0,
+      "owner": null,
+      "roleHierarchyForAssign": false,
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "showOn": [
+        "ARCHIVED",
+        "LOCKED",
+        "LISTING",
+        "UNLOCKED"
+      ]
+    },
+    {
+      "assignable": false,
+      "commentable": false,
+      "condition": "",
+      "icon": "workflowIcon",
+      "id": "38efc763-d78f-4e4b-b092-59cd8c579b93",
+      "name": "Unpublish",
+      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
+      "nextStepCurrentStep": false,
+      "order": 0,
+      "owner": null,
+      "roleHierarchyForAssign": false,
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "showOn": [
+        "LOCKED",
+        "LISTING",
+        "PUBLISHED",
+        "UNLOCKED"
+      ]
+    }
+  ],
+  "schemeSystemActionWorkflowActionMappings": [
+    {
+      "identifier": "3d6be719-6b61-4ef8-a594-a9764e461597",
+      "owner": {
+        "archived": false,
+        "creationDate": 1588360366352,
+        "defaultScheme": false,
+        "description": "",
+        "entryActionId": null,
+        "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "mandatory": false,
+        "modDate": 1588360345217,
+        "name": "System Workflow",
+        "system": true
+      },
+      "systemAction": "NEW",
+      "workflowAction": {
+        "assignable": false,
+        "commentable": false,
+        "condition": "",
+        "icon": "workflowIcon",
+        "id": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+        "name": "Save",
+        "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+        "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
+        "nextStepCurrentStep": false,
+        "order": 0,
+        "owner": null,
+        "roleHierarchyForAssign": false,
+        "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "showOn": [
+          "EDITING",
+          "LOCKED",
+          "PUBLISHED",
+          "NEW",
+          "UNPUBLISHED"
+        ]
+      },
+      "ownerContentType": false,
+      "ownerScheme": true
+    },
+    {
+      "identifier": "63865890-c863-43a1-ab61-4b495dba5eb5",
+      "owner": {
+        "archived": false,
+        "creationDate": 1588360366352,
+        "defaultScheme": false,
+        "description": "",
+        "entryActionId": null,
+        "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "mandatory": false,
+        "modDate": 1588360345217,
+        "name": "System Workflow",
+        "system": true
+      },
+      "systemAction": "EDIT",
+      "workflowAction": {
+        "assignable": false,
+        "commentable": false,
+        "condition": "",
+        "icon": "workflowIcon",
+        "id": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+        "name": "Save",
+        "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+        "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
+        "nextStepCurrentStep": false,
+        "order": 0,
+        "owner": null,
+        "roleHierarchyForAssign": false,
+        "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "showOn": [
+          "EDITING",
+          "LOCKED",
+          "PUBLISHED",
+          "NEW",
+          "UNPUBLISHED"
+        ]
+      },
+      "ownerContentType": false,
+      "ownerScheme": true
+    },
+    {
+      "identifier": "3ec446c8-a9b6-47fe-830f-1e623493090c",
+      "owner": {
+        "archived": false,
+        "creationDate": 1588360366352,
+        "defaultScheme": false,
+        "description": "",
+        "entryActionId": null,
+        "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "mandatory": false,
+        "modDate": 1588360345217,
+        "name": "System Workflow",
+        "system": true
+      },
+      "systemAction": "UNPUBLISH",
+      "workflowAction": {
+        "assignable": false,
+        "commentable": false,
+        "condition": "",
+        "icon": "workflowIcon",
+        "id": "38efc763-d78f-4e4b-b092-59cd8c579b93",
+        "name": "Unpublish",
+        "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+        "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
+        "nextStepCurrentStep": false,
+        "order": 0,
+        "owner": null,
+        "roleHierarchyForAssign": false,
+        "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "showOn": [
+          "LOCKED",
+          "LISTING",
+          "PUBLISHED",
+          "UNLOCKED"
+        ]
+      },
+      "ownerContentType": false,
+      "ownerScheme": true
+    },
+    {
+      "identifier": "99019118-df2c-4297-a5aa-2fe3fe0f52ce",
+      "owner": {
+        "archived": false,
+        "creationDate": 1588360366352,
+        "defaultScheme": false,
+        "description": "",
+        "entryActionId": null,
+        "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "mandatory": false,
+        "modDate": 1588360345217,
+        "name": "System Workflow",
+        "system": true
+      },
+      "systemAction": "UNARCHIVE",
+      "workflowAction": {
+        "assignable": false,
+        "commentable": false,
+        "condition": "",
+        "icon": "workflowIcon",
+        "id": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
+        "name": "Unarchive",
+        "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+        "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
+        "nextStepCurrentStep": false,
+        "order": 0,
+        "owner": null,
+        "roleHierarchyForAssign": false,
+        "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "showOn": [
+          "ARCHIVED",
+          "LOCKED",
+          "LISTING",
+          "UNLOCKED"
+        ]
+      },
+      "ownerContentType": false,
+      "ownerScheme": true
+    },
+    {
+      "identifier": "2016a72e-85c7-4ee0-936f-36ce52df355e",
+      "owner": {
+        "archived": false,
+        "creationDate": 1588360366352,
+        "defaultScheme": false,
+        "description": "",
+        "entryActionId": null,
+        "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "mandatory": false,
+        "modDate": 1588360345217,
+        "name": "System Workflow",
+        "system": true
+      },
+      "systemAction": "PUBLISH",
+      "workflowAction": {
+        "assignable": false,
+        "commentable": false,
+        "condition": "",
+        "icon": "workflowIcon",
+        "id": "b9d89c80-3d88-4311-8365-187323c96436",
+        "name": "Publish",
+        "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+        "nextStep": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
+        "nextStepCurrentStep": false,
+        "order": 0,
+        "owner": null,
+        "roleHierarchyForAssign": false,
+        "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "showOn": [
+          "EDITING",
+          "LOCKED",
+          "LISTING",
+          "PUBLISHED",
+          "NEW",
+          "UNPUBLISHED",
+          "UNLOCKED"
+        ]
+      },
+      "ownerContentType": false,
+      "ownerScheme": true
+    },
+    {
+      "identifier": "e7b8c8a3-e605-473c-8680-6d95cac15c9b",
+      "owner": {
+        "archived": false,
+        "creationDate": 1588360366352,
+        "defaultScheme": false,
+        "description": "",
+        "entryActionId": null,
+        "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "mandatory": false,
+        "modDate": 1588360345217,
+        "name": "System Workflow",
+        "system": true
+      },
+      "systemAction": "ARCHIVE",
+      "workflowAction": {
+        "assignable": false,
+        "commentable": false,
+        "condition": "",
+        "icon": "workflowIcon",
+        "id": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+        "name": "Archive",
+        "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+        "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+        "nextStepCurrentStep": false,
+        "order": 0,
+        "owner": null,
+        "roleHierarchyForAssign": false,
+        "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "showOn": [
+          "ARCHIVED",
+          "LISTING",
+          "UNPUBLISHED",
+          "UNLOCKED"
+        ]
+      },
+      "ownerContentType": false,
+      "ownerScheme": true
+    },
+    {
+      "identifier": "3d73437e-3f1c-8e5c-ac97-a25e9cddf320",
+      "owner": {
+        "archived": false,
+        "creationDate": 1588360366352,
+        "defaultScheme": false,
+        "description": "",
+        "entryActionId": null,
+        "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "mandatory": false,
+        "modDate": 1588360345217,
+        "name": "System Workflow",
+        "system": true
+      },
+      "systemAction": "DESTROY",
+      "workflowAction": {
+        "assignable": false,
+        "commentable": false,
+        "condition": "",
+        "icon": "workflowIcon",
+        "id": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
+        "name": "Destroy",
+        "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+        "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+        "nextStepCurrentStep": false,
+        "order": 0,
+        "owner": null,
+        "roleHierarchyForAssign": false,
+        "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "showOn": [
+          "EDITING",
+          "ARCHIVED",
+          "LOCKED",
+          "LISTING",
+          "UNLOCKED"
+        ]
+      },
+      "ownerContentType": false,
+      "ownerScheme": true
+    },
+    {
+      "identifier": "d073436e-3c10-4e4c-8c97-225e9cddf320",
+      "owner": {
+        "archived": false,
+        "creationDate": 1588360366352,
+        "defaultScheme": false,
+        "description": "",
+        "entryActionId": null,
+        "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "mandatory": false,
+        "modDate": 1588360345217,
+        "name": "System Workflow",
+        "system": true
+      },
+      "systemAction": "DELETE",
+      "workflowAction": {
+        "assignable": false,
+        "commentable": false,
+        "condition": "",
+        "icon": "workflowIcon",
+        "id": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
+        "name": "Delete",
+        "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+        "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+        "nextStepCurrentStep": false,
+        "order": 0,
+        "owner": null,
+        "roleHierarchyForAssign": false,
+        "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+        "showOn": [
+          "EDITING",
+          "ARCHIVED",
+          "LOCKED",
+          "LISTING",
+          "UNLOCKED"
+        ]
+      },
+      "ownerContentType": false,
+      "ownerScheme": true
+    }
+  ],
   "schemes": [
     {
-      "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "creationDate": 1530721950755,
-      "name": "System Workflow",
-      "description": "",
       "archived": false,
-      "mandatory": false,
+      "creationDate": 1588360366352,
       "defaultScheme": false,
-      "modDate": 1530721947676,
+      "description": "",
       "entryActionId": null,
+      "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "mandatory": false,
+      "modDate": 1588360345217,
+      "name": "System Workflow",
       "system": true
     }
   ],
   "steps": [
     {
+      "creationDate": 1588360401715,
+      "enableEscalation": false,
+      "escalationAction": null,
+      "escalationTime": 0,
       "id": "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
-      "creationDate": 1530722059341,
-      "name": "New",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 0,
+      "name": "New",
       "resolved": false,
-      "enableEscalation": false,
-      "escalationAction": null,
-      "escalationTime": 0
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2"
     },
     {
+      "creationDate": 1588360401717,
+      "enableEscalation": false,
+      "escalationAction": null,
+      "escalationTime": 0,
       "id": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "creationDate": 1530722059342,
-      "name": "Unpublished",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 1,
+      "name": "Draft",
       "resolved": false,
-      "enableEscalation": false,
-      "escalationAction": null,
-      "escalationTime": 0
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2"
     },
     {
+      "creationDate": 1588360401718,
+      "enableEscalation": false,
+      "escalationAction": null,
+      "escalationTime": 0,
       "id": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "creationDate": 1530722059343,
-      "name": "Published",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 2,
+      "name": "Published",
       "resolved": true,
-      "enableEscalation": false,
-      "escalationAction": null,
-      "escalationTime": 0
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2"
     },
     {
+      "creationDate": 1588360401718,
+      "enableEscalation": false,
+      "escalationAction": null,
+      "escalationTime": 0,
       "id": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-      "creationDate": 1530722059344,
-      "name": "Archived",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 3,
+      "name": "Archived",
       "resolved": true,
-      "enableEscalation": false,
-      "escalationAction": null,
-      "escalationTime": 0
-    }
-  ],
-  "actions": [
-    {
-      "id": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
-      "name": "Archive",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": false,
-      "showOn": [
-        "UNLOCKED",
-        "LISTING",
-        "UNPUBLISHED"
-      ]
-    },
-    {
-      "id": "134a50d3-782d-43de-8877-42c0be1c86a4",
-      "name": "Copy",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "currentstep",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": true,
-      "showOn": [
-        "UNLOCKED",
-        "LOCKED",
-        "LISTING",
-        "UNPUBLISHED",
-        "PUBLISHED"
-      ]
-    },
-    {
-      "id": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
-      "name": "Delete",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": false,
-      "showOn": [
-        "UNLOCKED",
-        "ARCHIVED",
-        "LOCKED",
-        "LISTING",
-        "EDITING"
-      ]
-    },
-    {
-      "id": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
-      "name": "Destroy",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": false,
-      "showOn": [
-        "UNLOCKED",
-        "ARCHIVED",
-        "LOCKED",
-        "LISTING",
-        "EDITING"
-      ]
-    },
-    {
-      "id": "b9d89c80-3d88-4311-8365-187323c96436",
-      "name": "Publish",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": false,
-      "showOn": [
-        "UNLOCKED",
-        "LOCKED",
-        "LISTING",
-        "UNPUBLISHED"
-      ]
-    },
-    {
-      "id": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
-      "name": "Save",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": false,
-      "showOn": [
-        "NEW",
-        "LOCKED",
-        "UNPUBLISHED",
-        "PUBLISHED",
-        "EDITING"
-      ]
-    },
-    {
-      "id": "b9d89c80-3d88-4311-8365-187323c96436",
-      "name": "Save / Publish",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": false,
-      "showOn": [
-        "NEW",
-        "LOCKED",
-        "UNPUBLISHED",
-        "PUBLISHED",
-        "EDITING"
-      ]
-    },
-    {
-      "id": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
-      "name": "Unarchive",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": false,
-      "showOn": [
-        "UNLOCKED",
-        "ARCHIVED",
-        "LOCKED",
-        "LISTING"
-      ]
-    },
-    {
-      "id": "38efc763-d78f-4e4b-b092-59cd8c579b93",
-      "name": "Unpublish",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": false,
-      "showOn": [
-        "UNLOCKED",
-        "LOCKED",
-        "LISTING",
-        "PUBLISHED"
-      ]
-    }
-  ],
-  "actionSteps": [
-    {
-      "stepId": "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
-      "actionId": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
-      "actionOrder": "0"
-    },
-    {
-      "stepId": "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
-      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
-      "actionOrder": "1"
-    },
-    {
-      "stepId": "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
-      "actionId": "38efc763-d78f-4e4b-b092-59cd8c579b93",
-      "actionOrder": "2"
-    },
-    {
-      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "actionId": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
-      "actionOrder": "0"
-    },
-    {
-      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "actionId": "000ec468-0a63-4283-beb7-fcb36c107b2f",
-      "actionOrder": "1"
-    },
-    {
-      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "actionId": "134a50d3-782d-43de-8877-42c0be1c86a4",
-      "actionOrder": "2"
-    },
-    {
-      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "actionId": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
-      "actionOrder": "3"
-    },
-    {
-      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
-      "actionOrder": "4"
-    },
-    {
-      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "actionId": "38efc763-d78f-4e4b-b092-59cd8c579b93",
-      "actionOrder": "5"
-    },
-    {
-      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "actionId": "000ec468-0a63-4283-beb7-fcb36c107b2f",
-      "actionOrder": "0"
-    },
-    {
-      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "actionId": "38efc763-d78f-4e4b-b092-59cd8c579b93",
-      "actionOrder": "1"
-    },
-    {
-      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "actionId": "134a50d3-782d-43de-8877-42c0be1c86a4",
-      "actionOrder": "2"
-    },
-    {
-      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "actionId": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
-      "actionOrder": "3"
-    },
-    {
-      "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
-      "actionOrder": "4"
-    },
-    {
-      "stepId": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-      "actionId": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
-      "actionOrder": "0"
-    },
-    {
-      "stepId": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-      "actionId": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
-      "actionOrder": "1"
-    },
-    {
-      "stepId": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-      "actionId": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
-      "actionOrder": "2"
-    }
-  ],
-  "actionClasses": [
-    {
-      "id": "74c560b7-f71d-44cd-bb33-8016abb3f0f2",
-      "actionId": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
-      "name": "Archive content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet",
-      "actionlet": {
-        "name": "Archive content",
-        "parameters": null,
-        "howTo": "This actionlet will archive the content.",
-        "localizedName": "Archive Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "6bc6def5-0565-483d-a5bf-e42d4e424bf0",
-      "actionId": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
-      "name": "Unlock content",
-      "order": 1,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
-      "actionlet": {
-        "name": "Unlock content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will checkin and unlock the content.",
-        "localizedName": "Unlock Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "369f381e-d58b-4243-8c92-f3a40b6b801d",
-      "actionId": "134a50d3-782d-43de-8877-42c0be1c86a4",
-      "name": "Copy Contentlet",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet",
-      "actionlet": {
-        "name": "Copy Contentlet",
-        "parameters": [],
-        "howTo": "This workflow actionlet copies the edited contentlet ",
-        "localizedName": "Copy Contentlet",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet.howTo"
-      }
-    },
-    {
-      "id": "93f32847-87b7-4770-bd00-987446fd69b8",
-      "actionId": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
-      "name": "Delete content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet",
-      "actionlet": {
-        "name": "Delete content",
-        "parameters": null,
-        "howTo": "This action will delete the content. Warning: this can't be undone!",
-        "localizedName": "Delete content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "74f42846-86b6-4660-bd00-789446fd67c8",
-      "actionId": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
-      "name": "Destroy content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet",
-      "actionlet": {
-        "name": "Destroy content",
-        "parameters": null,
-        "howTo": "This action will destroy the content. Warning: this can't be undone!",
-        "localizedName": "Destroy content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "10494596-1368-460f-980b-51c68fd32e5f",
-      "actionId": "000ec468-0a63-4283-beb7-fcb36c107b2f",
-      "name": "Save content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
-      "actionlet": {
-        "name": "Save content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will checkin the content.",
-        "localizedName": "Save content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "3dbab869-3abd-4c8c-ab54-3f7a7d893097",
-      "actionId": "000ec468-0a63-4283-beb7-fcb36c107b2f",
-      "name": "Publish content",
-      "order": 1,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
-      "actionlet": {
-        "name": "Publish content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will publish the content.",
-        "localizedName": "Publish Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "9f18823e-0a70-4e41-abbe-d356891ff044",
-      "actionId": "000ec468-0a63-4283-beb7-fcb36c107b2f",
-      "name": "Unlock content",
-      "order": 2,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
-      "actionlet": {
-        "name": "Unlock content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will checkin and unlock the content.",
-        "localizedName": "Unlock Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "61e7c4f5-cbc8-4535-a927-b9b793b7b3eb",
-      "actionId": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
-      "name": "Save content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
-      "actionlet": {
-        "name": "Save content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will checkin the content.",
-        "localizedName": "Save content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "b84879e9-545f-4436-b4c5-e76c1743d168",
-      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
-      "name": "Save content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
-      "actionlet": {
-        "name": "Save content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will checkin the content.",
-        "localizedName": "Save content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "9aacba54-b6f4-424c-97f2-56019cbdbbc7",
-      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
-      "name": "Publish content",
-      "order": 1,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
-      "actionlet": {
-        "name": "Publish content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will publish the content.",
-        "localizedName": "Publish Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "50ed0898-b721-4075-800e-ab2d9ea6183b",
-      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
-      "name": "Unlock content",
-      "order": 2,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
-      "actionlet": {
-        "name": "Unlock content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will checkin and unlock the content.",
-        "localizedName": "Unlock Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "a766e1a8-dd14-4b6a-b39e-98db6a258623",
-      "actionId": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
-      "name": "Unarchive content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet",
-      "actionlet": {
-        "name": "Unarchive content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will un archive the content and return it to a working state",
-        "localizedName": "Unarchive Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "4132cee3-393d-42ee-84f7-1084a015c4b3",
-      "actionId": "38efc763-d78f-4e4b-b092-59cd8c579b93",
-      "name": "Unpublish content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet",
-      "actionlet": {
-        "name": "Unpublish content",
-        "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will unpublish the content.",
-        "localizedName": "Unpublish Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet.howTo"
-      }
-    }
-  ],
-  "actionClassParams": [],
-  "permissions": [
-    {
-      "id": 0,
-      "inode": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
-    },
-    {
-      "id": 0,
-      "inode": "134a50d3-782d-43de-8877-42c0be1c86a4",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
-    },
-    {
-      "id": 0,
-      "inode": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
-    },
-    {
-      "id": 0,
-      "inode": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
-    },
-    {
-      "id": 0,
-      "inode": "000ec468-0a63-4283-beb7-fcb36c107b2f",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
-    },
-    {
-      "id": 0,
-      "inode": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
-    },
-    {
-      "id": 0,
-      "inode": "b9d89c80-3d88-4311-8365-187323c96436",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
-    },
-    {
-      "id": 0,
-      "inode": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
-    },
-    {
-      "id": 0,
-      "inode": "38efc763-d78f-4e4b-b092-59cd8c579b93",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2"
     }
   ]
 }
