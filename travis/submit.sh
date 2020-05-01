@@ -8,12 +8,9 @@ then
   CURRENT_BRANCH=$TRAVIS_BRANCH
 fi
 
-function bell() {
-  while true; do
-    echo -e "\a"
-    sleep 60
-  done
-}
+scriptPah=$(dirname $0)
+. "$scriptPah/common.sh"
+
 bell &
 gcloud builds submit \
   --config=travis/cloudbuild.yaml \

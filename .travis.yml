@@ -53,6 +53,7 @@ jobs:
   include:
     - stage: build image
       script: bash travis/submit.sh
+    - script: bash travis/submitSidecar.sh
     - stage: build curl image
       script: bash travis/submitCurl.sh
     - stage: tests
@@ -83,7 +84,7 @@ jobs:
       name: mssql
     - script: bash travis/curl.sh
       if: >-
-        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
+          commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
       env: DB_TYPE=postgres
       name: curl tests postgres
     - script: bash travis/curl.sh

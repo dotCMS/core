@@ -1,5 +1,14 @@
 export TEST_TYPE=curl
 
+function resolveLabel() {
+  local result=$1
+  if [[ $result == 0 ]]; then
+    echo "PASS"
+  else
+    echo "FAIL"
+  fi
+}
+
 # Validating we have a license file
 if [ ! -s "/custom/dotsecure/license/license.dat" ]
 then
@@ -42,61 +51,61 @@ echo "==========================================================================
 echo "================================================================================"
 echo ""
 
-if [ ! -z "${WAIT_DB_FOR}" ]
+if [ ! -z "${WAIT_SIDECAR_FOR}" ]
 then
-    echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    echo "            Requested sleep of [${WAIT_DB_FOR}]", waiting for the db?
-    echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    echo "            Requested sleep of [${WAIT_SIDECAR_FOR}]", waiting for the sidecar?
+    echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     echo ""
-    sleep ${WAIT_DB_FOR}
+    sleep ${WAIT_SIDECAR_FOR}
 fi
 
 echo ""
 echo "========================================================================================================"
-echo "Executing... [newman run <collection> -reporters cli,htmlextra --reporter-html-exporextra] <report file>"
+echo "Executing... [newman run <collection> -reporters cli,htmlextra --reporter-htmlextra-export] <report file>"
 echo "========================================================================================================"
 echo ""
 
 # Prepare to run newman for every found postman collection
-POSTMAN_ENV_FILE="postman_environment.json"
-sed -i 's/localhost:8080/localhost:15005/g' $POSTMAN_ENV_FILE
-mkdir -p /build/src/core/dotCMS/build/reports/tests/curlTest
+postmanEnvFile="postman_environment.json"
+reportFolder="/build/src/core/dotCMS/build/reports/tests/curlTest"
+mkdir -p $reportFolder
 cd /build/src/core/dotCMS/src/curl-test
+sed -i 's/localhost:8080/sidecar:8080/g' ./$postmanEnvFile
 # Create a map to store collection -> newman result
 declare -A curlResults
 > /build/resultLinks.html
+
 IFS=$'\n'
 for f in $(ls *.json);
 do
-  if [[ "$f" == "$POSTMAN_ENV_FILE" ]]; then
+  if [[ "$f" == "$postmanEnvFile" ]]; then
     continue
-  else
-    echo "Running newman for collection: \"${f}\""
-    collectionFolder=$(echo "$f"| tr ' ' '_' | cut -f 1 -d '.')
-    collectionPath="/build/src/core/dotCMS/build/reports/tests/curlTest/$collectionFolder"
-    page="index.html"
-    mkdir -p "$collectionPath"
-    resultFile="$collectionPath/$page"
-    newman run "$f" -e "$POSTMAN_ENV_FILE" --reporters cli,htmlextra --reporter-htmlextra-export "$resultFile"
-    curlResults[$f]=$?
-    if [[ curlResults[$f] != 0 ]]; then
-      resultLabel=FAIL
-    else
-      resultLabel=PASS
-    fi
-    echo "<tr><td><a href=\"./$collectionFolder/$page\">$f</a></td>
-      <td>$resultLabel</td></tr>" >> /build/resultLinks.html
   fi
+
+  echo "Running newman for collection: \"${f}\""
+  collectionName=$(echo "$f"| tr ' ' '_' | cut -f 1 -d '.')
+  page="${collectionName}.html"
+  resultFile="${reportFolder}/${page}"
+
+  # actual running of postman tests for current collection
+  newman run "$f" -e ${postmanEnvFile} --reporters cli,htmlextra --reporter-htmlextra-export $resultFile
+
+  # handle collection results
+  curlResults[$collectionName]=$?
+  resultLabel=$(resolveLabel ${curlResults[$collectionName]})
+  echo "<tr><td><a href=\"./$page\">$f</a></td>
+    <td>$resultLabel</td></tr>" >> /build/resultLinks.html
 done
 
 cat /build/newmanTestResultsHeader.html /build/resultLinks.html /build/newmanTestResultsFooter.html \
-  > /build/src/core/dotCMS/build/reports/tests/curlTest/index.html &&
+  > "${reportFolder}/index.html" &&
   rm /build/resultLinks.html
 
 curlReturnCode=0
 for r in "${!curlResults[@]}"
 do
-  if [[ curlResults[$r] != 0 ]]; then
+  if [[ ${curlResults[$r]} != 0 ]]; then
     curlReturnCode=1
     break
   fi
@@ -117,7 +126,7 @@ echo "  >>> Copying gradle reports to [/custom/output/reports/]"
 echo ""
 
 # Copying gradle report
-cp -R /build/src/core/dotCMS/build/reports/tests/curlTest/ /custom/output/reports/html/
+cp -R ${reportFolder}/ /custom/output/reports/html/
 
 # Do we want to export the resulting reports to google storage?
 if [ ! -z "${EXPORT_REPORTS}" ]
