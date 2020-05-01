@@ -87,13 +87,15 @@
                     textValue = textValue.replaceAll(">", "&gt;");
                 }
 
-                boolean isNumber = (field.getFieldContentlet().startsWith(Field.DataType.INTEGER.toString())
-                        || field.getFieldContentlet().startsWith(Field.DataType.FLOAT.toString())
-                );
+
+                boolean isNumber = field.getFieldContentlet().startsWith(Field.DataType.INTEGER.toString());
+                boolean isFloat = field.getFieldContentlet().startsWith(Field.DataType.FLOAT.toString());
+
+                String regex = (isNumber) ? "[0-9]*" : (isFloat) ? "[+-]?([0-9]*[.])?[0-9]+" : "";
         %>
         <%---  Renders the field it self --%>
         <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
-                <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
+                <%=(isFloat || isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'"+regex+"', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
                value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
         <%
         }
