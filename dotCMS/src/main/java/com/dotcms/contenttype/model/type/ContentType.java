@@ -174,20 +174,25 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return innerFields;
   }
 
-  
   /**
-   * This method will return a list of fields that are of a specific Field class
-   * e.g. <code>contentType.fields(BinaryField.class);</code> will return all the binary fields
-   * on that content type;
+   * This method will return a list of fields that are of a specific Field class e.g.
+   * <code>contentType.fields(BinaryField.class);</code> will return all the binary fields on that
+   * content type. You can also pass in the ImmutableClass, e.g.
+   * <code>contentType.fields(ImmutableBinaryField.class);</code> will return all the binary fields as
+   * well
+   * 
    * @param clazz
    * @return
    */
   @JsonIgnore
   @Value.Lazy
   public List<Field> fields(final Class<? extends Field> clazz) {
+    final String clazzName = clazz.getName().replace(".Immutable",".");
     return this.fields()
-    .stream()
-    .filter(field -> Try.of(()->field.getClass().asSubclass(clazz)!=null).getOrElse(false))
+        .stream()
+        .filter(field -> 
+        field.getClass().getName().replace(".Immutable",".").equals(clazzName) 
+    )
     .collect(Collectors.toList());
   }
 

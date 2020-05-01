@@ -20,6 +20,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -192,11 +193,27 @@ public class ResourceLink {
             final StringBuilder resourceLinkUri = new StringBuilder();
 
             resourceLinkUri.append(identifier.getParentPath()).append(binary.getName());
-            resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri.toString()));
+            resourceLink.append(escapeUri(resourceLinkUri.toString()));
             resourceLinkUri.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
             resourceLink.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
 
             return Tuple.of(resourceLink.toString(), resourceLinkUri.toString());
+        }
+
+        String escapeUri (final String uri) {
+
+            if (uri.indexOf('+') != -1) {
+
+                final String [] uriArray = uri.split("\\+");
+                for (int i = 0; i < uriArray.length; ++i) {
+
+                    uriArray[i] = UtilMethods.encodeURIComponent(uriArray[i]).replaceAll("\\+", "%20");
+                }
+
+                return StringUtils.joinWith("+", uriArray);
+            }
+
+            return UtilMethods.encodeURIComponent(uri).replaceAll("\\+", "%20");
         }
 
         private static boolean isEditableAsText(final String mimeType, final String fileAssetName ){

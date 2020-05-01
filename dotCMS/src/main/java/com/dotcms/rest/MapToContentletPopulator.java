@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -41,6 +42,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+
+import javax.servlet.http.HttpServletRequest;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
@@ -139,10 +142,17 @@ public class MapToContentletPopulator  {
 
     private void setIndexPolicy(final Contentlet contentlet, final Map<String, Object> map) {
 
-        final Object indexPolicyValue = map.getOrDefault("indexPolicy", IndexPolicyProvider.getInstance().forSingleContent());
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        Object indexPolicyValue          = null;
+        if (null != request) {
+
+            indexPolicyValue = request.getParameter("indexPolicy");
+        }
+
+        indexPolicyValue  = null != indexPolicyValue? indexPolicyValue:
+                map.getOrDefault("indexPolicy", IndexPolicyProvider.getInstance().forSingleContent());
         
         contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicyValue));
-        
     }
 
 

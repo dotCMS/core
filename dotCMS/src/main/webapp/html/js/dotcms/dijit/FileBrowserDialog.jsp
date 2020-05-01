@@ -1,6 +1,9 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
+
+
 <div id="${id}" style="display: none;">
     <div dojoAttachPoint="dialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Select-a-file")%>" class="file-selector-tree">
+        <dot-asset-drop-zone dojoAttachPoint="dropzone">
         <form dojoAttachPoint="search_form" onsubmit="return false;">
             <div dojotype="dijit.layout.BorderContainer" design="sidebar" gutters="false" livesplitters="false" class="file-selector-tree__container">
                 <div dojotype="dijit.layout.ContentPane" dojoAttachPoint="foldersContentPane" splitter="false" region="leading" title="<%= LanguageUtil.get(pageContext, "Folders")%>" class="portlet-sidebar-wrapper">
@@ -24,10 +27,15 @@
                             </div>
                             <div class="portlet-toolbar__actions-secondary">
                                 <div class="file-selector-tree__views-menu">
-                                    <span><%= LanguageUtil.get(pageContext, "View")%>:</span>
-                                    <img dojoAttachPoint="listViewIcon" src="/html/images/icons/application-detail.png" alt='<%= LanguageUtil.get(pageContext, "list-view")%>' title='<%= LanguageUtil.get(pageContext, "list-view")%>'>
-                                    <img dojoAttachPoint="detailViewIcon" src="/html/images/icons/application-list.png" alt='<%= LanguageUtil.get(pageContext, "details-view")%>' title='<%= LanguageUtil.get(pageContext, "details-view")%>'>
-                                    <img dojoAttachPoint="thumbnailViewIcon" src="/html/images/icons/application-icon.png" alt='<%= LanguageUtil.get(pageContext, "thumbnails-view")%>' title='<%= LanguageUtil.get(pageContext, "thumbnails-view")%>'>
+                                    <div style="margin:10px;"><%= LanguageUtil.get(pageContext, "View")%>:</div>
+                                    <div dojoAttachPoint="detailViewIcon" style="margin:10px;cursor:pointer;">
+                                        <i  class="material-icons">format_list_bulleted</i>
+                                    </div>
+                                    <div dojoAttachPoint="thumbnailViewIcon" style="margin:10px;cursor:pointer;">
+                                        <i  class="material-icons">grid_on</i>
+                                    </div>
+
+                                    
                                 </div>
                             </div>
                         </div>
@@ -52,14 +60,9 @@
                                 <tbody dojoAttachPoint="detailsTableBody">
                                 </tbody>
                             </table>
-                            <table dojoAttachPoint="listTable" style="display: none;" class="listingTable">
-                                <tbody dojoAttachPoint="listTableBody">
-                                </tbody>
-                            </table>
-                            <table dojoAttachPoint="thumbnailsTable" style="display: none;" class="thumbnailTD" style="width:100%;">
-                                <tbody dojoAttachPoint="thumbnailsTableBody">
-                                </tbody>
-                            </table>
+
+                            <div dojoAttachPoint="thumbnailsTable" style="display: none" class="file-selector-tree__card-view">
+                            </div>
                         </div>
                         <div dojoAttachPoint="tablesSummary" style="display:none" class="file-selector-tree__pagination portlet-pagination">
                             <button dojoType="dijit.form.Button" dojoAttachPoint="previousButton" dojoAttachEvent="onClick:_previousButtonClick"><%= LanguageUtil.get(pageContext, "Previous")%></button>
@@ -83,6 +86,7 @@
                 </div>
             </div>
         </form>
+        </dot-asset-drop-zone>
     </div>
 
     <div dojoAttachPoint="addFileDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Upload-file(s)")%>" style="width: 700px; height: 450px;">
