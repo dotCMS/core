@@ -413,7 +413,6 @@ class AppsHelper {
 
     /**
      * This method allows deleting a single secret/property from a stored integration.
-     * TODO: if a required property/secret is deleted.. the app must enter into some sort of invalid state.
      * @param form Secret specific-form
      * @param user Logged in user.
      * @throws DotSecurityException
