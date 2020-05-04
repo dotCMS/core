@@ -240,7 +240,7 @@
                 <style type="text/css">
                    dot-asset-drop-zone {
                      width: 100%;
-                     height: 90%;
+                     height: 91%;
                      position: absolute;
                      z-index: 1;
                      pointer-events: none;

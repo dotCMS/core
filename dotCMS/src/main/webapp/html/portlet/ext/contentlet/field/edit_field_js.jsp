@@ -334,7 +334,7 @@ var cmsfile=null;
 	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
         dropZone.addEventListener('uploadComplete', async (event) => {
 		const dotAsset = await event.detail[0].json();
-		const asset  = `<img src="${window.location.origin}/dA/${dotAsset.entity.inode}" alt=`${dotAsset.entity.titleImage}` />`;
+		const asset  = `<img src="${window.location.origin}/dA/${dotAsset.entity.inode}" alt="${dotAsset.entity.titleImage}" />`;
 		tinymceInstance.get(textAreaId).execCommand('mceInsertContent', false, asset);
         })
     }
