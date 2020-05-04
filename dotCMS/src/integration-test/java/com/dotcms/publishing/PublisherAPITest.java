@@ -544,6 +544,7 @@ public class PublisherAPITest extends IntegrationTestBase {
         final List<Object> listExcludeClasses = new ArrayList();
         listExcludeClasses.add("User");
         listExcludeClasses.add("Host");
+        listExcludeClasses.add("ContentType");
         filtersMap.put("excludeClasses", listExcludeClasses);
         filtersMap.put("dependencies",true);
         filtersMap.put("excludeDependencyQuery","+baseType:7");
@@ -568,6 +569,7 @@ public class PublisherAPITest extends IntegrationTestBase {
         Assert.assertFalse(publisherFilter.acceptExcludeClasses("User"));//Will not be accepted since it's in the list
         Assert.assertTrue(publisherFilter.acceptExcludeClasses("Template"));
         Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses("Host"));//Will not be accepted since it's in the list
+        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses("ContentType"));//Will not be accepted since it's in the list
         Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses("Structure"));
 
     }

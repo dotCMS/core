@@ -20,7 +20,7 @@ public class PublisherFilterImplTest {
     @Test
     public void Test_acceptExcludeDependencyClasses(){
         // Using diff case because user can use diff case
-        final ArrayList<String> listOfTypes = new ArrayList<String>(Arrays.asList("Containers", "TEMPLATE","host"));
+        final ArrayList<String> listOfTypes = new ArrayList<String>(Arrays.asList("Containers", "TEMPLATE","host","ContentType"));
 
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
@@ -29,12 +29,14 @@ public class PublisherFilterImplTest {
         Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.TEMPLATE.getType()));
         Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType()));
         Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType()));
+        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType()));
         // Adding the types to the Set
         listOfTypes.stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type));
         // Should return false since types are in the Set
         Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTAINER.getType()));
         Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.TEMPLATE.getType()));
         Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType()));
+        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType()));
         // Should return true since the type is not in the Set
         Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType()));
 
@@ -48,18 +50,18 @@ public class PublisherFilterImplTest {
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
         // Should return true since the types have not been add to the Set, using the PusheableAsset since this is the value passed in core
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTAINER.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.TEMPLATE.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType()));
+        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.CONTAINER.getType()));
+        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.TEMPLATE.getType()));
+        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.SITE.getType()));
+        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.CONTENTLET.getType()));
         // Adding the types to the Set
         listOfTypes.stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type));
         // Should return false since types are in the Set
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTAINER.getType()));
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.TEMPLATE.getType()));
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType()));
+        Assert.assertFalse(publisherFilter.acceptExcludeClasses(PusheableAsset.CONTAINER.getType()));
+        Assert.assertFalse(publisherFilter.acceptExcludeClasses(PusheableAsset.TEMPLATE.getType()));
+        Assert.assertFalse(publisherFilter.acceptExcludeClasses(PusheableAsset.SITE.getType()));
         // Should return true since the type is not in the Set
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType()));
+        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.CONTENTLET.getType()));
 
     }
 
