@@ -37,6 +37,7 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueResource;
+import com.dotcms.rest.api.v1.storage.FileStorageResource;
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
 import com.dotcms.rest.api.v1.system.UpgradeTaskResource;
@@ -164,6 +165,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(AppsResource.class);
 
 					REST_CLASSES.add(BrowserResource.class);
+					REST_CLASSES.add(FileStorageResource.class);
 				}
 			}
 		}

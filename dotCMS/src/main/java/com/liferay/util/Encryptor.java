@@ -46,7 +46,10 @@ public class Encryptor {
 
 	public static final String ENCODING = "UTF8";
 
-	public static final String DIGEST_ALGORITHM = Config.getStringProperty("ENCRYPTION_DIGEST_ALGORITHM","SHA-256");
+	public static final String SHA256_ALGORITHM = "SHA-256";
+	public static final String DIGEST_ALGORITHM = Config.getStringProperty("ENCRYPTION_DIGEST_ALGORITHM",SHA256_ALGORITHM);
+
+
 
 	public static final String KEY_ALGORITHM = Config.getStringProperty("ENCRYPTION_KEY_ALGORITHM","AES");
     public static final int KEY_LENGTH = Config.getIntProperty("ENCRYPTION_KEY_LENGTH",256);
@@ -158,4 +161,37 @@ public class Encryptor {
 
 	private static final Log _log = LogFactory.getLog(Encryptor.class);
 
+	public static class Hashing {
+
+		public static HashBuilder sha256() throws NoSuchAlgorithmException {
+
+			return new SHA236HashBuilder();
+		}
+	}
+
+	private static class SHA236HashBuilder implements HashBuilder {
+
+		private final MessageDigest sha256;
+
+		private SHA236HashBuilder() throws NoSuchAlgorithmException {
+
+			this.sha256 = MessageDigest.getInstance(SHA256_ALGORITHM);
+		}
+
+		@Override
+		public void append(final byte[] bytes) {
+
+			this.sha256.update(bytes);
+		}
+
+		@Override
+		public String buildHexa() {
+			return Base64.encode(this.buildBytes());
+		}
+
+		@Override
+		public byte[] buildBytes() {
+			return this.sha256.digest();
+		}
+	}
 }

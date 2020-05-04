@@ -61,6 +61,8 @@ import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.storage.FileStorageAPI;
+import com.dotcms.storage.FileStorageAPIImpl;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -525,6 +527,10 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static FileAssetAPI getFileAssetAPI(){
 		return (FileAssetAPI) getInstance(APIIndex.FILEASSET_API);
+	}
+
+	public static FileStorageAPI getFileStorageAPI(){
+		return (FileStorageAPI) getInstance(APIIndex.FILESTORAGE_API);
 	}
 
 	/**
@@ -1123,9 +1129,8 @@ enum APIIndex
 	PUBLISH_AUDIT_API,
 	APPS_API,
 	DOT_ASSET_API,
-	BROWSER_API;
-
-
+	BROWSER_API,
+	FILESTORAGE_API;
 
 
 	Object create() {
@@ -1205,6 +1210,7 @@ enum APIIndex
 			case APPS_API: return AppsAPI.INSTANCE.get();
 			case DOT_ASSET_API: return new DotAssetAPIImpl();
 			case BROWSER_API: return new BrowserAPIImpl();
+			case FILESTORAGE_API: return new FileStorageAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

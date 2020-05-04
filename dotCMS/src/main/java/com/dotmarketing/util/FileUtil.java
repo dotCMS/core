@@ -15,15 +15,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.liferay.util.Encryptor;
+import com.liferay.util.HashBuilder;
 import org.apache.commons.lang3.RandomStringUtils;
 
 public class FileUtil {
 
-	private static Set<String> extensions = new HashSet<String>();
+	private static final int BUFFER_SIZE = 4096; // 4KB // todo: get this from config
+	private static Set<String> extensions = new HashSet<>();
 
 	/**
 	 * Creates a temporal file with unique name
@@ -234,6 +238,40 @@ public class FileUtil {
             }
         };
     }
+
+	/**
+	 * Figure out the sha256 of the file content, assumes that the file exists and can be read
+	 * @param file {@link File}
+	 * @return String
+	 * @throws NoSuchAlgorithmException
+	 * @throws IOException
+	 */
+	public static String sha256 (final File file) throws NoSuchAlgorithmException, IOException {
+
+		return sha256(file.toPath());
+	} // sha256.
+
+	/**
+	 * Figure out the sha256 of the file content, assumes that the file exists and can be read
+	 * @param path {@link Path}
+	 * @return String
+	 * @throws NoSuchAlgorithmException
+	 * @throws IOException
+	 */
+    public static String sha256 (final Path path) throws NoSuchAlgorithmException, IOException {
+
+		final HashBuilder sha256Builder = Encryptor.Hashing.sha256();
+		final byte[] buffer             = new byte[BUFFER_SIZE];
+
+		try (InputStream inputStream = Files.newInputStream(path)) {
+
+			while (inputStream.read(buffer) != -1) {
+				sha256Builder.append(buffer);
+			}
+		}
+
+		return sha256Builder.buildHexa();
+	} // sha256.
 }
 
 final class PNGFileNameFilter implements FilenameFilter {
