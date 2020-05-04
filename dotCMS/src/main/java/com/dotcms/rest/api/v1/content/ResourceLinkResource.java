@@ -79,44 +79,38 @@ public class ResourceLinkResource {
                                      @Context final HttpServletResponse response,
                                      @QueryParam("inode")            final String inode,
                                      @QueryParam("identifier")       final String identifier,
-                                     @DefaultValue("-1") @QueryParam("language") final String language) throws DotStateException {
-        try {
-            if (!UtilMethods.isSet(inode) && !UtilMethods.isSet(identifier)) {
+                                     @DefaultValue("-1") @QueryParam("language") final String language) throws DotStateException, DotSecurityException, DotDataException {
+        if (!UtilMethods.isSet(inode) && !UtilMethods.isSet(identifier)) {
 
-                throw new IllegalArgumentException("Missing required inode/identifier param");
-            }
-
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource).requiredBackendUser(true).requiredFrontendUser(false)
-                            .requestAndResponse(request, response).rejectWhenNoUser(true).init();
-            final User user       = initData.getUser();
-            final long languageId = LanguageUtil.getLanguageId(language);
-            final PageMode mode   = PageMode.get(request);
-            final Contentlet contentlet = this.getContentlet(inode, identifier, languageId,
-                    ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initData, mode);
-
-            Logger.debug(this, ()-> "Finding the resource link for the contentlet: " + contentlet.getIdentifier());
-            final ResourceLink link     = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet);
-            if(link.isDownloadRestricted()) {
-
-                throw new DotSecurityException("The Resource link to the contentlet is restricted.");
-            }
-
-            return Response.ok(new ResponseEntityView(ImmutableMap.of("resourceLink",
-                    ImmutableMap.of(
-                            "href",        link.getResourceLinkAsString(),
-                            "text",        link.getResourceLinkUriAsString(),
-                            "mimeType",    link.getMimeType(),
-                            "idPath",      link.getIdPath(),
-                            "versionPath", link.getVersionPath()
-                    )
-            ))).build();
-        } catch (Exception ex) {
-            Logger.error(this.getClass(),
-                    "Exception on method findResourceLink with exception message: " + ex
-                            .getMessage(), ex);
-            return ResponseUtil.mapExceptionResponse(ex);
+            throw new IllegalArgumentException("Missing required inode/identifier param");
         }
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource).requiredBackendUser(true).requiredFrontendUser(false)
+                        .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user       = initData.getUser();
+        final long languageId = LanguageUtil.getLanguageId(language);
+        final PageMode mode   = PageMode.get(request);
+        final Contentlet contentlet = this.getContentlet(inode, identifier, languageId,
+                ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initData, mode);
+
+        Logger.debug(this, ()-> "Finding the resource link for the contentlet: " + contentlet.getIdentifier());
+        final ResourceLink link     = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet);
+        if(link.isDownloadRestricted()) {
+
+            throw new DotSecurityException("The Resource link to the contentlet is restricted.");
+        }
+
+        return Response.ok(new ResponseEntityView(ImmutableMap.of("resourceLink",
+                ImmutableMap.of(
+                        "href",        link.getResourceLinkAsString(),
+                        "text",        link.getResourceLinkUriAsString(),
+                        "mimeType",    link.getMimeType(),
+                        "idPath",      link.getIdPath(),
+                        "versionPath", link.getVersionPath()
+                )
+        ))).build();
+
     }
 
     private Contentlet getContentlet(final String inode,

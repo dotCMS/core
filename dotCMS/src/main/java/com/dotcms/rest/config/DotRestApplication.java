@@ -3,6 +3,7 @@ package com.dotcms.rest.config;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
+import com.dotcms.rest.api.v1.apps.AppsResource;
 import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
 import com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResource;
@@ -31,7 +32,6 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.portlet.PortletResource;
 import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
-import com.dotcms.rest.api.v1.apps.AppsResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
@@ -50,11 +50,11 @@ import com.dotcms.rest.api.v1.temp.TempFileResource;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
-import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+
 import java.util.HashSet;
 import java.util.Set;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
