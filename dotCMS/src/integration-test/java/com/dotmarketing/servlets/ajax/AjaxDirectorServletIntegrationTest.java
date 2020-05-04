@@ -151,13 +151,6 @@ public class AjaxDirectorServletIntegrationTest {
             }
         });
 
-        //Create new filter to send in the URL
-        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
-        final Map<String,Object> filtersMap1 =
-                ImmutableMap.of("dependencies",true,"relationships",true);
-        final FilterDescriptor filterDescriptor1 =
-                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false, APILocator.systemUser().getUserId());
-        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor1);
 
         remotePublishAjaxActionPushBundle.setRequestJSON("{\n"
                 + "    \"assetIdentifier\": \""+bundleId+"\",\n"
@@ -166,8 +159,7 @@ public class AjaxDirectorServletIntegrationTest {
                 + "    \"remotePublishExpireDate\":\""+expireDateString+"\",\n"
                 + "    \"remotePublishExpireTime\":\"10-00\",\n"
                 + "    \"iWantTo\":\"publish\",\n"
-                + "    \"whoToSend\":\""+environmentIdsString+"\",\n"
-                + "    \"filterKey\":\""+ filterDescriptor1.getKey() +"\n"
+                + "    \"whoToSend\":\""+environmentIdsString+"\"\n"
                 + "}");
 
         remotePublishAjaxActionPushBundle.setRequestURI("/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle");
