@@ -1,0 +1,157 @@
+package com.dotcms.rest.api.v1.content;
+
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ResourceLink;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
+import org.glassfish.jersey.server.JSONP;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Optional;
+import java.util.function.Supplier;
+
+/**
+ * Exposes a {@link com.dotmarketing.portlets.contentlet.model.ResourceLink} by inode or id
+ * @author jsanca
+ */
+@Path("/v1/content/resourcelink")
+public class ResourceLinkResource {
+
+    private final WebResource    webResource;
+    private final ContentletAPI contentletAPI;
+
+    public ResourceLinkResource() {
+        this(new WebResource(), APILocator.getContentletAPI());
+    }
+
+    @VisibleForTesting
+    protected ResourceLinkResource(final WebResource webResource, final ContentletAPI contentletAPI) {
+
+        this.webResource   = webResource;
+        this.contentletAPI = contentletAPI;
+    }
+
+    /**
+     * Given an inode or identifier this will build get you a Resource Link
+     * The inode nor identifier, is expected other wise you'll get exception
+     * @param request    {@link HttpServletRequest} http request
+     * @param response   {@link HttpServletResponse} http response
+     * @param inode      {@link String} asset inode
+     * @param identifier {@link String} identifier
+     * @param language   {@link String} optional parameter
+     * @return Response
+     * @throws DotDataException
+     * @throws DotStateException
+     * @throws DotSecurityException
+     */
+    @GET
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
+    public Response findResourceLink(@Context final HttpServletRequest  request,
+                                     @Context final HttpServletResponse response,
+                                     @QueryParam("inode")            final String inode,
+                                     @QueryParam("identifier")       final String identifier,
+                                     @DefaultValue("-1") @QueryParam("language") final String language) throws DotStateException {
+        try {
+            if (!UtilMethods.isSet(inode) && !UtilMethods.isSet(identifier)) {
+
+                throw new IllegalArgumentException("Missing required inode/identifier param");
+            }
+
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource).requiredBackendUser(true).requiredFrontendUser(false)
+                            .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+            final User user       = initData.getUser();
+            final long languageId = LanguageUtil.getLanguageId(language);
+            final PageMode mode   = PageMode.get(request);
+            final Contentlet contentlet = this.getContentlet(inode, identifier, languageId,
+                    ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initData, mode);
+
+            Logger.debug(this, ()-> "Finding the resource link for the contentlet: " + contentlet.getIdentifier());
+            final ResourceLink link     = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet);
+            if(link.isDownloadRestricted()) {
+
+                throw new DotSecurityException("The Resource link to the contentlet is restricted.");
+            }
+
+            return Response.ok(new ResponseEntityView(ImmutableMap.of("resourceLink",
+                    ImmutableMap.of(
+                            "href",        link.getResourceLinkAsString(),
+                            "text",        link.getResourceLinkUriAsString(),
+                            "mimeType",    link.getMimeType(),
+                            "idPath",      link.getIdPath(),
+                            "versionPath", link.getVersionPath()
+                    )
+            ))).build();
+        } catch (Exception ex) {
+            Logger.error(this.getClass(),
+                    "Exception on method findResourceLink with exception message: " + ex
+                            .getMessage(), ex);
+            return ResponseUtil.mapExceptionResponse(ex);
+        }
+    }
+
+    private Contentlet getContentlet(final String inode,
+                                     final String identifier,
+                                     final long language,
+                                     final Supplier<Long> sessionLanguage,
+                                     final InitDataObject initDataObject,
+                                     final PageMode pageMode) throws DotDataException, DotSecurityException {
+
+        Contentlet contentlet = null;
+        PageMode mode         = pageMode;
+
+        if(UtilMethods.isSet(inode)) {
+
+            Logger.debug(this, ()-> "Finding the contentlet by inode: " + inode);
+            contentlet = this.contentletAPI.find
+                    (inode, initDataObject.getUser(), mode.respectAnonPerms);
+
+            DotPreconditions.notNull(contentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
+        } else if (UtilMethods.isSet(identifier)) {
+
+            Logger.debug(this, ()-> "Finding the contentlet by identifier: " + identifier);
+            mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
+            final Optional<Contentlet> currentContentlet =  language <= 0?
+                    Optional.ofNullable(this.contentletAPI.findContentletByIdentifier(identifier, mode.showLive,
+                            sessionLanguage.get(), initDataObject.getUser() , mode.respectAnonPerms)):
+                    this.contentletAPI.findContentletByIdentifierOrFallback
+                            (identifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
+
+            DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
+            contentlet = currentContentlet.get();
+
+        }
+
+        return contentlet;
+    }
+
+}

@@ -16,6 +16,7 @@ import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
 import com.dotcms.rest.api.v1.content.ContentVersionResource;
+import com.dotcms.rest.api.v1.content.ResourceLinkResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
@@ -49,6 +50,7 @@ import com.dotcms.rest.api.v1.temp.TempFileResource;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
+import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import java.util.HashSet;
 import java.util.Set;
@@ -164,6 +166,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(AppsResource.class);
 
 					REST_CLASSES.add(BrowserResource.class);
+
+					REST_CLASSES.add(ResourceLinkResource.class);
 				}
 			}
 		}
