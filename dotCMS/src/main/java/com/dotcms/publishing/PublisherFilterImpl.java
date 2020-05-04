@@ -69,4 +69,17 @@ public class PublisherFilterImpl implements PublisherFilter{
     public boolean acceptExcludeDependencyClasses(final String pusheableAssetType) {
         return !this.excludeDependencyClassesSet.contains(pusheableAssetType.toLowerCase());
     }
+
+    public String toString(){
+        return "PublisherFilter {" +
+                " excludeClassesSet = " + this.excludeClassesSet.toString() +
+                " , excludeDependencyClassesSet = " + this.excludeDependencyClassesSet.toString() +
+                " , excludeQueryIds = " + this.excludeQueryAssetIdSet.toString() +
+                " , excludeDependencyQueryIds = " + this.excludeDependencyQueryAssetIdSet.toString() +
+                " , relationships = " + this.relationships +
+                " , dependencies = " + this.dependencies +
+                "}";
+
+
+    }
 }

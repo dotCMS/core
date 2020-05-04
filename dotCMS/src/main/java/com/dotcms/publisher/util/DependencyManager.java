@@ -179,6 +179,7 @@ public class DependencyManager {
 
 
 		final PublisherFilter publisherFilter = APILocator.getPublisherAPI().createPublisherFilter(config.getId());
+		Logger.info(this,publisherFilter.toString());
 		for (PublishQueueElement asset : assets) {
 			//Check if the asset.Type is in the excludeClasses filter, if it is the asset is not added to the bundle
 			if(!publisherFilter.acceptExcludeClasses(asset.getType())){
