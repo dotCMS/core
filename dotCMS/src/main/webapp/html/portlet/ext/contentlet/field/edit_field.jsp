@@ -236,10 +236,22 @@
         %>
         <div class="wysiwyg-wrapper">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
-            <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
-                    class="editWYSIWYGField aceText aceTall" 
-                    name="<%=field.getFieldContentlet()%>"
-                    id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%></textarea>
+
+                <style type="text/css">
+                   dot-asset-drop-zone {
+                     width: 100%;
+                     height: 90%;
+                     position: absolute;
+                     z-index: 1;
+                     pointer-events: none;
+                   }
+                </style>
+                <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>"></dot-asset-drop-zone>
+                <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
+                        class="editWYSIWYGField aceText aceTall" 
+                        name="<%=field.getFieldContentlet()%>"
+                        id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%>  
+                </textarea>
 
             <div class="wysiwyg-tools">
                 <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">

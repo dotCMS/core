@@ -43,7 +43,6 @@
 			languages : '<%= usera.getLanguageId().substring(0,2) %>',
 			disk_cache : true,
 			debug : false
-
 		});
 	}else{
 		tinymce.init({
@@ -64,7 +63,6 @@
     		file_picker_callback: function(callback, value, meta) {
     			cmsFileBrowser(callback, value, meta);
     		}
-
 		});
 	}
 </script>
@@ -332,6 +330,15 @@ var cmsfile=null;
         document.dispatchEvent(customEvent)
     }
 
+    function insertDropZoneAsset(tinymceInstance, textAreaId) {
+    	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+        dropZone.addEventListener('uploadComplete', async (event) => {
+        	const dotAsset = await event.detail[0].json();
+        	const asset  = `<img src="${window.location.origin}/dA/${dotAsset.entity.inode}" alt=`${dotAsset.entity.titleImage}` />`;
+        	tinymceInstance.get(textAreaId).execCommand('mceInsertContent', false, asset);
+        })
+    }
+
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
 			//Confirming the change
@@ -368,10 +375,30 @@ var cmsfile=null;
 			}else if(tinyConf.plugins != undefined ){
 			    tinyConf.plugins=tinyConf.plugins.replace("compat3x","");
 			}
-            console.log(textAreaId, tinyConf );
+            console.log(textAreaId, tinyConf);
 			//Enabling the wysiwyg
 			try {
+
+				// Init instance callback to fix the pointer-events issue.
+				tinyConf = {
+					...tinyConf,
+					init_instance_callback: (editor) => {
+						let dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+	
+	                	editor.on('dragover', function(e) {
+	                		dropZone.style.pointerEvents = "all";
+	                	});
+
+	                	editor.dom.bind(document, 'dragleave', function(e) {
+							dropZone.style.pointerEvents = "none";
+	                		return false;
+	                	})
+                	}
+				}
+   
                 var wellTinyMCE = new tinymce.Editor(textAreaId, tinyConf, tinymce.EditorManager);
+               	insertDropZoneAsset(tinymce, textAreaId);
+
 				wellTinyMCE.render();
                 wellTinyMCE.on('change', emmitFieldDataChange);
 			}
