@@ -335,17 +335,29 @@ public class DependencyManager {
 			}
 		}
 
+		Logger.info(this,"ContentTypes: " + this.contentTypes.size());
+
 		if(publisherFilter.isDependencies()){
 			setHostDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setFolderDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setHTMLPagesDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setTemplateDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setContainerDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setStructureDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setLinkDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setLanguageDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setContentDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setRuleDependencies(publisherFilter);
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 		}
 
 		config.setHostSet(hosts);
