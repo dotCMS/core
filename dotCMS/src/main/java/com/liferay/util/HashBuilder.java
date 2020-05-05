@@ -13,6 +13,13 @@ public interface HashBuilder {
     void append(final byte [] bytes);
 
     /**
+     * Max quantity of bytes
+     * @param bytes    byte [] array
+     * @param maxBytes {@link Integer}
+     */
+    void append(final byte [] bytes, final int maxBytes);
+
+    /**
      * Build the hash as a hexadecimal string.
      * @return String
      */
@@ -23,4 +30,10 @@ public interface HashBuilder {
      * @return byte []
      */
     byte [] buildBytes ();
+
+    /**
+     * This returns the hash as the unix tools used to do/
+     * @return String
+     */
+    String buildUnixHash();
 }

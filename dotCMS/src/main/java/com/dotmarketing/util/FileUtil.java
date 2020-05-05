@@ -1,6 +1,11 @@
 package com.dotmarketing.util;
 
 import com.dotcms.util.CloseUtils;
+import com.liferay.util.Encryptor;
+import com.liferay.util.HashBuilder;
+import org.apache.commons.lang3.RandomStringUtils;
+
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileWriter;
@@ -8,8 +13,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,10 +23,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.liferay.util.Encryptor;
-import com.liferay.util.HashBuilder;
-import org.apache.commons.lang3.RandomStringUtils;
 
 public class FileUtil {
 
@@ -243,37 +242,39 @@ public class FileUtil {
 	/**
 	 * Figure out the sha256 of the file content, assumes that the file exists and can be read
 	 * @param file {@link File}
-	 * @return String
+	 * @return String  just as unix sha returns
 	 * @throws NoSuchAlgorithmException
 	 * @throws IOException
 	 */
-	public static String sha256 (final File file) throws NoSuchAlgorithmException, IOException {
+	public static String sha256toUnixHash (final File file) throws NoSuchAlgorithmException, IOException {
 
-		return sha256(file.toPath());
-	} // sha256.
+		return sha256toUnixHash(file.toPath());
+	} // sha256toUnixHash.
 
 	/**
 	 * Figure out the sha256 of the file content, assumes that the file exists and can be read
 	 * @param path {@link Path}
-	 * @return String
+	 * @return String just as unix sha returns
 	 * @throws NoSuchAlgorithmException
 	 * @throws IOException
 	 */
-    public static String sha256 (final Path path) throws NoSuchAlgorithmException, IOException {
+    public static String sha256toUnixHash(final Path path) throws NoSuchAlgorithmException, IOException {
 
 		final HashBuilder sha256Builder = Encryptor.Hashing.sha256();
 		final byte[] buffer             = new byte[BUFFER_SIZE];
+		int countBytes 					= 0;
 
-		try (InputStream inputStream = Files.newInputStream(path)) {
+		try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
 
-			while (inputStream.read(buffer) != -1) {
-				sha256Builder.append(buffer);
+			countBytes = inputStream.read(buffer);
+			while (countBytes > 0) {
+
+				sha256Builder.append(buffer, countBytes);
 			}
 		}
 
-		//return sha256Builder.buildHexa();
-		return new String(sha256Builder.buildBytes());
-	} // sha256.
+		return sha256Builder.buildUnixHash();
+	} // sha256toUnixHash.
 }
 
 final class PNGFileNameFilter implements FilenameFilter {

@@ -3,10 +3,8 @@ package com.dotcms.storage;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import io.vavr.control.Try;
 
@@ -37,7 +35,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             mapBuilder.put("length", binary.length());
             mapBuilder.put("contentType", MimeTypeUtils.getMimeType(binary));
             mapBuilder.put("modDate", System.currentTimeMillis());
-            mapBuilder.put("sha256", Try.of(()->FileUtil.sha256(binary)).getOrElse("unknown"));
+            mapBuilder.put("sha256", Try.of(()->FileUtil.sha256toUnixHash(binary)).getOrElse("unknown"));
         }
 
         return mapBuilder.build();

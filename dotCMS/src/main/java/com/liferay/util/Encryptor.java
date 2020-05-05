@@ -171,6 +171,7 @@ public class Encryptor {
 
 	private static class SHA236HashBuilder implements HashBuilder {
 
+		private static final char[] HEXADECIMAL_ALPHABET_ARRAY = "0123456789abcdef".toCharArray();
 		private final MessageDigest sha256;
 
 		private SHA236HashBuilder() throws NoSuchAlgorithmException {
@@ -185,6 +186,11 @@ public class Encryptor {
 		}
 
 		@Override
+		public void append(final byte [] bytes, final int maxBytes) {
+			this.sha256.update(bytes, 0, maxBytes);
+		}
+
+		@Override
 		public String buildHexa() {
 			return Base64.encode(this.buildBytes());
 		}
@@ -193,5 +199,20 @@ public class Encryptor {
 		public byte[] buildBytes() {
 			return this.sha256.digest();
 		}
+
+		@Override
+		public String buildUnixHash() {
+
+			final byte [] bytes             = this.buildBytes();
+			final StringBuilder hashBuilder = new StringBuilder(2 * bytes.length);
+			for (final byte _byte : bytes) {
+
+				hashBuilder.append(HEXADECIMAL_ALPHABET_ARRAY[(_byte >> 4) & 0xf])
+						.append(HEXADECIMAL_ALPHABET_ARRAY[_byte & 0xf]);
+			}
+
+			return hashBuilder.toString();
+		}
+
 	}
 }
