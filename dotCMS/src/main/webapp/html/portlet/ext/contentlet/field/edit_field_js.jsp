@@ -586,12 +586,12 @@ var cmsfile=null;
 		);
 		dropZoneComponents.forEach((dropZone) => {
 			if (
-				contentHost.dataset.hostType === "host" ||
+				contentHost.dataset.hostType === "host" && contentHost.value !== "SYSTEM_HOST" ||
 				contentHost.dataset.hostType === "folder"
 			) {
 				dropZone["folder"] = contentHost.value;
 			} else {
-				contentHost.value = "";
+				dropZone["folder"] = ""
 			}
 		});
 	}
