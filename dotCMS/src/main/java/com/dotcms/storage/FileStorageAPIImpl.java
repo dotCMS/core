@@ -1,12 +1,20 @@
 package com.dotcms.storage;
 
+import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.MimeTypeUtils;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
 import io.vavr.control.Try;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Default implementation
@@ -20,7 +28,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     @Override
     public Map<String, Object> generateBasicMetaData(final File binary) {
 
-        final ImmutableMap.Builder<String, Object> mapBuilder = new ImmutableMap.Builder<>();
+        final ImmutableSortedMap.Builder<String, Object> mapBuilder =
+                new ImmutableSortedMap.Builder<>(Comparator.naturalOrder());
 
         if (binary.exists() && binary.canRead()) {
             mapBuilder.put("title", binary.getName());
@@ -36,6 +45,22 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     @Override
     public Map<String, Object> generateFullMetaData(final  File binary) {
-        return null;
+
+        final TreeMap<String, Object> metadataMap = new TreeMap<>(Comparator.naturalOrder());
+
+        try {
+
+            final TikaUtils tikaUtils = new TikaUtils();
+            final int maxLength       = Config.getIntProperty("META_DATA_MAX_SIZE",
+                    TikaUtils.DEFAULT_META_DATA_MAX_SIZE) * TikaUtils.SIZE;
+
+            metadataMap.putAll(this.generateBasicMetaData(binary));
+            metadataMap.putAll(tikaUtils.getForcedMetaDataMap(binary, maxLength));
+        } catch (DotDataException e) {
+
+            return Collections.emptyMap();
+        }
+
+        return new ImmutableSortedMap.Builder<String, Object>(Comparator.naturalOrder()).putAll(metadataMap).build();
     }
 }

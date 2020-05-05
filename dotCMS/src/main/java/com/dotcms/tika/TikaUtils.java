@@ -44,8 +44,8 @@ import java.util.zip.GZIPOutputStream;
 
 public class TikaUtils {
 
-    private static final int SIZE = 1024;
-    private static final int DEFAULT_META_DATA_MAX_SIZE = 5;
+    public static final int SIZE = 1024;
+    public static final int DEFAULT_META_DATA_MAX_SIZE = 5;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private TikaProxyService tikaService;
@@ -347,6 +347,22 @@ public class TikaUtils {
                                                final Set<String> metadataFields,
                                                final int maxLength) {
 
+        final Map<String, Object> metaMap = this.getForcedMetaDataMap(binFile, maxLength);
+
+        this.filterMetadataFields(metaMap, metadataFields);
+
+        return metaMap;
+    }
+
+    /**
+     * Similar as {@link #getMetaDataMap(String, File, boolean)} but includes tika collection
+     * and the max length of the binary file to parse.
+     * Also, it is not storing anything on the file system as the reference method {@link #getMetaDataMap(String, File, boolean)}
+     * This one does everything on memory, means forceMemory is always true and the file system cache has to be performed on upper layers
+     */
+    public Map<String, Object> getForcedMetaDataMap(final File binFile,
+                                                    final int maxLength) {
+
         if (!osgiInitialized) {
             Logger.error(this.getClass(),
                     "Unable to get file Meta Data, OSGI Framework not initialized");
@@ -381,8 +397,6 @@ public class TikaUtils {
             metaMap.put(FileAssetAPI.SIZE_FIELD, binFile.length());
             metaMap.put("length", binFile.length());
         }
-
-        this.filterMetadataFields(metaMap, metadataFields);
 
         return metaMap;
     }

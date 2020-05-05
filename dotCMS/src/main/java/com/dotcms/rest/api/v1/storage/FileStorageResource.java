@@ -34,7 +34,7 @@ public class FileStorageResource {
     private final MultiPartUtils multiPartUtils;
 
     @VisibleForTesting
-    public FileStorageResource(final FileStorageAPI fileStorageAPI,
+    protected FileStorageResource(final FileStorageAPI fileStorageAPI,
                                final WebResource webResource,
                                final MultiPartUtils multiPartUtils) {
 
@@ -53,9 +53,9 @@ public class FileStorageResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response fireActionMultipart(@Context final HttpServletRequest request,
-                                              @Context final HttpServletResponse response,
-                                              final FormDataMultiPart multipart) throws IOException {
+    public final Response getMetadata(@Context final HttpServletRequest request,
+                                      @Context final HttpServletResponse response,
+                                               final FormDataMultiPart multipart) throws IOException {
 
         final List<File> files = this.multiPartUtils.getBinariesFromMultipart(multipart);
         final ImmutableMap.Builder<String, Object> bodyResultBuilder = new ImmutableMap.Builder<>();
@@ -67,6 +67,31 @@ public class FileStorageResource {
         for (final File file : files) {
 
             bodyResultBuilder.put(file.getName(), this.fileStorageAPI.generateBasicMetaData(file));
+        }
+
+        return Response.ok(new ResponseEntityView(bodyResultBuilder.build())).build();
+    }
+
+    @PUT
+    @Path("/fullmetadata")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response getFullMetadata(@Context final HttpServletRequest request,
+                                          @Context final HttpServletResponse response,
+                                                   final FormDataMultiPart multipart) throws IOException {
+
+        final List<File> files = this.multiPartUtils.getBinariesFromMultipart(multipart);
+        final ImmutableMap.Builder<String, Object> bodyResultBuilder = new ImmutableMap.Builder<>();
+        if (!UtilMethods.isSet(files)) {
+
+            throw new BadRequestException("Must send files to generate the metadata");
+        }
+
+        for (final File file : files) {
+
+            bodyResultBuilder.put(file.getName(), this.fileStorageAPI.generateFullMetaData(file));
         }
 
         return Response.ok(new ResponseEntityView(bodyResultBuilder.build())).build();

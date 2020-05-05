@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,7 +27,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 public class FileUtil {
 
-	private static final int BUFFER_SIZE = 4096; // 4KB // todo: get this from config
+	private static final int BUFFER_SIZE = Config.getIntProperty("FILE_BUFFER", 4096);
 	private static Set<String> extensions = new HashSet<>();
 
 	/**
@@ -270,7 +271,8 @@ public class FileUtil {
 			}
 		}
 
-		return sha256Builder.buildHexa();
+		//return sha256Builder.buildHexa();
+		return new String(sha256Builder.buildBytes());
 	} // sha256.
 }
 
