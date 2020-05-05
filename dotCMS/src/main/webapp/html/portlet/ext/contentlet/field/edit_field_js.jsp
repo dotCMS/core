@@ -375,7 +375,6 @@ var cmsfile=null;
 			}else if(tinyConf.plugins != undefined ){
 			    tinyConf.plugins=tinyConf.plugins.replace("compat3x","");
 			}
-            console.log(textAreaId, tinyConf);
 			//Enabling the wysiwyg
 			try {
 
