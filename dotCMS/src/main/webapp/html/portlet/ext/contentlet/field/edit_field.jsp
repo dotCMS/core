@@ -200,7 +200,7 @@
         %>
 
 
-        <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" onChange="updateHostFolderValues('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
+        <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" onChange="updateHostFolderValues('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true); setDotAssetHost();"
              value="<%= selectorValue %>"></div>
         <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
                value="<%= selectorValue %>"/>
@@ -234,6 +234,7 @@
                 }
             }
         %>
+
         <div class="wysiwyg-wrapper">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
                 <div class="wysiwyg-container">
@@ -244,7 +245,6 @@
                           id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%>
                   </textarea>
                 </div>
-
             <div class="wysiwyg-tools">
               <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">
                   <option value="WYSIWYG">WYSIWYG</option>
