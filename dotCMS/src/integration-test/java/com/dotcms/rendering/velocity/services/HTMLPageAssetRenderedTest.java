@@ -1509,8 +1509,8 @@ public class HTMLPageAssetRenderedTest {
         Calendar tomorrow = Calendar.getInstance();
         tomorrow.add(Calendar.DATE, 1);
 
-        mockRequest.getSession().setAttribute("tm_date", tomorrow.toString());
-        mockRequest.getSession().setAttribute("tm_lang", "1");
+        //mockRequest.getSession().setAttribute("tm_date", Long.toString(tomorrow.getTime().getTime()));
+        //mockRequest.getSession().setAttribute("tm_lang", "1");
 
         FilterChain chain = Mockito.mock(FilterChain.class);
         final TimeMachineFilter timeMachineFilter = new TimeMachineFilter();
