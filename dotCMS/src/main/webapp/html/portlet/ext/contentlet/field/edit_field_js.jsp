@@ -377,28 +377,34 @@ var cmsfile=null;
 			}
 			//Enabling the wysiwyg
 			try {
-				// Init instance callback to fix the pointer-events issue.
-				tinyConf = {
-					...tinyConf,
-					init_instance_callback: (editor) => {
-						let dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
-		editor.on('dragover', function(e) {
-			dropZone.style.pointerEvents = "all";
-		});
-	          editor.dom.bind(document, 'dragleave', function(e) {
-							dropZone.style.pointerEvents = "none";
-	              return false;
-	            });
-          }
-				}
-        var wellTinyMCE = new tinymce.Editor(textAreaId, tinyConf, tinymce.EditorManager);
-	insertDropZoneAsset(tinymce, textAreaId);
-				wellTinyMCE.render();
-        wellTinyMCE.on('change', emmitFieldDataChange);
+			  // Init instance callback to fix the pointer-events issue.
+			  tinyConf = {
+			    ...tinyConf,
+			    init_instance_callback: (editor) => {
+			      let dropZone = document.getElementById(
+			        `dot-asset-drop-zone-${textAreaId}`
+			      );
+			      editor.on("dragover", function (e) {
+			        dropZone.style.pointerEvents = "all";
+			      });
+			      editor.dom.bind(document, "dragleave", function (e) {
+			        dropZone.style.pointerEvents = "none";
+			        return false;
+			      });
+			    },
+			  };
+			  var wellTinyMCE = new tinymce.Editor(
+			    textAreaId,
+			    tinyConf,
+			    tinymce.EditorManager
+			  );
+			  insertDropZoneAsset(tinymce, textAreaId);
+			  wellTinyMCE.render();
+			  wellTinyMCE.on("change", emmitFieldDataChange);
+			} catch (e) {
+			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
-			catch(e) {
-				showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
-			}
+
 			enabledWYSIWYG[textAreaId] = true;
 		}
 	}
