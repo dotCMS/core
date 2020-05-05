@@ -188,7 +188,6 @@ public class DependencyBundlerTest extends IntegrationTestBase {
             //Generate the bundler
             Logger.info(DependencyBundlerTest.class, "Start of Bundler: " + aClass.getSimpleName());
             bundler.generate(bundleRoot, bundlerStatus);
-            Logger.info(DependencyBundlerTest.class,pconf.getStructures().isEmpty() ? "vacio" : "lleno");
             Logger.info(DependencyBundlerTest.class, "End of Bundler: " + aClass.getSimpleName());
         }
 
@@ -240,8 +239,7 @@ public class DependencyBundlerTest extends IntegrationTestBase {
         //Generate Bundle, will return several dependencySet with the assets that will be added to the bundle
         final PushPublisherConfig listOfAssetsWithNewFilter = generateBundle(bundleWithNewFilter.getId(), Operation.PUBLISH);
         Assert.assertNotNull(listOfAssetsWithNewFilter);
-        Assert.assertTrue("CT: " + contentType.id() + " LoA: " + listOfAssetsWithNewFilter.getStructures().toString()
-                ,listOfAssetsWithNewFilter.getStructures().isEmpty());
+        Assert.assertTrue(listOfAssetsWithNewFilter.getStructures().isEmpty());
         Assert.assertTrue(listOfAssetsWithNewFilter.getContentlets().contains(content.getIdentifier()));
     }
 

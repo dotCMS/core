@@ -335,29 +335,17 @@ public class DependencyManager {
 			}
 		}
 
-		Logger.info(this,"ContentTypes: " + this.contentTypes.size());
-
 		if(publisherFilter.isDependencies()){
 			setHostDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setFolderDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setHTMLPagesDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setTemplateDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setContainerDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setStructureDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setLinkDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setLanguageDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setContentDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 			setRuleDependencies(publisherFilter);
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
 		}
 
 		config.setHostSet(hosts);
@@ -1291,10 +1279,7 @@ public class DependencyManager {
 				Logger.debug(this, e.toString());
 			}
 
-			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
-
 			if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true) && publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
-				Logger.info(this,publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())?"true":"false");
 				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
 				contentTypes.addOrClean( con.getStructureInode(), struct.getModDate());
 				structureDependencyHelper(con.getStructureInode(),publisherFilter);
