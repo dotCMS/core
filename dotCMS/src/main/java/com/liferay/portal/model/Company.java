@@ -22,14 +22,14 @@
 
 package com.liferay.portal.model;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
+import com.google.common.hash.Hashing;
+import com.liferay.portal.util.PropsUtil;
+import com.liferay.util.Base64;
 import java.security.Key;
 import java.util.Locale;
 import java.util.TimeZone;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Logger;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.util.Base64;
 
 /**
  * <a href="Company.java.html"><b><i>View Source</i></b></a>
@@ -99,6 +99,18 @@ public class Company extends CompanyModel {
 		_keyObj = keyObj;
 
 		super.setKey(Base64.objectToString(keyObj));
+	}
+
+	public String getKeyDigest() {
+		final Key key = getKeyObj();
+		if (null != key) {
+			try {
+				return Hashing.sha256().hashBytes(key.getEncoded()).toString();
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
+		return null;
 	}
 
 	public User getDefaultUser() {

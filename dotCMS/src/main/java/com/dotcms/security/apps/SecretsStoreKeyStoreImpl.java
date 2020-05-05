@@ -1,6 +1,8 @@
 package com.dotcms.security.apps;
 
 import static com.dotcms.security.apps.AppsCache.CACHE_404;
+
+import com.dotcms.auth.providers.jwt.factories.SigningKeyFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -8,6 +10,7 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -49,6 +52,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     private static final String SECRETS_STORE_SECRET_KEY_FACTORY_TYPE = "PBE";
     private static final String SECRETS_KEYSTORE_PASSWORD_KEY = "SECRETS_KEYSTORE_PASSWORD_KEY";
     private static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
+    private static final String APPS_KEY_PROVIDER_CLASS = "APPS_KEY_PROVIDER_CLASS";
     private final String secretsKeyStorePath;
     private final AppsCache cache;
 
@@ -281,7 +285,26 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @return
      */
     private Key key() {
-        return Sneaky.sneak(() -> APILocator.getCompanyAPI().getDefaultCompany()).getKeyObj();
+        final String providerClassName = getCustomKeyProvider();
+        if(UtilMethods.isSet(providerClassName)){
+            try {
+                final SigningKeyFactory customKeyProvider = ((Class<SigningKeyFactory>) Class
+                        .forName(providerClassName)).newInstance();
+                return customKeyProvider.getKey();
+            } catch (Exception e) {
+                Logger.error(this.getClass(), " Fail to get Security Key from Custom Key Provider Will fallback to default key provider. ", e);
+            }
+        }
+        return Sneaky.sneak(() -> AppsKeyDefaultProvider.INSTANCE.get().getKey());
+    }
+
+    /**
+     * brings the possibility to load a custom class to override the default Key provider thought an implementation of <code>SigningKeyFactory</code>
+     * @return
+     */
+    private String getCustomKeyProvider() {
+        return Config
+                .getStringProperty(APPS_KEY_PROVIDER_CLASS, null);
     }
 
     /**

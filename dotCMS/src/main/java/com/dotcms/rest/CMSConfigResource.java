@@ -1,10 +1,12 @@
 package com.dotcms.rest;
 
+import com.dotcms.company.CompanyAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
@@ -17,6 +19,7 @@ import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
@@ -496,5 +499,31 @@ public class CMSConfigResource {
 
         return responseResource.response( responseMessage.toString() );
     }
+
+    @POST
+    @Path ("/regenerateKey")
+    @Produces (MediaType.APPLICATION_JSON)
+    @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
+    public Response regenerateKey ( @Context HttpServletRequest request,
+            @Context final HttpServletResponse response) throws JSONException, IOException {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            final CompanyAPI companyAPI = APILocator.getCompanyAPI();
+            final Company defaultCompany = companyAPI.getDefaultCompany();
+            final Company updatedCompany = APILocator.getCompanyAPI().regenerateKey(defaultCompany, user);
+            return Response.ok(new ResponseEntityView(updatedCompany.getKeyDigest())).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception calling regenerateKey." , e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
 
 }

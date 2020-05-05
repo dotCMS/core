@@ -3,7 +3,10 @@
 <% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
-<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotcms.rest.api.v1.system.ConfigurationHelper"%>
+<%
+boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
+%>
 
 <script type="text/javascript">
 
@@ -37,6 +40,26 @@
         imgSwap('<%= company.getHomeURL() %>');
     });
 
+	function regenerateKeyProxy() {
+		dijit.byId("regenerateKeyDialog").show();
+	}
+
+	function regenerateKeyProxyOk() {
+
+		regenerateKey(function (value) {
+			if(value){
+				dojo.byId("key-digest").value = value;
+				dijit.byId("regenerateKeyDialog").hide();
+			}
+		});
+		return true;
+	}
+
+	function regenerateKeyProxyCancel() {
+		dijit.byId("regenerateKeyDialog").hide();
+		return true;
+	}
+
 </script>
 
 
@@ -60,6 +83,12 @@
 	                <dt><%= LanguageUtil.get(pageContext, "email-address") %></dt>
 	                <dd><input dojoType="dijit.form.TextBox" id="companyEmailAddress" name="companyEmailAddress" size="20" type="text" value="<%= company.getEmailAddress() %>" style="width: 250px"></dd>
 				</dl>
+
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "cluster-id") %></dt>
+					<dd><input dojoType="dijit.form.TextBox" readonly="readonly" id="clusterId" name="clusterId" size="20" type="text" value="<%= ConfigurationHelper.getClusterId() %>" style="width: 250px"></dd>
+				</dl>
+
 				<dl>
 	                <dt><%= LanguageUtil.get(pageContext, "background.color") %></dt>
 	                <dd style="position:relative;">
@@ -122,16 +151,16 @@
 	          <dl>
 	          		<dt>&nbsp;</dt>
 	                <dd><div id="imageBlock" style="width:250px; height:170px; border:1px solid #b3b3b3;background-repeat:no-repeat; background-size:100% 100%;"></div></dd>
-	        </dl>
+	          </dl>
 
-            <div id="bgColorPicker" data-dojo-type="dijit.Dialog" title="Background Color Picker">
-                <div id="bgPickerLive" dojoType="dojox.widget.ColorPicker"
-                     webSafe="false"
-                     liveUpdate="true"
-                     value="<%= company.getSize() %>"
-                     onChange="bgColorStyler(arguments[0])">
-                </div>
-            </div>
+				<div id="bgColorPicker" data-dojo-type="dijit.Dialog" title="Background Color Picker">
+					<div id="bgPickerLive" dojoType="dojox.widget.ColorPicker"
+						 webSafe="false"
+						 liveUpdate="true"
+						 value="<%= company.getSize() %>"
+						 onChange="bgColorStyler(arguments[0])">
+					</div>
+				</div>
 
 				<div id="pColorPicker" data-dojo-type="dijit.Dialog" title="Primary Color Picker">
 					<div id="pPickerLive" dojoType="dojox.widget.ColorPicker"
@@ -151,29 +180,29 @@
 					</div>
 				</div>
 
-            <div id="bgPicker" data-dojo-type="dijit.Dialog" title="Backgrounds">
-                <table class="bgThumbnail">
-                    <tr>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-1.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-1-sm.jpg" width="75" height="47"></a></div></td>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-2.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-2-sm.jpg" width="75" height="47"></a></div></td>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-3.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-3-sm.jpg" width="75" height="47"></a></div></td>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-4.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-4-sm.jpg" width="75" height="47"></a></div></td>
-                    </tr>
-                    <tr>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-5.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-5-sm.jpg" width="75" height="47"></a></div></td>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-6.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-6-sm.jpg" width="75" height="47"></a></div></td>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-7.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-7-sm.jpg" width="75" height="47"></a></div></td>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-8.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-8-sm.jpg" width="75" height="47"></a></div></td>
-                    </tr>
-                    <tr>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-9.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-9-sm.jpg" width="75" height="47"></a></div></td>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-10.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-10-sm.jpg" width="75" height="47"></a></div></td>
-                        <td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-11.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-11-sm.jpg" width="75" height="47"></a></div></td>
-                        <td><div><a href="#" onclick="imgSwap(''); dijit.byId('bgPicker').hide();"> <img src="/html/images/backgrounds/bg-no-sm.jpg" width="75" height="47"></a></div></td>
-                    </tr>
-                </table>
-            </div>
-
+				<div id="bgPicker" data-dojo-type="dijit.Dialog" title="Backgrounds">
+					<table class="bgThumbnail">
+						<tr>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-1.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-1-sm.jpg" width="75" height="47"></a></div></td>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-2.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-2-sm.jpg" width="75" height="47"></a></div></td>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-3.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-3-sm.jpg" width="75" height="47"></a></div></td>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-4.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-4-sm.jpg" width="75" height="47"></a></div></td>
+						</tr>
+						<tr>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-5.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-5-sm.jpg" width="75" height="47"></a></div></td>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-6.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-6-sm.jpg" width="75" height="47"></a></div></td>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-7.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-7-sm.jpg" width="75" height="47"></a></div></td>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-8.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-8-sm.jpg" width="75" height="47"></a></div></td>
+						</tr>
+						<tr>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-9.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-9-sm.jpg" width="75" height="47"></a></div></td>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-10.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-10-sm.jpg" width="75" height="47"></a></div></td>
+							<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-11.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-11-sm.jpg" width="75" height="47"></a></div></td>
+							<td><div><a href="#" onclick="imgSwap(''); dijit.byId('bgPicker').hide();"> <img src="/html/images/backgrounds/bg-no-sm.jpg" width="75" height="47"></a></div></td>
+						</tr>
+					</table>
+				</div>
+			</div>
         </td>
         <td valign="top">
             <img style="max-width: 300px;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0"><br>
@@ -266,6 +295,19 @@
 	                    </select>
 	                </dd>
 	            </dl>
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "key-digest") %></dt>
+					<dd>
+						<div class="inline-form">
+							<input id="key-digest" readonly="readonly" dojoType="dijit.form.TextBox" name="companyKeyDigest" size="50" type="text" value="<%= company.getKeyDigest() %>" style="width: 250px">
+							<% if(userIsAdmin){  %>
+								<button id="regenKeyButton" dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onclick="regenerateKeyProxy()" >
+									<%= LanguageUtil.get(pageContext, "key-digest-regenerate") %>
+								</button>
+							<% } %>
+						</div>
+					</dd>
+				</dl>
 	        </div>
 	    </td>
 	</tr>
@@ -275,4 +317,29 @@
     <button dojoType="dijit.form.Button" onclick="saveCompanyAuthTypeInfo();" type="button" id="securitySubmitButton" iconClass="saveIcon">
         <%= LanguageUtil.get(pageContext, "save") %>
     </button>
+</div>
+
+<div id="regenerateKeyDialog" dojoType="dijit.Dialog" style="display:none;width:500px;vertical-align: middle; " draggable="true" title="<%= LanguageUtil.get(pageContext, "key-digest-regenerate-prompt") %>" >
+
+	<span class="ui-confirmdialog-message" >
+		<%= LanguageUtil.get(pageContext, "key-digest-regenerate-warning") %>
+	</span>
+
+    <div>
+        <table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">
+          <tr>
+			<td style="width:50%;text-align: right">
+				<button id="cancelButton" dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: regenerateKeyProxyCancel">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+				</button>
+			</td>
+			<td style="width:50%;text-align: left">
+				<button id="okButton" dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: regenerateKeyProxyOk">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "key-digest-regenerate")) %>
+				</button>
+			</td>
+		  </tr>
+        </table>
+    </div>
+
 </div>
