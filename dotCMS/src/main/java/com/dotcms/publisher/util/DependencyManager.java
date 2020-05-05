@@ -1291,7 +1291,10 @@ public class DependencyManager {
 				Logger.debug(this, e.toString());
 			}
 
+			Logger.info(this,"ContentTypes: " + this.contentTypes.size());
+
 			if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true) && publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
+				Logger.info(this,publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())?"true":"false");
 				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
 				contentTypes.addOrClean( con.getStructureInode(), struct.getModDate());
 				structureDependencyHelper(con.getStructureInode(),publisherFilter);
@@ -1313,6 +1316,7 @@ public class DependencyManager {
             List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
                             .search(keyValueQuery,0, -1, StringPool.BLANK, user, false);// search for language variables
             if (!listKeyValueLang.isEmpty()) {// if there is any language variable add the content type
+				Logger.info(this,"ESTOY EN EL LANG");
                 Structure struct = CacheLocator.getContentTypeCache()
                                 .getStructureByInode(listKeyValueLang.get(0).getContentTypeId());
                 contentTypes.addOrClean(struct.getIdentifier(), struct.getModDate());
