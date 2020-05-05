@@ -15,6 +15,7 @@ import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rendering.velocity.servlet.VelocityServlet;
 import com.dotcms.timemachine.ajax.TimeMachineAjaxAction;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
@@ -1474,55 +1475,5 @@ public class HTMLPageAssetRenderedTest {
                         APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                         PermissionAPI.PERMISSION_READ),
                 contentlet, APILocator.systemUser(), false);
-    }
-
-    /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: TimeMachine in running and request a existing Page
-     * Should: Return the page
-     */
-    @Test
-    public void testingTimeMachine () throws Exception{
-
-        final Container container = createContainer();
-        final Template template = createTemplate(container);
-
-        Config.setProperty(contentFallbackProperty, false);
-        Config.setProperty(pageFallbackProperty, false);
-
-        final String pageName = "test1Page-"+System.currentTimeMillis();
-        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
-
-        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
-
-        final HttpServletRequest mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request()
-                )
-                .request();
-
-
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
-        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
-        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-
-        Calendar tomorrow = Calendar.getInstance();
-        tomorrow.add(Calendar.DATE, 1);
-
-        //mockRequest.getSession().setAttribute("tm_date", Long.toString(tomorrow.getTime().getTime()));
-        //mockRequest.getSession().setAttribute("tm_lang", "1");
-
-        FilterChain chain = Mockito.mock(FilterChain.class);
-        final TimeMachineFilter timeMachineFilter = new TimeMachineFilter();
-        timeMachineFilter.doFilter(mockRequest, mockResponse, chain);
-
-        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                PageContextBuilder.builder()
-                        .setUser(systemUser)
-                        .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.LIVE)
-                        .build(),
-                mockRequest, mockResponse);
-        Assert.assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
     }
 }
