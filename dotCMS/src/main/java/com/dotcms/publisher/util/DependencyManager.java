@@ -1315,16 +1315,20 @@ public class DependencyManager {
             String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
             List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
                             .search(keyValueQuery,0, -1, StringPool.BLANK, user, false);// search for language variables
-            if (!listKeyValueLang.isEmpty()) {// if there is any language variable add the content type
-				Logger.info(this,"ESTOY EN EL LANG");
+			// if there is any language variable and we accept to push content type, add the content type
+            if (!listKeyValueLang.isEmpty() && publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
                 Structure struct = CacheLocator.getContentTypeCache()
                                 .getStructureByInode(listKeyValueLang.get(0).getContentTypeId());
                 contentTypes.addOrClean(struct.getIdentifier(), struct.getModDate());
                 structureDependencyHelper(struct.getIdentifier(),publisherFilter);
             }
-            for (Contentlet keyValue : listKeyValueLang) {// add the language variable
-                contents.addOrClean(keyValue.getIdentifier(), keyValue.getModDate());
-            }
+			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType())) {
+				for (Contentlet keyValue : listKeyValueLang) {// add the language variable
+					if(publisherFilter.acceptExcludeDependencyQuery(keyValue.getIdentifier())) {
+						contents.addOrClean(keyValue.getIdentifier(), keyValue.getModDate());
+					}
+				}
+			}
         }
 
 	}
