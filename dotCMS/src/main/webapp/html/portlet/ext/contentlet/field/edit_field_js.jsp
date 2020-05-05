@@ -565,14 +565,35 @@ var cmsfile=null;
 		 var data = dijit.byId('HostSelector').attr('selectedItem');
 		 if(data["type"]== "host"){
 			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId(field).dataset.hostType =  data["type"];
 			dojo.byId('hostId').value =  dijit.byId('HostSelector').attr('value');
 			dojo.byId('folderInode').value = "";
+
 		 }else if(data["type"]== "folder"){
 			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId(field).dataset.hostType =  data["type"];
 			dojo.byId('folderInode').value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId('hostId').dataset.hostType = data["type"];
 			dojo.byId('hostId').value = "";
 		}
 	  }
+	}
+
+	function setDotAssetHost() {
+		const contentHost = dojo.byId("contentHost");
+		const dropZoneComponents = Array.from(
+			document.querySelectorAll(".wysiwyg__dot-asset-drop-zone")
+		);
+		dropZoneComponents.forEach((dropZone) => {
+			if (
+				contentHost.dataset.hostType === "host" ||
+				contentHost.dataset.hostType === "folder"
+			) {
+				dropZone["folder"] = contentHost.value;
+			} else {
+				contentHost.value = "";
+			}
+		});
 	}
 
 	function aceAreaById(textarea){
