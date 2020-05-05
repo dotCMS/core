@@ -236,48 +236,40 @@
         %>
         <div class="wysiwyg-wrapper">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
-
-                <style type="text/css">
-                   dot-asset-drop-zone {
-                     width: 100%;
-                     height: 91%;
-                     position: absolute;
-                     z-index: 1;
-                     pointer-events: none;
-                   }
-                </style>
-                <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>"></dot-asset-drop-zone>
-                <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
-                        class="editWYSIWYGField aceText aceTall" 
-                        name="<%=field.getFieldContentlet()%>"
-                        id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%>  
-                </textarea>
+                <div class="wysiwyg-container">
+                  <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
+                  <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
+                          class="editWYSIWYGField aceText aceTall" 
+                          name="<%=field.getFieldContentlet()%>"
+                          id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%>  
+                  </textarea>
+                </div>
 
             <div class="wysiwyg-tools">
-                <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">
-                    <option value="WYSIWYG">WYSIWYG</option>
-                    <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
-                    <option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
-                </select>
+              <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">
+                  <option value="WYSIWYG">WYSIWYG</option>
+                  <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
+                  <option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
+              </select>
 
-                <div class="langVariablesField inline-form">
-                    <label for="glossary_term_<%= field.getVelocityVarName() %>">
-                        <%= LanguageUtil.get(pageContext, "Language-Variables") %>:
-                    </label>
-                    <input type="text" dojoType="dijit.form.TextBox"
-                           id="glossary_term_<%= field.getVelocityVarName() %>"
-                           name="glossary_term_<%= field.getVelocityVarName() %>"
-                           style="margin: 0"
-                           onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
+              <div class="langVariablesField inline-form">
+                  <label for="glossary_term_<%= field.getVelocityVarName() %>">
+                      <%= LanguageUtil.get(pageContext, "Language-Variables") %>:
+                  </label>
+                  <input type="text" dojoType="dijit.form.TextBox"
+                          id="glossary_term_<%= field.getVelocityVarName() %>"
+                          name="glossary_term_<%= field.getVelocityVarName() %>"
+                          style="margin: 0"
+                          onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
 
-                    <div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
-                        <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
-                    </div>
-                    <script type="text/javascript">
-                        dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
-                    </script>
-                </div>
-            </div>
+                  <div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
+                      <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
+                  </div>
+                  <script type="text/javascript">
+                      dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
+                  </script>
+              </div>
+          </div>
 
             <!-- AChecker errors -->
             <div id="acheck<%=field.getVelocityVarName()%>"></div>
