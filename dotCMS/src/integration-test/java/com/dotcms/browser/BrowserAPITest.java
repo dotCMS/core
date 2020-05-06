@@ -117,6 +117,16 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: testing the pagination of the BrowserAPI, the test creates a site and a folder, them add 100 files and iterate over them with the browser api
+     * Given Scenario: 1)  request items from 0 to 10
+     *                  2) request items form 10 to 60
+     *                  3) request items form 60 to 100
+     *                  4) out of range
+     * ExpectedResult: Must have always 100 files as a total, and should retrieve the respective items per request
+     *
+     */
+
     @Test()
     public void test_GetFolderContent_pagination() throws DotDataException, DotSecurityException, IOException {
 
