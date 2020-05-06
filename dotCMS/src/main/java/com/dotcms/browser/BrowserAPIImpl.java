@@ -29,12 +29,14 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,6 +62,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     @CloseDBIfOpened
     public Map<String, Object> getFolderContent(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException {
 
+        final MutableInt countItems                     = new MutableInt(0);
         final boolean respectFrontEndRoles = false;
         List<Map<String, Object>> returnList = new ArrayList<>();
         final Role[] roles = APILocator.getRoleAPI().loadRolesForUser(browserQuery.user.getUserId()).toArray(new Role[0]);
@@ -82,20 +85,21 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         if (browserQuery.showFolders) {
 
-            this.includeFolders(browserQuery, returnList, roles, parent);
+            this.includeFolders(browserQuery, returnList, roles, parent, countItems);
         }
 
         if (browserQuery.showLinks) {
 
-            this.includeLinks(browserQuery, returnList, roles, parent, host);
+            this.includeLinks(browserQuery, returnList, roles, parent, host, countItems);
         }
 
         final String luceneQuery = this.createQuery(browserQuery, parent, host);
         final String esSortBy    = ("name".equals(browserQuery.sortBy) ? "title" : browserQuery.sortBy)
                 + (browserQuery.sortByDesc ? " desc" : StringPool.BLANK);
 
-        final List<Contentlet> contentlets = APILocator.getContentletAPI().search(luceneQuery, browserQuery.maxResults,
-                browserQuery.offset, esSortBy, browserQuery.user, true);
+        final int searchOffset = 0; //browserQuery.offset > 0? browserQuery.offset - countItems.getValue(): browserQuery.offset;
+        final PaginatedArrayList<Contentlet> contentlets = (PaginatedArrayList)APILocator.getContentletAPI().search(luceneQuery,
+                browserQuery.maxResults + browserQuery.offset, searchOffset>0? searchOffset:0, esSortBy, browserQuery.user, true);
 
         for (final Contentlet contentlet : contentlets) {
 
@@ -150,8 +154,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         final Map<String, Object> returnMap = new HashMap<>();
-        returnMap.put("total", returnList.size());
-        returnMap.put("list",  returnList.subList(offset, offset + maxResults));
+        returnMap.put("total", contentlets.getTotalResults() + countItems.getValue());
+        returnMap.put("list",  offset > returnList.size()? Collections.emptyList(): returnList.subList(offset, offset + maxResults));
         return returnMap;
     }
 
@@ -252,7 +256,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     private void includeLinks(final BrowserQuery browserQuery, final List<Map<String, Object>> returnList,
-                              final Role[] roles, final Folder parent, final Host host) throws DotDataException, DotSecurityException {
+                              final Role[] roles, final Folder parent, final Host host, final MutableInt countItems) throws DotDataException, DotSecurityException {
         // Getting the links directly under the parent folder or host
         List<Link> links = new ArrayList<>();
 
@@ -293,6 +297,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 linkMap.put("hasTitleImage", "");
                 linkMap.put("__icon__", "linkIcon");
                 returnList.add(linkMap);
+                countItems.increment();
             }
         }
     } // includeLinks.
@@ -300,7 +305,8 @@ public class BrowserAPIImpl implements BrowserAPI {
     private void includeFolders(final BrowserQuery browserQuery,
                                 final List<Map<String, Object>> returnList,
                                 final Role[] roles,
-                                final Folder parent) throws DotDataException, DotSecurityException {
+                                final Folder parent,
+                                final MutableInt countItems) throws DotDataException, DotSecurityException {
 
         if (parent != null) {
 
@@ -329,6 +335,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                     folderMap.put("hasTitleImage", StringPool.BLANK);
                     folderMap.put("__icon__", IconType.FOLDER.iconName());
                     returnList.add(folderMap);
+                    countItems.increment();
                 }
             }
         }
