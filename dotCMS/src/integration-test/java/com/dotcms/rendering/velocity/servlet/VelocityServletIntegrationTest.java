@@ -1,7 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.anyString;
@@ -38,7 +37,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.*;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -269,10 +267,10 @@ public class VelocityServletIntegrationTest {
         final Template template = new TemplateDataGen().site(host).withContainer(container.getIdentifier()).nextPersisted();
 
         final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
-        final ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(contentGenericType.id());
-        cs.setCode("$!{body}");
-        csList.add(cs);
+        final ContainerStructure containerStructure = new ContainerStructure();
+        containerStructure.setStructureId(contentGenericType.id());
+        containerStructure.setCode("$!{body}");
+        csList.add(containerStructure);
 
         container = APILocator.getContainerAPI().save(container, csList, host, systemUser, false);
         PublishFactory.publishAsset(container, systemUser, false, false);
@@ -304,7 +302,7 @@ public class VelocityServletIntegrationTest {
                 .request();
 
 
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         mockRequest.getSession().setAttribute("tm_host" , host);
@@ -315,7 +313,7 @@ public class VelocityServletIntegrationTest {
         final ServletOutputStream outputStream = mock(ServletOutputStream.class);
         when(mockResponse.getOutputStream()).thenReturn(outputStream);
 
-        Calendar tomorrow = Calendar.getInstance();
+        final Calendar tomorrow = Calendar.getInstance();
         tomorrow.add(Calendar.DATE, 1);
 
         //setting Time Machine
@@ -323,13 +321,13 @@ public class VelocityServletIntegrationTest {
         mockRequest.getSession().setAttribute("tm_lang", "1");
 
         mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER, systemUser);
-        mockRequest.getSession().setAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION, PageMode.EDIT_MODE);
+        mockRequest.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, PageMode.EDIT_MODE);
 
-        FilterChain chain = Mockito.mock(FilterChain.class);
+        final FilterChain chain = mock(FilterChain.class);
         final TimeMachineFilter timeMachineFilter = new TimeMachineFilter();
         timeMachineFilter.doFilter(mockRequest, mockResponse, chain);
 
-        VelocityServlet velocityServlet = new VelocityServlet();
+        final VelocityServlet velocityServlet = new VelocityServlet();
         velocityServlet.service(mockRequest, mockResponse);
 
         verify(mockResponse, never()).sendError(anyInt());
