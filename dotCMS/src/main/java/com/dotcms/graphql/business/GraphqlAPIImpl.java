@@ -179,7 +179,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
             if(!(field instanceof RowField) && !(field instanceof ColumnField)) {
                 if (field instanceof RelationshipField) {
-                    handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
+                    try {
+                        handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
+                    } catch(Exception e) {
+                        Logger.error(this, "Unable to create relationship field", e);
+                    }
                 } else {
                     builder.field(newFieldDefinition()
                         .name(field.variable())
@@ -205,8 +209,9 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         try {
             relatedContentType = getRelatedContentTypeForField(field, APILocator.systemUser());
         } catch (DotSecurityException | DotDataException e) {
-            throw new DotRuntimeException("Unable to create schema type for Content Type: " + contentType.variable(), e);
+            throw new DotRuntimeException("Unable to create relationship field type for field: " + contentType.variable() + "." + field.variable(), e);
         }
+
 
         Relationship relationship;
 
@@ -342,6 +347,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     private ContentType getRelatedContentTypeForField(final Field field, final User user) throws DotSecurityException, DotDataException {
         final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
             user);
+
+        if(relationship==null) {
+            throw new DotDataException("Relationship with name:"
+                    + field.relationType() + " not found. Field var:" + field.variable() + ". Field ID: " + field.id());
+        }
 
         final String relatedContentTypeId = relationship.getParentStructureInode().equals(field.contentTypeId())
             ? relationship.getChildStructureInode() : relationship.getParentStructureInode();
