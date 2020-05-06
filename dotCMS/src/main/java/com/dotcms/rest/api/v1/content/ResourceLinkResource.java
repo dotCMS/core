@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -28,12 +30,17 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 
 /**
@@ -58,10 +65,11 @@ public class ResourceLinkResource {
     }
 
     /**
-     * Given an inode or identifier this will build get you a Resource Link
+     * Given an inode or identifier this will build get you a Resource Link for a specific field
      * The inode nor identifier, is expected other wise you'll get exception
      * @param request    {@link HttpServletRequest} http request
      * @param response   {@link HttpServletResponse} http response
+     * @param field      {{@link String} field variable name
      * @param inode      {@link String} asset inode
      * @param identifier {@link String} identifier
      * @param language   {@link String} optional parameter
@@ -73,12 +81,15 @@ public class ResourceLinkResource {
     @GET
     @JSONP
     @NoCache
+    @Path("field/{field}")
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findResourceLink(@Context final HttpServletRequest  request,
                                      @Context final HttpServletResponse response,
+                                     @PathParam("field")             final String field,
                                      @QueryParam("inode")            final String inode,
                                      @QueryParam("identifier")       final String identifier,
                                      @DefaultValue("-1") @QueryParam("language") final String language) throws DotStateException, DotSecurityException, DotDataException {
+
         if (!UtilMethods.isSet(inode) && !UtilMethods.isSet(identifier)) {
 
             throw new IllegalArgumentException("Missing required inode/identifier param");
@@ -94,22 +105,13 @@ public class ResourceLinkResource {
                 ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initData, mode);
 
         Logger.debug(this, ()-> "Finding the resource link for the contentlet: " + contentlet.getIdentifier());
-        final ResourceLink link     = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet);
+        final ResourceLink link     = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet, field);
         if(link.isDownloadRestricted()) {
 
             throw new DotSecurityException("The Resource link to the contentlet is restricted.");
         }
 
-        return Response.ok(new ResponseEntityView(ImmutableMap.of("resourceLink",
-                ImmutableMap.of(
-                        "href",        link.getResourceLinkAsString(),
-                        "text",        link.getResourceLinkUriAsString(),
-                        "mimeType",    link.getMimeType(),
-                        "idPath",      link.getIdPath(),
-                        "versionPath", link.getVersionPath()
-                )
-        ))).build();
-
+        return Response.ok(new ResponseEntityView(toMapView(link))).build();
     }
 
     private Contentlet getContentlet(final String inode,
@@ -147,4 +149,71 @@ public class ResourceLinkResource {
         return contentlet;
     }
 
+    /**
+     * Given an inode or identifier this will build get you a Resource Link
+     * This will retrieve all binaries field for the contentlet
+     * The inode nor identifier, is expected other wise you'll get exception
+     * @param request    {@link HttpServletRequest} http request
+     * @param response   {@link HttpServletResponse} http response
+     * @param inode      {@link String} asset inode
+     * @param identifier {@link String} identifier
+     * @param language   {@link String} optional parameter
+     * @return Response
+     * @throws DotDataException
+     * @throws DotStateException
+     * @throws DotSecurityException
+     */
+    @GET
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
+    public Response findResourceLink(@Context final HttpServletRequest  request,
+                                     @Context final HttpServletResponse response,
+                                     @QueryParam("inode")            final String inode,
+                                     @QueryParam("identifier")       final String identifier,
+                                     @DefaultValue("-1") @QueryParam("language") final String language) throws DotStateException, DotSecurityException, DotDataException {
+
+        if (!UtilMethods.isSet(inode) && !UtilMethods.isSet(identifier)) {
+
+            throw new IllegalArgumentException("Missing required inode/identifier param");
+        }
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource).requiredBackendUser(true).requiredFrontendUser(false)
+                        .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user       = initData.getUser();
+        final long languageId = LanguageUtil.getLanguageId(language);
+        final PageMode mode   = PageMode.get(request);
+        final Contentlet contentlet = this.getContentlet(inode, identifier, languageId,
+                ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initData, mode);
+        final Map<String, Object> resourceLinkMap = new TreeMap<>();
+
+        Logger.debug(this, ()-> "Finding the resource links for the contentlet: " + contentlet.getIdentifier());
+
+        for (final Field field : contentlet.getContentType().fields(BinaryField.class)) {
+
+            final String fieldName  = field.variable();
+            final ResourceLink link = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet, fieldName);
+            if (link.isDownloadRestricted()) {
+
+                throw new DotSecurityException("The Resource link to the contentlet is restricted.");
+            }
+
+            resourceLinkMap.put(fieldName, toMapView(link));
+        }
+
+        return Response.ok(new ResponseEntityView(resourceLinkMap)).build();
+    }
+
+    private Map<String, Object> toMapView (final ResourceLink link) {
+
+        return new ImmutableMap.Builder<String, Object>()
+                .put("href",               link.getResourceLinkAsString())
+                .put("text",               link.getResourceLinkUriAsString())
+                .put("mimeType",           link.getMimeType())
+                .put("idPath",             link.getIdPath())
+                .put("versionPath",        link.getVersionPath())
+                .put("configuredImageURL", link.getConfiguredImageURL())
+                .build();
+    }
 }
