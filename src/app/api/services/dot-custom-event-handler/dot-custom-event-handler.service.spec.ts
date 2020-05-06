@@ -1,15 +1,16 @@
-import { DotIframeEventsHandler } from './iframe-events-handler.service';
-import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { DotLoadingIndicatorService } from '../../dot-loading-indicator/dot-loading-indicator.service';
+
+import { DOTTestBed } from '@tests/dot-test-bed';
+import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotMenuService } from '@services/dot-menu.service';
-import { DotContentletEditorService } from '../../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
+import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
-describe('DotIframeEventsHandler', () => {
-    let service: DotIframeEventsHandler;
+describe('DotCustomEventHandlerService', () => {
+    let service: DotCustomEventHandlerService;
     let dotLoadingIndicatorService: DotLoadingIndicatorService;
     let dotRouterService: DotRouterService;
     let dotUiColorsService: DotUiColorsService;
@@ -20,7 +21,7 @@ describe('DotIframeEventsHandler', () => {
     beforeEach(() => {
         injector = DOTTestBed.configureTestingModule({
             providers: [
-                DotIframeEventsHandler,
+                DotCustomEventHandlerService,
                 DotLoadingIndicatorService,
                 DotMenuService,
                 DotPushPublishDialogService
@@ -28,7 +29,7 @@ describe('DotIframeEventsHandler', () => {
             imports: [RouterTestingModule]
         });
 
-        service = injector.get(DotIframeEventsHandler);
+        service = injector.get(DotCustomEventHandlerService);
         dotLoadingIndicatorService = injector.get(DotLoadingIndicatorService);
         dotRouterService = injector.get(DotRouterService);
         dotUiColorsService = injector.get(DotUiColorsService);

@@ -7,7 +7,7 @@ import { DotLoadingIndicatorModule } from './dot-loading-indicator/dot-loading-i
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy';
 import { IframeOverlayService } from './service/iframe-overlay.service';
 import { PIPES } from '../../../../components';
-import { DotIframeEventsHandler } from './iframe-porlet-legacy/services/iframe-events-handler.service';
+import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { RouterModule } from '@angular/router';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 
@@ -22,6 +22,6 @@ import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-o
         RouterModule,
         DotOverlayMaskModule
     ],
-    providers: [IframeOverlayService, DotIframeEventsHandler]
+    providers: [IframeOverlayService, DotCustomEventHandlerService]
 })
 export class IFrameModule {}

@@ -24,6 +24,7 @@ import { DotEditPageStateControllerModule } from './components/dot-edit-page-sta
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
+import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 const routes: Routes = [
     {
@@ -62,7 +63,8 @@ const routes: Routes = [
         DotEditPageService,
         DotPageRenderService,
         DotWorkflowService,
-        IframeOverlayService
+        IframeOverlayService,
+        DotCustomEventHandlerService
     ]
 })
 export class DotEditContentModule {}

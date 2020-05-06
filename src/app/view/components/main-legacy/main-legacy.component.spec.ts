@@ -10,6 +10,7 @@ import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-ifram
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -22,8 +23,7 @@ class MockDotDialogComponent {}
     template: ''
 })
 class MockDotToolbarComponent {
-    @Input()
-    collapsed: boolean;
+    @Input() collapsed: boolean;
 }
 
 @Component({
@@ -31,66 +31,65 @@ class MockDotToolbarComponent {
     template: ''
 })
 class MockDotMainNavComponent {
-    @Input()
-    collapsed: boolean;
+    @Input() collapsed: boolean;
 }
 
 @Component({
     selector: 'dot-message-display',
     template: ''
 })
-class MockDotMessageDisplayComponent {
-}
+class MockDotMessageDisplayComponent {}
 
 @Component({
     selector: 'dot-large-message-display',
     template: ''
 })
-class MockDotLargeMessageDisplayComponent {
-}
+class MockDotLargeMessageDisplayComponent {}
 
 @Component({
     selector: 'dot-push-publish-dialog',
     template: ''
 })
-class MockDotPushPublishDialogComponent {
-}
+class MockDotPushPublishDialogComponent {}
 
 describe('MainComponentLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
     let dotIframeService: DotIframeService;
     let dotRouterService: DotRouterService;
+    let dotCustomEventHandlerService: DotCustomEventHandlerService;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            imports: [
-                RouterTestingModule,
-                DotContentletEditorModule],
-            providers: [
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                DotMenuService
-            ],
-            declarations: [
-                MainComponentLegacyComponent,
-                MockDotDialogComponent,
-                MockDotMainNavComponent,
-                MockDotToolbarComponent,
-                MockDotMessageDisplayComponent,
-                MockDotLargeMessageDisplayComponent,
-                MockDotPushPublishDialogComponent
-            ]
-        }).compileComponents();
-    }));
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                imports: [RouterTestingModule, DotContentletEditorModule],
+                providers: [
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
+                    DotMenuService,
+                    DotCustomEventHandlerService
+                ],
+                declarations: [
+                    MainComponentLegacyComponent,
+                    MockDotDialogComponent,
+                    MockDotMainNavComponent,
+                    MockDotToolbarComponent,
+                    MockDotMessageDisplayComponent,
+                    MockDotLargeMessageDisplayComponent,
+                    MockDotPushPublishDialogComponent
+                ]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(MainComponentLegacyComponent);
         de = fixture.debugElement;
         dotIframeService = de.injector.get(DotIframeService);
         dotRouterService = de.injector.get(DotRouterService);
+        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
         spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
     });
@@ -109,14 +108,26 @@ describe('MainComponentLegacyComponent', () => {
     });
 
     describe('Create Contentlet', () => {
+        let createContentlet: DebugElement;
+        beforeEach(() => {
+            createContentlet = de.query(By.css('dot-create-contentlet'));
+        });
+
         it('should refresh the current portlet data', () => {
             spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
                 id: 'site-browser'
             });
-            const createContentlet: DebugElement = de.query(By.css('dot-create-contentlet'));
+
             createContentlet.triggerEventHandler('close', {});
 
             expect(dotIframeService.reloadData).toHaveBeenCalledWith('site-browser');
+        });
+
+        it('should call dotCustomEventHandlerService on customEvent', () => {
+            spyOn(dotCustomEventHandlerService, 'handle');
+            createContentlet.triggerEventHandler('custom', { data: 'test' });
+
+            expect(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({ data: 'test' });
         });
     });
 });

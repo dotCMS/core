@@ -31,6 +31,7 @@ import {
     PageModelChangeEventType
 } from './services/dot-edit-content-html/models';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -73,6 +74,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private ngZone: NgZone,
         private route: ActivatedRoute,
         private siteService: SiteService,
+        private dotCustomEventHandlerService: DotCustomEventHandlerService,
         public dotEditContentHtmlService: DotEditContentHtmlService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public sanitizer: DomSanitizer,
@@ -207,6 +209,17 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      */
     onCancelToolbar() {
         this.dotRouterService.goToSiteBrowser();
+    }
+
+
+    /**
+     * Handle the custom events emmited by the Edit Contentlet
+     *
+     * @param CustomEvent $event
+     * @memberof DotEditContentComponent
+     */
+    onCustomEvent($event: CustomEvent): void {
+        this.dotCustomEventHandlerService.handle($event);
     }
 
     private isInternallyNavigatingToSamePage(url: string): boolean {

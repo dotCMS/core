@@ -1,20 +1,20 @@
 import { Injectable } from '@angular/core';
-import { DotLoadingIndicatorService } from '../../dot-loading-indicator/dot-loading-indicator.service';
+import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotContentletEditorService } from '../../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotIframeService } from '../../service/dot-iframe/dot-iframe.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
 
 /**
- * Handle events triggered by the iframe in the IframePortletLegacyComponent
+ * Handle Custom events
  *
  * @export
- * @class DotIframeEventsHandler
+ * @class DotCustomEventHandlerService
  */
 @Injectable()
-export class DotIframeEventsHandler {
+export class DotCustomEventHandlerService {
     private readonly handlers;
 
     constructor(
@@ -41,10 +41,10 @@ export class DotIframeEventsHandler {
      * Handle custom events from the iframe portlets
      *
      * @param CustomEvent event
-     * @memberof DotIframeEventsHandler
+     * @memberof DotCustomEventHandlerService
      */
     handle(event: CustomEvent): void {
-        if (this.handlers[event.detail.name]) {
+        if ( event && this.handlers[event.detail.name]) {
             this.handlers[event.detail.name](event);
         }
     }

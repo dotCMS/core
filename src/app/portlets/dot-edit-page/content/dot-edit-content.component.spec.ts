@@ -45,6 +45,7 @@ import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loadi
 import { DotPageMode, DotPageContainer, DotPageContent } from '../shared/models';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
+import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 @Component({
     selector: 'dot-global-message',
@@ -103,6 +104,7 @@ describe('DotEditContentComponent', () => {
     let dotLoadingIndicatorService: DotLoadingIndicatorService;
     let dotContentletEditorService: DotContentletEditorService;
     let dotDialogService: DotAlertConfirmService;
+    let dotCustomEventHandlerService: DotCustomEventHandlerService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -159,6 +161,7 @@ describe('DotEditContentComponent', () => {
                 DotEditPageService,
                 DotGlobalMessageService,
                 DotPageStateService,
+                DotCustomEventHandlerService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -211,6 +214,7 @@ describe('DotEditContentComponent', () => {
         dotLoadingIndicatorService = de.injector.get(DotLoadingIndicatorService);
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
         dotDialogService = de.injector.get(DotAlertConfirmService);
+        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
 
         spyOn(dotPageStateService, 'reload');
 
@@ -327,6 +331,13 @@ describe('DotEditContentComponent', () => {
 
             it('should have', () => {
                 expect(dotEditContentlet).not.toBeNull();
+            });
+
+            it('should call dotCustomEventHandlerService on customEvent', () => {
+                spyOn(dotCustomEventHandlerService, 'handle');
+                dotEditContentlet.triggerEventHandler('custom', {data: 'test'});
+
+                expect(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({data: 'test'});
             });
         });
 

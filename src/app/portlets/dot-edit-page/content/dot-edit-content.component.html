@@ -5,7 +5,7 @@
 ></dot-form-selector>
 
 <dot-add-contentlet></dot-add-contentlet>
-<dot-edit-contentlet></dot-edit-contentlet>
+<dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
 <dot-reorder-menu [url]="reorderMenuUrl" (close)="onCloseReorderDialog()"></dot-reorder-menu>
 
 <dot-loading-indicator fullscreen="true"></dot-loading-indicator>

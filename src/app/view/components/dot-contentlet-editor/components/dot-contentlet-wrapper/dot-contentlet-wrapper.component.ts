@@ -117,10 +117,10 @@ export class DotContentletWrapperComponent implements OnInit {
     /**
      * Handle the custome events from the DotDialogIframe component
      *
-     * @param any $event
+     * @param CustomEvent $event
      * @memberof DotAddContentletComponent
      */
-    onCustomEvent($event) {
+    onCustomEvent($event: CustomEvent): void {
         if (this.customEventsHandler[$event.detail.name]) {
             this.customEventsHandler[$event.detail.name]($event);
         }

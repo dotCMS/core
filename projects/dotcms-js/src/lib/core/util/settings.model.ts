@@ -1,5 +1,5 @@
 /**
- * Setting Object used by other services and components
+ * Setting Object used by other dot-custom-event-handler and components
  */
 export class DotSettings {
     site: string;

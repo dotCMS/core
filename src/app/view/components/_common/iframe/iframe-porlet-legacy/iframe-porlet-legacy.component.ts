@@ -9,8 +9,8 @@ import { SiteService, LoggerService } from 'dotcms-js';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotIframeEventsHandler } from './services/iframe-events-handler.service';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 @Component({
     selector: 'dot-iframe-porlet',
@@ -27,7 +27,7 @@ export class IframePortletLegacyComponent implements OnInit {
         private dotMenuService: DotMenuService,
         private dotRouterService: DotRouterService,
         private route: ActivatedRoute,
-        private dotIframeEventsHandler: DotIframeEventsHandler,
+        private dotCustomEventHandlerService: DotCustomEventHandlerService,
         public loggerService: LoggerService,
         public siteService: SiteService
     ) {}
@@ -50,11 +50,11 @@ export class IframePortletLegacyComponent implements OnInit {
     /**
      * Handle the custom events emmited by the iframe
      *
-     * @param any $event
+     * @param CustomEvent $event
      * @memberof IframePortletLegacyComponent
      */
     onCustomEvent($event: CustomEvent): void {
-        this.dotIframeEventsHandler.handle($event);
+        this.dotCustomEventHandlerService.handle($event);
     }
 
     /**
@@ -74,10 +74,7 @@ export class IframePortletLegacyComponent implements OnInit {
 
     private setIframeSrc(): void {
         // We use the query param to load a page in edit mode in the iframe
-        const queryUrl$ = this.route.queryParams.pipe(
-            pluck('url'),
-            map((url: string) => url)
-        );
+        const queryUrl$ = this.route.queryParams.pipe(pluck('url'), map((url: string) => url));
 
         queryUrl$.subscribe((queryUrl: string) => {
             if (queryUrl) {
@@ -89,10 +86,7 @@ export class IframePortletLegacyComponent implements OnInit {
     }
 
     private setPortletUrl(): void {
-        const portletId$ = this.route.params.pipe(
-            pluck('id'),
-            map((id: string) => id)
-        );
+        const portletId$ = this.route.params.pipe(pluck('id'), map((id: string) => id));
 
         portletId$
             .pipe(
@@ -101,10 +95,11 @@ export class IframePortletLegacyComponent implements OnInit {
                         map((urlSegment: UrlSegment[]) => urlSegment[0].path)
                     )
                 ),
-                mergeMap(([id, url]) =>
-                    url === 'add'
-                        ? this.contentletService.getUrlById(id)
-                        : this.dotMenuService.getUrlById(id)
+                mergeMap(
+                    ([id, url]) =>
+                        url === 'add'
+                            ? this.contentletService.getUrlById(id)
+                            : this.dotMenuService.getUrlById(id)
                 )
             )
             .subscribe((url: string) => {

@@ -47,6 +47,7 @@ describe('DotCreateContentletComponent', () => {
         dotCreateContentletWrapper = de.query(By.css('dot-contentlet-wrapper'));
         dotCreateContentletWrapperComponent = dotCreateContentletWrapper.componentInstance;
         spyOn(component.close, 'emit');
+        spyOn(component.custom, 'emit');
     });
 
     describe('default', () => {
@@ -57,6 +58,11 @@ describe('DotCreateContentletComponent', () => {
         it('should emit close', () => {
             dotCreateContentletWrapper.triggerEventHandler('close', {});
             expect(component.close.emit).toHaveBeenCalledTimes(1);
+        });
+
+        it('should emit custom', () => {
+            dotCreateContentletWrapper.triggerEventHandler('custom', {});
+            expect(component.custom.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should have url in null', () => {
