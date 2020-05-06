@@ -97,9 +97,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         final String esSortBy    = ("name".equals(browserQuery.sortBy) ? "title" : browserQuery.sortBy)
                 + (browserQuery.sortByDesc ? " desc" : StringPool.BLANK);
 
-        final int searchOffset = 0; //browserQuery.offset > 0? browserQuery.offset - countItems.getValue(): browserQuery.offset;
         final PaginatedArrayList<Contentlet> contentlets = (PaginatedArrayList)APILocator.getContentletAPI().search(luceneQuery,
-                browserQuery.maxResults + browserQuery.offset, searchOffset>0? searchOffset:0, esSortBy, browserQuery.user, true);
+                browserQuery.maxResults + browserQuery.offset, 0, esSortBy, browserQuery.user, true);
 
         for (final Contentlet contentlet : contentlets) {
 
