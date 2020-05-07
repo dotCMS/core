@@ -23,7 +23,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -1471,5 +1470,4 @@ public class HTMLPageAssetRenderedTest {
                         PermissionAPI.PERMISSION_READ),
                 contentlet, APILocator.systemUser(), false);
     }
-
 }
