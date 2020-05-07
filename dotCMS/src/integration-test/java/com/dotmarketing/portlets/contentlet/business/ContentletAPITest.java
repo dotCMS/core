@@ -6145,7 +6145,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             //verify that the content type was unlinked from the deleted page
             type = contentTypeAPI.find(type.id());
             assertEquals(htmlPage.getIdentifier(), type.detailPage());
-            assertEquals("mapPatternForTesting", type.urlMapPattern());
+            assertEquals("/mapPatternForTesting", type.urlMapPattern());
         } finally {
             if (type != null){
                 contentTypeAPI.delete(type);
