@@ -1,6 +1,7 @@
 package com.dotcms.rest.exception.mapper;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.util.UtilMethods;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -136,7 +137,7 @@ public final class ExceptionMapperUtil {
 
         return Response
                 .status(status)
-                .entity(entity)
+                .entity(map("message", message))
                 .header("error-message", message)
                 .type(MediaType.APPLICATION_JSON)
                 .build();
