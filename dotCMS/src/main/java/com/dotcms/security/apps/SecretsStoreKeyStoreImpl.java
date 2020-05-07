@@ -15,6 +15,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -28,6 +29,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -35,6 +37,7 @@ import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import org.apache.commons.lang.time.FastDateFormat;
 
 
 /**
@@ -422,4 +425,22 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         cache.flushSecret(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void backupAndRemoveKeyStore() throws IOException {
+        final File secretStoreFile = new File(secretsKeyStorePath);
+        if (!secretStoreFile.exists()) {
+            final String error = String.format("KeyStore file `%s` does NOT exist therefore it can not be backed-up. ",secretsKeyStorePath);
+            Logger.warn(SecretsStoreKeyStoreImpl.class, error);
+            throw new DotRuntimeException(error);
+        }
+        final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+        final String name = secretStoreFile.getName();
+        final File secretStoreFileBak = new File(secretStoreFile.getParent(), datetimeFormat.format(new Date()) + "-" + name );
+        Files.copy(secretStoreFile.toPath(), secretStoreFileBak.toPath());
+        secretStoreFile.delete();
+
+        Logger.info(SecretsStoreKeyStoreImpl.class, ()->String.format("KeyStore %s has been removed and backed up", secretsKeyStorePath));
+    }
 }

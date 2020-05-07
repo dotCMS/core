@@ -3,7 +3,8 @@ package com.dotcms.system.event.local.business;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
-import com.dotcms.publishing.listener.SecurityKeyResetEventListener;
+import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
+import com.dotcms.security.apps.AppsKeyResetEventListener;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
 import com.dotmarketing.beans.Host;
@@ -36,7 +37,9 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
         APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class, UnassignedWorkflowContentletCheckinListener.getInstance());
 
-        APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, SecurityKeyResetEventListener.INSTANCE.get());
+        APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, PushPublishKeyResetEventListener.INSTANCE.get());
+
+        APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, AppsKeyResetEventListener.INSTANCE.get());
 
     }
 

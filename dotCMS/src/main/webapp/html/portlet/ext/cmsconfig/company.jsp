@@ -48,7 +48,7 @@ boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUse
 
 		regenerateKey(function (value) {
 			if(value){
-				dojo.byId("key-digest").value = value;
+				dojo.byId("key-digest").innerHTML = value;
 				dijit.byId("regenerateKeyDialog").hide();
 			}
 		});
@@ -86,7 +86,9 @@ boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUse
 
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "cluster-id") %></dt>
-					<dd><input dojoType="dijit.form.TextBox" readonly="readonly" id="clusterId" name="clusterId" size="20" type="text" value="<%= ConfigurationHelper.getClusterId() %>" style="width: 250px"></dd>
+					<dd>
+						 <span><%= ConfigurationHelper.getClusterId() %></span>
+					</dd>
 				</dl>
 
 				<dl>
@@ -295,19 +297,19 @@ boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUse
 	                    </select>
 	                </dd>
 	            </dl>
+				<% if(userIsAdmin){  %>
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "key-digest") %></dt>
 					<dd>
 						<div class="inline-form">
-							<input id="key-digest" readonly="readonly" dojoType="dijit.form.TextBox" name="companyKeyDigest" size="50" type="text" value="<%= company.getKeyDigest() %>" style="width: 250px">
-							<% if(userIsAdmin){  %>
-								<button id="regenKeyButton" dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onclick="regenerateKeyProxy()" >
-									<%= LanguageUtil.get(pageContext, "key-digest-regenerate") %>
-								</button>
-							<% } %>
+							<span id="key-digest"><%= company.getKeyDigest() %></span> &nbsp; &nbsp;
+							<button id="regenKeyButton" dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onclick="regenerateKeyProxy()" >
+								<%= LanguageUtil.get(pageContext, "key-digest-regenerate") %>
+							</button>
 						</div>
 					</dd>
 				</dl>
+				<% } %>
 	        </div>
 	    </td>
 	</tr>

@@ -8,7 +8,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.Encryptor;
 import java.security.Key;
 import java.util.List;
@@ -17,16 +16,15 @@ import java.util.List;
  * Once registered this listener takes care or recreating the Push-Publish Auth-Keys
  * First decrypting the old content using the original Key then re-inserting it using the new Key.
  */
-public class SecurityKeyResetEventListener implements EventSubscriber<CompanyKeyResetEvent> {
+public class PushPublishKeyResetEventListener implements EventSubscriber<CompanyKeyResetEvent> {
 
     private final PublishingEndPointAPI publishingEndPointAPI;
 
-    @VisibleForTesting
-    SecurityKeyResetEventListener(final PublishingEndPointAPI publishingEndPointAPI) {
+    private PushPublishKeyResetEventListener(final PublishingEndPointAPI publishingEndPointAPI) {
         this.publishingEndPointAPI = publishingEndPointAPI;
     }
 
-    private SecurityKeyResetEventListener() {
+    private PushPublishKeyResetEventListener() {
        this(APILocator.getPublisherEndPointAPI());
     }
 
@@ -43,20 +41,20 @@ public class SecurityKeyResetEventListener implements EventSubscriber<CompanyKey
                     final String encryptedKey = Encryptor.encrypt(newKey,authKey);
                     publishingEndPoint.setAuthKey(new StringBuilder(encryptedKey));
                 } catch (Exception e) {
-                    Logger.error(SecurityKeyResetEventListener.class, String.format("Failed updating endpoint with id `%s`", publishingEndPoint.getId()), e);
+                    Logger.error(PushPublishKeyResetEventListener.class, String.format("Failed updating endpoint with id `%s`", publishingEndPoint.getId()), e);
                 }
             }
         } catch (DotDataException e) {
-            Logger.error(SecurityKeyResetEventListener.class, "Error gathering data to update push-publish endpoints.", e);
+            Logger.error(PushPublishKeyResetEventListener.class, "Error gathering data to update push-publish endpoints.", e);
             throw new DotRuntimeException(e);
         }
     }
 
     public enum INSTANCE {
         SINGLETON;
-        final SecurityKeyResetEventListener provider = new SecurityKeyResetEventListener();
+        final PushPublishKeyResetEventListener provider = new PushPublishKeyResetEventListener();
 
-        public static SecurityKeyResetEventListener get() {
+        public static PushPublishKeyResetEventListener get() {
             return SINGLETON.provider;
         }
 

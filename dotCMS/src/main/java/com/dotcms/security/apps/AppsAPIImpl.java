@@ -4,6 +4,7 @@ import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.google.common.collect.ImmutableList.of;
 import static java.util.Collections.emptyMap;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -25,7 +26,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
@@ -786,6 +786,18 @@ public class AppsAPIImpl implements AppsAPI {
                 Logger.info(AppsAPIImpl.class, () -> String.format(" Secret with `%s` has been removed. ", secretKey));
             }
         }
+    }
+
+    /**
+     * On the event of a Company Key reset. We need to react and handle it as best we can
+     * @param user
+     * @throws DotDataException
+     */
+    @Override
+    public void resetSecrets(final User user)
+            throws DotDataException, IOException {
+       secretsStore.backupAndRemoveKeyStore();
+       appsCache.clearCache();
     }
 
 }

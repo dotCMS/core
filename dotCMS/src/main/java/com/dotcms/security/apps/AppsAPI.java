@@ -186,6 +186,15 @@ public interface AppsAPI {
     Map<String, List<String>> computeSecretWarnings(final AppDescriptor appDescriptor, final Host site, final User user)
             throws DotSecurityException, DotDataException;
 
+    /**
+     *
+     * @param user
+     * @throws DotDataException
+     * @throws IOException
+     */
+    void resetSecrets(User user)
+                    throws DotDataException, IOException;
+
 
     enum INSTANCE {
         INSTANCE;
