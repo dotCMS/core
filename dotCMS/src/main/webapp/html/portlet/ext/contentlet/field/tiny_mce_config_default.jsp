@@ -5,9 +5,7 @@
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
-
 <%@page import="com.liferay.portal.model.User"%>
-
 <% 
 
 String cssPath = Config.getStringProperty("WYSIWYG_CSS", "/application/wysiwyg/wysiwyg.css");
@@ -16,18 +14,13 @@ if(!CMSUrlUtil.getInstance().amISomething(cssPath, host, WebAPILocator.getLangua
   cssPath=null;
 }
 
-
 %>
-
-
-
-
 var tinyMCEProps = {	
-			theme: "modern",
+			theme: "silver",
 			selector: "textarea",
-    		menubar: 'false',
+            menubar: 'false',
     		statusbar: false,
-    		resize: "true",
+            resize: "true",
     		plugins: [
         		"advlist anchor autolink lists link image charmap print  hr anchor ",
         		"searchreplace wordcount visualchars fullscreen ",

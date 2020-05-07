@@ -32,7 +32,6 @@ if(clipboard ==null){
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
 <style>
-
 #imageContainer{
 	width:520px;
 	height:300px;
@@ -52,9 +51,7 @@ if(clipboard ==null){
 	float:left;
 }
 .thumbContainer:hover{
-
 	border:2px dotted blue;
-
 }
 .thumbInfo{
 	text-align:right;
@@ -71,8 +68,6 @@ if(clipboard ==null){
 <body>
 <h2><%=LanguageUtil.get(pageContext, "Clipboard") %></h2>
 <%=LanguageUtil.get(pageContext, "Select-an-image-below") %>
-
-
 
 <div id="imageContainer">
 
@@ -103,14 +98,7 @@ if(clipboard ==null){
 					thumbUrl+="?";
 				}
 				thumbUrl+= "&filter=Thumbnail&thumbnail_w=150&thumbnail_h=150";
-			}
-			
-			
-			
-			
-			
-			
-			
+			}			
 			%>
 			<div class="thumbContainer" onclick="DotImageClipboard.insertContent('<%=url%>')">
 				<img id="clipThumb<%=i %>" src="<%=thumbUrl %>" width="150" height="150"/>
@@ -125,16 +113,14 @@ if(clipboard ==null){
 	function getDim(x){
 		var ele = document.getElementById("clipThumbInfo" + x);
 		ele.innerHTML = eval("img" + x + ".width") + "x" + eval("img" + x + ".height")
-		
-		
 	}
 
-	<%for(int i=0;i<clipboard.size();i++){ %>
-		<%String url = clipboard.get(i); %>
-		var img<%=i%> = new Image();;
-		img<%=i%>.onload =function(){getDim(<%=i%>)};
-		img<%=i%>.src="<%=url%>";
-	<%}%>
+<%for(int i=0;i<clipboard.size();i++){ %>
+	<%String url = clipboard.get(i); %>
+	var img<%=i%> = new Image();;
+	img<%=i%>.onload =function(){getDim(<%=i%>)};
+	img<%=i%>.src="<%=url%>";
+<%}%>
 </script>
 	
 	

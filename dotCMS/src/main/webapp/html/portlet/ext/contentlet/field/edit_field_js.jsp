@@ -40,14 +40,14 @@
 		tinyMCE_GZ.init({
 			plugins : 'style,layer,table,save,advhr,advimage,advlink,emotions,iespell,insertdatetime,preview,media,searchreplace,print,contextmenu',
 			themes : 'simple,advanced',
-			languages : '<%= usera.getLanguageId().substring(0,2) %>',
+			language : '<%= usera.getLanguageId().substring(0,2) %>',
 			disk_cache : true,
 			debug : false
 		});
 	}else{
 		tinymce.init({
 			selector: "textarea#"+textAreaId,
-    		theme: "modern",
+    		theme: "silver",
     		menubar:false,
     	    statusbar: false,
     		plugins: [
@@ -56,9 +56,9 @@
         		"insertdatetime media nonbreaking save table contextmenu directionality",
         		"emoticons template paste textcolor colorpicker validation textpattern dotimageclipboard"
     		],
-			languages : '<%= usera.getLanguageId().substring(0,2) %>',
+			language : '<%= usera.getLanguageId().substring(0,2) %>',
 			toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
-    		toolbar2: "print preview | validation media | forecolor dotimageclipboard backcolor emoticons",
+    	toolbar2: "print preview | validation media | forecolor dotimageclipboard backcolor emoticons",
     		image_advtab: true,
     		file_picker_callback: function(callback, value, meta) {
     			cmsFileBrowser(callback, value, meta);
@@ -377,6 +377,7 @@ var cmsfile=null;
 			}
 			//Enabling the wysiwyg
 			try {
+				console.log(tinyConf)
 			  // Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,

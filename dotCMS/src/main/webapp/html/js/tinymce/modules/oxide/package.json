@@ -1,0 +1,30 @@
+{
+  "name": "@tinymce/oxide",
+  "version": "1.2.3",
+  "description": "TinyMCE 5 Oxide skin",
+  "scripts": {
+    "test": "echo 'No tests'",
+    "build": "gulp build",
+    "start": "gulp watch",
+    "prepublishOnly": "yarn ci",
+    "ci": "gulp build --no-color"
+  },
+  "keywords": [
+    "TinyMCE"
+  ],
+  "author": "Ephox Corporation",
+  "license": "LGPL-2.1",
+  "files": [
+    "build/skins/content/**/*.css",
+    "build/skins/content/**/*.css.map",
+    "build/skins/ui/**/*.css",
+    "build/skins/ui/**/*.css.map",
+    "build/skins/ui/**/*.woff",
+    "src/less/**/*",
+    "src/svg/**/*",
+    "src/fonts/**/*",
+    "src/text/**/*",
+    "README.md",
+    "LICENSE.txt"
+  ]
+}

@@ -1,0 +1,53 @@
+import { Option, Strings, Type } from '@ephox/katamari';
+import { Element } from '@ephox/sugar';
+import 'tinymce';
+import * as Loader from '../loader/Loader';
+import { setTinymceBaseUrl } from '../loader/Urls';
+
+const setupBaseUrl = (tinymce: any, settings: Record<string, any>) => {
+  if (settings.base_url) {
+    setTinymceBaseUrl(tinymce, settings.base_url);
+  } else if (!Type.isString(tinymce.baseURL) || !Strings.contains(tinymce.baseURL, '/project/')) {
+    setTinymceBaseUrl(tinymce, `/project/node_modules/tinymce`);
+  }
+};
+
+const setupLight = (callback: Loader.RunCallback, settings: Record<string, any>, success: Loader.SuccessCallback, failure: Loader.FailureCallback) => {
+  const nuSettings: Record<string, any> = {
+    toolbar: '',
+    menubar: false,
+    statusbar: false,
+    ...settings
+  };
+
+  Loader.setup({
+    preInit: setupBaseUrl,
+    run: callback,
+    success,
+    failure
+  }, nuSettings, Option.none());
+};
+
+const setup = (callback: Loader.RunCallback, settings: Record<string, any>, success: Loader.SuccessCallback, failure: Loader.FailureCallback) => {
+  Loader.setup({
+    preInit: setupBaseUrl,
+    run: callback,
+    success,
+    failure
+  }, settings, Option.none());
+};
+
+const setupFromElement = (callback: Loader.RunCallback, settings: Record<string, any>, element: Element, success: Loader.SuccessCallback, failure: Loader.FailureCallback) => {
+  Loader.setup({
+    preInit: setupBaseUrl,
+    run: callback,
+    success,
+    failure
+  }, settings, Option.some(element));
+};
+
+export {
+  setup,
+  setupLight,
+  setupFromElement
+};
