@@ -23,6 +23,9 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="java.util.List"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotmarketing.portlets.workflows.model.MultiSelectionWorkflowActionletParameter" %>
+<%@ page import="com.dotmarketing.portlets.workflows.model.MultiKeyValue" %>
+<%@ page import="java.util.Collection" %>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -53,18 +56,35 @@
 		</tr>
 	
 			
-			<%for(WorkflowActionletParameter x : params){ %>
-				<%WorkflowActionClassParameter enteredParam = enteredParams.get(x.getKey());
+			<%for(WorkflowActionletParameter workflowActionletParameter : params){ %>
+				<%WorkflowActionClassParameter enteredParam = enteredParams.get(workflowActionletParameter.getKey());
 				enteredParam = (enteredParam == null) ? new WorkflowActionClassParameter() : enteredParam;
-				String value = (enteredParam.getValue() != null) ? enteredParam.getValue() : x.getDefaultValue();%>
+				String value = (enteredParam.getValue() != null) ? enteredParam.getValue() : workflowActionletParameter.getDefaultValue();%>
 				
-
+				<%if (workflowActionletParameter instanceof MultiSelectionWorkflowActionletParameter) { %>
 				<tr>
-					<td nowrap="true" valign="top" style="text-align: right;"><%if(x.isRequired()){ %><span class="required"></span><%} %><%=x.getDisplayName() %>:</td>
+					<td nowrap="true" valign="top" style="text-align: right;"><%if(workflowActionletParameter.isRequired()){ %><span class="required"></span><%} %><%=workflowActionletParameter.getDisplayName() %>:</td>
 					<td>
-						<textarea class="wfParamTextArea" dojoType="ValidationTextarea" required="<%=x.isRequired() %>" id="acp-<%=x.getKey() %>"  name="acp-<%=x.getKey() %>" ><%=UtilMethods.webifyString(value) %></textarea>
+						<select  id="acp-<%=workflowActionletParameter.getKey() %>"  name="acp-<%=workflowActionletParameter.getKey() %>">
+							<%
+								for(MultiKeyValue multiKeyValue : ((MultiSelectionWorkflowActionletParameter) workflowActionletParameter).getMultiValues()) { %>
+
+							<option value="<%=multiKeyValue.getKey()%>" <%= multiKeyValue.getKey().equals(value)? "selected":""%> >
+								<%=multiKeyValue.getValue()%>
+							</option>
+
+							<% } %>
+						</select>
 					</td>
 				</tr>
+				<% } else { %>
+				<tr>
+					<td nowrap="true" valign="top" style="text-align: right;"><%if(workflowActionletParameter.isRequired()){ %><span class="required"></span><%} %><%=workflowActionletParameter.getDisplayName() %>:</td>
+					<td>
+						<textarea class="wfParamTextArea" dojoType="ValidationTextarea" required="<%=workflowActionletParameter.isRequired() %>" id="acp-<%=workflowActionletParameter.getKey() %>"  name="acp-<%=workflowActionletParameter.getKey() %>" ><%=UtilMethods.webifyString(value) %></textarea>
+					</td>
+				</tr>
+				<% } %>
 			<%}%>
 	
 	
