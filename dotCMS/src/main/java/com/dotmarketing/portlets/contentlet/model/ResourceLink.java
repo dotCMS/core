@@ -12,7 +12,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformer;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -22,6 +21,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.lang.text.StrBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -196,21 +196,23 @@ public class ResourceLink {
             final String extension = UtilMethods.getFileExtension(fileName);
             final String shortyId  = contentlet.getIdentifier().replace(StringPool.DASH, StringPool.BLANK).substring(0, 10);
 
-            return pattern
-                    .replaceAll("\\{name\\}",        fileName)
-                    .replaceAll("\\{fileName\\}",    fileName)
-                    .replaceAll("\\{path\\}",        path)
-                    .replaceAll("\\{extension\\}",   extension)
-                    .replaceAll("\\{languageId\\}",  String.valueOf(contentlet.getLanguageId()))
-                    .replaceAll("\\{hostname\\}",    host.getHostname())
-                    .replaceAll("\\{hostName\\}",    host.getHostname())
-                    .replaceAll("\\{inode\\}",       contentlet.getInode())
-                    .replaceAll("\\{hostId\\}",      host.getIdentifier())
-                    .replaceAll("\\{identifier\\}",  contentlet.getIdentifier())
-                    .replaceAll("\\{id\\}",          contentlet.getIdentifier())
-                    .replaceAll("\\{shortyInode\\}", contentlet.getInode().replace(StringPool.DASH, StringPool.BLANK).substring(0, 10))
-                    .replaceAll("\\{shortyId\\}",    shortyId)
-                    .replaceAll("\\{shortyIdentifier\\}",    shortyId);
+            final StrBuilder    patternBuilder = new StrBuilder(pattern);
+
+            return patternBuilder
+                    .replaceAll("{name}",        fileName)
+                    .replaceAll("{fileName}",    fileName)
+                    .replaceAll("{path}",        path)
+                    .replaceAll("{extension}",   extension)
+                    .replaceAll("{languageId}",  String.valueOf(contentlet.getLanguageId()))
+                    .replaceAll("{hostname}",    host.getHostname())
+                    .replaceAll("{hostName}",    host.getHostname())
+                    .replaceAll("{inode}",       contentlet.getInode())
+                    .replaceAll("{hostId}",      host.getIdentifier())
+                    .replaceAll("{identifier}",  contentlet.getIdentifier())
+                    .replaceAll("{id}",          contentlet.getIdentifier())
+                    .replaceAll("{shortyInode}", contentlet.getInode().replace(StringPool.DASH, StringPool.BLANK).substring(0, 10))
+                    .replaceAll("{shortyId}",    shortyId)
+                    .replaceAll("{shortyIdentifier}",    shortyId).toString();
         }
 
         Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
