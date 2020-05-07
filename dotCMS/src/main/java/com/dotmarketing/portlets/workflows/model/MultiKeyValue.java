@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.workflows.model;
 
+/**
+ * A multi key is just a single abstraction of a key value for a {@link MultiValueProvider}
+ * @author jsanca
+ */
 public class MultiKeyValue {
 
     private final String key;

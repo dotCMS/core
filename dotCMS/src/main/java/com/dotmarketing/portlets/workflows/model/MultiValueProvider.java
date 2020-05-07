@@ -6,6 +6,7 @@ import java.util.Collection;
  * This interface basically provides a collection of values for a {@link MultiSelectionWorkflowActionletParameter}
  * @author jsanca
  */
+@FunctionalInterface
 public interface MultiValueProvider {
 
     /**
