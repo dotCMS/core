@@ -330,12 +330,24 @@ var cmsfile=null;
         document.dispatchEvent(customEvent)
     }
 
-    function insertDropZoneAsset(tinymceInstance, textAreaId) {
+  function insertDropZoneAsset(activeEditor, textAreaId) {
     	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
         dropZone.addEventListener('uploadComplete', async (event) => {
-        	const dotAsset = await event.detail[0].json();
-        	const asset  = `<img src="${window.location.origin}/dA/${dotAsset.entity.inode}" alt="${dotAsset.entity.titleImage}" />`;
-        	tinymceInstance.get(textAreaId).execCommand('mceInsertContent', false, asset);
+					// EDITOR
+						
+					const dotAsset = await event.detail[0].json();
+					console.log({dotAsset})
+					const asset = `
+						<img 
+							src="${window.location.origin}/dA/${dotAsset.entity.inode}" 
+							alt="${dotAsset.entity.titleImage}"
+							data-field-name="${textAreaId}"
+							data-inode="${dotAsset.entity.inode}"
+							data-identifier="${dotAsset.entity.identifier}"
+							data-saveas="${dotAsset.entity.title}"
+						/>
+						`;
+        	activeEditor.get(textAreaId).execCommand('mceInsertContent', false, asset);
         })
     }
 
@@ -377,8 +389,7 @@ var cmsfile=null;
 			}
 			//Enabling the wysiwyg
 			try {
-				console.log(tinyConf)
-			  // Init instance callback to fix the pointer-events issue.
+				// Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,
 			    init_instance_callback: (editor) => {
@@ -392,7 +403,56 @@ var cmsfile=null;
 			        dropZone.style.pointerEvents = "none";
 			        return false;
 			      });
-			    },
+					},
+					setup: (editor) => {
+
+						editor.ui.registry.addButton('doteditimage', {
+							icon: "image",
+							text: 'Edit Image',
+							onAction: function (api) {
+								// EDITOR
+								const imgNode = editor.selection.getNode();
+									
+								const attrs = {
+									fieldName: imgNode.dataset.fieldName,
+									inode: imgNode.dataset.inode,
+									identifier: imgNode.dataset.identifier,
+									saveAs: imgNode.dataset.saveas
+								}
+
+								const ImageEditor = new dotcms.dijit.image.ImageEditor({
+									editImageText: "",
+									tempId: attrs.fieldName,
+									fieldName: attrs.fieldName,
+									binaryFieldId: attrs.identifier,
+									fieldContentletId: attrs.identifier,
+									saveAsFileName: attrs.saveAs,
+									inode: attrs.inode,
+									isWysiwyg: true
+								});
+
+								ImageEditor.execute()
+							}
+						});
+					
+						editor.ui.registry.addContextToolbar('imagealignment', {
+							predicate: function (node) {
+								return node.nodeName.toLowerCase() === 'img'
+							},
+							items: 'alignleft aligncenter alignright | doteditimage',
+							position: 'node',
+							scope: 'node'
+						});
+
+						editor.ui.registry.addContextToolbar('textselection', {
+							predicate: function (node) {
+								return !editor.selection.isCollapsed();
+							},
+							items: 'bold | italic | underline | blockquote',
+							position: 'selection',
+							scope: 'node'
+						});
+					}
 			  };
 			  var wellTinyMCE = new tinymce.Editor(
 			    textAreaId,

@@ -239,6 +239,19 @@
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
                 <div class="wysiwyg-container">
                   <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
+                
+                    <%-- EDITOR --%>
+                   <%-- <div dojoType="dotcms.dijit.image.ImageEditor"
+                        editImageText=""
+                        inode="0"
+                        fieldName="<%=field.getVelocityVarName()%>"
+                        binaryFieldId="identifier"
+                        fieldContentletId="identifier"
+                        saveAsFileName="file_name"
+                        class="edit-image<%=field.getVelocityVarName()%>"
+                    >
+                   </div> --%>
+
                   <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
                           class="editWYSIWYGField aceText aceTall" 
                           name="<%=field.getFieldContentlet()%>"
@@ -423,9 +436,6 @@
 
         <%
             //END FILE Field
-
-
-            
             
             //BINARY kind of field rendering  http://jira.dotmarketing.net/browse/DOTCMS-1073
         } else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
@@ -486,9 +496,6 @@
            </div>
        </div>
 
-
-
-
     <%}else{ %>
        <div id="thumbnailParent<%=field.getVelocityVarName()%>">
            <div dojoType="dotcms.dijit.image.ImageEditor"
@@ -504,20 +511,14 @@
        </div>
     <%} %>
 
-
-
     <%}else{%>
-
-            <% if(UtilMethods.isSet(resourceLink) && !resourceLink.isDownloadRestricted()){ %>
-
-                <div id="<%=field.getVelocityVarName()%>ThumbnailSliderWrapper">
-                    <a class="bg" href="javascript: serveFile('','<%=binInode%>','<%=field.getVelocityVarName()%>');"
-                       id="<%=field.getVelocityVarName()%>BinaryFile"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download"))%></a>
-                    <br/>
-                </div>
-
-            <% } %>
-
+        <% if(UtilMethods.isSet(resourceLink) && !resourceLink.isDownloadRestricted()){ %>
+            <div id="<%=field.getVelocityVarName()%>ThumbnailSliderWrapper">
+                <a class="bg" href="javascript: serveFile('','<%=binInode%>','<%=field.getVelocityVarName()%>');"
+                    id="<%=field.getVelocityVarName()%>BinaryFile"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download"))%></a>
+                <br/>
+            </div>
+        <% } %>
     <%}
 
     }%>
