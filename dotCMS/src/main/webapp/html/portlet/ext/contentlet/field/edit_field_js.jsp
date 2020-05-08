@@ -333,15 +333,13 @@ var cmsfile=null;
   function insertDropZoneAsset(activeEditor, textAreaId) {
     	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
         dropZone.addEventListener('uploadComplete', async (event) => {
-					// EDITOR
-						
+					// EDITOR					
 					const dotAsset = await event.detail[0].json();
-					console.log({dotAsset})
 					const asset = `
 						<img 
-							src="${window.location.origin}/dA/${dotAsset.entity.inode}" 
+							src="/contentAsset/image/${dotAsset.entity.inode}/${dotAsset.entity.titleImage}" 
 							alt="${dotAsset.entity.titleImage}"
-							data-field-name="${textAreaId}"
+							data-field-name="${dotAsset.entity.titleImage}"
 							data-inode="${dotAsset.entity.inode}"
 							data-identifier="${dotAsset.entity.identifier}"
 							data-saveas="${dotAsset.entity.title}"
@@ -405,30 +403,29 @@ var cmsfile=null;
 			      });
 					},
 					setup: (editor) => {
-
 						editor.ui.registry.addButton('doteditimage', {
 							icon: "image",
 							text: 'Edit Image',
 							onAction: function (api) {
 								// EDITOR
 								const imgNode = editor.selection.getNode();
-									
+
 								const attrs = {
 									fieldName: imgNode.dataset.fieldName,
 									inode: imgNode.dataset.inode,
 									identifier: imgNode.dataset.identifier,
-									saveAs: imgNode.dataset.saveas
+									saveAs: imgNode.dataset.saveas,
 								}
 
 								const ImageEditor = new dotcms.dijit.image.ImageEditor({
 									editImageText: "",
-									tempId: attrs.fieldName,
+									tempId: attrs.inode,
 									fieldName: attrs.fieldName,
 									binaryFieldId: attrs.identifier,
 									fieldContentletId: attrs.identifier,
 									saveAsFileName: attrs.saveAs,
 									inode: attrs.inode,
-									isWysiwyg: true
+									activeEditor: editor,
 								});
 
 								ImageEditor.execute()
