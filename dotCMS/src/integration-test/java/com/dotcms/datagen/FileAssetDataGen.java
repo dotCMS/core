@@ -23,14 +23,6 @@ public class FileAssetDataGen extends ContentletDataGen {
             throws DotSecurityException, DotDataException {
         this(file);
         this.folder = folder;
-
-        this.host(
-            APILocator.getHostAPI().find(
-                    folder.getHostId(),
-                    APILocator.systemUser(),
-                    false
-            )
-        );
     }
 
     public FileAssetDataGen(final File file) throws DotDataException, DotSecurityException {
