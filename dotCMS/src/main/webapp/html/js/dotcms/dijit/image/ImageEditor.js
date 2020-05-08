@@ -101,10 +101,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget, {
 	createImageWindow: function () {
 		this.tabindex = 0;
 		this.thumbnailDiv.tabindex = 0;
-
 		var newerInode = window.contentAdmin.contentletInode;
-
-		console.log({ newerInode });
 
 		var id = this.inode;
 		if (newerInode && newerInode != this.inode) {
@@ -114,8 +111,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget, {
 		} else if (this.tempId) {
 			id = this.tempId;
 		}
-
-		console.log({ id });
 
 		this.baseFilterUrl = "/contentAsset/image/" + id;
 		if (this.fieldName != undefined) {
@@ -410,7 +405,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget, {
                     data-identifier="${this.fieldContentletId}"
                     data-saveas="${this.saveAsFileName}"
                 />`;
-                
+
 			activeEditor.execCommand("mceReplaceContent", false, asset);
 		} else {
 			url = url.indexOf("?") > -1 ? url + "&" : url + "?";
@@ -421,7 +416,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget, {
 				return () => {
 					if (xhr.status == 200) {
 						var dataJson = JSON.parse(xhr.responseText);
-						console.log({ dataJson });
 						self.tempId = dataJson.id;
 						if (
 							window.document.getElementById(self.binaryFieldId + "ValueField")
