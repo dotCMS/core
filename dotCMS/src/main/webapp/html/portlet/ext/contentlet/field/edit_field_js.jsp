@@ -123,10 +123,7 @@ var cmsfile=null;
 		field.value = dateValue;
 
 		if(typeof updateStartRecurrenceDate === 'function' && (varName == 'startDate' || varName == 'endDate')){
-
-
-             updateStartRecurrenceDate(varName);
-
+       updateStartRecurrenceDate(varName);
 		}
 	}
 
@@ -333,8 +330,8 @@ var cmsfile=null;
     function insertDropZoneAsset(tinymceInstance, textAreaId) {
 	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
         dropZone.addEventListener('uploadComplete', async (event) => {
-		const dotAsset = await event.detail[0].json();
-		const asset  = `<img src="${window.location.origin}/dA/${dotAsset.entity.inode}" alt="${dotAsset.entity.titleImage}" />`;
+					const dotAsset = await event.detail[0].json();
+		const asset  = `<img src="/contentAsset/image/${dotAsset.entity.inode}/${dotAsset.entity.titleImage}" alt="${dotAsset.entity.titleImage}" />`;
 		tinymceInstance.get(textAreaId).execCommand('mceInsertContent', false, asset);
         })
     }
@@ -377,6 +374,7 @@ var cmsfile=null;
 			}
 			//Enabling the wysiwyg
 			try {
+
 			  // Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,
@@ -391,7 +389,11 @@ var cmsfile=null;
 			        dropZone.style.pointerEvents = "none";
 			        return false;
 			      });
-			    },
+					},
+					setup: (ed) => {
+
+
+					},
 			  };
 			  var wellTinyMCE = new tinymce.Editor(
 			    textAreaId,
@@ -400,7 +402,9 @@ var cmsfile=null;
 			  );
 			  insertDropZoneAsset(tinymce, textAreaId);
 			  wellTinyMCE.render();
-			  wellTinyMCE.on("change", emmitFieldDataChange);
+				wellTinyMCE.on("change", emmitFieldDataChange);
+
+
 			} catch (e) {
 			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
