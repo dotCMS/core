@@ -1076,12 +1076,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget, {
 			? url
 			: location.protocol + "//" + location.host + url;
 		return;
-
-		// TODO: Remove unreachable
-		img.src = url + "?test=" + new Date().getTime();
-		this.currentUrl = url;
-		this.iframe.dijit.byId("viewingUrl").set("value", url, false);
-		this.iframe.dojo.byId("showLink").href = url;
 	},
 
 	_resetSavedFiles: function () {
