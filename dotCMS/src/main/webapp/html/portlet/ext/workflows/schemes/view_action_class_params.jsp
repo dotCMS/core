@@ -65,7 +65,7 @@
 				<tr>
 					<td nowrap="true" valign="top" style="text-align: right;"><%if(workflowActionletParameter.isRequired()){ %><span class="required"></span><%} %><%=workflowActionletParameter.getDisplayName() %>:</td>
 					<td>
-						<select  id="acp-<%=workflowActionletParameter.getKey() %>"  name="acp-<%=workflowActionletParameter.getKey() %>">
+						<select  id="acp-<%=workflowActionletParameter.getKey() %>"  name="acp-<%=workflowActionletParameter.getKey() %>" dojoType="dijit.form.FilteringSelect" style="width:100%">
 							<%
 								for(MultiKeyValue multiKeyValue : ((MultiSelectionWorkflowActionletParameter) workflowActionletParameter).getMultiValues()) { %>
 
