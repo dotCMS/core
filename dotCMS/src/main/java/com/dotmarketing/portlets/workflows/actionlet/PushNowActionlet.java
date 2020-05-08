@@ -13,6 +13,9 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.workflows.model.MultiKeyValue;
+import com.dotmarketing.portlets.workflows.model.MultiSelectionWorkflowActionletParameter;
+import com.dotmarketing.portlets.workflows.model.MultiValueProvider;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -22,6 +25,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +70,10 @@ public class PushNowActionlet extends WorkFlowActionlet {
         final FilterDescriptor defaultFilter = APILocator.getPublisherAPI().getFilterDescriptorMap()
                 .values().stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findAny().get();
         params.add(new WorkflowActionletParameter(PARAM_ENVIRONMENT, "Name of the Environment", "", true));
-        params.add(new WorkflowActionletParameter(PARAM_FILTER_KEY, "Filter", defaultFilter.getKey(), true));
+        final List<MultiKeyValue> multiKeyValueList = new ArrayList<>();
+        APILocator.getPublisherAPI().getFilterDescriptorMap().values().stream()
+                .forEach(filterDescriptor -> multiKeyValueList.add(new MultiKeyValue(filterDescriptor.getKey(),filterDescriptor.getTitle())));
+        params.add(new MultiSelectionWorkflowActionletParameter(PARAM_FILTER_KEY, "Filter", defaultFilter.getKey(), true,()->multiKeyValueList));
         return params;
     }
 
