@@ -327,12 +327,23 @@ var cmsfile=null;
         document.dispatchEvent(customEvent)
     }
 
-    function insertDropZoneAsset(tinymceInstance, textAreaId) {
+    function insertDropZoneAsset(activeEditor, textAreaId) {
     	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
         dropZone.addEventListener('uploadComplete', async (event) => {
-					const dotAsset = await event.detail[0].json();
-        	const asset  = `<img src="/contentAsset/image/${dotAsset.entity.inode}/${dotAsset.entity.titleImage}" alt="${dotAsset.entity.titleImage}" />`;
-        	tinymceInstance.get(textAreaId).execCommand('mceInsertContent', false, asset);
+					if(event.detail) {
+						const dotAsset = await event.detail[0].json();
+						const asset = `
+						<img 
+							src="/contentAsset/image/${dotAsset.entity.inode}/${dotAsset.entity.titleImage}" 
+							alt="${dotAsset.entity.titleImage}"
+							data-field-name="${dotAsset.entity.titleImage}"
+							data-inode="${dotAsset.entity.inode}"
+							data-identifier="${dotAsset.entity.identifier}"
+							data-saveas="${dotAsset.entity.title}"
+						/>
+						`;
+						activeEditor.get(textAreaId).execCommand('mceInsertContent', false, asset);
+  				}
         })
     }
 
