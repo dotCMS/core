@@ -334,8 +334,9 @@ var cmsfile=null;
     	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
         dropZone.addEventListener('uploadComplete', async (event) => {
 					// EDITOR					
-					const dotAsset = await event.detail[0].json();
-					const asset = `
+					if(event.detail) {
+						const dotAsset = await event.detail[0].json();
+						const asset = `
 						<img 
 							src="/contentAsset/image/${dotAsset.entity.inode}/${dotAsset.entity.titleImage}" 
 							alt="${dotAsset.entity.titleImage}"
@@ -345,7 +346,8 @@ var cmsfile=null;
 							data-saveas="${dotAsset.entity.title}"
 						/>
 						`;
-        	activeEditor.get(textAreaId).execCommand('mceInsertContent', false, asset);
+        		activeEditor.get(textAreaId).execCommand('mceInsertContent', false, asset);
+					}
         })
     }
 
