@@ -410,6 +410,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget, {
                     data-identifier="${this.fieldContentletId}"
                     data-saveas="${this.saveAsFileName}"
                 />`;
+                
 			activeEditor.execCommand("mceReplaceContent", false, asset);
 		} else {
 			url = url.indexOf("?") > -1 ? url + "&" : url + "?";
