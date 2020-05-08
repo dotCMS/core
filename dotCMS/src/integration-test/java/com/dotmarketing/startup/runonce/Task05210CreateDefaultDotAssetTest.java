@@ -23,7 +23,7 @@ public class Task05210CreateDefaultDotAssetTest {
         IntegrationTestInitService.getInstance().init();
     }
 
-    private void removeConstraintIfAny() throws DotDataException {
+    private List<Map<String, Object>> removeConstraintIfAny() throws DotDataException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);
         } catch (SQLException e) {
@@ -63,21 +63,27 @@ public class Task05210CreateDefaultDotAssetTest {
         new DotConnect().setSQL("delete from inode where inode = ?")
                 .addParam(Task05210CreateDefaultDotAsset.DOTASSET_VARIABLE_INODE).loadResult();
 
-        FactoryLocator.getWorkFlowFactory().saveSchemeIdsForContentType(
-                Task05210CreateDefaultDotAsset.DOTASSET_VARIABLE_INODE,
-                workflowSchemeXStructure.stream().map(register -> (String) register.get("scheme_id")).collect(Collectors.toSet()),
-                null
-        );
+        return workflowSchemeXStructure;
     }
 
     @Test
     public void Test_Upgrade_Task() throws DotDataException {
-        removeConstraintIfAny();
+        final List<Map<String, Object>> constraint = removeConstraintIfAny();
+
         final Task05210CreateDefaultDotAsset task =  new Task05210CreateDefaultDotAsset();
         assertTrue(task.forceRun());
         task.executeUpgrade();
+
+        addConstraintIfAny(constraint);
     }
 
+    private void addConstraintIfAny(final  List<Map<String, Object>> constraint) throws DotDataException {
+        FactoryLocator.getWorkFlowFactory().saveSchemeIdsForContentType(
+                Task05210CreateDefaultDotAsset.DOTASSET_VARIABLE_INODE,
+                constraint.stream().map(register -> (String) register.get("scheme_id")).collect(Collectors.toSet()),
+                null
+        );
+    }
 
 
 }
