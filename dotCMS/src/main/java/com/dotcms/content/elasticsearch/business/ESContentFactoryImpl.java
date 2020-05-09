@@ -1506,7 +1506,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private boolean useQueryCache=false;
     private boolean shouldQueryCache() {
-        return useQueryCache ? useQueryCache : LicenseManager.getInstance().isEnterprise() && Config.getBooleanProperty("ES_CACHE_SEARCH_QUERIES", true);
+        if(!useQueryCache) {
+            useQueryCache = LicenseManager.getInstance().isEnterprise() && Config.getBooleanProperty("ES_CACHE_SEARCH_QUERIES", true);
+        }
+        return useQueryCache;
     }
     
 
