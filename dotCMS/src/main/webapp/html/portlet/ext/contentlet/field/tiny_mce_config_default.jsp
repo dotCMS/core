@@ -11,6 +11,8 @@
 <% 
 
 String cssPath = Config.getStringProperty("WYSIWYG_CSS", "/application/wysiwyg/wysiwyg.css");
+int licenseLevel = LicenseUtil.getLevel();
+int licenseStandard = LicenseLevel.STANDARD.level;
 Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 if(!CMSUrlUtil.getInstance().amISomething(cssPath, host, WebAPILocator.getLanguageWebAPI().getLanguage(request).getId())){
   cssPath=null;
@@ -26,7 +28,7 @@ var tinyMCEProps = {
     plugins: [
         "advlist anchor autolink lists link image charmap print  hr anchor ",
         "searchreplace wordcount visualchars fullscreen ",
-        "emoticons  paste textcolor colorpicker textpattern validation dotimageclipboard doteditimage"
+        "emoticons  paste textcolor colorpicker textpattern validation dotimageclipboard"
     ],
     block_formats: 'Paragraph=p;Header 1=h1;Header 2=h2;Header 3=h3;Header 4=h4;Header 5=h5;Pre=pre;Code=code;Remove Format=removeformat',
     toolbar1: "formatselect | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image dotimageclipboard  | link unlink anchor | hr charmap | fullscreen | validation",
@@ -56,3 +58,7 @@ var tinyMCEProps = {
         cmsFileBrowser(callback, value, meta);
     }
 };		
+
+<%if(licenseLevel > licenseStandard){ %>
+ tinyMCEProps.plugins.push("doteditimage");
+<%} %>

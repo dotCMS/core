@@ -486,9 +486,6 @@
            </div>
        </div>
 
-
-
-
     <%}else{ %>
        <div id="thumbnailParent<%=field.getVelocityVarName()%>">
            <div dojoType="dotcms.dijit.image.ImageEditor"

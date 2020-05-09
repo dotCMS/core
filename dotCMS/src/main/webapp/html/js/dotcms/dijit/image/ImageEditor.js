@@ -37,9 +37,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     execute: null,
 	activeEditor: undefined,
 
-
-
-
     postCreate: function(){
         window.top._dotImageEditor = this;
         this.execute = this.createImageWindow;
