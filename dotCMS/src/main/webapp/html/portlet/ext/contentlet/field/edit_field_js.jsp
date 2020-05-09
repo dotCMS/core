@@ -414,6 +414,7 @@ var cmsfile=null;
 			} catch (e) {
 			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
+
 			enabledWYSIWYG[textAreaId] = true;
 		}
 	}
