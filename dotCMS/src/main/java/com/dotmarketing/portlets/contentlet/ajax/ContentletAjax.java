@@ -571,7 +571,7 @@ public class ContentletAjax {
 		}
 
 		// Building search params and lucene query
-		StringBuffer luceneQuery = new StringBuffer("-contentType:forms ");
+		StringBuffer luceneQuery = new StringBuffer();
 
     if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
       luceneQuery.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
@@ -631,7 +631,10 @@ public class ContentletAjax {
 		        }
 		    }
 		    luceneQuery.append("-contentType:Host ");
-		    luceneQuery.append("-baseType:3 ");
+            luceneQuery.append("-contentType:forms ");
+            if (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
+                luceneQuery.append("-baseType:3 ");
+            }
 		}
 
         final String finalSort = getFinalSort(fields, orderBy, st, structureInodes);
@@ -892,10 +895,12 @@ public class ContentletAjax {
 							        if("catchall".equals(fieldName)) {
 							           
 							            luceneQuery.append(" title:'" + fieldValueStr + "'^15 ");
-							            for(String x : fieldValueStr.split("[,|\\s+]")) {
-							                luceneQuery.append(" title:" + x + "^5 ");
-							                
-							            }
+                                        final String[] titleSplit = fieldValueStr.split("[,|\\s+]");
+                                        if (titleSplit.length > 1) {
+                                            for (final String term : titleSplit) {
+                                                luceneQuery.append(" title:" + term + "^5 ");
+                                            }
+                                        }
 							            luceneQuery.append(" title_dotraw:*" + fieldValueStr + "*^5 ");
 							        }
 							        

@@ -30,13 +30,12 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.RenderRequestImpl;
 import io.vavr.control.Try;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.PageContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
 
 /**
  * Struts action that retrieves the required information to display the "Content Search" portlet.
@@ -141,6 +140,7 @@ public class ViewContentletAction extends DotPortletAction {
     List<BaseContentType> baseTypes = resolveBaseTypes(request);
    
     final List<ContentType> contentTypesList = new ArrayList<>();
+    boolean addAll = false;
     if (baseTypes.size() > 0) {
       for (BaseContentType type : baseTypes) {
         contentTypesList.addAll(contentTypeApi.findByType(type));
@@ -158,12 +158,15 @@ public class ViewContentletAction extends DotPortletAction {
 
     }else {
         contentTypesList.addAll(contentTypeApi.findAll());
+        addAll = true;
     }
-    
+
     contentTypesList.removeIf(t->t.variable().equalsIgnoreCase(Host.HOST_VELOCITY_VAR_NAME));
     contentTypesList.removeIf(t->t.variable().equalsIgnoreCase("forms"));
-    
-    request.setAttribute("contentTypesJs", buildJsArray(contentTypesList));
+
+    if (!addAll) {
+        request.setAttribute("contentTypesJs", buildJsArray(contentTypesList));
+    }
     return contentTypesList;
 
 
