@@ -329,18 +329,19 @@ var cmsfile=null;
 
     function insertDropZoneAsset(activeEditor, textAreaId) {
     	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
-        dropZone.addEventListener('uploadComplete', async (event) => {
-					if(event.detail) {
-						const dotAsset = await event.detail[0].json();
+        dropZone.addEventListener('uploadComplete', async (asset) => {
+					if(asset.detail) {
+						const [dotAsset] = event.detail;
+						const { inode, titleImage, identifier, title } = dotAsset;
 						const asset = `
-						<img 
-							src="/contentAsset/image/${dotAsset.entity.inode}/${dotAsset.entity.titleImage}" 
-							alt="${dotAsset.entity.titleImage}"
-							data-field-name="${dotAsset.entity.titleImage}"
-							data-inode="${dotAsset.entity.inode}"
-							data-identifier="${dotAsset.entity.identifier}"
-							data-saveas="${dotAsset.entity.title}"
-						/>
+							<img 
+								src="/contentAsset/image/${inode}/${titleImage}" 
+								alt="${titleImage}"
+								data-field-name="${titleImage}"
+								data-inode="${inode}"
+								data-identifier="${identifier}"
+								data-saveas="${title}"
+							/>
 						`;
 						activeEditor.get(textAreaId).execCommand('mceInsertContent', false, asset);
   				}
