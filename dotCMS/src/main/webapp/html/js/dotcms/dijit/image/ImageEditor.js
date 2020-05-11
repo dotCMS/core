@@ -355,16 +355,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     },
 
-    _isValidURL: function (url) {
-		var elm;
-		if (!elm) {
-			elm = document.createElement("input");
-			elm.setAttribute("type", "url");
-		}
-		elm.value = url;
-		return elm.validity.valid;
-	},
-
     /**
      * Save as passes a var:_imageToolSaveFile to the binary servlet with all the other
      * params.  This saves the file handle in the users session.  We look for this
@@ -381,49 +371,50 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
 
-_isValidURL: function (url) {
-		var elm;
-		if (!elm) {
-			elm = document.createElement("input");
-			elm.setAttribute("type", "url");
-		}
-		elm.value = url;
-		return elm.validity.valid;
-	},
+    _isValidURL: function (url) {
+        let elem = document.createElement("input");
+        elem.setAttribute("type", "url");
+		elem.value = url;
+		return elem.validity.valid;
+    },
+
+    /**
+     * Sends an image back to the tinymce WYSIWYG editor from the "Edit Image" dialog.
+     *
+     * @param {object} activeEditor - Instance of the active editor
+     * @param {string} url - Image URL
+     */
+    _sendImageToEditor: function(activeEditor, url) {
+        let newUrl;
+        newUrl = this._isValidURL(url) ? new URL(url).pathname : url;
+
+        const asset = `
+            <img
+                src="${newUrl}"
+                alt="${this.fieldName}"
+                data-field-name="${this.fieldName}"
+                data-inode="${this.inode}"
+                data-identifier="${this.fieldContentletId}"
+                data-saveas="${this.saveAsFileName}"
+            />`;
+        activeEditor.execCommand("mceReplaceContent", false, asset);
+    },
     /**
      * This saves an image
      * that lives on a contentlet
      *
      */
-
     saveBinaryImage: function(activeEditor){
-
-        var field=this.binaryFieldId;
+        var field = this.binaryFieldId;
         if(this.fieldContentletId.length>0) {
             field=this.fieldContentletId;
         }
 
-        var url = this.cleanUrl(this.currentUrl);
+        let url = this.cleanUrl(this.currentUrl);
 
-            if (activeEditor) {
-                var newUrl;
-                if (this._isValidURL(url)) {
-                    newUrl = new URL(url).pathname;
-                } else {
-                    newUrl = url;
-            }
-
-            const asset = `
-                <img
-                    src="${newUrl}"
-                    alt="${this.fieldName}"
-                    data-field-name="${this.fieldName}"
-                    data-inode="${this.inode}"
-                    data-identifier="${this.fieldContentletId}"
-                    data-saveas="${this.saveAsFileName}"
-                />`;
-            activeEditor.execCommand("mceReplaceContent", false, asset);
-		} else {
+        if (activeEditor) {
+            this._sendImageToEditor(activeEditor, url)
+        } else {
             url = url.indexOf("?") > -1 ? url + "&" : url + "?";
             url += field.length > 0 ? "&binaryFieldId=" + field : "";
             url += "&_imageToolSaveFile=true";
@@ -452,10 +443,6 @@ _isValidURL: function (url) {
 
 
 
-
-
-
-
     closeEditorWhenRedrawFinish: function() {
         if (this.painting) {
             setTimeout("window.top._dotImageEditor.closeEditorWhenRedrawFinish()", 500);
@@ -476,17 +463,12 @@ _isValidURL: function (url) {
     },
 
 
-
     closeSaveAsDia : function(){
         saveAsDia = this.iframe.dijit.byId("saveAsDialog").hide();
         this.iframe.dojo.byId("saveAsName").value = "";
 
 
     },
-
-
-
-
 
     /***************************************************************************
      *
