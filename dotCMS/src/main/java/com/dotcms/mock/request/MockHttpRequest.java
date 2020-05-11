@@ -5,6 +5,8 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +29,8 @@ public class MockHttpRequest implements MockRequest {
 
     private final HttpServletRequest request;
     private final Map<String,String[]> paramMap;
-    public MockHttpRequest(final String hostname, final String uri) {
+    public MockHttpRequest(final String hostname, final String incomingUri) {
+        final String uri = UtilMethods.isSet(incomingUri) ? incomingUri : StringPool.FORWARD_SLASH;
         HttpServletRequest mockReq = new BaseRequest().request();
         Mockito.when(mockReq.getRequestURI()).thenReturn(uri);
         Mockito.when(mockReq.getRequestURL()).thenReturn(new StringBuffer("http://" + hostname + uri));
