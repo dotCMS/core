@@ -29,8 +29,10 @@ public class MockHttpRequest implements MockRequest {
 
     private final HttpServletRequest request;
     private final Map<String,String[]> paramMap;
-    public MockHttpRequest(final String hostname, final String incomingUri) {
+    public MockHttpRequest(final String incomingHostname, final String incomingUri) {
+        
         final String uri = UtilMethods.isSet(incomingUri) ? incomingUri : StringPool.FORWARD_SLASH;
+        final String hostname = UtilMethods.isSet(incomingHostname) ? incomingHostname : "localhost";
         HttpServletRequest mockReq = new BaseRequest().request();
         Mockito.when(mockReq.getRequestURI()).thenReturn(uri);
         Mockito.when(mockReq.getRequestURL()).thenReturn(new StringBuffer("http://" + hostname + uri));
