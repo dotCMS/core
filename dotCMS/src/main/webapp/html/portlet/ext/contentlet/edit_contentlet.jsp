@@ -195,6 +195,8 @@
 	}
 
 	boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
+
+	PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
 %>
 
 <!-- global included dependencies -->
