@@ -1504,23 +1504,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return searchSourceBuilder;
     }
 
-    
-    private final boolean shouldQueryCache = LicenseManager.getInstance().isEnterprise()
-                    && Config.getBooleanProperty("ES_CACHE_SEARCH_QUERIES", true);
-
+    private boolean useQueryCache=false;
+    private boolean shouldQueryCache() {
+        if(!useQueryCache) {
+            useQueryCache = LicenseManager.getInstance().isEnterprise() && Config.getBooleanProperty("ES_CACHE_SEARCH_QUERIES", true);
+        }
+        return useQueryCache;
+    }
     
 
     SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
         
-
-        final Optional<SearchHits> optionalHits = (shouldQueryCache) ? queryCache.get(searchRequest) : Optional.empty();
+        final Optional<SearchHits> optionalHits = shouldQueryCache() ? queryCache.get(searchRequest) : Optional.empty();
         if(optionalHits.isPresent()) {
             return optionalHits.get();
         }
         try {
             SearchResponse response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
             SearchHits hits  = response.getHits();
-            if(shouldQueryCache) {
+            if(shouldQueryCache()) {
                 queryCache.put(searchRequest, hits);
             }
             return hits;
