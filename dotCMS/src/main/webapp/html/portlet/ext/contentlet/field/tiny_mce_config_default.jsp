@@ -1,11 +1,11 @@
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.dotmarketing.filters.CMSUrlUtil"%>
-<%@page import="com.dotcms.enterprise.LicenseUtil"%>
-<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
-
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.liferay.portal.model.User"%>
 
 <% 
@@ -17,9 +17,15 @@ Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 if(!CMSUrlUtil.getInstance().amISomething(cssPath, host, WebAPILocator.getLanguageWebAPI().getLanguage(request).getId())){
   cssPath=null;
 }
+String editImage = LanguageUtil.get(pageContext, "Edit-Image");
 %>
 
-var tinyMCEProps = {	
+var tinyMCEProps = {
+    dotLanguageStrings: {
+    <%if(editImage!=null){ %>
+     edit_image: "<%=editImage %>",
+    <%} %>
+    },	
     theme: "modern",
     selector: "textarea",
     menubar: 'false',
