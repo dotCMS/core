@@ -162,8 +162,7 @@ public enum PageMode {
     }
 
     private static boolean isPageModeSet(final HttpSession ses) {
-        return (ses != null && ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION) != null
-                && ses.getAttribute("tm_date") == null);
+        return (ses != null && ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION) != null);
     }
 
     private static PageMode getCurrentPageMode(final HttpSession ses) {

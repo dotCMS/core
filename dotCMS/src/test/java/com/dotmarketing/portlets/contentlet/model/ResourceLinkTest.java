@@ -1,11 +1,5 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotmarketing.beans.Host;
@@ -14,22 +8,23 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuilder;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import javax.servlet.http.HttpServletRequest;
-
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.junit.Test;
-import org.mockito.Mockito;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.io.FileWriter;
+
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ResourceLinkTest {
 
@@ -139,6 +134,8 @@ public class ResourceLinkTest {
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
@@ -174,6 +171,8 @@ public class ResourceLinkTest {
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
@@ -212,6 +211,8 @@ public class ResourceLinkTest {
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
@@ -248,6 +249,8 @@ public class ResourceLinkTest {
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
@@ -285,6 +288,8 @@ public class ResourceLinkTest {
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.isFileAsset()).thenReturn(true);
@@ -319,6 +324,8 @@ public class ResourceLinkTest {
         final String htmlFileName = file.getName();
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
@@ -352,6 +359,8 @@ public class ResourceLinkTest {
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getLanguageId()).thenReturn(languageId);
@@ -383,6 +392,8 @@ public class ResourceLinkTest {
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getLanguageId()).thenReturn(languageId);
