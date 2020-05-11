@@ -285,7 +285,11 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this._hide(this.listTable);
 		this._hide(this.thumbnailsTable);
 		this._removeRows(this.detailsTableBody);
-		this._removeRows(this.thumbnailsTable);
+        this._removeRows(this.thumbnailsTable);
+        
+        if (this._currentFilter) {
+            this._currentOffset = 0
+        }
 
 		BrowserAjax.getFolderContentWithDotAssets(this._norm(this.currentFolder.id), this._currentOffset, this._maxNumberOfAssets, this._currentFilter, this.mimeTypes,
 			this.fileExtensions, false, true, this.onlyFiles, this.sortBy, this.sortByDesc, true, this.includeDotAssets, dojo.hitch(this, this._selectFolderCallback));
