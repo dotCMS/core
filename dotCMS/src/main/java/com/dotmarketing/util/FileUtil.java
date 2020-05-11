@@ -270,6 +270,7 @@ public class FileUtil {
 			while (countBytes > 0) {
 
 				sha256Builder.append(buffer, countBytes);
+				countBytes = inputStream.read(buffer);
 			}
 		}
 

@@ -66,7 +66,7 @@ public class FileStorageResource {
 
         for (final File file : files) {
 
-            bodyResultBuilder.put(file.getName(), this.fileStorageAPI.generateBasicMetaData(file));
+            bodyResultBuilder.put(file.getName(), this.fileStorageAPI.generateRawBasicMetaData(file));
         }
 
         return Response.ok(new ResponseEntityView(bodyResultBuilder.build())).build();
@@ -91,7 +91,7 @@ public class FileStorageResource {
 
         for (final File file : files) {
 
-            bodyResultBuilder.put(file.getName(), this.fileStorageAPI.generateFullMetaData(file));
+            bodyResultBuilder.put(file.getName(), this.fileStorageAPI.generateRawFullMetaData(file, FileStorageAPI.configuredMaxLength()));
         }
 
         return Response.ok(new ResponseEntityView(bodyResultBuilder.build())).build();
