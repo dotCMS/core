@@ -30,6 +30,8 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.MultiKeyValue;
+import com.dotmarketing.portlets.workflows.model.MultiSelectionWorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
@@ -176,6 +178,33 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
         final Bundle bundleCreated = FactoryLocator.getBundleFactory().findSentBundles(adminUser.getUserId(),1,0).stream().findFirst().get();
         Assert.assertEquals(filterKey,bundleCreated.getFilterKey());
 
+    }
+
+    /**
+     * This test is for the getParameters method.
+     * In the Filter Param should come all the possible filters that the user have to select,
+     * and the defaultValue should be a filter set as default = true.
+     */
+    @Test
+    public void test_PushNowActionlet_getParameters_getFilters(){
+        //Clean all filters
+        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
+        //Create 3 filters, one set as default
+        final String defaulFilterKey = "defaultFilterKey"+System.currentTimeMillis();
+        final String filterKey1 = "filterKey1"+System.currentTimeMillis();
+        final String filterKey2 = "filterKey2"+System.currentTimeMillis();
+        createFilterDescriptor(defaulFilterKey,true);
+        createFilterDescriptor(filterKey1,false);
+        createFilterDescriptor(filterKey2,false);
+
+        //Get Params
+        final PushNowActionlet pushNowActionlet = new PushNowActionlet();
+        final List<WorkflowActionletParameter> parameters = pushNowActionlet.getParameters();
+        Assert.assertFalse(parameters.isEmpty());
+        Assert.assertEquals(defaulFilterKey,parameters.get(1).getDefaultValue());
+        Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(1)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(defaulFilterKey)));
+        Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(1)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(filterKey1)));
+        Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(1)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(filterKey2)));
     }
 
 }
