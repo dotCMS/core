@@ -67,13 +67,25 @@ public class PushNowActionlet extends WorkFlowActionlet {
     @Override
     public List<WorkflowActionletParameter> getParameters() {
         final List<WorkflowActionletParameter> params = new ArrayList<>();
+        //Environment Param
+        List<Environment> environmentList;
+        try {
+            environmentList = this.environmentAPI.findAllEnvironments();
+        } catch (DotDataException e) {
+            final String errorMsg = "An error occurred when trying to find the environments";
+            Logger.debug(this, errorMsg);
+            throw new WorkflowActionFailureException(errorMsg, e);
+        }
+        final List<MultiKeyValue> multiKeyValueEnvList = new ArrayList<>();
+        environmentList.stream().forEach(environment -> multiKeyValueEnvList.add(new MultiKeyValue(environment.getName(),environment.getName())));
+        params.add(new MultiSelectionWorkflowActionletParameter(PARAM_ENVIRONMENT, "Name of the Environment", environmentList.get(0).getName(), true,()->multiKeyValueEnvList));
+        //Filter Param
         final FilterDescriptor defaultFilter = APILocator.getPublisherAPI().getFilterDescriptorMap()
                 .values().stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findAny().get();
-        params.add(new WorkflowActionletParameter(PARAM_ENVIRONMENT, "Name of the Environment", "", true));
-        final List<MultiKeyValue> multiKeyValueList = new ArrayList<>();
+        final List<MultiKeyValue> multiKeyValueFilterList = new ArrayList<>();
         APILocator.getPublisherAPI().getFilterDescriptorMap().values().stream()
-                .forEach(filterDescriptor -> multiKeyValueList.add(new MultiKeyValue(filterDescriptor.getKey(),filterDescriptor.getTitle())));
-        params.add(new MultiSelectionWorkflowActionletParameter(PARAM_FILTER_KEY, "Filter", defaultFilter.getKey(), true,()->multiKeyValueList));
+                .forEach(filterDescriptor -> multiKeyValueFilterList.add(new MultiKeyValue(filterDescriptor.getKey(),filterDescriptor.getTitle())));
+        params.add(new MultiSelectionWorkflowActionletParameter(PARAM_FILTER_KEY, "Filter", defaultFilter.getKey(), true,()->multiKeyValueFilterList));
         return params;
     }
 

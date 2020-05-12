@@ -119,7 +119,7 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
         APILocator.getPublisherAPI().addFilterDescriptor(new FilterDescriptor(key,key,filtersMap,defaultFilter,"DOTCMS_BACK_END_USER"));
     }
 
-    private static Environment createEnvironment () throws DotDataException, DotSecurityException {
+    private static Environment createEnvironment (final String name) throws DotDataException, DotSecurityException {
 
         final EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
         final Environment environment = new Environment();
@@ -128,7 +128,7 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
                 APILocator.getRoleAPI().loadRoleByKey(adminUser.getUserId()).getId(),
                 PermissionAPI.PERMISSION_USE));
 
-        environment.setName("TestEnvironment_" + System.currentTimeMillis());
+        environment.setName(name);
         environment.setPushToAll(false);
         environmentAPI.saveEnvironment(environment, permissions);
 
@@ -151,7 +151,7 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
         final String filterKey = "testFilterKey.yml"+System.currentTimeMillis();
         createFilterDescriptor(filterKey,false);
         //Create Environment
-        final Environment environment = createEnvironment();
+        final Environment environment = createEnvironment("TestEnvironment_" + System.currentTimeMillis());
         //Create Workflow and pass the env and the filterKey
         createWorkflowWithPushNowActionlet(environment.getName(),filterKey);
         //Create Contentlet
@@ -186,7 +186,12 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
      * and the defaultValue should be a filter set as default = true.
      */
     @Test
-    public void test_PushNowActionlet_getParameters_getFilters(){
+    public void test_PushNowActionlet_getParameters_getFilters()
+            throws DotSecurityException, DotDataException {
+        //Create environment
+        final String environmentName = "TestEnvironment_1_" + System.currentTimeMillis();
+        createEnvironment(environmentName);
+
         //Clean all filters
         APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
         //Create 3 filters, one set as default
@@ -205,6 +210,33 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(1)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(defaulFilterKey)));
         Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(1)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(filterKey1)));
         Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(1)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(filterKey2)));
+    }
+
+    /**
+     * This test is for the getParameters method.
+     * In the Environment Param should come all the possible environments that the user have to select.
+     */
+    @Test
+    public void test_PushNowActionlet_getParameters_getEnvironments()
+            throws DotSecurityException, DotDataException {
+        //Clean all filters
+        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
+        //Create Environments
+        final String environmentName1 = "TestEnvironment_" + System.currentTimeMillis();
+        final String environmentName2 = "TestEnvironment_1_" + System.currentTimeMillis();
+        createEnvironment(environmentName1);
+        createEnvironment(environmentName2);
+
+        //Create Filter
+        final String defaulFilterKey = "defaultFilterKey"+System.currentTimeMillis();
+        createFilterDescriptor(defaulFilterKey,true);
+
+        //Get Params
+        final PushNowActionlet pushNowActionlet = new PushNowActionlet();
+        final List<WorkflowActionletParameter> parameters = pushNowActionlet.getParameters();
+        Assert.assertFalse(parameters.isEmpty());
+        Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(0)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(environmentName1)));
+        Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(0)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(environmentName2)));
     }
 
 }
