@@ -143,8 +143,8 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         contentletAPI.checkin(checkedOut, systemUser, false);
         contentletAPI.checkin(workingPage, systemUser, false);
 
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session = mock(HttpSession.class);
 
         when(request.getRequestURI()).thenReturn("/"+pageName);
@@ -154,7 +154,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER_ID))
                 .thenReturn(systemUser.getUserId());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
-        when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER)).thenReturn(systemUser);
+        when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(systemUser);
 
         when(request.getParameter("host_id")).thenReturn(site.getIdentifier());
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
@@ -231,8 +231,8 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         final Contentlet workingPage = contentletAPI.checkout(pageLive.getInode(), systemUser, false);
         contentletAPI.checkin(workingPage, systemUser, false);
 
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session = mock(HttpSession.class);
 
         when(request.getRequestURI()).thenReturn("/"+pageName);
