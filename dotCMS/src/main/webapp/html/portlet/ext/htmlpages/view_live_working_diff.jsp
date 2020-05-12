@@ -8,7 +8,6 @@
     String id = request.getParameter("id");
     long lang = Long.parseLong(request.getParameter("pageLang"));
     User user = APILocator.getUserAPI().getSystemUser();
-    //String contentId = request.getParameter("contentId");
     IHTMLPage htmlPage = null;
 
     try {
