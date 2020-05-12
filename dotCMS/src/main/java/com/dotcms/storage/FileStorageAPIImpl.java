@@ -2,14 +2,21 @@ package com.dotcms.storage;
 
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.MimeTypeUtils;
+import com.dotmarketing.business.Cachable;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSortedMap;
 import io.vavr.control.Try;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
@@ -104,6 +111,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         final Optional<File> metadataFile  = generateMetaDataConfiguration.getMetaDataFileSupplier().get();
 
         this.checkOverride(metadataFile, generateMetaDataConfiguration);
+
         if (!this.exists(metadataFile)) {
 
             if (this.validBinary(binary)) {
@@ -111,26 +119,66 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 final int maxLength = generateMetaDataConfiguration.getMaxLength();
                 metadataMap         = generateMetaDataConfiguration.isFull()?
                                         this.generateFullMetaData (binary, generateMetaDataConfiguration.getMetaDataKeyFilter(), maxLength):
-                                        this.generateBasicMetaData(binary, generateMetaDataConfiguration.getMetaDataKeyFilter()):
+                                        this.generateBasicMetaData(binary, generateMetaDataConfiguration.getMetaDataKeyFilter());
 
+                if (generateMetaDataConfiguration.isStore() && metadataFile.isPresent()) {
 
-                if (generateMetaDataConfiguration.isStore() && this.exists(metadataFile)) {
-
-                    // todo: write on file system
+                    this.storeMetadata(metadataFile, metadataMap);
                 }
             }
         } else {
 
-            // todo: see if can read from file system
+            metadataMap =  this.retrieveMetadata(metadataFile);
         }
-
 
         if (generateMetaDataConfiguration.isCache()) {
 
-            // todo: put in case
+            final Cachable cachable = CacheLocator.getCache(generateMetaDataConfiguration.
+                    getCacheGroupSupplier().get());
+
+            if (null != cachable) {
+
+                final DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
+                if (null != cacheAdmin) {
+
+                    cacheAdmin.put(generateMetaDataConfiguration.getCacheKeySupplier().get(),
+                            metadataMap, generateMetaDataConfiguration.getCacheGroupSupplier().get());
+                }
+            }
         }
 
         return metadataMap;
+    }
+
+    private Map<String, Object> retrieveMetadata(final Optional<File> metadataFile) {
+
+        Map<String, Object> objectMap = Collections.emptyMap();
+
+        try (JsonCompressorReader reader = new JsonCompressorReader(metadataFile.get())) {
+
+            objectMap   = reader.read(Map.class);
+            Logger.info(this, "Metadata read from: " + metadataFile.get());
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
+
+        return objectMap;
+    }
+
+    private void storeMetadata(final Optional<File> metadataFile,
+                               final Map<String, Object> metadataMap) {
+
+        try (JsonCompressorWriter writer = new JsonCompressorWriter(metadataFile.get())){
+
+            writer.write(metadataMap);
+
+            writer.flush();
+            Logger.info(this, "Metadata wrote on: " + metadataFile.get());
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
     }
 
     private boolean validBinary (final File binary) {
@@ -149,12 +197,53 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         if (generateMetaDataConfiguration.isOverride() && this.exists(metadataFile)) {
 
             try {
+
                 metadataFile.get().delete();
             } catch (Exception e) {
+
                 Logger.error(this.getClass(),
                         String.format("Unable to delete existing metadata file [%s] [%s]",
                                 metadataFile.get().getAbsolutePath(), e.getMessage()), e);
             }
         }
+    } // checkOverride.
+
+    @Override
+    public Map<String, Object> retrieveMetaData(GenerateMetaDataConfiguration generateMetaDataConfiguration) {
+
+        Map<String, Object> metadataMap = Collections.emptyMap();
+
+        if (generateMetaDataConfiguration.isCache()) {
+
+            final Cachable cachable = CacheLocator.getCache(generateMetaDataConfiguration.
+                    getCacheGroupSupplier().get());
+
+            if (null != cachable) {
+
+                final DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
+                if (null != cacheAdmin) {
+
+                    metadataMap = Try.of(()->(Map<String, Object>)cacheAdmin.get(generateMetaDataConfiguration.getCacheKeySupplier().get(),
+                            generateMetaDataConfiguration.getCacheGroupSupplier().get())).getOrElse(Collections.emptyMap());
+                }
+            }
+        }
+
+        if (!UtilMethods.isSet(metadataMap)) {
+
+            final Optional<File> metadataFile = generateMetaDataConfiguration.getMetaDataFileSupplier().get();
+
+            if (this.exists(metadataFile)) {
+
+                metadataMap =  this.retrieveMetadata(metadataFile);
+                Logger.info(this, "Retrieve the meta data from file sytem, path: " + metadataFile.get());
+            }
+        } else {
+
+            Logger.info(this, "Retrieve the meta data from cache, key: " + generateMetaDataConfiguration.getCacheKeySupplier().get()
+                    + ", group: " + generateMetaDataConfiguration.getCacheGroupSupplier().get());
+        }
+
+        return metadataMap;
     }
 }

@@ -75,4 +75,12 @@ public interface FileStorageAPI {
      * @return Map with the metadata
      */
     Map<String, Object> generateMetaData(final File binary, GenerateMetaDataConfiguration generateMetaDataConfiguration);
+
+    /**
+     *
+     * @param generateMetaDataConfiguration
+     * @return
+     */
+    Map<String, Object> retrieveMetaData(GenerateMetaDataConfiguration generateMetaDataConfiguration);
+
 }

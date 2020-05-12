@@ -132,7 +132,7 @@ public class GenerateMetaDataConfiguration {
         /**
          * On huge file, we probably do not want to parse all the content, so this max will limited how much do we want to read
          */
-        private int               maxLength = FileStorageAPI.configuredMaxLength();
+        private int               maxLength = FileStorageAPI.configuredMaxLength(); // todo: convert to long
 
         /**
          * {@link Predicate} filter the meta data key for the map result generation
@@ -152,7 +152,7 @@ public class GenerateMetaDataConfiguration {
         /**
          * Cache group, if cache is true, by default goes to FileAssetMetadataCache
          */
-        private Supplier<String>  cacheGroupSupplier = ()-> "FileAssetMetadataCache";
+        private Supplier<String>  cacheGroupSupplier = ()-> "Contentlet"; // todo: this must be not editable
 
         public Builder metaDataFileSupplier(final Supplier<Optional<File>> metaDataFileSupplier) {
 
