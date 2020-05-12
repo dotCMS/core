@@ -169,7 +169,7 @@ dependencies {
     starter group: 'com.dotcms', name: 'starter', version: 'empty_20200512', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
     //starter group: 'com.dotcms', name: 'starter', version: '20200512', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20200506', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20200512', ext: 'zip'
     
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
