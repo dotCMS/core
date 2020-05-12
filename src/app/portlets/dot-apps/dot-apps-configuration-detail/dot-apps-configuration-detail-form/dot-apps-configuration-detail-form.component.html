@@ -1,5 +1,14 @@
+<ng-template #warningIcon let-field="field">
+    <dot-icon
+        *ngIf="field.warnings && field.warnings.length"
+        name="warning"
+        pTooltip="{{ field.warnings.length ? field.warnings.join('. ') : '' }}"
+        size="18"
+    ></dot-icon>
+</ng-template>
+
 <form #form="ngForm" [formGroup]="myFormGroup" class="form__group" novalidate>
-    <div class="dot-apps-configuration-detail__form">
+    <div #formContainer class="dot-apps-configuration-detail__form">
         <div
             class="dot-apps-configuration-detail__form-row"
             *ngFor="let field of formFields"
@@ -16,6 +25,9 @@
                         }"
                         >{{ field.label }}</label
                     >
+                    <ng-container
+                        *ngTemplateOutlet="warningIcon; context: { field: field }"
+                    ></ng-container>
                     <input
                         pInputText
                         type="password"
@@ -34,6 +46,9 @@
                         }"
                         >{{ field.label }}</label
                     >
+                    <ng-container
+                        *ngTemplateOutlet="warningIcon; context: { field: field }"
+                    ></ng-container>
                     <textarea
                         #inputTextarea
                         pInputTextarea
@@ -47,11 +62,17 @@
             <ng-container *ngSwitchCase="'BOOL'">
                 <p-checkbox
                     binary="true"
+                    [ngClass]="{
+                        required: field.required
+                    }"
                     [id]="field.name"
                     [label]="field.label"
                     [formControlName]="field.name"
                     [value]="field.value"
                 ></p-checkbox>
+                <ng-container
+                    *ngTemplateOutlet="warningIcon; context: { field: field }"
+                ></ng-container>
                 <span class="form__group-hint">{{ field.hint }}</span>
             </ng-container>
         </div>

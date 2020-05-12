@@ -21,13 +21,9 @@ describe('DotAppsConfigurationListResolver', () => {
     let dotAppsServices: DotAppsService;
     let dotAppsConfigurationListResolver: DotAppsConfigurationResolver;
     const messages = {
-        'apps.configurations': 'Configurations',
-        'apps.no.configurations': 'No Configurations',
         'apps.confirmation.delete.all.button': 'Delete All',
         'apps.confirmation.title': 'Are you sure?',
         'apps.key': 'Key:',
-        'apps.confirmation.description.show.more': 'Show More',
-        'apps.confirmation.description.show.less': 'Show Less',
         'apps.confirmation.delete.all.message': 'Delete all?',
         'apps.confirmation.accept': 'Ok',
         'apps.search.placeholder': 'Search'

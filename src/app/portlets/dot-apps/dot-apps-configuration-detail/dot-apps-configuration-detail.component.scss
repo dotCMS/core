@@ -10,38 +10,13 @@
 
 .dot-apps-configuration-detail__header {
     background-color: $white;
-    display: flex;
-    font-size: $font-size-small;
     position: sticky;
     top: 0;
     z-index: 1;
 }
 
-.dot-apps-configuration-detail__service-name {
-    color: $black;
-    display: inline-block;
-    font-size: $font-size-xx-large;
-    font-weight: bold;
-    margin: $basic-padding * 3 0 $basic-padding * 3 $basic-padding * 3;
-}
-
-.dot-apps-configuration-detail__service-key {
-    color: $gray;
-    display: inline-block;
-    font-size: $font-size-large;
-    height: $basic-padding * 3;
-    margin: $basic-padding * 3 0 0 $basic-padding * 2;
-    vertical-align: bottom;
-}
-
-.dot-apps-configuration-detail-actions {
-    margin-top: $basic-padding * 2 + 2;
-    position: absolute;
-    right: $basic-padding * 2;
-
-    button:last-child {
-        margin-left: $basic-padding;
-    }
+.dot-apps-configuration-detail-actions button:last-child {
+    margin-left: $basic-padding;
 }
 
 .dot-apps-configuration-detail__body {
@@ -53,9 +28,16 @@
 .dot-apps-configuration-detail__host-name {
     border-bottom: 1px solid $gray-lighter;
     color: $black;
+    display: flex;
+    justify-content: space-between;
     font-size: $font-size-large;
     font-weight: $font-weight-semi-bold;
-    padding: $basic-padding * 3;
+    padding: $basic-padding * 2;
+
+    span {
+        align-items: center;
+        display: inline-flex;
+    }
 }
 
 .dot-apps-configuration-detail__form-content {

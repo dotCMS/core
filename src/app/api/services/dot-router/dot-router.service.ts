@@ -103,13 +103,23 @@ export class DotRouterService {
     }
 
     /**
+     * Redirects to an App Configuration page
+     *
+     * @param string appKey
+     * @memberof DotRouterService
+     */
+    goToAppsConfiguration(appKey: string) {
+        this.router.navigate([`/apps/${appKey}`]);
+    }
+
+    /**
      * Redirects to create/edit configuration site page
      *
      * @param string integrationKey
      * @param DotAppsSites site
      * @memberof DotRouterService
      */
-    goToAppsServices(integrationKey: string, site: DotAppsSites) {
+    goToUpdateAppsConfiguration(integrationKey: string, site: DotAppsSites) {
         const route =
             site && site.configured
                 ? `/apps/${integrationKey}/edit/${site.id}`
@@ -213,12 +223,10 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     replaceQueryParams(params: { [key: string]: string | number }): void {
-        this.router.navigate(
-            [],
-            {
-                queryParams: params,
-                queryParamsHandling: 'merge'
-            });
+        this.router.navigate([], {
+            queryParams: params,
+            queryParamsHandling: 'merge'
+        });
     }
 
     private redirectMain(): Promise<boolean> {

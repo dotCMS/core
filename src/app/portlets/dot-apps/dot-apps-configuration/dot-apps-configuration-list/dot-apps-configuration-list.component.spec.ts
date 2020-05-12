@@ -42,13 +42,13 @@ describe('DotAppsConfigurationListComponent', () => {
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotAppsConfigurationListComponent);
         component = fixture.debugElement.componentInstance;
-        component.itemsPerPage = 10;
+        component.itemsPerPage = 40;
         component.siteConfigurations = sites;
     });
 
     describe('With more data to load', () => {
         beforeEach(() => {
-            component.disabledLoadDataButton = false;
+            component.hideLoadDataButton = false;
             fixture.detectChanges();
         });
 
@@ -58,25 +58,19 @@ describe('DotAppsConfigurationListComponent', () => {
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.queryAll(
-                    By.css('dot-apps-configuration-item')
-                )[0].componentInstance.site
+                fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
+                    .componentInstance.site
             ).toBe(component.siteConfigurations[0]);
-
             expect(
-                fixture.debugElement.query(
-                    By.css('.dot-apps-configuration-list__show-more')
-                ).nativeElement.outerText
-            ).toBe(
-                component.messagesKey['apps.configurations.show.more'].toUpperCase()
-            );
+                fixture.debugElement.query(By.css('.dot-apps-configuration-list__show-more'))
+                    .nativeElement.outerText
+            ).toBe(component.messagesKey['apps.configurations.show.more'].toUpperCase());
         });
 
         it('should emit action for edit --> Site Item', () => {
             spyOn(component.edit, 'emit');
-            const siteItem = fixture.debugElement.queryAll(
-                By.css('dot-apps-configuration-item')
-            )[0].componentInstance;
+            const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
+                .componentInstance;
 
             siteItem.edit.emit(sites[0]);
             expect(component.edit.emit).toHaveBeenCalledWith(sites[0]);
@@ -84,9 +78,8 @@ describe('DotAppsConfigurationListComponent', () => {
 
         it('should emit action for delete --> Site Item', () => {
             spyOn(component.delete, 'emit');
-            const siteItem = fixture.debugElement.queryAll(
-                By.css('dot-apps-configuration-item')
-            )[0].componentInstance;
+            const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
+                .componentInstance;
 
             siteItem.delete.emit(sites[0]);
             expect(component.delete.emit).toHaveBeenCalledWith(sites[0]);
@@ -94,9 +87,8 @@ describe('DotAppsConfigurationListComponent', () => {
 
         it('should Load More button be enabled', () => {
             expect(
-                fixture.debugElement.query(
-                    By.css('.dot-apps-configuration-list__show-more')
-                ).nativeElement.disabled
+                fixture.debugElement.query(By.css('.dot-apps-configuration-list__show-more'))
+                    .nativeElement.disabled
             ).toBe(false);
         });
 
@@ -114,18 +106,16 @@ describe('DotAppsConfigurationListComponent', () => {
         });
     });
 
-    describe('With more data to load', () => {
+    describe('With no more data to load', () => {
         beforeEach(() => {
-            component.disabledLoadDataButton = true;
+            component.hideLoadDataButton = true;
             fixture.detectChanges();
         });
 
         it('should Load More button be enabled', () => {
             expect(
-                fixture.debugElement.query(
-                    By.css('.dot-apps-configuration-list__show-more')
-                ).nativeElement.disabled
-            ).toBe(true);
+                fixture.debugElement.query(By.css('.dot-apps-configuration-list__show-more'))
+            ).toBeFalsy();
         });
     });
 });

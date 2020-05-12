@@ -1,0 +1,37 @@
+@import "variables";
+
+:host {
+    display: block;
+
+    dot-action-button {
+        display: flex;
+        float: right;
+        position: relative;
+        right: $basic-padding * 2;
+        top: -$basic-padding * 3;
+        z-index: 1;
+    }
+
+    ::ng-deep .ui-table .ui-table-thead tr th {
+        padding-left: 0;
+        padding-right: 0;
+
+        &:first-child {
+            padding-left: $basic-padding * 3;
+        }
+    }
+
+    .dot-key-value__header-keyValue-label {
+        text-align: left;
+    }
+
+    .dot-key-value__header-hidden-label {
+        text-align: center;
+    }
+
+    p-table .dot-key-value__header-actions-label {
+        padding-right: $basic-padding * 4;
+        text-align: right;
+        width: 185px;
+    }
+}

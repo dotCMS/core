@@ -22,10 +22,9 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     messagesKey: { [key: string]: string } = {};
     apps: DotApps;
 
-    disabledLoadDataButton: boolean;
-    paginationPerPage = 10;
+    hideLoadDataButton: boolean;
+    paginationPerPage = 40;
     totalRecords: number;
-    showMore: boolean;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -82,7 +81,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
                 this.apps.sites = event ? this.apps.sites.concat(app.sites) : app.sites;
                 this.apps.configurationsCount = app.configurationsCount;
                 this.totalRecords = this.paginationService.totalRecords;
-                this.disabledLoadDataButton = !this.isThereMoreData(this.apps.sites.length);
+                this.hideLoadDataButton = !this.isThereMoreData(this.apps.sites.length);
             });
     }
 
@@ -93,7 +92,17 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
      * @memberof DotAppsConfigurationComponent
      */
     gotoConfiguration(site: DotAppsSites): void {
-        this.dotRouterService.goToAppsServices(this.apps.key, site);
+        this.dotRouterService.goToUpdateAppsConfiguration(this.apps.key, site);
+    }
+
+    /**
+     * Redirects to app configuration listing page
+     *
+     * @param string key
+     * @memberof DotAppsConfigurationDetailComponent
+     */
+    goToApps(key: string): void {
+        this.dotRouterService.gotoPortlet(`/apps/${key}`);
     }
 
     /**

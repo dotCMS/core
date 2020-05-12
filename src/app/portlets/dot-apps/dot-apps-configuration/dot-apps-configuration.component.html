@@ -1,50 +1,5 @@
 <div class="dot-apps-configuration__container">
-    <div class="dot-apps-configuration__header">
-        <dot-avatar
-            [size]="112"
-            [url]="apps.iconUrl"
-            [label]="apps.name"
-        ></dot-avatar>
-        <div class="dot-apps-configuration__data">
-            <span class="dot-apps-configuration__service-name">
-                {{ apps.name }}
-            </span>
-            <div class="dot-apps-configuration__service-key">
-                {{ messagesKey['apps.key'] }}
-                <dot-copy-button
-                    [copy]="apps.key"
-                    [label]="apps.key"
-                ></dot-copy-button>
-            </div>
-            <span class="dot-apps-configuration__configurations"
-                >{{
-                    apps.configurationsCount
-                        ? apps.configurationsCount +
-                          ' ' +
-                          messagesKey['apps.configurations']
-                        : messagesKey['apps.no.configurations']
-                }}
-            </span>
-            <div
-                class="dot-apps-configuration__description"
-                [ngClass]="{
-                    'dot-apps-configuration__description__show-more': showMore
-                }"
-            >
-                {{ apps.description }}
-                <a
-                    class="dot-apps-configuration__description__link_show-more"
-                    *ngIf="apps.description.length > 220"
-                    (click)="showMore = !showMore"
-                    >{{
-                        showMore
-                            ? messagesKey['apps.confirmation.description.show.less']
-                            : messagesKey['apps.confirmation.description.show.more']
-                    }}</a
-                >
-            </div>
-        </div>
-    </div>
+    <dot-apps-configuration-header *ngIf="apps" [app]="apps"></dot-apps-configuration-header>
     <div class="dot-apps-configuration__body">
         <div>
             <div class="dot-apps-configuration__action_header">
@@ -57,14 +12,15 @@
                 <button
                     pButton
                     link
-                    [label]="messagesKey['apps.confirmation.delete.all.button']"
                     icon="fa fa-trash-o"
+                    [label]="messagesKey['apps.confirmation.delete.all.button']"
+                    [disabled]="!apps.configurationsCount"
                     (click)="deleteAllConfigurations()"
                 ></button>
             </div>
             <dot-apps-configuration-list
                 [siteConfigurations]="apps.sites"
-                [disabledLoadDataButton]="disabledLoadDataButton"
+                [hideLoadDataButton]="hideLoadDataButton"
                 [itemsPerPage]="paginationPerPage"
                 (loadData)="loadData($event)"
                 (edit)="gotoConfiguration($event)"

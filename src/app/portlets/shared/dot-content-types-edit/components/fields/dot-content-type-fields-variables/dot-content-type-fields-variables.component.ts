@@ -1,65 +1,32 @@
-import {
-    Component,
-    Input,
-    SimpleChanges,
-    OnChanges,
-    OnInit,
-    OnDestroy,
-    ViewChild
-} from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
-import {
-    DotFieldVariablesService
-} from './services/dot-field-variables.service';
+import { Component, Input, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
+import { DotFieldVariablesService } from './services/dot-field-variables.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotFieldVariable } from './models/dot-field-variable.interface';
 import { ResponseView } from 'dotcms-js';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
-import { Table } from 'primeng/table';
-import * as _ from 'lodash';
 import { DotCMSContentTypeField } from 'dotcms-models';
+import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
 
 @Component({
     selector: 'dot-content-type-fields-variables',
     styleUrls: ['./dot-content-type-fields-variables.component.scss'],
     templateUrl: './dot-content-type-fields-variables.component.html'
 })
-export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges, OnDestroy {
-    @ViewChild('table')
-    table: Table;
-
+export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
     @Input()
     field: DotCMSContentTypeField;
 
     fieldVariables: DotFieldVariable[] = [];
-    fieldVariablesBackup: DotFieldVariable[] = [];
-    messages: { [key: string]: string } = {};
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        public dotMessageService: DotMessageService,
         private fieldVariablesService: DotFieldVariablesService
     ) {}
 
-    ngOnInit(): void {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.field.variables.key_header.label',
-                'contenttypes.field.variables.value_header.label',
-                'contenttypes.field.variables.actions_header.label',
-                'contenttypes.field.variables.value_no_rows.label'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messages = messages;
-                this.initTableData();
-            });
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.field.currentValue && !changes.field.firstChange) {
+        if (changes.field.currentValue) {
             this.initTableData();
         }
     }
@@ -70,49 +37,43 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     }
 
     /**
-     * Handle Delete event, if a variable has an Id (it already exist) we make a
-     * request to the backend, if not then the variable is only removed from the
-     * UI collection
-     * @param {DotFieldVariable} fieldVariable
-     * @param {number} fieldIndex
+     * Handle Delete event doing a Delete to the Backend
+     * @param {DotKeyValue} variable
      * @memberof DotContentTypeFieldsVariablesComponent
      */
-    deleteVariable(fieldVariable: DotFieldVariable, fieldIndex: number): void {
-        if (fieldVariable.id) {
-            this.deleteExistingVariable(fieldIndex);
-        } else {
-            this.deleteEmptyVariable(fieldIndex);
-        }
+    deleteExistingVariable(variable: DotKeyValue): void {
+        this.fieldVariablesService
+            .delete(this.field, variable)
+            .pipe(take(1))
+            .subscribe(
+                () => {
+                    this.fieldVariables = this.fieldVariables.filter(
+                        (item: DotFieldVariable) => item.key !== variable.key
+                    );
+                },
+                (err: ResponseView) => {
+                    this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
+                }
+            );
     }
 
     /**
-     * Handle Save event, if a fieldIndex is provided(variable already exist) we make a
-     * request to the backend, if not then an empty variable and a row is added to the
-     * UI collection
-     * @param {number} fieldIndex
+     * Handle Save event doing a Post to the Backend
+     * @param {DotKeyValue} variable
      * @memberof DotContentTypeFieldsVariablesComponent
      */
-    saveVariable(fieldIndex: number): void {
-        if (typeof fieldIndex === 'number') {
-            this.updateExistingVariable(this.fieldVariablesBackup[fieldIndex], fieldIndex);
-        } else {
-            this.addEmptyVariable();
-        }
-    }
-
-    /**
-     * Handle Cancel event, if a fieldIndex is provided(variable already exist) we restore
-     * the original value of the variable, if not then the variable last added is removed from
-     * UI collection
-     * @param {number} fieldIndex
-     * @memberof DotContentTypeFieldsVariablesComponent
-     */
-    onCancel(fieldIndex: number): void {
-        if (this.fieldVariables[fieldIndex].id) {
-            this.fieldVariablesBackup[fieldIndex] = _.cloneDeep(this.fieldVariables[fieldIndex]);
-        } else {
-            this.deleteVariable(this.fieldVariables[fieldIndex], fieldIndex);
-        }
+    updateExistingVariable(variable: DotKeyValue): void {
+        this.fieldVariablesService
+            .save(this.field, variable)
+            .pipe(take(1))
+            .subscribe(
+                (savedVariable: DotFieldVariable) => {
+                    this.fieldVariables = this.updateVariableCollection(savedVariable);
+                },
+                (err: ResponseView) => {
+                    this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
+                }
+            );
     }
 
     private initTableData(): void {
@@ -121,88 +82,21 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
             .pipe(takeUntil(this.destroy$))
             .subscribe((fieldVariables: DotFieldVariable[]) => {
                 this.fieldVariables = fieldVariables;
-                this.fieldVariablesBackup = _.cloneDeep(fieldVariables);
             });
     }
 
-    private deleteExistingVariable(fieldIndex: number): void {
-        this.fieldVariablesService
-            .delete(this.field, this.fieldVariables[fieldIndex])
-            .pipe(take(1))
-            .subscribe(
-                () => {
-                    [this.fieldVariables, this.fieldVariablesBackup] = [
-                        this.fieldVariables,
-                        this.fieldVariablesBackup
-                    ].map((variables: DotFieldVariable[]) => {
-                        return variables.filter(
-                            (_item: DotFieldVariable, index: number) => index !== fieldIndex
-                        );
-                    });
-                },
-                (err: ResponseView) => {
-                    this.dotHttpErrorManagerService
-                        .handle(err)
-                        .pipe(take(1))
-                        .subscribe();
-                }
-            );
-    }
+    private updateVariableCollection(savedVariable: DotFieldVariable): DotFieldVariable[] {
+        const variableExist = this.fieldVariables.find(
+            (item: DotKeyValue) => item.key === savedVariable.key
+        );
 
-    private deleteEmptyVariable(fieldIndex: number): void {
-        [this.fieldVariables, this.fieldVariablesBackup] = [
-            this.fieldVariables,
-            this.fieldVariablesBackup
-        ].map((variables: DotFieldVariable[]) => {
-            return variables.filter((_item: DotFieldVariable, index: number) => index !== fieldIndex);
-        });
-    }
-
-    private updateExistingVariable(variable: DotFieldVariable, variableIndex: number): void {
-        this.fieldVariablesService
-            .save(this.field, variable)
-            .pipe(take(1))
-            .subscribe(
-                (savedVariable: DotFieldVariable) => {
-                    this.fieldVariables = this.updateVariableCollection(
-                        savedVariable,
-                        variableIndex
-                    );
-                    this.fieldVariablesBackup[variableIndex] = _.cloneDeep(this.fieldVariables[variableIndex]);
-                },
-                (err: ResponseView) => {
-                    this.dotHttpErrorManagerService
-                        .handle(err)
-                        .pipe(take(1))
-                        .subscribe();
-                }
-            );
-    }
-
-    private addEmptyVariable(): void {
-        if (this.fieldVariables.length === 0 || this.isEmptyVariableNotAdded()) {
-            const emptyVariable: DotFieldVariable = {
-                key: '',
-                value: ''
-            };
-            this.fieldVariables = [].concat(emptyVariable, this.fieldVariables);
-            this.fieldVariablesBackup = [].concat(emptyVariable, this.fieldVariablesBackup);
-        }
-    }
-
-    private isEmptyVariableNotAdded(): boolean {
-        return this.fieldVariables.length > 0 && this.fieldVariables[0].key !== '';
-    }
-
-    private updateVariableCollection(
-        savedVariable: DotFieldVariable,
-        variableIndex?: number
-    ): DotFieldVariable[] {
-        return this.fieldVariables.map((item, index) => {
-            if (index === variableIndex) {
-                item = savedVariable;
-            }
-            return item;
-        });
+        return variableExist
+            ? this.fieldVariables.map((item: DotFieldVariable) => {
+                  if (item.key === savedVariable.key) {
+                      item = savedVariable;
+                  }
+                  return item;
+              })
+            : [savedVariable, ...this.fieldVariables];
     }
 }

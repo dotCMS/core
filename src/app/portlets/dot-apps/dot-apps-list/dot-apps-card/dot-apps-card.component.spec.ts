@@ -5,7 +5,9 @@ import { DOTTestBed } from '@tests/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { DotAppsCardComponent } from './dot-apps-card.component';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { CardModule } from 'primeng/primeng';
+import { CardModule, TooltipModule } from 'primeng/primeng';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { NgxMdModule } from 'ngx-md';
 
 describe('DotAppsCardComponent', () => {
     let component: DotAppsCardComponent;
@@ -13,12 +15,13 @@ describe('DotAppsCardComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'apps.configurations': 'Configurations',
-        'apps.no.configurations': 'No Configurations'
+        'apps.no.configurations': 'No Configurations',
+        'apps.invalid.configurations': 'Invalid Configurations'
     });
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            imports: [CardModule, DotAvatarModule],
+            imports: [CardModule, DotAvatarModule, DotIconModule, NgxMdModule, TooltipModule],
             declarations: [DotAppsCardComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
@@ -32,13 +35,18 @@ describe('DotAppsCardComponent', () => {
     describe('With configuration', () => {
         beforeEach(() => {
             component.app = {
+                allowExtraParams: true,
                 configurationsCount: 1,
                 key: 'asana',
                 name: 'Asana',
-                description: 'It\'s asana to keep track of your asana events',
+                description: "It's asana to keep track of your asana events",
                 iconUrl: '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg'
             };
             fixture.detectChanges();
+        });
+
+        it('should not have warning icon', () => {
+            expect(fixture.debugElement.query(By.css('dot-icon'))).toBeFalsy();
         });
 
         it('should not have disabled css class', () => {
@@ -59,13 +67,12 @@ describe('DotAppsCardComponent', () => {
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-card__name'))
-                    .nativeElement.innerText
+                fixture.debugElement.query(By.css('.dot-apps-card__name')).nativeElement.innerText
             ).toBe(component.app.name);
 
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-card__configurations'))
-                    .nativeElement.textContent
+                fixture.debugElement.query(By.css('.dot-apps-card__configurations')).nativeElement
+                    .textContent
             ).toContain(
                 `${component.app.configurationsCount} ${component.messagesKey['apps.configurations']}`
             );
@@ -76,16 +83,28 @@ describe('DotAppsCardComponent', () => {
         });
     });
 
-    describe('With No configuration', () => {
+    describe('With No configuration & warnings', () => {
         beforeEach(() => {
             component.app = {
+                allowExtraParams: false,
                 configurationsCount: 0,
                 key: 'asana',
                 name: 'Asana',
-                description: 'It\'s asana to keep track of your asana events',
-                iconUrl: '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg'
+                description: "It's asana to keep track of your asana events",
+                iconUrl: '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg',
+                sitesWithWarnings: 2
             };
             fixture.detectChanges();
+        });
+
+        it('should have warning icon', () => {
+            const warningIcon = fixture.debugElement.query(By.css('dot-icon'));
+            expect(warningIcon).toBeTruthy();
+            expect(warningIcon.attributes['name']).toBe('warning');
+            expect(warningIcon.attributes['size']).toBe('18');
+            expect(warningIcon.attributes['ng-reflect-text']).toBe(
+                `${component.app.sitesWithWarnings} ${component.messagesKey['apps.invalid.configurations']}`
+            );
         });
 
         it('should have disabled css class', () => {
@@ -104,8 +123,8 @@ describe('DotAppsCardComponent', () => {
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-card__configurations'))
-                    .nativeElement.textContent
+                fixture.debugElement.query(By.css('.dot-apps-card__configurations')).nativeElement
+                    .textContent
             ).toContain(component.messagesKey['apps.no.configurations']);
         });
     });

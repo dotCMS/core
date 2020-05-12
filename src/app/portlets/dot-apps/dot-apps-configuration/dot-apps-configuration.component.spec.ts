@@ -6,8 +6,6 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { ActivatedRoute } from '@angular/router';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { InputTextModule, ButtonModule } from 'primeng/primeng';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
@@ -20,6 +18,7 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
 import { PaginatorService } from '@services/paginator';
+import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 
 const messages = {
     'apps.key': 'Key',
@@ -48,6 +47,7 @@ const sites = [
 ];
 
 const appData = {
+    allowExtraParams: true,
     configurationsCount: 2,
     key: 'google-calendar',
     name: 'Google Calendar',
@@ -97,9 +97,8 @@ describe('DotAppsConfigurationComponent', () => {
                 InputTextModule,
                 ButtonModule,
                 CommonModule,
-                DotAvatarModule,
                 DotActionButtonModule,
-                DotCopyButtonModule,
+                DotAppsConfigurationHeaderModule,
                 DotAppsConfigurationListModule
             ],
             declarations: [DotAppsConfigurationComponent],
@@ -163,28 +162,6 @@ describe('DotAppsConfigurationComponent', () => {
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration__service-name'))
-                    .nativeElement.innerText
-            ).toBe(component.apps.name);
-
-            expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration__service-key'))
-                    .nativeElement.textContent
-            ).toContain(`${component.messagesKey['apps.key']} ${component.apps.key}`);
-
-            expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration__configurations'))
-                    .nativeElement.textContent
-            ).toContain(
-                `${component.apps.configurationsCount} ${component.messagesKey['apps.configurations']}`
-            );
-
-            expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration__description'))
-                    .nativeElement.innerText
-            ).toContain(`${component.apps.description}`);
-
-            expect(
                 fixture.debugElement.query(By.css('.dot-apps-configuration__action_header input'))
                     .nativeElement.placeholder
             ).toContain(component.messagesKey['apps.search.placeholder']);
@@ -195,23 +172,11 @@ describe('DotAppsConfigurationComponent', () => {
             ).toContain(component.messagesKey['apps.confirmation.delete.all.button'].toUpperCase());
         });
 
-        it('should have Dot-Copy-Button with appKey value', () => {
-            const copyBtn = fixture.debugElement.query(By.css('dot-copy-button')).componentInstance;
-            expect(copyBtn.copy).toBe(component.apps.key);
-            expect(copyBtn.label).toBe(component.apps.key);
-        });
-
-        it('should have Dot-Avatar with correct values', () => {
-            const avatar = fixture.debugElement.query(By.css('dot-avatar')).componentInstance;
-            expect(avatar.size).toBe(112);
-            expect(avatar.url).toBe(component.apps.iconUrl);
-        });
-
         it('should have dot-apps-configuration-list with correct values', () => {
             const listComp = fixture.debugElement.query(By.css('dot-apps-configuration-list'))
                 .componentInstance;
             expect(listComp.siteConfigurations).toBe(component.apps.sites);
-            expect(listComp.disabledLoadDataButton).toBe(true);
+            expect(listComp.hideLoadDataButton).toBe(true);
             expect(listComp.itemsPerPage).toBe(component.paginationPerPage);
         });
 
@@ -226,7 +191,7 @@ describe('DotAppsConfigurationComponent', () => {
             const listComp = fixture.debugElement.query(By.css('dot-apps-configuration-list'))
                 .componentInstance;
             listComp.edit.emit(sites[0]);
-            expect(routerService.goToAppsServices).toHaveBeenCalledWith(
+            expect(routerService.goToUpdateAppsConfiguration).toHaveBeenCalledWith(
                 component.apps.key,
                 sites[0]
             );
@@ -267,22 +232,5 @@ describe('DotAppsConfigurationComponent', () => {
             expect(paginationService.setExtraParams).toHaveBeenCalledWith('filter', 'test');
             expect(paginationService.getWithOffset).toHaveBeenCalled();
         }));
-    });
-
-    describe('With NO integrations count', () => {
-        beforeEach(() => {
-            routeDatamock.data.app = {
-                ...appData,
-                configurationsCount: 0
-            };
-            fixture.detectChanges();
-        });
-
-        it('should show No configurations label', () => {
-            expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration__configurations'))
-                    .nativeElement.textContent
-            ).toContain(component.messagesKey['apps.no.configurations']);
-        });
     });
 });

@@ -19,8 +19,7 @@ export interface DotAppsResolverData {
  * @implements {Resolve<{[key: string]: string}>}
  */
 @Injectable()
-export class DotAppsConfigurationResolver
-    implements Resolve<Observable<DotAppsResolverData>> {
+export class DotAppsConfigurationResolver implements Resolve<Observable<DotAppsResolverData>> {
     constructor(
         private dotAppsService: DotAppsService,
         public dotMessageService: DotMessageService
@@ -28,20 +27,14 @@ export class DotAppsConfigurationResolver
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotAppsResolverData> {
         const appsKey = route.paramMap.get('appKey');
-        const appsConfigurations$ = this.dotAppsService
-            .getConfigurationList(appsKey)
-            .pipe(take(1));
+        const appsConfigurations$ = this.dotAppsService.getConfigurationList(appsKey).pipe(take(1));
         const messages$: Observable<{
             [key: string]: string;
         }> = this.dotMessageService
             .getMessages([
-                'apps.configurations',
-                'apps.no.configurations',
                 'apps.confirmation.delete.all.button',
                 'apps.confirmation.title',
                 'apps.key',
-                'apps.confirmation.description.show.more',
-                'apps.confirmation.description.show.less',
                 'apps.confirmation.delete.all.message',
                 'apps.confirmation.accept',
                 'apps.search.placeholder'

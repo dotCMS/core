@@ -1,0 +1,55 @@
+<tr class="dot-key-value-table-input-row">
+    <td>
+        <input
+            #keyCell
+            pInputText
+            class="field-key-input"
+            type="text"
+            autocomplete="false"
+            [placeholder]="messages['keyValue.key_input.placeholder']"
+            (blur)="editFieldInit($event)"
+            (focus)="editFieldInit($event)"
+            (keyup)="editFieldInit($event)"
+            (keydown.escape)="onCancel($event)"
+            (keydown.enter)="onPressEnter($event)"
+            [(ngModel)]="variable.key"
+        />
+    </td>
+    <td>
+        <input
+            #valueCell
+            pInputText
+            class="field-value-input"
+            autocomplete="false"
+            [type]="variable.hidden ? 'password' : 'text'"
+            [placeholder]="messages['keyValue.value_input.placeholder']"
+            (focus)="editFieldInit($event)"
+            (keyup)="editFieldInit($event)"
+            (keydown.escape)="onCancel($event)"
+            (keydown.enter)="onPressEnter($event)"
+            [(ngModel)]="variable.value"
+        />
+    </td>
+    <td *ngIf="showHiddenField" class="dot-key-value-table-input-row__variables-hidden">
+        <p-inputSwitch [(ngModel)]="variable.hidden" (click)="editFieldInit()"></p-inputSwitch>
+    </td>
+    <td class="dot-key-value-table-input-row__variables-actions">
+        <button
+            pButton
+            secondary
+            tiny
+            class="dot-key-value-table-input-row__variables-actions-edit-cancel"
+            [label]="messages['Cancel']"
+            (click)="onCancel($event)"
+        ></button>
+        <button
+            #saveButton
+            pButton
+            tiny
+            class="dot-key-value-table-input-row__variables-actions-edit-save"
+            [label]="messages['Save']"
+            [disabled]="saveDisabled"
+            (click)="saveVariable()"
+        ></button>
+    </td>
+</tr>

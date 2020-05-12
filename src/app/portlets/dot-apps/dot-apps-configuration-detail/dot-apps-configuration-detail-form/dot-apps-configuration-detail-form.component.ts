@@ -1,4 +1,12 @@
-import { Component, OnInit, Input, Output, EventEmitter, ViewChild } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    Input,
+    Output,
+    EventEmitter,
+    ViewChild,
+    ElementRef
+} from '@angular/core';
 import { FormControl, FormGroup, Validators, NgForm } from '@angular/forms';
 import { DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 
@@ -9,6 +17,7 @@ import { DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 })
 export class DotAppsConfigurationDetailFormComponent implements OnInit {
     @ViewChild('form') public form: NgForm;
+    @ViewChild('formContainer') public formContainer: ElementRef;
 
     @Input() formFields: DotAppsSecrets[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();
@@ -32,6 +41,10 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
         });
 
         this.emitValues();
+
+        setTimeout(() => {
+            this.formContainer.nativeElement.querySelector(`#${this.formFields[0].name}`).focus();
+        }, 0);
     }
 
     private getFieldValue(field: DotAppsSecrets): string | boolean {

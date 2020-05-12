@@ -1,6 +1,9 @@
 <div class="dot-apps-configuration-list__results">
     <dot-apps-configuration-item
         *ngFor="let site of siteConfigurations; let i = index"
+        [ngClass]="{
+            'dot-apps-configuration-item__not-configured': !site.configured
+        }"
         [site]="site"
         (edit)="edit.emit($event)"
         (delete)="delete.emit($event)"
@@ -11,7 +14,7 @@
     pButton
     secondary
     class="dot-apps-configuration-list__show-more"
+    *ngIf="!hideLoadDataButton"
     [label]="messagesKey['apps.configurations.show.more']"
     (click)="loadNext()"
-    [disabled]="disabledLoadDataButton"
 ></button>

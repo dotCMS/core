@@ -65,7 +65,7 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
      * @memberof DotAppsListComponent
      */
     goToApp(key: string): void {
-        this.dotRouterService.gotoPortlet(`/apps/${key}`);
+        this.dotRouterService.goToAppsConfiguration(key);
     }
 
     private filterApps(searchCriteria?: string): void {

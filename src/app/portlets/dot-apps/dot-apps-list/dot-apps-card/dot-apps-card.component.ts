@@ -19,7 +19,8 @@ export class DotAppsCardComponent implements OnInit {
         this.dotMessageService
             .getMessages([
                 'apps.configurations',
-                'apps.no.configurations'
+                'apps.no.configurations',
+                'apps.invalid.configurations'
             ])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {

@@ -3,10 +3,13 @@
 :host {
     form {
         display: flex;
+        max-width: 900px;
         width: 100%;
     }
 
     textarea {
+        font-family: $code-text;
+        font-size: $font-size-medium;
         height: 36px;
         max-height: 400px;
     }
@@ -19,10 +22,23 @@
 .dot-apps-configuration-detail__form-row {
     margin-bottom: $basic-padding * 3;
 
-    & > * {
+    input,
+    textarea {
         width: 100%;
     }
 
+    .form__label,
+    p-checkbox {
+        display: inline;
+    }
+
+    dot-icon {
+        color: $brand-primary;
+        margin-left: $basic-padding;
+        vertical-align: middle;
+    }
+
+    ::ng-deep p-checkbox.required label:before,
     label.required:before {
         color: $red;
         content: "* ";

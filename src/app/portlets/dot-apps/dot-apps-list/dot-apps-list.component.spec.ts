@@ -22,6 +22,7 @@ class AppsServicesMock {
 const routeDatamock = {
     appsServices: [
         {
+            allowExtraParams: true,
             configurationsCount: 0,
             key: 'google-calendar',
             name: 'Google Calendar',
@@ -29,6 +30,7 @@ const routeDatamock = {
             iconUrl: '/dA/d948d85c-3bc8-4d85-b0aa-0e989b9ae235/photo/surfer-profile.jpg'
         },
         {
+            allowExtraParams: true,
             configurationsCount: 1,
             key: 'asana',
             name: 'Asana',
@@ -113,6 +115,6 @@ describe('DotAppsListComponent', () => {
         const card: DotAppsCardComponent = fixture.debugElement.queryAll(By.css('dot-apps-card'))[0]
             .componentInstance;
         card.actionFired.emit(component.apps[0].key);
-        expect(routerService.gotoPortlet).toHaveBeenCalledWith(`/apps/${component.apps[0].key}`);
+        expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps[0].key);
     });
 });

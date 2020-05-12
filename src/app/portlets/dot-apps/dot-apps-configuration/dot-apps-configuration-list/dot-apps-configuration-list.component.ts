@@ -22,7 +22,7 @@ export class DotAppsConfigurationListComponent implements OnInit {
     @ViewChild('searchInput')
     searchInput: ElementRef;
 
-    @Input() disabledLoadDataButton: boolean;
+    @Input() hideLoadDataButton: boolean;
     @Input() itemsPerPage: number;
     @Input() siteConfigurations: DotAppsSites[];
 

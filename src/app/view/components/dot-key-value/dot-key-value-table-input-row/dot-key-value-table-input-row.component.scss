@@ -1,0 +1,53 @@
+@import "variables";
+@import "mixins";
+
+:host {
+    display: contents;
+
+    input {
+        width: 100%;
+    }
+
+    p-inputSwitch {
+        display: inline-block;
+    }
+}
+
+.dot-key-value-table-input-row {
+    border-bottom: 1px solid $gray-bg;
+
+    &:hover {
+        background-color: $gray-bg;
+    }
+
+    td:nth-child(-n + 2) {
+        padding-right: $basic-padding * 3;
+    }
+}
+
+.dot-key-value-table-input-row td,
+.dot-key-value-table-input-row__variables-actions {
+    padding: 0;
+    height: $basic-padding * 8;
+    vertical-align: middle;
+
+    &:first-child {
+        padding-left: $basic-padding * 3;
+    }
+
+    &:last-child {
+        padding-right: $basic-padding * 3;
+    }
+}
+
+.dot-key-value-table-input-row__variables-actions {
+    text-align: right;
+
+    button {
+        margin-left: $basic-padding;
+    }
+}
+
+.dot-key-value-table-input-row__variables-hidden {
+    text-align: center;
+}

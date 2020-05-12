@@ -7,7 +7,7 @@ import { ActivatedRoute } from '@angular/router';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
-import { Injectable } from '@angular/core';
+import { Injectable, Component, Input, Output, EventEmitter } from '@angular/core';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { CommonModule } from '@angular/common';
@@ -17,12 +17,14 @@ import { ButtonModule } from 'primeng/button';
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 import { By } from '@angular/platform-browser';
 import { DotAppsSaveData } from '@shared/models/dot-apps/dot-apps.model';
+import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
+import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 
 const messages = {
     'apps.key': 'Key',
     Cancel: 'CANCEL',
     Save: 'SAVE',
-    'apps.add.property': 'ADD PROPERTY',
+    'apps.custom.properties': 'Custom Properties',
     'apps.form.dialog.success.header': 'Header',
     'apps.form.dialog.success.message': 'Message',
     ok: 'OK'
@@ -69,6 +71,7 @@ const sites = [
 ];
 
 const appData = {
+    allowExtraParams: false,
     configurationsCount: 1,
     key: 'google-calendar',
     name: 'Google Calendar',
@@ -97,6 +100,21 @@ class MockDotAppsService {
     }
 }
 
+@Component({
+    selector: 'dot-key-value',
+    template: ''
+})
+class MockDotKeyValueComponent {
+    @Input()
+    showHiddenField: string;
+    @Input()
+    variables: DotKeyValue[];
+    @Output()
+    delete = new EventEmitter<DotKeyValue>();
+    @Output()
+    save = new EventEmitter<DotKeyValue>();
+}
+
 describe('DotAppsConfigurationDetailComponent', () => {
     let component: DotAppsConfigurationDetailComponent;
     let fixture: ComponentFixture<DotAppsConfigurationDetailComponent>;
@@ -117,9 +135,10 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 ButtonModule,
                 CommonModule,
                 DotCopyButtonModule,
+                DotAppsConfigurationHeaderModule,
                 DotAppsConfigurationDetailFormModule
             ],
-            declarations: [DotAppsConfigurationDetailComponent],
+            declarations: [DotAppsConfigurationDetailComponent, MockDotKeyValueComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -144,11 +163,11 @@ describe('DotAppsConfigurationDetailComponent', () => {
         component = fixture.debugElement.componentInstance;
         appsServices = fixture.debugElement.injector.get(DotAppsService);
         routerService = fixture.debugElement.injector.get(DotRouterService);
+        spyOn(appsServices, 'saveSiteConfiguration').and.returnValue(of({}));
     });
 
-    describe('With integrations count', () => {
+    describe('Without dynamic params', () => {
         beforeEach(() => {
-            spyOn(appsServices, 'saveSiteConfiguration').and.returnValue(of({}));
             fixture.detectChanges();
         });
 
@@ -158,14 +177,6 @@ describe('DotAppsConfigurationDetailComponent', () => {
         });
 
         it('should set labels and buttons with right values', () => {
-            expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration-detail__service-name'))
-                    .nativeElement.textContent
-            ).toContain(component.apps.name);
-            expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration-detail__service-key'))
-                    .nativeElement.textContent
-            ).toContain(`${component.messagesKey['apps.key']} ${component.apps.key}`);
             expect(
                 fixture.debugElement.queryAll(
                     By.css('.dot-apps-configuration-detail-actions button')
@@ -180,11 +191,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 fixture.debugElement.query(By.css('.dot-apps-configuration-detail__host-name'))
                     .nativeElement.textContent
             ).toContain(component.apps.sites[0].name);
-            expect(
-                fixture.debugElement.queryAll(
-                    By.css('.dot-apps-configuration-detail__form-content button')
-                )[0].nativeElement.innerText
-            ).toContain(component.messagesKey['apps.add.property']);
+            expect(fixture.debugElement.query(By.css('dot-key-value'))).toBeFalsy();
         });
 
         it('should set Save button disabled to false with valid form', () => {
@@ -199,7 +206,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             const formComponent = fixture.debugElement.query(
                 By.css('dot-apps-configuration-detail-form')
             ).componentInstance;
-            expect(formComponent.formFields).toBe(sites[0].secrets);
+            expect(formComponent.formFields).toEqual(sites[0].secrets);
         });
 
         it('should update formData and formValid fields when dot-apps-configuration-detail-form changed', () => {
@@ -222,7 +229,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 By.css('.dot-apps-configuration-detail-actions button')
             )[0];
             cancelBtn.triggerEventHandler('click', {});
-            expect(routerService.gotoPortlet).toHaveBeenCalledWith(`/apps/${component.apps.key}`);
+            expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps.key);
         });
 
         it('should have Dot-Copy-Button with appKey value', () => {
@@ -244,6 +251,83 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 enabled: {
                     hidden: false,
                     value: 'true'
+                }
+            };
+            const saveBtn = fixture.debugElement.queryAll(
+                By.css('.dot-apps-configuration-detail-actions button')
+            )[1];
+
+            saveBtn.triggerEventHandler('click', {});
+            expect(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(
+                component.apps.key,
+                component.apps.sites[0].id,
+                transformedData
+            );
+        });
+    });
+
+    describe('With dynamic variables', () => {
+        beforeEach(() => {
+            const sitesDynamic = [].concat(sites);
+            sitesDynamic[0].secrets = [].concat(sites[0].secrets, {
+                dynamic: true,
+                name: 'custom',
+                hidden: false,
+                hint: 'dynamic variable',
+                label: '',
+                required: false,
+                type: 'STRING',
+                value: 'test'
+            });
+            routeDatamock.data.app = {
+                ...appData,
+                allowExtraParams: true,
+                sites: sitesDynamic
+            };
+            fixture.detectChanges();
+        });
+
+        it('should show DotKeyValue component with right values', () => {
+            const keyValue = fixture.debugElement.query(By.css('dot-key-value'));
+            expect(keyValue).toBeTruthy();
+            expect(keyValue.componentInstance.showHiddenField).toBe(true);
+            expect(keyValue.componentInstance.variables).toEqual([
+                { key: 'custom', hidden: false, value: 'test' }
+            ]);
+        });
+
+        it('should update local collection with saved value', () => {
+            const variableEmitted = { key: 'custom', hidden: false, value: 'changed' };
+            const keyValue = fixture.debugElement.query(By.css('dot-key-value'));
+            keyValue.componentInstance.save.emit(variableEmitted);
+            expect(component.dynamicVariables[0]).toEqual(variableEmitted);
+            expect(component.dynamicVariables.length).toEqual(1);
+        });
+
+        it('should delete from local collection', () => {
+            const variableEmitted = { key: 'custom', hidden: false, value: 'test' };
+            const keyValue = fixture.debugElement.query(By.css('dot-key-value'));
+            keyValue.componentInstance.delete.emit(variableEmitted);
+            expect(component.dynamicVariables.length).toEqual(0);
+        });
+
+        it('should save configuration when Save button clicked', () => {
+            const transformedData = {
+                name: {
+                    hidden: false,
+                    value: 'John'
+                },
+                password: {
+                    hidden: false,
+                    value: '****'
+                },
+                enabled: {
+                    hidden: false,
+                    value: 'true'
+                },
+                custom: {
+                    hidden: false,
+                    value: 'test'
                 }
             };
             const saveBtn = fixture.debugElement.queryAll(

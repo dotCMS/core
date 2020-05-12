@@ -1,12 +1,13 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { DotApps, DotAppsSaveData } from '@shared/models/dot-apps/dot-apps.model';
+import { DotApps, DotAppsSaveData, DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 import { ActivatedRoute } from '@angular/router';
 import { pluck, take } from 'rxjs/operators';
-
+import * as _ from 'lodash';
 import { DotAppsResolverData } from '../dot-apps-configuration/dot-apps-configuration-resolver.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
+import { DotKeyValueUtil } from '@components/dot-key-value/util/dot-key-value-util';
 
 @Component({
     selector: 'dot-apps-configuration-detail',
@@ -18,6 +19,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     messagesKey: { [key: string]: string } = {};
     apps: DotApps;
 
+    dynamicVariables: DotKeyValue[];
     formData: { [key: string]: string };
     formFields: any[];
     formValid = false;
@@ -25,8 +27,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     constructor(
         private route: ActivatedRoute,
         private dotRouterService: DotRouterService,
-        private dotAppsService: DotAppsService,
-        private dotDialogService: DotAlertConfirmService
+        private dotAppsService: DotAppsService
     ) {}
 
     ngOnInit() {
@@ -34,8 +35,12 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
             .pipe(pluck('data'), take(1))
             .subscribe(({ messages, app }: DotAppsResolverData) => {
                 this.apps = app;
-                this.formFields = app.sites[0].secrets;
+                this.formFields = this.getSecrets(app.sites[0].secrets);
                 this.messagesKey = messages;
+
+                this.dynamicVariables = this.transformSecretsToKeyValue(
+                    this.getSecrets(app.sites[0].secrets, true)
+                );
             });
     }
 
@@ -53,16 +58,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
             )
             .pipe(take(1))
             .subscribe(() => {
-                this.dotDialogService.alert({
-                    accept: () => {
-                        this.goToApps(this.apps.key);
-                    },
-                    header: this.messagesKey['apps.form.dialog.success.header'],
-                    message: this.messagesKey['apps.form.dialog.success.message'],
-                    footerLabel: {
-                        accept: this.messagesKey['ok']
-                    }
-                });
+                this.goToApps(this.apps.key);
             });
     }
 
@@ -73,17 +69,68 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
      * @memberof DotAppsConfigurationDetailComponent
      */
     goToApps(key: string): void {
-        this.dotRouterService.gotoPortlet(`/apps/${key}`);
+        this.dotRouterService.goToAppsConfiguration(key);
+    }
+
+    /**
+     * Handle Save event doing if new a prepend, otherwise a replace
+     * to the local collection
+     * @param {DotKeyValue} variable
+     * @memberof DotAppsConfigurationDetailComponent
+     */
+    saveDynamicVariable(variable: DotKeyValue): void {
+        const indexChanged = DotKeyValueUtil.getVariableIndexChanged(
+            variable,
+            this.dynamicVariables
+        );
+        if (indexChanged !== null) {
+            this.dynamicVariables[indexChanged] = _.cloneDeep(variable);
+        } else {
+            this.dynamicVariables = [variable, ...this.dynamicVariables];
+        }
+    }
+
+    /**
+     * Handle Delete event doing a removing the variable from the local collection
+     * @param {DotKeyValue} variable
+     * @memberof DotAppsConfigurationDetailComponent
+     */
+    deleteDynamicVariable(variable: DotKeyValue): void {
+        this.dynamicVariables = this.dynamicVariables.filter(
+            (item: DotKeyValue) => item.key !== variable.key
+        );
     }
 
     private getTransformedFormData(): DotAppsSaveData {
         const params = {};
+
         for (const key of Object.keys(this.formData)) {
             params[key] = {
                 hidden: this.formData[`${key}Hidden`] || false,
                 value: this.formData[key].toString()
             };
         }
+
+        this.dynamicVariables.forEach((item: DotKeyValue) => {
+            params[item.key] = {
+                hidden: item.hidden || false,
+                value: item.value.toString()
+            };
+        });
+
         return params;
+    }
+
+    private getSecrets(
+        secrets: DotAppsSecrets[],
+        includeDinamicFields: boolean = false
+    ): DotAppsSecrets[] {
+        return secrets.filter((secret: DotAppsSecrets) => secret.dynamic === includeDinamicFields);
+    }
+
+    private transformSecretsToKeyValue(secrets: DotAppsSecrets[]): DotKeyValue[] {
+        return secrets.map(({ name, hidden, value }: DotAppsSecrets) => {
+            return { key: name, hidden: hidden, value: value };
+        });
     }
 }

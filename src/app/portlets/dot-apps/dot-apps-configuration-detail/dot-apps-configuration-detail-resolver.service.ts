@@ -29,9 +29,10 @@ export class DotAppsConfigurationDetailResolver implements Resolve<DotAppsResolv
         }> = this.dotMessageService
             .getMessages([
                 'apps.key',
-                'apps.add.property',
+                'apps.custom.properties',
                 'apps.form.dialog.success.header',
                 'apps.form.dialog.success.message',
+                'apps.custom.properties',
                 'ok',
                 'Cancel',
                 'Save'

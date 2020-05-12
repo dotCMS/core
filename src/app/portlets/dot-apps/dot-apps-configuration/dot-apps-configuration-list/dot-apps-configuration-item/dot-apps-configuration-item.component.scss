@@ -15,9 +15,14 @@
         box-shadow: $md-shadow-5;
     }
 
-    dot-icon-button {
+    dot-icon-button,
+    dot-icon {
         align-self: center;
         margin-right: $basic-padding * 2;
+    }
+
+    dot-icon {
+        color: $brand-primary;
     }
 }
 

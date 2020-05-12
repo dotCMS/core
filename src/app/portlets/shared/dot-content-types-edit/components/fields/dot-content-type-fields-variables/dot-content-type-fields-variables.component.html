@@ -1,33 +1,5 @@
-<dot-action-button class="action-header__primary-button" (click)="saveVariable(null)"></dot-action-button>
-<p-table #table [value]="fieldVariablesBackup" sortField="clazz" (keydown.enter)="$event.stopPropagation()" sortOrder=0 dataKey="id">
-    <ng-template pTemplate="header" let-columns>
-        <tr>
-            <th [ngStyle]="{'text-align': 'left', 'width': '33%'}">
-                {{messages['contenttypes.field.variables.key_header.label']}}
-            </th>
-            <th [ngStyle]="{'text-align': 'left', 'width': '33%'}">
-                {{messages['contenttypes.field.variables.value_header.label']}}
-            </th>
-            <th [ngStyle]="{'text-align': 'right', 'width': '185px', 'padding-right': '32px'}">
-                {{messages['contenttypes.field.variables.actions_header.label']}}
-            </th>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-fieldVariable let-rowIndex="rowIndex">
-        <dot-content-type-fields-variables-table-row #tableRow
-            [fieldVariable]="fieldVariable"
-            [variableIndex]="rowIndex"
-            [variablesList]="fieldVariables"
-            (cancel)="onCancel($event)"
-            (delete)="deleteVariable(fieldVariables[$event], $event)"
-            (save)="saveVariable($event)">
-        </dot-content-type-fields-variables-table-row>
-    </ng-template>
-    <ng-template pTemplate="emptymessage" let-fieldVariables>
-        <tr>
-            <td [attr.colspan]="3">
-                {{ messages['contenttypes.field.variables.value_no_rows.label'] }}
-            </td>
-        </tr>
-    </ng-template>
-</p-table>
+<dot-key-value
+    [variables]="fieldVariables"
+    (delete)="deleteExistingVariable($event)"
+    (save)="updateExistingVariable($event)"
+></dot-key-value>

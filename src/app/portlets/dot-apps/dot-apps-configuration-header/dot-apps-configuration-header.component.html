@@ -1,0 +1,40 @@
+<dot-avatar
+    [size]="112"
+    [url]="app.iconUrl"
+    [label]="app.name"
+    (click)="goToApps(app.key)"
+></dot-avatar>
+<div class="dot-apps-configuration__data">
+    <span class="dot-apps-configuration__service-name" (click)="goToApps(app.key)">
+        {{ app.name }}
+    </span>
+    <div class="dot-apps-configuration__service-key">
+        {{ messagesKey['apps.key'] }}
+        <dot-copy-button [copy]="app.key" [label]="app.key"></dot-copy-button>
+    </div>
+    <span class="dot-apps-configuration__configurations"
+        >{{
+            app.configurationsCount
+                ? app.configurationsCount + ' ' + messagesKey['apps.configurations']
+                : messagesKey['apps.no.configurations']
+        }}
+    </span>
+    <div
+        class="dot-apps-configuration__description"
+        [ngClass]="{
+            'dot-apps-configuration__description__show-more': showMore
+        }"
+    >
+        <ngx-md>{{ app.description }}</ngx-md>
+        <a
+            class="dot-apps-configuration__description__link_show-more"
+            *ngIf="app.description.length > 270"
+            (click)="showMore = !showMore"
+            >{{
+                showMore
+                    ? messagesKey['apps.confirmation.description.show.less']
+                    : messagesKey['apps.confirmation.description.show.more']
+            }}</a
+        >
+    </div>
+</div>

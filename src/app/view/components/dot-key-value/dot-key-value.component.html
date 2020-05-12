@@ -1,0 +1,53 @@
+<p-table
+    #table
+    [value]="variablesBackup"
+    sortField="clazz"
+    (keydown.enter)="$event.stopPropagation()"
+    sortOrder="0"
+    dataKey="id"
+>
+    <ng-template pTemplate="header" let-columns>
+        <tr>
+            <th class="dot-key-value__header-keyValue-label">
+                {{ messages['keyValue.key_header.label'] }}
+            </th>
+            <th class="dot-key-value__header-keyValue-label">
+                {{ messages['keyValue.value_header.label'] }}
+            </th>
+            <th *ngIf="showHiddenField" class="dot-key-value__header-hidden-label">
+                {{ messages['keyValue.hidden_header.label'] }}
+            </th>
+            <th class="dot-key-value__header-actions-label">
+                {{ messages['keyValue.actions_header.label'] }}
+            </th>
+        </tr>
+        <dot-key-value-table-input-row
+            [autoFocus]="autoFocus"
+            [showHiddenField]="showHiddenField"
+            [variablesList]="variables"
+            (save)="saveVariable($event)"
+        >
+        </dot-key-value-table-input-row>
+    </ng-template>
+    <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
+        <dot-key-value-table-row
+            #tableRow
+            [showHiddenField]="showHiddenField"
+            [isHiddenField]="variables[rowIndex].hidden"
+            [variable]="variable"
+            [variableIndex]="rowIndex"
+            [variablesList]="variables"
+            (cancel)="onCancel($event)"
+            (delete)="deleteVariable($event)"
+            (save)="saveVariable($event)"
+        >
+        </dot-key-value-table-row>
+    </ng-template>
+    <ng-template pTemplate="emptymessage" let-variables>
+        <tr>
+            <td [attr.colspan]="showHiddenField ? 4 : 3">
+                {{ messages['keyValue.value_no_rows.label'] }}
+            </td>
+        </tr>
+    </ng-template>
+</p-table>

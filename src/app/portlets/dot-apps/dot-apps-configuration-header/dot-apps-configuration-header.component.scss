@@ -1,0 +1,85 @@
+@import "variables";
+
+:host {
+    background-color: $white;
+    border-bottom: 1px solid $gray-light;
+    display: flex;
+    padding: $basic-padding * 3 $basic-padding * 3 $basic-padding * 3 0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+    dot-avatar {
+        align-self: baseline;
+        border-radius: 50%;
+        box-shadow: $md-shadow-2;
+        cursor: pointer;
+        margin: 0 $basic-padding * 3 0 $basic-padding * 3;
+    }
+}
+
+.dot-apps-configuration__data {
+    font-size: $font-size-small;
+    width: 100%;
+}
+
+.dot-apps-configuration__service-name {
+    color: $black;
+    cursor: pointer;
+    display: inline-block;
+    font-size: $font-size-xx-large;
+    font-weight: bold;
+}
+
+.dot-apps-configuration__service-key {
+    color: $gray;
+    display: inline-block;
+    font-size: $font-size-large;
+    height: 24px;
+    margin-left: $basic-padding * 2;
+    vertical-align: bottom;
+}
+
+.dot-apps-configuration__configurations {
+    color: $gray;
+    display: block;
+    font-size: $font-size-large;
+    margin-bottom: $basic-padding * 2;
+    margin-top: $basic-padding;
+}
+
+::ng-deep {
+    .dot-apps-configuration__description {
+        max-width: 900px;
+        position: relative;
+    }
+
+    .dot-apps-configuration__description p {
+        font-size: $font-size-large;
+        height: 2.6em;
+        line-height: inherit;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    .dot-apps-configuration__description__link_show-more {
+        background-color: $white;
+        cursor: pointer;
+        font-size: $font-size-large;
+        padding-left: $basic-padding;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        z-index: 1;
+    }
+
+    .dot-apps-configuration__description__show-more p {
+        height: auto;
+        overflow: visible;
+
+        .dot-apps-configuration__description__link_show-more {
+            position: relative;
+            top: 0;
+        }
+    }
+}

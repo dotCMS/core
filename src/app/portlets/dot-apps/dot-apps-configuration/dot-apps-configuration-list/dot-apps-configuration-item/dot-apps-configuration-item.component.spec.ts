@@ -7,6 +7,8 @@ import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { By } from '@angular/platform-browser';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { TooltipModule } from 'primeng/primeng';
 
 const messages = {
     'apps.key': 'Key',
@@ -18,14 +20,16 @@ const messages = {
     'apps.confirmation.description.show.less': 'Show Less',
     'apps.confirmation.delete.all.message': 'Delete all?',
     'apps.confirmation.accept': 'Ok',
-    'apps.search.placeholder': 'Search by name'
+    'apps.search.placeholder': 'Search by name',
+    'apps.invalid.secrets': 'Invalid Secrets'
 };
 
 const sites = [
     {
         configured: true,
         id: '123',
-        name: 'demo.dotcms.com'
+        name: 'demo.dotcms.com',
+        secretsWithWarnings: 2
     },
     {
         configured: false,
@@ -43,7 +47,7 @@ describe('DotAppsConfigurationItemComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            imports: [CommonModule, DotIconButtonModule],
+            imports: [CommonModule, DotIconButtonModule, DotIconModule, TooltipModule],
             declarations: [DotAppsConfigurationItemComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
@@ -67,15 +71,13 @@ describe('DotAppsConfigurationItemComponent', () => {
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.query(
-                    By.css('.dot-apps-configuration-list__name')
-                ).nativeElement.innerText
+                fixture.debugElement.query(By.css('.dot-apps-configuration-list__name'))
+                    .nativeElement.innerText
             ).toBe(sites[0].name);
 
             expect(
-                fixture.debugElement.query(
-                    By.css('.dot-apps-configuration-list__host-key')
-                ).nativeElement.textContent
+                fixture.debugElement.query(By.css('.dot-apps-configuration-list__host-key'))
+                    .nativeElement.textContent
             ).toContain(`${component.messagesKey['apps.key']} ${sites[0].id}`);
         });
 
@@ -84,6 +86,16 @@ describe('DotAppsConfigurationItemComponent', () => {
             expect(buttons.length).toBe(2);
             expect(buttons[0].componentInstance.icon).toBe('delete_outline');
             expect(buttons[1].componentInstance.icon).toBe('edit');
+        });
+
+        it('should have warning icon', () => {
+            const warningIcon = fixture.debugElement.query(By.css('dot-icon'));
+            expect(warningIcon).toBeTruthy();
+            expect(warningIcon.attributes['name']).toBe('warning');
+            expect(warningIcon.attributes['size']).toBe('18');
+            expect(warningIcon.attributes['ng-reflect-text']).toBe(
+                `${component.site.secretsWithWarnings} ${component.messagesKey['apps.invalid.secrets']}`
+            );
         });
 
         it('should emit delete action', () => {
@@ -138,6 +150,12 @@ describe('DotAppsConfigurationItemComponent', () => {
             const buttons = fixture.debugElement.queryAll(By.css('dot-icon-button'));
             expect(buttons.length).toBe(1);
             expect(buttons[0].componentInstance.icon).toBe('add_circle');
+        });
+
+        it('should not have warning icon', () => {
+            expect(fixture.debugElement.query(By.css('dot-icon')).attributes['name']).not.toBe(
+                'warning'
+            );
         });
 
         it('should emit edit action with No site', () => {

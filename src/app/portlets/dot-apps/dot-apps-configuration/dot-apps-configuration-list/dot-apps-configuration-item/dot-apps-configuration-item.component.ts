@@ -35,7 +35,8 @@ export class DotAppsConfigurationItemComponent implements OnInit {
                 'apps.key',
                 'apps.confirmation.title',
                 'apps.confirmation.delete.message',
-                'apps.confirmation.accept'
+                'apps.confirmation.accept',
+                'apps.invalid.secrets'
             ])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {

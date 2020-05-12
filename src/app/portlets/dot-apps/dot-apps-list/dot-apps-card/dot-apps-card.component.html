@@ -22,7 +22,15 @@
                         : messagesKey['apps.no.configurations']
                 }}
             </span>
+            <dot-icon
+                *ngIf="app.sitesWithWarnings"
+                name="warning"
+                pTooltip="{{
+                    app.sitesWithWarnings + ' ' + messagesKey['apps.invalid.configurations']
+                }}"
+                size="18"
+            ></dot-icon>
         </div>
     </p-header>
-    {{ app.description }}
+    <ngx-md>{{ app.description }}</ngx-md>
 </p-card>

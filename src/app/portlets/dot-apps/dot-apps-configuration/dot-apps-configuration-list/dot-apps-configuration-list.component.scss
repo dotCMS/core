@@ -8,4 +8,14 @@
 dot-apps-configuration-item {
     margin: $basic-padding * 2 0 $basic-padding * 3;
     overflow: auto;
+
+    &.dot-apps-configuration-item__not-configured {
+        background-color: $gray-bg;
+        color: $gray;
+
+        &:hover {
+            background-color: transparent;
+            color: $black;
+        }
+    }
 }
