@@ -1004,8 +1004,7 @@ class DeployWarTomcatTask extends DefaultTask{
 task initNpm(type: NpmTask) {
     args = ['init', '--yes']
 
-    dependsOn 'installDotcmsUI', 'installDotcmsWebComponents'
-    finalizedBy 'cleanNodeModules'
+    finalizedBy 'installDotcmsUI', 'installDotcmsWebComponents'
 }
 
 task installDotcmsUI(type: NpmTask) {
@@ -1047,6 +1046,7 @@ task copyDotCMSWebComponents(type: Copy) {
     from "./node_modules/dotcms-webcomponents/dist/"
     into "./src/main/webapp/"
     include 'dotcms-webcomponents/*'
+    finalizedBy 'cleanNodeModules'
 }
 
 task downloadDependencies(type: Exec) {
