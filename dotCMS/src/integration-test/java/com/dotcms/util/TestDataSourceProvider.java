@@ -30,13 +30,9 @@ public class TestDataSourceProvider implements DotDataSourceStrategy {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
         final Properties properties = new Properties();
 
-        String dbType = "postgres";
-
-        if (System.getProperty("databaseType")!=null){
-            dbType = System.getProperty("databaseType");
-        } else if(System.getenv("databaseType")!=null){
-            dbType = System.getenv("databaseType");
-        }
+        final String dbType = System.getProperty("databaseType",
+                (System.getenv("databaseType") != null ? System.getenv("databaseType")
+                        : "postgres"));
 
         try (InputStream resourceStream = loader.getResourceAsStream(dbType + "-db-config.properties")) {
             properties.load(resourceStream);
