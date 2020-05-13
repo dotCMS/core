@@ -234,15 +234,14 @@
                 }
             }
         %>
-        
         <div class="wysiwyg-wrapper">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
                 <div class="wysiwyg-container">
                   <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
                   <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
-                          class="editWYSIWYGField aceText aceTall" 
-                          name="<%=field.getFieldContentlet()%>"
-                          id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%>  
+                      class="editWYSIWYGField aceText aceTall"
+                      name="<%=field.getFieldContentlet()%>"
+                      id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%>
                   </textarea>
                 </div>
             <div class="wysiwyg-tools">
@@ -485,9 +484,6 @@
                <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
            </div>
        </div>
-
-
-
 
     <%}else{ %>
        <div id="thumbnailParent<%=field.getVelocityVarName()%>">
