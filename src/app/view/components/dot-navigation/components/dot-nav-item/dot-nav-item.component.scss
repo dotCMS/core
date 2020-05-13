@@ -5,93 +5,92 @@
 :host {
     display: block;
 
-    ::ng-deep {
-        .ui-tooltip {
-            &.dot-nav__tooltip {
-                margin-left: $basic-padding + $navigation-width-collased - $navigation-width;
+    &.dot-nav-item__collapsed {
+        position: relative;
+        transition: background-color $basic-speed ease;
 
-                .ui-tooltip-text {
-                    overflow-wrap: break-word;
-                    min-width: 100px;
-                    max-width: 150px;
-                    text-align: center;
-                }
+        &:hover {
+            background-color: rgba(var(--color-white_rgb), 0.1);
+
+            dot-sub-nav {
+                height: auto !important;
+                left: $navigation-width-collased;
+                opacity: 1;
+                pointer-events: all;
+                position: absolute;
+                top: 0;
+                transform: translateY(0);
+                transition: opacity $basic-speed ease, transform $basic-speed ease;
+                z-index: 2;
             }
         }
-    }
 
-    &:not(.contextmenu) {
-        dot-sub-nav {
-            transition: opacity $basic-speed ease, width $basic-speed ease;
-        }
-    }
-
-    &.collapsed {
-        dot-icon,
-        .dot-nav__item-label {
+        dot-sub-nav,
+        .dot-nav__item-label,
+        .dot-nav__item-arrow {
+            pointer-events: none;
             opacity: 0;
         }
 
-        .dot-nav__item {
-            max-height: $navigation-item-height;
+        dot-sub-nav {
+            background: var(--color-background);
+            border-bottom-right-radius: 0.1875rem;
+            border-top-right-radius: 0.1875rem;
+            box-shadow: $md-shadow-2;
+            transform: translateY(1rem);
+        }
 
-            &:hover {
-                &:not(.dot-nav__item--active) {
-                    background-color: rgba(var(--color-white_rgb), 0.1);
-                }
-            }
+        dot-icon {
+            opacity: 0;
+        }
+
+        .dot-nav__title {
+            width: $navigation-width-collased;
+        }
+
+        .dot-nav__item {
+            height: $navigation-item-height;
         }
 
         .dot-nav__item--active {
             background-color: $brand-primary;
         }
-
-        &.contextmenu {
-            .dot-nav__item {
-                &:not(.dot-nav__item--active) {
-                    background-color: rgba(var(--color-white_rgb), 0.1);
-                }
-            }
-        }
-
-        &:not(.contextmenu) {
-            ::ng-deep dot-sub-nav {
-                opacity: 0;
-                width: $navigation-width-collased;
-
-                .dot-nav-sub__link {
-                    background-color: $gray-bg;
-                }
-            }
-        }
     }
 }
 
-dot-sub-nav {
-    opacity: 1;
+.dot-nav__title {
+    overflow: hidden;
+    transition: width $basic-speed ease;
     width: $navigation-width;
 }
 
-.dot-nav {
-    &__item {
-        align-items: center;
-        cursor: pointer;
-        display: flex;
-        min-height: $navigation-item-height;
-        padding: 14px $basic-padding 13px 23px; // top and bottom padding to get min 48px height
-        transition: background-color $basic-speed ease $basic-speed;
-        width: $navigation-width;
-        justify-content: space-between;
+.dot-nav__item {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    min-height: $navigation-item-height;
+    padding: 14px $basic-padding * 3 13px 23px; // top and bottom padding to get min 48px height
+    position: relative;
+    transition: background-color $basic-speed ease;
+    width: $navigation-width;
+}
 
-        &-label {
-            margin-left: $basic-padding * 2;
-            word-break: break-word;
-            flex: 1;
-        }
-    }
+.dot-nav__item-label {
+    flex: 1;
+    margin-left: $basic-padding * 2;
+    word-break: break-word;
+    transition: opacity $basic-speed ease;
+}
 
-    dot-icon,
-    &__item-label {
-        transition: opacity $basic-speed ease;
-    }
+dot-icon {
+    opacity: 1;
+    position: absolute;
+    right: $basic-padding;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity $basic-speed ease;
+}
+
+dot-nav-icon {
+    flex-shrink: 0;
 }

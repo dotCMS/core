@@ -1,19 +1,19 @@
-<div class="dot-nav__item"
-     (click)="clickHandler($event, data)"
-     [class.dot-nav__item--active]="data.active"
-     [pTooltip]="( !data.isOpen && collapsed ) ? data.tabName : null"
-     tooltipStyleClass="dot-nav__tooltip"
-     appendTo="target"
->
-    <dot-nav-icon [icon]="data.tabIcon" aria-hidden="true"></dot-nav-icon>
-    <span class="dot-nav__item-label">{{data.tabName}}</span>
-    <dot-icon
-        class="dot-nav__item-arrow"
-        name="{{data.isOpen ? 'arrow_drop_down' : 'arrow_drop_up'}}"
-        aria-hidden="true">
-    </dot-icon>
+<div class="dot-nav__title">
+    <div
+        (click)="clickHandler($event, data)"
+        [class.dot-nav__item--active]="data.active"
+        appendTo="target"
+        class="dot-nav__item"
+    >
+        <dot-nav-icon [icon]="data.tabIcon" aria-hidden="true"></dot-nav-icon>
+        <span class="dot-nav__item-label">{{ data.tabName }}</span>
+        <dot-icon
+            aria-hidden="true"
+            class="dot-nav__item-arrow"
+            name="{{ data.isOpen ? 'arrow_drop_down' : 'arrow_drop_up' }}"
+        >
+        </dot-icon>
+    </div>
 </div>
-<dot-sub-nav [data]="data"
-             [collapsed]="collapsed"
-             (itemClick)="handleItemClick($event)">
+<dot-sub-nav [data]="data" [collapsed]="collapsed" (itemClick)="handleItemClick($event)">
 </dot-sub-nav>

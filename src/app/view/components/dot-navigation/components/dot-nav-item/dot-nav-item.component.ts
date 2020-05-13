@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, Input, HostListener, HostBinding } from '@angular/core';
+import { Component, Output, EventEmitter, Input, HostBinding } from '@angular/core';
 import { DotMenu, DotMenuItem } from '@models/navigation';
 
 @Component({
@@ -8,13 +8,14 @@ import { DotMenu, DotMenuItem } from '@models/navigation';
 })
 export class DotNavItemComponent {
     @Input() data: DotMenu;
-    @Output()
-    menuRightClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenu }> = new EventEmitter();
+
     @Output()
     menuClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenu }> = new EventEmitter();
+
     @Output()
     itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
-    @HostBinding('class.collapsed')
+
+    @HostBinding('class.dot-nav-item__collapsed')
     @Input()
     collapsed: boolean;
 
@@ -32,23 +33,6 @@ export class DotNavItemComponent {
             originalEvent: $event,
             data: data
         });
-    }
-
-    /**
-     * Handle right-click on menu section title
-     *
-     * @param MouseEvent $event
-     * @memberof DotNavItemComponent
-     */
-    @HostListener('contextmenu', ['$event'])
-    showSubMenuPanel(event: MouseEvent) {
-        if (this.collapsed) {
-            event.preventDefault();
-            this.menuRightClick.emit({
-                originalEvent: event,
-                data: this.data
-            });
-        }
     }
 
     /**

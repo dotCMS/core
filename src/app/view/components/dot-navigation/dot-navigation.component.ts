@@ -55,17 +55,6 @@ export class DotNavigationComponent implements OnInit {
     }
 
     /**
-     * Set isOpen to the passed DotMenu item
-     *
-     * @param DotMenu currentItem
-     * @memberof DotNavigationComponent
-     */
-    onMenuRightClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {
-        this.dotNavigationService.setOpen(event.data.id);
-        this.iframeOverlayService.show();
-    }
-
-    /**
      * Handle click on document to hide the fly-out menu
      *
      * @memberof DotNavItemComponent

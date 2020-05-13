@@ -235,24 +235,4 @@ describe('DotNavigationComponent', () => {
             });
         });
     });
-
-    describe('menuRickClick event ', () => {
-        let iframeOverlayService: IframeOverlayService;
-
-        beforeEach(() => {
-            iframeOverlayService = de.injector.get(IframeOverlayService);
-            spyOn(iframeOverlayService, 'show');
-
-            navItem.triggerEventHandler('menuRightClick', {
-                originalEvent: {},
-                data: dotMenuMock()
-            });
-            fixture.detectChanges();
-        });
-
-        it('should call set open and call iframeOverlayService', () => {
-            expect(dotNavigationService.setOpen).toHaveBeenCalledWith(dotMenuMock().id);
-            expect(iframeOverlayService.show).toHaveBeenCalledTimes(1);
-        });
-    });
 });

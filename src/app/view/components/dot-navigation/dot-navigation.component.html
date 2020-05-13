@@ -6,9 +6,7 @@
             <dot-nav-item
                 [data]="item"
                 [collapsed]="dotNavigationService.collapsed$ | async"
-                [class.contextmenu]="item.isOpen && dotNavigationService.collapsed$ | async"
                 (menuClick)="onMenuClick($event)"
-                (menuRightClick)="onMenuRightClick($event)"
                 (itemClick)="onItemClick($event)">
             </dot-nav-item>
         </li>

@@ -7,29 +7,23 @@
     text-decoration: none;
 }
 
+dot-nav-item {
+    cursor: pointer;
+}
+
 nav {
     transition: width $basic-speed ease;
     width: $navigation-width;
 
-    &:not(.collapsed) {
-        .dot-nav__list-item {
-            transition: background-color $basic-speed ease;
+    .dot-nav__list-item--active {
+        background-color: rgba(var(--color-white_rgb), 0.1);
+    }
 
-            &--active {
-                background-color: rgba(var(--color-white_rgb), 0.1);
-                padding-bottom: $basic-padding * 2;
-            }
-        }
+    &.collapsed {
+        width: $navigation-width-collased;
     }
 }
 
 ul {
     @include naked-list;
-}
-
-
-
-.collapsed {
-    width: $navigation-width-collased;
-    overflow: hidden;
 }

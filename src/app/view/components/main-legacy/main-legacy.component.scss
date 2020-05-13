@@ -20,11 +20,6 @@
     overflow: hidden;
 }
 
-.layout__main,
-.layout__sidebar {
-    overflow: auto;
-}
-
 .layout__main {
     flex-grow: 1;
     background-color: $gray-bg;
@@ -36,7 +31,6 @@
     transition: width $basic-speed * 2 cubic-bezier(0.25, 0.8, 0.25, 1);
 
     .collapsed & {
-        overflow: hidden;
         width: 0;
     }
 }

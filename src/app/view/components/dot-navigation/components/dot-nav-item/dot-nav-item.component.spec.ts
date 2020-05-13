@@ -68,6 +68,12 @@ describe('DotNavItemComponent', () => {
         expect(navItem.nativeElement.classList.contains('dot-nav__item--active')).toBe(true);
     });
 
+    it('should have title wrapper set', () => {
+        const title: DebugElement = de.query(By.css('.dot-nav__title'));
+
+        expect(title).toBeDefined();
+    });
+
     it('should have icons set', () => {
         const icon: DebugElement = de.query(By.css('dot-nav-icon'));
         const arrow: DebugElement = de.query(By.css('.dot-nav__item-arrow'));
@@ -110,42 +116,5 @@ describe('DotNavItemComponent', () => {
             expect(subNav.componentInstance.collapsed).toBe(true);
         });
 
-        it('should emit menuRightClick on right click', () => {
-            const event = new MouseEvent('contextmenu')
-            spyOn(component.menuRightClick, 'emit');
-            de.triggerEventHandler('contextmenu', event);
-            expect(component.menuRightClick.emit).toHaveBeenCalledWith({
-                originalEvent: event,
-                data: component.data
-            });
-        });
-    });
-
-    describe('tooltip', () => {
-        beforeEach(() => {});
-
-        it('should set tooltip properties', () => {
-            expect(navItem.attributes['ng-reflect-text']).toBeNull();
-            expect(navItem.attributes['tooltipStyleClass']).toEqual('dot-nav__tooltip');
-            expect(navItem.attributes['appendTo']).toEqual('target');
-        });
-
-        describe('collapse', () => {
-            beforeEach(() => {
-                componentHost.collapsed$.next(true);
-                fixtureHost.detectChanges();
-            });
-
-            it('should set tooltip text', () => {
-                expect(navItem.attributes['ng-reflect-text']).toEqual(dotMenuMock().tabName);
-            });
-
-            it('should be null on right-click', () => {
-                componentHost.menu = { ...dotMenuMock(), isOpen: true };
-                de.triggerEventHandler('contextmenu', new MouseEvent('contextmenu'));
-                fixtureHost.detectChanges();
-                expect(navItem.attributes['ng-reflect-text']).toEqual(null);
-            });
-        });
     });
 });

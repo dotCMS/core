@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { DotMenu, DotMenuItem } from '@models/navigation';
 
@@ -31,6 +31,11 @@ export class DotSubNavComponent {
     @Output()
     itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
     @Input() collapsed: boolean;
+
+    // tslint:disable-next-line: cyclomatic-complexity
+    @HostBinding('@expandAnimation') get getAnimation(): string {
+        return !this.collapsed && this.data.isOpen ? 'expanded' : 'collapsed';
+    }
 
     constructor() {}
 
