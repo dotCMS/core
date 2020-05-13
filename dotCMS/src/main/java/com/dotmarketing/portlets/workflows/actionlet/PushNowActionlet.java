@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
@@ -68,17 +69,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
     public List<WorkflowActionletParameter> getParameters() {
         final List<WorkflowActionletParameter> params = new ArrayList<>();
         //Environment Param
-        List<Environment> environmentList;
-        try {
-            environmentList = this.environmentAPI.findAllEnvironments();
-        } catch (DotDataException e) {
-            final String errorMsg = "An error occurred when trying to find the environments";
-            Logger.debug(this, errorMsg);
-            throw new WorkflowActionFailureException(errorMsg, e);
-        }
-        final List<MultiKeyValue> multiKeyValueEnvList = new ArrayList<>();
-        environmentList.stream().forEach(environment -> multiKeyValueEnvList.add(new MultiKeyValue(environment.getName(),environment.getName())));
-        params.add(new MultiSelectionWorkflowActionletParameter(PARAM_ENVIRONMENT, "Name of the Environment", environmentList.get(0).getName(), true,()->multiKeyValueEnvList));
+        params.add(new WorkflowActionletParameter(PARAM_ENVIRONMENT, "Name of the Environment", "", true));
         //Filter Param
         final FilterDescriptor defaultFilter = APILocator.getPublisherAPI().getFilterDescriptorMap()
                 .values().stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findAny().get();

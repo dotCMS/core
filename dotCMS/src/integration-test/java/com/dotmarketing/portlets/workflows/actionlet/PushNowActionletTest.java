@@ -212,31 +212,4 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(1)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(filterKey2)));
     }
 
-    /**
-     * This test is for the getParameters method.
-     * In the Environment Param should come all the possible environments that the user have to select.
-     */
-    @Test
-    public void test_PushNowActionlet_getParameters_getEnvironments()
-            throws DotSecurityException, DotDataException {
-        //Clean all filters
-        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
-        //Create Environments
-        final String environmentName1 = "TestEnvironment_" + System.currentTimeMillis();
-        final String environmentName2 = "TestEnvironment_1_" + System.currentTimeMillis();
-        createEnvironment(environmentName1);
-        createEnvironment(environmentName2);
-
-        //Create Filter
-        final String defaulFilterKey = "defaultFilterKey"+System.currentTimeMillis();
-        createFilterDescriptor(defaulFilterKey,true);
-
-        //Get Params
-        final PushNowActionlet pushNowActionlet = new PushNowActionlet();
-        final List<WorkflowActionletParameter> parameters = pushNowActionlet.getParameters();
-        Assert.assertFalse(parameters.isEmpty());
-        Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(0)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(environmentName1)));
-        Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(0)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(environmentName2)));
-    }
-
 }
