@@ -178,7 +178,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
             return attributes.get(key);
         }).when(request).getAttribute(Mockito.anyString());
 
-        final String diff = HTMLDiffUtil.htmlDiffPage(pageLive, systemUser, request, response);
+        final String diff = new HTMLDiffUtilProxy().htmlDiffPage(pageLive, systemUser, request, response);
         Assert.assertNotEquals(NOTHING_CHANGED,diff);
         final Document document = Jsoup.parse(diff);
         final Elements removedElements = document.select("span.diff-html-removed");
@@ -266,7 +266,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
             return attributes.get(key);
         }).when(request).getAttribute(Mockito.anyString());
 
-        final String diff = HTMLDiffUtil.htmlDiffPage(pageLive, systemUser, request, response);
+        final String diff = new HTMLDiffUtilProxy().htmlDiffPage(pageLive, systemUser, request, response);
         Assert.assertEquals(NOTHING_CHANGED, diff);
     }
 
