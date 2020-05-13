@@ -52,7 +52,7 @@
         "node-fetch": "^2.6.0",
         "npm": "^6.9.0",
         "primeicons": "^1.0.0",
-        "primeng": "^7.0.3",
+        "primeng": "7.0.3",
         "rxjs": "~6.3.3",
         "test": "^0.6.0",
         "zone.js": "~0.8.26"
