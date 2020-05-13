@@ -386,7 +386,6 @@ var cmsfile=null;
 			}
 			//Enabling the wysiwyg
 			try {
-
 			  // Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,
@@ -401,7 +400,7 @@ var cmsfile=null;
 			        dropZone.style.pointerEvents = "none";
 			        return false;
 			      });
-					}
+          }
 			  };
 			  var wellTinyMCE = new tinymce.Editor(
 			    textAreaId,
@@ -411,7 +410,6 @@ var cmsfile=null;
 			  insertDropZoneAsset(tinymce, textAreaId);
 			  wellTinyMCE.render();
 				wellTinyMCE.on("change", emmitFieldDataChange);
-
 			} catch (e) {
 			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
