@@ -327,15 +327,15 @@ var cmsfile=null;
         document.dispatchEvent(customEvent)
     }
 
-    function insertDropZoneAsset(activeEditor, textAreaId) {
+  function insertDropZoneAsset(activeEditor, textAreaId) {
 	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
         dropZone.addEventListener('uploadComplete', async (asset) => {
 					if(asset.detail) {
 						const [dotAsset] = event.detail;
-						const { inode, titleImage, identifier, title } = dotAsset;
+						const { inode, titleImage, identifier, title } = dotAsset;	
 						const asset = `
 							<img
-								src="/contentAsset/image/${inode}/${titleImage}"
+								src="/contentAsset/image/${identifier}/${titleImage}"
 								alt="${titleImage}"
 								data-field-name="${titleImage}"
 								data-inode="${inode}"

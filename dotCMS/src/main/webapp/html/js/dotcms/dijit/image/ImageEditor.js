@@ -12,10 +12,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     // cssUrl:'/html/js/dotcms/dijit/image/image-tools.css',
     imageToolJsp:'/html/js/dotcms/dijit/image/image_tool.jsp',
     baseFilterUrl:"/contentAsset/image",
-    // changes to show the value in the toolbar
     currentUrl:"/contentAsset/image",
     ajaxUrl:"/servlet/dotImageToolAjax",
-
     resizeFilter:false,
     zoomValue:0,
     inode:'0',
@@ -93,20 +91,18 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this.tabindex = 0;
         this.thumbnailDiv.tabindex=0;
 
-
         var newerInode = window.contentAdmin.contentletInode;
 
         var id=this.inode;
-        if(newerInode && newerInode!= this.inode){
+        if(newerInode && newerInode !== this.inode && !this.activeEditor){
             this.inode = newerInode;
             id=newerInode;
             this.tempId=null;
-        }else if(this.tempId){
+        } else if(this.activeEditor) {
+            id = this.fieldContentletId
+        } else {
             id = this.tempId;
         }
-
-
-
 
         this.baseFilterUrl= "/contentAsset/image/" + id;
         if(this.fieldName != undefined){
@@ -115,7 +111,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this.currentUrl = this.baseFilterUrl;
 
 
-
+        console.log(this.currentUrl)
 
         // clean up any old image editors laying around
         this._cleanUpImageEditor();
@@ -387,7 +383,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     _sendImageToEditor: function(activeEditor, url) {
         let newUrl;
         newUrl = this._isValidURL(url) ? new URL(url).pathname : url;
-
+        console.log(newUrl)
         const asset = `
             <img
                 src="${newUrl}"
