@@ -76,8 +76,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             shorty=this.tempId;
         }
 
-
-
         this.baseFilterUrl+= "/" + shorty;
 
         if(this.fieldName != undefined){
@@ -87,29 +85,33 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this.currentUrl = this.baseFilterUrl;
     },
 
+    _determineAssetId: function(activeEditor, contentletId, newerInode) {
+        switch (true) {
+            case !!activeEditor:
+                return contentletId;
+            case newerInode.length > 0 && newerInode != this.inode && !this.tempId:
+                this.inode = newerInode;
+                this.tempId = null;
+                return newerInode;
+            case this.tempId && this.tempId.length > 0:
+                return this.tempId;
+            default:
+                return this.inode;
+        } 
+    },
+
     createImageWindow: function(){
         this.tabindex = 0;
         this.thumbnailDiv.tabindex=0;
 
-        var newerInode = window.contentAdmin.contentletInode;
-
-        var id=this.inode;
-        if(newerInode && newerInode !== this.inode && !this.activeEditor){
-            this.inode = newerInode;
-            id=newerInode;
-            this.tempId=null;
-        } else if(this.activeEditor) {
-            id = this.fieldContentletId
-        } else {
-            id = this.tempId;
-        }
-
+        const newerInode = window.contentAdmin.contentletInode;
+        let id = this._determineAssetId(this.activeEditor, this.fieldContentletId, newerInode)
+        
         this.baseFilterUrl= "/contentAsset/image/" + id;
         if(this.fieldName != undefined){
             this.baseFilterUrl+= "/" + this.fieldName;
         }
         this.currentUrl = this.baseFilterUrl;
-
 
         console.log(this.currentUrl)
 
@@ -330,7 +332,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             return;
         }
         var fileUrl = this.cleanUrl(this.currentUrl);
-        var url = (fileUrl.indexOf("?")>-1) ? fileUrl + "&"  : fileUrl + "?_imageToolClipboard=true";
+        var url = (fileUrl.indexOf("?") > -1) ? fileUrl + "&"  : fileUrl + "?_imageToolClipboard=true";
         //alert(url);
         var target = this.iframe.dojo.byId('me');
         dojo.style(target, "opacity", 0);

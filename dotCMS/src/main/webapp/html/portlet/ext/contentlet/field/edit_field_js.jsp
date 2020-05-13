@@ -336,7 +336,7 @@ var cmsfile=null;
 							const image = `
 								<img
 									src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
-									alt="${asset.titleImage}"
+									alt="${asset.title}"
 									data-field-name="${asset.titleImage}"
 									data-inode="${asset.inode}"
 									data-identifier="${asset.identifier}"

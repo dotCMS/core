@@ -11,14 +11,9 @@
 <%@page import="java.util.Enumeration"%>
 <%	
 	String dojoPath = Config.getStringProperty("path.to.dojo");
-
 	String id = request.getParameter("id");
-	
 	String fieldName = (UtilMethods.isSet(request.getParameter("fieldName"))) ? request.getParameter("fieldName") : "fileAsset";
-
 	String baseImage =  "/contentAsset/image/" + id + "/" + fieldName + "/" ;
-
-
 
 	String hostId = null;
 	if (request.getParameter("host_id") != null) {
@@ -27,8 +22,7 @@
 		hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
 	}
 		
-	
-    User user = com.liferay.portal.util.PortalUtil.getUser(request);
+ User user = com.liferay.portal.util.PortalUtil.getUser(request);
 
     if(user ==null || LicenseLevel.COMMUNITY.level == LicenseUtil.getLevel()){
     	response.getWriter().println("Unauthorized");
@@ -37,7 +31,6 @@
 	
     String userAgent = request.getHeader("USER-AGENT");
 %>
-
 
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD. HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -160,7 +153,7 @@
 					</button>
 					&nbsp;
 				</span>
-                &nbsp;
+         &nbsp;
 				<button dojoType="dijit.form.Button" onclick="imageEditor.saveImage()" >
 					<%= LanguageUtil.get(pageContext, "Save") %>
 				</button>
