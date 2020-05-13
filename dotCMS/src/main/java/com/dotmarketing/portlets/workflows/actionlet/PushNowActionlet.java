@@ -15,7 +15,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.MultiKeyValue;
 import com.dotmarketing.portlets.workflows.model.MultiSelectionWorkflowActionletParameter;
-import com.dotmarketing.portlets.workflows.model.MultiValueProvider;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -24,9 +23,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
+import io.vavr.control.Try;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -69,14 +67,13 @@ public class PushNowActionlet extends WorkFlowActionlet {
     public List<WorkflowActionletParameter> getParameters() {
         final List<WorkflowActionletParameter> params = new ArrayList<>();
         //Environment Param
-        params.add(new WorkflowActionletParameter(PARAM_ENVIRONMENT, "Name of the Environment", "", true));
+        params.add(new WorkflowActionletParameter(PARAM_ENVIRONMENT, Try.of(()->LanguageUtil.get("pushNowActionlet.environments.name")).getOrElse("Name of the Environments"), "", true));
         //Filter Param
-        final FilterDescriptor defaultFilter = APILocator.getPublisherAPI().getFilterDescriptorMap()
-                .values().stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findAny().get();
+        final Collection<FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterDescriptorMap().values();
+        final FilterDescriptor defaultFilter = filterDescriptorMap.stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findFirst().get();
         final List<MultiKeyValue> multiKeyValueFilterList = new ArrayList<>();
-        APILocator.getPublisherAPI().getFilterDescriptorMap().values().stream()
-                .forEach(filterDescriptor -> multiKeyValueFilterList.add(new MultiKeyValue(filterDescriptor.getKey(),filterDescriptor.getTitle())));
-        params.add(new MultiSelectionWorkflowActionletParameter(PARAM_FILTER_KEY, "Filter", defaultFilter.getKey(), true,()->multiKeyValueFilterList));
+        filterDescriptorMap.stream().forEach(filterDescriptor -> multiKeyValueFilterList.add(new MultiKeyValue(filterDescriptor.getKey(),filterDescriptor.getTitle())));
+        params.add(new MultiSelectionWorkflowActionletParameter(PARAM_FILTER_KEY, Try.of(()->LanguageUtil.get("pushNowActionlet.filter")).getOrElse("Name of the Environments"), defaultFilter.getKey(), true,()->multiKeyValueFilterList));
         return params;
     }
 
