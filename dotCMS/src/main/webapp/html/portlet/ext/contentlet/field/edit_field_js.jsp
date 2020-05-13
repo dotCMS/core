@@ -43,7 +43,6 @@
 			languages : '<%= usera.getLanguageId().substring(0,2) %>',
 			disk_cache : true,
 			debug : false
-
 		});
 	}else{
 		tinymce.init({
@@ -64,7 +63,6 @@
     		file_picker_callback: function(callback, value, meta) {
     			cmsFileBrowser(callback, value, meta);
     		}
-
 		});
 	}
 </script>
@@ -332,6 +330,15 @@ var cmsfile=null;
         document.dispatchEvent(customEvent)
     }
 
+    function insertDropZoneAsset(tinymceInstance, textAreaId) {
+    	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+        dropZone.addEventListener('uploadComplete', async (event) => {
+        	const dotAsset = await event.detail[0].json();
+        	const asset  = `<img src="${window.location.origin}/dA/${dotAsset.entity.inode}" alt="${dotAsset.entity.titleImage}" />`;
+        	tinymceInstance.get(textAreaId).execCommand('mceInsertContent', false, asset);
+        })
+    }
+
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
 			//Confirming the change
@@ -368,16 +375,36 @@ var cmsfile=null;
 			}else if(tinyConf.plugins != undefined ){
 			    tinyConf.plugins=tinyConf.plugins.replace("compat3x","");
 			}
-            console.log(textAreaId, tinyConf );
 			//Enabling the wysiwyg
 			try {
-                var wellTinyMCE = new tinymce.Editor(textAreaId, tinyConf, tinymce.EditorManager);
-				wellTinyMCE.render();
-                wellTinyMCE.on('change', emmitFieldDataChange);
+			  // Init instance callback to fix the pointer-events issue.
+			  tinyConf = {
+			    ...tinyConf,
+			    init_instance_callback: (editor) => {
+			      let dropZone = document.getElementById(
+			        `dot-asset-drop-zone-${textAreaId}`
+			      );
+			      editor.on("dragover", function (e) {
+			        dropZone.style.pointerEvents = "all";
+			      });
+			      editor.dom.bind(document, "dragleave", function (e) {
+			        dropZone.style.pointerEvents = "none";
+			        return false;
+			      });
+			    },
+			  };
+			  var wellTinyMCE = new tinymce.Editor(
+			    textAreaId,
+			    tinyConf,
+			    tinymce.EditorManager
+			  );
+			  insertDropZoneAsset(tinymce, textAreaId);
+			  wellTinyMCE.render();
+			  wellTinyMCE.on("change", emmitFieldDataChange);
+			} catch (e) {
+			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
-			catch(e) {
-				showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
-			}
+
 			enabledWYSIWYG[textAreaId] = true;
 		}
 	}
@@ -538,14 +565,35 @@ var cmsfile=null;
 		 var data = dijit.byId('HostSelector').attr('selectedItem');
 		 if(data["type"]== "host"){
 			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId(field).dataset.hostType =  data["type"];
 			dojo.byId('hostId').value =  dijit.byId('HostSelector').attr('value');
 			dojo.byId('folderInode').value = "";
+
 		 }else if(data["type"]== "folder"){
 			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId(field).dataset.hostType =  data["type"];
 			dojo.byId('folderInode').value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId('hostId').dataset.hostType = data["type"];
 			dojo.byId('hostId').value = "";
 		}
 	  }
+	}
+
+	function setDotAssetHost() {
+		const contentHost = dojo.byId("contentHost");
+		const dropZoneComponents = Array.from(
+			document.querySelectorAll(".wysiwyg__dot-asset-drop-zone")
+		);
+		dropZoneComponents.forEach((dropZone) => {
+			if (
+				contentHost.dataset.hostType === "host" && contentHost.value !== "SYSTEM_HOST" ||
+				contentHost.dataset.hostType === "folder"
+			) {
+				dropZone["folder"] = contentHost.value;
+			} else {
+				dropZone["folder"] = ""
+			}
+		});
 	}
 
 	function aceAreaById(textarea){
