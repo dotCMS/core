@@ -22,6 +22,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 
+/**
+ * This Resource is for the push publishing filters
+ */
 @Path("/v1/pushpublish/filter")
 public class PushPublishFilterResource {
 
@@ -36,6 +39,9 @@ public class PushPublishFilterResource {
         this.webResource = webResource;
     }
 
+    /**
+     * Lists all filters descriptors that the user role has access to.
+     */
     @GET
     @JSONP
     @NoCache

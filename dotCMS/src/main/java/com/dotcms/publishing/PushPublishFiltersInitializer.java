@@ -41,7 +41,7 @@ public class PushPublishFiltersInitializer implements DotInitializer {
                         Logger.error(this, e.getMessage(), e);
                     }
                 });
-                Logger.debug(PushPublishFiltersInitializer.class, " dotcms filters files copied");
+                Logger.debug(PushPublishFiltersInitializer.class, ()->" dotcms filters files copied");
             }
             Logger.info(PushPublishFiltersInitializer.class, " ymlFiles are set under:  " + filtersDirectoryString);
             //For each YAML file under the directory,

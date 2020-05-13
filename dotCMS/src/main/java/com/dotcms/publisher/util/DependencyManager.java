@@ -85,31 +85,31 @@ import org.apache.commons.lang.StringUtils;
  */
 public class DependencyManager {
 
-	private DependencySet hosts;
-	private DependencySet folders;
-	private DependencySet htmlPages;
-	private DependencySet templates;
-	private DependencySet contentTypes;
-	private DependencySet containers;
-	private DependencySet contents;
-	private DependencySet links;
-	private DependencySet relationships;
-	private DependencySet workflows;
-	private DependencySet languages;
-	private DependencySet rules;
-	private DependencySet categories;
+	private final DependencySet hosts;
+	private final DependencySet folders;
+	private final DependencySet htmlPages;
+	private final DependencySet templates;
+	private final DependencySet contentTypes;
+	private final DependencySet containers;
+	private final DependencySet contents;
+	private final DependencySet links;
+	private final DependencySet relationships;
+	private final DependencySet workflows;
+	private final DependencySet languages;
+	private final DependencySet rules;
+	private final DependencySet categories;
 
-	private Set<String> hostsSet;
-	private Set<String> foldersSet;
-	private Set<String> htmlPagesSet;
-	private Set<String> templatesSet;
+	private final Set<String> hostsSet;
+	private final Set<String> foldersSet;
+	private final Set<String> htmlPagesSet;
+	private final Set<String> templatesSet;
 	private Set<String> contentTypesSet;
-	private Set<String> containersSet;
-	private Set<String> fileAssetContainersSet;
-	private Set<String> contentsSet;
-	private Set<String> linksSet;
-	private Set<String> ruleSet;
-	private Set<String> solvedContentTypes;
+	private final Set<String> containersSet;
+	private final Set<String> fileAssetContainersSet;
+	private final Set<String> contentsSet;
+	private final Set<String> linksSet;
+	private final Set<String> ruleSet;
+	private final Set<String> solvedContentTypes;
 
 	private User user;
 
@@ -377,39 +377,39 @@ public class DependencyManager {
 
 				// Folder Dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.FOLDER.getType())) {
-					Folder ff = APILocator.getFolderAPI()
+					final Folder folder = APILocator.getFolderAPI()
 							.findFolderByPath(ident.getParentPath(), ident.getHostId(), user,
 									false);
-					folders.addOrClean(ff.getInode(), ff.getModDate());
-					foldersSet.add(ff.getInode());
+					folders.addOrClean(folder.getInode(), folder.getModDate());
+					foldersSet.add(folder.getInode());
 				}
 
 				// Host Dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType())) {
-					Host hh = APILocator.getHostAPI().find(ident.getHostId(), user, false);
-					hosts.addOrClean(hh.getIdentifier(), hh.getModDate());
-					hostsSet.add(hh.getIdentifier());
+					final Host host = APILocator.getHostAPI().find(ident.getHostId(), user, false);
+					hosts.addOrClean(host.getIdentifier(), host.getModDate());
+					hostsSet.add(host.getIdentifier());
 				}
 
 				// Content Dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType())) {
-					Link link = APILocator.getMenuLinkAPI()
+					final Link link = APILocator.getMenuLinkAPI()
 							.findWorkingLinkById(linkId, user, false);
 
 					if (link != null) {
 
 						if (link.getLinkType().equals(Link.LinkType.INTERNAL.toString())) {
-							Identifier id = APILocator.getIdentifierAPI()
+							final Identifier id = APILocator.getIdentifierAPI()
 									.find(link.getInternalLinkIdentifier());
 
 							// add file/content dependencies. will also work with htmlpages as content
 							if (InodeUtils.isSet(id.getInode()) && id.getAssetType()
 									.equals("contentlet")) {
-								List<Contentlet> contentList = APILocator.getContentletAPI()
+								final List<Contentlet> contentList = APILocator.getContentletAPI()
 										.search("+identifier:" + id.getId(), 0, 0, "moddate", user,
 												false);
 
-								for (Contentlet contentlet : contentList) {
+								for (final Contentlet contentlet : contentList) {
 									if(publisherFilter.acceptExcludeDependencyQuery(contentlet.getIdentifier())) {
 										contents.addOrClean(contentlet.getIdentifier(),
 												contentlet.getModDate());
@@ -443,14 +443,14 @@ public class DependencyManager {
 	 */
 	private void setHostDependencies (final PublisherFilter publisherFilter) {
 		try {
-			for (String id : hostsSet) {
-				final Host h = APILocator.getHostAPI().find(id, user, false);
+			for (final String hostId : hostsSet) {
+				final Host host = APILocator.getHostAPI().find(hostId, user, false);
 
 				// Template dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.TEMPLATE.getType())) {
 					final List<Template> templateList = APILocator.getTemplateAPI()
-							.findTemplatesAssignedTo(h);
-					for (Template template : templateList) {
+							.findTemplatesAssignedTo(host);
+					for (final Template template : templateList) {
 						templates.addOrClean(template.getIdentifier(), template.getModDate());
 						templatesSet.add(template.getIdentifier());
 					}
@@ -459,8 +459,8 @@ public class DependencyManager {
 				// Container dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTAINER.getType())) {
 					final List<Container> containerList = APILocator.getContainerAPI()
-							.findContainersUnder(h);
-					for (Container container : containerList) {
+							.findContainersUnder(host);
+					for (final Container container : containerList) {
 
 						if (container instanceof FileAssetContainer) {
 							fileAssetContainersSet.add(container.getIdentifier());
@@ -474,10 +474,10 @@ public class DependencyManager {
 
 				// Content dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType())) {
-					String luceneQuery = "+conHost:" + h.getIdentifier();
+					final String luceneQuery = "+conHost:" + host.getIdentifier();
 					final List<Contentlet> contentList = APILocator.getContentletAPI()
 							.search(luceneQuery, 0, 0, null, user, false);
-					for (Contentlet contentlet : contentList) {
+					for (final Contentlet contentlet : contentList) {
 						if(publisherFilter.acceptExcludeDependencyQuery(contentlet.getIdentifier())) {
 							contents.addOrClean(contentlet.getIdentifier(),
 									contentlet.getModDate());
@@ -489,8 +489,8 @@ public class DependencyManager {
 				// Structure dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
 					final List<Structure> structuresList = StructureFactory
-							.getStructuresUnderHost(h, user, false);
-					for (Structure structure : structuresList) {
+							.getStructuresUnderHost(host, user, false);
+					for (final Structure structure : structuresList) {
 						contentTypes.addOrClean(structure.getInode(), structure.getModDate());
 						contentTypesSet.add(structure.getInode());
 					}
@@ -499,8 +499,8 @@ public class DependencyManager {
 				// Folder dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.FOLDER.getType())) {
 					final List<Folder> folderList = APILocator.getFolderAPI()
-							.findFoldersByHost(h, user, false);
-					for (Folder folder : folderList) {
+							.findFoldersByHost(host, user, false);
+					for (final Folder folder : folderList) {
 						folders.addOrClean(folder.getInode(), folder.getModDate());
 						foldersSet.add(folder.getInode());
 					}
@@ -509,7 +509,7 @@ public class DependencyManager {
 				// Rule dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.RULE.getType())) {
 					final List<Rule> ruleList = APILocator.getRulesAPI()
-							.getAllRulesByParent(h, user, false);
+							.getAllRulesByParent(host, user, false);
 					for (final Rule rule : ruleList) {
 						this.rules.add(rule.getId());
 						this.ruleSet.add(rule.getId());
@@ -535,20 +535,20 @@ public class DependencyManager {
 	 */
 	private void setFolderDependencies(final PublisherFilter publisherFilter) {
 		try {
-			List<Folder> folderList = new ArrayList<Folder>();
+			final List<Folder> folderList = new ArrayList<Folder>();
 
-			HashSet<String> parentFolders = new HashSet<String>();
+			final HashSet<String> parentFolders = new HashSet<String>();
 
-			for (String id : foldersSet) {
-				Folder f = APILocator.getFolderAPI().find(id, user, false);
+			for (final String folderId : foldersSet) {
+				final Folder folder = APILocator.getFolderAPI().find(folderId, user, false);
 				// Parent folder
-				Folder parent = APILocator.getFolderAPI().findParentFolder(f, user, false);
-				if(UtilMethods.isSet(parent)) {
-					folders.addOrClean( parent.getInode(), parent.getModDate());
-					parentFolders.add(parent.getInode());
+				final Folder parentFolder = APILocator.getFolderAPI().findParentFolder(folder, user, false);
+				if(UtilMethods.isSet(parentFolder)) {
+					folders.addOrClean( parentFolder.getInode(), parentFolder.getModDate());
+					parentFolders.add(parentFolder.getInode());
 				}
 
-				folderList.add(f);
+				folderList.add(folder);
 			}
 			foldersSet.addAll(parentFolders);
 			setFolderListDependencies(folderList, publisherFilter);
@@ -569,27 +569,27 @@ public class DependencyManager {
 	 * @throws DotSecurityException
 	 */
 	private void setFolderListDependencies(final List<Folder> folderList, final PublisherFilter publisherFilter) throws DotIdentifierStateException, DotDataException, DotSecurityException {
-		for (Folder f : folderList) {
+		for (final Folder folder : folderList) {
 
 			// Add folder even if empty
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.FOLDER.getType())) {
-				folders.addOrClean(f.getInode(), f.getModDate());
-				foldersSet.add(f.getInode());
+				folders.addOrClean(folder.getInode(), folder.getModDate());
+				foldersSet.add(folder.getInode());
 			}
 
 			// Host dependency
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType())) {
-				Host h = APILocator.getHostAPI().find(f.getHostId(), user, false);
-				hosts.addOrClean(f.getHostId(), h.getModDate());
-				hostsSet.add(f.getHostId());
+				final Host host = APILocator.getHostAPI().find(folder.getHostId(), user, false);
+				hosts.addOrClean(folder.getHostId(), host.getModDate());
+				hostsSet.add(folder.getHostId());
 			}
 
 			// Content dependencies
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType())) {
-				String luceneQuery = "+conFolder:" + f.getInode();
-				List<Contentlet> contentList = APILocator.getContentletAPI()
+				final String luceneQuery = "+conFolder:" + folder.getInode();
+				final List<Contentlet> contentList = APILocator.getContentletAPI()
 						.search(luceneQuery, 0, 0, null, user, false);
-				for (Contentlet contentlet : contentList) {
+				for (final Contentlet contentlet : contentList) {
 					if(publisherFilter.acceptExcludeDependencyQuery(contentlet.getIdentifier())) {
 						contents.addOrClean(contentlet.getIdentifier(), contentlet.getModDate());
 						contentsSet.add(contentlet.getIdentifier());
@@ -599,8 +599,8 @@ public class DependencyManager {
 
 			// Menu Link dependencies
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.LINK.getType())) {
-				List<Link> linkList = APILocator.getMenuLinkAPI().findFolderMenuLinks(f);
-				for (Link link : linkList) {
+				final List<Link> linkList = APILocator.getMenuLinkAPI().findFolderMenuLinks(folder);
+				for (final Link link : linkList) {
 					links.addOrClean(link.getIdentifier(), link.getModDate());
 					linksSet.add(link.getIdentifier());
 				}
@@ -608,17 +608,17 @@ public class DependencyManager {
 
 			// Structure dependencies
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
-				List<Structure> structureList = APILocator.getFolderAPI()
-						.getStructures(f, user, false);
-				for (Structure structure : structureList) {
+				final List<Structure> structureList = APILocator.getFolderAPI()
+						.getStructures(folder, user, false);
+				for (final Structure structure : structureList) {
 					contentTypes.addOrClean(structure.getInode(), structure.getModDate());
 					contentTypesSet.add(structure.getInode());
 				}
 
 				//Add the default structure of this folder
-				if (f.getDefaultFileType() != null) {
-					Structure defaultStructure = CacheLocator.getContentTypeCache()
-							.getStructureByInode(f.getDefaultFileType());
+				if (folder.getDefaultFileType() != null) {
+					final Structure defaultStructure = CacheLocator.getContentTypeCache()
+							.getStructureByInode(folder.getDefaultFileType());
 					if ((defaultStructure != null && InodeUtils.isSet(defaultStructure.getInode()))
 							&& !contentTypesSet.contains(defaultStructure.getInode())) {
 						contentTypes.addOrClean(defaultStructure.getInode(),
@@ -628,7 +628,7 @@ public class DependencyManager {
 				}
 			}
 
-			setFolderListDependencies(APILocator.getFolderAPI().findSubFolders(f, user, false),publisherFilter);
+			setFolderListDependencies(APILocator.getFolderAPI().findSubFolders(folder, user, false),publisherFilter);
 		}
 
 	}
@@ -641,11 +641,11 @@ public class DependencyManager {
 	private void setHTMLPagesDependencies(final PublisherFilter publisherFilter)  {
 		try {
 
-			Set<String> idsToWork = new HashSet<>();
+			final Set<String> idsToWork = new HashSet<>();
 			idsToWork.addAll(htmlPagesSet);
-			for (String contId : contentsSet) {
+			for (final String contId : contentsSet) {
 
-				List<Contentlet> c = APILocator.getContentletAPI().search("+identifier:" + contId, 0, 0, "moddate", user, false);
+				final List<Contentlet> c = APILocator.getContentletAPI().search("+identifier:" + contId, 0, 0, "moddate", user, false);
 
 				if (c != null && !c.isEmpty() && c.get(0).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
 					idsToWork.add(contId);
@@ -680,24 +680,24 @@ public class DependencyManager {
 
 		try {
 
-			IdentifierAPI idenAPI = APILocator.getIdentifierAPI();
-			FolderAPI folderAPI = APILocator.getFolderAPI();
-			Set<Container> containerList = new HashSet<>();
+			final IdentifierAPI idenAPI = APILocator.getIdentifierAPI();
+			final FolderAPI folderAPI = APILocator.getFolderAPI();
+			final Set<Container> containerList = new HashSet<>();
 
-			for (String pageId : idsToWork) {
-				Identifier iden = idenAPI.find(pageId);
+			for (final String pageId : idsToWork) {
+				final Identifier identifier = idenAPI.find(pageId);
 
 				// Host dependency
 				if (publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType())) {
-					Host h = APILocator.getHostAPI().find(iden.getHostId(), user, false);
-					hosts.addOrClean(iden.getHostId(), h.getModDate());
-					hostsSet.add(iden.getHostId());
+					final Host host = APILocator.getHostAPI().find(identifier.getHostId(), user, false);
+					hosts.addOrClean(identifier.getHostId(), host.getModDate());
+					hostsSet.add(identifier.getHostId());
 				}
 
 				// Folder dependencies
 				if (publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.FOLDER.getType())) {
-					Folder folder = folderAPI
-							.findFolderByPath(iden.getParentPath(), iden.getHostId(), user, false);
+					final Folder folder = folderAPI
+							.findFolderByPath(identifier.getParentPath(), identifier.getHostId(), user, false);
 					folders.addOrClean(folder.getInode(), folder.getModDate());
 					foldersSet.add(folder.getInode());
 				}
@@ -712,7 +712,7 @@ public class DependencyManager {
 									user, false).get(0);
 				} catch (DotContentletStateException e) {
 					// content not found message is already displayed on console
-					Logger.debug(this, e.getMessage(), e);
+					Logger.debug(this,()->e.getMessage());
 				}
 				if (contentlet != null)
 					workingPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
@@ -722,7 +722,7 @@ public class DependencyManager {
 
 				contentlet = null;
 				try {
-					List<Contentlet> result = APILocator.getContentletAPI()
+					final List<Contentlet> result = APILocator.getContentletAPI()
 							.search("+identifier:" + pageId + " +live:true", 0, 0, "moddate", user,
 									false);
 					if (!result.isEmpty()) {
@@ -731,10 +731,11 @@ public class DependencyManager {
 
 				} catch (DotContentletStateException e) {
 					// content not found message is already displayed on console
-					Logger.debug(this, e.getMessage(), e);
+					Logger.debug(this,()->e.getMessage());
 				}
-				if (contentlet != null)
+				if (contentlet != null) {
 					livePage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+				}
 
 				// working template working page
 				Template workingTemplateWP = null;
@@ -782,7 +783,7 @@ public class DependencyManager {
 							.getContainersInTemplate(liveTemplateLP, user, false));
 				}
 
-				for (Container container : containerList) {
+				for (final Container container : containerList) {
 					// Containers dependencies
 					if (publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTAINER.getType())) {
 						if (container instanceof FileAssetContainer) {
@@ -796,29 +797,29 @@ public class DependencyManager {
 
 					// Structure dependencies
 					if (publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
-						List<ContainerStructure> csList = APILocator.getContainerAPI()
+						final List<ContainerStructure> containerStructureList = APILocator.getContainerAPI()
 								.getContainerStructures(container);
 
-						for (ContainerStructure containerStructure : csList) {
-							Structure st = CacheLocator.getContentTypeCache()
+						for (final ContainerStructure containerStructure : containerStructureList) {
+							final Structure structure = CacheLocator.getContentTypeCache()
 									.getStructureByInode(containerStructure.getStructureId());
 							contentTypes.addOrClean(containerStructure.getStructureId(),
-									st.getModDate());
+									structure.getModDate());
 							contentTypesSet.add(containerStructure.getStructureId());
 						}
 					}
 
 					// Contents dependencies
 					if (publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType())) {
-						List<MultiTree> treeList = APILocator.getMultiTreeAPI()
+						final List<MultiTree> treeList = APILocator.getMultiTreeAPI()
 								.getMultiTrees(workingPage, container);
 
-						for (MultiTree mt : treeList) {
-							String contentIdentifier = mt.getChild();
-							List<Contentlet> contentList = APILocator.getContentletAPI()
+						for (final MultiTree multiTree : treeList) {
+							final String contentIdentifier = multiTree.getChild();
+							final List<Contentlet> contentList = APILocator.getContentletAPI()
 									.search("+identifier:" + contentIdentifier, 0, 0, "moddate",
 											user, false);
-							for (Contentlet contentletI : contentList) {
+							for (final Contentlet contentletI : contentList) {
 								if(publisherFilter.acceptExcludeDependencyQuery(contentlet.getIdentifier())) {
 									contents.addOrClean(contentletI.getIdentifier(),
 											contentletI.getModDate());
@@ -855,35 +856,35 @@ public class DependencyManager {
 	 */
 	private void setTemplateDependencies(final PublisherFilter publisherFilter)  {
 		try {
-			List<Container> containerList = new ArrayList<>();
-			FolderAPI folderAPI = APILocator.getFolderAPI();
+			final List<Container> containerList = new ArrayList<>();
+			final FolderAPI folderAPI = APILocator.getFolderAPI();
 
-			for (String id : templatesSet) {
-				Template wkT = APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
-				Template lvT = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
+			for (final String id : templatesSet) {
+				final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
+				final Template liveTemplate = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
 
 				// Host dependency
 				if (publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType())) {
-					Host h = APILocator.getHostAPI()
-							.find(APILocator.getTemplateAPI().getTemplateHost(wkT).getIdentifier(),
+					final Host host = APILocator.getHostAPI()
+							.find(APILocator.getTemplateAPI().getTemplateHost(workingTemplate).getIdentifier(),
 									user, false);
 					hosts.addOrClean(
-							APILocator.getTemplateAPI().getTemplateHost(wkT).getIdentifier(),
-							h.getModDate());
+							APILocator.getTemplateAPI().getTemplateHost(workingTemplate).getIdentifier(),
+							host.getModDate());
 				}
 
 				containerList.clear();
 				// Container dependencies
 				if (publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTAINER.getType())) {
 					containerList.addAll(APILocator.getTemplateAPI()
-							.getContainersInTemplate(wkT, user, false));
+							.getContainersInTemplate(workingTemplate, user, false));
 
-					if (lvT != null && InodeUtils.isSet(lvT.getInode())) {
+					if (liveTemplate != null && InodeUtils.isSet(liveTemplate.getInode())) {
 						containerList.addAll(APILocator.getTemplateAPI()
-								.getContainersInTemplate(lvT, user, false));
+								.getContainersInTemplate(liveTemplate, user, false));
 					}
 
-					for (Container container : containerList) {
+					for (final Container container : containerList) {
 
 						if (container instanceof FileAssetContainer) {
 							fileAssetContainersSet.add(container.getIdentifier());
@@ -897,17 +898,17 @@ public class DependencyManager {
 
 				//Adding theme
 				if (publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.FOLDER.getType())) {
-					if (UtilMethods.isSet(wkT.getTheme())) {
+					if (UtilMethods.isSet(workingTemplate.getTheme())) {
 						try {
-							Folder themeFolder = folderAPI.find(wkT.getTheme(), user, false);
+							final Folder themeFolder = folderAPI.find(workingTemplate.getTheme(), user, false);
 							if (themeFolder != null && InodeUtils.isSet(themeFolder.getInode())) {
-								Folder parent = APILocator.getFolderAPI()
+								final Folder parentFolder = APILocator.getFolderAPI()
 										.findParentFolder(themeFolder, user, false);
-								if (UtilMethods.isSet(parent)) {
-									folders.addOrClean(parent.getInode(), parent.getModDate());
-									foldersSet.add(parent.getInode());
+								if (UtilMethods.isSet(parentFolder)) {
+									folders.addOrClean(parentFolder.getInode(), parentFolder.getModDate());
+									foldersSet.add(parentFolder.getInode());
 								}
-								List<Folder> folderList = new ArrayList<Folder>();
+								final List<Folder> folderList = new ArrayList<Folder>();
 								folderList.add(themeFolder);
 								setFolderListDependencies(folderList, publisherFilter);
 							}
@@ -942,44 +943,44 @@ public class DependencyManager {
 
 		try {
 
-			List<Container> containerList = new ArrayList<>();
+			final List<Container> containerList = new ArrayList<>();
 
-			for (String id : containersSet) {
-				Container c = APILocator.getContainerAPI().getWorkingContainerById(id, user, false);
+			for (final String id : containersSet) {
+				final Container containerById = APILocator.getContainerAPI().getWorkingContainerById(id, user, false);
 
 				// Host Dependency
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType())) {
-					Host h = APILocator.getContainerAPI().getParentHost(c, user, false);
-					hosts.addOrClean(APILocator.getContainerAPI().getParentHost(c, user, false)
-							.getIdentifier(), h.getModDate());
+					final Host host = APILocator.getContainerAPI().getParentHost(containerById, user, false);
+					hosts.addOrClean(APILocator.getContainerAPI().getParentHost(containerById, user, false)
+							.getIdentifier(), host.getModDate());
 				}
 
 				containerList.clear();
 
 				// Content Type Dependencies
 				if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
-					Container workingContainer = APILocator.getContainerAPI()
+					final Container workingContainer = APILocator.getContainerAPI()
 							.getWorkingContainerById(id, user, false);
 					if (workingContainer != null) {
 						containerList.add(workingContainer);
 					}
 
-					Container liveContainer = APILocator.getContainerAPI()
+					final Container liveContainer = APILocator.getContainerAPI()
 							.getLiveContainerById(id, user, false);
 					if (liveContainer != null) {
 						containerList.add(liveContainer);
 					}
 
-					for (Container container : containerList) {
+					for (final Container container : containerList) {
 						// Structure dependencies
-						List<ContainerStructure> csList = APILocator.getContainerAPI()
+						final List<ContainerStructure> csList = APILocator.getContainerAPI()
 								.getContainerStructures(container);
 
-						for (ContainerStructure containerStructure : csList) {
-							Structure st = CacheLocator.getContentTypeCache()
+						for (final ContainerStructure containerStructure : csList) {
+							final Structure structure = CacheLocator.getContentTypeCache()
 									.getStructureByInode(containerStructure.getStructureId());
 							contentTypes.addOrClean(containerStructure.getStructureId(),
-									st.getModDate());
+									structure.getModDate());
 							contentTypesSet.add(containerStructure.getStructureId());
 						}
 					}
@@ -1062,7 +1063,7 @@ public class DependencyManager {
 	private void setStructureDependencies(final PublisherFilter publisherFilter)  throws DotDataException, DotSecurityException {
 		try {
 
-			for (String inode : contentTypesSet) {
+			for (final String inode : contentTypesSet) {
 				structureDependencyHelper(inode,publisherFilter);
 			}
 
@@ -1128,15 +1129,16 @@ public class DependencyManager {
 
 				if (!contentTypes.contains(relationship.getChildStructureInode()) && config
 						.getOperation().equals(Operation.PUBLISH)) {
-					Structure struct = CacheLocator.getContentTypeCache()
+					final Structure childStructure = CacheLocator.getContentTypeCache()
 							.getStructureByInode(relationship.getChildStructureInode());
 					solvedContentTypes.add(stInode);
 					contentTypes
-							.addOrClean(relationship.getChildStructureInode(), struct.getModDate());
+							.addOrClean(relationship.getChildStructureInode(), childStructure.getModDate());
 
-					if (!solvedContentTypes.contains(relationship.getChildStructureInode()))
+					if (!solvedContentTypes.contains(relationship.getChildStructureInode())) {
 						structureDependencyHelper(relationship.getChildStructureInode(),
 								publisherFilter);
+					}
 				}
 				if (!contentTypes.contains(relationship.getParentStructureInode()) && config
 						.getOperation().equals(Operation.PUBLISH)) {
@@ -1156,63 +1158,63 @@ public class DependencyManager {
 
 	/**
 	 * 
-	 * @param cons
+	 * @param contentletSet
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private void processList(final Set<Contentlet> cons, final PublisherFilter publisherFilter) throws DotDataException, DotSecurityException {
-		Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
-		Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
+	private void processList(final Set<Contentlet> contentletSet, final PublisherFilter publisherFilter) throws DotDataException, DotSecurityException {
+		final Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
+		final Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
 
-		for (Contentlet con : cons) {
+		for (final Contentlet contentlet : contentletSet) {
 			// Host Dependency
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType())) {
-				Host h = APILocator.getHostAPI().find(con.getHost(), user, false);
-				hosts.addOrClean(con.getHost(), h.getModDate());
+				final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, false);
+				hosts.addOrClean(contentlet.getHost(), host.getModDate());
 			}
 
-			contentsToProcess.add(con);
+			contentsToProcess.add(contentlet);
 
 			// Relationships Dependencies
 			if(publisherFilter.isRelationships()) {
-				Map<Relationship, List<Contentlet>> contentRel =
-						APILocator.getContentletAPI().findContentRelationships(con, user);
+				final Map<Relationship, List<Contentlet>> contentRelationshipsMap =
+						APILocator.getContentletAPI().findContentRelationships(contentlet, user);
 
-				for (Relationship rel : contentRel.keySet()) {
-					contentsToProcess.addAll(contentRel.get(rel));
+				for (final Relationship relationship : contentRelationshipsMap.keySet()) {
+					contentsToProcess.addAll(contentRelationshipsMap.get(relationship));
 					/**
 					 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
 					 *
 					 * We need the relationships in which the single related content is involved.
 					 *
 					 */
-					if (contentRel.get(rel).size() > 0)
-						relationships.addOrClean(rel.getInode(), rel.getModDate());
+					if (contentRelationshipsMap.get(relationship).size() > 0)
+						relationships.addOrClean(relationship.getInode(), relationship.getModDate());
 				}
 			}
 		}
 		// end relationships false
 
-		for (Contentlet con : contentsToProcess) {
+		for (final Contentlet contentletToProcess : contentsToProcess) {
 			// Host Dependency
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType())) {
-				Host h = APILocator.getHostAPI().find(con.getHost(), user, false);
-				hosts.addOrClean(con.getHost(), h.getModDate());
+				final Host host = APILocator.getHostAPI().find(contentletToProcess.getHost(), user, false);
+				hosts.addOrClean(contentletToProcess.getHost(), host.getModDate());
 			}
-			contentsWithDependenciesToProcess.add(con);
+			contentsWithDependenciesToProcess.add(contentletToProcess);
 			//Copy asset files to bundle folder keeping original folders structure
-			List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
+			final List<Field> fields=FieldsCache.getFieldsByStructureInode(contentletToProcess.getStructureInode());
 
-			for(Field ff : fields) {
-				if (ff.getFieldType().equals(Field.FieldType.IMAGE.toString())
-						|| ff.getFieldType().equals(Field.FieldType.FILE.toString())) {
+			for(final Field field : fields) {
+				if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
+						|| field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 
 					try {
 						String value = "";
-						if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
-							value = APILocator.getContentletAPI().getFieldValue(con, ff).toString();
+						if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(contentletToProcess, field))){
+							value = APILocator.getContentletAPI().getFieldValue(contentletToProcess, field).toString();
 						}
-						Identifier id = APILocator.getIdentifierAPI().find(value);
+						final Identifier id = APILocator.getIdentifierAPI().find(value);
 						if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
 							contentsWithDependenciesToProcess.addAll(
 									APILocator.getContentletAPI()
@@ -1228,39 +1230,39 @@ public class DependencyManager {
 		}
 
 		// Adding the Contents (including related) and adding filesAsContent
-		for (Contentlet con : contentsWithDependenciesToProcess) {
+		for (final Contentlet contentletWithDependenciesToProcess : contentsWithDependenciesToProcess) {
 			// Host Dependency
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType())) {
-				Host h = APILocator.getHostAPI().find(con.getHost(), user, false);
-				hosts.addOrClean(con.getHost(), h.getModDate());
+				final Host host = APILocator.getHostAPI().find(contentletWithDependenciesToProcess.getHost(), user, false);
+				hosts.addOrClean(contentletWithDependenciesToProcess.getHost(), host.getModDate());
 			}
 			// Content Dependency
-			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType()) && publisherFilter.acceptExcludeDependencyQuery(con.getIdentifier())) {
-				contents.addOrClean(con.getIdentifier(),
-						con.getModDate());
+			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType()) && publisherFilter.acceptExcludeDependencyQuery(contentletWithDependenciesToProcess.getIdentifier())) {
+				contents.addOrClean(contentletWithDependenciesToProcess.getIdentifier(),
+						contentletWithDependenciesToProcess.getModDate());
 			}
 			// Folder Dependency
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.FOLDER.getType())) {
-				Folder f = APILocator.getFolderAPI().find(con.getFolder(), user, false);
-				folders.addOrClean(con.getFolder(), f.getModDate()); // adding content folder
+				final Folder folder = APILocator.getFolderAPI().find(contentletWithDependenciesToProcess.getFolder(), user, false);
+				folders.addOrClean(contentletWithDependenciesToProcess.getFolder(), folder.getModDate()); // adding content folder
 			}
 			// Language Dependency
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.LANGUAGE.getType())) {
-				languages.addOrClean(Long.toString(con.getLanguageId()),
+				languages.addOrClean(Long.toString(contentletWithDependenciesToProcess.getLanguageId()),
 						new Date()); // will be included only when hasn't been sent ever
 			}
 
 			try {
 				if (Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES", false)
-						&& con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+						&& contentletWithDependenciesToProcess.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
 
-					Folder contFolder=APILocator.getFolderAPI().find(con.getFolder(), user, false);
-					List<IHTMLPage> folderHtmlPages = new ArrayList<IHTMLPage>(); 
+					final Folder contFolder=APILocator.getFolderAPI().find(contentletWithDependenciesToProcess.getFolder(), user, false);
+					final List<IHTMLPage> folderHtmlPages = new ArrayList<IHTMLPage>();
 					folderHtmlPages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(contFolder, false, false, user, false));
 					folderHtmlPages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(contFolder, true, false, user, false));
 
-					Set<String> pagesToProcess = new HashSet<>();
-					for (IHTMLPage htmlPage : folderHtmlPages) {
+					final Set<String> pagesToProcess = new HashSet<>();
+					for (final IHTMLPage htmlPage : folderHtmlPages) {
 
 						Boolean mustBeIncluded;
 
@@ -1280,35 +1282,35 @@ public class DependencyManager {
 			}
 
 			if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true) && publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
-				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
-				contentTypes.addOrClean( con.getStructureInode(), struct.getModDate());
-				structureDependencyHelper(con.getStructureInode(),publisherFilter);
+				final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(contentletWithDependenciesToProcess.getStructureInode());
+				contentTypes.addOrClean( contentletWithDependenciesToProcess.getStructureInode(), structure.getModDate());
+				structureDependencyHelper(contentletWithDependenciesToProcess.getStructureInode(),publisherFilter);
 			}
 
 			// Evaluate all the categories from this contentlet to include as dependency.
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CATEGORY.getType())) {
 				final List<Category> categoriesFromContentlet = APILocator.getCategoryAPI()
-						.getParents(con, APILocator.systemUser(), false);
-				for (Category category : categoriesFromContentlet) {
+						.getParents(contentletWithDependenciesToProcess, APILocator.systemUser(), false);
+				for (final Category category : categoriesFromContentlet) {
 					categories.addOrClean(category.getCategoryId(), category.getModDate());
 				}
 			}
         }
 		
 		//This is for adding the new language variables (as content)
-        for (String lang : languages) {
-            String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
-            List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
+        for (final String lang : languages) {
+            final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
+            final List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
                             .search(keyValueQuery,0, -1, StringPool.BLANK, user, false);// search for language variables
 			// if there is any language variable and we accept to push content type, add the content type
             if (!listKeyValueLang.isEmpty() && publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
-                Structure struct = CacheLocator.getContentTypeCache()
+                final Structure structure = CacheLocator.getContentTypeCache()
                                 .getStructureByInode(listKeyValueLang.get(0).getContentTypeId());
-                contentTypes.addOrClean(struct.getIdentifier(), struct.getModDate());
-                structureDependencyHelper(struct.getIdentifier(),publisherFilter);
+                contentTypes.addOrClean(structure.getIdentifier(), structure.getModDate());
+                structureDependencyHelper(structure.getIdentifier(),publisherFilter);
             }
 			if(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType())) {
-				for (Contentlet keyValue : listKeyValueLang) {// add the language variable
+				for (final Contentlet keyValue : listKeyValueLang) {// add the language variable
 					if(publisherFilter.acceptExcludeDependencyQuery(keyValue.getIdentifier())) {
 						contents.addOrClean(keyValue.getIdentifier(), keyValue.getModDate());
 					}

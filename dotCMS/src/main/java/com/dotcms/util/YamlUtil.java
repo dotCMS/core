@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,6 +48,7 @@ public class YamlUtil {
 
             return parse(inputStream, tClass);
         }catch (Exception e){
+            Logger.error(YamlUtil.class,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
     }
@@ -64,6 +66,7 @@ public class YamlUtil {
             return ymlMapper
                     .readValue(inputStream, tClass);
         } catch (Exception e) {
+            Logger.error(YamlUtil.class,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
     }
@@ -79,6 +82,7 @@ public class YamlUtil {
         try {
             ymlMapper.writeValue(file, yaml);
         } catch (Exception e) {
+            Logger.error(YamlUtil.class,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
     }

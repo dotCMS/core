@@ -159,7 +159,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 
     @Override
     public List<FilterDescriptor> getFiltersDescriptorsByRole(final User user) throws DotDataException {
-        if(APILocator.getUserAPI().isCMSAdmin(user)){
+        if(user.isAdmin()){
             return new ArrayList<>(this.loadedFilters.values());
         }
         final List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), true);
@@ -185,11 +185,8 @@ public class PublisherAPIImpl implements PublisherAPI {
 
     @Override
     public FilterDescriptor getFilterDescriptorByKey(final String filterKey) {
-        final FilterDescriptor defaultFilter = this.loadedFilters.values().stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findAny().get();
-        if(!UtilMethods.isSet(filterKey)){
-            return defaultFilter;
-        }
-        return this.loadedFilters.getOrDefault(filterKey,defaultFilter);
+        final FilterDescriptor defaultFilter = getDefaultFilter();
+        return !UtilMethods.isSet(filterKey) ? defaultFilter : this.loadedFilters.getOrDefault(filterKey,defaultFilter);
     }
 
     @Override
@@ -203,11 +200,12 @@ public class PublisherAPIImpl implements PublisherAPI {
                 (Boolean)filterDescriptor.getFilters().getOrDefault("relationships",true));
 
         if(filterDescriptor.getFilters().containsKey("excludeClasses")){
-            ((ArrayList)filterDescriptor.getFilters().get("excludeClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
+            List.class.cast(filterDescriptor.getFilters().get("excludeClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
+
         }
 
         if(filterDescriptor.getFilters().containsKey("excludeDependencyClasses")){
-            ((ArrayList)filterDescriptor.getFilters().get("excludeDependencyClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type.toString()));
+            List.class.cast(filterDescriptor.getFilters().get("excludeDependencyClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type.toString()));
         }
 
         if(filterDescriptor.getFilters().containsKey("excludeQuery")){
@@ -223,5 +221,9 @@ public class PublisherAPIImpl implements PublisherAPI {
         }
 
         return publisherFilter;
+    }
+
+    public FilterDescriptor getDefaultFilter(){
+        return this.loadedFilters.values().stream().filter(FilterDescriptor::isDefaultFilter).findFirst().get();
     }
 }

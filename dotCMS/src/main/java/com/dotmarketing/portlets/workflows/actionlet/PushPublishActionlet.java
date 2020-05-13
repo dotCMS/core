@@ -149,7 +149,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			final Date publishDate = dateFormat
 					.parse(contentPushPublishDate + "-" + contentPushPublishTime);
 
-			Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,"");//TODO: where its called??
+			Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,"");
 			APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
 			publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
@@ -157,7 +157,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 					.equals(contentPushExpireTime.trim()))) {
 				Date expireDate = dateFormat
 						.parse(contentPushExpireDate + "-" + contentPushExpireTime);
-				bundle = new Bundle(null, publishDate, expireDate, user.getUserId(), forcePush,"");//TODO: where its called??);
+				bundle = new Bundle(null, publishDate, expireDate, user.getUserId(), forcePush,"");
 				APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 				publisherAPI.addContentsToUnpublish(identifiers, bundle.getId(), expireDate, user);
 			}
