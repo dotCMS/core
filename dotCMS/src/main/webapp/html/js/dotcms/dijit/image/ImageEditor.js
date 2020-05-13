@@ -34,13 +34,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     compression:'none',
     compressionValue:65,
     fileSize:0,
-    
-
-
-
+    execute: null,
+	activeEditor: undefined,
 
     postCreate: function(){
         window.top._dotImageEditor = this;
+        this.execute = this.createImageWindow;
         // this._loadCss();
         this.filters = new Array();
 
@@ -289,16 +288,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     },
 
-
-
-
-
-
     closeImageWindow : function(e){
         this._cleanUpImageEditor();
         
     },
-
 
     /**
      * cleans up old references, resets imageEditor
@@ -329,19 +322,11 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         
     },
 
-
-
-
-
-
-
     /***************************************************************************
      *
      * Button Actions
      *
      **************************************************************************/
-
-
 
     addToClipboard : function(){
         if(this.currentUrl.indexOf("/temp_")>-1){
@@ -370,12 +355,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     },
 
-
-
-
-
-
-
     /**
      * Save as passes a var:_imageToolSaveFile to the binary servlet with all the other
      * params.  This saves the file handle in the users session.  We look for this
@@ -384,7 +363,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     saveImage : function(){
         if(this.binaryFieldId != null && this.binaryFieldId.length > 0){
-            this.saveBinaryImage();
+            this.saveBinaryImage(this.activeEditor);
         }
         else{
             this.saveFileImage();
@@ -392,56 +371,75 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
 
+    _isValidURL: function (url) {
+        let elem = document.createElement("input");
+        elem.setAttribute("type", "url");
+		elem.value = url;
+		return elem.validity.valid;
+    },
 
+    /**
+     * Sends an image back to the tinymce WYSIWYG editor from the "Edit Image" dialog.
+     * 
+     * @param {object} activeEditor - Instance of the active editor
+     * @param {string} url - Image URL
+     */
+    _sendImageToEditor: function(activeEditor, url) {
+        let newUrl;
+        newUrl = this._isValidURL(url) ? new URL(url).pathname : url;
+
+        const asset = `
+            <img 
+                src="${newUrl}" 
+                alt="${this.fieldName}"
+                data-field-name="${this.fieldName}"
+                data-inode="${this.inode}"
+                data-identifier="${this.fieldContentletId}"
+                data-saveas="${this.saveAsFileName}"
+            />`;
+        activeEditor.execCommand("mceReplaceContent", false, asset);
+    },
     /**
      * This saves an image
      * that lives on a contentlet
      *
      */
-
-    saveBinaryImage: function(){
-
-        var field=this.binaryFieldId;
+    saveBinaryImage: function(activeEditor){
+        var field = this.binaryFieldId;
         if(this.fieldContentletId.length>0) {
             field=this.fieldContentletId;
         }
 
-        var url =   this.cleanUrl(this.currentUrl) ;
-        url = (url.indexOf("?")>-1) ? url + "&"  : url + "?";
-        url += (field.length > 0) ? "&binaryFieldId=" +field : "";
-        url += "&_imageToolSaveFile=true";
-        
-        
-        var xhr = new XMLHttpRequest();
-        xhr.onload = (self => {
-            return () => {
-                if (xhr.status == 200) {
-                    var dataJson = JSON.parse(xhr.responseText);
-                    self.tempId=dataJson.id;
-                    if(window.document.getElementById(self.binaryFieldId + "ValueField")){
-                        window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id; 
+        let url = this.cleanUrl(this.currentUrl);
+
+        if (activeEditor) { 
+            this._sendImageToEditor(activeEditor, url)
+        } else {
+            url = url.indexOf("?") > -1 ? url + "&" : url + "?";
+            url += field.length > 0 ? "&binaryFieldId=" + field : "";
+            url += "&_imageToolSaveFile=true";
+            var xhr = new XMLHttpRequest();
+            xhr.onload = (self => {
+                return () => {
+                    if (xhr.status == 200) {
+                        var dataJson = JSON.parse(xhr.responseText);
+                        self.tempId=dataJson.id;
+                        if(window.document.getElementById(self.binaryFieldId + "ValueField")){
+                            window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id; 
+                        }
+                        
+                    } else {
+                        alert("Error! Upload failed");
                     }
-                    
-                } else {
-                    alert("Error! Upload failed");
-                }
-            };
-        })(this);
-        xhr.open("GET", url, true);
-        xhr.send();
-        
-
-
-        this.setThumbnail();
-        
-
+                };
+            })(this);
+            xhr.open("GET", url, true);
+            xhr.send();
+            this.setThumbnail();
+        }
         // close without wiping out the saved value
         this.closeImageWindow();
     },
-
-
-
-
 
 
 
@@ -465,17 +463,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
 
-
     closeSaveAsDia : function(){
         saveAsDia = this.iframe.dijit.byId("saveAsDialog").hide();
         this.iframe.dojo.byId("saveAsName").value = "";
 
 
     },
-
-
-
-
 
     /***************************************************************************
      *
