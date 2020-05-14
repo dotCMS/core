@@ -12,6 +12,9 @@
 <%	
 	String dojoPath = Config.getStringProperty("path.to.dojo");
 	String id = request.getParameter("id");
+
+	String wysiwyg = (UtilMethods.isSet(request.getParameter("wysiwyg"))) ? request.getParameter("wysiwyg") : null;
+
 	String fieldName = (UtilMethods.isSet(request.getParameter("fieldName"))) ? request.getParameter("fieldName") : "fileAsset";
 	String baseImage =  "/contentAsset/image/" + id + "/" + fieldName + "/" ;
 
@@ -94,12 +97,7 @@
 				imageEditor.initIframe();
 			}
 		);
-
-		
-
-		
-		
-		
+	
 	</script>
 	
 </head>
@@ -155,7 +153,11 @@
 				</span>
          &nbsp;
 				<button dojoType="dijit.form.Button" onclick="imageEditor.saveImage()" >
-					<%= LanguageUtil.get(pageContext, "Save") %>
+						<% if(wysiwyg == null) { %>
+							<%= LanguageUtil.get(pageContext, "Save") %>
+						<%} else {%>	
+							<%= LanguageUtil.get(pageContext, "Apply") %>
+						<% } %>
 				</button>
 				&nbsp;
 				<button dojoType="dijit.form.Button" onClick="imageEditor.closeImageWindow()" >
