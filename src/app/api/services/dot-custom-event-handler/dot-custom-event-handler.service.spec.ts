@@ -6,7 +6,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
+import { DotPushPublishDialogService } from 'dotcms-js';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 describe('DotCustomEventHandlerService', () => {

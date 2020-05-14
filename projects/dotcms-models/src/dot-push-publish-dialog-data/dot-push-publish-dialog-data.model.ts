@@ -3,7 +3,6 @@
  * @export
  * @interface DotPushPublishDialogData
  */
-
 export interface DotPushPublishDialogData {
     assetIdentifier: string;
     title: string;

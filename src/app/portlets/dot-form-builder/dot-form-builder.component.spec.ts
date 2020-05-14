@@ -4,7 +4,7 @@ import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
-import { LoginService } from 'dotcms-js';
+import { LoginService, DotPushPublishDialogService } from 'dotcms-js';
 import { of } from 'rxjs';
 
 import { DOTTestBed } from '@tests/dot-test-bed';
@@ -13,7 +13,6 @@ import { DotFormBuilderComponent } from './dot-form-builder.component';
 import { DotUnlicensedPorletModule } from '@portlets/shared/dot-unlicensed-porlet';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
 
 let routeDatamock = {
     unlicensed: {

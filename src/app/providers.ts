@@ -28,7 +28,7 @@ import { InjectionToken } from '@angular/core';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
+import { DotPushPublishDialogService } from 'dotcms-js';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 

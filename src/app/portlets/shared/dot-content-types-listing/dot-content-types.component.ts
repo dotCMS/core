@@ -20,7 +20,7 @@ import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
-import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
+import { DotPushPublishDialogService } from 'dotcms-js';
 
 /**
  * List of Content Types

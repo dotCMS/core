@@ -17,7 +17,7 @@ import { Injectable } from '@angular/core';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { SelectItem } from 'primeng/primeng';
-import { ResponseView, HttpCode } from 'dotcms-js';
+import { ResponseView, HttpCode, DotPushPublishDialogService } from 'dotcms-js';
 import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService
@@ -26,7 +26,6 @@ import { DotCMSContentType } from 'dotcms-models';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 import { ActivatedRoute } from '@angular/router';
-import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
 
 @Injectable()
 class MockDotContentTypeService {

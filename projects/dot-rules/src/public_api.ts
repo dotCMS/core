@@ -10,8 +10,6 @@ export * from './lib/google-map/area-picker-dialog.component';
 export * from './lib/modal-dialog/dialog-component';
 export * from './lib/push-publish/add-to-bundle-dialog-component';
 export * from './lib/push-publish/add-to-bundle-dialog-container';
-export * from './lib/push-publish/push-publish-dialog-component';
-export * from './lib/push-publish/push-publish-dialog-container';
 export * from './lib/rule-action-component';
 export * from './lib/rule-component';
 export * from './lib/rule-condition-component';

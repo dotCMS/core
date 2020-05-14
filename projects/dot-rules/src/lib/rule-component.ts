@@ -1,5 +1,5 @@
 
-import {debounceTime} from 'rxjs/operators';
+import { debounceTime } from 'rxjs/operators';
 import {
     Component,
     EventEmitter,
@@ -62,11 +62,6 @@ const rsrc = {
       [assetId]="rule.key"
       [hidden]="!showAddToBundleDialog"
       (close)="showAddToBundleDialog = false; showMoreMenu = false"></cw-add-to-bundle-dialog-container>
-  <cw-push-publish-dialog-container
-      [environmentStores]="environmentStores"
-      [assetId]="rule.key"
-      [hidden]="!showPushPublishDialog"
-      (close)="showPushPublishDialog = false; showMoreMenu = false"></cw-push-publish-dialog-container>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled"
     [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
@@ -115,7 +110,7 @@ const rsrc = {
           (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
 
         <a class="item" *ngIf="environmentStores.length > 0 && (rule._id || rule.key) &&  !apiRoot.hideRulePushOptions"
-          (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
+          (click)="openPushPublishDialog.emit(rule.key); $event.stopPropagation()">Push Publish</a>
         <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
@@ -196,6 +191,7 @@ class RuleComponent {
     @Output()
     updateConditionParameter: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
     @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+    @Output() openPushPublishDialog: EventEmitter<string> = new EventEmitter(false);
 
     formModel: FormGroup;
     fireOn: any;
@@ -203,8 +199,6 @@ class RuleComponent {
     showMoreMenu = false;
     // tslint:disable-next-line:no-unused-variable
     showAddToBundleDialog = false;
-    // tslint:disable-next-line:no-unused-variable
-    showPushPublishDialog = false;
     hideFireOn: boolean;
     actionTypePlaceholder = '';
     conditionTypePlaceholder = '';

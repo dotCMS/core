@@ -18,8 +18,6 @@ import { GoogleMapService } from './services/GoogleMapService';
 import { I18nService } from './services/system/locale/I18n';
 import { InputDate } from './semantic/elements/input-date/input-date';
 import { ModalDialogComponent } from './modal-dialog/dialog-component';
-import { PushPublishDialogComponent } from './push-publish/push-publish-dialog-component';
-import { PushPublishDialogContainer } from './push-publish/push-publish-dialog-container';
 import { RestDropdown } from './semantic/modules/restdropdown/RestDropdown';
 import { RuleActionComponent } from './rule-action-component';
 import { RuleComponent } from './rule-component';
@@ -80,8 +78,6 @@ import { RuleViewService } from './services/dot-view-rule-service';
         Dropdown,
         InputDate,
         ModalDialogComponent,
-        PushPublishDialogComponent,
-        PushPublishDialogContainer,
         RestDropdown,
         RuleActionComponent,
         RuleComponent,

@@ -5,8 +5,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
-
+import { DotPushPublishDialogService } from 'dotcms-js';
 /**
  * Handle Custom events
  *

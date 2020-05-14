@@ -16,7 +16,8 @@ import {
     StringUtils,
     UserModel,
     DotEventsSocketURL,
-    DotEventsSocket
+    DotEventsSocket,
+    DotPushPublishDialogService
 } from 'dotcms-js';
 import { ConfirmationService } from 'primeng/primeng';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -32,7 +33,6 @@ import { DotLicenseService } from '../api/services/dot-license/dot-license.servi
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 class MockDotUiColorsService {

@@ -12,7 +12,8 @@ import {
 } from './rule-engine.container';
 import { IPublishEnvironment } from './services/bundle-service';
 import { RuleViewService, DotRuleMessage } from './services/dot-view-rule-service';
-import { takeUntil } from 'rxjs/operators';
+import { take, takeUntil } from 'rxjs/operators';
+import { DotPushPublishDialogService } from 'dotcms-js';
 
 const I8N_BASE = 'api.sites.ruleengine';
 
@@ -75,6 +76,7 @@ const I8N_BASE = 'api.sites.ruleengine';
         (updateRuleActionParameter)="updateRuleActionParameter.emit($event)"
         (deleteRuleAction)="deleteRuleAction.emit($event)"
 
+        (openPushPublishDialog)="showPushPublishDialog($event)"
         (createCondition)="createCondition.emit($event)"
         (createConditionGroup)="createConditionGroup.emit($event)"
         (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
@@ -125,7 +127,7 @@ export class RuleEngineComponent implements OnDestroy {
 
     globalError: string;
     showCloseButton: boolean;
-    
+
     filterText: string;
     status: string;
     activeRules: number;
@@ -133,8 +135,12 @@ export class RuleEngineComponent implements OnDestroy {
     private resources: I18nService;
     private _rsrcCache: { [key: string]: Observable<string> };
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private pushPublishTitleLabel = '';
 
-    constructor(resources: I18nService, private ruleViewService: RuleViewService) {
+    constructor(
+        resources: I18nService,
+        private ruleViewService: RuleViewService,
+        private dotPushPublishDialogService: DotPushPublishDialogService) {
         this.resources = resources;
         resources.get(I8N_BASE).subscribe(rsrc => {});
         this.filterText = '';
@@ -148,6 +154,11 @@ export class RuleEngineComponent implements OnDestroy {
                 this.globalError = dotRuleMessage.message;
                 this.showCloseButton = dotRuleMessage.allowClose;
             });
+
+        this.rsrc('pushPublish.title').pipe(take(1))
+            .subscribe(label => {
+                this.pushPublishTitleLabel = label;
+        });
     }
 
     ngOnDestroy(): void {
@@ -205,6 +216,13 @@ export class RuleEngineComponent implements OnDestroy {
 
     isFiltered(rule: RuleModel): boolean {
         return CwFilter.isFiltered(rule, this.filterText);
+    }
+
+    showPushPublishDialog(ruleKey: any): void {
+        this.dotPushPublishDialogService.open({
+            assetIdentifier: ruleKey,
+            title: this.pushPublishTitleLabel
+        });
     }
 }
 

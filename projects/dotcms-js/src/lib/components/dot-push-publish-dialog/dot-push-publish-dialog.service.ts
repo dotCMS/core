@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { DotPushPublishDialogData } from '@models/dot-push-publish-dialog-data/dot-push-publish-dialog-data.model';
+import { DotPushPublishDialogData } from 'dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotPushPublishDialogService {
     private data: Subject<DotPushPublishDialogData> = new Subject<DotPushPublishDialogData>();
 

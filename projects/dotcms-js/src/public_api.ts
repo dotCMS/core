@@ -43,6 +43,7 @@ export * from './lib/components/treeable-detail/treeable-detail.component';
 // COMPONENTS SPECIFIC SERVICES
 export * from './lib/components/site-selector/site-selector.service';
 export * from './lib/components/site-treetable/site-treetable.service';
+export * from './lib/components/dot-push-publish-dialog/dot-push-publish-dialog.service';
 
 // MODELS
 export * from './lib/core/models';
