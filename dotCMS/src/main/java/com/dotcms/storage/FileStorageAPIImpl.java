@@ -2,21 +2,18 @@ package com.dotcms.storage;
 
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.MimeTypeUtils;
-import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSortedMap;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
@@ -29,6 +26,7 @@ import java.util.function.Predicate;
  * @author jsanca
  */
 public class FileStorageAPIImpl implements FileStorageAPI {
+    private static final String CACHE_GROUP = "Contentlet";
 
     // width,height,contentType,author,keywords,fileSize,content,length,title
 
@@ -133,17 +131,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         if (generateMetaDataConfiguration.isCache()) {
 
-            final Cachable cachable = CacheLocator.getCache(generateMetaDataConfiguration.
-                    getCacheGroupSupplier().get());
+            final DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
+            if (null != cacheAdmin) {
 
-            if (null != cachable) {
-
-                final DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-                if (null != cacheAdmin) {
-
-                    cacheAdmin.put(generateMetaDataConfiguration.getCacheKeySupplier().get(),
-                            metadataMap, generateMetaDataConfiguration.getCacheGroupSupplier().get());
-                }
+                cacheAdmin.put(generateMetaDataConfiguration.getCacheKeySupplier().get(),
+                        metadataMap, CACHE_GROUP);
             }
         }
 
@@ -203,35 +195,30 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
                 Logger.error(this.getClass(),
                         String.format("Unable to delete existing metadata file [%s] [%s]",
-                                metadataFile.get().getAbsolutePath(), e.getMessage()), e);
+                               metadataFile.isPresent()?
+                                       metadataFile.get().getAbsolutePath(): StringPool.BLANK, e.getMessage()), e);
             }
         }
     } // checkOverride.
 
     @Override
-    public Map<String, Object> retrieveMetaData(GenerateMetaDataConfiguration generateMetaDataConfiguration) {
+    public Map<String, Object> retrieveMetaData(RequestMetaData requestMetaData) {
 
         Map<String, Object> metadataMap = Collections.emptyMap();
 
-        if (generateMetaDataConfiguration.isCache()) {
+        if (requestMetaData.isCache()) {
 
-            final Cachable cachable = CacheLocator.getCache(generateMetaDataConfiguration.
-                    getCacheGroupSupplier().get());
+            final DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
+            if (null != cacheAdmin) {
 
-            if (null != cachable) {
-
-                final DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-                if (null != cacheAdmin) {
-
-                    metadataMap = Try.of(()->(Map<String, Object>)cacheAdmin.get(generateMetaDataConfiguration.getCacheKeySupplier().get(),
-                            generateMetaDataConfiguration.getCacheGroupSupplier().get())).getOrElse(Collections.emptyMap());
-                }
+                metadataMap = Try.of(()->(Map<String, Object>)cacheAdmin.get(requestMetaData.getCacheKeySupplier().get(),
+                        CACHE_GROUP)).getOrElse(Collections.emptyMap());
             }
         }
 
         if (!UtilMethods.isSet(metadataMap)) {
 
-            final Optional<File> metadataFile = generateMetaDataConfiguration.getMetaDataFileSupplier().get();
+            final Optional<File> metadataFile = requestMetaData.getMetaDataFileSupplier().get();
 
             if (this.exists(metadataFile)) {
 
@@ -240,8 +227,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             }
         } else {
 
-            Logger.info(this, "Retrieve the meta data from cache, key: " + generateMetaDataConfiguration.getCacheKeySupplier().get()
-                    + ", group: " + generateMetaDataConfiguration.getCacheGroupSupplier().get());
+            Logger.info(this, "Retrieve the meta data from cache, key: " + requestMetaData.getCacheKeySupplier().get());
         }
 
         return metadataMap;

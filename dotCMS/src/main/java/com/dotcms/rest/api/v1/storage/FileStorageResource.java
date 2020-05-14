@@ -10,6 +10,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.storage.FileStorageAPI;
 import com.dotcms.storage.GenerateMetaDataConfiguration;
+import com.dotcms.storage.RequestMetaData;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.StringUtils;
@@ -100,10 +101,7 @@ public class FileStorageResource {
         final GenerateMetaDataConfiguration.Builder builder = new GenerateMetaDataConfiguration.Builder();
         builder.full(full);
 
-        if (bodyMap.containsKey("cacheKey") && bodyMap.containsKey("cacheGroup")) {
-
-            builder.cache(() -> (String) bodyMap.get("cacheKey"), () -> (String) bodyMap.get("cacheGroup"));
-        } else if (bodyMap.containsKey("cacheKey")) {
+        if (bodyMap.containsKey("cacheKey")) {
 
             builder.cache(() -> (String) bodyMap.get("cacheKey"));
         }
@@ -198,11 +196,8 @@ public class FileStorageResource {
 
         if (UtilMethods.isSet(bodyMap)) {
 
-            final GenerateMetaDataConfiguration.Builder builder = new GenerateMetaDataConfiguration.Builder();
-            if (bodyMap.containsKey("cacheKey") && bodyMap.containsKey("cacheGroup")) {
-
-                builder.cache(() -> (String) bodyMap.get("cacheKey"), () -> (String) bodyMap.get("cacheGroup"));
-            } else if (bodyMap.containsKey("cacheKey")) {
+            final RequestMetaData.Builder builder = new RequestMetaData.Builder();
+            if (bodyMap.containsKey("cacheKey")) {
 
                 builder.cache(() -> (String) bodyMap.get("cacheKey"));
             }

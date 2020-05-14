@@ -49,11 +49,6 @@ public class GenerateMetaDataConfiguration {
     private final Supplier<String>  cacheKeySupplier;
 
     /**
-     * Cache group, if cache is true
-     */
-    private final Supplier<String>  cacheGroupSupplier;
-
-    /**
      * If true, means the metadata generated will be full except if there is any metaDataKeyFilter, only these fields will be accepted.
      */
     private final boolean           full;
@@ -61,7 +56,6 @@ public class GenerateMetaDataConfiguration {
     private GenerateMetaDataConfiguration(final Builder builder) {
 
         this.cache                = builder.cache;
-        this.cacheGroupSupplier   = builder.cacheGroupSupplier;
         this.cacheKeySupplier     = builder.cacheKeySupplier;
         this.maxLength            = builder.maxLength;
         this.metaDataFileSupplier = builder.metaDataFileSupplier;
@@ -97,10 +91,6 @@ public class GenerateMetaDataConfiguration {
 
     public Supplier<String> getCacheKeySupplier() {
         return cacheKeySupplier;
-    }
-
-    public Supplier<String> getCacheGroupSupplier() {
-        return cacheGroupSupplier;
     }
 
     public boolean isFull() {
@@ -149,10 +139,6 @@ public class GenerateMetaDataConfiguration {
          */
         private Supplier<String>  cacheKeySupplier = null;
 
-        /**
-         * Cache group, if cache is true, by default goes to FileAssetMetadataCache
-         */
-        private Supplier<String>  cacheGroupSupplier = ()-> "Contentlet"; // todo: this must be not editable
 
         public Builder metaDataFileSupplier(final Supplier<Optional<File>> metaDataFileSupplier) {
 
@@ -191,16 +177,6 @@ public class GenerateMetaDataConfiguration {
             this.cacheKeySupplier = cacheKeySupplier;
             return this;
         }
-
-        public Builder cache(final Supplier<String>  cacheKeySupplier, final Supplier<String>  cacheGroupSupplier) {
-
-            this.cache              = true;
-            this.cacheKeySupplier   = cacheKeySupplier;
-            this.cacheGroupSupplier = cacheGroupSupplier;
-            return this;
-        }
-
-
 
         public GenerateMetaDataConfiguration build() {
             return new GenerateMetaDataConfiguration(this);
