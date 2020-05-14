@@ -87,18 +87,19 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     _determineAssetId: function(activeEditor, contentletId, newerInode) {
-        switch (true) {
-            case !!activeEditor:
-                return contentletId;
-            case newerInode.length > 0 && newerInode != this.inode && !this.tempId:
-                this.inode = newerInode;
-                this.tempId = null;
-                return newerInode;
-            case this.tempId && this.tempId.length > 0:
-                return this.tempId;
-            default:
-                return this.inode;
-        } 
+        let id;
+        if(!!activeEditor) {
+            id = contentletId;
+        } else if(newerInode.length > 0 && newerInode != this.inode && !this.tempId) {
+            this.inode = newerInode;
+            this.tempId = null;
+            id = newerInode;
+        } else if(this.tempId && this.tempId.length > 0) {
+            id = this.tempId;
+        } else {
+            id = this.inode
+        }
+        return id;
     },
 
     createImageWindow: function(){
