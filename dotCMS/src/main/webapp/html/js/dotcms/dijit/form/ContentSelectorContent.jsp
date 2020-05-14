@@ -26,34 +26,30 @@
                 dojoAttachPoint="structure_inode"
                 value="strInode"
             />
-            <div class="sideMenuWrapper">
-                <div dojoAttachPoint="structures_select"></div>
+            <div class="sideMenuWrapper beto">
+                <div dojoAttachPoint="search_general">
+                    <dl class="vertical">
+                        <dt>
+                            <label><%= LanguageUtil.get(pageContext, "Search") %>:</label>
+                        </dt>
+                        <dd>
+                        <input
+                            type="text"
+                            dojoType="dijit.form.TextBox"
+                            data-dojo-props="intermediateChanges:true"
+                            dojoAttachEvent="onKeyUp:_doDebounceSearch"
+                            dojoAttachPoint="generalSearch" />
+                        </dd>
+                    </dl>
+                </div>
                 <div dojoAttachPoint="search_languages_table"></div>
+                <div dojoAttachPoint="structures_select"></div>
                 <div dojoAttachPoint="search_fields_table"></div>
                 <div dojoAttachPoint="search_categories_table">
                     <dl
                         class="vertical"
                         dojoAttachPoint="search_categories_list"
                     ></dl>
-                </div>
-                <div dojoAttachPoint="search_general">
-                    <dl class="vertical">
-                        <dt>
-                            <label
-                                ><%= LanguageUtil.get(pageContext, "Search")
-                                %>:</label
-                            >
-                        </dt>
-                        <dd>
-                            <input
-                                type="text"
-                                dojoType="dijit.form.TextBox"
-                                data-dojo-props="intermediateChanges:true"
-                                dojoAttachEvent="onKeyUp:_doDebounceSearch"
-                                dojoAttachPoint="generalSearch"
-                            />
-                        </dd>
-                    </dl>
                 </div>
                 <div class="clear"></div>
                 <div class="buttonRow">
