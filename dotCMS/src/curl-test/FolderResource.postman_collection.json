@@ -1,0 +1,41 @@
+{
+	"info": {
+		"_postman_id": "d15d8b3a-f9b6-45d6-bfe5-2e2ca0e8e5cb",
+		"name": "FolderResource",
+		"description": "Test for FolderResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "create folders",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\"/folder1\",\"/folder2/subfolder1\"]\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/createfolders/demo.dotcms.com",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"createfolders",
+						"demo.dotcms.com"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

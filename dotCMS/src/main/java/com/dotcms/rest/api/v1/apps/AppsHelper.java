@@ -95,14 +95,32 @@ class AppsHelper {
             appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
                     Collectors.toList());
         }
-        final Set<String> hostIdentifiers = appsAPI.appKeysByHost().keySet();
+        final Set<String> siteIdentifiers = appsAPI.appKeysByHost().keySet();
         for (final AppDescriptor appDescriptor : appDescriptors) {
             final String appKey = appDescriptor.getKey();
-            final long configurationsCount = appsAPI
-                    .filterSitesForAppKey(appKey, hostIdentifiers, user).size();
-            views.add(new AppView(appDescriptor, configurationsCount));
+            final int configurationsCount = appsAPI.filterSitesForAppKey(appKey, siteIdentifiers, user).size();
+            final int sitesWithWarning = computeWarningsBySite(appDescriptor, siteIdentifiers, user);
+            views.add(new AppView(appDescriptor, configurationsCount, sitesWithWarning));
         }
         return views.stream().sorted(compareByCountAndName).collect(CollectionsUtils.toImmutableList());
+    }
+
+    /**
+     * Computes the number of warnings regardless of site under the given app-descriptor
+     * @param appDescriptor
+     * @param sitesWithConfigurations
+     * @param user
+     * @return sum or warnings for the given app-descriptor. Regardless of site.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private int computeWarningsBySite(final AppDescriptor appDescriptor,
+            final Set<String> sitesWithConfigurations, final User user)
+            throws DotDataException, DotSecurityException {
+        final Map<String, Map<String, List<String>>> warningsBySite = appsAPI
+                .computeWarningsBySite(appDescriptor, sitesWithConfigurations, user);
+        return (int) warningsBySite.values().stream().map(Map::values).filter(lists -> !lists.isEmpty())
+                .count();
     }
 
     /**
@@ -139,8 +157,11 @@ class AppsHelper {
         final Set<String> sitesWithConfigurations = appsAPI
                 .filterSitesForAppKey(appDescriptor.getKey(), appKeysByHost.keySet(), user);
 
+        final Map<String, Map<String, List<String>>> warningsBySite = appsAPI
+                .computeWarningsBySite(appDescriptor, sitesWithConfigurations, user);
+
         final PaginationUtil paginationUtil = new PaginationUtil(new SiteViewPaginator(
-                () -> sitesWithConfigurations, hostAPI, contentletAPI));
+                () -> sitesWithConfigurations, ()-> warningsBySite, hostAPI, contentletAPI));
         return paginationUtil
                 .getPage(request, user,
                         paginationContext.getFilter(),
@@ -150,7 +171,7 @@ class AppsHelper {
                         orderDirection,
                         Collections.emptyMap(),
                         (Function<PaginatedArrayList<SiteView>, AppView>) paginatedArrayList -> {
-                            final long count = sitesWithConfigurations.size();
+                            final int count = sitesWithConfigurations.size();
                             return new AppView(appDescriptor, count,
                                     paginatedArrayList);
                         });
@@ -187,21 +208,25 @@ class AppsHelper {
             //So we're gonna need a copy of the params on the yml.
             final Map<String, ParamDescriptor> descriptorParams = appDescriptor.getParams();
 
+            final Map<String, List<String>> warningsMap = appsAPI
+                    .computeSecretWarnings(appDescriptor, host, user);
+
             final Map<String,SecretView> mappedParams = appDescriptor.getParams().keySet().stream()
-                .map(paramKey -> new SecretView(paramKey, null, descriptorParams.get(paramKey)))
+                .map(paramKey -> new SecretView(paramKey, null, descriptorParams.get(paramKey), warningsMap.get(paramKey)))
                 .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
                         LinkedHashMap::new));
 
             final AppSecrets appSecrets = optionalAppSecrets.orElseGet(AppSecrets::empty);
 
-            final  Map<String,SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
+            final Map<String, SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
                     .stream()
-                    .map(e -> new SecretView(e.getKey(), e.getValue(), descriptorParams.get(e.getKey())))
-                    .sorted((o1, o2) ->  Boolean.compare(o1.isDynamic(), o2.isDynamic()))
+                    .map(e -> new SecretView(e.getKey(), e.getValue(),
+                            descriptorParams.get(e.getKey()), warningsMap.get(e.getKey())))
+                    .sorted((o1, o2) -> Boolean.compare(o1.isDynamic(), o2.isDynamic()))
                     .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
                             LinkedHashMap::new));
 
-            final int secretsCount = mappedSecrets.size();
+            final int configurationsCount = appsAPI.filterSitesForAppKey(key, appsAPI.appKeysByHost().keySet(), user).size();
 
             final List<SecretView> mergedParamsAndSecrets = mappedParams.entrySet().stream()
                 .map(paramViewEntry -> {
@@ -216,7 +241,7 @@ class AppsHelper {
             );
 
             final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(), mergedParamsAndSecrets);
-            return Optional.of(new AppView(appDescriptor, secretsCount,
+            return Optional.of(new AppView(appDescriptor, configurationsCount,
                     ImmutableList.of(siteView))
             );
 
@@ -388,7 +413,6 @@ class AppsHelper {
 
     /**
      * This method allows deleting a single secret/property from a stored integration.
-     * TODO: if a required property/secret is deleted.. the app must enter into some sort of invalid state.
      * @param form Secret specific-form
      * @param user Logged in user.
      * @throws DotSecurityException
@@ -605,10 +629,10 @@ class AppsHelper {
             try(final InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))){
                 final AppDescriptor appDescriptor = appsAPI
                         .createAppDescriptor(inputStream, user);
-                appViews.add(new AppView(appDescriptor,0L));
+                appViews.add(new AppView(appDescriptor,0, 0));
             }catch (Exception e){
                Logger.error(AppsHelper.class, e);
-               throw new DotDataException(e);
+               throw new DotDataException(e.getMessage(), e);
             }
         }
         return appViews;

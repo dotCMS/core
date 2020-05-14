@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.enterprise.publishing.remote.DependencyBundlerTest;
+import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
@@ -22,6 +23,7 @@ import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
@@ -266,7 +268,10 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrationResourceLinkTest.class,
         DependencyBundlerTest.class,
         PublisherFilterImplTest.class,
-        Task05305AddPushPublishFilterColumnTest.class
+        Task05305AddPushPublishFilterColumnTest.class,
+        IntegrationResourceLinkTest.class,
+        HTMLDiffUtilTest.class,
+        PushNowActionletTest.class
 })
 public class MainSuite {
 
