@@ -16,7 +16,7 @@ import java.util.Map;
  * 	excludeQuery:             (lucene query that added content is checked against to exclude)
  * 	excludeDependencyClasses: [ list of classes that should never be pushed as dependencies]
  * 	excludeClasses:           [ list of classes that should never be pushed]
- * 	incremental:              true|false . (basically, force push - should the push history be consulted when pushing?  Defaults to true)
+ * 	forcePush:              true|false . (basically, force push - should the push history be consulted when pushing?  Defaults to false)
  * 	dependencies:             true|false, defaults to true
  * 	relationships:            true|false, defaults to true
  */

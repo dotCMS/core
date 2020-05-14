@@ -6,21 +6,26 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.workflows.model.MultiKeyValue;
+import com.dotmarketing.portlets.workflows.model.MultiSelectionWorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
+import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +36,8 @@ import java.util.Map;
  * <ol>
  *     <li><b>Name of the Environment (String):</b> The name of the Push Publishing environment that will receive the
  *     Contentlet.</li>
- *     <li><b>Force the Push? true or false (String):</b> Type in true if the push will be forced. Otherwise, type in
- *     false. Defaults to false.</li>
+ *     <li><b>Filter Key (String):</b> Type in the filter key of one of the Push Publishing filters (the filter key is the name
+ *     of the file). Defaults to the filter set as default.</li>
  * </ol>
  * It's worth noting that, as its name implies, this Workflow Actionlet <b>allows users to {@code Push} content ONLY,
  * and NOT to {@code Remove} or {@code Push Remove}.</b>
@@ -50,7 +55,6 @@ public class PushNowActionlet extends WorkFlowActionlet {
     private static final String ACTIONLET_DESCRIPTION = "This actionlet will automatically publish the the content " +
             "object to the specified environment(s). Multiple environments can be separated by a comma (',')";
     private static final String PARAM_ENVIRONMENT = "environment";
-    private static final String PARAM_FORCE_PUSH = "force";
     private static final String PARAM_FILTER_KEY = "filterKey";
 
     private final PublisherAPI publisherAPI = PublisherAPI.getInstance();
@@ -62,9 +66,14 @@ public class PushNowActionlet extends WorkFlowActionlet {
     @Override
     public List<WorkflowActionletParameter> getParameters() {
         final List<WorkflowActionletParameter> params = new ArrayList<>();
-        params.add(new WorkflowActionletParameter(PARAM_ENVIRONMENT, "Name of the Environment", "", true));
-        params.add(new WorkflowActionletParameter(PARAM_FORCE_PUSH, "Force the Push? true or false", "false", true));
-        params.add(new WorkflowActionletParameter(PARAM_FILTER_KEY, "Filter", "", true));
+        //Environment Param
+        params.add(new WorkflowActionletParameter(PARAM_ENVIRONMENT, Try.of(()->LanguageUtil.get("pushNowActionlet.environments.name")).getOrElse("Name of the Environments"), "", true));
+        //Filter Param
+        final Collection<FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterDescriptorMap().values();
+        final FilterDescriptor defaultFilter = filterDescriptorMap.stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findFirst().get();
+        final List<MultiKeyValue> multiKeyValueFilterList = new ArrayList<>();
+        filterDescriptorMap.stream().forEach(filterDescriptor -> multiKeyValueFilterList.add(new MultiKeyValue(filterDescriptor.getKey(),filterDescriptor.getTitle())));
+        params.add(new MultiSelectionWorkflowActionletParameter(PARAM_FILTER_KEY, Try.of(()->LanguageUtil.get("pushNowActionlet.filter")).getOrElse("Name of the Environments"), defaultFilter.getKey(), true,()->multiKeyValueFilterList));
         return params;
     }
 
@@ -134,9 +143,10 @@ public class PushNowActionlet extends WorkFlowActionlet {
             // Push Publish now
             final Date publishDate = new Date();
             identifiers.add(contentlet.getIdentifier());
-            final boolean forcePush = "true".equals(params.get(PARAM_FORCE_PUSH).getValue()) ? Boolean.TRUE : Boolean.FALSE;
-            final String filterKey = params.get(PARAM_FILTER_KEY).getValue();//TODO: We need to implement the select to the push now dialog
-            final Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,filterKey);
+            final String filterKey = params.get(PARAM_FILTER_KEY).getValue();
+            final FilterDescriptor filterDescriptor = APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey);
+            final boolean forcePush = (boolean) filterDescriptor.getFilters().getOrDefault("forcePush",false);
+            final Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,filterDescriptor.getKey());
             this.bundleAPI.saveBundle(bundle, finalEnvs);
             this.publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
         } catch (final DotPublisherException e) {
