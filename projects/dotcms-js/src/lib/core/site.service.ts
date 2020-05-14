@@ -12,7 +12,9 @@ import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper'
  * Provide methods and data to hable the sites.
  * @export
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class SiteService {
     private selectedSite: Site;
     private urls: any;

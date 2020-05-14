@@ -663,7 +663,7 @@ export class RuleEngineContainer implements OnDestroy {
     });
 
     this._ruleService.requestRules(this.pageId);
-    this._ruleService.loadRules().pipe(take(1)).subscribe((rules: RuleModel[]) => {
+    this._ruleService.loadRules().pipe(takeUntil(this.destroy$)).subscribe((rules: RuleModel[]) => {
       this.loadRules(rules);
     });
     this.route.queryParams.pipe(take(1)).subscribe((params: Params) => this.isContentletHost =  (params.isContentletHost === 'true'));
