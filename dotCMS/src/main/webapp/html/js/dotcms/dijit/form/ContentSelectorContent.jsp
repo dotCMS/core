@@ -26,7 +26,7 @@
                 dojoAttachPoint="structure_inode"
                 value="strInode"
             />
-            <div class="sideMenuWrapper beto">
+            <div class="sideMenuWrapper">
                 <div dojoAttachPoint="search_general">
                     <dl class="vertical">
                         <dt>
