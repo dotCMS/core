@@ -1,4 +1,5 @@
 import { of, Observable } from 'rxjs';
+import * as _ from 'lodash';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -105,6 +106,8 @@ class MockDotAppsService {
     template: ''
 })
 class MockDotKeyValueComponent {
+    @Input()
+    autoFocus: boolean;
     @Input()
     showHiddenField: string;
     @Input()
@@ -268,8 +271,8 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
     describe('With dynamic variables', () => {
         beforeEach(() => {
-            const sitesDynamic = [].concat(sites);
-            sitesDynamic[0].secrets = [].concat(sites[0].secrets, {
+            const sitesDynamic = _.cloneDeep(sites);
+            sitesDynamic[0].secrets = [...sites[0].secrets, {
                 dynamic: true,
                 name: 'custom',
                 hidden: false,
@@ -278,7 +281,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 required: false,
                 type: 'STRING',
                 value: 'test'
-            });
+            }];
             routeDatamock.data.app = {
                 ...appData,
                 allowExtraParams: true,
@@ -290,6 +293,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should show DotKeyValue component with right values', () => {
             const keyValue = fixture.debugElement.query(By.css('dot-key-value'));
             expect(keyValue).toBeTruthy();
+            expect(keyValue.componentInstance.autoFocus).toBe(false);
             expect(keyValue.componentInstance.showHiddenField).toBe(true);
             expect(keyValue.componentInstance.variables).toEqual([
                 { key: 'custom', hidden: false, value: 'test' }
