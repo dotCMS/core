@@ -318,34 +318,60 @@ var cmsfile=null;
 		}
 	}
 
-    function emmitFieldDataChange(val) {
-        var customEvent = document.createEvent("CustomEvent");
-        customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "edit-contentlet-data-updated",
-            payload: val
-        });
-        document.dispatchEvent(customEvent)
-    }
+	function emmitFieldDataChange(val) {
+			var customEvent = document.createEvent("CustomEvent");
+			customEvent.initCustomEvent("ng-event", false, false,  {
+					name: "edit-contentlet-data-updated",
+					payload: val
+			});
+			document.dispatchEvent(customEvent)
+	}
+
+	function insertAssetInEditor(dotAssets, activeEditor, textAreaId) {
+		dotAssets.forEach(async (asset) => {
+			let results = await fetch(
+				`/api/v1/content/resourcelink?identifier=${asset.identifier}`
+			);
+			results = await results.json();
+
+			const mimeWhiteList = [
+				"image/jpeg",
+				"image/gif",
+				"image/webp",
+				"image/tiff",
+				"image/png",
+			];
+			const { mimeType, idPath } = results.entity.asset;
+
+			const image = `
+					<img
+					src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
+					alt="${asset.title}"
+					data-field-name="${asset.titleImage}"
+					data-inode="${asset.inode}"
+					data-identifier="${asset.identifier}"
+					data-saveas="${asset.title}"
+					/>`;
+
+			const link = `<a href="${idPath}">${asset.title}</a>`;
+
+			mimeWhiteList.includes(mimeType)
+				? activeEditor
+						.get(textAreaId)
+						.execCommand("mceInsertContent", false, image)
+				: activeEditor
+						.get(textAreaId)
+						.execCommand("mceInsertContent", false, link);
+		});
+	}
+
 
   function insertDropZoneAsset(activeEditor, textAreaId) {
 	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
         dropZone.addEventListener('uploadComplete', async (asset) => {
 					if(asset.detail) {
-						const dotAsset = asset.detail;
-						dotAsset.forEach(asset => {
-							const image = `
-								<img
-									src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
-									alt="${asset.title}"
-									data-field-name="${asset.titleImage}"
-									data-inode="${asset.inode}"
-									data-identifier="${asset.identifier}"
-									data-saveas="${asset.title}"
-								/>
-						`;
-							activeEditor.get(textAreaId).execCommand('mceInsertContent', false, image);
-						});
-				}
+						 insertAssetInEditor(asset.detail, activeEditor, textAreaId);
+					}
         })
     }
 
