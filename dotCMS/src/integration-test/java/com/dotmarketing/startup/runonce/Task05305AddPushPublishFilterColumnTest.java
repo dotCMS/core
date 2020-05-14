@@ -23,24 +23,13 @@ public class Task05305AddPushPublishFilterColumnTest {
         dotConnect.executeStatement(dropColumnSQL);
     }
 
-    private boolean checkColumnExists(){
-        final String dropColumnSQL = "select id from publishing_bundle where filter_key = ''";
-        final DotConnect dotConnect = new DotConnect();
-        try {
-            dotConnect.executeStatement(dropColumnSQL);
-            return true;
-        } catch (SQLException e) {
-            return false;
-        }
-    }
-
     @Test
     public void test_upgradeTask_success() throws SQLException, DotDataException {
         dropColumn();
-        assertFalse(checkColumnExists());
         final Task05305AddPushPublishFilterColumn task = new Task05305AddPushPublishFilterColumn();
+        assertTrue(task.forceRun());//True because the column does not exists
         task.executeUpgrade();
-        assertTrue(checkColumnExists());
+        assertFalse(task.forceRun());//False because the column exists
     }
 
 }

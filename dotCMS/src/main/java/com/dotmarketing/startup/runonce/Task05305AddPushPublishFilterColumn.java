@@ -1,6 +1,10 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+import com.dotmarketing.util.Logger;
+import java.sql.SQLException;
 import java.util.List;
 
 public class Task05305AddPushPublishFilterColumn extends AbstractJDBCStartupTask {
@@ -37,6 +41,11 @@ public class Task05305AddPushPublishFilterColumn extends AbstractJDBCStartupTask
 
     @Override
     public boolean forceRun() {
-        return true;
+        try {
+            return !new DotDatabaseMetaData().getColumnNames(DbConnectionFactory.getConnection(), "publishing_bundle").contains("filter_key");
+        } catch (SQLException e) {
+            Logger.error(this, e.getMessage(),e);
+            return false;
+        }
     }
 }
