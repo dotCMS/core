@@ -179,7 +179,7 @@
             <img style="max-width: 300px;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0"><br>
             <form action="/api/config/saveCompanyLogo" enctype="multipart/form-data" id="companyLogoForm" name="companyLogoForm" method="post">
             	<div style="margin-top:32px;">
-                    <div style="margin-top:16px;"><%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" id="logoFile" name="logoFile"></div>
+                    <div style="margin-top:16px;"><%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" accept="image/*" id="logoFile" name="logoFile"></div>
                     <div style="margin-top:16px;">
                         <button  dojoType="dijit.form.Button" onClick="uploadCompanyLogo();" iconClass="saveIcon">
                             <%= LanguageUtil.get(pageContext, "upload-image") %>
