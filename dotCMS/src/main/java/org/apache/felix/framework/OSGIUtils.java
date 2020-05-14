@@ -1,12 +1,12 @@
 package org.apache.felix.framework;
 
+import javax.servlet.ServletContext;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
-import javax.servlet.ServletContext;
-import org.apache.felix.http.proxy.DispatcherTracker;
-import org.osgi.framework.BundleContext;
 
 /**
  * @author Jonathan Gamba 10/3/18
@@ -37,9 +37,8 @@ public class OSGIUtils {
      * Sets the bundle context to the OSGIProxyServlet
      */
     private static void initOsgiProxyTracker(final ServletContext context) {
-
-        if (Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
-
+        
+        if(Config.getBooleanProperty("felix.felix.enable.osgi.proxyservlet", false)) {
             if (OSGIProxyServlet.bundleContext == null) {
 
                 final Object bundleContext = context.getAttribute(BundleContext.class.getName());
