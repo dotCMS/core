@@ -19,16 +19,17 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.contenttype.util.KeyValueFieldUtil;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -49,22 +50,20 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-
 import java.io.File;
-import java.util.ArrayList;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -568,6 +567,55 @@ public class ESMappingAPITest {
                 contentTypeAPI.delete(contentType);
             }
 
+        }
+
+    }
+
+    @Test
+    public void Test_Create_ContentType_With_KeyValue_Field_Test_Query_Expect_Success()
+            throws DotDataException, DotSecurityException {
+
+        List<Field> fields = new ArrayList<>();
+        final String myKeyValueField = "myKeyValueField";
+        fields.add(
+                new FieldDataGen()
+                        .type(KeyValueField.class)
+                        .name(myKeyValueField)
+                        .velocityVarName(myKeyValueField).indexed(true)
+                        .next()
+        );
+        final String contentTypeName = "myContentTypeWithKeyValues" + System.currentTimeMillis();
+        final ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeName)
+                .fields(fields)
+                .nextPersisted();
+
+        new ContentletDataGen(contentType.id()).setProperty(myKeyValueField,
+                "{\"key1\":\"val1\"  }").nextPersisted();
+        new ContentletDataGen(contentType.id()).setProperty(myKeyValueField,
+                "{\"key1\":\"val1\", \"key2\":\"val2\"  }").nextPersisted();
+        new ContentletDataGen(contentType.id()).setProperty(myKeyValueField,
+                "{\"key1\":\"val1\", \"key2\":\"val2\", \"key3\":\"val3\"  }").nextPersisted();
+
+        final String  queryString =  String.format("+%s.%s.%s:val*",contentTypeName, myKeyValueField, "key1");
+        Logger.info(ESMappingAPITest.class, () -> String.format(" Query: %s ",queryString));
+        final String wrappedQuery = String.format("{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"%s\""
+                + "     }"
+                + "  }"
+                + "}", queryString);
+
+        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        Assert.assertEquals(3, searchResults.size());
+        for (Object searchResult : searchResults) {
+           final Contentlet contentlet = (Contentlet) searchResult;
+            final String json = (String)contentlet.getMap().get("myKeyValueField");
+            Assert.assertNull(json);
+            final Map<String, Object> map = KeyValueFieldUtil.JSONValueToHashMap(json);
+            Assert.assertTrue(map.containsKey("key1"));
         }
 
     }
