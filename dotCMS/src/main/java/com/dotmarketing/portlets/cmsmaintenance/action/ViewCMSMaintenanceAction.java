@@ -26,6 +26,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -966,34 +967,16 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			pr = response.getWriter();
 			pr.print(StringUtils.join(fileColumns, ","));
 			pr.print("\r\n");
-			final DotConnect dc = new DotConnect();
-			final StringBuilder sql = new StringBuilder();
-			sql.append("SELECT drj.id, drj.ident_to_index, drj.inode_to_index, drj.priority, drj.index_val ")
-					.append("FROM dist_reindex_journal drj WHERE drj.priority > ")
-					.append(ReindexQueueFactory.Priority.REINDEX.dbValue());
-			dc.setSQL(sql.toString());
-			final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
+
+            final List<ReindexEntry> failedRecords = APILocator.getReindexQueueAPI()
+                    .getFailedReindexRecords();
 			if (!failedRecords.isEmpty()) {
-				for (final Map<String, Object> row : failedRecords) {
-					String id;
-					String priority;
-					if (DbConnectionFactory.isOracle()) {
-						BigDecimal rowVal = (BigDecimal) row.get("id");
-						id = new Long(rowVal.toPlainString()).toString();
-						rowVal = (BigDecimal) row.get("priority");
-						priority = new Long(rowVal.toPlainString()).toString();
-					} else {
-						final Long rowVal = (Long) row.get("id");
-						id = rowVal.toString();
-						priority = String.valueOf(row.get("priority"));
-					}
+				for (final ReindexEntry row : failedRecords) {
 					final StringBuilder entry = new StringBuilder();
-					entry.append(id).append(", ");
-					entry.append(row.get("ident_to_index").toString()).append(", ");
-					entry.append(priority).append(",");
-                    final String indexVal = UtilMethods.isSet(row.get("index_val")) ? String.class.cast(row.get
-                            ("index_val")) : StringUtils.EMPTY;
-                    entry.append(indexVal);
+					entry.append(row.getId()).append(", ");
+					entry.append(row.getIdentToIndex()).append(", ");
+					entry.append(row.getPriority()).append(",");
+                    entry.append(row.getLastResult());
 					pr.print(entry.toString());
 					pr.print("\r\n");
 				}

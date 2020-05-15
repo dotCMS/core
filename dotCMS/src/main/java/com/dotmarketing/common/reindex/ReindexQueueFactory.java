@@ -3,6 +3,7 @@ package com.dotmarketing.common.reindex;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -143,13 +144,26 @@ public class ReindexQueueFactory {
         dc.addParam(ReindexQueueFactory.Priority.REINDEX.dbValue());
         final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
         final List<ReindexEntry> failed = new ArrayList<>();
+        long id;
+        int priority;
         for (final Map<String, Object> map : failedRecords) {
             final String indexVal = UtilMethods.isSet(map.get("index_val")) ? String.class.cast(map.get("index_val"))
                     : StringUtils.EMPTY;
+
+            if (DbConnectionFactory.isOracle()) {
+                BigDecimal rowVal = (BigDecimal) map.get("id");
+                id = new Long(rowVal.toPlainString());
+                rowVal = (BigDecimal) map.get("priority");
+                priority = Integer.parseInt(rowVal.toPlainString());
+            } else {
+                id = (Long) map.get("id");
+                priority = Integer.parseInt(map.get("priority").toString());
+            }
+
             final ReindexEntry ridx = new ReindexEntry()
-                    .setId(Long.parseLong((String) map.get("id")))
+                    .setId(id)
                     .setIdentToIndex((String) map.get("ident_to_index"))
-                    .setPriority(Integer.parseInt((String) map.get("priority")))
+                    .setPriority(priority)
                     .setTimeEntered((Date) map.get("time_entered"))
                     .setLastResult(indexVal);
             failed.add(ridx);
