@@ -30,6 +30,8 @@ import com.dotcms.contenttype.util.KeyValueFieldUtil;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -571,6 +573,13 @@ public class ESMappingAPITest {
 
     }
 
+    /**
+     * General purpose is testing that KeyValue fields are indexed correctly.
+     * Given scenario: We create a Content type that holds a Key value field.
+     * Expected Results: Then we feed data into such field and use an ES query over the KeyValue to verify the results are coming back.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Create_ContentType_With_KeyValue_Field_Test_Query_Expect_Success()
             throws DotDataException, DotSecurityException {
@@ -614,4 +623,33 @@ public class ESMappingAPITest {
         }
     }
 
+    /**
+     * General purpose is testing that Metadata fields are indexed correctly can be used as query parameters.
+     * Given scenario: Known that saving a file assets generates metadata into the index. We create a file asset.
+     * Expected Results: Once the file is saved we use an ES query to verify that queries by metadata are functional.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Create_FileAsset_Query_by_MetaData_Expect_Success()
+            throws DotDataException, DotSecurityException {
+
+        final File binary = new File(ESMappingAPITest.class.getClassLoader().getResource("images/test.jpg").getFile());
+        final Host site = new SiteDataGen().nextPersisted();
+        final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, binary);
+        fileAssetDataGen.nextPersisted();
+
+        final String queryString =  String.format("+fileasset.filename:%s +metadata.contenttype:image* +metadata.filesize:%d ",binary.getName(), binary.length());
+        Logger.info(ESMappingAPITest.class, () -> String.format(" Query: %s ",queryString));
+        final String wrappedQuery = String.format("{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"%s\""
+                + "     }"
+                + "  }"
+                + "}", queryString);
+
+        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        Assert.assertFalse(searchResults.isEmpty());
+    }
 }
