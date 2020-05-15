@@ -15,8 +15,8 @@ public class ImplClassFieldTransformer implements FieldTransformer {
 
   final List<Field> genericFields;
 
-  public ImplClassFieldTransformer(final Field f) {
-    this.genericFields = ImmutableList.of(f);
+  public ImplClassFieldTransformer(final Field field) {
+    this.genericFields = ImmutableList.of(field);
   }
 
   public ImplClassFieldTransformer(final List<Field> fields) {

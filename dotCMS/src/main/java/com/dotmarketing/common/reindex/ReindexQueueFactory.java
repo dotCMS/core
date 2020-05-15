@@ -144,7 +144,7 @@ public class ReindexQueueFactory {
         dc.addParam(ReindexQueueFactory.Priority.REINDEX.dbValue());
         final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
         final List<ReindexEntry> failed = new ArrayList<>();
-        long id;
+        long identifier;
         int priority;
         for (final Map<String, Object> map : failedRecords) {
             final String indexVal = UtilMethods.isSet(map.get("index_val")) ? String.class.cast(map.get("index_val"))
@@ -152,16 +152,16 @@ public class ReindexQueueFactory {
 
             if (DbConnectionFactory.isOracle()) {
                 BigDecimal rowVal = (BigDecimal) map.get("id");
-                id = new Long(rowVal.toPlainString());
+                identifier = Long.valueOf(rowVal.toPlainString());
                 rowVal = (BigDecimal) map.get("priority");
-                priority = Integer.parseInt(rowVal.toPlainString());
+                priority = Integer.valueOf(rowVal.toPlainString());
             } else {
-                id = (Long) map.get("id");
+                identifier = (Long) map.get("id");
                 priority = Integer.parseInt(map.get("priority").toString());
             }
 
             final ReindexEntry ridx = new ReindexEntry()
-                    .setId(id)
+                    .setId(identifier)
                     .setIdentToIndex((String) map.get("ident_to_index"))
                     .setPriority(priority)
                     .setTimeEntered((Date) map.get("time_entered"))

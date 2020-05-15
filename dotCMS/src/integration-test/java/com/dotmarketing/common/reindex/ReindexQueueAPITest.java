@@ -108,7 +108,7 @@ public class ReindexQueueAPITest {
      * @return
      * @throws DotDataException
      */
-    private ReindexEntry getReindexEntry(String recordId) throws DotDataException {
+    private ReindexEntry getReindexEntry(final String recordId) throws DotDataException {
         final Map<String, ReindexEntry> entries = reindexQueueAPI.findContentToReindex();
 
         assertTrue(UtilMethods.isSet(entries));
