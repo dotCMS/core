@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
@@ -110,12 +111,11 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 					contentletDependencies.isRespectAnonymousPermissions() : user.isFrontendUser();
 
 			//Keeps existing relationships
-			if (contentletRelationships == null){
-                contentletRelationships = contentletAPI.getAllRelationships(contentlet);
-            }
+
 
 			if (categories == null) {
 				categories = this.categoryAPI.getParents(contentlet, user, respectFrontendPermission);
+				categories = UtilMethods.isSet(categories) ? categories : null;
 			}
 
 			final Contentlet contentletNew = this.contentletAPI.saveDraft(

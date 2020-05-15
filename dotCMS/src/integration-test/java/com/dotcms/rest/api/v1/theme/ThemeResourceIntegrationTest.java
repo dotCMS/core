@@ -180,6 +180,7 @@ public class ThemeResourceIntegrationTest {
             fileAssetDataGen.setProperty("title", THEME_PNG);
             fileAssetDataGen.setProperty("fileName", THEME_PNG);
             fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
+            fileAssetDataGen.host(host);
 
             thumbnail = fileAssetDataGen.nextPersisted();
 
