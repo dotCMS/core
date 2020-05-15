@@ -592,13 +592,8 @@ public class ESMappingAPITest {
                 .nextPersisted();
 
         new ContentletDataGen(contentType.id()).setProperty(myKeyValueField,
-                "{\"key1\":\"val1\"  }").nextPersisted();
-        new ContentletDataGen(contentType.id()).setProperty(myKeyValueField,
-                "{\"key1\":\"val1\", \"key2\":\"val2\"  }").nextPersisted();
-        new ContentletDataGen(contentType.id()).setProperty(myKeyValueField,
-                "{\"key1\":\"val1\", \"key2\":\"val2\", \"key3\":\"val3\"  }").nextPersisted();
-
-        final String  queryString =  String.format("+%s.%s.%s:val*",contentTypeName, myKeyValueField, "key1");
+                "{\"key\":\"key1\", value:\"val\" }").nextPersisted();
+        final String queryString =  String.format("+%s.%s.key:%s*",contentTypeName, myKeyValueField, "val");
         Logger.info(ESMappingAPITest.class, () -> String.format(" Query: %s ",queryString));
         final String wrappedQuery = String.format("{"
                 + "query: {"
@@ -609,15 +604,14 @@ public class ESMappingAPITest {
                 + "}", queryString);
 
         final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
-        Assert.assertEquals(3, searchResults.size());
+        Assert.assertFalse(searchResults.isEmpty());
         for (Object searchResult : searchResults) {
            final Contentlet contentlet = (Contentlet) searchResult;
             final String json = (String)contentlet.getMap().get("myKeyValueField");
-            Assert.assertNull(json);
+            Assert.assertNotNull(json);
             final Map<String, Object> map = KeyValueFieldUtil.JSONValueToHashMap(json);
-            Assert.assertTrue(map.containsKey("key1"));
+            Assert.assertTrue(map.containsKey("key"));
         }
-
     }
 
 }

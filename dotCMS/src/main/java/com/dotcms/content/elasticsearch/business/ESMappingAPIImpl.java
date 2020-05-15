@@ -740,9 +740,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
             keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + StringPool.PERIOD + k, v));
 		} else {
-            keyValueMap.forEach((k, v) -> {
-				((List)contentletMap.computeIfAbsent(keyName, key -> new ArrayList<>())).add(ImmutableMap.of(k,v));
-            });
+			keyValueMap.forEach((k, v) -> {
+				((List)contentletMap.computeIfAbsent(keyName, key -> new ArrayList<>())).add(
+						ImmutableMap.of( "key", k, "value", v));
+			});
 		}
 	}
 
