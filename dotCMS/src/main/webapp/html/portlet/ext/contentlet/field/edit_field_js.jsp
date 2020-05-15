@@ -26,7 +26,6 @@
 <%}else { %>
 <script type="text/javascript" src="/html/js/tinymce/js/tinymce/tinymce.min.js"></script>
 <%}%>
-	<h1>Gaby</h1>
 <script type="text/javascript">
 
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
@@ -47,7 +46,7 @@
 		});
 	}else{
 		tinymce.init({
-			selector: "ddd#"+textAreaId,
+			selector: "textarea#"+textAreaId,
     		theme: "modern",
     		menubar:false,
     	    statusbar: false,
