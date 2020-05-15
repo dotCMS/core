@@ -20,6 +20,8 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.search.TotalHits;
@@ -679,64 +681,87 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected int deleteOldContent(Date deleteFrom) throws DotDataException {
-	    ContentletCache cc = CacheLocator.getContentletCache();
-        Calendar calendar = Calendar.getInstance();
+    protected int deleteOldContent(final Date deleteFrom) throws DotDataException {
+        final Calendar calendar = Calendar.getInstance();
         calendar.setTime(deleteFrom);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        Date date = calendar.getTime();
-        //Because of the way Oracle databases handle dates,
-        //this string is converted to Uppercase.This does
-        //not cause a problem with the other databases
-        DotConnect dc = new DotConnect();
+        final Date date = calendar.getTime();
 
-        String countSQL = ("select count(*) as count from contentlet");
+        DotConnect dc = new DotConnect();
+        final String countSQL = "select count(*) as count from contentlet";
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
-        int before = Integer.parseInt(result.get(0).get("count"));
-
-        String deleteContentletSQL = "delete from contentlet where identifier<>'SYSTEM_HOST' and mod_date < ? " +
-        "and not exists (select * from contentlet_version_info where working_inode=contentlet.inode or live_inode=contentlet.inode)";
-        dc.setSQL(deleteContentletSQL);
+        final int before = Integer.parseInt(result.get(0).get("count"));
+        dc = new DotConnect();
+        dc.setSQL("SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS " +
+                "(SELECT working_inode, live_inode FROM contentlet_version_info WHERE working_inode = contentlet.inode OR " +
+                "live_inode = contentlet.inode)");
         dc.addParam(date);
-        dc.loadResult();
-
-        String deleteOrphanInodes="delete from inode where type='contentlet' and idate < ? and inode not in (select inode from contentlet)";
-        dc.setSQL(deleteOrphanInodes);
-        dc.addParam(date);
-        dc.loadResult();
-
+        result = dc.loadResults();
+        int oldInodesCount = result.size();
+        if (oldInodesCount > 0) {
+            final List<String> inodeList = new ArrayList<>();
+            for (final Map<String, String> row : result) {
+                inodeList.add(row.get("inode").toString());
+            }
+            final int splitAt = 100;
+            // Split all records into lists of size 'truncateAt'
+            final List<List<String>> inodesToDelete = Lists.partition(inodeList, splitAt);
+            final List<String> queries = Lists.newArrayList("DELETE FROM contentlet WHERE inode IN (?)",
+                    "DELETE FROM inode WHERE inode IN (?)");
+            for (final String query : queries) {
+                for (final List<String> inodes : inodesToDelete) {
+                    dc = new DotConnect();
+                    // Generate the "(?,?,?...)" string depending of the number of inodes
+                    final String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
+                    dc.setSQL(query.replace("?", parameterPlaceholders));
+                    for (final String inode : inodes) {
+                        dc.addParam(inode);
+                    }
+                    dc.loadResult();
+                }
+            }
+        }
+        dc = new DotConnect();
         dc.setSQL(countSQL);
         result = dc.loadResults();
-        int after = Integer.parseInt(result.get(0).get("count"));
-
-        int deleted=before - after;
-
-        // deleting orphan binary files
-        java.io.File assets=new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
-        for(java.io.File ff1 : assets.listFiles())
-            if(ff1.isDirectory() && ff1.getName().length()==1 && ff1.getName().matches("^[a-f0-9]$"))
-                for(java.io.File ff2 : ff1.listFiles())
-                    if(ff2.isDirectory() && ff2.getName().length()==1 && ff2.getName().matches("^[a-f0-9]$"))
-                        for(java.io.File ff3 : ff2.listFiles())
-                            try {
-                                if(ff3.isDirectory()) {
-                                    Contentlet con=find(ff3.getName());
-                                    if(con==null || !UtilMethods.isSet(con.getIdentifier()))
-                                        if(!FileUtils.deleteQuietly(ff3))
-                                            Logger.warn(this, "can't delete "+ff3.getAbsolutePath());
+        final int after = Integer.parseInt(result.get(0).get("count"));
+        final int deleted = before - after;
+        if (deleted > 0) {
+            // Deleting orphaned binary files
+            final java.io.File assets = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
+            for (final java.io.File firstLevelFolder : assets.listFiles()) {
+                if (firstLevelFolder.isDirectory() && firstLevelFolder.getName().length() == 1 && firstLevelFolder
+                        .getName().matches("^[a-f0-9]$")) {
+                    for (final java.io.File secondLevelFolder : firstLevelFolder.listFiles()) {
+                        if (secondLevelFolder.isDirectory() && secondLevelFolder.getName().length() == 1 &&
+                                secondLevelFolder.getName().matches("^[a-f0-9]$")) {
+                            for (final java.io.File asset : secondLevelFolder.listFiles()) {
+                                try {
+                                    if (asset.isDirectory()) {
+                                        final Contentlet contentlet = find(asset.getName());
+                                        if (null == contentlet || !UtilMethods.isSet(contentlet.getIdentifier())) {
+                                            if (!FileUtils.deleteQuietly(asset)) {
+                                                Logger.warn(this, "Asset '" + asset.getAbsolutePath() + "' could " +
+                                                        "not be deleted.");
+                                            }
+                                        }
+                                    }
+                                } catch (final Exception ex) {
+                                    Logger.warn(this, String.format("An error occurred when deleting asset '%s': %s",
+                                            asset.getAbsolutePath(), ex.getMessage()));
                                 }
                             }
-                            catch(Exception ex) {
-                                Logger.warn(this, ex.getMessage());
-                            }
-
-
+                        }
+                    }
+                }
+            }
+        }
         return deleted;
-	}
+    }
 
 	@Override
 	protected void deleteVersion(Contentlet contentlet) throws DotDataException {
