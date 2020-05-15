@@ -88,6 +88,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     createImageWindow: function(){
+        debugger;
         this.tabindex = 0;
         this.thumbnailDiv.tabindex=0;
 
