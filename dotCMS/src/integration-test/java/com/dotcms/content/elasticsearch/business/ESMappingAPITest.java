@@ -584,7 +584,7 @@ public class ESMappingAPITest {
     public void Test_Create_ContentType_With_KeyValue_Field_Test_Query_Expect_Success()
             throws DotDataException, DotSecurityException {
 
-        List<Field> fields = new ArrayList<>();
+        final List<Field> fields = new ArrayList<>();
         final String myKeyValueField = "myKeyValueField";
         fields.add(
                 new FieldDataGen()
@@ -614,12 +614,12 @@ public class ESMappingAPITest {
 
         final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
         Assert.assertFalse(searchResults.isEmpty());
-        for (Object searchResult : searchResults) {
+        for (final Object searchResult : searchResults) {
            final Contentlet contentlet = (Contentlet) searchResult;
             final String json = (String)contentlet.getMap().get("myKeyValueField");
-            Assert.assertNotNull(json);
+            assertNotNull(json);
             final Map<String, Object> map = KeyValueFieldUtil.JSONValueToHashMap(json);
-            Assert.assertTrue(map.containsKey("key"));
+            assertTrue(map.containsKey("key"));
         }
     }
 
@@ -634,7 +634,7 @@ public class ESMappingAPITest {
     public void Test_Create_FileAsset_Query_by_MetaData_Expect_Success()
             throws DotDataException, DotSecurityException {
 
-        final File binary = new File(ESMappingAPITest.class.getClassLoader().getResource("images/test.jpg").getFile());
+        final File binary = new File(Thread.currentThread().getContextClassLoader().getResource("images/test.jpg").getFile());
         final Host site = new SiteDataGen().nextPersisted();
         final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, binary);
         fileAssetDataGen.nextPersisted();
@@ -650,6 +650,6 @@ public class ESMappingAPITest {
                 + "}", queryString);
 
         final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
-        Assert.assertFalse(searchResults.isEmpty());
+        assertFalse(searchResults.isEmpty());
     }
 }
