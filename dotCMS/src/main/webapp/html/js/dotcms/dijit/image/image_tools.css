@@ -247,7 +247,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
         
 #controlTable td{
 	border:0px solid silver;
-	padding:3px;	
+	padding:3px 0;
 	text-align:center;
 	white-space: nowrap;
 	vertical-align: middle;
