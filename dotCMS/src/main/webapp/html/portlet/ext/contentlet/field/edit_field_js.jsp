@@ -676,6 +676,7 @@ var cmsfile=null;
 
 		var assetURI = replaceUrlPattern(pattern, file);
 		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
+
 	}
 
 
