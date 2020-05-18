@@ -1019,7 +1019,11 @@ task installDotcmsUI(type: NpmTask) {
 }
 
 task installDotcmsWebComponents(type: NpmTask) {
-    args = ['install', 'dotcms-webcomponents']
+    if ("latest".equals(webComponentsReleaseVersion)) {
+        args = ['install', 'dotcms-ui']
+    } else {
+        args = ['install', 'dotcms-ui@' + webComponentsReleaseVersion]
+    }
     finalizedBy 'copyDotCMSWebComponents'
 }
 
