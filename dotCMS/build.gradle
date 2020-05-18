@@ -1010,9 +1010,9 @@ task initNpm(type: NpmTask) {
 
 task installDotcmsUI(type: NpmTask) {
     if ("latest".equals(coreWebReleaseVersion)) {
-        args = ['install', 'dotcms-webcomponents']
+        args = ['install', 'dotcms-ui']
     }else{
-        args = ['install', 'dotcms-webcomponents@' + coreWebReleaseVersion]
+        args = ['install', 'dotcms-ui@' + coreWebReleaseVersion]
     }
 
     finalizedBy 'copyDotcmsUI'
@@ -1020,9 +1020,9 @@ task installDotcmsUI(type: NpmTask) {
 
 task installDotcmsWebComponents(type: NpmTask) {
     if ("latest".equals(webComponentsReleaseVersion)) {
-        args = ['install', 'dotcms-ui']
+        args = ['install', 'dotcms-webcomponents']
     } else {
-        args = ['install', 'dotcms-ui@' + webComponentsReleaseVersion]
+        args = ['install', 'dotcms-webcomponents@' + webComponentsReleaseVersion]
     }
     finalizedBy 'copyDotCMSWebComponents'
 }
