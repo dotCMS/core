@@ -115,7 +115,7 @@ jobs:
         - PROVIDER_DB_PASSWORD=mssqldotCMS2019
 
 install:
-  - travis/discover_cicd.sh
+  - .cicd/seed.sh
   - dotcicd/library/pipeline/travis/core/environment_vars.sh
   - dotcicd/library/pipeline/travis/core/install_gcloud.sh
 
