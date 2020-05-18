@@ -17,13 +17,15 @@ Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 if(!CMSUrlUtil.getInstance().amISomething(cssPath, host, WebAPILocator.getLanguageWebAPI().getLanguage(request).getId())){
   cssPath=null;
 }
-String editImage = LanguageUtil.get(pageContext, "Edit-Image");
+String editImage = LanguageUtil.get(pageContext, "edit");
+String propertiesLabel = LanguageUtil.get(pageContext, "properties");
 %>
 
 var tinyMCEProps = {
     dotLanguageStrings: {
     <%if(editImage!=null){ %>
      edit_image: "<%=editImage %>",
+     propertiesLabel: "<%=propertiesLabel %>",
     <%} %>
     },
     theme: "modern",
