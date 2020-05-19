@@ -413,11 +413,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
                 data-saveas="${this.saveAsFileName}"
             />`;
 
-		if(this.currentNode.nodeName === "FIGURE") {
-			this.currentNode.querySelector("img").src = newUrl
-		} else {
-			activeEditor.execCommand("mceReplaceContent", false, asset);
-		}
+		this.currentNode.nodeName === "FIGURE"
+			? (this.currentNode.querySelector("img").src = newUrl)
+			: activeEditor.execCommand("mceReplaceContent", false, asset);
     },
     /**
      * This saves an image
