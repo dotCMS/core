@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ChainedContext;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -155,6 +156,37 @@ public class VelocityUtilTest {
         
         // Test that it fails to set the underlying session
         assertTrue(request.getSession().getAttribute(WebKeys.USER_ID) ==null);
+    }
+    
+    
+    /**
+     * https://github.com/dotCMS/core/issues/18318
+     * 
+     * The servlet context is too dangerous to expose to velocity and allows for arbitrary 
+     * code execution
+     * 
+     * @throws Exception
+     */
+    
+    @Test
+    public void test_servlet_context_is_not_available_in_velocity() throws Exception {
+
+        final HttpServletRequest request = new MockSessionRequest(
+                        new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request()).request();
+
+        final HttpServletResponse response = new MockHttpResponse().response();
+
+
+        ChainedContext context = (ChainedContext) VelocityUtil.getWebContext(request, response);
+
+        assert (context.getServletContext() == null);
+        assert (context.get("application") == null);
+        assert (context.getRequest().getServletContext() == null);
+        assert (context.getAttribute("application") == null);
+        assert (context.getVelocityContext().get("application") == null);
+
+
+
     }
     
 

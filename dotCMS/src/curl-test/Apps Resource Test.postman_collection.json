@@ -1,0 +1,1307 @@
+{
+	"info": {
+		"_postman_id": "423987b3-9e86-45ef-998d-e85d613647ab",
+		"name": "Apps",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "find",
+			"item": [
+				{
+					"name": "upload-app",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0e88b529-a3f2-43e0-bbb3-347ff8ece06b",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.expect(jsonData.entity.length).to.eql(1);",
+									"    pm.collectionVariables.set(\"key\", jsonData.entity[0].key);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/build/src/curl-test/resources/app-descriptor.yml"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "app-get-all",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "94ead9fb-80ca-45cb-abdf-44ca3f692d59",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.length).to.be.above(0);",
+									"    var serviceKeyFound = false;",
+									"    var configurationsCount = 100; //any value.",
+									"    var entries = jsonData.entity;",
+									"    var serviceKey = pm.collectionVariables.get(\"service_key\");",
+									"    for (var i = 0; i < entries.length; i++) {",
+									"       serviceKeyFound = (entries[i].key == serviceKey);  ",
+									"       configurationsCount = entries[i].configurationsCount;  ",
+									"       if(serviceKeyFound){",
+									"          break;",
+									"       }",
+									"    }",
+									"    //We expect the new key to appear.",
+									"    pm.expect(serviceKeyFound).to.be.eql(true);",
+									"    //And come with a zero configurations count. Since it's new.",
+									"    pm.expect(configurationsCount).to.be.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-app",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "459b626d-ee13-46ac-85c4-dc0d4f4b6341",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "1821aedd-75f3-424d-8a3f-09c4a308e3a1",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    var serviceKey = pm.collectionVariables.get(\"service_key\");",
+									"    console.log(serviceKey);",
+									"    pm.expect(jsonData.entity.key).to.be.eql(serviceKey);",
+									"    var sites = jsonData.entity.sites;",
+									"    //None of the sites should be configured for a brand new service.",
+									"    var siteId = null;",
+									"    for (var i = 0; i < sites.length; i++) {",
+									"       siteId = sites[i].id;  ",
+									"       pm.expect(sites[i].configured).to.be.eql(false);",
+									"    }",
+									"    pm.collectionVariables.set(\"site_id\", siteId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "save-update",
+			"item": [
+				{
+					"name": "app-save-ivalid-param-name",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(pm.response.text()).to.include(\"Unknown additional params `invalid-param` not allowed by the app descriptor.\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n\t  \"param1\": {\n\t\t \"value\": \"value1\"\n      },\n      \"param2\": {\n\t\t \"value\": \"value2\"\n      },\n     \"hiddenParam\": {\n\t\t \"value\": \"value3\"\n      },\n      \"invalid-param\": {\n\t\t \"value\": \"lol\"\n      }\n}\n\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}",
+								"{{site_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "app-save-ivalid-site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(404);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(pm.response.text()).to.include(\" Couldn't find any host with identifier `any-thing-but-a-valid-site-id` \");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"invalid-param\": {\n        \"value\": \"lol\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/any-thing-but-a-valid-site-id",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}",
+								"any-thing-but-a-valid-site-id"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "app-save",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n\t  \"param1\": {\n\t\t \"value\": \"value1\"\n      },\n      \"param2\": {\n\t\t \"value\": \"value2\"\n      },\n     \"hiddenParam\": {\n\t\t \"value\": \"value3\"\n      }\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}",
+								"{{site_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "app-update-hidden-secret",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"hiddenParam\": {\n        \"value\": \"This is a hidden value.\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}",
+								"{{site_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-service-integration-hidden-secret",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    var serviceKey = pm.collectionVariables.get(\"key\");",
+									"    var siteId = pm.collectionVariables.get(\"site_id\");",
+									"    pm.expect(jsonData.entity.key).to.be.eql(serviceKey);",
+									"    var sites = jsonData.entity.sites;",
+									"    pm.expect(sites.length).to.be.above(0);",
+									"    pm.expect(sites[0].id).to.be.eql(siteId);",
+									"    pm.expect(sites[0].configured).to.be.eql(true);",
+									"    var secrets = sites[0].secrets;",
+									"    const secret = secrets.find(s => s.name === 'hiddenParam');",
+									"    ",
+									"    if(secret){",
+									"       pm.expect(secret.value).to.include('*****');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}",
+								"{{site_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "service-integration-update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"param1\": {\n        \"value\": \"new-updated-val\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}",
+								"{{site_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-service-integration-test-update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    var serviceKey = pm.collectionVariables.get(\"service_key\");",
+									"    var siteId = pm.collectionVariables.get(\"site_id\");",
+									"    pm.expect(jsonData.entity.key).to.be.eql(serviceKey);",
+									"    var sites = jsonData.entity.sites;",
+									"    pm.expect(sites.length).to.be.above(0);",
+									"    pm.expect(sites[0].id).to.be.eql(siteId);",
+									"    pm.expect(sites[0].configured).to.be.eql(true);",
+									"    ",
+									"    var secrets = sites[0].secrets;",
+									"    const secret = secrets.find(s => s.name === 'param1');",
+									"    ",
+									"    if(secret){",
+									"       pm.expect(secret.value).to.include('new-updated-val');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}",
+								"{{site_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "delete",
+			"item": [
+				{
+					"name": "apps-delete-param",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bfb9ebe4-12d7-4a93-9151-e27d00171879",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n   \"key\" : \"{{key}}\",\n   \"siteId\" : \"{{site_id}}\",\n   \"params\": [\"param1\"]\n}\n\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "apps-get-secrets-verify-delete-param",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    var serviceKey = pm.collectionVariables.get(\"key\");",
+									"    var siteId = pm.collectionVariables.get(\"site_id\");",
+									"    pm.expect(jsonData.entity.key).to.be.eql(serviceKey);",
+									"    var sites = jsonData.entity.sites;",
+									"    pm.expect(sites.length).to.be.above(0);",
+									"    pm.expect(sites[0].id).to.be.eql(siteId);",
+									"    pm.expect(sites[0].configured).to.be.eql(false);",
+									"    var secrets = sites[0].secrets;",
+									"    const secret = secrets.find(s => s.name === 'param1'); ",
+									"   if(secret){",
+									"       pm.expect(secret.value).to.include('default-value'); //Test this comes back with the daefault value from the yml",
+									"    } ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}",
+								"{{site_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "app-delete-configurations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c7f86063-649b-4703-ad01-343be9d4023a",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "apps-get-secrets-verify-delete-config",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}",
+								"{{site_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "app-test-delete-descriptor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fc16be18-0766-4241-b8c9-0505c45c83b7",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}?removeDescriptor=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}"
+							],
+							"query": [
+								{
+									"key": "removeDescriptor",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "apps-secrets-verify-descriptor-gone",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "4d9d93a6-742a-4071-853a-4fcb16121f07",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "f76d335c-9dfc-4553-b519-f31e9db9c938",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "5ccba6e0-d83a-463d-821f-678c710d35f5",
+			"key": "key",
+			"value": "postman-test-service-descriptor",
+			"type": "string"
+		},
+		{
+			"id": "1438f3c6-0e94-41ac-88dd-51be54614f51",
+			"key": "site_id",
+			"value": "48190c8c-42c4-46af-8d1a-0cd5db894797",
+			"type": "string"
+		},
+		{
+			"id": "398c71b3-c141-4c4f-8ba8-aac824fbef83",
+			"key": "service_key",
+			"value": "postman-test-service-descriptor",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

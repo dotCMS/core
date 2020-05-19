@@ -30,6 +30,13 @@ public class AppSecrets implements Serializable {
         return secrets;
     }
 
+    public void destroy() {
+        for (final Secret secret : secrets.values()) {
+            secret.destroy();
+        }
+    }
+
+
     public static class Builder {
 
         private final Map<String,Secret> secretMap = new HashMap<>();
@@ -77,6 +84,15 @@ public class AppSecrets implements Serializable {
             return this;
         }
 
+    }
+
+    /**
+     * Short hand to
+     * new Builder().build();
+     * @return
+     */
+    public static AppSecrets empty(){
+      return new Builder().build();
     }
 
 }

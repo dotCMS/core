@@ -34,7 +34,7 @@ public interface AppsAPI {
      * Conforms a map where the Elements are lists of app unique names, organized by host as key.
      * @return
      */
-    Map<String, Set<String>> appKeysByHost();
+    Map<String, Set<String>> appKeysByHost() throws DotSecurityException, DotDataException;
 
     /**
      * This returns a json object read from the secret store that contains the apps integration configuration and secret.
@@ -63,8 +63,8 @@ public interface AppsAPI {
             Host host, User user) throws DotDataException, DotSecurityException;
 
    /**
-    * This will tell you all the different integrations for a given appKey.
-    * If the app key is used in a given host the host will come back in the resulting list.
+    * This will tell you all the different apps for a given appKey.
+    * If the app key is used in a given site the site will come back in the resulting list.
     * Otherwise it means no configurations exist for the given host.
     * @param key unique app id for the given host.
     * @param siteIdentifiers a list of host identifiers
@@ -118,7 +118,7 @@ public interface AppsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     *
+     * Given an app key and the current user this will give back the appDescriptor
      * @param key
      * @param user
      * @return
@@ -129,7 +129,7 @@ public interface AppsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     *
+     * Create an App-Descriptor given an InputStream from a yml file read
      * @param inputStream
      * @param user
      * @throws IOException
@@ -141,7 +141,7 @@ public interface AppsAPI {
             User user) throws IOException, DotDataException, DotSecurityException;
 
     /**
-     *
+     * Remove an App and all the secrets underneath.
      * @param key
      * @param user
      * @param removeDescriptor
@@ -151,6 +151,41 @@ public interface AppsAPI {
     void removeApp(final String key, final User user,
             final boolean removeDescriptor)
             throws DotSecurityException, DotDataException;
+
+    /**
+     * Method meant to to be consumed from a site delete event.
+     * @param host
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void removeSecretsForSite(Host host, User user)
+                    throws DotDataException, DotSecurityException;
+    /**
+     * Warnings are any secrets missing required values stated on the AppDescriptor
+     * @param appDescriptor
+     * @param sitesWithConfigurations
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    Map<String, Map<String, List<String>>> computeWarningsBySite(final AppDescriptor appDescriptor,
+            final Set<String> sitesWithConfigurations, final User user)
+            throws DotSecurityException, DotDataException;
+
+    /**
+     * Warnings are any secrets missing required values stated on the AppDescriptor
+     * @param appDescriptor
+     * @param site
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    Map<String, List<String>> computeSecretWarnings(final AppDescriptor appDescriptor, final Host site, final User user)
+            throws DotSecurityException, DotDataException;
+
 
     enum INSTANCE {
         INSTANCE;

@@ -850,6 +850,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
             } else {
                 var name = asset.title;
+                name = typeof name !== 'undefined'? name: asset.identifier;
                 var assetIcon = '/icon?i=' + name.toLowerCase();
                 if (asset.type == 'file_asset') {
                     name = asset.fileName;

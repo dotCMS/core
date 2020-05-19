@@ -2,10 +2,52 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
-
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.search.TotalHits;
+import org.apache.lucene.search.TotalHits.Relation;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.NumberUtils;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -57,49 +99,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.search.TotalHits;
-import org.apache.lucene.search.TotalHits.Relation;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.util.NumberUtils;
+import io.vavr.control.Try;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -115,7 +115,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
 	private final IndiciesAPI indiciesAPI;
-
+	private final ESQueryCache queryCache;
     @VisibleForTesting
     public static final String CACHE_404_CONTENTLET = "CACHE_404_CONTENTLET";
 
@@ -136,6 +136,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         this.contentletCache = CacheLocator.getContentletCache();
         this.languageAPI     =  APILocator.getLanguageAPI();
         this.indiciesAPI     = APILocator.getIndiciesAPI();
+        this.queryCache      = CacheLocator.getESQueryCache();
 	}
 
 	@Override
@@ -222,15 +223,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(Contentlet cont,
 			com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException {
-	    String name = "";
-        try {
-            // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
-            if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())){
-                name = APILocator.getContentletAPI().getName(
-                        cont, APILocator.getUserAPI().getSystemUser(), true);
-            }
-        }catch (DotSecurityException e) {
 
+        // if the title was not intentionally set to null.
+        final boolean allowTitle = null == cont.getNullProperties() || !cont.getNullProperties().contains(Contentlet.TITTLE_KEY);
+
+	    String name = "";
+	    if (allowTitle) {
+            try {
+                // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
+                if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())) {
+                    name = APILocator.getContentletAPI().getName(
+                            cont, APILocator.getUserAPI().getSystemUser(), true);
+                }
+            } catch (DotSecurityException e) {
+
+            }
         }
         List<Field> fields = FieldsCache.getFieldsByStructureInode(cont.getStructureInode());
         for (Field f : fields) {
@@ -263,8 +270,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         fatty.setModUser(cont.getModUser());
         fatty.setModDate(cont.getModDate());
         fatty.setReviewInterval(cont.getReviewInterval());
-        fatty.setTitle(name);
-        fatty.setFriendlyName(name);
+        if (allowTitle) { // if the title was not intentionally set to null.
+            fatty.setTitle(name);
+            fatty.setFriendlyName(name);
+        }
         List<String> wysiwygFields = cont.getDisabledWysiwyg();
         if( wysiwygFields != null && wysiwygFields.size() > 0 ) {
             StringBuilder wysiwyg = new StringBuilder();
@@ -833,9 +842,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
         searchRequest.source(searchSourceBuilder);
 
-        final SearchResponse response = Sneaky.sneak(()->
-                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
-        SearchHits hits = response.getHits();
+        SearchHits  hits = cachedIndexSearch(searchRequest);
+        
         List<Contentlet> cons = new ArrayList<>();
 
         for ( SearchHit hit : hits ) {
@@ -960,33 +968,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
-		try {
-			StringWriter query= new StringWriter();
-			query.append(" +identifier:" + identifier);
-			query.append(" +languageid:" + languageId);
-			query.append(" +deleted:false");
-
-            final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(query.toString());
-			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-
-			final  SearchRequest searchRequest = new SearchRequest();
-			searchRequest.source(searchSourceBuilder);
-			searchRequest.indices((live ? info.getLive() : info.getWorking()));
-
-            final SearchResponse response = Sneaky.sneak(()->
-                    RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
-            SearchHits hits = response.getHits();
-
-			return find(hits.getAt(0).getSourceAsMap().get("inode").toString());
-		}
-		// if we don't have the con in this language
-		catch(ArrayIndexOutOfBoundsException aibex){
-			return null;
-		}
-		catch (Exception e) {
-			throw new ElasticsearchException(e.getMessage(), e);
-
-		}
+        final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+        if(cvi == null  || UtilMethods.isEmpty(cvi.getIdentifier()) || (live && UtilMethods.isEmpty(cvi.getLiveInode()))) {
+            return null;
+        }
+        return Try.of(()->find((live?cvi.getLiveInode():cvi.getWorkingInode()))).getOrElseThrow(e->new DotRuntimeException(e));
+        
 	}
 
 	@Override
@@ -1072,10 +1059,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @NotNull
     private List<Contentlet> getContentletsFromSearchResponse(SearchRequest searchRequest) {
-        final SearchResponse response = Sneaky.sneak(()->
-                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
+        
 
-        SearchHits hits = response.getHits();
+        SearchHits hits = cachedIndexSearch(searchRequest);
 
         List<Contentlet> cons = new ArrayList<>();
         for (int i = 0; i < hits.getHits().length; i++) {
@@ -1377,9 +1363,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         SearchRequest searchRequest = getCountSearchRequest(qq);
         searchRequest.indices(indexToHit);
 
-        final SearchResponse response = Sneaky.sneak(()->
-                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
-       return response.getHits().getTotalHits().value;
+        final SearchHits hits = cachedIndexSearch(searchRequest);
+       return hits.getTotalHits().value;
 	}
 
     @Override
@@ -1404,9 +1389,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
                 info.getLive(): info.getWorking());
 
-        final SearchResponse response = Sneaky.sneak(()->
-                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
-        return response.getHits().getTotalHits().value;
+        final SearchHits hits = cachedIndexSearch(searchRequest);
+        return hits.getTotalHits().value;
     }
 
     @Override
@@ -1520,23 +1504,67 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return searchSourceBuilder;
     }
 
-	@Override
-	protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
+    private boolean useQueryCache=false;
+    private boolean shouldQueryCache() {
+        if(!useQueryCache) {
+            useQueryCache = LicenseManager.getInstance().isEnterprise() && Config.getBooleanProperty("ES_CACHE_SEARCH_QUERIES", true);
+        }
+        return useQueryCache;
+    }
+    
 
-	    final String formattedQuery = LuceneQueryDateTimeFormatter
+    SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
+        
+        final Optional<SearchHits> optionalHits = shouldQueryCache() ? queryCache.get(searchRequest) : Optional.empty();
+        if(optionalHits.isPresent()) {
+            return optionalHits.get();
+        }
+        try {
+            SearchResponse response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
+            SearchHits hits  = response.getHits();
+            if(shouldQueryCache()) {
+                queryCache.put(searchRequest, hits);
+            }
+            return hits;
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(searchRequest.source()) ));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                            searchRequest.source().toString(), e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+            
+        
+        
+    }
+    
+
+    
+    
+    @Override
+    protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
+
+        final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-	    // we check the query to figure out wich indexes to hit
-	    String indexToHit;
-	    IndiciesInfo info;
-	    try {
-	        info=APILocator.getIndiciesAPI().loadIndicies();
-	    }
-	    catch(DotDataException ee) {
-	        Logger.fatal(this, "Can't get indicies information",ee);
-	        return null;
-	    }
-	    if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+        // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
+        try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return null;
+        }
+        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
             indexToHit = info.getLive();
         } else {
             indexToHit = info.getWorking();
@@ -1545,63 +1573,48 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final SearchRequest searchRequest = new SearchRequest();
         SearchResponse response;
         final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
-        try {
-            searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-            searchRequest.indices(indexToHit);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        searchRequest.indices(indexToHit);
 
-            if(limit>0) {
-                searchSourceBuilder.size(limit);
-            }
-            if(offset>0) {
-                searchSourceBuilder.from(offset);
-            }
-            if(UtilMethods.isSet(sortBy) ) {
-            	sortBy = sortBy.toLowerCase();
-
-                if(sortBy.startsWith("score")){
-            		String[] sortByCriteria = sortBy.split("[,|\\s+]");
-            		String defaultSecondarySort = "moddate";
-            		SortOrder defaultSecondardOrder = SortOrder.DESC;
-
-            		if(sortByCriteria.length>2){
-            			if(sortByCriteria[2].equalsIgnoreCase("desc")) {
-                            defaultSecondardOrder = SortOrder.DESC;
-                        } else {
-                            defaultSecondardOrder = SortOrder.ASC;
-                        }
-            		}
-            		if(sortByCriteria.length>1){
-            			defaultSecondarySort= sortByCriteria[1];
-            		}
-
-                    searchSourceBuilder.sort("_score", SortOrder.DESC);
-                    searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
-            	} else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
-                    addBuilderSort(sortBy, searchSourceBuilder);
-                }
-            }else{
-                searchSourceBuilder.sort("moddate", SortOrder.DESC);
-            }
-
-            searchRequest.source(searchSourceBuilder);
-            response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
-        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
-            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
-            Logger.error(this.getClass(), "----------------------------------------------");
-            Logger.error(this.getClass(), String.format("Elasticsearch error in index '%s'", indexToHit));
-            Logger.error(this.getClass(), String.format("Lucene Query: [ %s ]", formattedQuery));
-            Logger.error(this.getClass(), String.format("ES Query: %s", searchSourceBuilder));
-            Logger.error(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
-            Logger.error(this.getClass(), "----------------------------------------------");
-            return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
-        } catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
-                    formattedQuery, e.getMessage());
-            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
+        if(limit>0) {
+            searchSourceBuilder.size(limit);
         }
-	    return response.getHits();
-	}
+        if(offset>0) {
+            searchSourceBuilder.from(offset);
+        }
+        if(UtilMethods.isSet(sortBy) ) {
+            sortBy = sortBy.toLowerCase();
+
+            if(sortBy.startsWith("score")){
+                String[] sortByCriteria = sortBy.split("[,|\\s+]");
+                String defaultSecondarySort = "moddate";
+                SortOrder defaultSecondardOrder = SortOrder.DESC;
+
+                if(sortByCriteria.length>2){
+                    if(sortByCriteria[2].equalsIgnoreCase("desc")) {
+                        defaultSecondardOrder = SortOrder.DESC;
+                    } else {
+                        defaultSecondardOrder = SortOrder.ASC;
+                    }
+                }
+                if(sortByCriteria.length>1){
+                    defaultSecondarySort= sortByCriteria[1];
+                }
+
+                searchSourceBuilder.sort("_score", SortOrder.DESC);
+                searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
+            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
+                addBuilderSort(sortBy, searchSourceBuilder);
+            }
+        }else{
+            searchSourceBuilder.sort("moddate", SortOrder.DESC);
+        }
+
+        searchRequest.source(searchSourceBuilder);
+        return cachedIndexSearch(searchRequest);
+
+
+    }
 
     public static void addBuilderSort(String sortBy, SearchSourceBuilder srb) {
         String[] sortbyArr = sortBy.split(",");

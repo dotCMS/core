@@ -47,8 +47,12 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,12 +60,14 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+@RunWith(DataProviderRunner.class)
 public class SiteSearchJobImplTest extends IntegrationTestBase {
 
     static ESIndexAPI esIndexAPI;
@@ -93,15 +99,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         siteSearchAuditAPI = APILocator.getSiteSearchAuditAPI();
         contentletAPI = APILocator.getContentletAPI();
         hostAPI = APILocator.getHostAPI();
-
-        final List<Host> allHosts = hostAPI.findAll(systemUser, false);
-        for (final Host host : allHosts) {
-            if (host.isSystemHost() || host.getHostname().startsWith("demo")) {
-                continue;
-            }
-            hostAPI.archive(host, systemUser, false);
-            hostAPI.delete(host, systemUser, false);
-        }
 
         site = new SiteDataGen().nextPersisted();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
@@ -448,74 +445,220 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
     }
 
-    /**
-     * Given sceneario: Multi-language content referenced from a page. Create a Site-Search run including all the languages of the content and
-     * check the two versions made it into the resulting index.
-     */
+    static class TestCaseSiteSearch {
+        boolean defaultPageToDefaultLanguage;
+        boolean defaultContentToDefaultLanguage;
+        boolean siteSearchDefaultLanguage;
+        boolean siteSearchSecondLanguage;
+        boolean siteSearchThirdLanguage;
+        boolean createContentInDefaultLanguage;
+        boolean createContentInSecondLanguage;
+        boolean createContentInThirdLanguage;
+        boolean createPageInDefaultLanguage;
+        boolean createPageInSecondLanguage;
+        boolean expectedResultsWhenSearchingContentInDefaultLanguage;
+        boolean expectedResultsWhenSearchingContentInSecondLanguage;
+        boolean expectedResultsWhenSearchingContentInThirdLanguage;
 
+        public TestCaseSiteSearch(boolean defaultPageToDefaultLanguage,
+                boolean defaultContentToDefaultLanguage, boolean siteSearchDefaultLanguage,
+                boolean siteSearchSecondLanguage, boolean siteSearchThirdLanguage,
+                boolean createContentInDefaultLanguage,
+                boolean createContentInSecondLanguage, boolean createContentInThirdLanguage,
+                boolean createPageInDefaultLanguage,
+                boolean createPageInSecondLanguage,
+                boolean expectedResultsWhenSearchingContentInDefaultLanguage,
+                boolean expectedResultsWhenSearchingContentInSecondLanguage,
+                boolean expectedResultsWhenSearchingContentInThirdLanguage) {
+            this.defaultPageToDefaultLanguage = defaultPageToDefaultLanguage;
+            this.defaultContentToDefaultLanguage = defaultContentToDefaultLanguage;
+            this.siteSearchDefaultLanguage = siteSearchDefaultLanguage;
+            this.siteSearchSecondLanguage = siteSearchSecondLanguage;
+            this.siteSearchThirdLanguage = siteSearchThirdLanguage;
+            this.createContentInDefaultLanguage = createContentInDefaultLanguage;
+            this.createContentInSecondLanguage = createContentInSecondLanguage;
+            this.createContentInThirdLanguage = createContentInThirdLanguage;
+            this.createPageInDefaultLanguage = createPageInDefaultLanguage;
+            this.createPageInSecondLanguage = createPageInSecondLanguage;
+            this.expectedResultsWhenSearchingContentInDefaultLanguage = expectedResultsWhenSearchingContentInDefaultLanguage;
+            this.expectedResultsWhenSearchingContentInSecondLanguage = expectedResultsWhenSearchingContentInSecondLanguage;
+            this.expectedResultsWhenSearchingContentInThirdLanguage = expectedResultsWhenSearchingContentInThirdLanguage;
+        }
+    }
+
+    @DataProvider
+    public static Object[] siteSearchTestCases() {
+
+        /*
+         * Given sceneario: default-language content referenced from a page in default lang only. DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
+         * Create a Site-Search run only in default language
+         * Expected: searching for the content in default language should give results. The result should be the page in the default language
+         */
+
+        TestCaseSiteSearch case1 = new TestCaseSiteSearchBuilder()
+                .siteSearchDefaultLanguage(true)
+                .createContentInDefaultLanguage(true)
+                .createPageInDefaultLanguage(true)
+                .expectedResultsWhenSearchingContentInDefaultLanguage(true)
+                .createTestCaseSiteSearch();
+
+        /*
+         * Given sceneario: default-language content referenced from a page in default lang only.
+         * DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true
+         * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
+         * Create a Site-Search run only in second language
+         * Expected: searching for the content in default language should give results. The result should be the page in the default language
+         */
+
+        TestCaseSiteSearch case2 = new TestCaseSiteSearchBuilder()
+                .defaultContentToDefaultLanguage(true)
+                .defaultPageToDefaultLanguage(true)
+                .siteSearchSecondLanguage(true)
+                .createContentInDefaultLanguage(true)
+                .createPageInDefaultLanguage(true)
+                .expectedResultsWhenSearchingContentInDefaultLanguage(true)
+                .createTestCaseSiteSearch();
+
+        /*
+
+        /*
+         * Given sceneario: default-language content referenced from a page in default lang only.
+         * DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=false
+         * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
+         *
+         * Create a Site-Search run only in second language
+         * Expected: searching for the content in default language should give results. The result should be the page in the default language
+         */
+
+        TestCaseSiteSearch case3 = new TestCaseSiteSearchBuilder()
+                .defaultContentToDefaultLanguage(false)
+                .defaultPageToDefaultLanguage(true)
+                .siteSearchSecondLanguage(true)
+                .createContentInDefaultLanguage(true)
+                .createPageInDefaultLanguage(true)
+                .expectedResultsWhenSearchingContentInDefaultLanguage(false)
+                .createTestCaseSiteSearch();
+
+        /*
+
+
+         * Given sceneario: Content in second language only referenced from a page in default language.
+         * DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true.
+         * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
+         * Create a Site-Search run only in second language.
+         * Expected: searching for content in second language should give results. The result should be the page in the default language
+         */
+
+        TestCaseSiteSearch case4 = new TestCaseSiteSearchBuilder()
+                .defaultContentToDefaultLanguage(true)
+                .defaultPageToDefaultLanguage(true)
+                .siteSearchSecondLanguage(true)
+                .createContentInSecondLanguage(true)
+                .createPageInDefaultLanguage(true)
+                .expectedResultsWhenSearchingContentInSecondLanguage(true)
+                .createTestCaseSiteSearch();
+
+
+        /*
+         * Same as above but with DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=false
+         * Expected: searching for content in second language should give NO results.
+         */
+
+        TestCaseSiteSearch case5 = new TestCaseSiteSearchBuilder()
+                .defaultContentToDefaultLanguage(true)
+                .defaultPageToDefaultLanguage(false)
+                .siteSearchSecondLanguage(true)
+                .createContentInSecondLanguage(true)
+                .createPageInDefaultLanguage(true)
+                .expectedResultsWhenSearchingContentInSecondLanguage(false)
+                .createTestCaseSiteSearch();
+
+        /*
+         * Given sceneario: two-language (default and second) content referenced from a page in default lang only. DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
+         * Create a Site-Search run including both languages
+         * Expected: searching content of either version of the content should give results. The result should be the page in the default language
+         */
+
+        TestCaseSiteSearch case6 = new TestCaseSiteSearchBuilder()
+                .defaultContentToDefaultLanguage(true)
+                .defaultPageToDefaultLanguage(true)
+                .siteSearchDefaultLanguage(true)
+                .siteSearchSecondLanguage(true)
+                .createContentInDefaultLanguage(true)
+                .createContentInSecondLanguage(true)
+                .createPageInDefaultLanguage(true)
+                .expectedResultsWhenSearchingContentInDefaultLanguage(true)
+                .expectedResultsWhenSearchingContentInSecondLanguage(true)
+                .createTestCaseSiteSearch();
+
+
+        /*
+         * Given sceneario: two-language (second and third) content referenced from a page in default lang only. DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
+         * Create a Site-Search run including both languages
+         * Expected: searching content of either version of the content should give results. The result should be the page in the default language
+         */
+
+        TestCaseSiteSearch case7 = new TestCaseSiteSearchBuilder()
+                .defaultContentToDefaultLanguage(true)
+                .defaultPageToDefaultLanguage(true)
+                .siteSearchSecondLanguage(true)
+                .siteSearchThirdLanguage(true)
+                .createContentInSecondLanguage(true)
+                .createContentInThirdLanguage(true)
+                .createPageInDefaultLanguage(true)
+                .expectedResultsWhenSearchingContentInSecondLanguage(true)
+                .expectedResultsWhenSearchingContentInThirdLanguage(true)
+                .createTestCaseSiteSearch();
+
+
+        return new TestCaseSiteSearch[] {case1, case2, case3, case4, case5, case6, case7};
+    }
+
+    @UseDataProvider("siteSearchTestCases")
     @Test
-    public void test_MultilangContent_IndexingAllLanguages()
+    public void testSiteSearchDifferentScenarios(final TestCaseSiteSearch testCase)
             throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException, WebAssetException {
 
         boolean defaultContentToDefaultLangOriginalValue =
                 Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
 
-        try {
+        boolean defaultPagetoDefaultLangOriginalValue =
+                Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
 
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        try {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", testCase.defaultContentToDefaultLanguage);
+            Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", testCase.defaultPageToDefaultLanguage);
 
             final Host site = new SiteDataGen().nextPersisted();
-            Language lang1 = APILocator.getLanguageAPI().getDefaultLanguage();
-            Language lang2 = new LanguageDataGen().nextPersisted();
+            Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+            Language secondLang = new LanguageDataGen().nextPersisted();
+            Language thirdLang = new LanguageDataGen().nextPersisted();
             folder = new FolderDataGen().site(site).nextPersisted();
 
-            Contentlet contentletLang1 = TestDataUtils
-                    .getEmployeeContent(true, lang1.getId(), null, site);
+            Contentlet contentletDefaultLang = null;
+            Contentlet contentSecondLang = null;
 
-            contentletLang1 = contentletAPI.find(contentletLang1.getInode(), systemUser, false);
-            contentletLang1.setStringProperty("firstName", "catherine");
-            contentletLang1 = contentletAPI.checkin(contentletLang1, systemUser, false);
+            if(testCase.createContentInDefaultLanguage) {
+                contentletDefaultLang = createAndPublishEmployeeContent(site, defaultLang, "catherine");
 
-            ContentletDataGen.publish(contentletLang1);
+                if(testCase.createContentInSecondLanguage) {
+                    createNewVersionAndPublishExistingEmployeeContent(secondLang, contentletDefaultLang,
+                            "catalina");
+                }
+            } else if(testCase.createContentInSecondLanguage) {
+                contentSecondLang = createAndPublishEmployeeContent(site, secondLang, "catalina");
 
-            Contentlet contentletLang2 = contentletAPI
-                    .find(contentletLang1.getInode(), systemUser, false);
-            contentletLang2.setInode("");
-            contentletLang2.setLanguageId(lang2.getId());
-            contentletLang2.setStringProperty("firstName", "catalina");
-            contentletLang2 = contentletAPI.checkin(contentletLang2, systemUser, false);
+                if(testCase.createContentInThirdLanguage) {
+                    createNewVersionAndPublishExistingEmployeeContent(thirdLang, contentSecondLang,
+                            "caterina");
+                }
+            }
 
-            ContentletDataGen.publish(contentletLang2);
+            Contentlet contentToPassToPage = contentletDefaultLang!=null
+                    ? contentletDefaultLang
+                    : contentSecondLang;
 
-            final Container container = new ContainerDataGen().withContentType(contentletLang1
-                    .getContentType(), "$!{firstName}").nextPersisted();
-
-            ContainerDataGen.publish(container);
-
-            final String uuid = UUIDGenerator.generateUuid();
-
-            final Template template = new TemplateDataGen()
-                    .withContainer(container.getIdentifier(), uuid)
-                    .nextPersisted();
-
-            TemplateDataGen.publish(template);
-
-            HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(lang1.getId())
-                    .nextPersisted();
-
-            HTMLPageDataGen.publish(page);
-
-            final MultiTree multiTree = new MultiTree(page.getIdentifier(),
-                    container.getIdentifier(),
-                    contentletLang1.getIdentifier(), getDotParserContainerUUID(uuid), 0);
-
-            APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
-
-            final String html = APILocator.getHTMLPageAssetAPI().getHTML(page.getURI(), site, true,
-                    contentletLang1.getIdentifier(), APILocator.systemUser(),
-                    contentletLang1.getLanguageId(), USER_AGENT_DOTCMS_SITESEARCH);
-
-            Assert.assertFalse(html.isEmpty());
+            HTMLPageAsset pageDefaultLang = createHtmlPageAsset(defaultLang, contentToPassToPage);
 
             final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
             for (final String index : indicesBeforeTest) {
@@ -531,9 +674,22 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
             jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME,
                     SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
             jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
+
+
+            List<String> langsToIndex = new ArrayList<>();
+            // change the order in purpose to test a case of the wrong document making it into the sitesearch index
+            if(testCase.siteSearchThirdLanguage) {
+                langsToIndex.add(Long.toString(thirdLang.getId()));
+            }
+            if(testCase.siteSearchSecondLanguage) {
+                langsToIndex.add(Long.toString(secondLang.getId()));
+            }
+            if(testCase.siteSearchDefaultLanguage) {
+                langsToIndex.add(Long.toString(defaultLang.getId()));
+            }
+
             jobDataMap
-                    .put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(lang1.getId()),
-                            Long.toString(lang2.getId())});
+                    .put(SiteSearchJobImpl.LANG_TO_INDEX, langsToIndex.toArray(new String[0]));
             jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
 
             final JobDetail jobDetail = Mockito.mock(JobDetail.class);
@@ -548,17 +704,118 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
             Assert.assertFalse(indicesAfterTest.isEmpty());
             final String newIndexName = indicesAfterTest.get(0);
 
-            SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catalina", 0, 10);
-            Assert.assertTrue(searchResults.getTotalResults() >= 1);
 
-            searchResults = siteSearchAPI.search(newIndexName, "catherine", 0, 10);
-            Assert.assertTrue(searchResults.getTotalResults() >= 1);
+            if(testCase.expectedResultsWhenSearchingContentInDefaultLanguage) {
+                SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catherine", 0, 10);
+                Assert.assertTrue("Content in default Language gives results",
+                        searchResults.getTotalResults() >= 1);
+                Assert.assertEquals(pageDefaultLang.getTitle(),
+                        searchResults.getResults().get(0).getTitle());
+                Assert.assertEquals(pageDefaultLang.getLanguageId(),
+                        searchResults.getResults().get(0).getLanguage());
+            } else {
+                SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catherine", 0, 10);
+                Assert.assertEquals("Content in default Language gives NO results", 0,
+                        searchResults.getTotalResults());
+            }
+
+            if(testCase.expectedResultsWhenSearchingContentInSecondLanguage) {
+                SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catalina", 0, 10);
+                Assert.assertTrue("Content in second Language gives results",
+                        searchResults.getTotalResults() >= 1);
+                Assert.assertEquals(pageDefaultLang.getTitle(),
+                        searchResults.getResults().get(0).getTitle());
+                Assert.assertEquals(pageDefaultLang.getLanguageId(),
+                        searchResults.getResults().get(0).getLanguage());
+            } else {
+                SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catalina", 0, 10);
+                Assert.assertEquals("Content in second Language gives NO results", 0,
+                        searchResults.getTotalResults());
+            }
+
+            if(testCase.expectedResultsWhenSearchingContentInThirdLanguage) {
+                SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "caterina", 0, 10);
+                Assert.assertTrue("Content in third Language gives results",
+                        searchResults.getTotalResults() >= 1);
+                Assert.assertEquals(pageDefaultLang.getTitle(),
+                        searchResults.getResults().get(0).getTitle());
+                Assert.assertEquals(pageDefaultLang.getLanguageId(),
+                        searchResults.getResults().get(0).getLanguage());
+            } else {
+                SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "caterina", 0, 10);
+                Assert.assertEquals("Content in third Language gives NO results", 0,
+                        searchResults.getTotalResults());
+            }
 
         } finally {
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
                     defaultContentToDefaultLangOriginalValue);
+
+            Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE",
+                    defaultPagetoDefaultLangOriginalValue);
         }
     }
 
+    private HTMLPageAsset createNewVersionHtmlPage(HTMLPageAsset pageDefaultLang, Language secondLang)
+            throws DotSecurityException, DotDataException {
+        Contentlet pageSecondLang = contentletAPI.find(pageDefaultLang.getInode(), systemUser, false);
+        pageSecondLang.setInode("");
+        pageSecondLang.setLanguageId(secondLang.getId());
+        pageSecondLang = contentletAPI.checkin(pageSecondLang, systemUser, false);
+        ContentletDataGen.publish(pageSecondLang);
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(pageSecondLang);
+    }
 
+    private void createNewVersionAndPublishExistingEmployeeContent(Language newLang,
+            Contentlet contentToCheckout, String firstName) throws DotDataException, DotSecurityException {
+        Contentlet contentInNewLang = contentletAPI
+                .find(contentToCheckout.getInode(), systemUser, false);
+        contentInNewLang.setInode("");
+        contentInNewLang.setLanguageId(newLang.getId());
+        contentInNewLang.setStringProperty("firstName", firstName);
+        contentInNewLang = contentletAPI.checkin(contentInNewLang, systemUser, false);
+        ContentletDataGen.publish(contentInNewLang);
+    }
+
+    private Contentlet createAndPublishEmployeeContent(Host site, Language language,
+            String firstName) throws DotDataException, DotSecurityException {
+        Contentlet contentletDefaultLang = TestDataUtils
+                .getEmployeeContent(true, language.getId(), null, site);
+
+        contentletDefaultLang = contentletAPI
+                .find(contentletDefaultLang.getInode(), systemUser, false);
+        contentletDefaultLang.setStringProperty("firstName", firstName);
+        contentletDefaultLang = contentletAPI.checkin(contentletDefaultLang, systemUser, false);
+        ContentletDataGen.publish(contentletDefaultLang);
+        return contentletDefaultLang;
+    }
+
+    private HTMLPageAsset createHtmlPageAsset(Language lang1, Contentlet contentlet)
+            throws DotSecurityException, WebAssetException, DotDataException {
+        final Container container = new ContainerDataGen().withContentType(contentlet
+                .getContentType(), "$!{firstName}").nextPersisted();
+
+        ContainerDataGen.publish(container);
+
+        final String uuid = UUIDGenerator.generateUuid();
+
+        final Template template = new TemplateDataGen()
+                .withContainer(container.getIdentifier(), uuid)
+                .nextPersisted();
+
+        TemplateDataGen.publish(template);
+
+        HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(lang1.getId())
+                .nextPersisted();
+
+        HTMLPageDataGen.publish(page);
+
+        final MultiTree multiTree = new MultiTree(page.getIdentifier(),
+                container.getIdentifier(),
+                contentlet.getIdentifier(), getDotParserContainerUUID(uuid), 0);
+
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        return page;
+    }
 }

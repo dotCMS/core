@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeSet;
 import org.apache.commons.lang.WordUtils;
@@ -106,7 +107,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
     /**
      * The map where the JSONObject's properties are kept.
      */
-    private Map<String,Object> map = new HashMap<>();;
+    private Map<String,Object> map = new LinkedHashMap<>();
 
 
     /**

@@ -1620,7 +1620,7 @@
                         showDeleted = true;
                 }
 
-                dijit.byId("searchButton").attr("disabled", true);
+                //dijit.byId("searchButton").attr("disabled", true);
                 //dijit.byId("clearButton").attr("disabled", false);
 
                 document.getElementById('fieldsValues').value = fieldsValues;
@@ -1676,6 +1676,7 @@
                 var checkAll = dijit.byId("checkAll");
                 var check;
 
+	            getViewCardEl().value = ''
                 for (var i = 0; i < cbContentInodeList.length; ++i) {
                         check = dijit.byId("checkbox" + i);
                         if(check) {

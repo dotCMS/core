@@ -97,7 +97,9 @@ public class PageResourceHelper implements Serializable {
 
 
     @WrapInTransaction
-    public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
+    public void saveContent(final String pageId,
+                            final List<PageContainerForm.ContainerEntry> containerEntries,
+                            final Language language) throws DotDataException {
 
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -129,7 +131,7 @@ public class PageResourceHelper implements Serializable {
         for (final String personalization : multiTreesMap.keySet()) {
 
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
-                    multiTreesMap.get(personalization));
+                    multiTreesMap.get(personalization), Optional.ofNullable(language.getId()));
         }
     }
 

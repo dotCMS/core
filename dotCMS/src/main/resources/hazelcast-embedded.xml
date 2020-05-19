@@ -302,8 +302,13 @@
         <max-size>5000</max-size>
         <eviction-policy>LFU</eviction-policy>
     </map>
-    
-    <map name="virtuallinkscache">
+
+    <map name="vanityurlcache">
+        <max-size>25000</max-size>
+        <eviction-policy>LFU</eviction-policy>
+    </map>
+
+    <map name="cachedvanityurlgroup">
         <max-size>25000</max-size>
         <eviction-policy>LFU</eviction-policy>
     </map>
@@ -540,8 +545,13 @@
         <eviction-policy>LFU</eviction-policy>
     </map>
     
-    <map name="virtuallinkscache">
-        <max-size>1000</max-size>
+    <map name="vanityurlcache">
+        <max-size>25000</max-size>
+        <eviction-policy>LFU</eviction-policy>
+    </map>
+
+    <map name="cachedvanityurlgroup">
+        <max-size>25000</max-size>
         <eviction-policy>LFU</eviction-policy>
     </map>
     

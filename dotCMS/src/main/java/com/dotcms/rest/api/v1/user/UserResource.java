@@ -403,7 +403,7 @@ public class UserResource implements Serializable {
 		final String userToImpersonate = (UtilMethods.isSet(loginAsUserId) ? loginAsUserId : principalUserId);
         session.removeAttribute(WebKeys.USER);
 		session.setAttribute(WebKeys.USER_ID, userToImpersonate);
-		PrincipalThreadLocal.setName(loginAsUserId);
+		PrincipalThreadLocal.setName(userToImpersonate);
 		session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, site);
 	}
 
@@ -420,6 +420,7 @@ public class UserResource implements Serializable {
 	private void revertLoginAsSessionInfo(final HttpServletRequest request, final Host currentSite, final String
 			principalUserId) {
 		updateLoginAsSessionInfo(request, currentSite, principalUserId, null);
+		request.getSession().removeAttribute(WebKeys.PRINCIPAL_USER_ID);
 	}
 
 	/**

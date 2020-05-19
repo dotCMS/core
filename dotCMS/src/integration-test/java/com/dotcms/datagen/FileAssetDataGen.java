@@ -4,9 +4,13 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.liferay.util.FileUtil;
+
 import java.io.File;
+import java.io.IOException;
 
 public class FileAssetDataGen extends ContentletDataGen {
 
@@ -21,7 +25,7 @@ public class FileAssetDataGen extends ContentletDataGen {
         this.folder = folder;
     }
 
-    private FileAssetDataGen(final File file) throws DotDataException, DotSecurityException {
+    public FileAssetDataGen(final File file) throws DotDataException, DotSecurityException {
 
         super(APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find("FileAsset").id());
@@ -32,4 +36,24 @@ public class FileAssetDataGen extends ContentletDataGen {
         setProperty(FileAssetAPI.BINARY_FIELD, file);
     }
 
+    public static Contentlet createFileAsset(
+            final Folder folder,
+            final String fileName,
+            final String suffix)
+            throws IOException, DotSecurityException, DotDataException {
+
+        return  createFileAsset(folder, fileName, suffix, "helloworld");
+    }
+
+    private static Contentlet createFileAsset(
+            final Folder folder,
+            final String fileName,
+            final String suffix,
+            final String content)
+            throws IOException, DotSecurityException, DotDataException {
+        final java.io.File file = java.io.File.createTempFile(fileName, suffix);
+        FileUtil.write(file, content);
+
+        return  new FileAssetDataGen(folder, file).nextPersisted();
+    }
 }

@@ -1,7 +1,9 @@
 package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
@@ -10,8 +12,13 @@ import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
@@ -69,6 +76,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.visitor.filter.logger.VisitorLoggerTest.class,
         com.dotcms.visitor.filter.characteristics.VisitorCharacterTest.class,
         com.dotcms.graphql.business.GraphqlAPITest.class,
+        com.dotcms.contenttype.test.ContentTypeTest.class,
         com.dotcms.contenttype.test.DeleteFieldJobTest.class,
         com.dotcms.contenttype.test.ContentTypeAPIImplTest.class,
         com.dotcms.contenttype.test.ContentTypeBuilderTest.class,
@@ -99,7 +107,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.rendering.velocity.viewtools.content.ContentToolTest.class,
         com.dotcms.rendering.velocity.viewtools.WorkflowToolTest.class,
-        com.dotcms.rendering.velocity.viewtools.BrowserAPITest.class,
+        com.dotcms.browser.BrowserAPITest.class,
         com.dotcms.rendering.velocity.viewtools.LanguageWebAPITest.class,
         com.dotcms.rendering.velocity.viewtools.ContainerWebAPIIntegrationTest.class,
         com.dotcms.rendering.velocity.services.VelocityResourceKeyTest.class,
@@ -240,8 +248,17 @@ import org.junit.runners.Suite.SuiteClasses;
         AppsResourceTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
+        DotAssetBaseTypeToContentTypeStrategyImplTest.class,
         RulesAPIImplIntegrationTest.class,
-        SiteSearchJobImplTest.class
+        RulesAPIImplIntegrationTest.class,
+        SiteSearchJobImplTest.class,
+        FileAssetAPIImplIntegrationTest.class,
+        FileAssetFactoryIntegrationTest.class,
+        FileAssetAPIImplTest.class,
+        UserResourceIntegrationTest.class,
+        SiteSearchJobImplTest.class,
+        IntegrationResourceLinkTest.class,
+        HTMLDiffUtilTest.class
 })
 public class MainSuite {
 

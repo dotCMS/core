@@ -111,7 +111,7 @@ public class TimedCacheProvider extends CacheProvider {
 
 	@Override
 	public void remove(String group) {
-		Logger.info(this.getClass(), "===== Calling remove for [" + getName()
+		Logger.debug(this.getClass(), "===== Calling remove for [" + getName()
 				+ "] - " + cacheKey(group, ""));
 		// Get the cache for the given group
 		Cache<String, Object> cache = getCache(group);
@@ -234,10 +234,10 @@ public class TimedCacheProvider extends CacheProvider {
                                 if (seconds == -1) {
                                     seconds = Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100);
                                 }
-		                        Logger.info(this.getClass(),
-		                                "***\t Building Cache : " + cacheName + ", size:" + size
+		                        Logger.infoEvery(this.getClass(),
+		                                "***\t Building Cache : " + cacheName + ", size:" + size +  ", seconds:" + seconds 
 		                                        + ",Concurrency:"
-		                                        + Config.getIntProperty("cache.concurrencylevel", 32));
+		                                        + Config.getIntProperty("cache.concurrencylevel", 32), 60000);
 		                        cache = Caffeine.newBuilder()
 		                                .maximumSize(size)
 		                                .expireAfterWrite(seconds, TimeUnit.SECONDS)
@@ -249,8 +249,8 @@ public class TimedCacheProvider extends CacheProvider {
 		                        groups.put(cacheName, cache);
 
 		                    } else {
-		                        Logger.info(this.getClass(),
-		                                "***\t No Cache for   : " + cacheName + ", using " + DEFAULT_CACHE);
+		                        Logger.infoEvery(this.getClass(),
+		                                "***\t No Cache for   : " + cacheName + ", using " + DEFAULT_CACHE, 60000);
 		                        cache = getCache(DEFAULT_CACHE);
 		                        groups.put(cacheName, cache);
 		                    }

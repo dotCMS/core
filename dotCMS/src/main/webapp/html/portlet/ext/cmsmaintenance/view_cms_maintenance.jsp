@@ -162,12 +162,6 @@ function checkFixAsset()
 	CMSMaintenanceAjax.getFixAssetsProgress(fixAssetsCallback);
 }
 
-function doCreateZipAjax(dataOnly)
-{
-	showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext,"Backup-file-created-on-background") %>");
-	CMSMaintenanceAjax.doBackupExport("createZip",dataOnly,showDotCMSSystemMessage);
-}
-
 function doReplace () {
   if (document.getElementById("searchString").value == "") {
   		alert ("<%= LanguageUtil.get(pageContext,"Please-specify-a-search-string") %>");
@@ -1428,10 +1422,10 @@ dd.leftdl {
                     <td><%= LanguageUtil.get(pageContext,"Backup-to-Zip-file") %></td>
                     <td style="text-align:center;white-space:nowrap;">
 						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('true');" iconClass="backupIcon">
+							<button dojoType="dijit.form.Button" onClick="doCreateZip('true');" iconClass="backupIcon">
 							   <%= LanguageUtil.get(pageContext,"Backup-Data-Only") %>
 							</button>
-							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('false');" iconClass="backupIcon">
+							<button dojoType="dijit.form.Button" onClick="doCreateZip('false');" iconClass="backupIcon">
 							  <%= LanguageUtil.get(pageContext,"Backup-Data/Assets") %>
 							</button>
 						</div>
