@@ -55,6 +55,7 @@ import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
+import com.dotcms.rest.servlet.ReloadableServletContainer;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -68,6 +69,10 @@ import com.google.common.collect.ImmutableSet;
  */
 public class DotRestApplication extends javax.ws.rs.core.Application {
 
+    
+    /**
+     * these are system resources and should never change
+     */
 	private final static Set<Class<?>> INTERNAL_CLASSES = ImmutableSet.<Class<?>>builder()
                     .add(MultiPartFeature.class)
                     .add(com.dotcms.rest.api.v1.index.ESIndexResource.class)
@@ -148,14 +153,34 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
                     .add(ResourceLinkResource.class)
                     .build();
 
+	
+	/**
+	 * This is the cheap way to create a concurrent set of user provided classes
+	 */
     private final static Map<Class<?>, Boolean> customClasses = new ConcurrentHashMap<>();
 
-    public static boolean addClass(Class<?> clazz) {
-        return customClasses.putIfAbsent(clazz, true);
+    /**
+     * adds a class and reloads
+     * @param clazz
+     */
+    public synchronized static void addClass(Class<?> clazz) {
+        if(clazz==null)return;
+        if(!customClasses.containsKey(clazz)) {
+            customClasses.put(clazz, true);
+            ReloadableServletContainer.reload(new DotRestApplication());
+        }
     }
 
-    public static boolean removeClass(Class<?> clazz) {
-        return customClasses.remove(clazz);
+    /**
+     * removes a class and reloads
+     * @param clazz
+     */
+    public synchronized static void removeClass(Class<?> clazz) {
+        if(clazz==null)return;
+        if(customClasses.containsKey(clazz)) {
+            customClasses.remove(clazz);
+            ReloadableServletContainer.reload(new DotRestApplication());
+        }
     }
 
     @Override
