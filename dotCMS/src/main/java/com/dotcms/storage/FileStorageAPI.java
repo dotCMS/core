@@ -28,10 +28,16 @@ public interface FileStorageAPI {
      * Returns the default configured max length
      * @return int
      */
-    static int configuredMaxLength () {
-        return Config.getIntProperty("META_DATA_MAX_SIZE",
+    static long configuredMaxLength () {
+        return Config.getLongProperty("META_DATA_MAX_SIZE",
                 FileStorageAPI.DEFAULT_META_DATA_MAX_SIZE) * FileStorageAPI.SIZE;
     }
+
+    /**
+     * Returns the storage provider
+     * @return StorageProvider
+     */
+    StorageProvider getStorageProvider();
 
     /**
      * Gets the basic metadata from the binary, this method returns the raw metadata, does not stores anything on cache or disk neither filter anything
@@ -43,10 +49,10 @@ public interface FileStorageAPI {
     /**
      * Gets the full metadata from the binary, this method returns the raw metadata, does not stores anything on cache or disk neither filter anything
      * @param binary  {@link File} file to get the information
-     * @param maxLength {@link Integer} max length is used when parse the content, how many bytes do you want to parse.
+     * @param maxLength {@link Long} max length is used when parse the content, how many bytes do you want to parse.
      * @return Map with the metadata
      */
-    Map<String, Object> generateRawFullMetaData(final File binary, final int maxLength);
+    Map<String, Object> generateRawFullMetaData(final File binary, final long maxLength);
 
 
     /**
@@ -61,10 +67,10 @@ public interface FileStorageAPI {
      * Gets the full metadata from the binary, this could involved a more expensive process such as Tika, this method does not any stores but could do a filter anything
      * @param binary  {@link File} file to get the information
      * @param metaDataKeyFilter  {@link Predicate} filter for the map result generation
-     * @param maxLength {@link Integer} max length is used when parse the content, how many bytes do you want to parse.
+     * @param maxLength {@link Long} max length is used when parse the content, how many bytes do you want to parse.
      * @return Map with the metadata
      */
-    Map<String, Object> generateFullMetaData(final File binary, Predicate<String> metaDataKeyFilter, final int maxLength);
+    Map<String, Object> generateFullMetaData(final File binary, Predicate<String> metaDataKeyFilter, final long maxLength);
 
     /**
      * Based on the configuration generates the metadata, this configuration is more specific could select between
@@ -83,4 +89,11 @@ public interface FileStorageAPI {
      */
     Map<String, Object> retrieveMetaData(RequestMetaData requestMetaData);
 
+    /**
+     * Set metadata generator. There is one for default based on Tika, however if you want to override it just implement the {@link MetadataGenerator} and override the default one.
+     * @param metadataGenerator {@link MetadataGenerator}
+     */
+    void setMetadataGenerator(final MetadataGenerator metadataGenerator);
+    void setObjectReaderDelegate(final ObjectReaderDelegate objectReaderDelegate);
+    void setObjectWriterDelegate(final ObjectWriterDelegate objectWriterDelegate);
 }

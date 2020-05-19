@@ -3,6 +3,7 @@ package com.dotcms.config;
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
 import com.dotcms.rendering.velocity.events.ExceptionHandlersInitializer;
+import com.dotcms.storage.StorageProviderInitializer;
 import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
@@ -110,7 +111,9 @@ public class DotInitializationService implements Serializable {
                 new PayloadVerifierFactoryInitializer(),
                 new LocalSystemEventSubscribersInitializer(),
                 (DotInitializer)APILocator.getPersonaAPI(),
-                new ExceptionHandlersInitializer());
+                new ExceptionHandlersInitializer(),
+                new StorageProviderInitializer()
+                );
     } // getInternalInitializers.
 
     private Set<DotInitializer> getServiceLoaderInitializers() {

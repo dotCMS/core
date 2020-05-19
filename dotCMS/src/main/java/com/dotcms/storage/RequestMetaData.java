@@ -12,9 +12,9 @@ import java.util.function.Supplier;
 public class RequestMetaData {
 
     /**
-     * Provides the supplier to stores the metadata generated, if store is true
+     * Provides the key for the storage
      */
-    private final Supplier<Optional<File>>    metaDataFileSupplier;
+    private final StorageKey    storageKey;
 
     /**
      * If true, means the medatada output will be stores in the memory cache.
@@ -30,11 +30,11 @@ public class RequestMetaData {
 
         this.cache                = builder.cache;
         this.cacheKeySupplier     = builder.cacheKeySupplier;
-        this.metaDataFileSupplier = builder.metaDataFileSupplier;
+        this.storageKey           = builder.storageKey;
     }
 
-    public Supplier<Optional<File>> getMetaDataFileSupplier() {
-        return metaDataFileSupplier;
+    public StorageKey getStorageKey() {
+        return storageKey;
     }
 
     public boolean isCache() {
@@ -48,9 +48,9 @@ public class RequestMetaData {
     public static final class Builder {
 
         /**
-         * Provides the supplier to stores the metadata generated, if store is true
+         * Provides the key for the storage
          */
-        private Supplier<Optional<File>>    metaDataFileSupplier = ()-> Optional.empty();
+        private  StorageKey    storageKey;
 
         /**
          * If true, means the medatada output will be stores in the memory cache.
@@ -62,6 +62,11 @@ public class RequestMetaData {
          */
         private Supplier<String>  cacheKeySupplier = null;
 
+        public Builder cache(final boolean cache) {
+
+            this.cache            = cache;
+            return this;
+        }
 
         public Builder cache(final Supplier<String>  cacheKeySupplier) {
 
@@ -70,9 +75,9 @@ public class RequestMetaData {
             return this;
         }
 
-        public Builder metaDataFileSupplier(final Supplier<Optional<File>> metaDataFileSupplier) {
+        public Builder storageKey(final StorageKey storageKey) {
 
-            this.metaDataFileSupplier = metaDataFileSupplier;
+            this.storageKey = storageKey;
             return this;
         }
 

@@ -20,6 +20,8 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import java.util.Map;
+
 /**
  * @author Jason Tesser
  * @since 1.6
@@ -56,6 +58,23 @@ public class ContentletCacheImpl extends ContentletCache {
 		}else{
 			return (TranslatedQuery)o;
 		}
+	}
+
+	public void addMetadataMap(final String key, final Map<String, Object> metadataMap) {
+
+		cache.put(META_DATA_MAP_KEY + key, UtilMethods.isSet(metadataMap)?
+				metadataMap:EMPTY_METADATA_MAP, metadataGroup);
+	}
+
+	public  Map<String, Object> getMetadataMap(final String key) {
+
+		Map<String, Object>  metadata = null;
+		try {
+			metadata=(Map<String, Object> )cache.get(META_DATA_MAP_KEY + key, metadataGroup);
+		} catch (DotCacheException e) {
+			Logger.debug(this, "Cache Entry not found", e);
+		}
+		return metadata;
 	}
 
 	@Override

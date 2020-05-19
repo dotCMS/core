@@ -1,9 +1,5 @@
 package com.dotcms.storage;
 
-import com.dotmarketing.util.Config;
-
-import java.io.File;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -14,9 +10,9 @@ import java.util.function.Supplier;
 public class GenerateMetaDataConfiguration {
 
     /**
-     * Provides the supplier to stores the metadata generated, if store is true
+     * Provides the key for the storage
      */
-    private final Supplier<Optional<File>>    metaDataFileSupplier;
+    private final StorageKey    storageKey;
 
     /**
      * If true, means the metadata output will be stores in the metaDataFileSupplier file
@@ -31,7 +27,7 @@ public class GenerateMetaDataConfiguration {
     /**
      * On huge file, we probably do not want to parse all the content, so this max will limited how much do we want to read
      */
-    private final int               maxLength;
+    private final long              maxLength;
 
     /**
      * {@link Predicate} filter the meta data key for the map result generation
@@ -58,15 +54,15 @@ public class GenerateMetaDataConfiguration {
         this.cache                = builder.cache;
         this.cacheKeySupplier     = builder.cacheKeySupplier;
         this.maxLength            = builder.maxLength;
-        this.metaDataFileSupplier = builder.metaDataFileSupplier;
+        this.storageKey           = builder.storageKey;
         this.metaDataKeyFilter    = builder.metaDataKeyFilter;
         this.override             = builder.override;
         this.store                = builder.store;
         this.full                 = builder.full;
     }
 
-    public Supplier<Optional<File>> getMetaDataFileSupplier() {
-        return metaDataFileSupplier;
+    public StorageKey getStorageKey() {
+        return storageKey;
     }
 
     public boolean isStore() {
@@ -77,7 +73,7 @@ public class GenerateMetaDataConfiguration {
         return override;
     }
 
-    public int getMaxLength() {
+    public long getMaxLength() {
         return maxLength;
     }
 
@@ -107,7 +103,7 @@ public class GenerateMetaDataConfiguration {
         /**
          * Provides the supplier to stores the metadata generated, if store is true
          */
-        private Supplier<Optional<File>>    metaDataFileSupplier = ()-> Optional.empty();
+        private StorageKey       storageKey = null;
 
         /**
          * If true, means the metadata output will be stores in the metaDataFileSupplier file
@@ -122,7 +118,7 @@ public class GenerateMetaDataConfiguration {
         /**
          * On huge file, we probably do not want to parse all the content, so this max will limited how much do we want to read
          */
-        private int               maxLength = FileStorageAPI.configuredMaxLength(); // todo: convert to long
+        private long              maxLength = FileStorageAPI.configuredMaxLength();
 
         /**
          * {@link Predicate} filter the meta data key for the map result generation
@@ -140,10 +136,15 @@ public class GenerateMetaDataConfiguration {
         private Supplier<String>  cacheKeySupplier = null;
 
 
-        public Builder metaDataFileSupplier(final Supplier<Optional<File>> metaDataFileSupplier) {
+        public Builder storageKey(final StorageKey storageKey) {
 
-            this.store                = true;
-            this.metaDataFileSupplier = metaDataFileSupplier;
+            this.storageKey   = storageKey;
+            return this;
+        }
+
+        public Builder store(final boolean store) {
+
+            this.store = store;
             return this;
         }
 
@@ -153,13 +154,22 @@ public class GenerateMetaDataConfiguration {
             return this;
         }
 
-        public Builder override(final boolean override) {
+        public Builder cache(final boolean cache) {
 
-            this.override = override;
+            this.cache = cache;
             return this;
         }
 
-        public Builder maxLength(final int maxLength) {
+        public Builder override(final boolean override) {
+
+            this.override = override;
+            if (this.override) {
+                this.store = true;
+            }
+            return this;
+        }
+
+        public Builder maxLength(final long maxLength) {
 
             this.maxLength = maxLength;
             return this;

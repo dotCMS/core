@@ -5,15 +5,14 @@ import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSortedMap;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
@@ -26,10 +25,34 @@ import java.util.function.Predicate;
  * @author jsanca
  */
 public class FileStorageAPIImpl implements FileStorageAPI {
+
     private static final String CACHE_GROUP = "Contentlet";
 
     // width,height,contentType,author,keywords,fileSize,content,length,title
 
+    private volatile ObjectReaderDelegate objectReaderDelegate = new JsonReaderDelegate<>(Map.class);
+    private volatile ObjectWriterDelegate objectWriterDelegate = new JsonWriterDelegate();
+    private volatile MetadataGenerator    metadataGenerator    =  new TikaMetadataGenerator();
+    private final StorageProvider         storageProvider      =  new StorageProvider();
+
+    @Override
+    public void setObjectReaderDelegate(final ObjectReaderDelegate objectReaderDelegate) {
+        this.objectReaderDelegate = objectReaderDelegate;
+    }
+
+    @Override
+    public void setObjectWriterDelegate(final ObjectWriterDelegate objectWriterDelegate) {
+        this.objectWriterDelegate = objectWriterDelegate;
+    }
+
+    @Override
+    public void setMetadataGenerator(final MetadataGenerator metadataGenerator) {
+        this.metadataGenerator = metadataGenerator;
+    }
+
+    public StorageProvider getStorageProvider() {
+        return this.storageProvider;
+    }
 
     @Override
     public Map<String, Object> generateRawBasicMetaData(final File binary) {
@@ -38,7 +61,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     }
 
     @Override
-    public Map<String, Object> generateRawFullMetaData(final  File binary, final int maxLength) {
+    public Map<String, Object> generateRawFullMetaData(final  File binary, long maxLength) {
 
         return this.generateFullMetaData(binary, s -> true, maxLength); // raw = no filter
     }
@@ -76,25 +99,26 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     @Override
     public Map<String, Object> generateFullMetaData(final File binary, final Predicate<String> metaDataKeyFilter,
-                                                    final int maxLength) {
+                                                    final long maxLength) {
 
         final TreeMap<String, Object> metadataMap = new TreeMap<>(Comparator.naturalOrder());
 
         try {
 
-            final TikaUtils tikaUtils = new TikaUtils();
-
             metadataMap.putAll(this.generateBasicMetaData(binary, metaDataKeyFilter));
-            final Map<String, Object> tikaMetaDataMap = tikaUtils.getForcedMetaDataMap(binary, maxLength);
-            for (final Map.Entry<String, Object> entry : tikaMetaDataMap.entrySet()) {
+            final Map<String, Object> fullMetaDataMap = this.metadataGenerator.generate(binary, maxLength);
+            if (UtilMethods.isSet(fullMetaDataMap)) {
+                for (final Map.Entry<String, Object> entry : fullMetaDataMap.entrySet()) {
 
-                if(metaDataKeyFilter.test(entry.getKey())) {
+                    if (metaDataKeyFilter.test(entry.getKey())) {
 
-                    metadataMap.put(entry.getKey(), entry.getValue());
+                        metadataMap.put(entry.getKey(), entry.getValue());
+                    }
                 }
             }
-        } catch (DotDataException e) {
+        } catch (Exception e) {
 
+            Logger.error(this, e.getMessage(), e);
             return Collections.emptyMap();
         }
 
@@ -106,51 +130,73 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                                                 final GenerateMetaDataConfiguration generateMetaDataConfiguration) {
 
         Map<String, Object> metadataMap    = Collections.emptyMap();
-        final Optional<File> metadataFile  = generateMetaDataConfiguration.getMetaDataFileSupplier().get();
+        final StorageKey    storageKey     = generateMetaDataConfiguration.getStorageKey();
+        final String        storageType    = this.getStorageType (storageKey);
+        final Storage       storage        = this.getStorageProvider().getStorage(storageType);
 
-        this.checkOverride(metadataFile, generateMetaDataConfiguration);
+        this.checkBucket  (storageKey, storage);
+        this.checkOverride(storage, generateMetaDataConfiguration);
 
-        if (!this.exists(metadataFile)) {
+        if (!storage.existsObject(storageKey.getBucket(), storageKey.getPath())) {
 
             if (this.validBinary(binary)) {
 
-                final int maxLength = generateMetaDataConfiguration.getMaxLength();
-                metadataMap         = generateMetaDataConfiguration.isFull()?
+                final long maxLength = generateMetaDataConfiguration.getMaxLength();
+                metadataMap          = generateMetaDataConfiguration.isFull()?
                                         this.generateFullMetaData (binary, generateMetaDataConfiguration.getMetaDataKeyFilter(), maxLength):
                                         this.generateBasicMetaData(binary, generateMetaDataConfiguration.getMetaDataKeyFilter());
 
-                if (generateMetaDataConfiguration.isStore() && metadataFile.isPresent()) {
+                if (generateMetaDataConfiguration.isStore()) {
 
-                    this.storeMetadata(metadataFile, metadataMap);
+                    this.storeMetadata(storageKey, storage, metadataMap);
                 }
             }
         } else {
 
-            metadataMap =  this.retrieveMetadata(metadataFile);
+            metadataMap =  this.retrieveMetadata(storageKey, storage);
         }
 
         if (generateMetaDataConfiguration.isCache()) {
 
-            final DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (null != cacheAdmin) {
-
-                cacheAdmin.put(generateMetaDataConfiguration.getCacheKeySupplier().get(),
-                        metadataMap, CACHE_GROUP);
-            }
+            this.putIntoCache(generateMetaDataConfiguration.getCacheKeySupplier().get(), metadataMap);
         }
 
         return metadataMap;
     }
 
-    private Map<String, Object> retrieveMetadata(final Optional<File> metadataFile) {
+    private String getStorageType(final StorageKey storageKey) {
+
+        return UtilMethods.isSet(storageKey.getStorage())? storageKey.getStorage():
+                Config.getStringProperty("DEFAULT_STORAGE_TYPE", StorageType.FILE_SYSTEM.name());
+    }
+
+    private void checkBucket(final StorageKey storageKey, final Storage storage) {
+
+        if (!storage.existsBucket(storageKey.getBucket())) {
+
+            storage.createBucket(storageKey.getBucket());
+        }
+    }
+
+    private void putIntoCache (final String cacheKey, final Map<String, Object> metadataMap) {
+
+        final DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
+        if (null != cacheAdmin) {
+
+            cacheAdmin.put(cacheKey,
+                    metadataMap, CACHE_GROUP);
+        }
+    }
+
+    private Map<String, Object> retrieveMetadata(final StorageKey storageKey, final Storage storage) {
 
         Map<String, Object> objectMap = Collections.emptyMap();
 
-        try (JsonCompressorReader reader = new JsonCompressorReader(metadataFile.get())) {
+        try {
 
-            objectMap   = reader.read(Map.class);
-            Logger.info(this, "Metadata read from: " + metadataFile.get());
-        } catch (IOException e) {
+            objectMap   = (Map<String, Object>) storage.pullObject(storageKey.getBucket(), storageKey.getPath(), this.objectReaderDelegate);
+            Logger.info(this, "Metadata read from: " + storageKey.getPath());
+        } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);
         }
@@ -158,16 +204,15 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return objectMap;
     }
 
-    private void storeMetadata(final Optional<File> metadataFile,
+    private void storeMetadata(final StorageKey storageKey, final Storage storage,
                                final Map<String, Object> metadataMap) {
 
-        try (JsonCompressorWriter writer = new JsonCompressorWriter(metadataFile.get())){
+        try {
 
-            writer.write(metadataMap);
-
-            writer.flush();
-            Logger.info(this, "Metadata wrote on: " + metadataFile.get());
-        } catch (IOException e) {
+            storage.pushObject(storageKey.getBucket(), storageKey.getPath(), this.objectWriterDelegate, metadataMap,
+                    Collections.emptyMap()); // todo: define this later
+            Logger.info(this, "Metadata wrote on: " + storageKey.getPath());
+        } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);
         }
@@ -183,26 +228,26 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return metadataFile.isPresent() && metadataFile.get().exists();
     }
 
-    private void checkOverride (final Optional<File> metadataFile,
+    private void checkOverride (final Storage storage,
                                 final GenerateMetaDataConfiguration generateMetaDataConfiguration) {
 
-        if (generateMetaDataConfiguration.isOverride() && this.exists(metadataFile)) {
+        final StorageKey storageKey = generateMetaDataConfiguration.getStorageKey();
+        if (generateMetaDataConfiguration.isOverride() && storage.existsObject(storageKey.getBucket(), storageKey.getPath())) {
 
             try {
 
-                metadataFile.get().delete();
+                storage.deleteObject(storageKey.getBucket(), storageKey.getPath());
             } catch (Exception e) {
 
                 Logger.error(this.getClass(),
                         String.format("Unable to delete existing metadata file [%s] [%s]",
-                               metadataFile.isPresent()?
-                                       metadataFile.get().getAbsolutePath(): StringPool.BLANK, e.getMessage()), e);
+                                storageKey.getPath(), e.getMessage()), e);
             }
         }
     } // checkOverride.
 
     @Override
-    public Map<String, Object> retrieveMetaData(RequestMetaData requestMetaData) {
+    public Map<String, Object> retrieveMetaData(final RequestMetaData requestMetaData) {
 
         Map<String, Object> metadataMap = Collections.emptyMap();
 
@@ -218,12 +263,18 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         if (!UtilMethods.isSet(metadataMap)) {
 
-            final Optional<File> metadataFile = requestMetaData.getMetaDataFileSupplier().get();
+            final StorageKey    storageKey     = requestMetaData.getStorageKey();
+            final String        storageType    = this.getStorageType (storageKey);
+            final Storage       storage        = this.getStorageProvider().getStorage(storageType);
 
-            if (this.exists(metadataFile)) {
+            this.checkBucket(storageKey, storage);
+            if (storage.existsObject(storageKey.getBucket(), storageKey.getPath())) {
 
-                metadataMap =  this.retrieveMetadata(metadataFile);
-                Logger.info(this, "Retrieve the meta data from file sytem, path: " + metadataFile.get());
+                metadataMap =  this.retrieveMetadata(storageKey, storage);
+                Logger.info(this, "Retrieve the meta data from file system, path: " + storageKey.getPath());
+                if (null != requestMetaData.getCacheKeySupplier()) {
+                    this.putIntoCache(requestMetaData.getCacheKeySupplier().get(), metadataMap); // todo: check this b/c it could be storing the full meta, should reduce it
+                }
             }
         } else {
 
@@ -231,5 +282,24 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         }
 
         return metadataMap;
+    }
+
+    private class TikaMetadataGenerator implements MetadataGenerator {
+
+        @Override
+        public Map<String, Object> generate(final File binary, final long maxLength) {
+
+            try {
+
+                final TikaUtils tikaUtils = new TikaUtils();
+                final Map<String, Object> tikaMetaDataMap = tikaUtils.getForcedMetaDataMap(binary, new Long(maxLength).intValue());
+                return tikaMetaDataMap;
+            } catch (DotDataException e) {
+
+                Logger.error(this, e.getMessage(), e);
+            }
+
+            return Collections.emptyMap();
+        }
     }
 }
