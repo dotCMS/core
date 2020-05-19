@@ -10,7 +10,7 @@ steps:
       - 'PULL_REQUEST=$_PULL_REQUEST'
       - 'GITHUB_USER=$_GITHUB_USER'
       - 'GITHUB_USER_TOKEN=$_GITHUB_USER_TOKEN'
-      - 'SIDECAR_IMAGE_NAME=gcr.io/$PROJECT_ID/integration-tests-image:$_CUSTOM_RUN_ID'
+      - 'SERVICE_HOST_PORT_PREFIX=1'
     args: ['-f', './docker/tests/integration/travis-integration-service.yml',
            '-f', './docker/tests/shared/$_DB_TYPE-docker-compose.yml',
            '-f', './docker/tests/shared/open-distro-docker-compose.yml',

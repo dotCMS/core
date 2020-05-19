@@ -52,7 +52,6 @@ while getopts "d:b:e:g:rch" option; do
 done
 
 echo ""
-BUILD_IMAGE_TAG="dotcms-sidecar-image"
 
 #  One of ["postgres", "mysql", "oracle", "mssql"]
 if [ -z "${database}" ]; then
@@ -79,27 +78,6 @@ echo ""
 # Creating required folders
 mkdir -p output
 
-if [ "$buildImage" = true ]; then
-
-  # Building the docker image for a given branch
-  if [ "$useCache" = true ]; then
-    docker build --pull \
-      --build-arg BUILD_FROM=COMMIT \
-      --build-arg BUILD_ID=${branchOrCommit} \
-      --build-arg BUILD_HASH=${gitHash} \
-      --build-arg LICENSE_KEY=${LICENSE_KEY} \
-      -t ${BUILD_IMAGE_TAG} .
-  else
-    docker build --pull --no-cache \
-      --build-arg BUILD_FROM=COMMIT \
-      --build-arg BUILD_ID=${branchOrCommit} \
-      --build-arg BUILD_HASH=${gitHash} \
-      --build-arg LICENSE_KEY=${LICENSE_KEY} \
-      -t ${BUILD_IMAGE_TAG} .
-  fi
-
-fi
-
 if [ ! -z "${extra}" ]; then
   echo ""
   echo " >>> Running with extra parameters [${extra}]"
@@ -111,13 +89,13 @@ fi
 export databaseType=${database}
 export IMAGE_BASE_NAME=${BUILD_IMAGE_TAG}
 docker-compose -f sidecar-service-compose.yml \
-  -f ../shared/${database}-docker-compose.yml \
-  -f ../shared/open-distro-docker-compose.yml \
+  -f ${database}-docker-compose.yml \
+  -f open-distro-docker-compose.yml \
   up \
   --abort-on-container-exit
 
 # Cleaning up
 docker-compose -f sidecar-service-compose.yml \
-  -f ../shared/${database}-docker-compose.yml \
-  -f ../shared/open-distro-docker-compose.yml \
+  -f ${database}-docker-compose.yml \
+  -f open-distro-docker-compose.yml \
   down

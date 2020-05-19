@@ -53,7 +53,6 @@ jobs:
   include:
     - stage: build image
       script: bash travis/submit.sh
-    - script: bash travis/submitSidecar.sh
     - stage: build curl image
       script: bash travis/submitCurl.sh
     - stage: tests
@@ -85,25 +84,37 @@ jobs:
     - script: bash travis/curl.sh
       if: >-
           commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
-      env: DB_TYPE=postgres
+      env:
+        - DB_TYPE=postgres
+        - PROVIDER_DB_USERNAME=postgres
+        - PROVIDER_DB_PASSWORD=postgres
       name: curl tests postgres
     - script: bash travis/curl.sh
       if: >-
         (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
         OR commit_message =~ /(\[travis\]|\[travis mysql\])/
-      env: DB_TYPE=mysql
+      env:
+        - DB_TYPE=mysql
+        - PROVIDER_DB_USERNAME=mysql
+        - PROVIDER_DB_PASSWORD=mysql
       name: curl tests mysql
     - script: bash travis/curl.sh
       if: >-
         (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
         OR commit_message =~ /(\[travis\]|\[travis oracle\])/
-      env: DB_TYPE=oracle
+      env:
+        - DB_TYPE=oracle
+        - PROVIDER_DB_USERNAME=oracle
+        - PROVIDER_DB_PASSWORD=oracle
       name: curl tests oracle
     - script: bash travis/curl.sh
       if: >-
         (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
         OR commit_message =~ /(\[travis\]|\[travis mssql\])/
-      env: DB_TYPE=mssql
+      env:
+        - DB_TYPE=mssql
+        - PROVIDER_DB_USERNAME=sa
+        - PROVIDER_DB_PASSWORD=dotCMS12345
       name: curl tests mssql
 
 install:
