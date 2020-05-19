@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.folder;
 
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -16,11 +15,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -80,7 +77,7 @@ public class FolderResourceTest {
 
         //Check Results
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        List<Map<String,Object>> listOfResults = List.class.cast(responseEntityView.getEntity());
+        final List<Map<String,Object>> listOfResults = List.class.cast(responseEntityView.getEntity());
         for(int i=0;i<listOfResults.size();i++){
             final String identifier = listOfResults.get(i).get("identifier").toString();
             final Folder folderCreated = folderAPI.find(identifier,adminUser,false);

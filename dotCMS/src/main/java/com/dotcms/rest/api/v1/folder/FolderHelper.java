@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.folder;
 import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -59,12 +58,12 @@ public class FolderHelper {
      */
     public List createFolders(final List<String> paths, final String siteName, final User user) throws DotDataException, DotSecurityException {
 
-        final List<Folder> savedFolders = new ArrayList<Folder>();
         final Host host = hostAPI.findByName(siteName, user, true);
         if(!UtilMethods.isSet(host)) {
             throw new IllegalArgumentException(String.format(" Couldn't find any host with name `%s` ",siteName));
         }
 
+        final List<Folder> savedFolders = new ArrayList<Folder>();
         for (final String path : paths) {
             savedFolders.add(folderAPI.createFolders(path, host, user, true));
         }
