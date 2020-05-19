@@ -680,7 +680,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-	@Override
+    /**
+     * Deletes all the Contentlet versions that are older than the specified date.
+     *
+     * @param deleteFrom The date as of which all contents older than that will be deleted.
+     *
+     * @return The number of records deleted by this operation.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    @Override
     protected int deleteOldContent(final Date deleteFrom) throws DotDataException {
         final Calendar calendar = Calendar.getInstance();
         calendar.setTime(deleteFrom);
@@ -689,7 +698,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         final Date date = calendar.getTime();
-
         DotConnect dc = new DotConnect();
         final String countSQL = "select count(*) as count from contentlet";
         dc.setSQL(countSQL);
@@ -703,27 +711,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         result = dc.loadResults();
         int oldInodesCount = result.size();
         if (oldInodesCount > 0) {
-            final List<String> inodeList = new ArrayList<>();
-            for (final Map<String, String> row : result) {
-                inodeList.add(row.get("inode").toString());
-            }
-            final int splitAt = 100;
-            // Split all records into lists of size 'truncateAt'
-            final List<List<String>> inodesToDelete = Lists.partition(inodeList, splitAt);
-            final List<String> queries = Lists.newArrayList("DELETE FROM contentlet WHERE inode IN (?)",
-                    "DELETE FROM inode WHERE inode IN (?)");
-            for (final String query : queries) {
-                for (final List<String> inodes : inodesToDelete) {
-                    dc = new DotConnect();
-                    // Generate the "(?,?,?...)" string depending of the number of inodes
-                    final String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
-                    dc.setSQL(query.replace("?", parameterPlaceholders));
-                    for (final String inode : inodes) {
-                        dc.addParam(inode);
-                    }
-                    dc.loadResult();
-                }
-            }
+            final List<String> inodeList = result.stream().map(row -> row.get("inode")).collect(Collectors.toList());
+            deleteContentData(inodeList);
         }
         dc = new DotConnect();
         dc.setSQL(countSQL);
@@ -731,36 +720,72 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final int after = Integer.parseInt(result.get(0).get("count"));
         final int deleted = before - after;
         if (deleted > 0) {
-            // Deleting orphaned binary files
-            final java.io.File assets = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
-            for (final java.io.File firstLevelFolder : assets.listFiles()) {
-                if (firstLevelFolder.isDirectory() && firstLevelFolder.getName().length() == 1 && firstLevelFolder
-                        .getName().matches("^[a-f0-9]$")) {
-                    for (final java.io.File secondLevelFolder : firstLevelFolder.listFiles()) {
-                        if (secondLevelFolder.isDirectory() && secondLevelFolder.getName().length() == 1 &&
-                                secondLevelFolder.getName().matches("^[a-f0-9]$")) {
-                            for (final java.io.File asset : secondLevelFolder.listFiles()) {
-                                try {
-                                    if (asset.isDirectory()) {
-                                        final Contentlet contentlet = find(asset.getName());
-                                        if (null == contentlet || !UtilMethods.isSet(contentlet.getIdentifier())) {
-                                            if (!FileUtils.deleteQuietly(asset)) {
-                                                Logger.warn(this, "Asset '" + asset.getAbsolutePath() + "' could " +
-                                                        "not be deleted.");
-                                            }
+            deleteOrphanedBinaryFiles();
+        }
+        return deleted;
+    }
+
+    /**
+     * Deletes the content data associated to the specified list of Inodes. Based on such a list, the {@code contentlet}
+     * will be cleaned up as well.
+     *
+     * @param inodeList The list of Inodes that will be deleted.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    private void deleteContentData(final List<String> inodeList) throws DotDataException {
+        final int splitAt = 100;
+        // Split all records into lists of size 'truncateAt'
+        final List<List<String>> inodesToDelete = Lists.partition(inodeList, splitAt);
+        final List<String> queries = Lists.newArrayList("DELETE FROM contentlet WHERE inode IN (?)",
+                "DELETE FROM inode WHERE inode IN (?)");
+        for (final String query : queries) {
+            for (final List<String> inodes : inodesToDelete) {
+                final DotConnect dc = new DotConnect();
+                // Generate the "(?,?,?...)" string depending of the number of inodes
+                final String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
+                dc.setSQL(query.replace("?", parameterPlaceholders));
+                for (final String inode : inodes) {
+                    dc.addParam(inode);
+                }
+                dc.loadResult();
+            }
+        }
+    }
+
+    /**
+     * Deletes binary files in the {@code /assets/} folder that don't belong to a valid Inode. This cleanup routine
+     * helps dotCMS keep things in order when deleting old versions of contentlets.
+     */
+    private void deleteOrphanedBinaryFiles() {
+        // Deleting orphaned binary files
+        final java.io.File assets = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
+        for (final java.io.File firstLevelFolder : assets.listFiles()) {
+            if (firstLevelFolder.isDirectory() && firstLevelFolder.getName().length() == 1 && firstLevelFolder
+                    .getName().matches("^[a-f0-9]$")) {
+                for (final java.io.File secondLevelFolder : firstLevelFolder.listFiles()) {
+                    if (secondLevelFolder.isDirectory() && secondLevelFolder.getName().length() == 1 &&
+                            secondLevelFolder.getName().matches("^[a-f0-9]$")) {
+                        for (final java.io.File asset : secondLevelFolder.listFiles()) {
+                            try {
+                                if (asset.isDirectory()) {
+                                    final Contentlet contentlet = find(asset.getName());
+                                    if (null == contentlet || !UtilMethods.isSet(contentlet.getIdentifier())) {
+                                        if (!FileUtils.deleteQuietly(asset)) {
+                                            Logger.warn(this, "Asset '" + asset.getAbsolutePath() + "' could " +
+                                                    "not be deleted.");
                                         }
                                     }
-                                } catch (final Exception ex) {
-                                    Logger.warn(this, String.format("An error occurred when deleting asset '%s': %s",
-                                            asset.getAbsolutePath(), ex.getMessage()));
                                 }
+                            } catch (final Exception ex) {
+                                Logger.warn(this, String.format("An error occurred when deleting asset '%s': %s",
+                                        asset.getAbsolutePath(), ex.getMessage()));
                             }
                         }
                     }
                 }
             }
         }
-        return deleted;
     }
 
 	@Override

@@ -65,7 +65,7 @@ public class CMSMaintenanceFactory {
         startDate.set(Calendar.SECOND, 0);
         startDate.set(Calendar.MILLISECOND, 0);
         final Calendar oldestInodeDate = getOldestInodeDate();
-        startDate = (null != oldestInodeDate ? oldestInodeDate : startDate);
+        startDate = null != oldestInodeDate ? oldestInodeDate : startDate;
         Logger.info(CMSMaintenanceFactory.class, String.format("- Deleting versions older than '%s'",
                 UtilMethods.dateToHTMLDate(assetsOlderThan, "yyyy-MM-dd")));
         Logger.info(CMSMaintenanceFactory.class, " ");
@@ -73,7 +73,7 @@ public class CMSMaintenanceFactory {
         while (startDate.getTime().before(assetsOlderThan) || startDate.getTime().equals(assetsOlderThan)) {
             try {
                 HibernateUtil.startTransaction();
-                int deletedRecords = removeOldVersions(startDate);
+                final int deletedRecords = removeOldVersions(startDate);
                 // Run the drop tasks iteratively, moving forward in time
                 // DROP_OLD_ASSET_ITERATE_BY_SECONDS controls how many seconds to move forward
                 // in time for each iteration - default is to iterate by 30 days
@@ -114,7 +114,7 @@ public class CMSMaintenanceFactory {
      * @return The oldest modification date from a versionable object.
      */
     private static Calendar getOldestInodeDate() {
-        Calendar startDate = Calendar.getInstance();
+        Calendar startDate = null;
         final DotConnect dc = new DotConnect();
         dc.setSQL(
                 "SELECT MIN(idate) AS min_date FROM inode WHERE type IN ('contentlet', 'containers', 'template')");
@@ -123,12 +123,12 @@ public class CMSMaintenanceFactory {
             final List<Map<String, Object>> results = dc.loadObjectResults();
             final Date minDate = (Date) results.get(0).get("min_date");
             if (null != minDate) {
+                startDate = Calendar.getInstance();
                 startDate.setTime(minDate);
             }
         } catch (final DotDataException e) {
             Logger.error(CMSMaintenanceFactory.class, String.format("An error occurred when finding the minimum date." +
                     " Using date specified by user instead: '%s'", e.getMessage()), e);
-            startDate = null;
         }
         return startDate;
     }
@@ -146,36 +146,37 @@ public class CMSMaintenanceFactory {
     private static int removeOldVersions(final Calendar assetsOlderThan) throws DotDataException {
         int deletedRecords = 0;
         int totalRecords = 0;
+        final String statusMsg = " Removed %d old %s";
         Logger.info(CMSMaintenanceFactory.class, String.format("-> Dropping versions older than '%s':",
                 UtilMethods.dateToHTMLDate(assetsOlderThan.getTime(), "yyyy-MM-dd")));
 
         deletedRecords = APILocator.getContentletAPI().deleteOldContent(assetsOlderThan.getTime());
         if (deletedRecords > 0) {
-            Logger.info(CMSMaintenanceFactory.class, " Removed " + deletedRecords + " old Contentlets");
+            Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Contentlets"));
             totalRecords += deletedRecords;
         }
 
         deletedRecords = APILocator.getContainerAPI().deleteOldVersions(assetsOlderThan.getTime());
         if (deletedRecords > 0) {
-            Logger.info(CMSMaintenanceFactory.class, " Removed " + deletedRecords + " old Containers");
+            Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Containers"));
             totalRecords += deletedRecords;
         }
 
         deletedRecords = APILocator.getTemplateAPI().deleteOldVersions(assetsOlderThan.getTime());
         if (deletedRecords > 0) {
-            Logger.info(CMSMaintenanceFactory.class, " Removed " + deletedRecords + " old Templates");
+            Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Templates"));
             totalRecords += deletedRecords;
         }
 
         deletedRecords = APILocator.getMenuLinkAPI().deleteOldVersions(assetsOlderThan.getTime());
         if (deletedRecords > 0) {
-            Logger.info(CMSMaintenanceFactory.class, " Removed " + deletedRecords + " old Links");
+            Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Links"));
             totalRecords += deletedRecords;
         }
 
         deletedRecords = APILocator.getWorkflowAPI().deleteWorkflowHistoryOldVersions(assetsOlderThan.getTime());
         if (deletedRecords > 0) {
-            Logger.info(CMSMaintenanceFactory.class, " Removed " + deletedRecords + " old Workflow History entries");
+            Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Workflow History entries"));
             totalRecords += deletedRecords;
         }
 
