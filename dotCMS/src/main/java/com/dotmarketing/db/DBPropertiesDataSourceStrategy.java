@@ -70,7 +70,7 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
 
             properties.clear();
             return new HikariDataSource(config);
-        } catch (ConfigurationException | FileNotFoundException e) {
+        } catch (Exception e) {
             Logger.error(DBPropertiesDataSourceStrategy.class,
                     "---------- Error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE
                             + " from db.properties file",

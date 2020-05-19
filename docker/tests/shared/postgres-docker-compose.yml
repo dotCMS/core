@@ -13,6 +13,6 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: dotcms
     ports:
-      - "15432:5432"
+      - "${SERVICE_HOST_PORT_PREFIX}5432:5432"
     volumes:
       - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/

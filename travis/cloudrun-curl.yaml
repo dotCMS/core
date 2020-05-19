@@ -4,15 +4,18 @@ steps:
   - name: 'docker/compose:1.24.1'
     env:
       - 'IMAGE_BASE_NAME=gcr.io/$PROJECT_ID/curl-tests-image:$_CUSTOM_RUN_ID'
-      - 'SIDECAR_IMAGE_NAME=gcr.io/$PROJECT_ID/dotcms-sidecar-image:$_CUSTOM_RUN_ID'
       - 'databaseType=$_DB_TYPE'
       - 'EXPORT_REPORTS=true'
       - 'GOOGLE_CREDENTIALS_BASE64=$_GOOGLE_CREDENTIALS_BASE64'
       - 'PULL_REQUEST=$_PULL_REQUEST'
       - 'GITHUB_USER=$_GITHUB_USER'
       - 'GITHUB_USER_TOKEN=$_GITHUB_USER_TOKEN'
+      - 'PROVIDER_DB_USERNAME=$_PROVIDER_DB_USERNAME'
+      - 'PROVIDER_DB_PASSWORD=$_PROVIDER_DB_PASSWORD'
+      - 'PROVIDER_DB_DBNAME=$_PROVIDER_DB_DBNAME'
+      - 'PROVIDER_DB_PORT=$_PROVIDER_DB_PORT'
     args: ['-f', './docker/tests/curl/travis-curl-service.yml',
-           '-f', './docker/tests/sidecar/sidecar-service-compose.yml',
+           '-f', './docker/tests/shared/sidecar-service-compose.yml',
            '-f', './docker/tests/shared/$_DB_TYPE-docker-compose.yml',
            '-f', './docker/tests/shared/open-distro-docker-compose.yml',
            'up',

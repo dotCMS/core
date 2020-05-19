@@ -13,6 +13,7 @@ fi
 # https://storage.googleapis.com/cicd-246518-tests/branch-name/mysql/logs/dotcms.log
 # https://storage.googleapis.com/cicd-246518-tests/branch-name/unit/reports/html/index.html
 # https://storage.googleapis.com/cicd-246518-tests/branch-name/unit/logs/dotcms.log
+echo "OJO:>> PULL_REQUEST: ${PULL_REQUEST}, TEST_TYPE: ${TEST_TYPE}"
 if [ "$PULL_REQUEST" != "false" ];
 then
 
@@ -21,11 +22,11 @@ then
   if [[ "${TEST_TYPE}" == "unit" ]]; then
     reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/index.html"
     statusesContext="Travis CI - [Unit tests]"
-  elif [[ "${TEST_TYPE}" == "integration" ]]; then
-    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/integrationTest/index.html"
-    statusesContext="Travis CI - [${databaseType}]"
-  else
+  elif [[ "${TEST_TYPE}" == "curl" ]]; then
     reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/curl/index.html"
+    statusesContext="Travis CI [Curl tests] - [${databaseType}]"
+  else
+    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/integrationTest/index.html"
     statusesContext="Travis CI - [${databaseType}]"
   fi
 

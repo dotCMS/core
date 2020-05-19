@@ -66,14 +66,14 @@ if [[ "${TEST_TYPE}" == "unit" ]]; then
   echo "
   ${logsLink}
   " >> ${outputFolder}/reports/html/index.html
-elif [[ "${TEST_TYPE}" == "integration" ]]; then
-  echo "
-  ${logsLink}
-  " >> ${outputFolder}/reports/html/integrationTest/index.html
-else
+elif [[ "${TEST_TYPE}" == "curl" ]]; then
   echo "
   ${logsLink}
   " >> ${outputFolder}/reports/html/curlTest/index.html
+else
+  echo "
+  ${logsLink}
+  " >> ${outputFolder}/reports/html/integrationTest/index.html
 fi
 
 gcloud auth activate-service-account --key-file="${credentialsFile}"

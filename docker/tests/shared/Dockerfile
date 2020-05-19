@@ -1,4 +1,4 @@
-FROM gcr.io/cicd-246518/dotcms-curl-image
+FROM gcr.io/cicd-246518/build-cms-image
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
