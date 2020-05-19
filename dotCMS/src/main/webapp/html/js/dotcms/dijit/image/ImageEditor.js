@@ -35,6 +35,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     execute: null,
     activeEditor: undefined,
     urlWithInode: undefined,
+	currentNode: undefined,
 
     postCreate: function(){
         window.top._dotImageEditor = this;
@@ -108,7 +109,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
         const newerInode = window.contentAdmin.contentletInode;
         let id = this._determineAssetId(this.activeEditor, this.fieldContentletId, newerInode)
-        
+
         this.baseFilterUrl = "/contentAsset/image/" + id;
         if(this.fieldName != undefined){
             this.baseFilterUrl += "/" + this.fieldName;
@@ -131,7 +132,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this.imageEditor.style =
 					"position:absolute;top:10px;bottom:20px;left:50%;right:50%; transform: translateX(-50%); padding:0;margin: 3rem 0;border:1px silver solid;background:white;z-index: 99999; width: 90%";
         document.body.insertBefore(this.imageEditor, document.body.firstChild);
-        
+
         this._addBackdrop();
     },
 
@@ -323,7 +324,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             myEditor.parentNode.removeChild(myEditor);
             document.querySelector(".dotcms").removeChild(this.backdrop);
         }
-        
+
 
         this.imageEditor=null;
         this.iframe =null;
@@ -401,7 +402,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     _sendImageToEditor: function(activeEditor, url) {
         let newUrl;
         newUrl = this._isValidURL(url) ? new URL(url).pathname : url;
-        
+
         const asset = `
             <img
                 src="${this.urlWithInode ? this.urlWithInode : newUrl}"
@@ -411,7 +412,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
                 data-identifier="${this.fieldContentletId}"
                 data-saveas="${this.saveAsFileName}"
             />`;
-        activeEditor.execCommand("mceReplaceContent", false, asset);
+
+		if(this.currentNode.nodeName === "FIGURE") {
+			this.currentNode.querySelector("img").src = newUrl
+		} else {
+			activeEditor.execCommand("mceReplaceContent", false, asset);
+		}
     },
     /**
      * This saves an image
@@ -427,7 +433,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         let url = this.cleanUrl(this.currentUrl);
 
         if (activeEditor) {
-            this._sendImageToEditor(activeEditor, url)
+            this._sendImageToEditor(activeEditor, url);
         } else {
             url = url.indexOf("?") > -1 ? url + "&" : url + "?";
             url += field.length > 0 ? "&binaryFieldId=" + field : "";
@@ -1150,7 +1156,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         }
 
         img.src = url +"?test=" + Date.now()
-        this.urlWithInode = url +`?i=${this.inode}`; 
+        this.urlWithInode = url +`?i=${this.inode}`;
 
         this.currentUrl = url;
         this.iframe.dijit.byId("viewingUrl").set("value", (url.includes("://") ? url : location.protocol +"//"+  location.host + url), false);
