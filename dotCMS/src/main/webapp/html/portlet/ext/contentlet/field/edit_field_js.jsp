@@ -327,7 +327,7 @@ var cmsfile=null;
 			document.dispatchEvent(customEvent)
 	}
 
-	function insertAssetInEditor(dotAssets, activeEditor, textAreaId) {
+	function insertAssetInEditor(dotAssets) {
 		dotAssets.forEach(async (asset) => {
 			let results = await fetch(
 				`/api/v1/content/resourcelink?identifier=${asset.identifier}`
@@ -354,26 +354,18 @@ var cmsfile=null;
 					/>`;
 
 			const link = `<a href="${idPath}">${asset.title}</a>`;
-
-			mimeWhiteList.includes(mimeType)
-				? activeEditor
-						.get(textAreaId)
-						.execCommand("mceInsertContent", false, image)
-				: activeEditor
-						.get(textAreaId)
-						.execCommand("mceInsertContent", false, link);
+			const assetToInsert = mimeWhiteList.includes(mimeType) ? image : link;
+			tinymce.execCommand("mceInsertContent", false, assetToInsert);
 		});
 	}
 
 
-  function insertDropZoneAsset(activeEditor, textAreaId) {
-	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
-        dropZone.addEventListener('uploadComplete', async (asset) => {
-			if(asset.detail) {
-				 insertAssetInEditor(asset.detail, activeEditor, textAreaId);
-			}
-        })
-    }
+  function insertDropZoneAsset(textAreaId) {
+		const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+		dropZone.addEventListener('uploadComplete', async (asset) => {
+			asset.detail && insertAssetInEditor(asset.detail)
+		})
+	}
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
@@ -434,7 +426,7 @@ var cmsfile=null;
 			    tinyConf,
 			    tinymce.EditorManager
 			  );
-			  insertDropZoneAsset(tinymce, textAreaId);
+			  insertDropZoneAsset(textAreaId);
 			  wellTinyMCE.render();
 				wellTinyMCE.on("change", emmitFieldDataChange);
 			} catch (e) {
