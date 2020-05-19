@@ -47,7 +47,7 @@ class MonitorHelper {
     private static final long   DEFAULT_ASSET_FS_TIMEOUT    = 1000;
     private static final long   DEFAULT_INDEX_TIMEOUT       = 1000;
     private static final long   DEFAULT_DB_TIMEOUT          = 1000;
-    private static final String DEFAULT_IP_ACL_VALUE        = "127.0.0.1/32,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,0:0:0:0:0:0:0:1/128";
+    private static final String[] DEFAULT_IP_ACL_VALUE        = new String[] {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","0:0:0:0:0:0:0:1"};
 
     private static final String EXTENDED_OPTION             = "extended";
 
@@ -65,11 +65,8 @@ class MonitorHelper {
         this.useExtendedFormat = request.getQueryString() != null && EXTENDED_OPTION.equals(request.getQueryString());
 
         // set this.accessGranted
-        final String config_ip_acl = Config.getStringProperty(SYSTEM_STATUS_API_IP_ACL, DEFAULT_IP_ACL_VALUE);
-        String[] aclIPs = null;
-        if(config_ip_acl != null) {
-            aclIPs = config_ip_acl.split(StringPool.COMMA);
-        }
+        final String[] aclIPs = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL, DEFAULT_IP_ACL_VALUE);
+
         final String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split(StringPool.SLASH)[1];
         if(aclIPs == null) {
             this.accessGranted = true;
