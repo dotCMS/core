@@ -318,7 +318,6 @@ var cmsfile=null;
 		}
 	}
 
-
 	function emmitFieldDataChange(val) {
 			var customEvent = document.createEvent("CustomEvent");
 			customEvent.initCustomEvent("ng-event", false, false,  {
@@ -371,6 +370,21 @@ var cmsfile=null;
 		dropzoneEvents = true
   }
 
+
+	function insertImage(dotAsset) {
+		const { inode, titleImage, identifier, title } = dotAsset;
+		const asset = `
+			<img
+			src="/contentAsset/image/${identifier}/${titleImage}"
+			alt="${titleImage}"
+			data-field-name="${titleImage}"
+			data-inode="${inode}"
+			data-identifier="${identifier}"
+			data-saveas="${title}"
+			/>
+		`;
+		tinymce.activeEditor.execCommand('mceInsertContent', false, asset);
+	}
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
@@ -480,6 +494,7 @@ var cmsfile=null;
 	var tinyMCEFilePickerCallback;
 
 	function cmsFileBrowser(callback, value, meta) {
+		debugger;
 		tinyMCEFilePickerCallback=callback;
 		if(meta.filetype=="image"){
 			cmsFileBrowserImage.show();
@@ -487,8 +502,12 @@ var cmsfile=null;
 		else{
 			cmsFileBrowserFile.show();
 		}
-		dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' })
-		dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' })
+		debugger;
+		setTimeout(()=> {
+			dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' });
+			dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' });
+		}, 0);
+
 
 	}
 

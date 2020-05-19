@@ -42,7 +42,7 @@ var tinyMCEProps = {
         "emoticons  paste textcolor colorpicker textpattern validation dotimageclipboard dotCustomButtons"
     ],
     block_formats: 'Paragraph=p;Header 1=h1;Header 2=h2;Header 3=h3;Header 4=h4;Header 5=h5;Pre=pre;Code=code;Remove Format=removeformat',
-    toolbar1: "formatselect | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | dotAddImage image dotimageclipboard  | link unlink anchor | hr charmap | fullscreen | validation",
+    toolbar1: "formatselect | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | dotAddImage dotimageclipboard  | link unlink anchor | hr charmap | fullscreen | validation",
     paste_auto_cleanup_on_paste : true,
     paste_strip_class_attributes : "all",
     convert_urls : true,
@@ -67,13 +67,7 @@ var tinyMCEProps = {
     image_caption: true,
     file_picker_callback: function(callback, value, meta) {
         debugger;
-        console.log(meta);
-        console.log(value);
         cmsFileBrowser(callback, value, meta);
-    },
-    file_browser_callback: function(field_name, url, type, win) {
-        debugger;
-        win.document.getElementById(field_name).value = 'my browser value';
     }
 };
 
