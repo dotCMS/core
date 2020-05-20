@@ -89,10 +89,10 @@ public class FolderResourceTest {
     /**
      * Method to test: createFolders in the FolderResource
      * Given Scenario: Try to create a few folders using an user that does not have permissions to create folders
-     * ExpectedResult: The endpoint should return a 403 code and no folders created
+     * ExpectedResult: The endpoint should return DotSecurityException that jersey will map to a 403 code and no folders created
      *
      */
-    @Test
+    @Test (expected = DotSecurityException.class)
     public void test_createFolders_UserNoPermissions_return403() throws DotDataException, DotSecurityException {
         final Host newHost = new SiteDataGen().nextPersisted();
         final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
@@ -102,29 +102,23 @@ public class FolderResourceTest {
         final long currentTime = System.currentTimeMillis();
         final List<String> foldersToCreate = Arrays.asList("test"+currentTime+"/folder"+currentTime,"/test2"+currentTime+"/","test3"+currentTime);
 
-        final Response responseResource = resource.createFolders(getHttpRequest(chrisUser.getEmailAddress(),password),response,foldersToCreate,newHost.getHostname());
-
-        //Check that the response is 403, Forbidden
-        Assert.assertEquals(Status.FORBIDDEN.getStatusCode(),responseResource.getStatus());
+        resource.createFolders(getHttpRequest(chrisUser.getEmailAddress(),password),response,foldersToCreate,newHost.getHostname());
 
     }
 
     /**
      * Method to test: createFolders in the FolderResource
      * Given Scenario: Try to create a few folders using the admin user, but the siteName passed does not belong to any site
-     * ExpectedResult: The endpoint should return a 400 code and no folders created
+     * ExpectedResult: The endpoint should return IllegalArgumentException that jersey will map to a 400 code and no folders created
      *
      */
-    @Test
+    @Test (expected = IllegalArgumentException.class)
     public void test_createFolders_siteNameNotExists_return400() throws DotDataException, DotSecurityException {
         final User adminUser = TestUserUtils.getAdminUser();
         final long currentTime = System.currentTimeMillis();
         final List<String> foldersToCreate = Arrays.asList("test"+currentTime+"/folder"+currentTime,"/test2"+currentTime+"/","test3"+currentTime);
 
-        final Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,"siteNameNotExists");
-
-        //Check that the response is 400, Bad Request
-        Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),responseResource.getStatus());
+        resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,"siteNameNotExists");
 
     }
 

@@ -10,6 +10,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
@@ -60,7 +61,8 @@ public class FolderResource implements Serializable {
     public final Response createFolders(@Context final HttpServletRequest httpServletRequest,
                                         @Context final HttpServletResponse httpServletResponse,
                                         final List<String> paths,
-                                        @PathParam("siteName") final String siteName) {
+                                        @PathParam("siteName") final String siteName)
+            throws DotSecurityException, DotDataException {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)
@@ -71,14 +73,9 @@ public class FolderResource implements Serializable {
 
         final User user = initData.getUser();
 
-        try {
             final List<Map<String, Object>> createdFolders = folderHelper.createFolders(paths, siteName, user);
 
             return Response.ok(new ResponseEntityView(createdFolders)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),"Exception saving/creating folders.", e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
     }
 
     @GET

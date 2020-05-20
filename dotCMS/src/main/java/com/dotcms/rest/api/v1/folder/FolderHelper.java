@@ -11,9 +11,11 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -67,14 +69,12 @@ public class FolderHelper {
         for (final String path : paths) {
             savedFolders.add(folderAPI.createFolders(path, host, user, true));
         }
-        return savedFolders.stream().map(folder -> {
-                        try {
-                            return folder.getMap();
-                        } catch (Exception e) {
-                            Logger.error(this, "Data Exception while converting to map", e);
-                            return Collections.EMPTY_MAP;
-                        }
-        }).collect(Collectors.toList());
+        return savedFolders.stream().map(this::folderToMap).collect(Collectors.toList());
+    }
+
+    private Map folderToMap (final Folder folder) {
+
+        return Try.of(()-> folder.getMap()).getOrElse(Collections.emptyMap());
     }
 
     /**
