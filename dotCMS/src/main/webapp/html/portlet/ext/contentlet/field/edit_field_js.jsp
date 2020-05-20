@@ -363,6 +363,7 @@ var cmsfile=null;
   function insertDropZoneAsset(textAreaId) {
 		const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
 		dropZone.addEventListener('uploadComplete', async (asset) => {
+			dropZone.style.display = 'none';
 			asset.detail && insertAssetInEditor(asset.detail)
 		})
 	}
@@ -408,16 +409,22 @@ var cmsfile=null;
 			  // Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,
-			    init_instance_callback: (editor) => {
-			      let dropZone = document.getElementById(
-			        `dot-asset-drop-zone-${textAreaId}`
-			      );
-			      editor.on("dragover", function (e) {
-			        dropZone.style.pointerEvents = "all";
-			      });
-			      editor.dom.bind(document, "dragleave", function (e) {
-			        dropZone.style.pointerEvents = "none";
-			        return false;
+					init_instance_callback: (editor) => {
+						let dropZone = document.getElementById(
+							`dot-asset-drop-zone-${textAreaId}`
+						);
+						editor.dom.bind(window, "dragover", function (e) {
+							dropZone.style.pointerEvents = "all";
+							dropZone.style.display = "block";
+						}, true);
+						editor.dom.bind(editor.contentDocument, "drop", function (e) {
+							dropZone.style.pointerEvents = "all";
+							dropZone.style.display = "none";
+						});
+						editor.dom.bind(editor.contentDocument, "dragleave", function (e) {
+							e.stopPropagation();
+							dropZone.style.pointerEvents = "none";
+							dropZone.style.display = "none";
 						});
 					}
 			  };
