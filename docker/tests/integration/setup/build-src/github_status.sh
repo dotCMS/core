@@ -53,15 +53,28 @@ then
   # Reading the pull request information in order to get the statuses URL (has a github PR identifier)
 
   # https://developer.github.com/v3/pulls/#get-a-single-pull-request
+  echo "OJO:>> curl -u ${GITHUB_USER}:${GITHUB_USER_TOKEN} --request GET https://api.github.com/repos/dotCMS/core/pulls/${PULL_REQUEST} -s"
   jsonResponse=$(curl -u ${GITHUB_USER}:${GITHUB_USER_TOKEN} \
   --request GET https://api.github.com/repos/dotCMS/core/pulls/${PULL_REQUEST} -s)
+  echo "OJO:>> jsonResponse: $jsonResponse"
 
   # Parse the response json to get the statuses URL
   jsonStatusesAttribute=`echo "$jsonResponse" | grep "${jsonAttribute}\w*\""`
   statusesURL=`echo "$jsonStatusesAttribute" | grep -o "${jsonBaseValue}\w*"`
+  echo "OJO:>> jsonStatusesAttribute: $jsonStatusesAttribute"
+  echo "OJO:>> statusesURL: $statusesURL"
 
   # https://developer.github.com/v3/repos/statuses/#create-a-status
   # The state of the status. Can be one of error, failure, pending, or success.
+  echo "OJO:>> curl -u ${GITHUB_USER}:${GITHUB_USER_TOKEN}
+  --request POST
+  --data \"{
+    \"state\": \"${GITHUB_STATUS}\",
+    \"description\": \"${GITHUB_DESCRIPTION}\",
+    \"target_url\": \"${reportsIndexURL}\",
+    \"context\": \"${statusesContext}\"
+  }\"
+  $statusesURL -s"
   curl -u ${GITHUB_USER}:${GITHUB_USER_TOKEN} \
   --request POST \
   --data "{
