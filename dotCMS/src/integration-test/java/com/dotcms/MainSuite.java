@@ -1,6 +1,8 @@
 package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.content.elasticsearch.business.ESIndexUtilTest;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
@@ -258,7 +260,9 @@ import org.junit.runners.Suite.SuiteClasses;
         UserResourceIntegrationTest.class,
         SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
-        HTMLDiffUtilTest.class
+        HTMLDiffUtilTest.class,
+        ESIndexUtilTest.class,
+        ESReadOnlyMonitorTest.class
 })
 public class MainSuite {
 

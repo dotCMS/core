@@ -10,16 +10,15 @@ import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -224,7 +223,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     @Override
     @WrapInTransaction
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
-        Logger.warn(this.getClass(), "Reindex failed for :" + idx + " because " + cause);
+        ESReadOnlyMonitor.getInstance().start(idx, cause);
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
 
     }
