@@ -61,7 +61,7 @@ public class FolderResource implements Serializable {
     }
 
     @POST
-    @Path("/createfolders")
+    @Path("/createfolders/{siteName}")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
