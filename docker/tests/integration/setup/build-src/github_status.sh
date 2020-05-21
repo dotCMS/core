@@ -75,7 +75,7 @@ then
     \"context\": \"${statusesContext}\"
   }\"
   $statusesURL -s"
-  curl -u ${GITHUB_USER}:${GITHUB_USER_TOKEN} \
+  stateResult=$(curl -u ${GITHUB_USER}:${GITHUB_USER_TOKEN} \
   --request POST \
   --data "{
     \"state\": \"${GITHUB_STATUS}\",
@@ -83,5 +83,6 @@ then
     \"target_url\": \"${reportsIndexURL}\",
     \"context\": \"${statusesContext}\"
   }" \
-  $statusesURL -s
+  $statusesURL -s)
+  echo "OJO:>> stateResult: $stateResult"
 fi
