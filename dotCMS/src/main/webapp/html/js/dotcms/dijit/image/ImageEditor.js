@@ -12,10 +12,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     // cssUrl:'/html/js/dotcms/dijit/image/image-tools.css',
     imageToolJsp:'/html/js/dotcms/dijit/image/image_tool.jsp',
     baseFilterUrl:"/contentAsset/image",
-    // changes to show the value in the toolbar
     currentUrl:"/contentAsset/image",
     ajaxUrl:"/servlet/dotImageToolAjax",
-
     resizeFilter:false,
     zoomValue:0,
     inode:'0',
@@ -34,13 +32,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     compression:'none',
     compressionValue:65,
     fileSize:0,
-    
-
-
-
+    execute: null,
+	activeEditor: undefined,
 
     postCreate: function(){
         window.top._dotImageEditor = this;
+        this.execute = this.createImageWindow;
         // this._loadCss();
         this.filters = new Array();
 
@@ -78,9 +75,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         if(this.tempId){
             shorty=this.tempId;
         }
-        
-        
-        
+
+
+
         this.baseFilterUrl+= "/" + shorty;
 
         if(this.fieldName != undefined){
@@ -89,44 +86,42 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
         this.currentUrl = this.baseFilterUrl;
     },
-    
+
     createImageWindow: function(){
         this.tabindex = 0;
         this.thumbnailDiv.tabindex=0;
 
-
         var newerInode = window.contentAdmin.contentletInode;
 
         var id=this.inode;
-        if(newerInode && newerInode!= this.inode){
+        if(newerInode && newerInode !== this.inode && !this.activeEditor){
             this.inode = newerInode;
             id=newerInode;
             this.tempId=null;
-        }else if(this.tempId){
+        } else if(this.activeEditor) {
+            id = this.fieldContentletId
+        } else {
             id = this.tempId;
         }
-        
-        
-
 
         this.baseFilterUrl= "/contentAsset/image/" + id;
         if(this.fieldName != undefined){
             this.baseFilterUrl+= "/" + this.fieldName;
         }
         this.currentUrl = this.baseFilterUrl;
-        
 
 
+        console.log(this.currentUrl)
 
         // clean up any old image editors laying around
         this._cleanUpImageEditor();
         window.top._dotImageEditor = this;
         var url = this.imageToolJsp + "?id=" + id;
-    
+
         url = url + "&fieldName="+ this.fieldName;
 
-        
-        
+
+
         this.imageEditor = document.createElement('div');
         this.imageEditor.id = 'dotImageDialog';
         this.imageEditor.innerHTML="<iframe scrolling='yes' src='" + url+ "' id='imageToolIframe' frameborder='0' style='width:100%;height:100%;overflow:hidden;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);'></iframe>";
@@ -171,10 +166,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     cleanUrl: function(x){
-    	while(x.indexOf("//")>-1){
-    		x= x.replace("//","/");
-    	}
-    	return x;
+	while(x.indexOf("//")>-1){
+		x= x.replace("//","/");
+	}
+	return x;
 
 
 
@@ -289,16 +284,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     },
 
-
-
-
-
-
     closeImageWindow : function(e){
         this._cleanUpImageEditor();
-        
-    },
 
+    },
 
     /**
      * cleans up old references, resets imageEditor
@@ -306,12 +295,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     _cleanUpImageEditor : function (e){
         window.top._dotImageEditor = null;
         window.parent._dotImageEditor = null;
-        
+
         var myEditor = (this.imageEditor) ? this.imageEditor : document.getElementById("dotImageDialog");
-        
+
         // if we have an Image Editor
         if(myEditor){
-            
+
             while (this.imageEditor.firstChild) {
                 this.imageEditor.removeChild(this.imageEditor.firstChild);
             }
@@ -326,22 +315,14 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this.saveAsIncrement=1;
         this.imagesLoaded=false;
         this.resizeFilter=false;
-        
+
     },
-
-
-
-
-
-
 
     /***************************************************************************
      *
      * Button Actions
      *
      **************************************************************************/
-
-
 
     addToClipboard : function(){
         if(this.currentUrl.indexOf("/temp_")>-1){
@@ -370,12 +351,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     },
 
-
-
-
-
-
-
     /**
      * Save as passes a var:_imageToolSaveFile to the binary servlet with all the other
      * params.  This saves the file handle in the users session.  We look for this
@@ -384,7 +359,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     saveImage : function(){
         if(this.binaryFieldId != null && this.binaryFieldId.length > 0){
-            this.saveBinaryImage();
+            this.saveBinaryImage(this.activeEditor);
         }
         else{
             this.saveFileImage();
@@ -392,56 +367,75 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
 
+    _isValidURL: function (url) {
+        let elem = document.createElement("input");
+        elem.setAttribute("type", "url");
+		elem.value = url;
+		return elem.validity.valid;
+    },
 
+    /**
+     * Sends an image back to the tinymce WYSIWYG editor from the "Edit Image" dialog.
+     *
+     * @param {object} activeEditor - Instance of the active editor
+     * @param {string} url - Image URL
+     */
+    _sendImageToEditor: function(activeEditor, url) {
+        let newUrl;
+        newUrl = this._isValidURL(url) ? new URL(url).pathname : url;
+        console.log(newUrl)
+        const asset = `
+            <img
+                src="${newUrl}"
+                alt="${this.fieldName}"
+                data-field-name="${this.fieldName}"
+                data-inode="${this.inode}"
+                data-identifier="${this.fieldContentletId}"
+                data-saveas="${this.saveAsFileName}"
+            />`;
+        activeEditor.execCommand("mceReplaceContent", false, asset);
+    },
     /**
      * This saves an image
      * that lives on a contentlet
      *
      */
-
-    saveBinaryImage: function(){
-
-        var field=this.binaryFieldId;
+    saveBinaryImage: function(activeEditor){
+        var field = this.binaryFieldId;
         if(this.fieldContentletId.length>0) {
             field=this.fieldContentletId;
         }
 
-        var url =   this.cleanUrl(this.currentUrl) ;
-        url = (url.indexOf("?")>-1) ? url + "&"  : url + "?";
-        url += (field.length > 0) ? "&binaryFieldId=" +field : "";
-        url += "&_imageToolSaveFile=true";
-        
-        
-        var xhr = new XMLHttpRequest();
-        xhr.onload = (self => {
-            return () => {
-                if (xhr.status == 200) {
-                    var dataJson = JSON.parse(xhr.responseText);
-                    self.tempId=dataJson.id;
-                    if(window.document.getElementById(self.binaryFieldId + "ValueField")){
-                        window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id; 
+        let url = this.cleanUrl(this.currentUrl);
+
+        if (activeEditor) {
+            this._sendImageToEditor(activeEditor, url)
+        } else {
+            url = url.indexOf("?") > -1 ? url + "&" : url + "?";
+            url += field.length > 0 ? "&binaryFieldId=" + field : "";
+            url += "&_imageToolSaveFile=true";
+            var xhr = new XMLHttpRequest();
+            xhr.onload = (self => {
+                return () => {
+                    if (xhr.status == 200) {
+                        var dataJson = JSON.parse(xhr.responseText);
+                        self.tempId=dataJson.id;
+                        if(window.document.getElementById(self.binaryFieldId + "ValueField")){
+                            window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id;
+                        }
+
+                    } else {
+                        alert("Error! Upload failed");
                     }
-                    
-                } else {
-                    alert("Error! Upload failed");
-                }
-            };
-        })(this);
-        xhr.open("GET", url, true);
-        xhr.send();
-        
-
-
-        this.setThumbnail();
-        
-
+                };
+            })(this);
+            xhr.open("GET", url, true);
+            xhr.send();
+            this.setThumbnail();
+        }
         // close without wiping out the saved value
         this.closeImageWindow();
     },
-
-
-
-
 
 
 
@@ -455,15 +449,14 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     doDownload: function(){
         var url =this.cleanUrl(this.currentUrl);
-        
+
         var aj =this.iframe.dojo.byId("actionJackson");
- 
+
         url = (x.indexOf("?")>-1) ? x + "&"  : x + "?";
         url = url + "r=" +_rand()+ "&force_download=true";
         aj.src=url;
 
     },
-
 
 
     closeSaveAsDia : function(){
@@ -472,10 +465,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
     },
-
-
-
-
 
     /***************************************************************************
      *
@@ -574,38 +563,38 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         sLeft = this.iframe.dojo.byId("imageViewPort").scrollLeft;
 
         var sw = parseInt(this.iframe.dojo.byId("displayImageWidth").value);
-        var sh = parseInt(this.iframe.dojo.byId("displayImageHeight").value);       
-                
+        var sh = parseInt(this.iframe.dojo.byId("displayImageHeight").value);
+
         var x = 0;
         var y = 0;
         var w = pc.w;
         var h = pc.h;
-        
+
         if(pc.l < 0){
-        	w = pc.w + pc.l;
+		w = pc.w + pc.l;
         }
         if(pc.t < 0){
-        	h = pc.h + pc.t;
-        }        
-        
+		h = pc.h + pc.t;
+        }
+
         if(pc.l > 0 && (pc.l+pc.w) < sw){
-        	x = pc.l;
-        	w = pc.w;
+		x = pc.l;
+		w = pc.w;
         }
         if(pc.t > 0 && (pc.t+pc.h) < sh){
-        	y = pc.t;
-        	h = pc.h;
+		y = pc.t;
+		h = pc.h;
         }
-        
+
         if((pc.l+pc.w) > sw){
-        	x = pc.l;
-        	w = (sw - pc.l) - 1;
+		x = pc.l;
+		w = (sw - pc.l) - 1;
         }
         if((pc.t+pc.h) > sh){
-        	y = pc.t;
-        	h = (sh - pc.t) - 1;
+		y = pc.t;
+		h = (sh - pc.t) - 1;
         }
-        
+
         var val ="";
         val+="/crop_w/" + parseInt(w);
         val+="/crop_h/" + parseInt(h) ;
@@ -644,7 +633,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var bic = dojo.coords(baseImage);
         var w = Math.round(bic.w * (zoomValue / 100));
         if(!this.resizeFilter)
-        	this.iframe.dojo.byId("displayImageWidth").value = w;
+		this.iframe.dojo.byId("displayImageWidth").value = w;
 
         this.resizeFilter= false;
         this.setHieghtFromWidth();
@@ -740,8 +729,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      */
 
     resizeBtnClick: function(action){
-    	if(action == 'resize')
-    		this.resizeFilter = true;
+	if(action == 'resize')
+		this.resizeFilter = true;
 
         var width =parseInt(this.iframe.dojo.byId("displayImageWidth").value);
         if(!isNaN(width)){
@@ -788,29 +777,29 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this._redrawImage();
     },
 
-    
+
     updateCompressionValue: function(){
         var x = this.iframe.dijit.byId("compressionValue").getValue();
         this.iframe.dojo.byId("compressionValueSpan").innerHTML=x + "%";
         this.compressionValue=x;
     },
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
     toggleCompression: function(){
         var x = this.iframe.dijit.byId("compression").getValue();
 
         this._removeFilter("Jpeg");
         this._removeFilter("WebP");
         this._removeFilter("Quality");
-        
+
         this.iframe.dijit.byId("compressionValue").set("value", this.compressionValue, false);
         this.iframe.dojo.byId("compressionValueSpan").innerHTML=this.compressionValue + "%";
-        
+
         if(!x || x=="none"){
             this.iframe.dojo.query("#controlTable .compressTd").forEach(function(node, index, arr){
                 node.style.display="none";
@@ -830,7 +819,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             });
             this._addFilter("WebP", "/webp_q/" + this.compressionValue);
             this.iframe.dijit.byId("compression").set("value", "webp", false);
-            
+
         }
         else if(x=="auto"){
             this.iframe.dojo.query("#controlTable .compressTd").forEach(function(node, index, arr){
@@ -838,9 +827,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             });
             this._addFilter("Quality", "/quality_q/" + this.compressionValue);
             this.iframe.dijit.byId("compression").set("value", "auto", false);
-            
+
         }
-        
+
         this._redrawImage();
     },
 
@@ -951,7 +940,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         if(hasWebP && filterName != "WebP"){
             newFilters.push(["WebP", "/webp_q/"+ this.compressionValue]);
         }
-        
+
         this.filters = newFilters;
 
         this.writeFilterList();
@@ -960,9 +949,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     removeFilterClick:function(filterName){
         this._removeFilter(filterName);
-        
-        
-        
+
+
+
         this._redrawImage();
 
 
@@ -1048,14 +1037,14 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     initIframe: function(){
         if(!this.iframe || this.iframe==undefined){
             this.iframe = dojo.byId("imageToolIframe").contentWindow;
-            
+
         }
         this._redrawImage();
     },
 
     changeViewingUrl: function(){
         var newUrl = this.iframe.dijit.byId("viewingUrl").getValue();
-        
+
         this._redrawImage(newUrl);
     },
 
@@ -1108,7 +1097,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             ctx.painting = false;
             ctx.inited=false;
             ctx.initViewport();
-            
+
             ctx.iframe.dojo.byId("fileSizeDiv").className="";
             var xhr = new XMLHttpRequest();
             xhr.open('HEAD', target.src, true);
@@ -1129,12 +1118,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
               }
             };
             xhr.send(null);
-            
+
         };
 
-        
+
         var url = useUrl;
-        
+
         if(!useUrl){
             url= this.baseFilterUrl;
             if(this.filters.length > 0){
@@ -1142,12 +1131,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             }
         }
         img.src = url +"?test=" + new Date().getTime()
-        
+
         this.currentUrl = url;
         this.iframe.dijit.byId("viewingUrl").set("value", (url.includes("://") ? url : location.protocol +"//"+  location.host + url), false);
         this.iframe.dojo.byId("showLink").href =  url.includes("://") ? url : location.protocol +"//"+  location.host + url;
         return;
-            
+
 
         img.src = url +"?test=" + new Date().getTime()
         this.currentUrl = url;

@@ -1100,6 +1100,32 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+	@DataProvider
+	public static Object[] getReservedTypeNames() {
+		return ContentTypeAPI.reservedStructureNames.toArray();
+	}
+
+	/**
+	 * Given scenario: Content type with reserved name set
+	 * Expected result: {@link IllegalArgumentException} should be thrown
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	@UseDataProvider("getReservedTypeNames")
+	public void testSave_GivenTypeWithReservedNameAndNotSystem_ShouldThrowException(final String name)
+			throws DotSecurityException, DotDataException {
+
+		APILocator.getContentTypeAPI(APILocator.systemUser())
+				.save(ContentTypeBuilder
+						.builder(SimpleContentType.class)
+						.folder(FolderAPI.SYSTEM_FOLDER)
+						.host(Host.SYSTEM_HOST)
+						.name(name) // setting a reserved name
+						.system(false) // system false!
+						.owner(user.getUserId())
+						.build());
+
+	}
+
 
 	@Test
 	@UseDataProvider("testCasesUpdateTypePermissions")

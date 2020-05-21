@@ -231,7 +231,7 @@
 			fields.get(0).getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
 				Field f0 = fields.get(0);
 				fields.remove(0);%>
-			<div id="<%=f0.getVelocityVarName()%>" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>">
+			<div id="tab_<%=f0.getVelocityVarName()%>" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>">
 		<%} else {	%>
 			<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>">
 		<%}%>
@@ -307,7 +307,7 @@
 							</div>
 						</div>
 
-                        <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
+                        <div id="tab_<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
                             <div class="content-edit__advaced-form">
 
                     <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {

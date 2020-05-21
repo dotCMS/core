@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class AppView {
 
-    private final long configurationsCount;
+    private final int configurationsCount;
 
     private final String key;
 
@@ -24,6 +24,9 @@ public class AppView {
     private final boolean allowExtraParams;
 
     @JsonInclude(Include.NON_NULL)
+    private final Integer sitesWithWarnings;
+
+    @JsonInclude(Include.NON_NULL)
     private final List<SiteView> sites;
 
     /**
@@ -31,13 +34,14 @@ public class AppView {
      * @param appDescriptor
      * @param configurationsCount
      */
-    public AppView(final AppDescriptor appDescriptor, final long configurationsCount) {
+    public AppView(final AppDescriptor appDescriptor, final int configurationsCount, final int sitesWithWarnings) {
         this.key = appDescriptor.getKey();
         this.name = appDescriptor.getName();
         this.description = appDescriptor.getDescription();
         this.iconUrl = appDescriptor.getIconUrl();
         this.allowExtraParams = appDescriptor.isAllowExtraParameters();
         this.configurationsCount = configurationsCount;
+        this.sitesWithWarnings = sitesWithWarnings == 0 ? null : sitesWithWarnings;
         this.sites = null;
     }
 
@@ -48,7 +52,7 @@ public class AppView {
      * @param configurationsCount
      * @param sites
      */
-    public AppView(final AppDescriptor appDescriptor, final long configurationsCount, final List<SiteView> sites) {
+    public AppView(final AppDescriptor appDescriptor, final int configurationsCount, final List<SiteView> sites) {
         this.key = appDescriptor.getKey();
         this.name = appDescriptor.getName();
         this.description = appDescriptor.getDescription();
@@ -56,6 +60,7 @@ public class AppView {
         this.allowExtraParams = appDescriptor.isAllowExtraParameters();
         this.configurationsCount = configurationsCount;
         this.sites = sites;
+        this.sitesWithWarnings = null;
     }
 
     /**
@@ -104,6 +109,14 @@ public class AppView {
      */
     public boolean isAllowExtraParams() {
         return allowExtraParams;
+    }
+
+    /**
+     * Number of potential issues per site (warnings)
+     * @return
+     */
+    public Integer getSitesWithWarnings() {
+        return sitesWithWarnings;
     }
 
     /**

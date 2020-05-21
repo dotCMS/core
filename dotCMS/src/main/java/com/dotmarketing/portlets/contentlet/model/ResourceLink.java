@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformer;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -20,6 +21,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.lang.text.StrBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -63,6 +65,8 @@ public class ResourceLink {
 
     private final boolean downloadRestricted;
 
+    private final String configuredImageURL;
+
     private ResourceLink(final String resourceLinkAsString, final String resourceLinkUriAsString,
             final String mimeType,
             final Contentlet fileAsset,
@@ -70,7 +74,8 @@ public class ResourceLink {
             final boolean editableAsText,
             final boolean downloadRestricted,
             final String versionPath,
-            final String idPath) {
+            final String idPath,
+             final String configuredImageURL) {
 
         this.resourceLinkAsString    = resourceLinkAsString;
         this.resourceLinkUriAsString = resourceLinkUriAsString;
@@ -81,6 +86,11 @@ public class ResourceLink {
         this.downloadRestricted      = downloadRestricted;
         this.versionPath             = versionPath;
         this.idPath                  = idPath;
+        this.configuredImageURL      = configuredImageURL;
+    }
+
+    public String getConfiguredImageURL() {
+        return configuredImageURL;
     }
 
     public String getResourceLinkAsString() {
@@ -138,14 +148,14 @@ public class ResourceLink {
             return build(request, user, contentlet, contentlet.isFileAsset()?FileAssetAPI.BINARY_FIELD: DotAssetContentType.ASSET_FIELD_VAR);
         }
 
-        public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet, final String velocityVarName) throws DotDataException, DotSecurityException {
+        public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet, final String fieldVelocityVarName) throws DotDataException, DotSecurityException {
 
-            final File binary           = Try.of(()->contentlet.getBinary(velocityVarName)).getOrNull();
+            final File binary           = Try.of(()->contentlet.getBinary(fieldVelocityVarName)).getOrNull();
             final Identifier identifier = getIdentifier(contentlet);
             if (binary==null || identifier == null && UtilMethods.isEmpty(identifier.getInode())){
 
                 return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, StringPool.BLANK, false, true,
-                        StringPool.BLANK, StringPool.BLANK);
+                        StringPool.BLANK, StringPool.BLANK, StringPool.BLANK);
             }
 
             Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
@@ -164,12 +174,45 @@ public class ResourceLink {
             final boolean downloadRestricted    = isDownloadPermissionBasedRestricted(contentlet, user);
             final String mimeType               = this.getMimiType(binary);
             final String fileAssetName          = binary.getName();
-            final Tuple2<String, String> resourceLink = this.createResourceLink(request, user, contentlet, identifier, binary, hostUrlBuilder.toString());
-            final Tuple2<String, String> versionPathIdPath = this.createVersionPathIdPath(contentlet, velocityVarName, binary);
+            final Tuple2<String, String> resourceLink      = this.createResourceLink(request, user, contentlet, identifier, binary, hostUrlBuilder.toString());
+            final Tuple2<String, String> versionPathIdPath = this.createVersionPathIdPath(contentlet, fieldVelocityVarName, binary);
+            final String configuredImageURL                = this.getConfiguredImageURL (contentlet, binary, host);
 
             return new ResourceLink(resourceLink._1(), resourceLink._2(), mimeType, contentlet,
-                    velocityVarName, isEditableAsText(mimeType, fileAssetName), downloadRestricted,
-                    versionPathIdPath._1(), versionPathIdPath._2());
+                    fieldVelocityVarName, isEditableAsText(mimeType, fileAssetName), downloadRestricted,
+                    versionPathIdPath._1(), versionPathIdPath._2(), configuredImageURL);
+        }
+
+        private String getConfiguredImageURL(final Contentlet contentlet, final File binary, final Host host) {
+
+            final  String pattern = Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}");
+            return replaceUrlPattern(pattern, contentlet, binary, host);
+        }
+
+        String replaceUrlPattern(final String pattern, final Contentlet contentlet, final File binary, final Host host) {
+
+            final String fileName  = binary.getName();
+            final String path      = "/dA/" + contentlet.getIdentifier() + "/";
+            final String extension = UtilMethods.getFileExtension(fileName);
+            final String shortyId  = contentlet.getIdentifier().replace(StringPool.DASH, StringPool.BLANK).substring(0, 10);
+
+            final StrBuilder    patternBuilder = new StrBuilder(pattern);
+
+            return patternBuilder
+                    .replaceAll("{name}",        fileName)
+                    .replaceAll("{fileName}",    fileName)
+                    .replaceAll("{path}",        path)
+                    .replaceAll("{extension}",   extension)
+                    .replaceAll("{languageId}",  String.valueOf(contentlet.getLanguageId()))
+                    .replaceAll("{hostname}",    host.getHostname())
+                    .replaceAll("{hostName}",    host.getHostname())
+                    .replaceAll("{inode}",       contentlet.getInode())
+                    .replaceAll("{hostId}",      host.getIdentifier())
+                    .replaceAll("{identifier}",  contentlet.getIdentifier())
+                    .replaceAll("{id}",          contentlet.getIdentifier())
+                    .replaceAll("{shortyInode}", contentlet.getInode().replace(StringPool.DASH, StringPool.BLANK).substring(0, 10))
+                    .replaceAll("{shortyId}",    shortyId)
+                    .replaceAll("{shortyIdentifier}",    shortyId).toString();
         }
 
         Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
