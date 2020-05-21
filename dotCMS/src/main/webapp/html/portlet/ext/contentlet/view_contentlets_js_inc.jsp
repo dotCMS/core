@@ -2387,11 +2387,11 @@
                         list.style.display = '';
                     }
 
-                    let dataViewButton = "<dot-data-view-button style=\"margin-right:32px" + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
+                    let dataViewButton = "<dot-data-view-button style=\"margin-left:24px" + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div>" + dataViewButton + "<div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>" + dataViewButton ;
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {
