@@ -9,7 +9,6 @@ import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -161,7 +160,6 @@ public class ViewContentletAction extends DotPortletAction {
         addAll = true;
     }
 
-    contentTypesList.removeIf(t->t.variable().equalsIgnoreCase(Host.HOST_VELOCITY_VAR_NAME));
     contentTypesList.removeIf(t->t.variable().equalsIgnoreCase("forms"));
 
     if (!addAll) {
