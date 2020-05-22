@@ -8,8 +8,8 @@ services:
   elasticsearch:
     image: "gcr.io/cicd-246518/es-open-distro:1.3.0"
     ports:
-      - "19200:9200"
-      - "19600:9600"
+      - "${SERVICE_HOST_PORT_PREFIX}9200:9200"
+      - "${SERVICE_HOST_PORT_PREFIX}9600:9600"
     environment:
       "PROVIDER_ELASTICSEARCH_HEAP_SIZE": '1500m'
       "PROVIDER_ELASTICSEARCH_DNSNAMES": 'elasticsearch'
