@@ -24,11 +24,11 @@ public abstract class FieldSql {
 			+ "field.searchable as searchable, unique_, field.mod_date as mod_date, inode.inode as inode, owner, idate from inode, field ";
 
 	public String findById = SELECT_ALL_FIELDS + " where inode.inode = field.inode and inode.inode =?";
-	public String findByContentType = SELECT_ALL_FIELDS + " where inode.inode = field.inode and structure_inode =? order by sort_order";
+	public String findByContentType = SELECT_ALL_FIELDS + " where inode.inode = field.inode and structure_inode =? order by sort_order, velocity_var_name";
 	public String findByContentTypeVar = SELECT_ALL_FIELDS
-			+ ", structure where inode.inode = field.inode and field.structure_inode = structure.inode and structure.velocity_var_name= ? order by sort_order";
+			+ ", structure where inode.inode = field.inode and field.structure_inode = structure.inode and structure.velocity_var_name= ? order by sort_order, velocity_var_name";
 	public String findByContentTypeAndRelationType = SELECT_ALL_FIELDS
-			+ ", structure where inode.inode = field.inode and structure_inode =? and field.field_relation_type= ? order by sort_order";
+			+ ", structure where inode.inode = field.inode and structure_inode =? and field.field_relation_type= ? order by sort_order, velocity_var_name";
 	
 	
 	public String findByContentTypeAndFieldVar = SELECT_ALL_FIELDS + " where inode.inode = field.inode and structure_inode =? and field.velocity_var_name=?";
