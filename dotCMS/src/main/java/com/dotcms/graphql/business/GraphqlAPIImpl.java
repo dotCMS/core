@@ -45,6 +45,7 @@ import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -85,9 +86,16 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     private volatile GraphQLSchema schema;
 
+    private RelationshipAPI relationshipAPI;
+
     public static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
     public GraphqlAPIImpl() {
+        this(APILocator.getRelationshipAPI());
+    }
+
+    public GraphqlAPIImpl(final RelationshipAPI relationshipAPI) {
+        this.relationshipAPI = relationshipAPI;
         // custom type mappings
         this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
         this.fieldClassGraphqlTypeMap.put(CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
@@ -215,7 +223,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         Relationship relationship;
 
         try {
-            relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
+            relationship = relationshipAPI.getRelationshipFromField(field,
                 APILocator.systemUser());
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
@@ -225,7 +233,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final ContentletRelationships.ContentletRelationshipRecords
             records = contentletRelationships.new ContentletRelationshipRecords(
             relationship,
-            APILocator.getRelationshipAPI().isChildField(relationship, field));
+            relationshipAPI.isChildField(relationship, field));
 
         GraphQLOutputType outputType = typesMap.get(relatedContentType.variable()) != null
             ? typesMap.get(relatedContentType.variable())
@@ -344,7 +352,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     }
 
     private ContentType getRelatedContentTypeForField(final Field field, final User user) throws DotSecurityException, DotDataException {
-        final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
+        final Relationship relationship = relationshipAPI.getRelationshipFromField(field,
             user);
 
         if(relationship==null) {
