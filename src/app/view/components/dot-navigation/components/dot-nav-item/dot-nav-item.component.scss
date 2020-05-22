@@ -69,7 +69,7 @@
     display: flex;
     justify-content: space-between;
     min-height: $navigation-item-height;
-    padding: 14px $basic-padding * 3 13px 23px; // top and bottom padding to get min 48px height
+    padding: 14px 22px 13px 25px; // top and bottom padding to get min 48px height
     position: relative;
     transition: background-color $basic-speed ease;
     width: $navigation-width;

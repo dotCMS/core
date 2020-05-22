@@ -27,12 +27,14 @@ describe('DotNavIconComponent', () => {
         fixture.detectChanges();
         const dotIconComponent: DotIconComponent = de.query(By.css('dot-icon')).componentInstance;
         expect(dotIconComponent).toBeDefined();
+        expect(dotIconComponent.size).toBe('18');
     });
 
     it('should have font awesome icon', () => {
         comp.icon = 'fa-test';
         fixture.detectChanges();
-        const faIcon: HTMLElement = de.query(By.css('.fa')).componentInstance;
-        expect(faIcon).toBeDefined();
+        const faIcon = de.query(By.css('.fa'));
+        expect(faIcon.componentInstance).toBeDefined();
+        expect(faIcon.nativeElement.style['font-size']).toBe('18px');
     });
 });
