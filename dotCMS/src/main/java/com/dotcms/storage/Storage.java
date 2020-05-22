@@ -9,72 +9,72 @@ import java.util.concurrent.Future;
  * Encapsulates an abstract storage, it provide the API to interact with whatever is behind the real storage:
  * it could be file system, db, s3, etc.
  *
- * An Storage follow the concept of a bucket which is a conceptual storage for an space,
+ * An Storage follow the concept of a group which is a conceptual storage for an space (such as folder, bucket, etc, depending on the storage),
  * on file system it could be an specific folder, on db a specific type and on s3 an actual bucket.
  * @author jsanca
  */
 public interface Storage {
 
     /**
-     * Returns true if exists the bucket
-     * @param bucketName {@link String} bucket name
+     * Returns true if exists the group
+     * @param groupName {@link String} group name
      * @return boolean
      */
-    boolean existsBucket(final String bucketName);
+    boolean existsGroup(final String groupName);
 
     /**
      * Returns true if the object on the path exists
-     * @param bucket     {@link String}
+     * @param groupName  {@link String}
      * @param objectPath {@link String}
      * @return boolean
      */
-    boolean existsObject(String bucket, String objectPath);
+    boolean existsObject(String groupName, String objectPath);
 
     /**
-     * Creates the bucket, returns true if ok
-     * @param bucketName {@link String} bucket name
+     * Creates the group, returns true if ok
+     * @param groupName {@link String} group name
      * @return boolean, true if ok
      */
-    boolean createBucket(final String bucketName);
+    boolean createGroup(final String groupName);
 
     /**
-     * Creates the bucket, returns true if ok
-     * @param bucketName {@link String} bucket name
+     * Creates the group, returns true if ok
+     * @param groupName    {@link String} group name
      * @param extraOptions {@link Map} depending on the implementation it might need extra options or not.
      * @return boolean, true if ok
      */
-    boolean createBucket(final String bucketName, final Map<String, Object> extraOptions);
+    boolean createGroup(final String groupName, final Map<String, Object> extraOptions);
 
     /**
-     * Deletes the bucket
-     * @param bucketName {@link String} bucket name
+     * Deletes the group
+     * @param groupName {@link String} group name
      * @return boolean true if deletes was ok.
      */
-    boolean deleteBucket(final String bucketName);
+    boolean deleteGroup(final String groupName);
 
     /**
-     * Deletes the object path on the bucket
-     * @param bucket {@link String} bucket name
-     * @param path   {@link String} object path
+     * Deletes the object path on the group
+     * @param groupName {@link String} group name
+     * @param path   {   @link String} object path
      * @return boolean true if deletes was ok.
      */
-    boolean deleteObject(String bucket, String path);
+    boolean deleteObject(String groupName, String path);
 
     /**
-     * List the buckets, the returns a list of object since the return would depend on the implementation.
+     * List the groups, the returns a list of object since the return would depend on the implementation.
      * @return List
      */
-    List<Object> listBuckets();
+    List<Object> listGroups();
 
     /**
      * Push a file to the storage, it will block until the operation is done
-     * @param bucketName {@link String} the bucket to upload
+     * @param groupName  {@link String} the group to upload
      * @param path       {@link String} path to upload the file
      * @param file       {@link File}   the actual file
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
-    Object pushFile(final String bucketName, final String path, final File file, final Map<String, Object> extraMeta);
+    Object pushFile(final String groupName, final String path, final File file, final Map<String, Object> extraMeta);
 
     /**
      * Push an object to the storage, uses a delegate to write the actual object to their own outputstream, it will block until the operation is done

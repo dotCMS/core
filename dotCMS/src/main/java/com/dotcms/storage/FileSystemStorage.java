@@ -32,31 +32,31 @@ public class FileSystemStorage implements Storage {
     }
 
     @Override
-    public boolean existsBucket(final String bucketName) {
+    public boolean existsGroup(final String groupName) {
 
-        return this.buckets.containsKey(bucketName) && this.buckets.get(bucketName).exists();
+        return this.buckets.containsKey(groupName) && this.buckets.get(groupName).exists();
     }
 
     @Override
-    public boolean existsObject(final String bucket, final String objectPath) {
+    public boolean existsObject(final String groupName, final String objectPath) {
 
-        return this.existsBucket(bucket) && new File(this.buckets.get(bucket), objectPath).exists();
+        return this.existsGroup(groupName) && new File(this.buckets.get(groupName), objectPath).exists();
     }
 
     @Override
-    public boolean createBucket(final String bucketName) {
+    public boolean createGroup(final String groupName) {
 
         throw new UnsupportedOperationException("On FileSystemStorage can not create buckets, they have to be previously defined");
     }
 
     @Override
-    public boolean createBucket(final String bucketName, final Map<String, Object> extraOptions) {
+    public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) {
 
         throw new UnsupportedOperationException("On FileSystemStorage can not create buckets, they have to be previously defined");
     }
 
     @Override
-    public boolean deleteBucket(final String bucketName) {
+    public boolean deleteGroup(final String groupName) {
 
         throw new UnsupportedOperationException("On FileSystemStorage can not delete buckets");
     }
@@ -67,24 +67,24 @@ public class FileSystemStorage implements Storage {
     }
 
     @Override
-    public List<Object> listBuckets() {
+    public List<Object> listGroups() {
 
         return new ImmutableList.Builder<>().addAll(this.buckets.keySet()).build();
     }
 
     @Override
-    public Object pushFile(final String bucketName,
+    public Object pushFile(final String groupName,
                        final String path,
                        final File file,
                        final Map<String, Object> extraMeta) {
 
-        if (!this.existsBucket(bucketName)) {
+        if (!this.existsGroup(groupName)) {
 
-            throw new IllegalArgumentException("The bucketName: " + bucketName +
+            throw new IllegalArgumentException("The bucketName: " + groupName +
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.buckets.get(bucketName);
+        final File bucketFile = this.buckets.get(groupName);
 
         if (null != file && file.exists() && file.canRead() && bucketFile.canWrite()) {
 
@@ -100,7 +100,7 @@ public class FileSystemStorage implements Storage {
         } else {
 
             throw new IllegalArgumentException("The file: " + file +
-                    ", is null, not exists or can not read. Also the bucket: " + bucketName +
+                    ", is null, not exists or can not read. Also the bucket: " + groupName +
                     " could not write");
         }
 
@@ -112,7 +112,7 @@ public class FileSystemStorage implements Storage {
                              final Object object, final Map<String, Object> extraMeta) {
 
 
-        if (!this.existsBucket(bucketName)) {
+        if (!this.existsGroup(bucketName)) {
 
             throw new IllegalArgumentException("The bucketName: " + bucketName +
                     ", does not have any file mapped");
@@ -176,7 +176,7 @@ public class FileSystemStorage implements Storage {
     public File pullFile(final String bucketName, final String path) {
 
         File clientFile = null;
-        if (!this.existsBucket(bucketName)) {
+        if (!this.existsGroup(bucketName)) {
 
             throw new IllegalArgumentException("The bucketName: " + bucketName +
                     ", does not have any file mapped");
@@ -207,7 +207,7 @@ public class FileSystemStorage implements Storage {
     public Object pullObject (final String bucketName, final String path, final ObjectReaderDelegate readerDelegate) {
 
         Object object = null;
-        if (!this.existsBucket(bucketName)) {
+        if (!this.existsGroup(bucketName)) {
 
             throw new IllegalArgumentException("The bucketName: " + bucketName +
                     ", does not have any file mapped");

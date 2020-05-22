@@ -2,8 +2,8 @@ package com.dotcms.storage;
 
 public class StorageKey {
 
-    private final String path;
-    private final String bucket;
+    private final String path;     // todo: rename to key
+    private final String bucket;  // rename to group
     private final String storage;
 
     private StorageKey(final Builder builder) {

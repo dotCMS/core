@@ -10,14 +10,14 @@ public interface HashBuilder {
      * Appends bytes to the algorithm
      * @param bytes byte []
      */
-    void append(final byte [] bytes);
+    HashBuilder append(final byte [] bytes);
 
     /**
      * Max quantity of bytes
      * @param bytes    byte [] array
      * @param maxBytes {@link Integer}
      */
-    void append(final byte [] bytes, final int maxBytes);
+    HashBuilder append(final byte [] bytes, final int maxBytes);
 
     /**
      * Build the hash as a hexadecimal string.

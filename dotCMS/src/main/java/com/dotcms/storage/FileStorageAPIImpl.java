@@ -134,7 +134,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         final String        storageType    = this.getStorageType (storageKey);
         final Storage       storage        = this.getStorageProvider().getStorage(storageType);
 
-        this.checkBucket  (storageKey, storage);
+        this.checkBucket  (storageKey, storage);  // todo: see if you want to remove this
         this.checkOverride(storage, generateMetaDataConfiguration);
 
         if (!storage.existsObject(storageKey.getBucket(), storageKey.getPath())) {
@@ -172,9 +172,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     private void checkBucket(final StorageKey storageKey, final Storage storage) {
 
-        if (!storage.existsBucket(storageKey.getBucket())) {
+        if (!storage.existsGroup(storageKey.getBucket())) {
 
-            storage.createBucket(storageKey.getBucket());
+            storage.createGroup(storageKey.getBucket());
         }
     }
 

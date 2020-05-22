@@ -180,14 +180,16 @@ public class Encryptor {
 		}
 
 		@Override
-		public void append(final byte[] bytes) {
+		public HashBuilder append(final byte[] bytes) {
 
 			this.sha256.update(bytes);
+			return this;
 		}
 
 		@Override
-		public void append(final byte [] bytes, final int maxBytes) {
+		public HashBuilder append(final byte [] bytes, final int maxBytes) {
 			this.sha256.update(bytes, 0, maxBytes);
+			return this;
 		}
 
 		@Override

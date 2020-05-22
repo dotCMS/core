@@ -1,27 +1,9 @@
 package com.dotcms.storage;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.enterprise.publishing.storage.AWSS3Storage;
-import com.dotcms.security.apps.AppSecrets;
-import com.dotcms.security.apps.Secret;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Logger;
-import io.vavr.control.Try;
+public class S3Storage {
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
-
+}
+/*
 public class S3Storage implements Storage {
 
     private final Map<String, com.dotcms.enterprise.publishing.storage.Storage> storageByHostMap = new ConcurrentHashMap<>();
@@ -133,13 +115,77 @@ public class S3Storage implements Storage {
     }
 
     @Override
-    public Object pushFile(String bucketName, String path, File file, Map<String, Object> extraMeta) {
-        return null;
+    public Object pushFile(final String bucketName, final String path, final File file, final Map<String, Object> extraMeta) {
+
+        UploadResult result = null;
+
+        Logger.debug(this, ()->"Pushing File: " + file);
+
+        final ObjectMetadata objectMetadata = new ObjectMetadata();
+        //setMD5Based64(file, objectMetadata); // todo: set the extraMeta.
+        //setContentType(file, objectMetadata);
+        try (InputStream is = Files.newInputStream(file.toPath())) {
+
+            objectMetadata.setContentLength(file.length());
+            final PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, path, is, objectMetadata);
+            final Upload upload = this.getStorage().uploadFile(putObjectRequest);
+
+            if (null != upload) {
+
+                result = upload.waitForUploadResult();
+                Logger.debug(this, "File: " + file + " has been uploaded, result: " + result);
+            }
+        } catch (IOException | InterruptedException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        }
+
+        return result;
+    }
+
+    private Tuple2<Integer, InputStream> objectToStream(final ObjectWriterDelegate writerDelegate,
+                                                        final Object object) {
+
+        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();  // todo not sure if I should compress this
+        writerDelegate.write(byteArrayOutputStream, object);
+        return Tuple.of(byteArrayOutputStream.size(), new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
     }
 
     @Override
-    public Object pushObject(String bucketName, String path, ObjectWriterDelegate writerDelegate, Object object, Map<String, Object> extraMeta) {
-        return null;
+    public Object pushObject(final String bucketName,
+                             final String path,
+                             final ObjectWriterDelegate writerDelegate,
+                             final Object object,
+                             final Map<String, Object> extraMeta) {
+
+        UploadResult result = null;
+
+        Logger.debug(this, ()->"Pushing Object: " + object);
+
+        final ObjectMetadata objectMetadata = new ObjectMetadata();
+        //setMD5Based64(file, objectMetadata); // todo: set the extraMeta.
+        //setContentType(file, objectMetadata);
+        final Tuple2<Integer, InputStream> sizeAndStream = this.objectToStream(writerDelegate, object);
+        final long objectLength = ConversionUtils.toLong(sizeAndStream._1(), 0l);
+        try (InputStream is = sizeAndStream._2()) {
+
+            objectMetadata.setContentLength(objectLength);
+            final PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, path, is, objectMetadata);
+            final Upload upload = this.getStorage().uploadFile(putObjectRequest);
+
+            if (null != upload) {
+
+                result = upload.waitForUploadResult();
+                Logger.debug(this, "Object: " + object + " has been uploaded, result: " + result);
+            }
+        } catch (IOException | InterruptedException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        }
+
+        return result;
     }
 
     @Override
@@ -172,3 +218,4 @@ public class S3Storage implements Storage {
         return null;
     }
 }
+*/
