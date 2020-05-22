@@ -758,6 +758,12 @@ public class GraphqlAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to rest: {@link GraphqlAPI#getSchema()}
+     * Given scenario: A bad relationship field which returns null when trying to get the
+     * {@link com.dotmarketing.portlets.structure.model.Relationship} out of it.
+     * Expected result: The schema should be able to generate but without that field present
+     */
     @Test
     public void testGetSchema_GivenFailuresInRelationshipField_SchemaShouldStillGenerate()
             throws DotDataException, DotSecurityException {
