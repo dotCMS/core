@@ -8,6 +8,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.SystemException;
+import java.util.Locale;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -94,6 +96,13 @@ public class LanguageUtilTest {
         Assert.assertEquals(expectedBaseId,   LanguageUtil.getLanguageId("FR"));
         APILocator.getLanguageAPI().deleteLanguage(baseLanguage);
         APILocator.getLanguageAPI().deleteLanguage(frLanguage);
+    }
+
+    @Test
+    public void test_getAllMessagesByLocale_success(){
+        final Locale locale = APILocator.getLanguageAPI().getDefaultLanguage().asLocale();
+        final Map messagesMap = LanguageUtil.getAllMessagesByLocale(locale);
+        Assert.assertNotNull(messagesMap);
     }
 
 }

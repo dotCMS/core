@@ -1156,6 +1156,227 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "getAllMessages",
+			"item": [
+				{
+					"name": "getAllMessages Success without Query Param",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c4b83944-7ff0-4ce8-9bf6-0ae102ae7710",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/i18n/all",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"i18n",
+								"all"
+							]
+						},
+						"description": "If the query param is not set it will use the default language"
+					},
+					"response": []
+				},
+				{
+					"name": "getAllMessages Success with Language And Country Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2295b4d9-6993-475c-97af-bea0f75c1517",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/i18n/all?language=en_us",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"i18n",
+								"all"
+							],
+							"query": [
+								{
+									"key": "language",
+									"value": "en_us"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getAllMessages Success with LanguageId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2a0f31b6-69cb-4817-819c-f7d06b1bbebb",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/i18n/all?language=1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"i18n",
+								"all"
+							],
+							"query": [
+								{
+									"key": "language",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getAllMessages BadRequest with LanguageId Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f6f2af93-ad7b-48ee-a2c5-b1b996ba4e04",
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/i18n/all?language=79875675",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"i18n",
+								"all"
+							],
+							"query": [
+								{
+									"key": "language",
+									"value": "79875675"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getAllMessages BadRequest with Language And Country Code Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6915d5bc-a516-4db6-ac7d-cfc9e3051cd7",
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/i18n/all?language=tt_tt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"i18n",
+								"all"
+							],
+							"query": [
+								{
+									"key": "language",
+									"value": "tt_tt"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
