@@ -676,6 +676,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
             if (listener != null) {
+                Logger.info(this.getClass(), "bulkAsync send");
                 RestHighLevelClientProvider.getInstance()
                         .getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
             } else {

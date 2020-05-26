@@ -6,6 +6,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.reindex.ReindexEntry;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -28,7 +29,7 @@ public class ESReadOnlyMonitor {
     private final RoleAPI roleAPI;
     private final SystemMessageEventUtil systemMessageEventUtil;
 
-    private boolean started;
+    private AtomicBoolean started;
     private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
 
     final Runnable runnable = () -> ESReadOnlyMonitor.this.putCurrentIndicesToWriteMode();
@@ -36,7 +37,7 @@ public class ESReadOnlyMonitor {
     private ESReadOnlyMonitor(final SystemMessageEventUtil systemMessageEventUtil, final RoleAPI roleAPI) {
         this.systemMessageEventUtil = systemMessageEventUtil;
         this.roleAPI = roleAPI;
-        started = false;
+        started.set(false);
 
         scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
         scheduledThreadPoolExecutor.setContinueExistingPeriodicTasksAfterShutdownPolicy(true);
@@ -64,14 +65,17 @@ public class ESReadOnlyMonitor {
         return Singleton.INSTANCE;
     }
 
-    public synchronized void start(final ReindexEntry reindexEntry, final String cause){
-        if (!started) {
+    public void start(final ReindexEntry reindexEntry, final String cause){
+        Logger.info(this.getClass(), "Checking to Start " + reindexEntry);
+        if (!started.compareAndSet(false, true)) {
             Logger.error(this.getClass(), "Reindex failed for :" + reindexEntry + " because " + cause);
 
             if (ESIndexUtil.isAnyCurrentIndicesReadOnly()) {
+                ReindexThread.setCurrentIndexReadOnly(true);
                 sendLargeMessage("es.index.read.only.message");
-                started = true;
                 startMonitor();
+            } else {
+                started.set(false);
             }
         }
     }
@@ -92,8 +96,11 @@ public class ESReadOnlyMonitor {
 
     private void putCurrentIndicesToWriteMode() {
         try {
+            Logger.info(this.getClass(), "putCurrentIndicesToWriteMode");
+            Logger.debug(this.getClass(), "Trying to set the current indices to Write mode");
             ESIndexUtil.putCurrentIndicesToWriteMode();
             sendLargeMessage("es.index.write.allow.message");
+            ReindexThread.setCurrentIndexReadOnly(false);
 
             this.stop();
         } catch (final ESResponseException e) {
@@ -102,11 +109,12 @@ public class ESReadOnlyMonitor {
     }
 
     private void startMonitor() {
+        Logger.info(this.getClass(), "Starting Monitor");
         scheduledThreadPoolExecutor.scheduleAtFixedRate(runnable, 0, 1, TimeUnit.MINUTES);
     }
 
-    private synchronized void stop() {
+    private void stop() {
        this.scheduledThreadPoolExecutor.shutdown();
-        this.started = false;
+        this.started.set(false);
     }
 }
