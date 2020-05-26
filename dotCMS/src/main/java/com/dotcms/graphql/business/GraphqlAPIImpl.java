@@ -45,6 +45,7 @@ import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -189,7 +190,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                 if (field instanceof RelationshipField) {
                     try {
                         handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
-                    } catch(Exception e) {
+                    } catch(DotStateException e) {
                         Logger.error(this, "Unable to create relationship field", e);
                     }
                 } else {
@@ -217,7 +218,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         try {
             relatedContentType = getRelatedContentTypeForField(field, APILocator.systemUser());
         } catch (DotSecurityException | DotDataException e) {
-            throw new DotRuntimeException("Unable to create relationship field type for field: " + contentType.variable() + "." + field.variable(), e);
+            throw new DotStateException("Unable to create relationship field type for field: " + contentType.variable() + "." + field.variable(), e);
         }
 
         Relationship relationship;
