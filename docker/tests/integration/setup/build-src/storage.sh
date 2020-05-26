@@ -62,10 +62,14 @@ echo ""
 logURL="https://storage.googleapis.com/${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_COMMIT_FOLDER}/logs/dotcms.log"
 logsLink="<h2 class=\"summaryGroup infoBox\" style=\"margin: 40px; padding: 15px;\"><a href=\"${logURL}\" target=\"_blank\">dotcms.log</a></h2>"
 
-if [[ "${TEST_TYPE}" == "unit"  ]]; then
+if [[ "${TEST_TYPE}" == "unit" ]]; then
   echo "
   ${logsLink}
   " >> ${outputFolder}/reports/html/index.html
+elif [[ "${TEST_TYPE}" == "curl" ]]; then
+  echo "
+  ${logsLink}
+  " >> ${outputFolder}/reports/html/curlTest/index.html
 else
   echo "
   ${logsLink}

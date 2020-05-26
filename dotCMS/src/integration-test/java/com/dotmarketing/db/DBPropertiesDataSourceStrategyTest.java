@@ -12,6 +12,7 @@ import com.dotmarketing.util.Constants;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,11 +69,11 @@ public class DBPropertiesDataSourceStrategyTest {
         final HikariDataSource testDatasource = (HikariDataSource) DbConnectionFactory.getDataSource();
 
         final File tempFile = createTempFile(
-                "connection_db_driver=" + testDatasource.getDriverClassName() + "\n"
-                        + "connection_db_base_url=" + testDatasource.getJdbcUrl() + "\n"
-                        + "connection_db_username=" + testDatasource.getUsername() + "\n"
-                        + "connection_db_password=" + testDatasource.getPassword() + "\n"
-                        + "connection_db_validation_query=" + testDatasource.getConnectionTestQuery());
+                "driverClassName=" + testDatasource.getDriverClassName() + "\n"
+                        + "jdbcUrl=" + testDatasource.getJdbcUrl() + "\n"
+                        + "username=" + testDatasource.getUsername() + "\n"
+                        + "password=" + testDatasource.getPassword() + "\n"
+                        + "connectionTestQuery=" + testDatasource.getConnectionTestQuery());
 
         final DataSource dataSource = new DBPropertiesDataSourceStrategy(tempFile).apply();
 
@@ -84,16 +85,20 @@ public class DBPropertiesDataSourceStrategyTest {
     @Test
     public void testGetHikariConfigWithValidFileShouldPass()
             throws IOException, ConfigurationException {
-        final File tempFile = createTempFile("connection_db_driver=org.postgresql.Driver\n"
-                + "connection_db_base_url=jdbc:postgresql://localhost/dotcms\n"
-                + "connection_db_username=postgres\n"
-                + "connection_db_password=postgres\n"
-                + "connection_db_validation_query=SELECT 1");
+        final File tempFile = createTempFile("driverClassName=org.postgresql.Driver\n"
+                + "jdbcUrl=jdbc:postgresql://localhost/dotcms\n"
+                + "username=postgres\n"
+                + "password=postgres\n"
+                + "connectionTestQuery=SELECT 1\n"
+                + "maximumPoolSize=60\n"
+                + "idleTimeout=10000\n"
+                + "maxLifetime=60000\n"
+                + "leakDetectionThreshold=60000");
 
         final PropertiesConfiguration properties = new PropertiesConfiguration();
-        properties.load(tempFile);
+        properties.load(new FileInputStream(tempFile));
         final HikariConfig config = new DBPropertiesDataSourceStrategy(tempFile)
-                .getHikariConfig(properties);
+                .getHikariConfig();
         validateConfiguration(config, properties);
     }
 
@@ -108,19 +113,17 @@ public class DBPropertiesDataSourceStrategyTest {
             final PropertiesConfiguration properties) {
         assertNotNull(config);
         assertEquals(Constants.DATABASE_DEFAULT_DATASOURCE, config.getPoolName());
-        assertEquals(properties.getString("connection_db_driver"), config.getDriverClassName());
-        assertEquals(properties.getString("connection_db_base_url"), config.getJdbcUrl());
-        assertEquals(properties.getString("connection_db_username"), config.getUsername());
-        assertEquals(properties.getString("connection_db_password"), config.getPassword());
-        assertEquals(properties.getInt("connection_db_max_total", 60), config.getMaximumPoolSize());
-        assertEquals(properties.getInt("connection_db_max_idle", 10) * 1000,
-                config.getIdleTimeout());
-        assertEquals(properties.getInt("connection_db_max_wait", 60000), config.getMaxLifetime());
-        assertEquals(properties.getString("connection_db_validation_query"),
-                config.getConnectionTestQuery());
-        assertEquals(properties.getInt("connection_db_leak_detection_threshold", 60000),
+        assertEquals(properties.getString("driverClassName"), config.getDriverClassName());
+        assertEquals(properties.getString("jdbcUrl"), config.getJdbcUrl());
+        assertEquals(properties.getString("username"), config.getUsername());
+        assertEquals(properties.getString("password"), config.getPassword());
+        assertEquals(properties.getInt("maximumPoolSize"), config.getMaximumPoolSize());
+        assertEquals(properties.getInt("idleTimeout"),config.getIdleTimeout());
+        assertEquals(properties.getInt("maxLifetime"), config.getMaxLifetime());
+        assertEquals(properties.getString("connectionTestQuery"), config.getConnectionTestQuery());
+        assertEquals(properties.getInt("leakDetectionThreshold"),
                 config.getLeakDetectionThreshold());
-        assertEquals(properties.getString("connection_db_default_transaction_isolation"),
+        assertEquals(properties.getString("transactionIsolation"),
                 config.getTransactionIsolation());
     }
 
@@ -132,7 +135,7 @@ public class DBPropertiesDataSourceStrategyTest {
     private File createTempFile(final String content) throws IOException {
 
         final File tempTestFile = File
-                .createTempFile("TestDockerSecrets_" + new Date().getTime(), ".txt");
+                .createTempFile("TestDBProperties_" + new Date().getTime(), ".txt");
         FileUtils.writeStringToFile(tempTestFile, content);
 
         return tempTestFile;

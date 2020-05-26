@@ -7,12 +7,12 @@ services:
 
   # https://hub.docker.com/_/postgres
   database:
-    image: "postgres:10-alpine"
+    image: "postgres:11-alpine"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: dotcms
     ports:
-      - "15432:5432"
+      - "${SERVICE_HOST_PORT_PREFIX}5432:5432"
     volumes:
       - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
