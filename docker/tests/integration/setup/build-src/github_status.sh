@@ -22,7 +22,7 @@ then
     reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/index.html"
     statusesContext="Travis CI - [Unit tests]"
   elif [[ "${TEST_TYPE}" == "curl" ]]; then
-    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/curl/index.html"
+    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/curlTest/index.html"
     statusesContext="Travis CI [Curl tests] - [${databaseType}]"
   else
     reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/integrationTest/index.html"
