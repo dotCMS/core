@@ -1,9 +1,7 @@
-package com.dotcms.util.user;
+package com.dotcms.util;
 
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.FileUtil;
-import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -12,13 +10,8 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * This {@link Iterable} receives a file and split in into a smaller files (as byte array).

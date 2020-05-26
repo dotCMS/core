@@ -78,14 +78,14 @@ public interface Storage {
 
     /**
      * Push an object to the storage, uses a delegate to write the actual object to their own outputstream, it will block until the operation is done
-     * @param bucketName {@link String} the bucket to upload
+     * @param groupName {@link String} the group to upload
      * @param path       {@link String} path to upload the file
      * @param writerDelegate     {@link ObjectWriterDelegate} stream to upload
      * @param object     {@link Object} object to write into the storage
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
-    Object pushObject(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate, final Object object, final Map<String, Object> extraMeta);
+    Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate, final Object object, final Map<String, Object> extraMeta);
 
     /**
      * Push a file to the storage, it will block until the operation is done
@@ -112,41 +112,41 @@ public interface Storage {
      * Returns a local with the path contains on the storage, keep in mind that depending on the implementation it could be the actual file
      * or it could be a temporal file that will be deleted.
      * This will block until the file is pulled.
-     * @param bucketName {@link String} bucket name
+     * @param groupName {@link String} group name
      * @param path {@link String}
      * @return File
      */
-    File pullFile (final String bucketName, final String path);
+    File pullFile (final String groupName, final String path);
 
     /**
      * Pull a stream from the storage and read as an object
      *
-     * @param bucketName {@link String}  bucket name to pull
+     * @param groupName {@link String}  group name to pull
      * @param path {@link String} path to pull the file
      * @param readerDelegate {@link ObjectReaderDelegate} to reads the object
      */
-    Object pullObject (final String bucketName, final String path, final ObjectReaderDelegate readerDelegate);
+    Object pullObject (final String groupName, final String path, final ObjectReaderDelegate readerDelegate);
 
     /**
      * Returns a local with the path contains on the storage, keep in mind that depending on the implementation it could be the actual file
      * or it could be a temporal file that will be deleted.
      *
-     * @param bucketName {@link String} bucket name
+     * @param groupName {@link String} group name
      * @param path {@link String}
      * @return Future File, the future will return the file when done
      */
-    Future<File> pullFileAsync (final String bucketName, final String path);
+    Future<File> pullFileAsync (final String groupName, final String path);
 
     /**
      * Returns a local with the path contains on the storage, keep in mind that depending on the implementation it could be the actual file
      * or it could be a temporal file that will be deleted.
      *
-     * @param bucketName {@link String} bucket name
+     * @param groupName {@link String} group name
      * @param path {@link String}
      * @param readerDelegate {@link ObjectReaderDelegate} to reads the object
      * @return Future File, the future will return the file when done
      */
-    Future<Object> pullObjectAsync (final String bucketName, final String path, final ObjectReaderDelegate readerDelegate);
+    Future<Object> pullObjectAsync (final String groupName, final String path, final ObjectReaderDelegate readerDelegate);
 
 
 

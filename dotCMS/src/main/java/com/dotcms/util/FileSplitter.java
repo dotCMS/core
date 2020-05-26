@@ -1,6 +1,5 @@
 package com.dotcms.util;
 
-import com.dotcms.util.user.FileJoiner;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;

@@ -17,6 +17,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
+/**
+ * Represents a Storage on the file system
+ * The groups here are folder previously defined, you can subscribe more by using {@link #addBucketMapping(String, File)}
+ * @author jsanca 
+ */
 public class FileSystemStorage implements Storage {
 
     private final Map<String, File> buckets = new ConcurrentHashMap<>();
@@ -108,17 +113,17 @@ public class FileSystemStorage implements Storage {
     }
 
     @Override
-    public Object pushObject(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate,
+    public Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate,
                              final Object object, final Map<String, Object> extraMeta) {
 
 
-        if (!this.existsGroup(bucketName)) {
+        if (!this.existsGroup(groupName)) {
 
-            throw new IllegalArgumentException("The bucketName: " + bucketName +
+            throw new IllegalArgumentException("The bucketName: " + groupName +
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.buckets.get(bucketName);
+        final File bucketFile = this.buckets.get(groupName);
 
         if (bucketFile.canWrite()) {
 
@@ -140,7 +145,7 @@ public class FileSystemStorage implements Storage {
             }
         } else {
 
-            throw new IllegalArgumentException("The bucket: " + bucketName + " could not write");
+            throw new IllegalArgumentException("The bucket: " + groupName + " could not write");
         }
 
         return true;
@@ -173,16 +178,16 @@ public class FileSystemStorage implements Storage {
     }
 
     @Override
-    public File pullFile(final String bucketName, final String path) {
+    public File pullFile(final String groupName, final String path) {
 
         File clientFile = null;
-        if (!this.existsGroup(bucketName)) {
+        if (!this.existsGroup(groupName)) {
 
-            throw new IllegalArgumentException("The bucketName: " + bucketName +
+            throw new IllegalArgumentException("The bucketName: " + groupName +
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.buckets.get(bucketName);
+        final File bucketFile = this.buckets.get(groupName);
 
         if (bucketFile.canRead()) {
 
@@ -197,23 +202,23 @@ public class FileSystemStorage implements Storage {
             }
         } else {
 
-            throw new IllegalArgumentException("The bucket: " + bucketName + " could not read");
+            throw new IllegalArgumentException("The bucket: " + groupName + " could not read");
         }
 
         return clientFile;
     }
 
     @Override
-    public Object pullObject (final String bucketName, final String path, final ObjectReaderDelegate readerDelegate) {
+    public Object pullObject (final String groupName, final String path, final ObjectReaderDelegate readerDelegate) {
 
         Object object = null;
-        if (!this.existsGroup(bucketName)) {
+        if (!this.existsGroup(groupName)) {
 
-            throw new IllegalArgumentException("The bucketName: " + bucketName +
+            throw new IllegalArgumentException("The bucketName: " + groupName +
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.buckets.get(bucketName);
+        final File bucketFile = this.buckets.get(groupName);
 
         if (bucketFile.canRead()) {
 
@@ -236,25 +241,25 @@ public class FileSystemStorage implements Storage {
             }
         } else {
 
-            throw new IllegalArgumentException("The bucket: " + bucketName + " could not read");
+            throw new IllegalArgumentException("The bucket: " + groupName + " could not read");
         }
 
         return object;
     }
 
     @Override
-    public Future<File> pullFileAsync(final String bucketName, final String path) {
+    public Future<File> pullFileAsync(final String groupName, final String path) {
 
         return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
-                ()-> this.pullFile(bucketName, path)
+                ()-> this.pullFile(groupName, path)
         );
     }
 
     @Override
-    public Future<Object> pullObjectAsync (final String bucketName, final String path, final ObjectReaderDelegate readerDelegate) {
+    public Future<Object> pullObjectAsync (final String groupName, final String path, final ObjectReaderDelegate readerDelegate) {
 
         return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
-                ()-> this.pullObject(bucketName, path, readerDelegate)
+                ()-> this.pullObject(groupName, path, readerDelegate)
         );
     }
 }

@@ -16,6 +16,7 @@ import com.dotcms.storage.FileStorageAPI;
 import com.dotcms.storage.GenerateMetaDataConfiguration;
 import com.dotcms.storage.RequestMetaData;
 import com.dotcms.storage.StorageKey;
+import com.dotcms.storage.StorageType;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -24,6 +25,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -31,12 +33,15 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.io.FilenameUtils;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
 
@@ -44,21 +49,34 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Path("/v1/storage")
 public class FileStorageResource {
@@ -87,6 +105,82 @@ public class FileStorageResource {
         this(APILocator.getFileStorageAPI(), new WebResource(),
                 new MultiPartUtils(), APILocator.getContentletAPI(), APILocator.getContentletMetadataAPI());
     }
+
+    @GET
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public final Response addFileToStorage(@Context final HttpServletRequest request,
+                                           @Context final HttpServletResponse response,
+                                           @QueryParam("path") final String path) {
+
+
+        final String storageType = Config.getStringProperty("DEFAULT_STORAGE_TYPE", StorageType.FILE_SYSTEM.name());
+
+        Logger.debug(this, ()-> "Getting the file: " + path + " from the storage: " + storageType);
+
+        final File   file        = this.fileStorageAPI.getStorageProvider().getStorage(storageType).pullFile("files", path);
+        final String fileName    = FilenameUtils.getName(path);
+
+        return Response.ok(
+                new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output)  {
+                        try (ZipOutputStream zoutput = new ZipOutputStream(output);
+                                InputStream fileInput = Files.newInputStream(file.toPath())) {
+
+                            int   bytesRead      = 0;
+                            final byte[] buffer  = new byte[512];
+                            zoutput.putNextEntry(new ZipEntry(path));
+
+                            while ((bytesRead = fileInput.read(buffer)) > 0) {
+
+                                zoutput.write(buffer, 0, bytesRead);
+                            }
+
+                            zoutput.closeEntry();
+                        } catch (Exception e) {
+
+                            Logger.warn(this.getClass(), e.getMessage(), e);
+                            throw new DotRuntimeException(e.getMessage());
+                        }
+                    }
+                },
+                "application/zip")
+                .header("content-disposition", "attachment; filename=" + fileName + ".zip")
+                .build();
+    }
+
+
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response addFileToStorage(@Context final HttpServletRequest request,
+                                           @Context final HttpServletResponse response,
+                                           final FormDataMultiPart multipart) throws IOException, JSONException {
+
+        final Tuple2<Map<String,Object>, List<File>> bodyAndBinaries =
+                this.multiPartUtils.getBodyMapAndBinariesFromMultipart(multipart);
+        final List<File> files            = bodyAndBinaries._2();
+
+        final ImmutableMap.Builder<File, Object> bodyResultBuilder = new ImmutableMap.Builder<>();
+        if (!UtilMethods.isSet(files)) {
+
+            throw new BadRequestException("Must send files");
+        }
+
+        for (final File file : files) {
+
+            final String storageType = Config.getStringProperty("DEFAULT_STORAGE_TYPE", StorageType.FILE_SYSTEM.name());
+            bodyResultBuilder.put(file, this.fileStorageAPI.getStorageProvider().getStorage(storageType)
+                    .pushFile("files", File.separator + file.getName(), file, Collections.emptyMap()));
+        }
+
+        return Response.ok(new ResponseEntityView(bodyResultBuilder.build())).build();
+    }
+
 
     @PUT
     @Path("/metadata/basic")

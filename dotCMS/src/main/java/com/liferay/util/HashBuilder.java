@@ -1,4 +1,4 @@
-package com.liferay.util;
+package com.liferay.util;  // todo: move out side from here
 
 /**
  * Encapsulates a builder for a hash.

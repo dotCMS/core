@@ -67,6 +67,7 @@ public class DotConnect {
 
     private static Map<Class, StatementObjectSetter> statementSetterHandlerMap =
             map(DotTimezonedTimestamp.class, DotConnect::setTimestampWithTimezone);
+    private int fetchSize = -1;
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
@@ -595,6 +596,11 @@ public class DotConnect {
                 }
 
                 // statement.setMaxRows(maxRows);
+                if (this.fetchSize > 0) {
+
+                    statement.setFetchSize(this.fetchSize);
+                }
+
                 Logger.debug(this, "SQL = " + statement.toString());
                 for (int i = 0; i < paramList.size(); i++) {
                     Object param = paramList.get(i);
@@ -1241,4 +1247,9 @@ public class DotConnect {
         }
     }
 
+    public DotConnect setFetchSize(final int fetchSize) {
+
+        this.fetchSize = fetchSize;
+        return this;
+    }
 }

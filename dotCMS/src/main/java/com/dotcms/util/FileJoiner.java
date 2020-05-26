@@ -1,4 +1,4 @@
-package com.dotcms.util.user;
+package com.dotcms.util;
 
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -13,6 +13,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.function.Function;
 
+/**
+ * A File Joiner is a class take chucks of a file (they could be an actual file [previously splitted]) or a collection of byte chucks.
+ * or both.
+ * In case you are gonna use the file instead of the raw bytes, you should need to define a buffer previous by passing the chuck file of the
+ * diff pieces (by default is 2mb) witch is the same default of the {@link FileSplitter} and {@link FileByteSplitter}
+ * @author jsanca
+ */
 public class FileJoiner implements AutoCloseable, Flushable, Closeable {
 
     private final OutputStream outputStream;
@@ -35,11 +42,11 @@ public class FileJoiner implements AutoCloseable, Flushable, Closeable {
         this (FileUtil.createOutputStream(file), FileJoiner::createCompressorOutputStream, CHUNK_SIZE);
     }
 
-    public FileJoiner(final OutputStream outputStream) throws IOException {
+    public FileJoiner(final OutputStream outputStream) {
         this (outputStream, FileJoiner::createCompressorOutputStream, CHUNK_SIZE);
     }
 
-    public FileJoiner(final OutputStream outputStream, final int bufferSize) throws IOException {
+    public FileJoiner(final OutputStream outputStream, final int bufferSize) {
         this (outputStream, FileJoiner::createCompressorOutputStream, bufferSize);
     }
 
@@ -68,7 +75,7 @@ public class FileJoiner implements AutoCloseable, Flushable, Closeable {
         }
     }
 
-    public void join (final byte[] bytes, int offset, int length) {
+    public void join (final byte[] bytes, final int offset, final int length) {
 
         try {
 
