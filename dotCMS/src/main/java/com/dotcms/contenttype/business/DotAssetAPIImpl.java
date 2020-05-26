@@ -16,6 +16,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +107,9 @@ public class DotAssetAPIImpl implements DotAssetAPI {
         final boolean isSystemHost         = null == contentTypeHostId || contentTypeHostId.equals(systemHostId);
         final Map<String, Field>  fieldMap = contentType.fieldMap();
         String [] mimeTypeFieldVariables   = new String [] { ALL_MIME_TYPE };
-        final List<FieldVariable> fieldVariables = fieldMap.get(DotAssetContentType.ASSET_FIELD_VAR).fieldVariables();
+        final List<FieldVariable> fieldVariables = fieldMap.containsKey(DotAssetContentType.ASSET_FIELD_VAR)?
+                fieldMap.get(DotAssetContentType.ASSET_FIELD_VAR).fieldVariables(): Collections.emptyList();
+
         if (UtilMethods.isSet(fieldVariables)) {
 
             final Optional<FieldVariable> fieldVariableOpt = fieldVariables.stream().filter(fieldVariable ->

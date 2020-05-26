@@ -12,6 +12,6 @@ services:
     environment:
       ORACLE_PWD: oracle
     ports:
-      - "11521:1521"
+      - "${SERVICE_HOST_PORT_PREFIX}1521:1521"
     volumes:
       - ./setup/db/oracle/init-scripts:/docker-entrypoint-initdb.d/setup

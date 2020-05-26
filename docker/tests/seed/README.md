@@ -1,7 +1,7 @@
-# DOTCMS INTEGRATION TESTS SEED
+# DOTCMS INTEGRATION AND CURL TESTS SEED
 
 This image contains the source files of dotCMS.  It consists of a clone of the dotcms git repo and includes the pre-downloaded gradle dependencies from the time this image was created.  
-It is intended to act as the build seed when running dotcms integration tests images, so these dependencies do not need to be downloaded with every build.
+It is intended to act as the build seed when running dotcms integration and curl tests images, so these dependencies do not need to be downloaded with every build.
 
 ## How to update
 
