@@ -8,6 +8,9 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -28,7 +31,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -61,7 +63,6 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.API;
 
 @RunWith(DataProviderRunner.class)
 public class ESContentFactoryImplTest extends IntegrationTestBase {
@@ -700,5 +701,37 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         assertTrue(hits5.getTotalHits().value > 0);
         
 
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#translateQuery(String, String)}
+     * Given Scenario: Perform a query with a community license
+     * ExpectedResult: The query should contain a filter by {@link BaseContentType#PERSONA} and {@link BaseContentType#FORM}
+     */
+    @Test
+    public void test_translateQueryWithoutLicense() throws Exception {
+        runNoLicense(() -> {
+            final TranslatedQuery translatedQuery = ESContentFactoryImpl
+                    .translateQuery("+contentType:Host", null);
+            assertTrue(translatedQuery.getQuery()
+                    .contains("-basetype:" + BaseContentType.PERSONA.getType()));
+            assertTrue(translatedQuery.getQuery()
+                    .contains("-basetype:" + BaseContentType.FORM.getType()));
+        });
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#translateQuery(String, String)}
+     * Given Scenario: Perform a query with an enterprise license
+     * ExpectedResult: The query should not contain a filter by {@link BaseContentType#PERSONA} nor {@link BaseContentType#FORM}
+     */
+    @Test
+    public void test_translateQueryWithLicense(){
+        final TranslatedQuery translatedQuery = ESContentFactoryImpl
+                .translateQuery("+contentType:Host", null);
+        assertFalse(translatedQuery.getQuery()
+                .contains("-basetype:" + BaseContentType.PERSONA.getType()));
+        assertFalse(
+                translatedQuery.getQuery().contains("-basetype:" + BaseContentType.FORM.getType()));
     }
 }
