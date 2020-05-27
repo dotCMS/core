@@ -152,7 +152,7 @@ public class ResourceLink {
 
             final File binary           = Try.of(()->contentlet.getBinary(fieldVelocityVarName)).getOrNull();
             final Identifier identifier = getIdentifier(contentlet);
-            if (binary==null || identifier == null && UtilMethods.isEmpty(identifier.getInode())){
+            if (binary==null || identifier == null || UtilMethods.isEmpty(identifier.getInode())){
 
                 return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, StringPool.BLANK, false, true,
                         StringPool.BLANK, StringPool.BLANK, StringPool.BLANK);

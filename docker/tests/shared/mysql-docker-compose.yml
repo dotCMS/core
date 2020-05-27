@@ -15,7 +15,7 @@ services:
       MYSQL_ROOT_PASSWORD: mysql
       MYSQL_DATABASE: dotcms
     ports:
-      - "13306:3306"
+      - "${SERVICE_HOST_PORT_PREFIX}3306:3306"
     volumes:
       - ./setup/db/mysql/custom.cnf:/etc/mysql/conf.d/custom.cnf
       - ./setup/db/mysql/init-scripts:/docker-entrypoint-initdb.d/
