@@ -328,23 +328,24 @@ var cmsfile=null;
     }
 
   function insertDropZoneAsset(activeEditor, textAreaId) {
-	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+        const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+
         dropZone.addEventListener('uploadComplete', async (asset) => {
-					if(asset.detail) {
-						const [dotAsset] = event.detail;
-						const { inode, titleImage, identifier, title } = dotAsset;	
-						const asset = `
-							<img
-								src="/contentAsset/image/${identifier}/${titleImage}"
-								alt="${titleImage}"
-								data-field-name="${titleImage}"
-								data-inode="${inode}"
-								data-identifier="${identifier}"
-								data-saveas="${title}"
-							/>
-						`;
-						activeEditor.get(textAreaId).execCommand('mceInsertContent', false, asset);
-				}
+            if (asset.detail) {
+                const [dotAsset] = event.detail;
+                const { inode, titleImage, identifier, title } = dotAsset;
+                const asset = `
+                    <img
+                        src="/contentAsset/image/${identifier}/${titleImage}"
+                        alt="${titleImage}"
+                        data-field-name="${titleImage}"
+                        data-inode="${inode}"
+                        data-identifier="${identifier}"
+                        data-saveas="${title}"
+                    />
+                `;
+                activeEditor.get(textAreaId).execCommand('mceInsertContent', false, asset);
+            }
         })
     }
 
@@ -394,7 +395,10 @@ var cmsfile=null;
 			        `dot-asset-drop-zone-${textAreaId}`
 			      );
 			      editor.on("dragover", function (e) {
-			        dropZone.style.pointerEvents = "all";
+                    const { kind } = Array.from(e.dataTransfer.items)[0];
+                    if (kind === 'file') {
+                        dropZone.style.pointerEvents = "all";
+                    }
 			      });
 			      editor.dom.bind(document, "dragleave", function (e) {
 			        dropZone.style.pointerEvents = "none";
@@ -643,33 +647,9 @@ var cmsfile=null;
 
 	function addFileImageCallback(file) {
 		
-		//console.log(file);
 		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
 
 		var assetURI = replaceUrlPattern(pattern, file);
-
-	    // console.log("assetURI:" + assetURI)
-	    /*
-	    pattern="/dA/{shortyId}/{name}?language_id";
-	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	    
-	    pattern="/dA/{shortyInode}/{name}?language_id={languageId}";
-	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	        
-        pattern="/dA/{shortyInode}/{extension}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-            
-        pattern="/dA/{inode}/{extension}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-        
-        pattern="/dA/{identifier}/{extension}?language_id={languageId}";  
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-
-	    
-        pattern="//{hostName}{path}{name}?language_id={languageId}";  
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	    */
-	    
 	    
 		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
 	}
