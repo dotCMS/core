@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -85,7 +86,7 @@ public interface Storage {
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
-    Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate, final Object object, final Map<String, Object> extraMeta);
+    Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate, final Serializable object, final Map<String, Object> extraMeta);
 
     /**
      * Push a file to the storage, it will block until the operation is done

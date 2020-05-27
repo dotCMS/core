@@ -2,30 +2,40 @@ package com.dotcms.storage;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.FileByteSplitter;
 import com.dotcms.util.FileJoiner;
+import com.dotcms.util.ReturnableDelegate;
+import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
+import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
+import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,25 +49,165 @@ import java.util.concurrent.Future;
  * see {@link FileByteSplitter} and {@link com.dotcms.util.FileJoiner} to get more details about the process
  * @author jsanca
  */
-public class DataBaseStorage implements Storage {
+public class DataBaseStorage implements Storage { // todo: this should be able to use a separated conn and
+    // pure jdbc
 
-    @CloseDBIfOpened
+
+    protected Connection getConnection () {
+
+        final String jdbcPool        = Config.getStringProperty("DATABASE_STORAGE_JDBC_POOL_NAME", StringPool.BLANK);
+        final boolean isExternalPool = UtilMethods.isSet(jdbcPool);
+
+        return isExternalPool?
+                DbConnectionFactory.getConnection(jdbcPool):
+                DbConnectionFactory.getConnection();
+    }
+
+    protected void wrapCloseConnection (final VoidDelegate voidDelegate) {
+
+        final String  jdbcPool       = Config.getStringProperty("DATABASE_STORAGE_JDBC_POOL_NAME", StringPool.BLANK);
+        final boolean isExternalPool = UtilMethods.isSet(jdbcPool);
+
+        if(isExternalPool) {
+
+            wrapExternalCloseConnection(voidDelegate, jdbcPool);
+        } else {
+
+            wrapLocalCloseConnection(voidDelegate);
+        }
+    }
+
+    private void wrapLocalCloseConnection(final VoidDelegate voidDelegate) {
+
+        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
+
+        try {
+
+            voidDelegate.execute();
+        }  catch (DotSecurityException | DotDataException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        } finally {
+
+            if (isNewConnection) {
+
+                DbConnectionFactory.closeSilently();
+            }
+        }
+    }
+
+    private void wrapExternalCloseConnection(final VoidDelegate voidDelegate, final String jdbcPool) {
+
+        Connection connection = null;
+        try {
+
+            connection = DbConnectionFactory.getConnection(jdbcPool);
+            voidDelegate.execute();
+        } catch (DotSecurityException | DotDataException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        } finally {
+
+            CloseUtils.closeQuietly(connection);
+        }
+    }
+
+    protected  <T> T wrapInTransaction (final ReturnableDelegate<T> delegate) {
+
+        final String  jdbcPool       = Config.getStringProperty("DATABASE_STORAGE_JDBC_POOL_NAME", StringPool.BLANK);
+        final boolean isExternalPool = UtilMethods.isSet(jdbcPool);
+
+        if(isExternalPool) {
+
+            return this.wrapInExternalTransaction(delegate, jdbcPool);
+        } else {
+
+            try {
+
+                return LocalTransaction.wrapReturnWithListeners(delegate);
+            } catch (Exception e) {
+
+                Logger.error(this, e.getMessage(), e);
+                throw new DotRuntimeException(e);
+            }
+        }
+    }
+
+    private <T> T wrapInExternalTransaction(final ReturnableDelegate<T> delegate, final String jdbcPool) {
+
+        T result = null;
+        Connection connection = null;
+
+        try {
+
+            connection = DbConnectionFactory.getConnection(jdbcPool);
+            connection.setAutoCommit(false);
+
+            result = delegate.execute();
+
+            connection.commit();
+        } catch (Throwable e) {
+
+            if (null != connection) {
+
+                try {
+                    connection.rollback();
+                } catch (SQLException ex) {
+
+                    throw new DotRuntimeException(ex);
+                }
+            }
+
+            throw new DotRuntimeException(e);
+        } finally {
+
+            if (null != connection) {
+                try {
+                    connection.setAutoCommit(false);
+                } catch (SQLException e) {
+
+                    throw new DotRuntimeException(e);
+                } finally {
+
+                    CloseUtils.closeQuietly(connection);
+                }
+            }
+        }
+
+        return result;
+    }
+
     @Override
     public boolean existsGroup(final String groupName) {
 
-        final List results = Try.of(() -> new DotConnect().setSQL("select * from storage where storage_group = ?")
-                .addParam(groupName).loadObjectResults()).getOrElse(() -> Collections.emptyList());
-        return !results.isEmpty();
+        final MutableBoolean result = new MutableBoolean(false);
+
+        this.wrapCloseConnection(()-> {
+
+            final List results = Try.of(() -> new DotConnect().setSQL("select * from storage where storage_group = ?")
+                    .addParam(groupName).loadObjectResults(this.getConnection())).getOrElse(() -> Collections.emptyList());
+            result.setValue(!results.isEmpty());
+        });
+
+        return result.booleanValue();
     }
 
-    @CloseDBIfOpened
     @Override
     public boolean existsObject(final String groupName, final String objectPath) {
 
-        final List results = Try.of(()->new DotConnect().setSQL("select * from storage where storage_group = ? and key = ?")
-                .addParam(groupName).addParam(objectPath)
-                .loadObjectResults()).getOrElse(()-> Collections.emptyList());
-        return !results.isEmpty();
+        final MutableBoolean result = new MutableBoolean(false);
+
+        this.wrapCloseConnection(()-> {
+
+            final List results = Try.of(()->new DotConnect().setSQL("select * from storage where storage_group = ? and key = ?")
+                    .addParam(groupName).addParam(objectPath)
+                    .loadObjectResults(this.getConnection())).getOrElse(()-> Collections.emptyList());
+            result.setValue(!results.isEmpty());
+        });
+
+        return result.booleanValue();
     }
 
     @Override
@@ -90,20 +240,27 @@ public class DataBaseStorage implements Storage {
                 ).getOrElse(false);
     }
 
-    @CloseDBIfOpened
     @Override
     public List<Object> listGroups() {
 
-        final List<Map<String, Object>> results = Try.of(()->new DotConnect().setSQL("select storage_group from storage")
-                .loadObjectResults()).getOrElse(()-> Collections.emptyList());
+        final MutableObject<List<Object>> result = new MutableObject<>(Collections.emptyList());
 
-        return results.stream().map(map -> map.get("storage_group")).collect(CollectionsUtils.toImmutableList());
+        this.wrapCloseConnection(()-> {
+
+            final List<Map<String, Object>> results = Try.of(()->new DotConnect().setSQL("select storage_group from storage")
+                    .loadObjectResults()).getOrElse(()-> Collections.emptyList());
+
+            result.setValue(results.stream().map(map -> map.get("storage_group")).collect(CollectionsUtils.toImmutableList()));
+        });
+
+        return result.getValue();
     }
 
     @WrapInTransaction
     @Override
     public Object pushFile(final String groupName, final String path,
-                           final File file, final Map<String, Object> extraMeta) {
+                           final File file, final Map<String, Object> extraMeta) { // todo: this should be an upsert
+
 
         try (final FileByteSplitter fileSplitter = new FileByteSplitter(file)) {
 
@@ -116,20 +273,20 @@ public class DataBaseStorage implements Storage {
                 final String chuckHash = Encryptor.Hashing.sha256().append
                         (bytesRead._1(), bytesRead._2()).buildUnixHash();
                 chuckHashes.add(chuckHash);
-                new DotConnect().executeUpdate("insert into storage_objects_data(hash_id, object) values (?, ?)",
+                new DotConnect().executeUpdate(this.getConnection(), "insert into storage_objects_data(hash_id, object) values (?, ?)",
                         chuckHash,
                                     bytesRead._1().length == bytesRead._2()?
                                         bytesRead._1(): this.chuckBytes (bytesRead._2(), bytesRead._1()));
             }
 
             final String objectHash = objectHashBuilder.buildUnixHash();
-            new DotConnect().executeUpdate("insert into storage(hash_id, key, storage_group) values (?, ?, ?)",
+            new DotConnect().executeUpdate(this.getConnection(),"insert into storage(hash_id, key, storage_group) values (?, ?, ?)",
                     objectHash, path, groupName);
 
             int order = 1;
             for (final String chuckHash : chuckHashes) {
 
-                new DotConnect().executeUpdate("insert into storage_objects(storage_hash, data_hash, data_order) values (?, ?, ?)",
+                new DotConnect().executeUpdate(this.getConnection(),"insert into storage_objects(storage_hash, data_hash, data_order) values (?, ?, ?)",
                         objectHash, chuckHash, order++);
             }
 
@@ -170,10 +327,10 @@ public class DataBaseStorage implements Storage {
     }
 
     @WrapInTransaction
-    @Override
+    @Override   // todo: this should be serialize in a file (the json) and use the pushFile method instead
     public Object pushObject(final String groupName, final String path,
                              final ObjectWriterDelegate writerDelegate,
-                             final Object object, final Map<String, Object> extraMeta) {
+                             final Serializable object, final Map<String, Object> extraMeta) {
 
         try {
 
