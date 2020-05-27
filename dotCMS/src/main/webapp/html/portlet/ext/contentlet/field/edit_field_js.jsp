@@ -318,6 +318,7 @@ var cmsfile=null;
 		}
 	}
 
+
 	function emmitFieldDataChange(val) {
 			var customEvent = document.createEvent("CustomEvent");
 			customEvent.initCustomEvent("ng-event", false, false,  {
@@ -359,14 +360,17 @@ var cmsfile=null;
 		});
 	}
 
+  var dropzoneEvents = false
 
-  function insertDropZoneAsset(textAreaId) {
+  function bindDropZoneUploadComplete(activeEditor, textAreaId) {
 		const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
 		dropZone.addEventListener('uploadComplete', async (asset) => {
 			dropZone.style.pointerEvents = "none";
 			asset.detail && insertAssetInEditor(asset.detail)
 		})
-	}
+		dropzoneEvents = true
+  }
+
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
@@ -409,29 +413,32 @@ var cmsfile=null;
 			  // Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,
-				init_instance_callback: (editor) => {
-					let dropZone = document.getElementById(
-						`dot-asset-drop-zone-${textAreaId}`
-					);
-					editor.dom.bind(window, "dragover", function (e) {
-						dropZone.style.pointerEvents = "all";
-					}, true);
-					editor.dom.bind(editor.contentDocument, "drop", function (e) {
-						dropZone.style.pointerEvents = "none";
-					});
-					editor.dom.bind(editor.contentDocument, "dragleave", function (e) {
-						dropZone.style.pointerEvents = "none";
-					});
-				}
+			    init_instance_callback: (editor) => {
+			      let dropZone = document.getElementById(
+			        `dot-asset-drop-zone-${textAreaId}`
+			      );
+			      editor.on("dragover", function (e) {
+                    const { kind } = Array.from(e.dataTransfer.items)[0];
+                    if (kind === 'file') {
+                        dropZone.style.pointerEvents = "all";
+                    }
+			      });
+			      editor.dom.bind(document, "dragleave", function (e) {
+			        dropZone.style.pointerEvents = "none";
+			        return false;
+			      });
+          }
 			  };
 			  var wellTinyMCE = new tinymce.Editor(
 			    textAreaId,
 			    tinyConf,
 			    tinymce.EditorManager
 			  );
-			  insertDropZoneAsset(textAreaId);
+			  if (!dropzoneEvents) {
+			    bindDropZoneUploadComplete(tinymce, textAreaId);
+			  }
 			  wellTinyMCE.render();
-				wellTinyMCE.on("change", emmitFieldDataChange);
+			  wellTinyMCE.on("change", emmitFieldDataChange);
 			} catch (e) {
 			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
@@ -664,35 +671,10 @@ var cmsfile=null;
 	}
 
 	function addFileImageCallback(file) {
-
-		//console.log(file);
+		
 		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
 
 		var assetURI = replaceUrlPattern(pattern, file);
-
-	    // console.log("assetURI:" + assetURI)
-	    /*
-	    pattern="/dA/{shortyId}/{name}?language_id";
-	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-
-	    pattern="/dA/{shortyInode}/{name}?language_id={languageId}";
-	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-
-        pattern="/dA/{shortyInode}/{extension}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-
-        pattern="/dA/{inode}/{extension}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-
-        pattern="/dA/{identifier}/{extension}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-
-
-        pattern="//{hostName}{path}{name}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	    */
-
-
 		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
 	}
 

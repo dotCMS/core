@@ -45,7 +45,7 @@ RUN chmod 500 /build/displayDebugData.sh && /build/displayDebugData.sh ${BUILD_F
 
 # ===========================================
 #  Copy our custom data to the source code  #
-COPY setup/ROOT/ /build/src/core/dotCMS/src/
+COPY setup/ROOT /build/src/core/dotCMS/src/
 # ===========================================
 
 VOLUME /db

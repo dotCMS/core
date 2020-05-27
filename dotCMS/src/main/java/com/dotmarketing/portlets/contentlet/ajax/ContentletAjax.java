@@ -9,8 +9,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
@@ -571,12 +569,7 @@ public class ContentletAjax {
 		}
 
 		// Building search params and lucene query
-		StringBuffer luceneQuery = new StringBuffer("-contentType:forms ");
-
-    if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-      luceneQuery.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
-      luceneQuery.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
-    }
+		StringBuffer luceneQuery = new StringBuffer();
 
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
@@ -630,8 +623,7 @@ public class ContentletAjax {
 		            break;
 		        }
 		    }
-		    luceneQuery.append("-contentType:Host ");
-		    luceneQuery.append("-baseType:3 ");
+            luceneQuery.append("-contentType:forms ");
 		}
 
         final String finalSort = getFinalSort(fields, orderBy, st, structureInodes);
@@ -682,17 +674,9 @@ public class ContentletAjax {
                 Optional<Relationship> childRelationship = getRelationshipFromChildField(st, fieldName);
                 if (childRelationship.isPresent()) {
                     //Getting related identifiers from index when filtering by parent
-                    final Contentlet relatedParent = conAPI
-                            .findContentletByIdentifierAnyLanguage(fieldValue);
-                    final List<String> relatedContent = conAPI
-                            .getRelatedContent(relatedParent, childRelationship.get(), true,
-                                    currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
-                                    offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
-                            .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
-
-                    if (relatedQueryByChild.length() > 0) {
-                        relatedQueryByChild.append(StringPool.COMMA);
-                    }
+                    final List<String> relatedContent = getRelatedIdentifiers(currentUser, offset,
+                            relatedQueryByChild, finalSort, fieldValue,
+                            childRelationship);
 
                     relatedQueryByChild.append(fieldName).append(StringPool.COLON).append(fieldValue);
 
@@ -892,10 +876,12 @@ public class ContentletAjax {
 							        if("catchall".equals(fieldName)) {
 							           
 							            luceneQuery.append(" title:'" + fieldValueStr + "'^15 ");
-							            for(String x : fieldValueStr.split("[,|\\s+]")) {
-							                luceneQuery.append(" title:" + x + "^5 ");
-							                
-							            }
+                                        final String[] titleSplit = fieldValueStr.split("[,|\\s+]");
+                                        if (titleSplit.length > 1) {
+                                            for (final String term : titleSplit) {
+                                                luceneQuery.append(" title:" + term + "^5 ");
+                                            }
+                                        }
 							            luceneQuery.append(" title_dotraw:*" + fieldValueStr + "*^5 ");
 							        }
 							        
@@ -1284,7 +1270,24 @@ public class ContentletAjax {
 		return results;
 	}
 
-	private boolean hasManyContentTypes(final String structureInode) {
+    List<String> getRelatedIdentifiers(User currentUser, int offset,
+            StringBuilder relatedQueryByChild, String finalSort, String fieldValue,
+            Optional<Relationship> childRelationship) throws DotDataException {
+        final Contentlet relatedParent = conAPI
+                .findContentletByIdentifierAnyLanguage(fieldValue);
+        final List<String> relatedContent = conAPI
+                .getRelatedContent(relatedParent, childRelationship.get(), true,
+                        currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
+                        offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
+                .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
+
+        if (relatedQueryByChild.length() > 0) {
+            relatedQueryByChild.append(StringPool.COMMA);
+        }
+        return relatedContent;
+    }
+
+    private boolean hasManyContentTypes(final String structureInode) {
 
 		return null != structureInode && structureInode.split(StringPool.COMMA).length > 1;
 	}

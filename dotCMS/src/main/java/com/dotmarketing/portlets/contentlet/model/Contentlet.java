@@ -15,6 +15,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.MimeTypeUtils;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -1031,7 +1032,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             String returnVal = TITLE_IMAGE_NOT_FOUND;
             for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
                 try {
-                    if(f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString())){
+                    if(f instanceof BinaryField && (UtilMethods.isImage(this.getBinary(f.variable()).toString()) || MimeTypeUtils.getMimeType(this.getBinary(f.variable())).contains("pdf") )){
                         returnVal=f.variable();
                         break;
                     }
