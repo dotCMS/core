@@ -190,24 +190,24 @@ public class LanguagesResource {
 
     /**
      * Gets all the Messages from the language passed.
+     * If default is passed it will get the messages for the default language.
      *
-     * If no language is passed will use the default language.
      * @param request
      * @param response
      * @param language languageId or languageCountryCode e.g en_us, it_it
      * @return all the messages of the language
      */
     @GET
-    @Path("/i18n/all")
+    @Path("{language}/i18n")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getAllMessages (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @DefaultValue("-1") @QueryParam("language") final String language){
+            @PathParam("language") final String language){
 
-        final long languageId = "-1".equalsIgnoreCase(language) ? APILocator.getLanguageAPI().getDefaultLanguage().getId() : LanguageUtil.getLanguageId(language);
+        final long languageId = "default".equalsIgnoreCase(language) ? APILocator.getLanguageAPI().getDefaultLanguage().getId() : LanguageUtil.getLanguageId(language);
         final Language language1 = APILocator.getLanguageAPI().getLanguage(languageId);
         if(!UtilMethods.isSet(language1)){
             final String message = "Language with Id or Code: "+ language + " does not exist";
