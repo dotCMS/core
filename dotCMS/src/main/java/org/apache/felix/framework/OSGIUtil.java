@@ -48,8 +48,7 @@ import com.google.common.collect.ImmutableList;
 public class OSGIUtil {
 
     //List of jar prefixes of the jars to be included in the osgi-extra-generated.conf file
-    private List<String> dotCMSJarPrefixes = ImmutableList
-            .copyOf(CollectionsUtils.list("dotcms", "ee-"));
+    private List<String> dotCMSJarPrefixes = ImmutableList.of("dotcms", "ee-");
     public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
     public final List<String> actionletsStopped = Collections.synchronizedList(new ArrayList<>());
     public WorkflowAPIOsgiService workflowOsgiService;
@@ -72,17 +71,17 @@ public class OSGIUtil {
     private String FELIX_EXTRA_PACKAGES_FILE_GENERATED;
     public String FELIX_EXTRA_PACKAGES_FILE;
 
-    private static OSGIUtil instance;
 
     public static OSGIUtil getInstance() {
-        if (instance == null) {
-            instance = new OSGIUtil(Config.CONTEXT);
-        }
-        return instance;
+        return OSGIUtilHolder.instance;
     }
 
-    private OSGIUtil (ServletContext servletContext) {
-        this.servletContext = servletContext;
+    private static class OSGIUtilHolder{
+        private static OSGIUtil instance = new OSGIUtil();
+    }
+    
+    private OSGIUtil () {
+        this.servletContext = Config.CONTEXT;
     }
 
     private Framework felixFramework;
