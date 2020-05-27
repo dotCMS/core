@@ -29,10 +29,10 @@ public class ESReadOnlyMonitor {
     private final RoleAPI roleAPI;
     private final SystemMessageEventUtil systemMessageEventUtil;
 
-    private AtomicBoolean started;
+    private AtomicBoolean started = new AtomicBoolean();
     private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
 
-    final Runnable runnable = () -> ESReadOnlyMonitor.this.putCurrentIndicesToWriteMode();
+    private Timer timer;
 
     private ESReadOnlyMonitor(final SystemMessageEventUtil systemMessageEventUtil, final RoleAPI roleAPI) {
         this.systemMessageEventUtil = systemMessageEventUtil;
@@ -67,6 +67,7 @@ public class ESReadOnlyMonitor {
 
     public void start(final ReindexEntry reindexEntry, final String cause){
         Logger.info(this.getClass(), "Checking to Start " + reindexEntry);
+        Logger.info(this.getClass(), "Started " + started.get() + " " + this.hashCode());
         if (!started.compareAndSet(false, true)) {
             Logger.error(this.getClass(), "Reindex failed for :" + reindexEntry + " because " + cause);
 
@@ -104,17 +105,33 @@ public class ESReadOnlyMonitor {
 
             this.stop();
         } catch (final ESResponseException e) {
-            Logger.debug(ESReadOnlyMonitor.class, ()  -> e.getMessage());
+            Logger.info(ESReadOnlyMonitor.class, ()  -> e.getMessage());
         }
     }
 
     private void startMonitor() {
         Logger.info(this.getClass(), "Starting Monitor");
-        scheduledThreadPoolExecutor.scheduleAtFixedRate(runnable, 0, 1, TimeUnit.MINUTES);
+
+        timer = new Timer(true);
+        timer.schedule(new MonitorTimerTask(this), 0, TimeUnit.MINUTES.toMillis(1));
     }
 
     private void stop() {
-       this.scheduledThreadPoolExecutor.shutdown();
+       this.timer.cancel();
+       this.timer = null;
         this.started.set(false);
+    }
+
+    private static class MonitorTimerTask extends TimerTask{
+        private final ESReadOnlyMonitor esReadOnlyMonitor;
+
+        MonitorTimerTask(final ESReadOnlyMonitor esReadOnlyMonitor) {
+            this.esReadOnlyMonitor = esReadOnlyMonitor;
+        }
+
+        @Override
+        public void run() {
+            this.esReadOnlyMonitor.putCurrentIndicesToWriteMode();
+        }
     }
 }

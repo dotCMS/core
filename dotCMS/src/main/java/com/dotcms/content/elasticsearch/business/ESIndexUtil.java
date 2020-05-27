@@ -13,6 +13,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 public class ESIndexUtil {
@@ -23,7 +24,6 @@ public class ESIndexUtil {
 
     public static  boolean isReadOnly(final String... indexNames) {
         final GetSettingsRequest request = new GetSettingsRequest().indices(indexNames);
-        request.names(READ_ONLY_ALLOW_DELETE_SETTING, READ_ONLY_SETTING);
 
         Logger.info(ESIndexUtil.class, "Checking if current index are read only");
 
@@ -31,7 +31,7 @@ public class ESIndexUtil {
                 RestHighLevelClientProvider.getInstance().getClient().indices()
                         .getSettings(request, RequestOptions.DEFAULT));
 
-        Logger.info(ESIndexUtil.class, "Checking if current index are read only RESPONSE");
+        Logger.info(ESIndexUtil.class, "RESPONSE Checking if current index are read only");
 
         return Arrays.stream(indexNames).anyMatch((indexName) -> {
             final String readOnlyAllowDelete = response.getSetting(indexName, READ_ONLY_ALLOW_DELETE_SETTING);

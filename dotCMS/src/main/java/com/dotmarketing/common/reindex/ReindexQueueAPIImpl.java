@@ -218,15 +218,12 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         reindexQueueFactory.deleteReindexEntry(identiferToDelete);
     }
 
-
-
     @Override
     @WrapInTransaction
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
         Logger.info(this.getClass(), "markAsFailed " + idx);
-        ESReadOnlyMonitor.getInstance().start(idx, cause);
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
-
+        ESReadOnlyMonitor.getInstance().start(idx, cause);
     }
 
 }

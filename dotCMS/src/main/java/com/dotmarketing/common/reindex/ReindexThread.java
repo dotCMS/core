@@ -2,6 +2,7 @@ package com.dotmarketing.common.reindex;
 
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexUtil;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -182,7 +183,7 @@ public class ReindexThread {
         final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
           Logger.info(this.getClass(), "workingRecords " + workingRecords);
         if (!workingRecords.isEmpty()) {
-            Logger.info(this.getClass(), "------------------------------ AGAIN");
+            Logger.info(this.getClass(), "------------------------------ Processing workingRecords");
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
               || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
@@ -196,15 +197,17 @@ public class ReindexThread {
             contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
           // otherwise, reindex normally
           } else if (!currentIndexReadOnly.get()){
-            reindexWithBulkRequest(workingRecords);
+              reindexWithBulkRequest(workingRecords);
           }
         } else {
 
           bulkProcessor = closeBulkProcessor(bulkProcessor);
           switchOverIfNeeded();
 
-          Thread.sleep(SLEEP);
+          //Thread.sleep(SLEEP);
         }
+
+        Thread.sleep(SLEEP);
       } catch (Exception ex) {
         Logger.error(this, "ReindexThread Exception", ex);
         ThreadUtils.sleep(SLEEP_ON_ERROR);
