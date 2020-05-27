@@ -327,10 +327,11 @@ var cmsfile=null;
         document.dispatchEvent(customEvent)
     }
 
-  function insertDropZoneAsset(activeEditor, textAreaId) {
-        const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+  var dropzoneEvents = false
 
-        dropZone.addEventListener('uploadComplete', async (asset) => {
+  function bindDropZoneUploadComplete(activeEditor, textAreaId) {
+	    const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+        dropZone.addEventListener('uploadComplete', (asset) => {
             if (asset.detail) {
                 const [dotAsset] = event.detail;
                 const { inode, titleImage, identifier, title } = dotAsset;
@@ -347,7 +348,9 @@ var cmsfile=null;
                 activeEditor.get(textAreaId).execCommand('mceInsertContent', false, asset);
             }
         })
+        dropzoneEvents = true
     }
+
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
@@ -410,10 +413,13 @@ var cmsfile=null;
 			    textAreaId,
 			    tinyConf,
 			    tinymce.EditorManager
-			  );
-			  insertDropZoneAsset(tinymce, textAreaId);
+              );
+              if (!dropzoneEvents) {
+                bindDropZoneUploadComplete(tinymce, textAreaId);
+
+              }
 			  wellTinyMCE.render();
-				wellTinyMCE.on("change", emmitFieldDataChange);
+			  wellTinyMCE.on("change", emmitFieldDataChange);
 			} catch (e) {
 			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
