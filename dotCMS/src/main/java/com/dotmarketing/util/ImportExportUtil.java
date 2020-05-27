@@ -1,5 +1,32 @@
 package com.dotmarketing.util;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipFile;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.felix.framework.OSGIUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
@@ -41,34 +68,6 @@ import com.liferay.util.Encryptor;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
-import java.nio.file.Files;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipFile;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.felix.framework.OSGIUtils;
 
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills
@@ -868,7 +867,7 @@ public class ImportExportUtil {
         }
 
         //Initializing felix
-        OSGIUtils.initializeOsgi(Config.CONTEXT);
+        OSGIUtil.getInstance().initializeFramework();
 
         //Reindexing the recently added content
         conAPI.refreshAllContent();
