@@ -1,11 +1,12 @@
 package com.dotcms.browser;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.IconType;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -16,14 +17,12 @@ import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -36,16 +35,13 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.mutable.MutableInt;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
  * Default implementation
@@ -344,7 +340,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                                            final User user,
                                            final boolean showArchived,
                                            final long languageId) throws DotDataException, DotStateException, DotSecurityException {
-
+/*
         final Map<String, Object> pageMap = new HashMap<>(page.getMap());
 
         pageMap.put("mimeType",     "application/dotpage");
@@ -375,13 +371,18 @@ public class BrowserAPIImpl implements BrowserAPI {
         
         pageMap.put("__icon__",      IconType.HTMLPAGE.iconName());
 
-        return pageMap;
+        //return pageMap;
+*/
+        final Map<String,Object> m = new DotContentletTransformer.Builder().webAssetOptions().content(page).build().toMaps().get(0);
+        System.out.println(m);
+        return m;
+
     } // htmlPageMap.
 
     private Map<String,Object> fileAssetMap(final FileAsset fileAsset,
                                             final User user,
                                             final boolean showArchived) throws DotDataException, DotStateException, DotSecurityException {
-
+/*
         final Map<String, Object> fileMap = new HashMap<>(fileAsset.getMap());
         final Identifier identifier       = APILocator.getIdentifierAPI().find(fileAsset.getVersionId());
 
@@ -427,17 +428,21 @@ public class BrowserAPIImpl implements BrowserAPI {
         if(fileAsset.getTitleImage().isPresent()) {
             fileMap.put("titleImage", fileAsset.getTitleImage().get().variable());
         }
-        
-        
-        fileMap.put("__icon__",       UtilHTML.getIconClass(fileAsset ));
 
-        return fileMap;
+        fileMap.put("__icon__",       UtilHTML.getIconClass(fileAsset ));
+        //return fileMap;
+*/
+
+        final Map<String,Object> m = new DotContentletTransformer.Builder().webAssetOptions().content(fileAsset).build().toMaps().get(0);
+        System.out.println(m);
+        return m;
+
     } // fileAssetMap.
 
     private Map<String,Object> dotAssetMap(final Contentlet dotAsset,
                                            final User user,
                                            final boolean showArchived) throws DotDataException, DotStateException, DotSecurityException {
-
+/*
         final Map<String, Object> fileMap = new ContentletToMapTransformer(dotAsset).toMaps().get(0);
         final Identifier identifier       = APILocator.getIdentifierAPI().find(dotAsset.getVersionId());
         final String fileName = Try.of(()->dotAsset.getBinary("asset").getName()).getOrElse("unknown");
@@ -479,10 +484,13 @@ public class BrowserAPIImpl implements BrowserAPI {
             fileMap.put("titleImage", dotAsset.getTitleImage().get().variable());
         }
         
-        
-        fileMap.put("__icon__",       UtilHTML.getIconClass(dotAsset));
 
-        return fileMap;
+        fileMap.put("__icon__",       UtilHTML.getIconClass(dotAsset));
+        //return fileMap;
+ */
+        final Map<String,Object> m = new DotContentletTransformer.Builder().dotAssetOptions().content(dotAsset).build().toMaps().get(0);
+        System.out.println(m);
+        return m;
     } // dotAssetMap.
 
     protected class WfData {

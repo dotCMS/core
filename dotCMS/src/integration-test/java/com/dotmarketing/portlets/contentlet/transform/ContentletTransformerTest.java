@@ -8,6 +8,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -20,18 +21,20 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
+import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
+import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.util.UUIDGenerator;
-import com.twelvemonkeys.util.LinkedSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -63,7 +66,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         List<Contentlet> list = APILocator.getContentletAPI().findAllContent(0,20);
         list = list.stream().filter(Objects::nonNull).collect(Collectors.toList());
         assertFalse("I was expecting at least 20 contentlets returned from the index",list.isEmpty());
-        final List<Map<String, Object>> transformedList = new ContentletToMapTransformer(list).toMaps();
+        final List<Map<String, Object>> transformedList = new DotContentletTransformer(list).toMaps();
 
         assertEquals(list.size(), transformedList.size());
         for(int i=0; i < list.size(); i++){
@@ -82,7 +85,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             assertNotNull(transformed.get(HTMLPageAssetAPI.URL_FIELD));
 
             //Forbidden properties Must Not be part of the result
-            for(final String property : ContentletToMapTransformer.privateInternalProperties){
+            for(final String property : TransformToolBox.privateInternalProperties){
                 assertFalse("found private property:" + property,transformed.containsKey(property));
             }
         }
@@ -103,11 +106,17 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
         contentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, urlExpected);
-
-
+        contentlet.getMap().put(Contentlet.LANGUAGEID_KEY, 1L);
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
-        final Contentlet newContentlet = new ContentletToMapTransformer(Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI()).hydrate().get(0);
+        final TransformToolBox toolBox = new TransformToolBox(APILocator.getIdentifierAPI(),
+                APILocator.getHostAPI(), APILocator.getLanguageAPI(), APILocator.getFileAssetAPI(),
+                APILocator.getVersionableAPI(), APILocator.getUserAPI(),
+                APILocator.getContentletAPI(), APILocator.getHTMLPageAssetAPI(), contentHelper);
+
+        final StrategyResolver resolver = new StrategyResolver(toolBox);
+
+        final Contentlet newContentlet = new DotContentletTransformer(Collections.singletonList(contentlet), resolver, DotContentletTransformer.defaultOptions).hydrate().get(0);
 
         assertNotNull(newContentlet);
         assertNotSame(newContentlet, contentlet); //This method now returns a new instance. A copy of the original contentlet
@@ -128,14 +137,23 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         };
         final String identifier = "1234";
 
+        final TransformToolBox toolBox = new TransformToolBox(APILocator.getIdentifierAPI(),
+                APILocator.getHostAPI(), APILocator.getLanguageAPI(), APILocator.getFileAssetAPI(),
+                APILocator.getVersionableAPI(), APILocator.getUserAPI(),
+                APILocator.getContentletAPI(), APILocator.getHTMLPageAssetAPI(), contentHelper);
+
+        final StrategyResolver resolver = new StrategyResolver(toolBox);
+
         Contentlet contentlet = new Contentlet();
 
         contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
+        contentlet.getMap().put(Contentlet.LANGUAGEID_KEY, 1L);
 
         when(identifierAPI.find(identifier)).thenReturn(null);
 
-        final Contentlet newContentlet = new ContentletToMapTransformer(
-                  Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI()
+        final Contentlet newContentlet = new DotContentletTransformer(
+                  Collections.singletonList(contentlet), resolver,
+                  DotContentletTransformer.defaultOptions
         ).hydrate().get(0);
 
         assertNotNull(newContentlet);
@@ -155,6 +173,14 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 return urlExpected;
             }
         };
+
+        final TransformToolBox toolBox = new TransformToolBox(APILocator.getIdentifierAPI(),
+                APILocator.getHostAPI(), APILocator.getLanguageAPI(), APILocator.getFileAssetAPI(),
+                APILocator.getVersionableAPI(), APILocator.getUserAPI(),
+                APILocator.getContentletAPI(), APILocator.getHTMLPageAssetAPI(), contentHelper);
+
+        final StrategyResolver resolver = new StrategyResolver(toolBox);
+
         final String identifier = "1234";
         Identifier identifierObject = new Identifier();
         identifierObject.setAssetName(urlExpected);
@@ -162,11 +188,11 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         Contentlet contentlet = new Contentlet();
 
         contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
+        contentlet.getMap().put(Contentlet.LANGUAGEID_KEY, 1L);
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
-        final Contentlet newContentlet = new ContentletToMapTransformer(
-                  Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI()
-        ).hydrate().get(0);
+        final Contentlet newContentlet = new DotContentletTransformer(
+                  Collections.singletonList(contentlet), resolver, DotContentletTransformer.defaultOptions).hydrate().get(0);
 
         assertNotNull(newContentlet);
         assertNotSame(newContentlet, contentlet);
@@ -202,7 +228,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertNull(constants.get(1).values());
         
         // assert our content Map has no constant values in it
-        Map<String,Object> map = new ContentletToMapTransformer(newContentlet).toMaps().get(0);
+        Map<String,Object> map = new DotContentletTransformer(newContentlet).toMaps().get(0);
         assertNull(map.get(constantVar1));
         assertNull(map.get(constantVar2));
         
@@ -226,7 +252,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertEquals(updatedType.fieldMap().get(constantVar2).values(), newContentlet.get(constantVar2));  
 
         
-        map = new ContentletToMapTransformer(newContentlet).toMaps().get(0);
+        map = new DotContentletTransformer(newContentlet).toMaps().get(0);
 
 
         // contentlet.constantValue ==  map.values
@@ -235,8 +261,41 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         
     }
 
-    
-    
+
+    @Test
+    public void Transformer_Backwards_Compatibility_Test()
+            throws DotDataException, DotSecurityException {
+        //final Contentlet con = APILocator.getContentletAPI()
+          //      .findContentletByIdentifier("2cc0ad0f-d5e9-4c4c-a243-227dd2c49ba3", false, 1L,
+            //            APILocator.systemUser(), false);
+        List<Contentlet> list = APILocator.getContentletAPI().findAllContent(250, 650);
+
+        list = list.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        assertFalse("I was expecting at least 20 contentlets returned from the index",list.isEmpty());
+        final List<Map<String, Object>> transformedList = new ContentletToMapTransformer(list).toMaps();
+        final List<Map<String, Object>> transformedList2 = new DotContentletTransformer(list).toMaps();
+
+        assertEquals(transformedList.size(), transformedList2.size());
+        for(int i=0; i < list.size(); i++){
+            final Contentlet original = list.get(i);
+            final Map<String,Object> originalTransformation = transformedList.get(i);
+            final Map<String,Object> transformation2= transformedList2.get(i);
+
+            for (String key1 : originalTransformation.keySet()) {
+                final Object object1 = originalTransformation.get(key1);
+                final Object object2 = transformation2.get(key1);
+
+                if (object1.equals(ContentletCache.CACHED_METADATA) || object1.equals(ContentletCache.EMPTY_METADATA)) {
+                   System.out.println(original.getStringProperty("metaData"));
+                    System.out.println(original.getContentType());
+                } else {
+                  assertNotNull(object2);
+                  assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", original.getContentType().name(), original.getIdentifier(), key1), object1, object2);
+                }
+            }
+        }
+
+    }
 
 
 }

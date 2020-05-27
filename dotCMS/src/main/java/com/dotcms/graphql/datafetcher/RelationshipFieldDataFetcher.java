@@ -7,18 +7,16 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.util.Collections;
-import java.util.List;
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import java.util.Collections;
+import java.util.List;
 
 public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
     @Override
@@ -59,8 +57,8 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
             List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user, true, isChildField);
             if (UtilMethods.isSet(relatedContent)) {
                 objectToReturn = records.doesAllowOnlyOne()
-                    ? new ContentletToMapTransformer(relatedContent).hydrate().get(0)
-                    : new ContentletToMapTransformer(relatedContent).hydrate();
+                    ? new DotContentletTransformer(relatedContent).hydrate().get(0)
+                    : new DotContentletTransformer(relatedContent).hydrate();
             }
 
             return objectToReturn;

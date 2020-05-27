@@ -18,7 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
@@ -317,6 +317,6 @@ public class ContentVersionResource {
      * @return Transformed Map
      */
     private Map<String, Object> contentletToMap( final Contentlet con) {
-        return new ContentletToMapTransformer(con).toMaps().get(0);
+        return new DotContentletTransformer(con).toMaps().get(0);
     }
 }

@@ -51,14 +51,14 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
                 if (imageContentlet.getTitleImage().isPresent()) {
                     final File imageFile = imageContentletOptional.get().getBinary("fileAsset");
 
-                    titleImageMap = new BinaryToMapTransformer(imageContentlet)
-                            .transform(imageFile, imageContentlet, imageContentlet.getTitleImage().get());
+                    titleImageMap = //new BinaryToMapTransformer(imageContentlet)
+                    BinaryToMapTransformer.transform(imageFile, imageContentlet, imageContentlet.getTitleImage().get());
                 }
 
 
             } else if (imageField.get() instanceof BinaryField) {
-                titleImageMap = new BinaryToMapTransformer(contentlet)
-                    .transform(contentlet.getTitleImage().get(), contentlet);
+                titleImageMap = //new BinaryToMapTransformer(contentlet)
+                        BinaryToMapTransformer.transform(contentlet.getTitleImage().get(), contentlet);
             }
 
             return titleImageMap;

@@ -18,7 +18,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 
 /**
- * DBTransformer that converts DB objects into Contentlet instances
+ * FieldsToMapTransformer that converts contentlet objects into Maps
  */
 public class CategoryToMapTransformer implements FieldsToMapTransformer {
     final Map<String, Object> mapOfMaps;
