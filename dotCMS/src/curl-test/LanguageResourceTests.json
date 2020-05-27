@@ -1161,7 +1161,7 @@
 			"name": "getAllMessages",
 			"item": [
 				{
-					"name": "getAllMessages Success without Query Param",
+					"name": "getAllMessages Success with default param",
 					"event": [
 						{
 							"listen": "test",
@@ -1183,7 +1183,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v2/languages/i18n/all",
+							"raw": "{{serverURL}}/api/v2/languages/default/i18n",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1191,8 +1191,8 @@
 								"api",
 								"v2",
 								"languages",
-								"i18n",
-								"all"
+								"default",
+								"i18n"
 							]
 						},
 						"description": "If the query param is not set it will use the default language"
@@ -1222,7 +1222,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v2/languages/i18n/all?language=en_us",
+							"raw": "{{serverURL}}/api/v2/languages/en_us/i18n",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1230,14 +1230,8 @@
 								"api",
 								"v2",
 								"languages",
-								"i18n",
-								"all"
-							],
-							"query": [
-								{
-									"key": "language",
-									"value": "en_us"
-								}
+								"en_us",
+								"i18n"
 							]
 						}
 					},
@@ -1266,7 +1260,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v2/languages/i18n/all?language=1",
+							"raw": "{{serverURL}}/api/v2/languages/1/i18n",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1274,14 +1268,8 @@
 								"api",
 								"v2",
 								"languages",
-								"i18n",
-								"all"
-							],
-							"query": [
-								{
-									"key": "language",
-									"value": "1"
-								}
+								"1",
+								"i18n"
 							]
 						}
 					},
@@ -1310,7 +1298,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v2/languages/i18n/all?language=79875675",
+							"raw": "{{serverURL}}/api/v2/languages/79875675/i18n",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1318,14 +1306,8 @@
 								"api",
 								"v2",
 								"languages",
-								"i18n",
-								"all"
-							],
-							"query": [
-								{
-									"key": "language",
-									"value": "79875675"
-								}
+								"79875675",
+								"i18n"
 							]
 						}
 					},
@@ -1354,7 +1336,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v2/languages/i18n/all?language=tt_tt",
+							"raw": "{{serverURL}}/api/v2/languages/tt_tt/i18n",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1362,14 +1344,8 @@
 								"api",
 								"v2",
 								"languages",
-								"i18n",
-								"all"
-							],
-							"query": [
-								{
-									"key": "language",
-									"value": "tt_tt"
-								}
+								"tt_tt",
+								"i18n"
 							]
 						}
 					},
