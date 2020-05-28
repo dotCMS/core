@@ -422,7 +422,7 @@ public class DataBaseStorage implements Storage { // todo: this should have a cr
     private byte[] objectToBytes(final ObjectWriterDelegate writerDelegate,
                                  final Serializable object) {
 
-        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();  
+        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         writerDelegate.write(byteArrayOutputStream, object);
         return  byteArrayOutputStream.toByteArray();
     }

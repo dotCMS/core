@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
@@ -11,6 +12,7 @@ import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
@@ -256,7 +258,9 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetAPIImplTest.class,
         UserResourceIntegrationTest.class,
         SiteSearchJobImplTest.class,
-        IntegrationResourceLinkTest.class
+        IntegrationResourceLinkTest.class,
+        HTMLDiffUtilTest.class,
+        FolderResourceTest.class
 })
 public class MainSuite {
 

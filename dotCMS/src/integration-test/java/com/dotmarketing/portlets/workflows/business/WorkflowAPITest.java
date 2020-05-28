@@ -3779,9 +3779,16 @@ public class WorkflowAPITest extends IntegrationTestBase {
         final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
+        final WorkflowScheme systemWorkflowScheme = workflowAPI.findSystemWorkflowScheme();
+        final ContentType contentType = new ContentTypeDataGen()
+                .workflowId(systemWorkflowScheme.getId())
+                .nextPersisted();
+
         //Create a dummy contentlet
-        final Contentlet contentlet = TestDataUtils
-                .getGenericContentContent(true, language.getId());
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
         assertNotNull(contentlet);
 
         //Saving a dummy workflow task

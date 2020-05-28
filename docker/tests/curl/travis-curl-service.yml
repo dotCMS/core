@@ -1,0 +1,34 @@
+# https://docs.docker.com/compose/compose-file/compose-versioning/
+version: "3.7"
+
+# https://docs.docker.com/compose/compose-file/
+# https://docs.docker.com/compose/extends/
+
+networks:
+  sc_net:
+
+services:
+
+  curl-tests:
+    image: "${IMAGE_BASE_NAME}"
+    environment:
+      databaseType:
+      EXTRA_PARAMS:
+      GOOGLE_CREDENTIALS_BASE64:
+      EXPORT_REPORTS:
+      PULL_REQUEST:
+      GITHUB_USER:
+      GITHUB_USER_TOKEN:
+      PROVIDER_DB_USERNAME:
+      PROVIDER_DB_PASSWORD:
+      PROVIDER_DB_DNSNAME: database
+      PROVIDER_ELASTICSEARCH_DNSNAMES: elasticsearch
+      WAIT_SIDECAR_FOR: 100
+    depends_on:
+      - sidecar
+    networks:
+      - sc_net
+
+  sidecar:
+    networks:
+      - sc_net

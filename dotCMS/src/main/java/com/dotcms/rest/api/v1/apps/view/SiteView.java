@@ -15,6 +15,9 @@ public class SiteView {
     private final boolean configured;
 
     @JsonInclude(Include.NON_NULL)
+    private final Integer secretsWithWarnings;
+
+    @JsonInclude(Include.NON_NULL)
     private final List<SecretView> secrets;
 
     /**
@@ -23,11 +26,12 @@ public class SiteView {
      * @param name
      * @param configured
      */
-    public SiteView(final String id, final String name, final boolean configured) {
+    public SiteView(final String id, final String name, final boolean configured, final int secretsWithWarning) {
         this.id = id;
         this.name = name;
         this.configured = configured;
         this.secrets = null;
+        this.secretsWithWarnings = (secretsWithWarning == 0 ? null : secretsWithWarning);
     }
 
     /**
@@ -42,6 +46,7 @@ public class SiteView {
         this.name = name;
         this.configured = secrets.stream().anyMatch(secretView -> null != secretView.getSecret());
         this.secrets = secrets;
+        this.secretsWithWarnings = null;
     }
 
     /**
@@ -66,6 +71,14 @@ public class SiteView {
      */
     public boolean isConfigured() {
         return configured;
+    }
+
+    /**
+     * Number of Secrets in conflict that have generated Warnings
+     * @return
+     */
+    public Integer getSecretsWithWarnings() {
+        return secretsWithWarnings;
     }
 
     /**

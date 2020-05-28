@@ -7,12 +7,10 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URL;
 import javax.sql.DataSource;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 
 /**
  * Singleton class that provides a datasource using a <b>db.properties</b> file configuration
@@ -57,20 +55,13 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
 
     @Override
     public DataSource apply() {
-        final PropertiesConfiguration properties = new PropertiesConfiguration();
         try {
 
             if (!(existsDBPropertiesFile())){
                 throw new FileNotFoundException("DB properties file not found");
             }
-
-            properties.load(new FileInputStream(getPropertiesFile()));
-
-            final HikariConfig config = getHikariConfig(properties);
-
-            properties.clear();
-            return new HikariDataSource(config);
-        } catch (ConfigurationException | FileNotFoundException e) {
+            return new HikariDataSource(getHikariConfig());
+        } catch (IOException e) {
             Logger.error(DBPropertiesDataSourceStrategy.class,
                     "---------- Error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE
                             + " from db.properties file",
@@ -86,25 +77,9 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
     }
 
     @VisibleForTesting
-    HikariConfig getHikariConfig(final PropertiesConfiguration properties) {
-        final HikariConfig config = new HikariConfig();
-
+    HikariConfig getHikariConfig() {
+        final HikariConfig config = new HikariConfig(propertiesFile.getPath());
         config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
-        config.setDriverClassName(properties.getString("connection_db_driver"));
-        config.setJdbcUrl(properties.getString("connection_db_base_url"));
-        config.setUsername(properties.getString("connection_db_username"));
-        config.setPassword(properties.getString("connection_db_password"));
-        config.setMaximumPoolSize(properties.getInt("connection_db_max_total", 60));
-        config.setIdleTimeout(properties.getInt("connection_db_max_idle", 10) * 1000);
-        config.setMaxLifetime(properties.getInt("connection_db_max_wait", 60000));
-        config.setConnectionTestQuery(properties.getString("connection_db_validation_query"));
-
-        // This property controls the amount of time that a connection can be out of the pool before a message
-        // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
-        // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
-        config.setLeakDetectionThreshold(properties.getInt("connection_db_leak_detection_threshold", 60000));
-
-        config.setTransactionIsolation(properties.getString("connection_db_default_transaction_isolation"));
         return config;
     }
 }

@@ -115,6 +115,8 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
                 && link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
         assertTrue(link.getVersionPath().contains("/dA/") && link.getVersionPath().contains("/"+htmlFileName)
                 && link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains("/dA/")
+                && link.getConfiguredImageURL().contains(contentlet.getIdentifier()) && link.getConfiguredImageURL().contains("language_id"));
     }
 
     private User mockLimitedUser(){
@@ -160,6 +162,8 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
                 && link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
         assertTrue(link.getVersionPath().contains("/dA/") && link.getVersionPath().contains("/"+htmlFileName)
                 && link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains("/dA/")
+                && link.getConfiguredImageURL().contains(contentlet.getIdentifier()) && link.getConfiguredImageURL().contains("language_id"));
 
     }
 
