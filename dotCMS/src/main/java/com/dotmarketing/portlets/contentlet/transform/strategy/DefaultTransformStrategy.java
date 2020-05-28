@@ -13,7 +13,15 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.*;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_AS_MAP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_AS_MAP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_CONSTANTS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_VERSION_INFO;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_AS_MAP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox.NA;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox.mapIdentifier;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox.mapLanguage;
@@ -33,6 +41,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -225,7 +234,10 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             map.put("isLocked", contentlet.isLocked());
         }
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
-        map.put("publishDate", contentlet.getModDate());
+
+        map.put("publishDate", Try.of(contentlet::getModDate).getOrNull());
+
+
     }
 
 }

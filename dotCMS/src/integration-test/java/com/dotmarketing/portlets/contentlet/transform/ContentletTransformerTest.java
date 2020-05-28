@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.rest.ContentHelper;
@@ -21,15 +22,20 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer.Builder;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,7 +44,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     @BeforeClass
@@ -262,37 +270,109 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     }
 
 
+    @DataProvider
+    public static Object[] listTestCases() throws Exception {
+        final User user = APILocator.systemUser();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final int limit = 300;
+        final boolean respectFrontEndUsers = false;
+        return new Object[]{
+                new TestCase(BaseContentType.getBaseContentType(0),
+                        contentletAPI.search("+basetype:0", limit, 0, null, user, respectFrontEndUsers)),
+                new TestCase(BaseContentType.getBaseContentType(1),
+                        contentletAPI.search("+basetype:1", limit, 0, null, user, respectFrontEndUsers)),
+                new TestCase(BaseContentType.getBaseContentType(2),
+                        contentletAPI.search("+basetype:2", limit, 0, null, user, respectFrontEndUsers)),
+                new TestCase(BaseContentType.getBaseContentType(3),
+                        contentletAPI.search("+basetype:3", limit, 0, null, user, respectFrontEndUsers)),
+                new TestCase(BaseContentType.getBaseContentType(4),
+                        contentletAPI.search("+basetype:4", limit, 0, null, user, respectFrontEndUsers)),
+                new TestCase(BaseContentType.getBaseContentType(5),
+                        contentletAPI.search("+basetype:5", limit, 0, null, user, respectFrontEndUsers)),
+                new TestCase(BaseContentType.getBaseContentType(6),
+                        contentletAPI.search("+basetype:6", limit, 0, null, user, respectFrontEndUsers)),
+                new TestCase(BaseContentType.getBaseContentType(7),
+                        contentletAPI.search("+basetype:7", limit, 0, null, user, respectFrontEndUsers)),
+                new TestCase(BaseContentType.getBaseContentType(8),
+                        contentletAPI.search("+basetype:8", limit, 0, null, user, respectFrontEndUsers))
+        };
+    }
+
+    private static class TestCase {
+        final BaseContentType baseContentType;
+        final List<Contentlet> contentlets;
+
+        TestCase(final BaseContentType baseContentType,
+                final List<Contentlet> contentlets) {
+            this.baseContentType = baseContentType;
+            this.contentlets = contentlets;
+        }
+    }
+
     @Test
-    public void Transformer_Backwards_Compatibility_Test()
-            throws DotDataException, DotSecurityException {
-        //final Contentlet con = APILocator.getContentletAPI()
-          //      .findContentletByIdentifier("2cc0ad0f-d5e9-4c4c-a243-227dd2c49ba3", false, 1L,
-            //            APILocator.systemUser(), false);
-        List<Contentlet> list = APILocator.getContentletAPI().findAllContent(250, 650);
+    @UseDataProvider("listTestCases")
+    public void Transformer_Backwards_Compatibility_Test(final TestCase testCase) {
 
-        list = list.stream().filter(Objects::nonNull).collect(Collectors.toList());
-        assertFalse("I was expecting at least 20 contentlets returned from the index",list.isEmpty());
-        final List<Map<String, Object>> transformedList = new ContentletToMapTransformer(list).toMaps();
-        final List<Map<String, Object>> transformedList2 = new DotContentletTransformer(list).toMaps();
+        final List <Contentlet> list = testCase.contentlets;
+        final String baseTypeName = testCase.baseContentType.name();
 
-        assertEquals(transformedList.size(), transformedList2.size());
-        for(int i=0; i < list.size(); i++){
+        if(list.isEmpty()){
+           Logger.warn(ContentletTransformerTest.class, String.format("Unable to get test samples of type `%s`",testCase.baseContentType.name()));
+           return;
+        }
+
+        final ContentletToMapTransformer contentletToMapTransformer = new ContentletToMapTransformer(list);
+
+        final List<Map<String, Object>> transformedList1 = contentletToMapTransformer.toMaps();
+
+        final DotTransformer dotTransformer = new Builder().defaultOptions().content(list).build();
+
+        final List<Map<String, Object>> transformedList2 = dotTransformer.toMaps();
+
+        assertEquals(transformedList1.size(), transformedList2.size());
+        for (int i = 0; i < list.size(); i++) {
+
             final Contentlet original = list.get(i);
-            final Map<String,Object> originalTransformation = transformedList.get(i);
-            final Map<String,Object> transformation2= transformedList2.get(i);
+            //We compare the transformation results are the same using the default options on the new Transformer
+            final Map<String, Object> objectMap1 = transformedList1.get(i);
 
-            for (String key1 : originalTransformation.keySet()) {
-                final Object object1 = originalTransformation.get(key1);
-                final Object object2 = transformation2.get(key1);
+            final Map<String, Object> objectMap2 = transformedList2.get(i);
 
-                if (object1.equals(ContentletCache.CACHED_METADATA) || object1.equals(ContentletCache.EMPTY_METADATA)) {
-                   System.out.println(original.getStringProperty("metaData"));
-                    System.out.println(original.getContentType());
-                } else {
-                  assertNotNull(object2);
-                  assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", original.getContentType().name(), original.getIdentifier(), key1), object1, object2);
-                }
+            assertTrue(String.format(" baseType `%s` should have same (or more) number of properties " ,baseTypeName),objectMap2.size() >= objectMap1.size());
+
+            for (String key1 : objectMap1.keySet()) {
+                final Object object1 = objectMap1.get(key1);
+                final Object object2 = objectMap2.get(key1);
+
+                assertNotNull(object2);
+                assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
+                        baseTypeName, original.getIdentifier(), key1), object1,
+                        object2);
             }
+
+        }
+        Logger.warn(ContentletTransformerTest.class, String.format("Test using samples of type `%s` successfully completed. ",baseTypeName));
+
+        final List<Contentlet> hydrated1 = contentletToMapTransformer.hydrate();
+        final List<Contentlet> hydrated2 = dotTransformer.hydrate();
+
+        assertEquals(hydrated1.size(), hydrated2.size());
+
+        for (int i = 0; i < list.size(); i++) {
+            final Contentlet contentlet1 = hydrated1.get(i);
+            final Contentlet contentlet2 = hydrated2.get(i);
+            assertEquals(contentlet1.getIdentifier(),contentlet2.getIdentifier());
+
+            for (String key1 : contentlet1.getMap().keySet()) {
+                final Object object1 = contentlet1.getMap().get(key1);
+                final Object object2 = contentlet2.getMap().get(key1);
+
+                assertNotNull(object2);
+                assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
+                        baseTypeName, contentlet1.getIdentifier(), key1), object1,
+                        object2);
+            }
+
         }
 
     }

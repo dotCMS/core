@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class DotContentletTransformer implements DotTransformer {
 
     static final Set<TransformOptions> defaultOptions = EnumSet.of(
-        INC_COMMON_PROPS, INC_CONSTANTS, INC_VERSION_INFO, INC_BINARIES, LOAD_META
+        INC_COMMON_PROPS, INC_CONSTANTS, INC_VERSION_INFO, INC_BINARIES
     );
 
     private final Set<TransformOptions> includedOptions;
@@ -127,7 +127,7 @@ public class DotContentletTransformer implements DotTransformer {
 
          private List<Contentlet> contentlets = new ArrayList<>();
 
-         private Set<TransformOptions> optionsHolder = new HashSet<>(defaultOptions);
+         private Set<TransformOptions> optionsHolder = new HashSet<>();
 
         public Builder content(final List<Contentlet> contentlets){
             this.contentlets.addAll(contentlets);
@@ -166,6 +166,18 @@ public class DotContentletTransformer implements DotTransformer {
         public Builder dotAssetOptions(){
             optionsHolder.clear();
             optionsHolder.addAll(EnumSet.of(INC_COMMON_PROPS, INC_VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
+            return this;
+        }
+
+        public Builder withOptions(final Set<TransformOptions> options){
+            optionsHolder.clear();
+            optionsHolder.addAll(options);
+            return this;
+        }
+
+        public Builder defaultOptions(){
+            optionsHolder.clear();
+            optionsHolder.addAll(defaultOptions);
             return this;
         }
 
