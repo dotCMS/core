@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.SystemException;
 import java.util.Locale;
 import java.util.Map;
@@ -72,16 +73,16 @@ public class LanguageUtilTest {
     }
 
     @Test
-    public void getLanguageId_existing_base_expected_non_negative_lang_Test() throws DotSecurityException, DotDataException, SystemException {
+    public void getLanguageId_existing_base_expected_non_negative_lang_Test() {
 
-        Logger.info(this, "Lang FR " + APILocator.getLanguageAPI().getLanguage("fr","fr"));
-
-        final Language baseLanguage = new LanguageDataGen().languageCode("fr").countryCode(null).nextPersisted();
-        final Language frLanguage   = new LanguageDataGen().languageCode("fr").countryCode("FR").nextPersisted();
+        final Language baseLanguage = (UtilMethods.isSet(APILocator.getLanguageAPI().getLanguage("fr",null))) ?
+                APILocator.getLanguageAPI().getLanguage("fr",null) :
+                new LanguageDataGen().languageCode("fr").countryCode(null).nextPersisted();
+        final Language frLanguage   = (UtilMethods.isSet(APILocator.getLanguageAPI().getLanguage("fr","fr"))) ?
+                APILocator.getLanguageAPI().getLanguage("fr","fr") :
+                new LanguageDataGen().languageCode("fr").countryCode("FR").nextPersisted();
         final long expectedBaseId   = baseLanguage.getId();
         final long expectedFrId     = frLanguage.getId();
-        Logger.info(this, "BaseLanFR " + baseLanguage);
-        Logger.info(this, "Langs " + APILocator.getLanguageAPI().getLanguages().toString());
 
 
         Logger.info(this, "Testing fr_CR");
