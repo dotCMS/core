@@ -74,10 +74,16 @@ public class LanguageUtilTest {
     @Test
     public void getLanguageId_existing_base_expected_non_negative_lang_Test() throws DotSecurityException, DotDataException, SystemException {
 
+        Logger.info(this, "Lang FR " + APILocator.getLanguageAPI().getLanguage("fr","fr"));
+
         final Language baseLanguage = new LanguageDataGen().languageCode("fr").countryCode(null).nextPersisted();
         final Language frLanguage   = new LanguageDataGen().languageCode("fr").countryCode("FR").nextPersisted();
         final long expectedBaseId   = baseLanguage.getId();
         final long expectedFrId     = frLanguage.getId();
+        Logger.info(this, "BaseLanFR " + baseLanguage);
+        Logger.info(this, "Langs " + APILocator.getLanguageAPI().getLanguages().toString());
+
+
         Logger.info(this, "Testing fr_CR");
         Assert.assertEquals(expectedBaseId, LanguageUtil.getLanguageId("fr_CR"));
         Logger.info(this, "Testing fr-CR");
