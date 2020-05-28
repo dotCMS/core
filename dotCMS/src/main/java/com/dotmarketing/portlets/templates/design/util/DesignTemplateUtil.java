@@ -412,7 +412,7 @@ public class DesignTemplateUtil {
 
 		if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
-			return FileAssetContainerUtil.getInstance().getFullPath(containerId);;
+			return FileAssetContainerUtil.getInstance().getFullPath(containerId);
 		}
 
     	final ShortyIdAPI shortyIdAPI     = APILocator.getShortyAPI();
