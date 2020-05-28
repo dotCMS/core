@@ -412,15 +412,16 @@ public class DesignTemplateUtil {
 
 		if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
-			return containerId;
+			return FileAssetContainerUtil.getInstance().getFullPath(containerId);;
 		}
 
     	final ShortyIdAPI shortyIdAPI     = APILocator.getShortyAPI();
     	final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     	final Optional<ShortyId> shortyId = shortyIdAPI.getShorty(containerId);
 
-		return shortyId.isPresent() && shortyId.get().subType == ShortType.CONTAINER?
-				containerId: identifierAPI.find(containerId).getParentPath();
+		return shortyId.isPresent() && shortyId.get().subType == ShortType.CONTAINER ?
+				containerId:
+				FileAssetContainerUtil.getInstance().getFullPath(identifierAPI.find(containerId).getParentPath());
 	}
 
 	private static String cleanId(final String identifier) {

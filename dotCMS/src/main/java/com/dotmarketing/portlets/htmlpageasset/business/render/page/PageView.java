@@ -136,13 +136,7 @@ public class PageView implements Serializable {
 
                 final Host host = ((FileAssetContainer) container).getHost();
 
-                String path = null;
-
-                if (host == null || this.site.getIdentifier().equals(host.getIdentifier())) {
-                    path = FileAssetContainer.class.cast(container).getPath();
-                } else {
-                    path = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
-                }
+                final String path = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
 
                 containerRawMap.put(path, containerRaw);
             } else {
