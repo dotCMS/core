@@ -101,8 +101,7 @@ public class LanguageUtilTest {
         Assert.assertEquals(expectedBaseId,   LanguageUtil.getLanguageId("fr"));
         Logger.info(this, "Testing FR");
         Assert.assertEquals(expectedBaseId,   LanguageUtil.getLanguageId("FR"));
-        APILocator.getLanguageAPI().deleteLanguage(baseLanguage);
-        APILocator.getLanguageAPI().deleteLanguage(frLanguage);
+
     }
 
     @Test
