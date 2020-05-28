@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox.privateInternalProperties;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.privateInternalProperties;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.Map;
@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class PrivatePropertyRemoveStrategy extends AbstractTransformStrategy<Contentlet> {
 
-    PrivatePropertyRemoveStrategy(final TransformToolBox toolBox) {
+    PrivatePropertyRemoveStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
@@ -19,7 +19,7 @@ public class PrivatePropertyRemoveStrategy extends AbstractTransformStrategy<Con
 
     @Override
     public Map<String, Object> transform(final Contentlet contentlet, final Map<String, Object> map,
-            Set<TransformOptions> options) {
+            final Set<TransformOptions> options) {
         removePrivateProperties(map);
         return map;
     }

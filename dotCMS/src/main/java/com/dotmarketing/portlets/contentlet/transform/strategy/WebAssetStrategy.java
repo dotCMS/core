@@ -14,7 +14,7 @@ import java.util.Set;
 public abstract class WebAssetStrategy <T extends Contentlet>  extends
         AbstractTransformStrategy<T> {
 
-    WebAssetStrategy(final TransformToolBox toolBox) {
+    WebAssetStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 

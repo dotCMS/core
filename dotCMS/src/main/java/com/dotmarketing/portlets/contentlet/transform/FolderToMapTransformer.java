@@ -1,16 +1,14 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * DBTransformer that converts DB objects into Contentlet instances

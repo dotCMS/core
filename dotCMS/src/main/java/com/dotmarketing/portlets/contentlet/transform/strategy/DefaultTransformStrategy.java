@@ -22,9 +22,9 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_AS_MAP;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox.NA;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox.mapIdentifier;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox.mapLanguage;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.NOT_APPLICABLE;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.mapIdentifier;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.mapLanguage;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
@@ -52,7 +52,7 @@ import java.util.Set;
 
 public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentlet> {
 
-    DefaultTransformStrategy(final TransformToolBox toolBox) {
+    DefaultTransformStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
@@ -84,8 +84,8 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put(IDENTIFIER_KEY, contentlet.getIdentifier());
         map.put(INODE_KEY, contentlet.getInode());
         map.put(TITTLE_KEY, contentlet.getTitle());
-        map.put(CONTENT_TYPE_KEY, type != null ? type.variable() : NA);
-        map.put(BASE_TYPE_KEY, type != null ? type.baseType().name() : NA);
+        map.put(CONTENT_TYPE_KEY, type != null ? type.variable() : NOT_APPLICABLE);
+        map.put(BASE_TYPE_KEY, type != null ? type.baseType().name() : NOT_APPLICABLE);
         map.put("languageId", contentlet.getLanguageId());
         final Optional<Field> titleImage = contentlet.getTitleImage();
         final boolean present = titleImage.isPresent();
@@ -95,8 +95,8 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         }
 
         final Host host = toolBox.hostAPI.find(contentlet.getHost(), APILocator.systemUser(), true);
-        map.put(HOST_NAME, host != null ? host.getHostname() : NA);
-        map.put(HOST_KEY, host != null ? host.getIdentifier() : NA);
+        map.put(HOST_NAME, host != null ? host.getHostname() : NOT_APPLICABLE);
+        map.put(HOST_KEY, host != null ? host.getIdentifier() : NOT_APPLICABLE);
 
         final String urlMap = toolBox.contentletAPI
                 .getUrlMapForContentlet(contentlet, toolBox.userAPI.getSystemUser(), true);
@@ -185,7 +185,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             for (final Field field : binaries) {
 
                 try {
-                    map.put(field.variable() + "Map", TransformToolBox.transform(field, contentlet));
+                    map.put(field.variable() + "Map", TransformToolbox.transform(field, contentlet));
 
                     final File conBinary = contentlet.getBinary(field.variable());
                     if (conBinary != null) {
@@ -225,7 +225,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             return;
         }
         final User modUser = toolBox.userAPI.loadUserById(contentlet.getModUser());
-        map.put("modUserName", null != modUser ? modUser.getFullName() : NA);
+        map.put("modUserName", null != modUser ? modUser.getFullName() : NOT_APPLICABLE);
         map.put(WORKING_KEY, contentlet.isWorking());
         map.put(LIVE_KEY, contentlet.isLive());
         map.put(ARCHIVED_KEY, contentlet.isArchived());

@@ -13,6 +13,8 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASS
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_PROGRESS;
 import static com.liferay.portal.language.LanguageUtil.getLiteralLocale;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rest.ContentHelper;
@@ -40,12 +42,11 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class TransformToolBox {
+public class TransformToolbox {
 
     //This set contains all the properties that we want to prevent from making it into the final contentlet or transformed map.
     public static final Set<String> privateInternalProperties = ImmutableSet
@@ -64,7 +65,7 @@ public class TransformToolBox {
                 IS_TEST_MODE
             );
 
-    static final String NA = "N/A";
+    static final String NOT_APPLICABLE = "N/A";
 
     final IdentifierAPI identifierAPI;
     final HostAPI hostAPI;
@@ -77,7 +78,7 @@ public class TransformToolBox {
     final ContentHelper contentHelper;
 
     @VisibleForTesting
-    public TransformToolBox(final IdentifierAPI identifierAPI,
+    public TransformToolbox(final IdentifierAPI identifierAPI,
             final HostAPI hostAPI,
             final LanguageAPI languageAPI,
             final FileAssetAPI fileAssetAPI, final VersionableAPI versionableAPI,
@@ -95,7 +96,7 @@ public class TransformToolBox {
         this.contentHelper = contentHelper;
     }
 
-    public TransformToolBox() {
+    public TransformToolbox() {
         this(APILocator.getIdentifierAPI(), APILocator.getHostAPI(), APILocator.getLanguageAPI(),
                 APILocator.getFileAssetAPI(), APILocator.getVersionableAPI(),
                 APILocator.getUserAPI(), APILocator.getContentletAPI(),
@@ -157,7 +158,9 @@ public class TransformToolBox {
             throw new DotStateException(e);
         }
 
-        if(file==null) return Collections.emptyMap();
+        if (file == null) {
+            return emptyMap();
+        }
 
         return transform(file, contentlet, field);
     }
@@ -168,7 +171,7 @@ public class TransformToolBox {
 
         map.put("versionPath", "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + field.variable() + "/" + file.getName());
         final int contentLanguageSize = Try
-                .of(()->APILocator.getLanguageAPI().getLanguages()).getOrElse(Collections.emptyList()).size();
+                .of(()->APILocator.getLanguageAPI().getLanguages()).getOrElse(emptyList()).size();
         map.put("idPath", "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getIdentifier()) + "/" + field.variable() + "/" + file.getName()
                 + (contentLanguageSize > 1?"?language_id=" + contentlet.getLanguageId(): StringPool.BLANK));
         map.put("name", file.getName());

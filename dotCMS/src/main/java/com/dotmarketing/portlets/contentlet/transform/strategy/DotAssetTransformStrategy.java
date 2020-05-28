@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.*;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.FILE_NAME_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYPE_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
@@ -21,7 +21,7 @@ public class DotAssetTransformStrategy extends WebAssetStrategy<Contentlet> {
 
     private static final String ASSET = "asset";
 
-    DotAssetTransformStrategy(final TransformToolBox toolBox) {
+    DotAssetTransformStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
@@ -32,7 +32,7 @@ public class DotAssetTransformStrategy extends WebAssetStrategy<Contentlet> {
 
     @Override
     public Map<String, Object> transform(final Contentlet dotAsset, final Map<String, Object> map,
-            Set<TransformOptions> options)
+            final Set<TransformOptions> options)
             throws DotDataException, DotSecurityException {
 
         String fileName = "unknown";

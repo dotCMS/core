@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.contentlet.transform;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox;
+import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -42,12 +42,12 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
 
     @NotNull
     public static Map<String, Object> transform(final Field field, final Contentlet con) {
-        return TransformToolBox.transform(field, con);
+        return TransformToolbox.transform(field, con);
     }
 
     public static Map<String, Object> transform(final File file, final Contentlet con,
             final Field field) {
-        return TransformToolBox.transform(file, con, field);
+        return TransformToolbox.transform(file, con, field);
     }
 }
 

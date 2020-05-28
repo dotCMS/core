@@ -142,7 +142,7 @@ public class ContentHelper {
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes, otherwise will the same instance
      */
     public Contentlet hydrateContentlet(final Contentlet contentlet) {
-       return new DotContentletTransformer(contentlet).hydrate().get(0);
+       return new DotContentletTransformer.Builder().contentResourceOptions().content(contentlet).build().hydrate().get(0);
     } // hydrateContentlet.
 
     /**

@@ -15,7 +15,7 @@ import java.util.Set;
 
 public class HtmlPageTransformStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
-    HtmlPageTransformStrategy(final TransformToolBox toolBox) {
+    HtmlPageTransformStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 

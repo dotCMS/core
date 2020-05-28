@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.*;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.DESCRIPTION;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.FILE_NAME_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.META_DATA_FIELD;
@@ -19,13 +20,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import java.util.Map;
 import java.util.Set;
 
 public class FileAssetTransformStrategy extends WebAssetStrategy<FileAsset> {
 
-    FileAssetTransformStrategy(final TransformToolBox toolBox) {
+    FileAssetTransformStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
@@ -46,7 +46,7 @@ public class FileAssetTransformStrategy extends WebAssetStrategy<FileAsset> {
         map.put(MIMETYPE_FIELD, fileAsset.getMimeType());
         map.put("name", fileAsset.getFileName());
         map.put("size", fileAsset.getFileSize());
-        final String description = fileAsset.getStringProperty(FileAssetAPI.DESCRIPTION);
+        final String description = fileAsset.getStringProperty(DESCRIPTION);
         map.put(DESCRIPTION, isSet(description) ? description : BLANK );
         map.put("type", "file_asset");
         map.put(UNDERLYING_FILENAME, fileAsset.getUnderlyingFileName());

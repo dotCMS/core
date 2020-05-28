@@ -15,7 +15,7 @@ public class StrategyResolver {
    private final PrivatePropertyRemoveStrategy cleanUpTransformStrategy;
 
    @VisibleForTesting
-   public StrategyResolver(final TransformToolBox toolBox) {
+   public StrategyResolver(final TransformToolbox toolBox) {
       strategyByBaseType = ImmutableMap.of(
               //These very specific implementations but most cases will be covered by the default strategy.
               BaseContentType.FILEASSET, new FileAssetTransformStrategy(toolBox),
@@ -27,7 +27,7 @@ public class StrategyResolver {
    }
 
    public StrategyResolver() {
-     this(new TransformToolBox());
+     this(new TransformToolbox());
    }
 
    public List<AbstractTransformStrategy> resolveStrategies(final ContentType contentType) {

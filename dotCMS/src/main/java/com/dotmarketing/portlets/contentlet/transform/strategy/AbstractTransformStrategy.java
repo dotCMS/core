@@ -9,9 +9,9 @@ import java.util.Set;
 
 public abstract class AbstractTransformStrategy<T extends Contentlet> {
 
-    protected final TransformToolBox toolBox;
+    protected final TransformToolbox toolBox;
 
-    AbstractTransformStrategy(final TransformToolBox toolBox) {
+    AbstractTransformStrategy(final TransformToolbox toolBox) {
         this.toolBox = toolBox;
     }
 

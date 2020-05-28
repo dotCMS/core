@@ -10,7 +10,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.strategy.AbstractTransformStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
-import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox;
+import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -120,7 +120,7 @@ public class DotContentletTransformer implements DotTransformer {
      * @return a copy contentlet
      */
     private Contentlet copy(final Contentlet contentlet) {
-       return TransformToolBox.copyContentlet(contentlet);
+       return TransformToolbox.copyContentlet(contentlet);
     }
 
     public static class Builder {
@@ -169,9 +169,9 @@ public class DotContentletTransformer implements DotTransformer {
             return this;
         }
 
-        public Builder withOptions(final Set<TransformOptions> options){
+        public Builder contentResourceOptions(){
             optionsHolder.clear();
-            optionsHolder.addAll(options);
+            optionsHolder.addAll(EnumSet.of(INC_COMMON_PROPS, INC_CONSTANTS, INC_VERSION_INFO, LOAD_META));
             return this;
         }
 

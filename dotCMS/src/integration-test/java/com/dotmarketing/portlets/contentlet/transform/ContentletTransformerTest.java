@@ -27,7 +27,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer.Builder;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
-import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolBox;
+import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.util.Logger;
@@ -93,7 +93,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             assertNotNull(transformed.get(HTMLPageAssetAPI.URL_FIELD));
 
             //Forbidden properties Must Not be part of the result
-            for(final String property : TransformToolBox.privateInternalProperties){
+            for(final String property : TransformToolbox.privateInternalProperties){
                 assertFalse("found private property:" + property,transformed.containsKey(property));
             }
         }
@@ -117,12 +117,12 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         contentlet.getMap().put(Contentlet.LANGUAGEID_KEY, 1L);
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
-        final TransformToolBox toolBox = new TransformToolBox(APILocator.getIdentifierAPI(),
+        final TransformToolbox toolbox = new TransformToolbox(APILocator.getIdentifierAPI(),
                 APILocator.getHostAPI(), APILocator.getLanguageAPI(), APILocator.getFileAssetAPI(),
                 APILocator.getVersionableAPI(), APILocator.getUserAPI(),
                 APILocator.getContentletAPI(), APILocator.getHTMLPageAssetAPI(), contentHelper);
 
-        final StrategyResolver resolver = new StrategyResolver(toolBox);
+        final StrategyResolver resolver = new StrategyResolver(toolbox);
 
         final Contentlet newContentlet = new DotContentletTransformer(Collections.singletonList(contentlet), resolver, DotContentletTransformer.defaultOptions).hydrate().get(0);
 
@@ -145,12 +145,12 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         };
         final String identifier = "1234";
 
-        final TransformToolBox toolBox = new TransformToolBox(APILocator.getIdentifierAPI(),
+        final TransformToolbox toolbox = new TransformToolbox(APILocator.getIdentifierAPI(),
                 APILocator.getHostAPI(), APILocator.getLanguageAPI(), APILocator.getFileAssetAPI(),
                 APILocator.getVersionableAPI(), APILocator.getUserAPI(),
                 APILocator.getContentletAPI(), APILocator.getHTMLPageAssetAPI(), contentHelper);
 
-        final StrategyResolver resolver = new StrategyResolver(toolBox);
+        final StrategyResolver resolver = new StrategyResolver(toolbox);
 
         Contentlet contentlet = new Contentlet();
 
@@ -182,7 +182,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             }
         };
 
-        final TransformToolBox toolBox = new TransformToolBox(APILocator.getIdentifierAPI(),
+        final TransformToolbox toolBox = new TransformToolbox(APILocator.getIdentifierAPI(),
                 APILocator.getHostAPI(), APILocator.getLanguageAPI(), APILocator.getFileAssetAPI(),
                 APILocator.getVersionableAPI(), APILocator.getUserAPI(),
                 APILocator.getContentletAPI(), APILocator.getHTMLPageAssetAPI(), contentHelper);
@@ -274,7 +274,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     public static Object[] listTestCases() throws Exception {
         final User user = APILocator.systemUser();
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-        final int limit = 300;
+        final int limit = 100;
         final boolean respectFrontEndUsers = false;
         return new Object[]{
                 new TestCase(BaseContentType.getBaseContentType(0),
