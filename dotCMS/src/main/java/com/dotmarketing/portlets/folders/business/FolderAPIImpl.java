@@ -614,6 +614,9 @@ public class FolderAPIImpl implements FolderAPI  {
 	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
 			DotSecurityException, DotDataException {
 
+		if(!UtilMethods.isSet(host)){
+			throw new IllegalArgumentException("Host is not set");
+		}
 		StringTokenizer st = new StringTokenizer(path, "/"); // todo: shouldn't use multiplaform path separator
 		StringBuffer sb = new StringBuffer("/");
 

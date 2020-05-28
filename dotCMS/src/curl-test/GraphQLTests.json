@@ -130,7 +130,7 @@
 					"response": []
 				},
 				{
-					"name": "Fire default action Copy",
+					"name": "Save Content in new Language",
 					"event": [
 						{
 							"listen": "test",
@@ -164,7 +164,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -176,6 +176,12 @@
 								"default",
 								"fire",
 								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "wait_for"
+								}
 							]
 						},
 						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
@@ -658,79 +664,463 @@
 			],
 			"description": "This test that the custom type Image contains the expecte fields.\nExpected fields:\n\n* fileName\n* description\n* fileAsset (Composed/Custom Type. see Binary type on our GraphQL doc)\n* metaData (Custom Type. See Key Value type on our GraphQL doc)\n* showOnMenu\n* sortOrder",
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Related content respects language in query for parent",
+			"item": [
+				{
+					"name": "Create new Language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8a5f7d79-1a4f-4c26-91d5-02af64120c41",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Child ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "613a34d7-d03d-435d-8151-d7df48524be2",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"childContentTypeVariable\", jsonData.entity[0].variable);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Child type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Child Type {{$randomBankAccount}}\",\n\t\"variable\": \"childType{{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Parent ContentType with Rel Field to Child",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ce3e7469-4883-4c1f-8d5b-c96cb39f8f8c",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
+									"pm.collectionVariables.set(\"relFieldVariable\", jsonData.entity[0].fields[1].variable);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Parent Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Parent Type {{$randomBankAccount}}\",\n\t\"variable\": \"parentType{{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n\t\t     \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableRelationshipField\",\n\t\t     \"required\":false,\n\t\t     \"name\":\"rel\",\n\t\t     \"relationships\":{\n\t\t        \"velocityVar\":\"{{childContentTypeVariable}}\",\n\t\t        \"cardinality\":0\n\t\t     },\n\t\t     \"searchable\":false\n\t\t}\n\t]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Save Child Content in new Language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bfbc43af-3428-4503-bf17-de462b161d8c",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"childContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{childContentTypeVariable}}\",\n       \"title\":\"Child Content in New Language\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"body\":\"Child Content in New Language\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"{{languageId}}\",\n       \"name\":\"Child Content in New Language\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "wait_for"
+								}
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Save Parent Content with related Child in new Language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "dff742a8-5027-4c0f-9480-516e38dfc047",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"parentContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{parentContentTypeVariable}}\",\n       \"title\":\"Parent Content in New Language\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"body\":\"Parent Content in New Language\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"{{languageId}}\",\n       \"name\":\"Parent Content in New Language\",\n       \"{{relFieldVariable}}\":\"{{childContentIdentifier}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "wait_for"
+								}
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Related Content should return content in parents Language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4d5d3d9f-9766-4c84-a2f3-2b601d3c48c5",
+								"exec": [
+									"pm.test(\"Content parent and child content returned in requested language\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    ",
+									"    var parentIdentifier = pm.collectionVariables.get(\"parentContentIdentifier\")",
+									"    var childIdentifier = pm.collectionVariables.get(\"childContentIdentifier\")",
+									"    var languageId = pm.collectionVariables.get(\"languageId\")",
+									"    ",
+									"    var collectionName = pm.collectionVariables.get(\"parentContentTypeVariable\")+\"Collection\"",
+									"    pm.expect(jsonData.data[collectionName][0].identifier).to.eql(parentIdentifier);",
+									"    pm.expect(jsonData.data[collectionName][0].rel[0].identifier).to.eql(childIdentifier);",
+									"    pm.expect(jsonData.data[collectionName][0].rel[0].conLanguage.id).to.eql(languageId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{parentContentTypeVariable}}Collection(query:\"+languageId:{{languageId}}\", limit: 20) {\n    identifier\n    {{relFieldVariable}} {\n        identifier\n        conLanguage {\n            id\n            languageCode\n            country\n            countryCode\n        }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
 		{
-			"id": "9e26fa87-28d3-4a68-9fc6-d045b8fa115b",
+			"id": "5eeb1f2c-c5a5-42ce-b885-cffe87f29491",
 			"key": "languageId",
-			"value": 1575934290535,
+			"value": 1590535300839,
 			"type": "number"
 		},
 		{
-			"id": "879d471c-3869-4a14-bb6d-a72b9e79336e",
+			"id": "5ec5c09c-5d86-4c00-82bf-8a8e0bb7ab92",
 			"key": "contentId",
 			"value": null,
 			"type": "any"
 		},
 		{
-			"id": "5da1d244-9d67-43a9-b248-803ef4bfaa18",
+			"id": "471ef95e-2ff7-4749-871f-f95764075537",
 			"key": "contentTypeVariable",
-			"value": "MyCustomType87775784",
+			"value": "parentType07066717",
 			"type": "string"
 		},
 		{
-			"id": "0edd2dbc-1724-4ee5-a0dd-fe0b1c609494",
+			"id": "80a1b6c6-2bca-45ce-9b36-723bb558d48d",
 			"key": "contentIdentifier",
-			"value": "4e01a699-1e94-4ca7-8104-2671662d9a9c",
+			"value": "343386b1-5b24-43f9-aae6-567b82596e30",
 			"type": "string"
 		},
 		{
-			"id": "b4062e3a-e06d-48c7-864f-ce9e842967d0",
+			"id": "e287a380-d21e-4605-a916-05492cc1ed0c",
 			"key": "structureVariable",
 			"value": "myStructure94983807",
 			"type": "string"
 		},
 		{
-			"id": "86182aa0-f349-4a6b-bac7-8bca78112b5f",
+			"id": "65196a81-c338-4b96-b315-6bb1adb7fa75",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType7",
 			"type": "string"
 		},
 		{
-			"id": "78c95be4-5c0e-4b7f-be14-de771ea66685",
+			"id": "2f04ae95-bcce-4ff8-95cc-889d50bea575",
 			"key": "imageContentIdentifier",
 			"value": "a0ec5a32-c136-40e5-ac72-384929756a2f",
 			"type": "string"
 		},
 		{
-			"id": "a07c66fe-df52-4410-9696-d9b5fc48deff",
+			"id": "1c9b79b4-7ada-4903-8818-dadee31c8c1d",
 			"key": "imageFieldVariable",
 			"value": "myImage",
 			"type": "string"
 		},
 		{
-			"id": "a49687e7-7e5a-4eb2-9dbb-543d8ca1f4b7",
+			"id": "2ef59ed6-ac7f-4f2f-9b9c-0c393fb4dcdf",
 			"key": "showOnMenu",
 			"value": true,
 			"type": "boolean"
 		},
 		{
-			"id": "e0ebcee1-9a10-4a55-b874-567bd2847da1",
+			"id": "ac4d58b7-c0a9-4768-9a3e-4920b0f8c1f6",
 			"key": "sortOrder",
 			"value": 2,
 			"type": "number"
 		},
 		{
-			"id": "33df0f66-32ae-4c7f-b162-dc667f116b7e",
+			"id": "e9492af7-b2b5-4593-aaf9-293ab14cd82f",
 			"key": "fileFieldVariable",
 			"value": "myFile",
 			"type": "string"
 		},
 		{
-			"id": "cad58671-33bd-4668-a746-4511fd7170bc",
+			"id": "52765603-b89d-49ad-9d90-4e21fdff2f85",
 			"key": "fileContentIdentifier",
 			"value": "9471b1e9-2536-4802-8662-7ac94b37533a",
+			"type": "string"
+		},
+		{
+			"id": "a07c0f97-e069-4667-b57b-6a33d56b1647",
+			"key": "childContentTypeVariable",
+			"value": "childType63933555",
+			"type": "string"
+		},
+		{
+			"id": "fbe52dc2-76a9-4409-9ebf-15a5f9c3b837",
+			"key": "parentContentTypeVariable",
+			"value": "parentType66739234",
+			"type": "string"
+		},
+		{
+			"id": "57c6f4ac-8029-438f-9223-8e3f9ab138af",
+			"key": "relFieldVariable",
+			"value": "rel",
+			"type": "string"
+		},
+		{
+			"id": "10f526fd-9d93-41df-a34e-e5ac5a9b85d9",
+			"key": "childContentIdentifier",
+			"value": "96192a71-ca0a-4383-bf6e-c0db9905491f",
+			"type": "string"
+		},
+		{
+			"id": "bcc90648-8e6b-4f13-878f-7182f7a9ba13",
+			"key": "parentContentIdentifier",
+			"value": "bc60f6f7-5a31-4583-818f-3af003233e2f",
 			"type": "string"
 		}
 	],

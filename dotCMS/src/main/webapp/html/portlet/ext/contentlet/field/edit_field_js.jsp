@@ -318,35 +318,59 @@ var cmsfile=null;
 		}
 	}
 
-    function emmitFieldDataChange(val) {
-        var customEvent = document.createEvent("CustomEvent");
-        customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "edit-contentlet-data-updated",
-            payload: val
-        });
-        document.dispatchEvent(customEvent)
-    }
 
-  function insertDropZoneAsset(activeEditor, textAreaId) {
-	const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
-        dropZone.addEventListener('uploadComplete', async (asset) => {
-					if(asset.detail) {
-						const [dotAsset] = event.detail;
-						const { inode, titleImage, identifier, title } = dotAsset;	
-						const asset = `
-							<img
-								src="/contentAsset/image/${identifier}/${titleImage}"
-								alt="${titleImage}"
-								data-field-name="${titleImage}"
-								data-inode="${inode}"
-								data-identifier="${identifier}"
-								data-saveas="${title}"
-							/>
-						`;
-						activeEditor.get(textAreaId).execCommand('mceInsertContent', false, asset);
-				}
-        })
-    }
+	function emmitFieldDataChange(val) {
+			var customEvent = document.createEvent("CustomEvent");
+			customEvent.initCustomEvent("ng-event", false, false,  {
+					name: "edit-contentlet-data-updated",
+					payload: val
+			});
+			document.dispatchEvent(customEvent)
+	}
+
+	function insertAssetInEditor(dotAssets) {
+		dotAssets.forEach(async (asset) => {
+			let results = await fetch(
+				`/api/v1/content/resourcelink?identifier=${asset.identifier}`
+			);
+			results = await results.json();
+
+			const mimeWhiteList = [
+				"image/jpeg",
+				"image/gif",
+				"image/webp",
+				"image/tiff",
+				"image/png",
+			];
+			const { mimeType, idPath } = results.entity.asset;
+
+			const image = `
+					<img
+					src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
+					alt="${asset.title}"
+					data-field-name="${asset.titleImage}"
+					data-inode="${asset.inode}"
+					data-identifier="${asset.identifier}"
+					data-saveas="${asset.title}"
+					/>`;
+
+			const link = `<a href="${idPath}">${asset.title}</a>`;
+			const assetToInsert = mimeWhiteList.includes(mimeType) ? image : link;
+			tinymce.execCommand("mceInsertContent", false, assetToInsert);
+		});
+	}
+
+  var dropzoneEvents = false
+
+  function bindDropZoneUploadComplete(activeEditor, textAreaId) {
+		const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+		dropZone.addEventListener('uploadComplete', async (asset) => {
+			dropZone.style.pointerEvents = "none";
+			asset.detail && insertAssetInEditor(asset.detail)
+		})
+		dropzoneEvents = true
+  }
+
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
@@ -369,7 +393,7 @@ var cmsfile=null;
 					     catch(e){
 					    	 showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 					     }
-	
+
 					 <%}else{%>
 					         var <%=field.variable()%>tinyPropOverride =  tinyMCEProps;
 				     <%}%>
@@ -394,7 +418,10 @@ var cmsfile=null;
 			        `dot-asset-drop-zone-${textAreaId}`
 			      );
 			      editor.on("dragover", function (e) {
-			        dropZone.style.pointerEvents = "all";
+                    const { kind } = Array.from(e.dataTransfer.items)[0];
+                    if (kind === 'file') {
+                        dropZone.style.pointerEvents = "all";
+                    }
 			      });
 			      editor.dom.bind(document, "dragleave", function (e) {
 			        dropZone.style.pointerEvents = "none";
@@ -407,9 +434,11 @@ var cmsfile=null;
 			    tinyConf,
 			    tinymce.EditorManager
 			  );
-			  insertDropZoneAsset(tinymce, textAreaId);
+			  if (!dropzoneEvents) {
+			    bindDropZoneUploadComplete(tinymce, textAreaId);
+			  }
 			  wellTinyMCE.render();
-				wellTinyMCE.on("change", emmitFieldDataChange);
+			  wellTinyMCE.on("change", emmitFieldDataChange);
 			} catch (e) {
 			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
@@ -621,7 +650,7 @@ var cmsfile=null;
 		    minLines: 25,
 		    maxLines:40
 	    });
-	    
+
     	aceEditors[textarea].clearSelection();
 		enabledCodeAreas[textarea]=true;
 		aceEditors[textarea].on("change", function(){
@@ -643,38 +672,13 @@ var cmsfile=null;
 
 	function addFileImageCallback(file) {
 		
-		//console.log(file);
 		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
 
 		var assetURI = replaceUrlPattern(pattern, file);
-
-	    // console.log("assetURI:" + assetURI)
-	    /*
-	    pattern="/dA/{shortyId}/{name}?language_id";
-	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	    
-	    pattern="/dA/{shortyInode}/{name}?language_id={languageId}";
-	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	        
-        pattern="/dA/{shortyInode}/{extension}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-            
-        pattern="/dA/{inode}/{extension}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-        
-        pattern="/dA/{identifier}/{extension}?language_id={languageId}";  
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-
-	    
-        pattern="//{hostName}{path}{name}?language_id={languageId}";  
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	    */
-	    
-	    
 		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
 	}
-	
-	
+
+
 	function replaceUrlPattern(pattern, file){
 
 	     return pattern
@@ -686,16 +690,16 @@ var cmsfile=null;
           .replace(/{hostname}/g    ,file.hostName)
           .replace(/{hostName}/g    ,file.hostName)
           .replace(/{inode}/g       ,file.inode)
-          .replace(/{hostId}/g      ,file.host)   
+          .replace(/{hostId}/g      ,file.host)
           .replace(/{identifier}/g  ,file.identifier)
           .replace(/{id}/g          ,file.identifier)
           .replace(/{shortyInode}/g ,file.inode.replace("-", "").substring(0, 10))
           .replace(/{shortyId}/g    ,file.identifier.replace("-", "").substring(0, 10))
           ;
-		
+
 	}
-	
-	
+
+
 	function addFileCallback(file) {
 		var ident
 		var ext = file.extension;
@@ -872,12 +876,12 @@ var cmsfile=null;
 			//textEditor[textarea].setTheme("ace/theme/textmate");
 			textEditor[textarea].getSession().setMode("ace/mode/"+keyValue);
 			textEditor[textarea].getSession().setUseWrapMode(true);
-			
+
 			textEditor[textarea].setOptions({
 		            minLines: 15,
 		            maxLines:35
 		        });
-			
+
 			 aceTextId[textarea] = textarea;
 		}
     	dijit.byId("toggleEditor_"+textarea).disabled=true;

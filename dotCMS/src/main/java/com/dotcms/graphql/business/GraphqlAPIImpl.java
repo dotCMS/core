@@ -45,6 +45,8 @@ import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -85,9 +87,16 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     private volatile GraphQLSchema schema;
 
+    private RelationshipAPI relationshipAPI;
+
     public static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
     public GraphqlAPIImpl() {
+        this(APILocator.getRelationshipAPI());
+    }
+
+    public GraphqlAPIImpl(final RelationshipAPI relationshipAPI) {
+        this.relationshipAPI = relationshipAPI;
         // custom type mappings
         this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
         this.fieldClassGraphqlTypeMap.put(CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
@@ -179,7 +188,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
             if(!(field instanceof RowField) && !(field instanceof ColumnField)) {
                 if (field instanceof RelationshipField) {
-                    handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
+                    try {
+                        handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
+                    } catch(DotStateException e) {
+                        Logger.error(this, "Unable to create relationship field", e);
+                    }
                 } else {
                     builder.field(newFieldDefinition()
                         .name(field.variable())
@@ -205,13 +218,13 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         try {
             relatedContentType = getRelatedContentTypeForField(field, APILocator.systemUser());
         } catch (DotSecurityException | DotDataException e) {
-            throw new DotRuntimeException("Unable to create schema type for Content Type: " + contentType.variable(), e);
+            throw new DotStateException("Unable to create relationship field type for field: " + contentType.variable() + "." + field.variable(), e);
         }
 
         Relationship relationship;
 
         try {
-            relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
+            relationship = relationshipAPI.getRelationshipFromField(field,
                 APILocator.systemUser());
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
@@ -221,7 +234,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final ContentletRelationships.ContentletRelationshipRecords
             records = contentletRelationships.new ContentletRelationshipRecords(
             relationship,
-            APILocator.getRelationshipAPI().isChildField(relationship, field));
+            relationshipAPI.isChildField(relationship, field));
 
         GraphQLOutputType outputType = typesMap.get(relatedContentType.variable()) != null
             ? typesMap.get(relatedContentType.variable())
@@ -340,8 +353,13 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     }
 
     private ContentType getRelatedContentTypeForField(final Field field, final User user) throws DotSecurityException, DotDataException {
-        final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
+        final Relationship relationship = relationshipAPI.getRelationshipFromField(field,
             user);
+
+        if(relationship==null) {
+            throw new DotDataException("Relationship with name:"
+                    + field.relationType() + " not found. Field var:" + field.variable() + ". Field ID: " + field.id());
+        }
 
         final String relatedContentTypeId = relationship.getParentStructureInode().equals(field.contentTypeId())
             ? relationship.getChildStructureInode() : relationship.getParentStructureInode();
