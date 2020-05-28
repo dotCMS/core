@@ -49,9 +49,9 @@ public interface Storage {
     /**
      * Deletes the group
      * @param groupName {@link String} group name
-     * @return boolean true if deletes was ok.
+     * @return int number of storages deleted
      */
-    boolean deleteGroup(final String groupName);
+    int deleteGroup(final String groupName);
 
     /**
      * Deletes the object path on the group
@@ -82,7 +82,7 @@ public interface Storage {
      * @param groupName {@link String} the group to upload
      * @param path       {@link String} path to upload the file
      * @param writerDelegate     {@link ObjectWriterDelegate} stream to upload
-     * @param object     {@link Object} object to write into the storage
+     * @param object     {@link Serializable} object to write into the storage
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
@@ -103,11 +103,11 @@ public interface Storage {
      * @param bucketName {@link String} the bucket to upload
      * @param path       {@link String} path to upload the file
      * @param writerDelegate     {@link ObjectWriterDelegate} stream to upload
-     * @param object     {@link Object} object to write into the storage
+     * @param object     {@link Serializable} object to write into the storage
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
-    Future<Object> pushObjectAsync(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate, final Object object, final Map<String, Object> extraMeta);
+    Future<Object> pushObjectAsync(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate, final Serializable object, final Map<String, Object> extraMeta);
 
     /**
      * Returns a local with the path contains on the storage, keep in mind that depending on the implementation it could be the actual file

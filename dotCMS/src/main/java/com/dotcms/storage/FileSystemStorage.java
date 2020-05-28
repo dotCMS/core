@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +62,7 @@ public class FileSystemStorage implements Storage {
     }
 
     @Override
-    public boolean deleteGroup(final String groupName) {
+    public int deleteGroup(final String groupName) {
 
         throw new UnsupportedOperationException("On FileSystemStorage can not delete buckets");
     }
@@ -114,7 +115,7 @@ public class FileSystemStorage implements Storage {
 
     @Override
     public Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate,
-                             final Object object, final Map<String, Object> extraMeta) {
+                             final Serializable object, final Map<String, Object> extraMeta) {
 
 
         if (!this.existsGroup(groupName)) {
@@ -169,7 +170,7 @@ public class FileSystemStorage implements Storage {
 
     @Override
     public Future<Object> pushObjectAsync(final String bucketName, final String path,
-                                          final ObjectWriterDelegate writerDelegate, final Object object,
+                                          final ObjectWriterDelegate writerDelegate, final Serializable object,
                                           final Map<String, Object> extraMeta) {
 
         return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(

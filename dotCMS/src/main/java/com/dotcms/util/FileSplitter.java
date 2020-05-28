@@ -11,9 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -40,36 +38,36 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
     private final File file;
 
     /**
-     * Size for the chuck files.
+     * Size for the chunk files.
      */
-    private final int chuckSize;
+    private final int chunkSize;
 
     private Closeable closeable;
 
     /**
-     * Defaut size for the chucks, 2mb
+     * Defaut size for the chuncks, 2mb
      */
-    private static final int CHUNK_SIZE = Config.getIntProperty("FILE_SPLITTER_CHUCK_SIZE", 2097152); // 2mb
+    private static final int CHUNK_SIZE = Config.getIntProperty("FILE_SPLITTER_CHUNK_SIZE", 2097152); // 2mb
 
     public FileSplitter(final File file) {
 
         this (file, CHUNK_SIZE);
     }
 
-    public FileSplitter(final File file, final int chuckSize) {
+    public FileSplitter(final File file, final int chunkSize) {
 
-        this (file, chuckSize, FileSplitter::createTempSubFile);
+        this (file, chunkSize, FileSplitter::createTempSubFile);
     }
 
-    public FileSplitter(final File file, final int chuckSize, final BiFunction<String, Integer, File> createSubFileFunction) {
+    public FileSplitter(final File file, final int chunkSize, final BiFunction<String, Integer, File> createSubFileFunction) {
 
-        this (file, chuckSize, createSubFileFunction, FileSplitter::createCompressorOutputStream);
+        this (file, chunkSize, createSubFileFunction, FileSplitter::createCompressorOutputStream);
     }
 
-    private static File createTempSubFile (final String originalFatFileName, final int chuckIndex) {
+    private static File createTempSubFile (final String originalFatFileName, final int chunkIndex) {
 
         return Try.of(()->FileUtil.createTemporalFile( // todo: use a pattern from config
-                originalFatFileName + StringPool.DASH + chuckIndex, ".bin")).getOrElseThrow(DotRuntimeException::new);  // get a pattern from config
+                originalFatFileName + StringPool.DASH + chunkIndex, ".bin")).getOrElseThrow(DotRuntimeException::new);  // get a pattern from config
     }
 
     private static OutputStream createCompressorOutputStream (final File file) {
@@ -78,14 +76,14 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
         return Try.of(()->com.liferay.util.FileUtil.createOutputStream(file.toPath(), compressor)).getOrElseThrow(DotRuntimeException::new);
     }
 
-    public FileSplitter(final File file, final int chuckSize,
+    public FileSplitter(final File file, final int chunkSize,
                         final BiFunction<String, Integer, File> createSubFileFunction,
                         final Function<File, OutputStream> outputStreamCreatorFunction) {
 
         this.createSubFileFunction = createSubFileFunction;
         this.outputStreamCreatorFunction = outputStreamCreatorFunction;
         this.file = file;
-        this.chuckSize = chuckSize;
+        this.chunkSize = chunkSize;
     }
 
     @Override
@@ -108,7 +106,7 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
         private int               cursor;
         private final InputStream stream;
         private final long        fileLength;
-        private final byte[]      chuckbuffer;
+        private final byte[]      chunkbuffer;
 
         public FileSplitterIterator() {
 
@@ -117,7 +115,7 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
             this.fileLength  = file.length();
             this.stream      = Try.of(()->com.liferay.util.FileUtil.createInputStream
                     (file.toPath(), "none")).getOrElseThrow(DotRuntimeException::new);
-            this.chuckbuffer = new byte[FileSplitter.this.chuckSize];
+            this.chunkbuffer = new byte[FileSplitter.this.chunkSize];
         }
 
         @Override
@@ -130,11 +128,11 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
 
             if (this.hasNext()) {
                 // check byte count from cursor...
-                final int readBytes  = Try.of(()->this.stream.read(this.chuckbuffer)).getOrElseThrow(DotRuntimeException::new);
-                final File chuckFile = FileSplitter.this.createSubFileFunction.apply(file.getName(), this.index);  // this file should have the chuck in the file and readBytes
-                try (OutputStream outputStream = FileSplitter.this.outputStreamCreatorFunction.apply(chuckFile)) {
+                final int readBytes  = Try.of(()->this.stream.read(this.chunkbuffer)).getOrElseThrow(DotRuntimeException::new);
+                final File chunkFile = FileSplitter.this.createSubFileFunction.apply(file.getName(), this.index);  // this file should have the chunk in the file and readBytes
+                try (OutputStream outputStream = FileSplitter.this.outputStreamCreatorFunction.apply(chunkFile)) {
 
-                    outputStream.write(this.chuckbuffer, 0, readBytes);
+                    outputStream.write(this.chunkbuffer, 0, readBytes);
                     outputStream.flush();
                 } catch (IOException e) {
 
@@ -144,7 +142,7 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
                 this.cursor         += readBytes;
                 this.index++;
 
-                return chuckFile;
+                return chunkFile;
             }
 
             throw new NoSuchElementException();
@@ -156,36 +154,5 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
                 this.stream.close();
             }
         }
-    }
-
-    public static void main(String[] args) {
-
-        List<File> files = new ArrayList<>();
-        File file = new File ("/Users/jsanca/Downloads/[JAVA][Beginning Java 8 Games Development].pdf" );
-
-        try (FileSplitter fileSplitter = new FileSplitter(file, 1048576, // 1 mb
-                (filename, index)-> new File("/Users/jsanca/Downloads/tmp/" + index + "-" + filename + ".bin"))) {
-
-            for (final File partitionFile : fileSplitter) {
-
-                files.add(partitionFile);
-                System.out.println(partitionFile.getAbsolutePath());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try (final FileJoiner fileJoiner = new FileJoiner(new File("/Users/jsanca/Downloads/tmp/ensambled.pdf"))){
-            for (final File chuckFile : files) {
-
-                fileJoiner.join(chuckFile);
-                fileJoiner.flush();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println("DONE");
-        System.exit(0);
     }
 }

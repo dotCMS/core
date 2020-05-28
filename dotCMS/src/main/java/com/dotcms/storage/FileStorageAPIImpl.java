@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import io.vavr.control.Try;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
@@ -209,7 +210,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         try {
 
-            storage.pushObject(storageKey.getBucket(), storageKey.getPath(), this.objectWriterDelegate, metadataMap,
+            storage.pushObject(storageKey.getBucket(), storageKey.getPath(), this.objectWriterDelegate, (Serializable)metadataMap,
                     Collections.emptyMap()); // todo: define this later
             Logger.info(this, "Metadata wrote on: " + storageKey.getPath());
         } catch (Exception e) {

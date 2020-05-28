@@ -29,7 +29,7 @@ public class FileJoiner implements AutoCloseable, Flushable, Closeable {
     /**
      * Defaut size for the chucks, 2mb
      */
-    private static final int CHUNK_SIZE = Config.getIntProperty("FILE_SPLITTER_CHUCK_SIZE", 2097152); // 2mb
+    private static final int CHUNK_SIZE = Config.getIntProperty("FILE_SPLITTER_CHUNK_SIZE", 2097152); // 2mb
 
 
     private static InputStream createCompressorOutputStream (final File file) {
