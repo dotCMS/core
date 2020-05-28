@@ -1,27 +1,23 @@
 package com.dotcms.rest.api.v1.folder;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.I18NUtil;
-import com.dotmarketing.exception.DotRuntimeException;
+
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import com.liferay.util.LocaleUtil;
 import java.io.Serializable;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -42,22 +38,18 @@ import org.glassfish.jersey.server.JSONP;
 public class FolderResource implements Serializable {
     private final WebResource webResource;
     private final FolderHelper folderHelper;
-    private final I18NUtil i18NUtil;
 
     public FolderResource() {
         this(new WebResource(),
-                FolderHelper.getInstance(),
-                I18NUtil.INSTANCE);
+                FolderHelper.getInstance());
     }
 
     @VisibleForTesting
     public FolderResource(final WebResource webResource,
-                          final FolderHelper folderHelper,
-                          final I18NUtil i18NUtil) {
+                          final FolderHelper folderHelper) {
 
         this.webResource = webResource;
         this.folderHelper = folderHelper;
-        this.i18NUtil = i18NUtil;
     }
 
     @POST
@@ -69,42 +61,21 @@ public class FolderResource implements Serializable {
     public final Response createFolders(@Context final HttpServletRequest httpServletRequest,
                                         @Context final HttpServletResponse httpServletResponse,
                                         final List<String> paths,
-                                        @PathParam("siteName") final String siteName) {
-        Response response = null;
-        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+                                        @PathParam("siteName") final String siteName)
+            throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(httpServletRequest, httpServletResponse)
+                        .init();
+
         final User user = initData.getUser();
-        final List<Map<String, Object>> folderResults;
 
-        try {
-            Locale locale = LocaleUtil.getLocale(user, httpServletRequest);
-            FolderHelper.FolderResults results = folderHelper.createFolders(paths, siteName, user);
-            folderResults = results.folders
-                    .stream()
-                    .map(folder -> {
-                        try {
-                            return folder.getMap();
-                        } catch (Exception e) {
-                            Logger.error(this, "Data Exception while converting to map", e);
-                            throw new DotRuntimeException("Data Exception while converting to map", e);
-                        }
-                    })
-                    .collect(Collectors.toList());
-            ;
+            final List<Map<String, Object>> createdFolders = folderHelper.createFolders(paths, siteName, user);
 
-            response = Response.ok(new ResponseEntityView
-                    (map("result", folderResults),
-                            results.getErrorEntities(), null,
-                            this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
-                                    "cancel")
-                    )).build(); // 200
-        } catch (Exception e) { // this is an unknown error, so we report as a 500.
-            Logger.error(this, "Error handling Save Folder Post Request", e);
-            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-                throw new ForbiddenException(e);
-            }
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
-        return response;
+            return Response.ok(new ResponseEntityView(createdFolders)).build(); // 200
     }
 
     @GET
@@ -123,7 +94,7 @@ public class FolderResource implements Serializable {
             Folder folder = folderHelper.loadFolderByURI(siteName,user,uri);
             response = Response.ok( new ResponseEntityView(folder) ).build();
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
-            Logger.error(this, "Error gettign folder for URI", e);
+            Logger.error(this, "Error getting folder for URI", e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
             }
