@@ -1,33 +1,26 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <style>
-    #dotAjaxMainHangerDiv, #dotAjaxMainDiv { height: 100%; }
-    .portlet-wrapper { display: flex; height: 100%; justify-content: center; }
-    .unlicense-content { align-self: center; text-align: center; }
-    .unlicense-content i, .unlicense-content h4 { color: #b3b1b8 }
-    .unlicense-content h4 { font-size:24px; font-weight:400; line-height:36px; }
-    .unlicense-content p { font-size:14px; font-weight:400; line-height:21px; margin-block-end:14px; margin-block-start:14px; }
-    .unlicense-content ul { display: inline-block; margin-block-end: 14px; margin-block-start: 14px;}
-    .unlicense-content ul li { line-height: 21px; list-style-type:disc; text-align: left; }
-    .unlicense-content ul li a { color: var(--color-main); font-size:14px; }
-    .request-license-button { background: var(--color-main); border: solid 1px transparent; border-radius: 2px; color: #fff; display: inline-block; line-height: 36px; padding: 0 24px; text-decoration: none; text-transform: uppercase; }
-    .request-license-button:hover { background: var(--color-main_mod); border: solid 1px transparent; }
+	.wrapper{background:url(/html/images/skin/publishing-promo.png) no-repeat 0 0;width:1183px;height:800px;margin:0 auto;}
+	.content{position:fixed;left:50%;top:70%;margin:-200px 0 0 -300px;width:600px;background:#333;opacity:.85;color:#fff;padding:20px 20px 35px 20px;-moz-border-radius: 15px;-webkit-border-radius: 15px;-moz-box-shadow:0px 0px 15px #666;-webkit-box-shadow:0px 0px 15px #666;}
+	.content h2{font-size:200%;}
+	.content p{margin:0;}
+	.content ul{margin:5px 0 25px 15px;padding:0 0 0 10px;list-style-position:outside; list-style:decimal;}
+	.content li{list-style-position:outside; list-style:disc;}
+	.content a{color:#fff;}
 </style>
-<div class="portlet-wrapper">
-    <div class="unlicense-content">
-        <i class="material-icons" style="font-size: 120px;">cloud_upload</i>
-        <h4><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.publishing-queue")%></h4>
-        <p><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.publishing-queue")%> <%=LanguageUtil.get(pageContext, "only-available-in-enterprise")%></p>
-        <ul>
-            <li>
-                <a target="_blank" href="https://dotcms.com/product/features/feature-list"><%=LanguageUtil.get(pageContext, "Learn-more-about-dotCMS-Enterprise")%></a>
-            </li>
-            <li>
-                <a target="_blank" href="https://dotcms.com/contact-us/"><%=LanguageUtil.get(pageContext, "Contact-Us-for-more-Information")%></a>
-            </li>
-        </ul>
-        <p style="display: block;">
-            <a class="request-license-button" href="https://dotcms.com/licensing/request-a-license-3/index"><%=LanguageUtil.get(pageContext, "request-trial-license")%></a>
-        </p>
-    </div>
+<div class="greyBg"></div>
+<div class="wrapper">
+	<div class="content">
+		<h2><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.publishing-queue")%></h2>
+		<p><%= LanguageUtil.get(pageContext, "PUBLISHING-NOT-LICENSED") %></p>
+
+	</div>
 </div>
+<script type="text/javascript">
+dojo.addOnUnload (function(){
+	if(dojo.isIE){//DOTCMS-5302
+		document.getElementById('formHandlerDemoDiv').innerHTML="";
+	}
+});
+</script>
 
