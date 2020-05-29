@@ -5,6 +5,7 @@ import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImpl
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
+import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
@@ -114,6 +115,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.services.VelocityResourceKeyTest.class,
         com.dotcms.rendering.velocity.services.HTMLPageAssetRenderedTest.class,
         com.dotcms.uuid.shorty.ShortyIdApiTest.class,
+        DotGraphQLHttpServletTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
         com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,

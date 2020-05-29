@@ -69,7 +69,7 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
      * those with the specific ones for graphql, api.cors.graphql.access-control-allow-headers
      * 
      */
-    private final Function0<HashMap<String, String>> corsHeaders = Function0.of(() -> {
+    protected final Function0<HashMap<String, String>> corsHeaders = Function0.of(() -> {
 
         final HashMap<String, String> headers = new HashMap<>();
         // load defaults
