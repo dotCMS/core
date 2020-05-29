@@ -9,12 +9,17 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.SystemException;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Locale;
 import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class LanguageUtilTest {
 
 
@@ -72,8 +77,21 @@ public class LanguageUtilTest {
         APILocator.getLanguageAPI().deleteLanguage(language);
     }
 
-    @Test
-    public void getLanguageId_existing_base_expected_non_negative_lang_Test() {
+    private static class testCaseLanguageLocale{
+        String localeRequested;
+        long expectedLangId;
+
+        testCaseLanguageLocale(final String localeRequested,final long expectedLangId){
+            this.localeRequested = localeRequested;
+            this.expectedLangId = expectedLangId;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCasesLanguageLocale() throws Exception {
+
+        // Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         final Language baseLanguage = (UtilMethods.isSet(APILocator.getLanguageAPI().getLanguage("fr",null))) ?
                 APILocator.getLanguageAPI().getLanguage("fr",null) :
@@ -81,27 +99,32 @@ public class LanguageUtilTest {
         final Language frLanguage   = (UtilMethods.isSet(APILocator.getLanguageAPI().getLanguage("fr","fr"))) ?
                 APILocator.getLanguageAPI().getLanguage("fr","fr") :
                 new LanguageDataGen().languageCode("fr").countryCode("FR").nextPersisted();
-        final long expectedBaseId   = baseLanguage.getId();
-        final long expectedFrId     = frLanguage.getId();
+        final long expectedBaseLangId   = baseLanguage.getId();
+        final long expectedFrLangId     = frLanguage.getId();
 
+        return new  Object[]{
+                new testCaseLanguageLocale("fr_CR",expectedBaseLangId),
+                new testCaseLanguageLocale("fr-CR",expectedBaseLangId),
+                new testCaseLanguageLocale("fr_FR",expectedFrLangId),
+                new testCaseLanguageLocale("FR_FR",expectedFrLangId),
+                new testCaseLanguageLocale("fr-FR",expectedFrLangId),
+                new testCaseLanguageLocale("FR-FR",expectedFrLangId),
+                new testCaseLanguageLocale("FR",expectedBaseLangId),
+                new testCaseLanguageLocale("fr",expectedBaseLangId),
 
-        Logger.info(this, "Testing fr_CR");
-        Assert.assertEquals(expectedBaseId, LanguageUtil.getLanguageId("fr_CR"));
-        Logger.info(this, "Testing fr-CR");
-        Assert.assertEquals(expectedBaseId, LanguageUtil.getLanguageId("fr-CR"));
-        Logger.info(this, "Testing fr_FR");
-        Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("fr_FR"));
-        Logger.info(this, "Testing FR_FR");
-        Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("FR_FR"));
-        Logger.info(this, "Testing fr-FR");
-        Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("fr-FR"));
-        Logger.info(this, "Testing FR-FR");
-        Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("FR-FR"));
-        Logger.info(this, "Testing fr");
-        Assert.assertEquals(expectedBaseId,   LanguageUtil.getLanguageId("fr"));
-        Logger.info(this, "Testing FR");
-        Assert.assertEquals(expectedBaseId,   LanguageUtil.getLanguageId("FR"));
+        };
+    }
 
+    /**
+     * This test is for the getLanguageId under the LanguageUtil.
+     * This method can receive a locale and get the languageId if it exists.
+     * If a language with a specific CountryCode not exists but the base language does, this one should be returned.
+     *
+     */
+    @Test
+    @UseDataProvider("testCasesLanguageLocale")
+    public void test_getLanguageId_DiffLanguageLocale(final testCaseLanguageLocale testCaseLanguageLocale) {
+        Assert.assertEquals(testCaseLanguageLocale.expectedLangId,LanguageUtil.getLanguageId(testCaseLanguageLocale.localeRequested));
     }
 
     @Test
