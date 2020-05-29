@@ -6,7 +6,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.SystemException;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -77,11 +76,11 @@ public class LanguageUtilTest {
         APILocator.getLanguageAPI().deleteLanguage(language);
     }
 
-    private static class TestCaseLanguageLocale{
+    private static class TestCaseLanguageLocale {
         String localeRequested;
         long expectedLangId;
 
-        testCaseLanguageLocale(final String localeRequested,final long expectedLangId){
+        TestCaseLanguageLocale(final String localeRequested,final long expectedLangId){
             this.localeRequested = localeRequested;
             this.expectedLangId = expectedLangId;
         }
@@ -103,14 +102,14 @@ public class LanguageUtilTest {
         final long expectedFrLangId     = frLanguage.getId();
 
         return new  Object[]{
-                new testCaseLanguageLocale("fr_CR",expectedBaseLangId),
-                new testCaseLanguageLocale("fr-CR",expectedBaseLangId),
-                new testCaseLanguageLocale("fr_FR",expectedFrLangId),
-                new testCaseLanguageLocale("FR_FR",expectedFrLangId),
-                new testCaseLanguageLocale("fr-FR",expectedFrLangId),
-                new testCaseLanguageLocale("FR-FR",expectedFrLangId),
-                new testCaseLanguageLocale("FR",expectedBaseLangId),
-                new testCaseLanguageLocale("fr",expectedBaseLangId),
+                new TestCaseLanguageLocale("fr_CR",expectedBaseLangId),
+                new TestCaseLanguageLocale("fr-CR",expectedBaseLangId),
+                new TestCaseLanguageLocale("fr_FR",expectedFrLangId),
+                new TestCaseLanguageLocale("FR_FR",expectedFrLangId),
+                new TestCaseLanguageLocale("fr-FR",expectedFrLangId),
+                new TestCaseLanguageLocale("FR-FR",expectedFrLangId),
+                new TestCaseLanguageLocale("FR",expectedBaseLangId),
+                new TestCaseLanguageLocale("fr",expectedBaseLangId),
 
         };
     }
@@ -123,7 +122,7 @@ public class LanguageUtilTest {
      */
     @Test
     @UseDataProvider("testCasesLanguageLocale")
-    public void test_getLanguageId_DiffLanguageLocale(final testCaseLanguageLocale testCaseLanguageLocale) {
+    public void test_getLanguageId_DiffLanguageLocale(final TestCaseLanguageLocale testCaseLanguageLocale) {
         Assert.assertEquals(testCaseLanguageLocale.expectedLangId,LanguageUtil.getLanguageId(testCaseLanguageLocale.localeRequested));
     }
 
