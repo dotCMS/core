@@ -77,7 +77,7 @@ public class LanguageUtilTest {
         APILocator.getLanguageAPI().deleteLanguage(language);
     }
 
-    private static class testCaseLanguageLocale{
+    private static class TestCaseLanguageLocale{
         String localeRequested;
         long expectedLangId;
 
