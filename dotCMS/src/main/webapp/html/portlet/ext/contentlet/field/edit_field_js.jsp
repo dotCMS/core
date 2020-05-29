@@ -355,7 +355,18 @@ var cmsfile=null;
 
 			const link = `<a href="${idPath}">${asset.title}</a>`;
 			const assetToInsert = mimeWhiteList.includes(mimeType) ? image : link;
-			tinymce.execCommand("mceInsertContent", false, assetToInsert);
+            tinymce.execCommand("mceInsertContent", false, assetToInsert);
+            const images = tinymce.activeEditor.contentDocument.querySelectorAll('img');
+            images.forEach(image => {
+                // Needs to ask Ivor because this is not a good aproach
+                console.log(image.naturalWidth);
+                console.log(image.naturalHeight);
+                image.addEventListener('load', () => {
+                    image.setAttribute('width', image.naturalWidth)
+                    image.setAttribute('height', image.naturalHeight)
+                })
+                
+            })
 		});
 	}
 
@@ -690,12 +701,9 @@ var cmsfile=null;
 	}
 
 	function addFileImageCallback(file) {
-		
 		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
-
-		var assetURI = replaceUrlPattern(pattern, file);
-		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
-
+        var assetURI = replaceUrlPattern(pattern, file);
+        insertAssetInEditor([file])
 	}
 
 
