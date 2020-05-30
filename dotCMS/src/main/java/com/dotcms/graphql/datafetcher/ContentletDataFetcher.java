@@ -8,7 +8,8 @@ import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -54,8 +55,9 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                 .filter(contentlet -> contentlet.getContentType().variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX))
                 .collect(Collectors.toList());
 
-
-            return new DotContentletTransformer(filteredContentletList).hydrate();
+            final DotTransformer transformer = new DotTransformerBuilder()
+                    .defaultOptions().content(filteredContentletList).build();
+            return transformer.hydrate();
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;

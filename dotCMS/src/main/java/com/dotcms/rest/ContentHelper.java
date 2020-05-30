@@ -15,7 +15,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -142,7 +142,7 @@ public class ContentHelper {
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes, otherwise will the same instance
      */
     public Contentlet hydrateContentlet(final Contentlet contentlet) {
-       return new DotContentletTransformer.Builder().contentResourceOptions().content(contentlet).build().hydrate().get(0);
+       return new DotTransformerBuilder().contentResourceOptions().content(contentlet).build().hydrate().get(0);
     } // hydrateContentlet.
 
     /**

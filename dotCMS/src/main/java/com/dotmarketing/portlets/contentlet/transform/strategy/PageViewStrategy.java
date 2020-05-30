@@ -10,12 +10,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.UtilHTML;
+import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
 
-public class HtmlPageTransformStrategy extends WebAssetStrategy<HTMLPageAsset> {
+public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
-    HtmlPageTransformStrategy(final TransformToolbox toolBox) {
+    PageViewStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
@@ -26,7 +27,7 @@ public class HtmlPageTransformStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
     @Override
     public Map<String, Object> transform(final HTMLPageAsset page, final Map<String, Object> map,
-            Set<TransformOptions> options)
+            Set<TransformOptions> options, User user)
             throws DotSecurityException, DotDataException {
 
         final String title = (String)map.get(TITLE_FIELD);

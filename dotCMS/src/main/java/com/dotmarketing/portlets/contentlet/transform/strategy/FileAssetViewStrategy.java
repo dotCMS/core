@@ -20,12 +20,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
 
-public class FileAssetTransformStrategy extends WebAssetStrategy<FileAsset> {
+public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
 
-    FileAssetTransformStrategy(final TransformToolbox toolBox) {
+    FileAssetViewStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
@@ -36,10 +38,10 @@ public class FileAssetTransformStrategy extends WebAssetStrategy<FileAsset> {
 
     @Override
     public Map<String, Object> transform(final FileAsset fileAsset, final Map<String, Object> map,
-            Set<TransformOptions> options)
+            Set<TransformOptions> options, User user)
             throws DotDataException, DotSecurityException {
-        final String title = (String)map.get(TITLE_FIELD);
-        if(isNotSet(title)){
+
+        if(isNotSet(fileAsset.getTitle())) {
             final Identifier identifier = toolBox.identifierAPI.find(fileAsset.getIdentifier());
             map.put(TITLE_FIELD, identifier.getAssetName());
         }
@@ -60,9 +62,16 @@ public class FileAssetTransformStrategy extends WebAssetStrategy<FileAsset> {
         map.put("height", fileAsset.getHeight());
 
         map.put("extension", getFileExtension(fileAsset.getUnderlyingFileName()));
-        map.put("__icon__", getIconClass(fileAsset ));
-        map.put("statusIcons", getStatusIcons(fileAsset));
-
+        try {
+            map.put("__icon__", getIconClass(fileAsset));
+        }catch (Exception e){
+            Logger.warn(FileAssetViewStrategy.class,"Failed to get icon.",e);
+        }
+        try {
+            map.put("statusIcons", getStatusIcons(fileAsset));
+        }catch (Exception e){
+            Logger.warn(FileAssetViewStrategy.class," Failed to get status icon.",e);
+        }
         if(options.contains(USE_ALIAS)) {
             map.put(FILE_NAME_FIELD, fileAsset.getFileName());
             map.put("fileSize", fileAsset.getFileSize());

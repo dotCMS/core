@@ -3,12 +3,13 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.privateInternalProperties;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
 
-public class PrivatePropertyRemoveStrategy extends AbstractTransformStrategy<Contentlet> {
+public class CleanupStrategy extends AbstractTransformStrategy<Contentlet> {
 
-    PrivatePropertyRemoveStrategy(final TransformToolbox toolBox) {
+    CleanupStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
@@ -19,7 +20,7 @@ public class PrivatePropertyRemoveStrategy extends AbstractTransformStrategy<Con
 
     @Override
     public Map<String, Object> transform(final Contentlet contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options) {
+            final Set<TransformOptions> options, User user) {
         removePrivateProperties(map);
         return map;
     }

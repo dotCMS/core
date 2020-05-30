@@ -19,8 +19,8 @@ public class IdentifierToMapTransformer implements FieldsToMapTransformer {
             throw new DotStateException("Contentlet needs an identifier to get properties");
         }
 
-        final List<Map<String, Object>> maps = //new ContentletToMapTransformer2(EnumSet.of(IDENTIFIER_AS_MAP), Collections.singletonList(con)).toMaps();
-                new DotContentletTransformer.Builder().identifierToMapTransformer().content(con).build().toMaps();
+        final List<Map<String, Object>> maps =
+                new DotTransformerBuilder().identifierToMapTransformer().content(con).build().toMaps();
         if (!maps.isEmpty()) {
             this.mapOfMaps = maps.get(0);
         } else {

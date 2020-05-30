@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,8 +19,9 @@ public abstract class WebAssetStrategy <T extends Contentlet>  extends
         super(toolBox);
     }
 
-    public final void apply(final T contentlet, final Map<String, Object> map, final Set<TransformOptions> options) {
-        super.apply(contentlet, map, options);
+    public final void apply(final T contentlet, final Map<String, Object> map,
+            final Set<TransformOptions> options, User user) {
+        super.apply(contentlet, map, options, user);
         urlOverride(contentlet, map);
     }
 

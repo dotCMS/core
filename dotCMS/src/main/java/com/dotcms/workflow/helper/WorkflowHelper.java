@@ -44,7 +44,8 @@ import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -1983,7 +1984,7 @@ public class WorkflowHelper {
      */
     public Map<String, Object> contentletToMap(final Contentlet contentlet) {
 
-        final DotContentletTransformer transformer = new DotContentletTransformer(contentlet);
+        final DotTransformer transformer = new DotTransformerBuilder().defaultOptions().content(contentlet).build();
         return transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
     }
 } // E:O:F:WorkflowHelper.

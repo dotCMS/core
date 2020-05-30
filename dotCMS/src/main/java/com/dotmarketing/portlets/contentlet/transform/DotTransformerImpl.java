@@ -1,6 +1,9 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.*;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_CONSTANTS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_VERSION_INFO;
 import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -13,66 +16,49 @@ import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.liferay.portal.model.User;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class DotContentletTransformer implements DotTransformer {
+/**
+ * This class intents to be the single point of transformation logic
+ * Transformation basically takes place in strategies that are plugged based on the options submitted
+ * or the ContentType associated to the the Content.
+ */
+
+class DotTransformerImpl implements DotTransformer {
 
     static final Set<TransformOptions> defaultOptions = EnumSet.of(
         INC_COMMON_PROPS, INC_CONSTANTS, INC_VERSION_INFO, INC_BINARIES
     );
 
+    private User user;
     private final Set<TransformOptions> includedOptions;
     private final List<Contentlet> contentlets;
     private final StrategyResolver strategyResolver;
-
-    /**
-     * Bulk transform constructor
-     * @param contentlets input
-     */
-    public DotContentletTransformer(final List<Contentlet> contentlets) {
-        this(contentlets, new StrategyResolver(), defaultOptions);
-    }
-
-    /**
-     * Convenience constructor
-     * @param contentlets input
-     */
-    public DotContentletTransformer(final Contentlet... contentlets) {
-        this(Arrays.asList(contentlets), new StrategyResolver(), defaultOptions);
-    }
-
-    /**
-     *
-     * @param options
-     * @param contentlets
-     */
-    private DotContentletTransformer(final Set<TransformOptions> options, final List<Contentlet> contentlets) {
-        this(contentlets, new StrategyResolver(), options);
-    }
 
     /**
      * Main constructor provides access to set the required APIs
      * @param contentlets input
      * @param strategyResolver strategyResolver
      * @param includeOptions
+     * @param user
      */
     @VisibleForTesting
-    DotContentletTransformer(final List<Contentlet> contentlets,
+    DotTransformerImpl(final List<Contentlet> contentlets,
             final StrategyResolver strategyResolver,
-            final Set<TransformOptions> includeOptions) {
+            final Set<TransformOptions> includeOptions,
+            final User user) {
         if(!isSet(contentlets)){
            throw new DotRuntimeException("At least 1 contentlet must be set.");
         }
         this.contentlets = contentlets;
         this.strategyResolver = strategyResolver;
         this.includedOptions = includeOptions;
+        this.user = user;
     }
 
     /**
@@ -91,12 +77,13 @@ public class DotContentletTransformer implements DotTransformer {
     private Map<String, Object> transform(final Contentlet contentlet) {
         final ContentType type = contentlet.getContentType();
         if(null != type) {
-            Logger.debug(DotContentletTransformer.class,()->String.format(" BaseType: `%s` Type: `%s`", type.name(), type.baseType().name()));
+            Logger.debug(
+                    DotTransformerImpl.class,()->String.format(" BaseType: `%s` Type: `%s`", type.name(), type.baseType().name()));
         }
         final Map<String, Object> map = contentlet.getMap();
-        final List<AbstractTransformStrategy> strategies = strategyResolver.resolveStrategies(type);
+        final List<AbstractTransformStrategy> strategies = strategyResolver.resolveStrategies(type, includedOptions);
         for(final AbstractTransformStrategy strategy:strategies){
-           strategy.apply(contentlet, map, includedOptions);
+           strategy.apply(contentlet, map, includedOptions, user);
         }
 
         return map;
@@ -121,70 +108,6 @@ public class DotContentletTransformer implements DotTransformer {
      */
     private Contentlet copy(final Contentlet contentlet) {
        return TransformToolbox.copyContentlet(contentlet);
-    }
-
-    public static class Builder {
-
-         private List<Contentlet> contentlets = new ArrayList<>();
-
-         private Set<TransformOptions> optionsHolder = new HashSet<>();
-
-        public Builder content(final List<Contentlet> contentlets){
-            this.contentlets.addAll(contentlets);
-            return this;
-        }
-
-        public Builder content(final Contentlet... contentlets){
-            this.contentlets.addAll(Arrays.asList(contentlets));
-            return this;
-        }
-
-        Builder binaryToMapTransformer(){
-           optionsHolder.clear();
-           optionsHolder.add(BINARIES_AS_MAP);
-           return this;
-        }
-
-        Builder languageToMapTransformer(){
-            optionsHolder.clear();
-            optionsHolder.add(LANGUAGE_AS_MAP);
-            return this;
-        }
-
-        Builder identifierToMapTransformer(){
-            optionsHolder.clear();
-            optionsHolder.add(IDENTIFIER_AS_MAP);
-            return this;
-        }
-
-        public Builder webAssetOptions(){
-            optionsHolder.clear();
-            optionsHolder.addAll(EnumSet.of(INC_COMMON_PROPS, INC_VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS));
-            return this;
-        }
-
-        public Builder dotAssetOptions(){
-            optionsHolder.clear();
-            optionsHolder.addAll(EnumSet.of(INC_COMMON_PROPS, INC_VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
-            return this;
-        }
-
-        public Builder contentResourceOptions(){
-            optionsHolder.clear();
-            optionsHolder.addAll(EnumSet.of(INC_COMMON_PROPS, INC_CONSTANTS, INC_VERSION_INFO, LOAD_META));
-            return this;
-        }
-
-        public Builder defaultOptions(){
-            optionsHolder.clear();
-            optionsHolder.addAll(defaultOptions);
-            return this;
-        }
-
-        public DotTransformer build(){
-           return new DotContentletTransformer(EnumSet.copyOf(optionsHolder) ,contentlets);
-        }
-
     }
 
 }

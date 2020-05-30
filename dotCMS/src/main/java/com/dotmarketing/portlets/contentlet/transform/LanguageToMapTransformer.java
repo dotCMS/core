@@ -18,8 +18,8 @@ public class LanguageToMapTransformer implements FieldsToMapTransformer {
             throw new DotStateException("Contentlet needs an inode to get fields");
         }
 
-        final List<Map<String, Object>> maps = //new ContentletToMapTransformer2(EnumSet.of(TransformOptions.LANGUAGE_AS_MAP), Collections.singletonList(con)).toMaps();
-                new DotContentletTransformer.Builder().languageToMapTransformer().content(con).build().toMaps();
+        final List<Map<String, Object>> maps =
+                new DotTransformerBuilder().languageToMapTransformer().content(con).build().toMaps();
         if (maps.isEmpty()) {
             this.mapOfMaps = Collections.emptyMap();
         } else {

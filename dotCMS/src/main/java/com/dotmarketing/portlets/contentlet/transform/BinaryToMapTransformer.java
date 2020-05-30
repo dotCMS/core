@@ -23,9 +23,8 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
             throw new DotStateException("Contentlet needs an inode to get fields");
         }
 
-        final List<Map<String, Object>> maps = //new ContentletToMapTransformer2(
-                //EnumSet.of(BINARIES_AS_MAP), Collections.singletonList(con)).toMaps();
-                new DotContentletTransformer.Builder().binaryToMapTransformer().content(con).build().toMaps();
+        final List<Map<String, Object>> maps =
+                new DotTransformerBuilder().binaryToMapTransformer().content(con).build().toMaps();
 
         if (maps.isEmpty()) {
             this.mapOfMaps = Collections.emptyMap();

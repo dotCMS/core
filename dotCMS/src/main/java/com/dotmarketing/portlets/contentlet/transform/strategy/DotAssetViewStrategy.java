@@ -13,15 +13,16 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
-public class DotAssetTransformStrategy extends WebAssetStrategy<Contentlet> {
+public class DotAssetViewStrategy extends WebAssetStrategy<Contentlet> {
 
     private static final String ASSET = "asset";
 
-    DotAssetTransformStrategy(final TransformToolbox toolBox) {
+    DotAssetViewStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
@@ -32,7 +33,7 @@ public class DotAssetTransformStrategy extends WebAssetStrategy<Contentlet> {
 
     @Override
     public Map<String, Object> transform(final Contentlet dotAsset, final Map<String, Object> map,
-            final Set<TransformOptions> options)
+            final Set<TransformOptions> options, User user)
             throws DotDataException, DotSecurityException {
 
         String fileName = "unknown";
@@ -42,7 +43,7 @@ public class DotAssetTransformStrategy extends WebAssetStrategy<Contentlet> {
             fileName = asset.getName();
             fileSize = asset.length();
         }catch (Exception e){
-            Logger.warn(DotAssetTransformStrategy.class, "dotAsset does not have a binary ", e);
+            Logger.warn(DotAssetViewStrategy.class, "dotAsset does not have a binary ", e);
         }
         map.put(MIMETYPE_FIELD, toolBox.fileAssetAPI.getMimeType(fileName));
 
@@ -51,9 +52,16 @@ public class DotAssetTransformStrategy extends WebAssetStrategy<Contentlet> {
         map.put("path", ResourceLink.getPath(dotAsset));
         map.put("name", fileName);
         map.put("size", fileSize);
-
-        map.put("__icon__", getIconClass(dotAsset));
-        map.put("statusIcons", getStatusIcons(dotAsset));
+        try {
+            map.put("__icon__", getIconClass(dotAsset));
+        } catch (Exception e) {
+            Logger.warn(DotAssetViewStrategy.class, "Failed to get icon.", e);
+        }
+        try {
+            map.put("statusIcons", getStatusIcons(dotAsset));
+        } catch (Exception e) {
+            Logger.warn(DotAssetViewStrategy.class, "Failed to get icon.", e);
+        }
         map.put("extension",  getFileExtension(fileName));
 
         if(options.contains(USE_ALIAS)) {

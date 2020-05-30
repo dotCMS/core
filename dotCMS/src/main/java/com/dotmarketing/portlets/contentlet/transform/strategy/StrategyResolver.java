@@ -1,46 +1,20 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
-public class StrategyResolver {
+/**
+ * This intends to serve strategies for a given combination of CT and options
+ */
+public interface StrategyResolver {
 
-   private final Map<BaseContentType, AbstractTransformStrategy> strategyByBaseType;
-   private final DefaultTransformStrategy defaultTransformStrategy;
-   private final PrivatePropertyRemoveStrategy cleanUpTransformStrategy;
-
-   @VisibleForTesting
-   public StrategyResolver(final TransformToolbox toolBox) {
-      strategyByBaseType = ImmutableMap.of(
-              //These very specific implementations but most cases will be covered by the default strategy.
-              BaseContentType.FILEASSET, new FileAssetTransformStrategy(toolBox),
-              BaseContentType.HTMLPAGE, new HtmlPageTransformStrategy(toolBox),
-              BaseContentType.DOTASSET, new DotAssetTransformStrategy(toolBox)
-      );
-      defaultTransformStrategy = new DefaultTransformStrategy(toolBox);
-      cleanUpTransformStrategy = new PrivatePropertyRemoveStrategy(toolBox);
-   }
-
-   public StrategyResolver() {
-     this(new TransformToolbox());
-   }
-
-   public List<AbstractTransformStrategy> resolveStrategies(final ContentType contentType) {
-      final ImmutableList.Builder<AbstractTransformStrategy> builder = new ImmutableList.Builder<>();
-      builder.add(defaultTransformStrategy);
-      if (null != contentType) {
-         final AbstractTransformStrategy strategy = strategyByBaseType.get(contentType.baseType());
-         if (null != strategy) {
-             builder.add(strategy);
-         }
-      }
-      builder.add(cleanUpTransformStrategy);
-      return builder.build();
-   }
-
+    /**
+     * Serve a list of strategies to be used to modify the contentlet
+     * @param contentType
+     * @param options
+     * @return
+     */
+    List<AbstractTransformStrategy> resolveStrategies(ContentType contentType,
+            Set<TransformOptions> options);
 }

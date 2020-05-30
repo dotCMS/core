@@ -17,7 +17,7 @@ import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -340,20 +340,20 @@ public class BrowserAPIImpl implements BrowserAPI {
                                            final User user,
                                            final boolean showArchived,
                                            final long languageId) throws DotDataException, DotStateException, DotSecurityException {
-        return new DotContentletTransformer.Builder().webAssetOptions().content(page).build().toMaps().get(0);
+        return new DotTransformerBuilder().webAssetOptions().content(page).build().toMaps().get(0);
     } // htmlPageMap.
 
     private Map<String,Object> fileAssetMap(final FileAsset fileAsset,
                                             final User user,
                                             final boolean showArchived) throws DotDataException, DotStateException, DotSecurityException {
-        return new DotContentletTransformer.Builder().webAssetOptions().content(fileAsset).build().toMaps().get(0);
+        return new DotTransformerBuilder().webAssetOptions().content(fileAsset).build().toMaps().get(0);
     } // fileAssetMap.
 
     private Map<String,Object> dotAssetMap(final Contentlet dotAsset,
                                            final User user,
                                            final boolean showArchived) throws DotDataException, DotStateException, DotSecurityException {
 
-        return new DotContentletTransformer.Builder().dotAssetOptions().content(dotAsset).build().toMaps().get(0);
+        return new DotTransformerBuilder().dotAssetOptions().content(dotAsset).build().toMaps().get(0);
     } // dotAssetMap.
 
     protected class WfData {

@@ -7,7 +7,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
@@ -56,9 +57,11 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user, true, isChildField);
             if (UtilMethods.isSet(relatedContent)) {
+                final DotTransformer transformer = new DotTransformerBuilder()
+                        .defaultOptions().content(relatedContent).build();
                 objectToReturn = records.doesAllowOnlyOne()
-                    ? new DotContentletTransformer(relatedContent).hydrate().get(0)
-                    : new DotContentletTransformer(relatedContent).hydrate();
+                    ? transformer.hydrate().get(0)
+                    : transformer.hydrate();
             }
 
             return objectToReturn;

@@ -8,6 +8,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_NAME;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.LANGUAGEID_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.LIVE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
@@ -63,7 +64,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
 
     @Override
     public Map<String, Object> transform(final Contentlet contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options)
+            final Set<TransformOptions> options, User user)
             throws DotDataException, DotSecurityException {
         addCommonProperties(contentlet, map, options);
         addIdentifier(contentlet, map, options);
@@ -86,7 +87,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put(TITTLE_KEY, contentlet.getTitle());
         map.put(CONTENT_TYPE_KEY, type != null ? type.variable() : NOT_APPLICABLE);
         map.put(BASE_TYPE_KEY, type != null ? type.baseType().name() : NOT_APPLICABLE);
-        map.put("languageId", contentlet.getLanguageId());
+        map.put(LANGUAGEID_KEY, contentlet.getLanguageId());
         final Optional<Field> titleImage = contentlet.getTitleImage();
         final boolean present = titleImage.isPresent();
         map.put(HAS_TITLE_IMAGE_KEY, present);
@@ -143,8 +144,8 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             return;
         }
 
-        final Identifier id = toolBox.identifierAPI.find(contentlet.getIdentifier());
-        map.putAll(mapIdentifier(id,true));
+        final Identifier identifier = toolBox.identifierAPI.find(contentlet.getIdentifier());
+        map.putAll(mapIdentifier(identifier,true));
     }
 
 

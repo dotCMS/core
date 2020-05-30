@@ -343,7 +343,7 @@ public class ResourceLink {
      * @param contentlet
      * @return
      */
-    public static String getPath(Contentlet contentlet){
+    public static String getPath(final Contentlet contentlet){
         return  "/dA/" + contentlet.getIdentifier() + StringPool.SLASH;
     }
 

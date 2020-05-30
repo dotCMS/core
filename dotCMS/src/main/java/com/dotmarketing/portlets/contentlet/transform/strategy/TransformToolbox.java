@@ -25,6 +25,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -46,6 +47,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+
+/**
+ * Just a class for common share code to reside
+ * And pass all the required services across layers within one single unit.
+ */
 public class TransformToolbox {
 
     //This set contains all the properties that we want to prevent from making it into the final contentlet or transformed map.
@@ -75,8 +81,22 @@ public class TransformToolbox {
     final UserAPI userAPI;
     final ContentletAPI contentletAPI;
     final HTMLPageAssetAPI htmlPageAssetAPI;
+    final CategoryAPI categoryAPI;
     final ContentHelper contentHelper;
 
+    /**
+     * main constructor
+     * @param identifierAPI
+     * @param hostAPI
+     * @param languageAPI
+     * @param fileAssetAPI
+     * @param versionableAPI
+     * @param userAPI
+     * @param contentletAPI
+     * @param htmlPageAssetAPI
+     * @param categoryAPI
+     * @param contentHelper
+     */
     @VisibleForTesting
     public TransformToolbox(final IdentifierAPI identifierAPI,
             final HostAPI hostAPI,
@@ -84,6 +104,7 @@ public class TransformToolbox {
             final FileAssetAPI fileAssetAPI, final VersionableAPI versionableAPI,
             final UserAPI userAPI,  final ContentletAPI contentletAPI,
             final HTMLPageAssetAPI htmlPageAssetAPI,
+            final CategoryAPI categoryAPI,
             final ContentHelper contentHelper) {
         this.identifierAPI = identifierAPI;
         this.hostAPI = hostAPI;
@@ -93,16 +114,25 @@ public class TransformToolbox {
         this.userAPI = userAPI;
         this.contentletAPI = contentletAPI;
         this.htmlPageAssetAPI = htmlPageAssetAPI;
+        this.categoryAPI = categoryAPI;
         this.contentHelper = contentHelper;
     }
 
+    /**
+     * Default constructor
+     */
     public TransformToolbox() {
         this(APILocator.getIdentifierAPI(), APILocator.getHostAPI(), APILocator.getLanguageAPI(),
-                APILocator.getFileAssetAPI(), APILocator.getVersionableAPI(),
-                APILocator.getUserAPI(), APILocator.getContentletAPI(),
-                APILocator.getHTMLPageAssetAPI(), ContentHelper.getInstance());
+            APILocator.getFileAssetAPI(), APILocator.getVersionableAPI(), APILocator.getUserAPI(),
+            APILocator.getContentletAPI(), APILocator.getHTMLPageAssetAPI(), APILocator.getCategoryAPI(),
+            ContentHelper.getInstance());
     }
 
+    /**
+     * Copy content util method
+     * @param contentlet
+     * @return
+     */
     public static Contentlet copyContentlet(final Contentlet contentlet) {
         final Contentlet newContentlet = new Contentlet();
         if (null != contentlet && null != contentlet.getMap()) {
@@ -111,6 +141,12 @@ public class TransformToolbox {
         return newContentlet;
     }
 
+    /**
+     * Lang functions now relocated here.
+     * @param language
+     * @param wrapAsMap
+     * @return
+     */
     static Map<String, Object> mapLanguage(final Language language, final boolean wrapAsMap) {
 
         final Builder<String, Object> builder = new Builder<>();
@@ -135,6 +171,12 @@ public class TransformToolbox {
         return builder.build();
     }
 
+    /**
+     * Mapping Lang functions
+     * @param identifier
+     * @param wrapAsMap
+     * @return
+     */
     static Map<String, Object> mapIdentifier(final Identifier identifier, final boolean wrapAsMap) {
 
         final Builder<String, Object> builder = new Builder<>();
@@ -150,6 +192,12 @@ public class TransformToolbox {
         return builder.build();
     }
 
+    /**
+     * Transform function
+     * @param field
+     * @param contentlet
+     * @return
+     */
     public static Map<String, Object> transform(final Field field, final Contentlet contentlet) {
         File file;
         try {
@@ -165,6 +213,13 @@ public class TransformToolbox {
         return transform(file, contentlet, field);
     }
 
+    /**
+     * Transform function
+     * @param file
+     * @param contentlet
+     * @param field
+     * @return
+     */
     public static Map<String, Object> transform(final File file, final Contentlet contentlet, final Field field) {
         DotPreconditions.checkNotNull(file, IllegalArgumentException.class, "File can't be null");
         final Map<String, Object> map = new HashMap<>();
