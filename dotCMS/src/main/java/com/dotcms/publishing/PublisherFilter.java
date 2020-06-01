@@ -15,7 +15,7 @@ public interface PublisherFilter {
      * @param type assetType that is gonna be added to bundle
      * @return boolean if the asset Type is in the set
      */
-    boolean acceptExcludeClasses(final String type);
+    boolean doesExcludeClassesContainsType(final String type);
 
     /**
      * Check if the contentlet needs to be excluded from the bundle.
@@ -24,7 +24,7 @@ public interface PublisherFilter {
      * @param contentletId id of the contentlet that is gonna be added to the bundle
      * @return boolean if the contentletId is in the set
      */
-    boolean acceptExcludeQuery(final String contentletId);
+    boolean doesExcludeQueryContainsContentletId(final String contentletId);
 
     /**
      * Check if the contentlet needs to be excluded from the bundle.
@@ -33,7 +33,7 @@ public interface PublisherFilter {
      * @param contentletId id of the contentlet that is gonna be added to the bundle
      * @return boolean if the contentletId is in the set
      */
-    boolean acceptExcludeDependencyQuery(final String contentletId);
+    boolean doesExcludeDependencyQueryContainsContentletId(final String contentletId);
 
     /**
      * Check if the pusheableAsset needs to be excluded from the bundle.
@@ -42,7 +42,7 @@ public interface PublisherFilter {
      * @param pusheableAssetType asset that is gonna be added to bundle
      * @return boolean if the asset Type is in the set
      */
-    boolean acceptExcludeDependencyClasses(final String pusheableAssetType);
+    boolean doesExcludeDependencyClassesContainsType(final String pusheableAssetType);
 
     /**
      *

@@ -18,73 +18,73 @@ public class PublisherFilterImplTest {
     }
 
     /**
-     * Method to test: {@link PublisherFilter#acceptExcludeDependencyClasses(String)}
+     * Method to test: {@link PublisherFilter#doesExcludeDependencyClassesContainsType(String)}
      * Given Scenario: Given a list of types that are gonna be excluded to PP as a Dependency
      * ExpectedResult: Types in the list are excluded and types not in the list are accepted
      *
      */
     @Test
-    public void Test_acceptExcludeDependencyClasses(){
+    public void Test_doesExcludeDependencyClassesContainsType(){
         // Using diff case because user can use diff case
         final ArrayList<String> listOfTypes = new ArrayList<String>(Arrays.asList("Containers", "TEMPLATE","host","ContentType"));
 
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
-        // Should return true since the types have not been add to the Set, using the PusheableAsset since this is the value passed in core
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTAINER.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.TEMPLATE.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType()));
+        // Should return false since the types have not been add to the Set, using the PusheableAsset since this is the value passed in core
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTAINER.getType()));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType()));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType()));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENT_TYPE.getType()));
         // Adding the types to the Set
         listOfTypes.stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type));
-        // Should return false since types are in the Set
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTAINER.getType()));
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.TEMPLATE.getType()));
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.SITE.getType()));
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType()));
-        // Should return true since the type is not in the Set
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENTLET.getType()));
+        // Should return true since types are in the Set
+        Assert.assertTrue(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTAINER.getType()));
+        Assert.assertTrue(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()));
+        Assert.assertTrue(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType()));
+        Assert.assertTrue(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENT_TYPE.getType()));
+        // Should return false since the type is not in the Set
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType()));
 
     }
 
     /**
-     * Method to test: {@link PublisherFilter#acceptExcludeClasses(String)}
+     * Method to test: {@link PublisherFilter#doesExcludeClassesContainsType(String)}
      * Given Scenario: Given a list of types that are gonna be excluded to PP
      * ExpectedResult: Types in the list are excluded and types not in the list are accepted
      *
      */
     @Test
-    public void Test_acceptExcludeClasses(){
+    public void Test_doesExcludeClassesContainsType(){
         // Using diff case because user can use diff case
         final ArrayList<String> listOfTypes = new ArrayList<String>(Arrays.asList("Containers", "TEMPLATE","host"));
 
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
-        // Should return true since the types have not been add to the Set, using the PusheableAsset since this is the value passed in core
-        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.CONTAINER.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.TEMPLATE.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.SITE.getType()));
-        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.CONTENTLET.getType()));
+        // Should return false since the types have not been add to the Set, using the PusheableAsset since this is the value passed in core
+        Assert.assertFalse(publisherFilter.doesExcludeClassesContainsType(PusheableAsset.CONTAINER.getType()));
+        Assert.assertFalse(publisherFilter.doesExcludeClassesContainsType(PusheableAsset.TEMPLATE.getType()));
+        Assert.assertFalse(publisherFilter.doesExcludeClassesContainsType(PusheableAsset.SITE.getType()));
+        Assert.assertFalse(publisherFilter.doesExcludeClassesContainsType(PusheableAsset.CONTENTLET.getType()));
         // Adding the types to the Set
         listOfTypes.stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type));
-        // Should return false since types are in the Set
-        Assert.assertFalse(publisherFilter.acceptExcludeClasses(PusheableAsset.CONTAINER.getType()));
-        Assert.assertFalse(publisherFilter.acceptExcludeClasses(PusheableAsset.TEMPLATE.getType()));
-        Assert.assertFalse(publisherFilter.acceptExcludeClasses(PusheableAsset.SITE.getType()));
-        // Should return true since the type is not in the Set
-        Assert.assertTrue(publisherFilter.acceptExcludeClasses(PusheableAsset.CONTENTLET.getType()));
+        // Should return true since types are in the Set
+        Assert.assertTrue(publisherFilter.doesExcludeClassesContainsType(PusheableAsset.CONTAINER.getType()));
+        Assert.assertTrue(publisherFilter.doesExcludeClassesContainsType(PusheableAsset.TEMPLATE.getType()));
+        Assert.assertTrue(publisherFilter.doesExcludeClassesContainsType(PusheableAsset.SITE.getType()));
+        // Should return false since the type is not in the Set
+        Assert.assertFalse(publisherFilter.doesExcludeClassesContainsType(PusheableAsset.CONTENTLET.getType()));
 
     }
 
     /**
-     * Method to test: {@link PublisherFilter#acceptExcludeQuery(String)}
+     * Method to test: {@link PublisherFilter#doesExcludeQueryContainsContentletId(String)}
      * Given Scenario: Given a list of ids that are gonna be excluded to PP
      * ExpectedResult: Ids in the list are excluded and ids not in the list are accepted
      *
      */
     @Test
-    public void Test_acceptExcludeQuery(){
+    public void Test_doesExcludeQueryContainContentletId(){
         // Generate a couple of uuid
         final String id1 = UUIDGenerator.generateUuid();
         final String id2 = UUIDGenerator.generateUuid();
@@ -93,30 +93,30 @@ public class PublisherFilterImplTest {
 
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
-        // Should return true since the ids have not been add to the Set
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(id1));
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(id2));
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(id3));
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(UUIDGenerator.generateUuid()));
+        // Should return false since the ids have not been add to the Set
+        Assert.assertFalse(publisherFilter.doesExcludeQueryContainsContentletId(id1));
+        Assert.assertFalse(publisherFilter.doesExcludeQueryContainsContentletId(id2));
+        Assert.assertFalse(publisherFilter.doesExcludeQueryContainsContentletId(id3));
+        Assert.assertFalse(publisherFilter.doesExcludeQueryContainsContentletId(UUIDGenerator.generateUuid()));
         // Adding the types to the Set
         listOfIds.stream().forEach(id -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(id));
-        // Should return false since ids are in the Set
-        Assert.assertFalse(publisherFilter.acceptExcludeQuery(id1));
-        Assert.assertFalse(publisherFilter.acceptExcludeQuery(id2));
-        Assert.assertFalse(publisherFilter.acceptExcludeQuery(id3));
-        // Should return true since the id is not in the Set
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(UUIDGenerator.generateUuid()));
+        // Should return true since ids are in the Set
+        Assert.assertTrue(publisherFilter.doesExcludeQueryContainsContentletId(id1));
+        Assert.assertTrue(publisherFilter.doesExcludeQueryContainsContentletId(id2));
+        Assert.assertTrue(publisherFilter.doesExcludeQueryContainsContentletId(id3));
+        // Should return false since the id is not in the Set
+        Assert.assertFalse(publisherFilter.doesExcludeQueryContainsContentletId(UUIDGenerator.generateUuid()));
 
     }
 
     /**
-     * Method to test: {@link PublisherFilter#acceptExcludeDependencyQuery(String)}
+     * Method to test: {@link PublisherFilter#doesExcludeDependencyQueryContainsContentletId(String)}
      * Given Scenario: Given a list of ids that are gonna be excluded to PP as a Dependency
      * ExpectedResult: Ids in the list are excluded and ids not in the list are accepted
      *
      */
     @Test
-    public void Test_acceptExcludeDependencyQuery(){
+    public void Test_doesExcludeDependencyQueryContainsContentletId(){
         // Generate a couple of uuid
         final String id1 = UUIDGenerator.generateUuid();
         final String id2 = UUIDGenerator.generateUuid();
@@ -125,19 +125,19 @@ public class PublisherFilterImplTest {
 
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
-        // Should return true since the ids have not been add to the Set
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(id1));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(id2));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(id3));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(UUIDGenerator.generateUuid()));
+        // Should return false since the ids have not been add to the Set
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyQueryContainsContentletId(id1));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyQueryContainsContentletId(id2));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyQueryContainsContentletId(id3));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyQueryContainsContentletId(UUIDGenerator.generateUuid()));
         // Adding the types to the Set
         listOfIds.stream().forEach(id -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(id));
-        // Should return false since ids are in the Set
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyQuery(id1));
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyQuery(id2));
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyQuery(id3));
-        // Should return true since the id is not in the Set
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(UUIDGenerator.generateUuid()));
+        // Should return true since ids are in the Set
+        Assert.assertTrue(publisherFilter.doesExcludeDependencyQueryContainsContentletId(id1));
+        Assert.assertTrue(publisherFilter.doesExcludeDependencyQueryContainsContentletId(id2));
+        Assert.assertTrue(publisherFilter.doesExcludeDependencyQueryContainsContentletId(id3));
+        // Should return false since the id is not in the Set
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyQueryContainsContentletId(UUIDGenerator.generateUuid()));
 
     }
 

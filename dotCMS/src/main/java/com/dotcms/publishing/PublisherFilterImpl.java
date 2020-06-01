@@ -51,23 +51,23 @@ public class PublisherFilterImpl implements PublisherFilter{
     }
 
     @Override
-    public boolean acceptExcludeClasses(final String assetType) {
-        return !this.excludeClassesSet.contains(assetType.toLowerCase());
+    public boolean doesExcludeClassesContainsType(final String assetType) {
+        return this.excludeClassesSet.contains(assetType.toLowerCase());
     }
 
     @Override
-    public boolean acceptExcludeQuery(final String contentletId) {
-        return !this.excludeQueryAssetIdSet.contains(contentletId);
+    public boolean doesExcludeQueryContainsContentletId(final String contentletId) {
+        return this.excludeQueryAssetIdSet.contains(contentletId);
     }
 
     @Override
-    public boolean acceptExcludeDependencyQuery(final String contentletId) {
-        return !this.excludeDependencyQueryAssetIdSet.contains(contentletId);
+    public boolean doesExcludeDependencyQueryContainsContentletId(final String contentletId) {
+        return this.excludeDependencyQueryAssetIdSet.contains(contentletId);
     }
 
     @Override
-    public boolean acceptExcludeDependencyClasses(final String pusheableAssetType) {
-        return !this.excludeDependencyClassesSet.contains(pusheableAssetType.toLowerCase());
+    public boolean doesExcludeDependencyClassesContainsType(final String pusheableAssetType) {
+        return this.excludeDependencyClassesSet.contains(pusheableAssetType.toLowerCase());
     }
 
     public String toString(){

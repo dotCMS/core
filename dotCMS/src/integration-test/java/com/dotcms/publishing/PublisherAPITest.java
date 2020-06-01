@@ -576,11 +576,11 @@ public class PublisherAPITest extends IntegrationTestBase {
         Assert.assertEquals(filtersMap.get("dependencies"),publisherFilter.isDependencies());
         Assert.assertEquals(filtersMap.get("relationships"),publisherFilter.isRelationships());
         Assert.assertEquals(filtersMap.get("forcePush"),bundle.isForcePush());
-        Assert.assertFalse(publisherFilter.acceptExcludeClasses("User"));//Will not be accepted since it's in the list
-        Assert.assertTrue(publisherFilter.acceptExcludeClasses("Template"));
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses("Host"));//Will not be accepted since it's in the list
-        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses("ContentType"));//Will not be accepted since it's in the list
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses("Structure"));
+        Assert.assertTrue(publisherFilter.doesExcludeClassesContainsType("User"));
+        Assert.assertFalse(publisherFilter.doesExcludeClassesContainsType("Template"));
+        Assert.assertTrue(publisherFilter.doesExcludeDependencyClassesContainsType("Host"));
+        Assert.assertTrue(publisherFilter.doesExcludeDependencyClassesContainsType("ContentType"));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyClassesContainsType("Structure"));
 
     }
 
@@ -619,10 +619,10 @@ public class PublisherAPITest extends IntegrationTestBase {
         Assert.assertEquals(filtersMap.get("dependencies"), publisherFilter.isDependencies());
         Assert.assertEquals(filtersMap.get("relationships"), publisherFilter.isRelationships());
         Assert.assertEquals(filtersMap.get("forcePush"), bundle.isForcePush());
-        Assert.assertFalse(publisherFilter
-                .acceptExcludeClasses("User"));//Will not be accepted since it's in the list
-        Assert.assertTrue(publisherFilter.acceptExcludeClasses("Template"));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses("Host"));
-        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses("Structure"));
+        Assert.assertTrue(publisherFilter
+                .doesExcludeClassesContainsType("User"));
+        Assert.assertFalse(publisherFilter.doesExcludeClassesContainsType("Template"));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyClassesContainsType("Host"));
+        Assert.assertFalse(publisherFilter.doesExcludeDependencyClassesContainsType("Structure"));
     }
 }
