@@ -76,7 +76,7 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
             map.put(FILE_NAME_FIELD, fileAsset.getFileName());
             map.put("fileSize", fileAsset.getFileSize());
         }
-
+        map.put("isContentlet", true);
         return map;
     }
 }

@@ -338,6 +338,11 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Given Scenario: We have the old and deprecated implementation vs the new one
+     * Expected Result: Both results must match
+     * @param testCase
+     */
     @Test
     @UseDataProvider("listTestCases")
     public void Transformer_Backwards_Compatibility_Test(final TestCase testCase) {
@@ -408,8 +413,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     }
 
     /**
-     * Given scenario:
-     * Expected results:
+     * Given scenario: This Test simply does a verification of the mechanism that instantiates strategies given a Content Type
+     * Expected results: The additional info is present on the resulting view
      * @throws DotDataException
      * @throws DotSecurityException
      */
@@ -525,7 +530,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final Integer returnedWidth = (Integer)mapView.get("width");
         final Integer returnedHeight = (Integer)mapView.get("height");
         final String meta = (String)mapView.get(META_DATA_FIELD);
-        final String icon = (String)mapView.get("__icon__");
         final String returnedUnderlyingFileName = (String)mapView.get(UNDERLYING_FILENAME);
 
         //FLAG Alias is OFF
