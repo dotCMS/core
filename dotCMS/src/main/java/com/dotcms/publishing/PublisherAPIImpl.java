@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.util.ArrayList;
@@ -178,7 +179,7 @@ public class PublisherAPIImpl implements PublisherAPI {
         return filters;
     }
 
-    @Override
+    @VisibleForTesting
     public Map<String, FilterDescriptor> getFilterDescriptorMap() {
         return this.loadedFilters;
     }
@@ -210,14 +211,14 @@ public class PublisherAPIImpl implements PublisherAPI {
 
         if(filterDescriptor.getFilters().containsKey("excludeQuery")){
             final String query = filterDescriptor.getFilters().get("excludeQuery").toString();
-            final List<Contentlet> contentlets = APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false);
-            contentlets.stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
+            APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
+                .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
         }
 
         if(filterDescriptor.getFilters().containsKey("excludeDependencyQuery")){
             final String query = filterDescriptor.getFilters().get("excludeDependencyQuery").toString();
-            final List<Contentlet> contentlets = APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false);
-            contentlets.stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
+            APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
+                .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
         }
 
         return publisherFilter;

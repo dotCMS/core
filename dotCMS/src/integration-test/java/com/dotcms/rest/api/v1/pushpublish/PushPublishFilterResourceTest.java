@@ -6,6 +6,7 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -35,7 +36,7 @@ public class PushPublishFilterResourceTest {
         resource = new PushPublishFilterResource();
         response = new MockHttpResponse();
 
-        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();//I suggest that the internal map is not exposed but offer the methods you need via API (e.g. clearFileDescriptors())
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         filterKey = "filterTestAPI.yml";
 
         createFilter();

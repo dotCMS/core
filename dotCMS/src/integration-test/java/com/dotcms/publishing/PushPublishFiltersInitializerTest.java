@@ -1,14 +1,17 @@
 package com.dotcms.publishing;
 
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.YamlUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.Assert;
@@ -45,7 +48,7 @@ public class PushPublishFiltersInitializerTest {
      *
      */
     @Test
-    public void test_loadFilter_success() throws IOException {
+    public void test_loadFilter_success() throws IOException, DotDataException {
         final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor =
@@ -56,9 +59,10 @@ public class PushPublishFiltersInitializerTest {
 
         pathStream.forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
 
-        final Map<String,FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterDescriptorMap();
-        Assert.assertFalse(filterDescriptorMap.isEmpty());
-        Assert.assertTrue(filterDescriptorMap.containsKey(filterDescriptor.getKey()));
+        final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
+                TestUserUtils.getAdminUser());
+        Assert.assertFalse(filterDescriptorList.isEmpty());
+        Assert.assertTrue(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));
     }
 
 }

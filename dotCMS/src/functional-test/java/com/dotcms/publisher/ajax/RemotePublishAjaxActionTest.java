@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.google.common.collect.ImmutableMap;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -101,7 +102,7 @@ public class RemotePublishAjaxActionTest {
 		user = APILocator.getUserAPI().getSystemUser();
 		adminUser = APILocator.getUserAPI().loadByUserByEmail( "admin@dotcms.com", user, false );
 		//Create new filter to send in the URL
-		APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
+		PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
 
 		final Map<String,Object> filtersMap1 =
 				ImmutableMap.of("dependencies",true,"relationships",true);

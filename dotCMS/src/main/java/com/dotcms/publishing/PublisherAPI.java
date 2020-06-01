@@ -60,12 +60,6 @@ public interface PublisherAPI {
     List<FilterDescriptor> getFiltersDescriptorsByRole(final User user) throws DotDataException;
 
     /**
-     * Gets the FilterMap that contains all the Filters loaded to the system.
-     * @return map of FilterDescriptors, the FilterDescriptor.Key is used as the key of the map.
-     */
-    Map<String, FilterDescriptor> getFilterDescriptorMap();
-
-    /**
      * Get a FilterDescriptor using the FilterDescriptor.Key as key
      * @param filterKey key of the filterDescriptor
      * @return filterDescriptor referenced to that key

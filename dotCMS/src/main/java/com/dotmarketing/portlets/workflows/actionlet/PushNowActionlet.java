@@ -69,7 +69,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
         //Environment Param
         params.add(new WorkflowActionletParameter(PARAM_ENVIRONMENT, Try.of(()->LanguageUtil.get("pushNowActionlet.environments.name")).getOrElse("Name of the Environments"), "", true));
         //Filter Param
-        final Collection<FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterDescriptorMap().values();
+        final Collection<FilterDescriptor> filterDescriptorMap = Try.of(()->APILocator.getPublisherAPI().getFiltersDescriptorsByRole(APILocator.systemUser())).get();
         final FilterDescriptor defaultFilter = filterDescriptorMap.stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findFirst().get();
         final List<MultiKeyValue> multiKeyValueFilterList = new ArrayList<>();
         filterDescriptorMap.stream().forEach(filterDescriptor -> multiKeyValueFilterList.add(new MultiKeyValue(filterDescriptor.getKey(),filterDescriptor.getTitle())));

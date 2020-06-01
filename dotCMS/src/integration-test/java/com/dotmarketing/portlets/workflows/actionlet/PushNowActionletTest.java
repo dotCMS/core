@@ -14,6 +14,7 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -193,7 +194,7 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
         createEnvironment(environmentName);
 
         //Clean all filters
-        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         //Create 3 filters, one set as default
         final String defaulFilterKey = "defaultFilterKey"+System.currentTimeMillis();
         final String filterKey1 = "filterKey1"+System.currentTimeMillis();
