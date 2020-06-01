@@ -11,6 +11,7 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.business.PublisherTestUtil;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -31,6 +32,7 @@ import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDe
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
 import com.dotmarketing.util.TestConfig;
+import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -259,23 +261,23 @@ import org.junit.runners.Suite.SuiteClasses;
         DotAssetAPITest.class,
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
         RulesAPIImplIntegrationTest.class,
-        RulesAPIImplIntegrationTest.class,
-        SiteSearchJobImplTest.class,
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         FileAssetAPIImplTest.class,
         UserResourceIntegrationTest.class,
         SiteSearchJobImplTest.class,
-        PushPublishFiltersInitializerTest.class,
-        PushPublishFilterResourceTest.class,
-        IntegrationResourceLinkTest.class,
-        DependencyBundlerTest.class,
-        PublisherFilterImplTest.class,
-        Task05305AddPushPublishFilterColumnTest.class,
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
+        LanguageUtilTest.class,
+        FolderResourceTest.class,
+        DependencyBundlerTest.class,
+        BundleFactoryTest.class,
+        PublisherTestUtil.class,
+        PublisherFilterImplTest.class,
+        PushPublishFiltersInitializerTest.class,
+        PushPublishFilterResourceTest.class,
         PushNowActionletTest.class,
-        FolderResourceTest.class
+        Task05305AddPushPublishFilterColumnTest.class
 })
 public class MainSuite {
 
