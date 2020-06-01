@@ -14,15 +14,14 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_AS_MAP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_AS_MAP;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_BINARIES;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_COMMON_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_CONSTANTS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_VERSION_INFO;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_AS_MAP;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.NOT_APPLICABLE;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.mapIdentifier;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.mapLanguage;
@@ -51,20 +50,32 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * If any Options marked as property is found this class gets instantiated since props are most likely to be resolved here
+ */
 public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentlet> {
 
+    /**
+     * Typical constructor
+     * @param toolBox
+     */
     DefaultTransformStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
-    @Override
-    public Contentlet fromContentlet(final Contentlet contentlet) {
-        return contentlet;
-    }
-
+    /**
+     * Regular transformation handler
+     * @param contentlet
+     * @param map
+     * @param options
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Override
     public Map<String, Object> transform(final Contentlet contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options, User user)
+            final Set<TransformOptions> options, final User user)
             throws DotDataException, DotSecurityException {
         addCommonProperties(contentlet, map, options);
         addIdentifier(contentlet, map, options);
@@ -75,9 +86,17 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         return map;
     }
 
+    /**
+     * Handle common properties found on all contentlets
+     * @param contentlet
+     * @param map
+     * @param options
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private void addCommonProperties(final Contentlet contentlet, final Map<String, Object> map, final Set<TransformOptions> options)
             throws DotSecurityException, DotDataException {
-        if(!options.contains(INC_COMMON_PROPS)){
+        if(!options.contains(COMMON_PROPS)){
             return;
         }
         final ContentType type = contentlet.getContentType();
@@ -123,7 +142,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
     private void addLanguage(final Contentlet contentlet, final Map<String, Object> map,
             final Set<TransformOptions> options) {
         final Language language = toolBox.languageAPI.getLanguage(contentlet.getLanguageId());
-        if (options.contains(LANGUAGE_AS_MAP)) {
+        if (options.contains(LANGUAGE_VIEW)) {
             map.putAll(mapLanguage(language, true));
         }
         if (options.contains(LANGUAGE_PROPS)) {
@@ -149,7 +168,6 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
     }
 
 
-
     /**
      * Constant fields are added down here
      * @param contentlet
@@ -157,7 +175,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * @param options
      */
     private void addConstants(final Contentlet contentlet, final Map<String, Object> map, final Set<TransformOptions> options){
-          if(!options.contains(INC_CONSTANTS)){
+          if(!options.contains(CONSTANTS)){
              return;
           }
             contentlet.getContentType().fields(ConstantField.class)
@@ -168,10 +186,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
 
 
     /**
-     * This method
-     * @param contentlet
-     * @param map
-     * @param options
+     * This method includes binaries in the resulting view if so is indicated
      */
     private void addBinaries(final Contentlet contentlet, final Map<String, Object> map,
             final Set<TransformOptions> options) {
@@ -181,36 +196,18 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         if (binaries.isEmpty()) {
             return;
         }
-        //This emulates the behavior we had on BinaryToMapTransformer
-        if (options.contains(BINARIES_AS_MAP)) {
+
+        // if we want to include binaries as they are (java.io.File) this is the flag you should turn on.
+        if (options.contains(BINARIES)) {
             for (final Field field : binaries) {
-
                 try {
-                    map.put(field.variable() + "Map", TransformToolbox.transform(field, contentlet));
-
                     final File conBinary = contentlet.getBinary(field.variable());
                     if (conBinary != null) {
-                        //This clearly replaces the binary by a string which is the expected output on BinaryToMapTransformer.
-                        map.put(field.variable(), conBinary.getName());
+                        map.put(field.variable(), conBinary);
                     }
                 } catch (IOException e) {
                     Logger.warn(this,
                             "Unable to get Binary from field with var " + field.variable());
-                }
-            }
-        } else {
-           // if we want to include binaries as they are (java.io.File) this is the flag you should turn on.
-            if (options.contains(INC_BINARIES)) {
-                for (final Field field : binaries) {
-                    try {
-                        final File conBinary = contentlet.getBinary(field.variable());
-                        if (conBinary != null) {
-                            map.put(field.variable(), conBinary);
-                        }
-                    } catch (IOException e) {
-                        Logger.warn(this,
-                                "Unable to get Binary from field with var " + field.variable());
-                    }
                 }
             }
         }
@@ -222,7 +219,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      */
     private void addVersionProperties(final Contentlet contentlet, final Map<String, Object> map, final Set<TransformOptions> options)
             throws DotSecurityException, DotDataException {
-        if(!options.contains(INC_VERSION_INFO)){
+        if(!options.contains(VERSION_INFO)){
             return;
         }
         final User modUser = toolBox.userAPI.loadUserById(contentlet.getModUser());
@@ -237,7 +234,6 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
 
         map.put("publishDate", Try.of(contentlet::getModDate).getOrNull());
-
 
     }
 

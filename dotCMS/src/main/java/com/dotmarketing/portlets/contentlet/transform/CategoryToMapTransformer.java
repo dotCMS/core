@@ -15,7 +15,7 @@ public class CategoryToMapTransformer implements FieldsToMapTransformer {
         if (con.getInode() == null) {
             throw new DotStateException("Contentlet needs an inode to get fields");
         }
-        final DotTransformer transformer = new DotTransformerBuilder().categoryToMapTransformer().forUser(user)
+        final DotContentletTransformer transformer = new DotTransformerBuilder().categoryToMapTransformer().forUser(user)
                 .content(con).build();
 
         this.mapOfMaps = transformer.toMaps().get(0);

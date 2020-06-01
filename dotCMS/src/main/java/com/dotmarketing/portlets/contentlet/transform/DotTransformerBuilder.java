@@ -1,12 +1,12 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_AS_MAP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_AS_MAP;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_COMMON_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_CONSTANTS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_VERSION_INFO;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_AS_MAP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
@@ -75,7 +75,7 @@ public class DotTransformerBuilder {
      */
     DotTransformerBuilder binaryToMapTransformer(){
        optionsHolder.clear();
-       optionsHolder.add(BINARIES_AS_MAP);
+       optionsHolder.add(BINARIES_VIEW);
        return this;
     }
 
@@ -85,7 +85,7 @@ public class DotTransformerBuilder {
      */
     DotTransformerBuilder languageToMapTransformer(){
         optionsHolder.clear();
-        optionsHolder.add(LANGUAGE_AS_MAP);
+        optionsHolder.add(LANGUAGE_VIEW);
         return this;
     }
 
@@ -116,7 +116,7 @@ public class DotTransformerBuilder {
     public DotTransformerBuilder webAssetOptions(){
         optionsHolder.clear();
         optionsHolder.addAll(
-                EnumSet.of(INC_COMMON_PROPS, INC_VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS));
+                EnumSet.of(COMMON_PROPS, VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS));
         return this;
     }
 
@@ -126,7 +126,7 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder dotAssetOptions(){
         optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(INC_COMMON_PROPS, INC_VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
         return this;
     }
 
@@ -136,7 +136,7 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder contentResourceOptions(){
         optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(INC_COMMON_PROPS, INC_CONSTANTS, INC_VERSION_INFO, LOAD_META));
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META));
         return this;
     }
 
@@ -146,7 +146,7 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder defaultOptions(){
         optionsHolder.clear();
-        optionsHolder.addAll(DotTransformerImpl.defaultOptions);
+        optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
         return this;
     }
 
@@ -154,7 +154,7 @@ public class DotTransformerBuilder {
      * Once every option has been selected get the instance here
      * @return
      */
-    public DotTransformer build() {
+    public DotContentletTransformer build() {
         final StrategyResolver resolver;
         final String providerClassName = getStrategyResolverProvider();
         if (isNotSet(providerClassName)) {
@@ -171,7 +171,7 @@ public class DotTransformerBuilder {
                 throw new DotRuntimeException(message, e);
             }
         }
-        return new DotTransformerImpl(contentlets, resolver, EnumSet.copyOf(optionsHolder), user);
+        return new DotContentletTransformerImpl(contentlets, resolver, EnumSet.copyOf(optionsHolder), user);
     }
 
     /**

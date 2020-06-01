@@ -14,20 +14,42 @@ import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Strategy to handle Contentlets of type Page
+ */
 public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
+    /**
+     * Main constructor
+     * @param toolBox
+     */
     PageViewStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
+    /**
+     * Instance Conversion method
+     * @param contentlet
+     * @return
+     */
     @Override
     public HTMLPageAsset fromContentlet(final Contentlet contentlet) {
         return toolBox.htmlPageAssetAPI.fromContentlet(contentlet);
     }
 
+    /**
+     * Map view method
+     * @param page
+     * @param map
+     * @param options
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Override
     public Map<String, Object> transform(final HTMLPageAsset page, final Map<String, Object> map,
-            Set<TransformOptions> options, User user)
+            final Set<TransformOptions> options, final User user)
             throws DotSecurityException, DotDataException {
 
         final String title = (String)map.get(TITLE_FIELD);

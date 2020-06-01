@@ -6,7 +6,6 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.IconType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -17,6 +16,8 @@ import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotFolderTransformerBuilder;
+import com.dotmarketing.portlets.contentlet.transform.DotMapViewTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -314,25 +315,11 @@ public class BrowserAPIImpl implements BrowserAPI {
                 Logger.error(this, "Could not load folders : ", e1);
             }
 
-            for (final Folder folder : folders) {
+            final DotMapViewTransformer transformer = new DotFolderTransformerBuilder().withFolders(folders).withUserAndRoles(browserQuery.user, roles).build();
+            final List<Map<String, Object>> mapViews = transformer.toMaps();
+            countItems.add(mapViews.size());
+            returnList.addAll(mapViews);
 
-                final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, browserQuery.user);
-                if (permissions.contains(PERMISSION_READ)) {
-
-                    final Map<String, Object> folderMap = folder.getMap();
-                    folderMap.put("permissions", permissions);
-                    folderMap.put("parent", folder.getInode());
-                    folderMap.put("mimeType", "");
-                    folderMap.put("name", folder.getName());
-                    folderMap.put("title", folder.getName());
-                    folderMap.put("description", folder.getTitle());
-                    folderMap.put("extension", "folder");
-                    folderMap.put("hasTitleImage", StringPool.BLANK);
-                    folderMap.put("__icon__", IconType.FOLDER.iconName());
-                    returnList.add(folderMap);
-                    countItems.increment();
-                }
-            }
         }
     } // includeFolders.
 

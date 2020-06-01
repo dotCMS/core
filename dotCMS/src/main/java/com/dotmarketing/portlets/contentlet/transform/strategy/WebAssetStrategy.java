@@ -15,12 +15,23 @@ import java.util.Set;
 public abstract class WebAssetStrategy <T extends Contentlet>  extends
         AbstractTransformStrategy<T> {
 
+    /**
+     * ToolBox taker constructor
+     * @param toolBox
+     */
     WebAssetStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
+    /**
+     * Strategy Apply method
+     * @param contentlet
+     * @param map
+     * @param options
+     * @param user
+     */
     public final void apply(final T contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options, User user) {
+            final Set<TransformOptions> options, final User user) {
         super.apply(contentlet, map, options, user);
         urlOverride(contentlet, map);
     }

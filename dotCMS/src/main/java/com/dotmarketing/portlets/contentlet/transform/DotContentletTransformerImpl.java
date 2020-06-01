@@ -1,16 +1,15 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_BINARIES;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_COMMON_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_CONSTANTS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_VERSION_INFO;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.strategy.AbstractTransformStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
@@ -28,15 +27,14 @@ import java.util.stream.Collectors;
  * Transformation basically takes place in strategies that are plugged based on the options submitted
  * or the ContentType associated to the the Content.
  */
-
-class DotTransformerImpl implements DotTransformer {
+class DotContentletTransformerImpl implements DotContentletTransformer {
 
     static final Set<TransformOptions> defaultOptions = EnumSet.of(
-        INC_COMMON_PROPS, INC_CONSTANTS, INC_VERSION_INFO, INC_BINARIES
+            COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES
     );
 
     private User user;
-    private final Set<TransformOptions> includedOptions;
+    private final Set<TransformOptions> options;
     private final List<Contentlet> contentlets;
     private final StrategyResolver strategyResolver;
 
@@ -44,20 +42,20 @@ class DotTransformerImpl implements DotTransformer {
      * Main constructor provides access to set the required APIs
      * @param contentlets input
      * @param strategyResolver strategyResolver
-     * @param includeOptions
+     * @param options
      * @param user
      */
     @VisibleForTesting
-    DotTransformerImpl(final List<Contentlet> contentlets,
+    DotContentletTransformerImpl(final List<Contentlet> contentlets,
             final StrategyResolver strategyResolver,
-            final Set<TransformOptions> includeOptions,
+            final Set<TransformOptions> options,
             final User user) {
         if(!isSet(contentlets)){
            throw new DotRuntimeException("At least 1 contentlet must be set.");
         }
         this.contentlets = contentlets;
         this.strategyResolver = strategyResolver;
-        this.includedOptions = includeOptions;
+        this.options = options;
         this.user = user;
     }
 
@@ -76,15 +74,19 @@ class DotTransformerImpl implements DotTransformer {
      */
     private Map<String, Object> transform(final Contentlet contentlet) {
         final ContentType type = contentlet.getContentType();
-        if(null != type) {
+        if (null != type) {
             Logger.debug(
-                    DotTransformerImpl.class,()->String.format(" BaseType: `%s` Type: `%s`", type.name(), type.baseType().name()));
+                    DotContentletTransformerImpl.class, () -> String
+                            .format(" BaseType: `%s` Type: `%s`", type.name(),
+                                    type.baseType().name()));
         }
         final Map<String, Object> map = contentlet.getMap();
-        final List<AbstractTransformStrategy> strategies = strategyResolver.resolveStrategies(type, includedOptions);
-        for(final AbstractTransformStrategy strategy:strategies){
-           strategy.apply(contentlet, map, includedOptions, user);
-        }
+
+        strategyResolver.resolveStrategies(type, options).stream()
+                .map(strategy -> {
+                    strategy.apply(contentlet, map, options, user);
+                    return strategy;
+                }).reduce((a, b) -> b).ifPresent(lastStrategy -> lastStrategy.cleanup(map));
 
         return map;
     }

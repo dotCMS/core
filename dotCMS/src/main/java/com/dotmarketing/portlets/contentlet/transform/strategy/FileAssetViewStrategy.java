@@ -38,7 +38,7 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
 
     @Override
     public Map<String, Object> transform(final FileAsset fileAsset, final Map<String, Object> map,
-            Set<TransformOptions> options, User user)
+            final Set<TransformOptions> options, final  User user)
             throws DotDataException, DotSecurityException {
 
         if(isNotSet(fileAsset.getTitle())) {

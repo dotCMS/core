@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 /**
  * This class is deprecated as it has proven to lack flexibility
- * @deprecated As of 5.3.1 instead use {@link DotTransformerImpl}
+ * @deprecated As of 5.3.1 instead use {@link DotContentletTransformerImpl}
  */
 @Deprecated
 public class ContentletToMapTransformer {

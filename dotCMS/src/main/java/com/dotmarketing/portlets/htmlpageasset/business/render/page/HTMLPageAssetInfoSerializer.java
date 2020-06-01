@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotmarketing.portlets.contentlet.transform.DotTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -20,7 +20,7 @@ public class HTMLPageAssetInfoSerializer extends JsonSerializer<HTMLPageAssetInf
     public void serialize(final HTMLPageAssetInfo htmlPageAssetInfo, final JsonGenerator jsonGenerator,
                           final SerializerProvider serializerProvider) throws IOException {
 
-        final DotTransformer transformer = new DotTransformerBuilder().defaultOptions().content(htmlPageAssetInfo.getPage()).build();
+        final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(htmlPageAssetInfo.getPage()).build();
         final Map<String, Object> pageContentletMap  = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
 
         final Builder<Object, Object> pageMapBuilder =

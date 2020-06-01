@@ -33,7 +33,6 @@ public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
 
             if(fileAsContentOptional.isPresent()) {
                 final Contentlet fileAsContent =
-                //new DotContentletTransformer(Collections.singletonList(fileAsContentOptional.get())).hydrate().get(0);
                 new DotTransformerBuilder().defaultOptions().content(fileAsContentOptional.get()).build().hydrate().get(0);
 
                 fileAsset = APILocator.getFileAssetAPI().fromContentlet(fileAsContent);

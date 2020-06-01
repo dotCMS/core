@@ -1,8 +1,8 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_COMMON_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.INC_VERSION_INFO;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.META_DATA_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYPE_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
@@ -62,7 +62,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -148,7 +147,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         final StrategyResolverImpl resolver = new StrategyResolverImpl(toolbox);
 
-        final Contentlet newContentlet = new DotTransformerImpl(singletonList(contentlet), resolver, DotTransformerImpl.defaultOptions, null).hydrate().get(0);
+        final Contentlet newContentlet = new DotContentletTransformerImpl(singletonList(contentlet), resolver, DotContentletTransformerImpl.defaultOptions, null).hydrate().get(0);
 
         assertNotNull(newContentlet);
         assertNotSame(newContentlet, contentlet); //This method now returns a new instance. A copy of the original contentlet
@@ -185,9 +184,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         when(identifierAPI.find(identifier)).thenReturn(null);
 
-        final Contentlet newContentlet = new DotTransformerImpl(
+        final Contentlet newContentlet = new DotContentletTransformerImpl(
                   singletonList(contentlet), resolver,
-                  DotTransformerImpl.defaultOptions, null
+                  DotContentletTransformerImpl.defaultOptions, null
         ).hydrate().get(0);
 
         assertNotNull(newContentlet);
@@ -228,9 +227,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         contentlet.getMap().put(Contentlet.LANGUAGEID_KEY, 1L);
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
-        final Contentlet newContentlet = new DotTransformerImpl(
+        final Contentlet newContentlet = new DotContentletTransformerImpl(
                 singletonList(contentlet), resolver,
-                DotTransformerImpl.defaultOptions, null).hydrate().get(0);
+                DotContentletTransformerImpl.defaultOptions, null).hydrate().get(0);
 
         assertNotNull(newContentlet);
         assertNotSame(newContentlet, contentlet);
@@ -356,7 +355,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         final List<Map<String, Object>> transformedList1 = contentletToMapTransformer.toMaps();
 
-        final DotTransformer dotTransformer = new DotTransformerBuilder().defaultOptions().content(list).build();
+        final DotContentletTransformer dotTransformer = new DotTransformerBuilder().defaultOptions().content(list).build();
 
         final List<Map<String, Object>> transformedList2 = dotTransformer.toMaps();
 
@@ -377,11 +376,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 final Object object2 = objectMap2.get(key1);
 
                 assertNotNull(object2);
-
-                if( testCase.baseContentType == BaseContentType.FILEASSET  &&  "title".equals(key1)){
-                    //A Bug that previously existed on the old impl
-                    continue;
-                }
 
                 assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
                         baseTypeName, original.getIdentifier(), key1), object1,
@@ -413,8 +407,14 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Given scenario:
+     * Expected results:
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
-    public void Test_Contentlet_To_Map_View() throws DotDataException, DotSecurityException {
+    public void Test_Contentlet_To_Map_View_For_FileAsset() throws DotDataException, DotSecurityException {
 
         final String urlExpected = "/index";
         final String identifier = "identifier";
@@ -493,7 +493,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
         final Set<TransformOptions> options1 = EnumSet.of(
-                INC_COMMON_PROPS, INC_VERSION_INFO
+                COMMON_PROPS, VERSION_INFO
         );
 
         final FileAsset fileAsset = mock(FileAsset.class);
@@ -510,7 +510,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         when(fileAssetAPI.fromContentlet(any(Contentlet.class))).thenReturn(fileAsset);
 
-        final List<Map<String, Object>> maps = new DotTransformerImpl(
+        final List<Map<String, Object>> maps = new DotContentletTransformerImpl(
                 singletonList(contentlet),
                 resolver,
                 options1, user).toMaps();
@@ -529,19 +529,19 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final String returnedUnderlyingFileName = (String)mapView.get(UNDERLYING_FILENAME);
 
         //FLAG Alias is OFF
-        Assert.assertFalse(mapView.containsKey("fileName"));
-        Assert.assertFalse(mapView.containsKey("fileSize"));
+        assertFalse(mapView.containsKey("fileName"));
+        assertFalse(mapView.containsKey("fileSize"));
         //Flag Metadata is OFF
 
-        Assert.assertEquals(identifier, returnedIdentifier);
-        Assert.assertEquals(urlExpected, title);
-        Assert.assertEquals(mimeType, returnedMimeType);
-        Assert.assertEquals("png",extension );
-        Assert.assertEquals(StringPool.BLANK, parent);
-        Assert.assertEquals(height, returnedHeight.intValue());
-        Assert.assertEquals(width, returnedWidth.intValue());
-        Assert.assertEquals(underlyingFileName, returnedUnderlyingFileName);
-        Assert.assertEquals(ContentletCache.CACHED_METADATA, meta);
+        assertEquals(identifier, returnedIdentifier);
+        assertEquals(urlExpected, title);
+        assertEquals(mimeType, returnedMimeType);
+        assertEquals("png",extension );
+        assertEquals(StringPool.BLANK, parent);
+        assertEquals(height, returnedHeight.intValue());
+        assertEquals(width, returnedWidth.intValue());
+        assertEquals(underlyingFileName, returnedUnderlyingFileName);
+        assertEquals(ContentletCache.CACHED_METADATA, meta);
 
     }
 

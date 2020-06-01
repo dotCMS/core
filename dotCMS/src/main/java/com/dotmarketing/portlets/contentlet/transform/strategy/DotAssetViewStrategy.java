@@ -27,13 +27,8 @@ public class DotAssetViewStrategy extends WebAssetStrategy<Contentlet> {
     }
 
     @Override
-    public Contentlet fromContentlet(final Contentlet contentlet) {
-        return contentlet;
-    }
-
-    @Override
     public Map<String, Object> transform(final Contentlet dotAsset, final Map<String, Object> map,
-            final Set<TransformOptions> options, User user)
+            final Set<TransformOptions> options, final User user)
             throws DotDataException, DotSecurityException {
 
         String fileName = "unknown";

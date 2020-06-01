@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.privateInternalProperties;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -8,6 +10,10 @@ import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Entry point class for the Strategies hierarchy
+ * @param <T>
+ */
 public abstract class AbstractTransformStrategy<T extends Contentlet> {
 
     protected final TransformToolbox toolBox;
@@ -16,7 +22,14 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
         this.toolBox = toolBox;
     }
 
-    abstract T fromContentlet(Contentlet contentlet);
+    /**
+     * Any descendant that has a particular way to retrieve it's own concrete type should override this
+     * @param contentlet
+     * @return
+     */
+     T fromContentlet(Contentlet contentlet){
+         return (T)contentlet;
+     }
 
     abstract Map<String, Object> transform(T contentlet,
             Map<String, Object> map,
@@ -34,6 +47,10 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
                subtype.getIdentifier()), e
             );
         }
+    }
+
+    public void cleanup(final Map<String, Object> map) {
+        map.keySet().removeAll(privateInternalProperties);
     }
 
 }

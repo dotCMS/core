@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -25,18 +26,21 @@ public class StrategyResolverImpl implements StrategyResolver {
 
     //Fixed strategies that are most like to be applied all the time.
     //Anyways we keep them on a Supplier to instantiate them only if they're really needed.
-    private final DefaultTransformStrategy defaultTransformStrategy;
-    private final CleanupStrategy cleanUpTransformStrategy;
+    private final Supplier<DefaultTransformStrategy> defaultTransformStrategy;
 
+    /**
+     * Test friendly constructor version
+     * @param strategyTriggeredByBaseType
+     * @param strategyTriggeredByOption
+     * @param defaultTransformStrategy
+     */
     StrategyResolverImpl(
             final Map<BaseContentType, Supplier<AbstractTransformStrategy>> strategyTriggeredByBaseType,
             final Map<TransformOptions, Supplier<AbstractTransformStrategy>> strategyTriggeredByOption,
-            final DefaultTransformStrategy defaultTransformStrategy,
-            final CleanupStrategy cleanUpTransformStrategy) {
+            final Supplier<DefaultTransformStrategy> defaultTransformStrategy) {
         this.strategyTriggeredByBaseType = strategyTriggeredByBaseType;
         this.strategyTriggeredByOption = strategyTriggeredByOption;
         this.defaultTransformStrategy = defaultTransformStrategy;
-        this.cleanUpTransformStrategy = cleanUpTransformStrategy;
     }
 
     /**
@@ -52,10 +56,10 @@ public class StrategyResolverImpl implements StrategyResolver {
                 BaseContentType.DOTASSET, () -> new DotAssetViewStrategy(toolBox)
                 ),
              ImmutableMap.of(
-                 CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox)
+                 CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox),
+                 BINARIES_VIEW, () -> new BinaryViewStrategy(toolBox)
              ),
-            //This are the ones applied at all times
-             new DefaultTransformStrategy(toolBox), new CleanupStrategy(toolBox)
+             ()-> new DefaultTransformStrategy(toolBox)
         );
     }
 
@@ -76,8 +80,10 @@ public class StrategyResolverImpl implements StrategyResolver {
     public List<AbstractTransformStrategy> resolveStrategies(final ContentType contentType,
             final Set<TransformOptions> options) {
         final ImmutableList.Builder<AbstractTransformStrategy> builder = new ImmutableList.Builder<>();
-        //The order on which things are applied is important
-        builder.add(defaultTransformStrategy);
+
+        if(options.stream().anyMatch(TransformOptions::isProperty)){
+           builder.add(defaultTransformStrategy.get());
+        }
 
         if (null != contentType) {
             final Supplier<AbstractTransformStrategy> supplier = strategyTriggeredByBaseType
@@ -93,8 +99,6 @@ public class StrategyResolverImpl implements StrategyResolver {
                 builder.add(supplier.get());
             }
         }
-
-        builder.add(cleanUpTransformStrategy);
 
         return builder.build();
     }
