@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.dotcms.rest.api.v1.storage.FileStorageResource;
+import com.dotcms.rest.api.v1.storage.ContentStorageResource;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rest.RulesEnginePortlet;
@@ -153,7 +153,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
                     .add(AppsResource.class)
                     .add(BrowserResource.class)
                     .add(ResourceLinkResource.class)
-                    .add(FileStorageResource.class)
+                    .add(ContentStorageResource.class)
                     .build();
 
 	

@@ -12,6 +12,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotCorruptedDataException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -321,7 +322,7 @@ public class DataBaseStorage implements Storage { // todo: this should have a cr
             final StringWriter metaDataJsonWriter = new StringWriter();
             this.objectMapper.writeValue(metaDataJsonWriter, extraMeta);
             new DotConnect().executeUpdate(this.getConnection(),
-                    "insert into storage(hash_id, key, storage_group, metadata) values (?, ?, ?, ?)",
+                    "insert into storage(hash, key, storage_group, metadata) values (?, ?, ?, ?)",
                     objectHash, path, groupName, metaDataJsonWriter.toString());
             return true;
         } catch (DotDataException | IOException e) {
@@ -354,13 +355,13 @@ public class DataBaseStorage implements Storage { // todo: this should have a cr
             final StringWriter metaDataJsonWriter = new StringWriter();
             this.objectMapper.writeValue(metaDataJsonWriter, extraMeta);
             new DotConnect().executeUpdate(this.getConnection(),
-                    "insert into storage(hash_id, key, storage_group, metadata) values (?, ?, ?, ?)",
+                    "insert into storage(hash, key, storage_group, metadata) values (?, ?, ?, ?)",
                     objectHash, path, groupName, metaDataJsonWriter.toString());
 
             int order = 1;
             for (final String chuckHash : chuckHashes) {
 
-                new DotConnect().executeUpdate(this.getConnection(),"insert into storage_objects(storage_hash, data_hash, data_order) values (?, ?, ?)",
+                new DotConnect().executeUpdate(this.getConnection(),"insert into storage_x_data(storage_hash, data_hash, data_order) values (?, ?, ?)",
                         objectHash, chuckHash, order++);
             }
 
@@ -506,13 +507,13 @@ public class DataBaseStorage implements Storage { // todo: this should have a cr
                     fileHashBuilder.append(bytes);
                 } else {
 
-                    // todo: throw some exception here
+                    throw new DotCorruptedDataException("The chunks hash is not valid");
                 }
             }
 
             if (!hashId.equals(fileHashBuilder.buildUnixHash())) {
 
-                // todo: throw some exception here
+                throw new DotCorruptedDataException("The file hash is not valid");
             }
         }
 

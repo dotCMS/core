@@ -6,11 +6,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonDeserialize(builder = MetadataForm.Builder.class)
 public class MetadataForm {
 
-    private final String identifier;
-    private final String inode;
-    private final String language;
-    private final String field;
-    private final boolean nocache;
+    private final String  identifier;
+    private final String  inode;
+    private final String  language;
+    private final String  field;
+    private final boolean cache;
 
     public MetadataForm(final Builder builder) {
 
@@ -18,7 +18,7 @@ public class MetadataForm {
         this.inode      = builder.inode;
         this.language   = builder.language;
         this.field      = builder.field;
-        this.nocache    = builder.nocache;
+        this.cache      = builder.cache;
     }
 
     public String getIdentifier() {
@@ -37,8 +37,8 @@ public class MetadataForm {
         return field;
     }
 
-    public boolean isNocache() {
-        return nocache;
+    public boolean isCache() {
+        return cache;
     }
 
     @Override
@@ -52,14 +52,14 @@ public class MetadataForm {
 
     public static final class Builder {
 
-        @JsonProperty private String identifier;
-        @JsonProperty private String inode;
-        @JsonProperty private String language;
-        @JsonProperty private String field;
-        @JsonProperty private boolean nocache = false;
+        @JsonProperty private String  identifier;
+        @JsonProperty private String  inode;
+        @JsonProperty private String  language;
+        @JsonProperty private String  field;
+        @JsonProperty private boolean cache = true;
 
-        public Builder nocache(final boolean nocache) {
-            this.nocache = nocache;
+        public Builder cache(final boolean cache) {
+            this.cache = cache;
             return this;
         }
 

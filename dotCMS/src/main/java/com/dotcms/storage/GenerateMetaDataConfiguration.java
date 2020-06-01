@@ -106,7 +106,7 @@ public class GenerateMetaDataConfiguration {
         private StorageKey       storageKey = null;
 
         /**
-         * If true, means the metadata output will be stores in the metaDataFileSupplier file
+         * If true, means the metadata output will be storage
          */
         private boolean           store = false;
 

@@ -90,10 +90,21 @@ public interface FileStorageAPI {
     Map<String, Object> retrieveMetaData(RequestMetaData requestMetaData);
 
     /**
-     * Set metadata generator. There is one for default based on Tika, however if you want to override it just implement the {@link MetadataGenerator} and override the default one.
+     * Set metadata generator. There is one for default based on Tika, however if you want to override it just implement the {@link MetadataGenerator} and set it, instead of the default one.
      * @param metadataGenerator {@link MetadataGenerator}
      */
-    void setMetadataGenerator(final MetadataGenerator metadataGenerator);
+    void setMetadataGenerator   (final MetadataGenerator metadataGenerator);
+
+    /**
+     * Metadata object are recovered from json, in case you are storing something else, override this one to support the unmarshal
+     * @param objectReaderDelegate {@link ObjectReaderDelegate}
+     */
     void setObjectReaderDelegate(final ObjectReaderDelegate objectReaderDelegate);
+
+    /**
+     * Metadata object are stored as a json, in case you want to transform to different thing
+     * @param objectWriterDelegate {@link ObjectWriterDelegate}
+     */
     void setObjectWriterDelegate(final ObjectWriterDelegate objectWriterDelegate);
+
 }

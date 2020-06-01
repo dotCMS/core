@@ -1,7 +1,9 @@
 package com.dotcms.storage;
 
 import java.io.File;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -26,11 +28,18 @@ public class RequestMetaData {
      */
     private final Supplier<String>  cacheKeySupplier;
 
+    /**
+     * In case the metadata is retrieved from the storage instead of the cache,
+     * you can wrap the metadata recovery from the storage in order to add, mod or remove values
+     */
+    private final Function<Map<String, Object>, Map<String, Object>> wrapMetadataMapForCache;
+
     private RequestMetaData(final Builder builder) {
 
-        this.cache                = builder.cache;
-        this.cacheKeySupplier     = builder.cacheKeySupplier;
-        this.storageKey           = builder.storageKey;
+        this.cache                   = builder.cache;
+        this.cacheKeySupplier        = builder.cacheKeySupplier;
+        this.storageKey              = builder.storageKey;
+        this.wrapMetadataMapForCache = builder.wrapMetadataMapForCache;
     }
 
     public StorageKey getStorageKey() {
@@ -43,6 +52,10 @@ public class RequestMetaData {
 
     public Supplier<String> getCacheKeySupplier() {
         return cacheKeySupplier;
+    }
+
+    public Function<Map<String, Object>, Map<String, Object>> getWrapMetadataMapForCache() {
+        return wrapMetadataMapForCache;
     }
 
     public static final class Builder {
@@ -61,6 +74,12 @@ public class RequestMetaData {
          * Cache key supplier, if cache is true
          */
         private Supplier<String>  cacheKeySupplier = null;
+
+        /**
+         * In case the metadata is retrieved from the storage instead of the cache,
+         * you can wrap the metadata recovery from the storage in order to add, mod or remove values
+         */
+        private Function<Map<String, Object>, Map<String, Object>> wrapMetadataMapForCache = map-> map;
 
         public Builder cache(final boolean cache) {
 
@@ -81,6 +100,11 @@ public class RequestMetaData {
             return this;
         }
 
+        public Builder wrapMetadataMapForCache(final Function<Map<String, Object>, Map<String, Object>> wrapMetadataMapForCache) {
+
+            this.wrapMetadataMapForCache = wrapMetadataMapForCache;
+            return this;
+        }
 
         public RequestMetaData build() {
             return new RequestMetaData(this);

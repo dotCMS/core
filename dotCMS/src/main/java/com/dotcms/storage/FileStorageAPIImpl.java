@@ -33,8 +33,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     private volatile ObjectReaderDelegate objectReaderDelegate = new JsonReaderDelegate<>(Map.class);
     private volatile ObjectWriterDelegate objectWriterDelegate = new JsonWriterDelegate();
-    private volatile MetadataGenerator    metadataGenerator    =  new TikaMetadataGenerator();
-    private final StorageProvider         storageProvider      =  new StorageProvider();
+    private volatile MetadataGenerator    metadataGenerator    = new TikaMetadataGenerator();
+    private final    StorageProvider      storageProvider      = new StorageProvider();
 
     @Override
     public void setObjectReaderDelegate(final ObjectReaderDelegate objectReaderDelegate) {
@@ -149,7 +149,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
                 if (generateMetaDataConfiguration.isStore()) {
 
-                    this.storeMetadata(storageKey, storage, metadataMap);
+                    this.storeMetadata(storageKey, storage, metadataMap, binary);
                 }
             }
         } else {
@@ -206,12 +206,13 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     }
 
     private void storeMetadata(final StorageKey storageKey, final Storage storage,
-                               final Map<String, Object> metadataMap) {
+                               final Map<String, Object> metadataMap, final File binary) {
 
         try {
 
-            storage.pushObject(storageKey.getBucket(), storageKey.getPath(), this.objectWriterDelegate, (Serializable)metadataMap,
-                    Collections.emptyMap()); // todo: define this later
+            storage.pushObject(storageKey.getBucket(), storageKey.getPath(),
+                    this.objectWriterDelegate, (Serializable)metadataMap,
+                    this.generateRawBasicMetaData(binary));
             Logger.info(this, "Metadata wrote on: " + storageKey.getPath());
         } catch (Exception e) {
 
@@ -272,9 +273,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             if (storage.existsObject(storageKey.getBucket(), storageKey.getPath())) {
 
                 metadataMap =  this.retrieveMetadata(storageKey, storage);
-                Logger.info(this, "Retrieve the meta data from file system, path: " + storageKey.getPath());
+                Logger.info(this, "Retrieve the meta data from storage, path: " + storageKey.getPath());
                 if (null != requestMetaData.getCacheKeySupplier()) {
-                    this.putIntoCache(requestMetaData.getCacheKeySupplier().get(), metadataMap); // todo: check this b/c it could be storing the full meta, should reduce it
+                    this.putIntoCache(requestMetaData.getCacheKeySupplier().get(),
+                            requestMetaData.getWrapMetadataMapForCache().apply(metadataMap));
                 }
             }
         } else {

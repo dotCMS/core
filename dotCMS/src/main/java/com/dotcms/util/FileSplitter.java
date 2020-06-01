@@ -45,7 +45,7 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
     private Closeable closeable;
 
     /**
-     * Defaut size for the chuncks, 2mb
+     * Defaut size for the chunks, 2mb
      */
     private static final int CHUNK_SIZE = Config.getIntProperty("FILE_SPLITTER_CHUNK_SIZE", 2097152); // 2mb
 

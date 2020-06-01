@@ -3,12 +3,14 @@ package com.dotcms.storage;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -96,7 +98,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                     metadataMap = this.fileStorageAPI.generateBasicMetaData(file,
                             metadataKey -> metadataFields.isEmpty() ? true : metadataFields.contains(metadataKey));
                     CacheLocator.getContentletCache()
-                            .addMetadataMap(contentlet.getInode(), metadataMap);
+                            .addMetadataMap(contentlet.getInode() + basicBinaryFieldName, metadataMap);
                 } else {
 
 
@@ -104,7 +106,8 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                             new GenerateMetaDataConfiguration.Builder()
                                     .full(false)
                                     .override(alwaysRegenerateMetadata)
-                                    .cache(()-> ContentletCache.META_DATA_MAP_KEY + contentlet.getInode())
+                                    .store(true)
+                                    .cache(()-> ContentletCache.META_DATA_MAP_KEY + contentlet.getInode() + basicBinaryFieldName)
                                     .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty() ? true : metadataFields.contains(metadataKey))
                                     .storageKey(new StorageKey.Builder().bucket(metadataBucketName).path(metadataPath).storage(storageType).build())
                                     .build()
@@ -149,6 +152,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                             .full(true)
                             .override(alwaysRegenerateMetadata)
                             .cache(false)  // do not want cache on full meta
+                            .store(true)
                             .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty()? true: metadataFields.contains(metadataKey))
                             .storageKey(new StorageKey.Builder().bucket(metadataBucketName).path(metadataPath).storage(storageType).build())
                             .build()
@@ -209,7 +213,8 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
 
         return this.fileStorageAPI.retrieveMetaData(
                 new RequestMetaData.Builder()
-                        .cache(()-> ContentletCache.META_DATA_MAP_KEY + contentlet.getInode())
+                        .wrapMetadataMapForCache(this::wrapMetadataMapForCache)
+                        .cache(()-> ContentletCache.META_DATA_MAP_KEY + contentlet.getInode() + fieldVariableName)
                         .storageKey(new StorageKey.Builder().bucket(metadataBucketName).path(metadataPath).storage(storageType).build())
                         .build()
         );
@@ -225,9 +230,50 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
         return this.fileStorageAPI.retrieveMetaData(
                 new RequestMetaData.Builder()
                         .cache(false)
+                        .wrapMetadataMapForCache(this::wrapMetadataMapForCache)
                         .storageKey(new StorageKey.Builder().bucket(metadataBucketName).path(metadataPath).storage(storageType).build())
                         .build()
         );
+    }
+
+    private Map<String, Object> wrapMetadataMapForCache (final Map<String, Object> originalMap) {
+
+        final ImmutableMap.Builder<String, Object> reduceMap = new ImmutableMap.Builder<>();
+
+        for (final String key : originalMap.keySet()) {
+
+            if (FileStorageAPI.TITLE_META_KEY.equals(key)) {
+
+                reduceMap.put(FileStorageAPI.TITLE_META_KEY, originalMap.get(key));
+            }
+
+            if (FileStorageAPI.PATH_META_KEY.equals(key)) {
+
+                reduceMap.put(FileStorageAPI.PATH_META_KEY, originalMap.get(key));
+            }
+
+            if (FileStorageAPI.LENGTH_META_KEY.equals(key)) {
+
+                reduceMap.put(FileStorageAPI.LENGTH_META_KEY, originalMap.get(key));
+            }
+
+            if (FileStorageAPI.CONTENT_TYPE_META_KEY.equals(key)) {
+
+                reduceMap.put(FileStorageAPI.CONTENT_TYPE_META_KEY, originalMap.get(key));
+            }
+
+            if (FileStorageAPI.MOD_DATE_META_KEY.equals(key)) {
+
+                reduceMap.put(FileStorageAPI.MOD_DATE_META_KEY, originalMap.get(key));
+            }
+
+            if (FileStorageAPI.SHA226_META_KEY.equals(key)) {
+
+                reduceMap.put(FileStorageAPI.SHA226_META_KEY, originalMap.get(key));
+            }
+        }
+
+        return reduceMap.build();
     }
 
     private Tuple2<Set<String>, Set<String>> findBinaryFields(final Contentlet contentlet) {
