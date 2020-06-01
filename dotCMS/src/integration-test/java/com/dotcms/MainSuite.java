@@ -11,7 +11,6 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
-import com.dotcms.publisher.business.PublisherTestUtil;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -272,7 +271,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderResourceTest.class,
         DependencyBundlerTest.class,
         BundleFactoryTest.class,
-        PublisherTestUtil.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
         PushPublishFilterResourceTest.class,
