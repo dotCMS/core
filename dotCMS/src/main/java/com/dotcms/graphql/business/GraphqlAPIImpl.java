@@ -62,6 +62,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLObjectType.Builder;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -269,61 +270,38 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     @LogTime(loggingLevel = "INFO")
     private GraphQLSchema generateSchema() throws DotDataException {
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final Set<GraphQLType> graphQLTypes = new HashSet<>();
 
-        List<ContentType> allTypes = contentTypeAPI.findAll();
-        // exclude ee types when no license
-        if(LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
-            allTypes = allTypes.stream().filter((type) ->!(type instanceof EnterpriseType))
-                    .collect(Collectors.toList());
-        }
-
-        // create all types
-        Map<String, GraphQLObjectType> concreteTypes = new HashMap<>();
-
-        allTypes.forEach((type)->createSchemaType(type, concreteTypes));
-
-        final Set<GraphQLType> graphQLTypes = new HashSet<>(InterfaceType.valuesAsSet());
         // custom scalar types
         graphQLTypes.add(ExtendedScalars.DateTime);
-        // add here the rest of types
-        graphQLTypes.addAll(concreteTypes.values());
 
-        // Root Type
-        GraphQLObjectType.Builder rootTypeBuilder = newObject()
-            .name("Query")
-            .field(newFieldDefinition()
-                .name("search")
-                .argument(GraphQLArgument.newArgument()
-                    .name("query")
-                    .type(nonNull(GraphQLString))
-                    .build())
-                .argument(GraphQLArgument.newArgument()
-                    .name("limit")
-                    .type(GraphQLInt)
-                    .build())
-                .argument(GraphQLArgument.newArgument()
-                    .name("offset")
-                    .type(GraphQLInt)
-                    .build())
-                .argument(GraphQLArgument.newArgument()
-                    .name("sortBy")
-                    .type(GraphQLString)
-                    .build())
-                .type(list(InterfaceType.CONTENTLET.getType()))
-                .dataFetcher(new ContentletDataFetcher()));
+        // content api types
+        graphQLTypes.addAll(getContentAPITypes());
 
-        List<GraphQLFieldDefinition> typesFieldsDefinitions = new ArrayList<>();
+        List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
         // each content type as query'able collection field
-        graphQLTypes.forEach((type)-> {
+        fieldDefinitions.addAll(getContentAPIFieldDefinitions());
+
+        // Root Type
+        GraphQLObjectType.Builder rootTypeBuilder = createRootTypeBuilder().fields(fieldDefinitions);
+
+        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(graphQLTypes).build();
+    }
+
+    private List<GraphQLFieldDefinition> getContentAPIFieldDefinitions() throws DotDataException {
+        List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
+
+        Collection<GraphQLType> contentAPITypes = getContentAPITypes();
+
+        contentAPITypes.forEach((type)-> {
             if(type.getName().equals(InterfaceType.CONTENTLET.getType().getName())) {
                 return;
             }
 
             final String fieldDescription = type instanceof GraphQLInterfaceType ? BASE_TYPE_SUFFIX : null;
 
-            typesFieldsDefinitions.add(newFieldDefinition()
+            fieldDefinitions.add(newFieldDefinition()
                 .name(TypeUtil.collectionizedName(type.getName()))
                 .argument(GraphQLArgument.newArgument()
                     .name("query")
@@ -347,9 +325,50 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         });
 
-        rootTypeBuilder = rootTypeBuilder.fields(typesFieldsDefinitions);
+        return fieldDefinitions;
+    }
 
-        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(graphQLTypes).build();
+    private Builder createRootTypeBuilder() {
+        return newObject()
+            .name("Query")
+            .field(newFieldDefinition()
+                .name("search")
+                .argument(GraphQLArgument.newArgument()
+                    .name("query")
+                    .type(nonNull(GraphQLString))
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("limit")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("offset")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("sortBy")
+                    .type(GraphQLString)
+                    .build())
+                .type(list(InterfaceType.CONTENTLET.getType()))
+                .dataFetcher(new ContentletDataFetcher()));
+    }
+
+    private Set<GraphQLType> getContentAPITypes() throws DotDataException {
+        Set<GraphQLType> contentAPITypes = new HashSet<>();
+
+        contentAPITypes.addAll(InterfaceType.valuesAsSet());
+
+        List<ContentType> allTypes = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .findAllRespectingLicense();
+        // create all types
+        Map<String, GraphQLObjectType> concreteTypes = new HashMap<>();
+
+        allTypes.forEach((type)->createSchemaType(type, concreteTypes));
+
+        // add here the rest of types
+        contentAPITypes.addAll(concreteTypes.values());
+
+        return contentAPITypes;
     }
 
     private ContentType getRelatedContentTypeForField(final Field field, final User user) throws DotSecurityException, DotDataException {
