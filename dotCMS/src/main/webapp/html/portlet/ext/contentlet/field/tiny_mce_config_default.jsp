@@ -23,6 +23,9 @@ String insertImageLabel = LanguageUtil.get(pageContext, "insert-image");
 
 %>
 
+var dotCMS = dotCMS || {};
+dotCMS.hasLicense = <%=licenseLevel > licenseStandard%>
+
 var tinyMCEProps = {
     dotLanguageStrings: {
     <%if(editImage!=null){ %>
@@ -68,9 +71,14 @@ var tinyMCEProps = {
     file_picker_callback: function(callback, value, meta) {
         debugger;
         cmsFileBrowser(callback, value, meta);
+    },
+    init_instance_callback: function (editor) {
+        debugger;
+        editor.on('PostProcess', function (e) {
+            debugger;
+            e.content += 'My custom content!';
+        });
     }
 };
 
-<%if(licenseLevel > licenseStandard){ %>
- tinyMCEProps.plugins.push("doteditimage");
-<%} %>
+tinyMCEProps.plugins.push("doteditimage");

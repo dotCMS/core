@@ -341,8 +341,8 @@ var cmsfile=null;
 				"image/tiff",
 				"image/png",
 			];
-			const { mimeType, idPath } = results.entity.asset;
-
+			const { mimeType, idPath } = results.entity[asset.titleImage];
+			debugger;
 			const image = `
 					<img
 					src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
@@ -356,17 +356,20 @@ var cmsfile=null;
 			const link = `<a href="${idPath}">${asset.title}</a>`;
 			const assetToInsert = mimeWhiteList.includes(mimeType) ? image : link;
             tinymce.execCommand("mceInsertContent", false, assetToInsert);
-            const images = tinymce.activeEditor.contentDocument.querySelectorAll('img');
-            images.forEach(image => {
-                // Needs to ask Ivor because this is not a good aproach
-                console.log(image.naturalWidth);
-                console.log(image.naturalHeight);
-                image.addEventListener('load', () => {
-                    image.setAttribute('width', image.naturalWidth)
-                    image.setAttribute('height', image.naturalHeight)
-                })
-                
-            })
+			setAssetDimensionsInEditor();
+
+		});
+	}
+
+	function setAssetDimensionsInEditor () {
+		const images = tinymce.activeEditor.contentDocument.querySelectorAll('img');
+		images.forEach(image => {
+			image.addEventListener('load', () => {
+				if(!image.getAttribute('width')){
+					image.setAttribute('width', image.naturalWidth);
+					image.setAttribute('height', image.naturalHeight);
+				}
+			})
 		});
 	}
 
