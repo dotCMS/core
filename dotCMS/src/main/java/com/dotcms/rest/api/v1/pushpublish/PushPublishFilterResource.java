@@ -25,7 +25,7 @@ import org.glassfish.jersey.server.JSONP;
 /**
  * This Resource is for the push publishing filters
  */
-@Path("/v1/pushpublish/filter")
+@Path("/v1/pushpublish/filters")
 public class PushPublishFilterResource {
 
     private final WebResource webResource;
