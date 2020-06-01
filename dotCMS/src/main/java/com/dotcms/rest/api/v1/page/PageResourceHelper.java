@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PersonalizedContentlet;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -285,7 +286,9 @@ public class PageResourceHelper implements Serializable {
         final Container foundContainer = APILocator.getContainerAPI()
                 .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
         if (foundContainer instanceof FileAssetContainer) {
-            containerPath = FileAssetContainer.class.cast(foundContainer).getPath();
+            containerPath = FileAssetContainerUtil.getInstance().getFullPath(
+                    FileAssetContainer.class.cast(foundContainer)
+            );
         }
 
         if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {

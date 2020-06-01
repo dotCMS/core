@@ -4,6 +4,11 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -31,7 +36,10 @@ public class ContainerRaw implements Serializable {
      * @param container The {@link Container} in the HTML Page.
      * @param containerStructures The list of {@link ContainerStructure} relationships. the browser.
      */
-    public ContainerRaw(final Container container, final List<ContainerStructure> containerStructures, final Map<String, List<Map<String,Object>>> contentlets) {
+    public ContainerRaw(
+            final Container container,
+            final List<ContainerStructure> containerStructures,
+            final Map<String, List<Map<String,Object>>> contentlets) {
         this.container = container;
         this.containerStructures =  (containerStructures != null)  ?  ImmutableList.copyOf(containerStructures) :  ImmutableList.of();
         this.contentlets = contentlets;
@@ -46,10 +54,15 @@ public class ContainerRaw implements Serializable {
      *
      * @return The {@link Container} in the page.
      */
+    @JsonIgnore
     public Container getContainer() {
         return container;
     }
 
+    @JsonProperty("container")
+    public ContainerView getContainerView() {
+        return new ContainerView(container);
+    }
 
     /**
      * Returns the relationships that determine what Content Types can be added to a specific Container.
