@@ -215,8 +215,14 @@ public class BundleFactoryTest {
         bundleFactory.deleteBundle(bundleid);
     }
 
+    /**
+     * Method to test: {@link BundleAPI#saveBundle(Bundle)}
+     * Given Scenario: Create a new bundle with a filter key
+     * ExpectedResult: the bundle should create without issues
+     *
+     */
     @Test
-    public void test_insertBundleWithFilterKey() throws DotDataException {
+    public void test_insertBundleWithFilterKey_success() throws DotDataException {
         final String uuid = UUIDGenerator.generateUuid();
         Bundle bundle = new Bundle();
         bundle.setId(uuid);
@@ -231,8 +237,14 @@ public class BundleFactoryTest {
         assertEquals("testFilter",bundle.getFilterKey());
     }
 
+    /**
+     * Method to test: {@link BundleAPI#saveBundle(Bundle)}
+     * Given Scenario: Create a new bundle without a filter key
+     * ExpectedResult: the bundle should create without issues
+     *
+     */
     @Test
-    public void test_insertBundleWithoutFilterKey() throws DotDataException {
+    public void test_insertBundleWithoutFilterKey_success() throws DotDataException {
         final String uuid = UUIDGenerator.generateUuid();
         Bundle bundle = new Bundle();
         bundle.setId(uuid);

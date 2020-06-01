@@ -38,8 +38,14 @@ public class PushPublishFiltersInitializerTest {
         YamlUtil.write(file,filterDescriptor);
     }
 
+    /**
+     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Given Scenario: Given a yaml file that contains a FilterDescriptor, the initializer reads the file and loads the filter
+     * ExpectedResult: filter is successfully added to the filterDescriptorMap
+     *
+     */
     @Test
-    public void test_loadFilter() throws IOException {
+    public void test_loadFilter_success() throws IOException {
         final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor =

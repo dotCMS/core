@@ -104,7 +104,7 @@ public class DependencyBundlerTest extends IntegrationTestBase {
      * @param excludeDependencyQuery
      * @param defaultFilter
      */
-    private static void createFilterDescriptor(final String key, final boolean dependencies,
+    private static void createFilterDescriptor(final String key, final boolean dependencies,//CREATE BUILDER PARA EVITAR METODO CON TANTOS PARAMS
             final boolean relationships, final boolean forcePush,
             final List<Object> excludeClasses, final List<Object> excludeDependencyClasses,
             final String excludeQuery, final String excludeDependencyQuery, final boolean defaultFilter){
@@ -477,9 +477,6 @@ public class DependencyBundlerTest extends IntegrationTestBase {
 
         //Create filter
         final String filterKey = "TestFilterWithDependenciesFalse.yml";
-        final List<Object> excludeClassesList = new ArrayList<>();
-        excludeClassesList.add("Template");
-        excludeClassesList.add("Containers");
         createFilterDescriptor(filterKey,false,true,false,
                 null,null,null,null,false);
         //Create bundle with New filter

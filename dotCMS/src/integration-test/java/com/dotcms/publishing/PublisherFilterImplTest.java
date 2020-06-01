@@ -17,6 +17,12 @@ public class PublisherFilterImplTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Method to test: {@link PublisherFilter#acceptExcludeDependencyClasses(String)}
+     * Given Scenario: Given a list of types that are gonna be excluded to PP as a Dependency
+     * ExpectedResult: Types in the list are excluded and types not in the list are accepted
+     *
+     */
     @Test
     public void Test_acceptExcludeDependencyClasses(){
         // Using diff case because user can use diff case
@@ -42,6 +48,12 @@ public class PublisherFilterImplTest {
 
     }
 
+    /**
+     * Method to test: {@link PublisherFilter#acceptExcludeClasses(String)}
+     * Given Scenario: Given a list of types that are gonna be excluded to PP
+     * ExpectedResult: Types in the list are excluded and types not in the list are accepted
+     *
+     */
     @Test
     public void Test_acceptExcludeClasses(){
         // Using diff case because user can use diff case
@@ -65,6 +77,12 @@ public class PublisherFilterImplTest {
 
     }
 
+    /**
+     * Method to test: {@link PublisherFilter#acceptExcludeQuery(String)}
+     * Given Scenario: Given a list of ids that are gonna be excluded to PP
+     * ExpectedResult: Ids in the list are excluded and ids not in the list are accepted
+     *
+     */
     @Test
     public void Test_acceptExcludeQuery(){
         // Generate a couple of uuid
@@ -91,6 +109,12 @@ public class PublisherFilterImplTest {
 
     }
 
+    /**
+     * Method to test: {@link PublisherFilter#acceptExcludeDependencyQuery(String)}
+     * Given Scenario: Given a list of ids that are gonna be excluded to PP as a Dependency
+     * ExpectedResult: Ids in the list are excluded and ids not in the list are accepted
+     *
+     */
     @Test
     public void Test_acceptExcludeDependencyQuery(){
         // Generate a couple of uuid
@@ -102,18 +126,18 @@ public class PublisherFilterImplTest {
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
         // Should return true since the ids have not been add to the Set
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(id1));
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(id2));
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(id3));
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(UUIDGenerator.generateUuid()));
+        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(id1));
+        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(id2));
+        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(id3));
+        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(UUIDGenerator.generateUuid()));
         // Adding the types to the Set
-        listOfIds.stream().forEach(id -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(id));
+        listOfIds.stream().forEach(id -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(id));
         // Should return false since ids are in the Set
-        Assert.assertFalse(publisherFilter.acceptExcludeQuery(id1));
-        Assert.assertFalse(publisherFilter.acceptExcludeQuery(id2));
-        Assert.assertFalse(publisherFilter.acceptExcludeQuery(id3));
+        Assert.assertFalse(publisherFilter.acceptExcludeDependencyQuery(id1));
+        Assert.assertFalse(publisherFilter.acceptExcludeDependencyQuery(id2));
+        Assert.assertFalse(publisherFilter.acceptExcludeDependencyQuery(id3));
         // Should return true since the id is not in the Set
-        Assert.assertTrue(publisherFilter.acceptExcludeQuery(UUIDGenerator.generateUuid()));
+        Assert.assertTrue(publisherFilter.acceptExcludeDependencyQuery(UUIDGenerator.generateUuid()));
 
     }
 

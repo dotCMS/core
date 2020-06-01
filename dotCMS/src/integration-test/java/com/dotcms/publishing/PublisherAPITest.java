@@ -326,8 +326,14 @@ public class PublisherAPITest extends IntegrationTestBase {
         return file -> !file.getAbsolutePath().endsWith("bundle.xml");
     }
 
+    /**
+     * Method to test: {@link PublisherAPI#addFilterDescriptor(FilterDescriptor)}
+     * Given Scenario: Create a new FilterDescriptor and add it to the FilterDescriptorMap
+     * ExpectedResult: the filterDescriptor is added successfully to the map
+     *
+     */
     @Test
-    public void test_addFilter(){
+    public void test_addFilter_success(){
         publisherAPI.getFilterDescriptorMap().clear();
 
         final Map<String,Object> filtersMap =
@@ -338,13 +344,18 @@ public class PublisherAPITest extends IntegrationTestBase {
         publisherAPI.addFilterDescriptor(filterDescriptor);
 
         final Map<String,FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterDescriptorMap();
-        Logger.info(this,filterDescriptorMap.toString());
         Assert.assertFalse(filterDescriptorMap.isEmpty());
         Assert.assertTrue(filterDescriptorMap.containsKey(filterDescriptor.getKey()));
     }
 
+    /**
+     * Method to test: {@link PublisherAPI#getFiltersDescriptorsByRole(User)}
+     * Given Scenario: Get the filters that the CMSAdmin has access to
+     * ExpectedResult: CMSAdmin has access to all the filters
+     *
+     */
     @Test
-    public void test_getFiltersByRole_CMSAdmin() throws DotDataException {
+    public void test_getFiltersByRole_CMSAdmin_returnAllFilters() throws DotDataException {
         publisherAPI.getFilterDescriptorMap().clear();
 
         final Map<String,Object> filtersMap =
@@ -363,7 +374,6 @@ public class PublisherAPITest extends IntegrationTestBase {
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
 
         final List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersDescriptorsByRole(newUser);
-        Logger.info(this,filterDescriptors.toString());
         Assert.assertFalse(filterDescriptors.isEmpty());
         Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
         Assert.assertTrue(filterDescriptors.contains(filterDescriptor2));

@@ -35,7 +35,7 @@ public class PushPublishFilterResourceTest {
         resource = new PushPublishFilterResource();
         response = new MockHttpResponse();
 
-        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
+        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();//I suggest that the internal map is not exposed but offer the methods you need via API (e.g. clearFileDescriptors())
         filterKey = "filterTestAPI.yml";
 
         createFilter();
@@ -66,16 +66,28 @@ public class PushPublishFilterResourceTest {
         return request;
     }
 
+    /**
+     * Method to test: {@link PushPublishFilterResource#getFilters(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: Get the filters that the user has access to, passing a user
+     * ExpectedResult: filters that the user has access to, 200 Code
+     *
+     */
     @Test
-    public void test_getFilter_withUser() throws DotDataException {
+    public void test_getFilter_withUser_success_returnFilter() throws DotDataException {
         final Response responseResource = resource.getFilters(getHttpRequest(true),response);
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         Assert.assertTrue(responseEntityView.getEntity().toString().contains(filterKey));
     }
 
+    /**
+     * Method to test: {@link PushPublishFilterResource#getFilters(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: Get the filters that the user has access to, but no user is set
+     * ExpectedResult: 401 Code, Invalid User, SecurityException
+     *
+     */
     @Test(expected = SecurityException.class)
-    public void test_getFilter_noUser() throws DotDataException {
+    public void test_getFilter_noUser_return401() throws DotDataException {
         resource.getFilters(getHttpRequest(false),response);
     }
 }
