@@ -23,8 +23,8 @@ String insertImageLabel = LanguageUtil.get(pageContext, "insert-image");
 
 %>
 
-var dotCMS = dotCMS || {};
-dotCMS.hasLicense = <%=licenseLevel > licenseStandard%>
+
+const dotCMSHasLicense = <%=licenseLevel > licenseStandard%>
 
 var tinyMCEProps = {
     dotLanguageStrings: {
