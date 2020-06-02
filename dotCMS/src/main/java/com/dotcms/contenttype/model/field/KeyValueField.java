@@ -1,14 +1,16 @@
 package com.dotcms.contenttype.model.field;
 
-import static com.dotcms.util.CollectionsUtils.list;
+import java.util.Collection;
+import java.util.List;
 
+import org.immutables.value.Value;
+
+import com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.collect.ImmutableList;
-import java.util.Collection;
-import java.util.List;
-import org.immutables.value.Value;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 @JsonSerialize(as = ImmutableKeyValueField.class)
 @JsonDeserialize(as = ImmutableKeyValueField.class)
@@ -44,7 +46,7 @@ public abstract class KeyValueField extends Field {
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
 		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.HINT,
-				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED);
+				ContentTypeFieldProperties.SEARCHABLE);
 	}
 
 	@JsonIgnore
