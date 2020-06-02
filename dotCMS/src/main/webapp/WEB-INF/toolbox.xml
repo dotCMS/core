@@ -39,7 +39,6 @@
 		<scope>application</scope>
 		<class>org.apache.velocity.tools.generic.ListTool</class>
 	</tool>
-
 	<tool>
 	  <key>esc</key>
 	  <scope>application</scope>
@@ -50,7 +49,6 @@
 		<scope>application</scope>
 		<class>org.apache.velocity.tools.generic.SortTool</class>
 	</tool>
-
 	<tool>
 		<key>mill</key>
 		<scope>request</scope>

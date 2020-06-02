@@ -23,12 +23,16 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -182,6 +186,38 @@ public class LanguagesResource {
     public Response getMessages(@Context HttpServletRequest request,
                                 final I18NForm i18NForm) {
         return oldLanguagesResource.getMessages(request, i18NForm);
+    }
+
+    /**
+     * Gets all the Messages from the language passed.
+     * If default is passed it will get the messages for the default language.
+     *
+     * @param request
+     * @param response
+     * @param language languageId or languageCountryCode e.g en_us, it_it
+     * @return all the messages of the language
+     */
+    @GET
+    @Path("{language}/i18n")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getAllMessages (
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("language") final String language){
+
+        final long languageId = "default".equalsIgnoreCase(language) ? APILocator.getLanguageAPI().getDefaultLanguage().getId() : LanguageUtil.getLanguageId(language);
+        final Language language1 = APILocator.getLanguageAPI().getLanguage(languageId);
+        if(!UtilMethods.isSet(language1)){
+            final String message = "Language with Id or Code: "+ language + " does not exist";
+            Logger.error(this,message);
+            throw new IllegalArgumentException(message);
+        }
+        final Locale locale = language1.asLocale();
+        final Map allMessagesMap = LanguageUtil.getAllMessagesByLocale(locale);
+
+        return Response.ok(new ResponseEntityView(allMessagesMap)).build();
     }
 
     private Language saveOrUpdateLanguage(final String languageId, final LanguageForm form) {

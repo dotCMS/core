@@ -15,7 +15,7 @@ services:
       MSSQL_PID: 'Developer'
       MSSQL_SA_PASSWORD: 'mssqldotCMS2019'
     ports:
-      - "11433:1433"
+      - "${SERVICE_HOST_PORT_PREFIX}1433:1433"
     volumes:
       # we copy our scripts onto the container
       - ./setup/db/mssql:/usr/src/app

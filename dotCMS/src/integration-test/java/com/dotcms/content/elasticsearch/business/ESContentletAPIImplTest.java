@@ -416,6 +416,97 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         checkLock(user, contentletSaved);
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#filterRelatedContent(Contentlet, Relationship, User, boolean, Boolean, int, int)}
+     * Given Scenario: When a related content is obtained from the index and in database this content
+     *                  doesn't exist (the index hasn't been updated yet), the returned list should not
+     *                  contain this "dirty" related content
+     * ExpectedResult: The method should return an empty list
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testGetRelatedContentWhenIndexIsMessedUp()
+            throws DotDataException, DotSecurityException {
+
+        final ContentType news = getNewsLikeContentType("News");
+        final ContentType comments = getCommentsLikeContentType("Comments");
+        relateContentTypes(news, comments);
+
+        final ContentType newsContentType = contentTypeAPI.find("News");
+        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+
+        Contentlet newsContentlet = null;
+        Contentlet commentsContentlet = null;
+
+        try {
+            //creates parent contentlet
+            ContentletDataGen dataGen = new ContentletDataGen(newsContentType.id());
+
+            //English version
+            newsContentlet = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
+                    .setProperty("title", "News Test")
+                    .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+                    .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+                    .next();
+
+            //creates child contentlet
+            dataGen = new ContentletDataGen(commentsContentType.id());
+            commentsContentlet = dataGen
+                    .languageId(languageAPI.getDefaultLanguage().getId())
+                    .setProperty("title", "Comment for News")
+                    .setProperty("email", "testing@dotcms.com")
+                    .setProperty("comment", "Comment for News")
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            //Saving relationship
+            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+
+            newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            newsContentlet = contentletAPI.checkin(newsContentlet,
+                    map(relationship, list(commentsContentlet)),
+                    null, user, false);
+
+            CacheLocator.getContentletCache().remove(commentsContentlet);
+            CacheLocator.getContentletCache().remove(newsContentlet);
+
+            final ESContentletAPIImpl contentletAPIImpl = Mockito.spy(new ESContentletAPIImpl());
+
+            Mockito.doReturn(new Contentlet()).when(contentletAPIImpl)
+                    .findContentletByIdentifierAnyLanguage(commentsContentlet.getIdentifier());
+
+            Mockito.doReturn(new Contentlet()).when(contentletAPIImpl)
+                    .findContentletByIdentifierAnyLanguage(newsContentlet.getIdentifier());
+
+            //Pull related content from comment child
+            List<Contentlet> result = contentletAPIImpl
+                    .filterRelatedContent(commentsContentlet, relationship, user, false, false, -1,
+                            -1);
+
+            assertNotNull(result);
+            assertEquals(0,result.size());
+
+            //pulling content from parent
+            result = contentletAPIImpl
+                    .filterRelatedContent(newsContentlet, relationship, user, false, true, -1,
+                            -1);
+
+            assertNotNull(result);
+            assertEquals(0,result.size());
+
+        } finally {
+            if (newsContentlet != null && UtilMethods.isSet(newsContentlet.getInode())) {
+                ContentletDataGen.remove(newsContentlet);
+            }
+
+            if (commentsContentlet != null && UtilMethods.isSet(commentsContentlet.getInode())) {
+                ContentletDataGen.remove(commentsContentlet);
+            }
+
+        }
+    }
+
     private void addPermission(
             final Role role,
             final Permissionable contentType,

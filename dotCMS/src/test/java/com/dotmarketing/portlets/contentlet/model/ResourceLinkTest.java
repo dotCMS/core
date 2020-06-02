@@ -388,12 +388,52 @@ public class ResourceLinkTest {
         final long languageId = 2L;
         final boolean isSecure = false;
 
-        final User limited = mockLimitedUser();
+        final User limited = mockAdminUser();
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
         when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.isFileAsset()).thenReturn(true);
+        when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(true);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
+        when(request.isSecure()).thenReturn(isSecure);
+        when(request.getServerPort()).thenReturn(80);
+
+        final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
+        final ResourceLink link = resourceLinkBuilder.build(request, limited, contentlet);
+        assertTrue(link.isDownloadRestricted());
+        assertEquals(StringPool.BLANK,link.getResourceLinkAsString());
+
+    }
+
+
+    /**
+     * Method to test: Test the resource link when the inode is null
+     * Given Scenario: When clone or create on diff lang, the id is set, but the inode is not
+     * ExpectedResult: Expected an empty resource link
+     *
+     */
+    @Test
+    public void test_new_contentlet_no_inode() throws Exception{
+
+        final String mimeType = "text/velocity";
+        final String htmlFileName = "widget-code.vtl";
+        final String path = "/application/comments/angular/";
+        final String hostName = "demo.dotcms.com";
+        final long languageId = 2L;
+        final boolean isSecure = false;
+
+        final User limited = mockLimitedUser();
+
+        final Contentlet contentlet = mock(Contentlet.class);
+        when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
+        when(contentlet.getInode()).thenReturn(null);
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getLanguageId()).thenReturn(languageId);
