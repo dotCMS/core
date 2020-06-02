@@ -54,7 +54,7 @@ import java.util.concurrent.Future;
  * see {@link FileByteSplitter} and {@link com.dotcms.util.FileJoiner} to get more details about the process
  * @author jsanca
  */
-public class DataBaseStorage implements Storage { // todo: this should have a cron job that deletes the orphan data.
+public class DataBaseStorage implements Storage {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -171,11 +171,13 @@ public class DataBaseStorage implements Storage { // todo: this should have a cr
         } finally {
 
             if (null != connection) {
+
+
                 try {
                     connection.setAutoCommit(autocommit);
                 } catch (SQLException e) {
 
-                    throw new DotRuntimeException(e);
+                    Logger.error(this, e.getMessage(), e);
                 } finally {
 
                     CloseUtils.closeQuietly(connection);
@@ -431,7 +433,7 @@ public class DataBaseStorage implements Storage { // todo: this should have a cr
     @Override
     public Future<Object> pushFileAsync(final String bucketName, final String path, final File file, final Map<String, Object> extraMeta) {
 
-        return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 ()-> this.pushFile(bucketName, path, file, extraMeta)
         );
     }
@@ -440,7 +442,7 @@ public class DataBaseStorage implements Storage { // todo: this should have a cr
     public Future<Object> pushObjectAsync(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate,
                                           final Serializable object, final Map<String, Object> extraMeta) {
 
-        return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 ()-> this.pushObject(bucketName, path, writerDelegate, object, extraMeta)
         );
     }
@@ -538,7 +540,7 @@ public class DataBaseStorage implements Storage { // todo: this should have a cr
     @Override
     public Future<File> pullFileAsync(final String groupName, final String path) {
 
-        return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 ()-> this.pullFile(groupName, path)
         );
     }
@@ -547,7 +549,7 @@ public class DataBaseStorage implements Storage { // todo: this should have a cr
     public Future<Object> pullObjectAsync(final String groupName, final String path,
                                           final ObjectReaderDelegate readerDelegate) {
 
-        return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 ()-> this.pullObject(groupName, path, readerDelegate)
         );
     }

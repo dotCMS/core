@@ -27,8 +27,19 @@ public abstract class ContentletCache implements Cachable {
 
 	public abstract void remove(String key);
 
+
+    /**
+     * Add the metadata as a map, to the cache
+     * @param key {@link String}
+     * @param metadataMap {@link Map}
+     */
     public abstract void addMetadataMap(String key, Map<String, Object> metadataMap);
 
+    /**
+     * Gets the metadata as a map
+     * @param key {@link String}
+     * @return Map
+     */
     public abstract Map<String, Object> getMetadataMap(String key);
 
 	public abstract void addMetadata(String key, Contentlet content);

@@ -19,7 +19,11 @@ import io.vavr.control.Try;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class ContentStorageHelper {
+/**
+ * Helper for the {@link ContentStorageResource}
+ * @author jsanca
+ */
+class ContentStorageHelper {
 
     private final ContentletAPI contentletAPI;
 
@@ -97,6 +101,5 @@ public class ContentStorageHelper {
                 Optional.ofNullable(this.contentletAPI.findContentletByIdentifierAnyLanguage(identifier)):
                 Optional.ofNullable(contentlet);
     }
-
 
 }

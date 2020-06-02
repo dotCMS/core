@@ -89,10 +89,7 @@ public class FileJoiner implements AutoCloseable, Flushable, Closeable {
     @Override
     public void close() throws IOException {
 
-        if (null != this.outputStream) {
-
-            this.outputStream.close();
-        }
+        CloseUtils.closeQuietly(this.outputStream);
     }
 
     @Override

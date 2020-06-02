@@ -3,14 +3,12 @@ package com.dotcms.storage;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -37,6 +35,9 @@ import java.util.Set;
  */
 public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
 
+    private static final String METADATA_GROUP_NAME = "METADATA_GROUP_NAME";
+    private static final String DEFAULT_STORAGE_TYPE = "DEFAULT_STORAGE_TYPE";
+    private static final String DEFAULT_METADATA_GROUP_NAME = "dotmetadata";
     private final FileStorageAPI fileStorageAPI;
 
     public ContentletMetadataAPIImpl() {
@@ -55,14 +56,13 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
 
         final ImmutableMap.Builder<String, Map<String, Object>> fullMetadataMap  = new ImmutableMap.Builder();
         final ImmutableMap.Builder<String, Map<String, Object>> basicMetadataMap = new ImmutableMap.Builder();
-        final  Map<String, com.dotcms.contenttype.model.field.Field>  fieldMap   = contentlet.getContentType().fieldMap();
+        final  Map<String, Field>  fieldMap   = contentlet.getContentType().fieldMap();
         /*
 		Verify if it is enabled the option to always regenerate metadata files on reindex,
 		enabling this could affect greatly the performance of a reindex process.
 		 */
         final boolean alwaysRegenerateMetadata = Config
                 .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
-        Map<String, Object> metadataMap        = null;
 
         Logger.debug(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
 
@@ -79,9 +79,9 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                                        final Map<String, Field> fieldMap,
                                        final boolean alwaysRegenerateMetadata) throws IOException {
 
-        final String storageType        = Config.getStringProperty("DEFAULT_STORAGE_TYPE", StorageType.FILE_SYSTEM.name());
+        final String storageType        = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
         Map<String, Object> metadataMap = Collections.emptyMap();
-        final String metadataBucketName = Config.getStringProperty("METADATA_BUCKET_NAME", "dotmetadata");
+        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DEFAULT_METADATA_GROUP_NAME);
         for (final String basicBinaryFieldName : basicBinaryFieldNameSet) {
 
             final File file           = contentlet.getBinary(basicBinaryFieldName);
@@ -109,7 +109,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                                     .store(true)
                                     .cache(()-> ContentletCache.META_DATA_MAP_KEY + contentlet.getInode() + basicBinaryFieldName)
                                     .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty() ? true : metadataFields.contains(metadataKey))
-                                    .storageKey(new StorageKey.Builder().bucket(metadataBucketName).path(metadataPath).storage(storageType).build())
+                                    .storageKey(new StorageKey.Builder().group(metadataBucketName).key(metadataPath).storage(storageType).build())
                                     .build()
                     );
                 }
@@ -137,9 +137,9 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                                       final Map<String, Field> fieldMap,
                                       final boolean alwaysRegenerateMetadata) throws IOException {
 
-        final String storageType        = Config.getStringProperty("DEFAULT_STORAGE_TYPE", StorageType.FILE_SYSTEM.name());
+        final String storageType        = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
         Map<String, Object> metadataMap = Collections.emptyMap();
-        final String metadataBucketName = Config.getStringProperty("METADATA_BUCKET_NAME", "dotmetadata");
+        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
         for (final String fullBinaryFieldName : fullBinaryFieldNameSet) {
 
             final File file           = contentlet.getBinary(fullBinaryFieldName);
@@ -154,7 +154,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                             .cache(false)  // do not want cache on full meta
                             .store(true)
                             .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty()? true: metadataFields.contains(metadataKey))
-                            .storageKey(new StorageKey.Builder().bucket(metadataBucketName).path(metadataPath).storage(storageType).build())
+                            .storageKey(new StorageKey.Builder().group(metadataBucketName).key(metadataPath).storage(storageType).build())
                             .build()
                         );
 
@@ -207,15 +207,15 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
     @Override
     public Map<String, Object> getMetadata(final Contentlet contentlet,final  String fieldVariableName) {
 
-        final String storageType        = Config.getStringProperty("DEFAULT_STORAGE_TYPE", StorageType.FILE_SYSTEM.name());
-        final String metadataBucketName = Config.getStringProperty("METADATA_BUCKET_NAME", "dotmetadata");
+        final String storageType        = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
         final String metadataPath       = this.getFileName(contentlet, fieldVariableName);
 
         return this.fileStorageAPI.retrieveMetaData(
                 new RequestMetaData.Builder()
                         .wrapMetadataMapForCache(this::wrapMetadataMapForCache)
                         .cache(()-> ContentletCache.META_DATA_MAP_KEY + contentlet.getInode() + fieldVariableName)
-                        .storageKey(new StorageKey.Builder().bucket(metadataBucketName).path(metadataPath).storage(storageType).build())
+                        .storageKey(new StorageKey.Builder().group(metadataBucketName).key(metadataPath).storage(storageType).build())
                         .build()
         );
     }
@@ -223,15 +223,15 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
     @Override
     public Map<String, Object> getMetadataNoCache(final Contentlet contentlet,final  String fieldVariableName) {
 
-        final String storageType        = Config.getStringProperty("DEFAULT_STORAGE_TYPE", StorageType.FILE_SYSTEM.name());
-        final String metadataBucketName = Config.getStringProperty("METADATA_BUCKET_NAME", "dotmetadata");
+        final String storageType        = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
         final String metadataPath       = this.getFileName(contentlet, fieldVariableName);
 
         return this.fileStorageAPI.retrieveMetaData(
                 new RequestMetaData.Builder()
                         .cache(false)
                         .wrapMetadataMapForCache(this::wrapMetadataMapForCache)
-                        .storageKey(new StorageKey.Builder().bucket(metadataBucketName).path(metadataPath).storage(storageType).build())
+                        .storageKey(new StorageKey.Builder().group(metadataBucketName).key(metadataPath).storage(storageType).build())
                         .build()
         );
     }

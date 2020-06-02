@@ -1247,6 +1247,11 @@ public class DotConnect {
         }
     }
 
+    /**
+     *  Number of rows to return, if zero is being ignore.
+     *  for instance, if using a forward cursor to fetch heavy rows, you can set to 1 (it will be slower but memory resources will be happy)
+     *  The behaviour will depend on the driver
+     * */
     public DotConnect setFetchSize(final int fetchSize) {
 
         this.fetchSize = fetchSize;

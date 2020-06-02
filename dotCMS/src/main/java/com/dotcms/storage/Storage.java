@@ -16,6 +16,8 @@ import java.util.concurrent.Future;
  */
 public interface Storage {
 
+    String STORAGE_POOL = "StoragePool";
+
     /**
      * Returns true if exists the group
      * @param groupName {@link String} group name

@@ -98,7 +98,7 @@ public class GenerateMetaDataConfiguration {
         /**
          * If true, means the metadata generated will be full except if there is any metaDataKeyFilter, only these fields will be accepted.
          */
-        private boolean           full = false;
+        private boolean           full;
 
         /**
          * Provides the supplier to stores the metadata generated, if store is true

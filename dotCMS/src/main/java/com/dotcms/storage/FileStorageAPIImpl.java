@@ -138,7 +138,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         this.checkBucket  (storageKey, storage);  // todo: see if you want to remove this
         this.checkOverride(storage, generateMetaDataConfiguration);
 
-        if (!storage.existsObject(storageKey.getBucket(), storageKey.getPath())) {
+        if (!storage.existsObject(storageKey.getGroup(), storageKey.getKey())) {
 
             if (this.validBinary(binary)) {
 
@@ -173,9 +173,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     private void checkBucket(final StorageKey storageKey, final Storage storage) {
 
-        if (!storage.existsGroup(storageKey.getBucket())) {
+        if (!storage.existsGroup(storageKey.getGroup())) {
 
-            storage.createGroup(storageKey.getBucket());
+            storage.createGroup(storageKey.getGroup());
         }
     }
 
@@ -195,8 +195,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         try {
 
-            objectMap   = (Map<String, Object>) storage.pullObject(storageKey.getBucket(), storageKey.getPath(), this.objectReaderDelegate);
-            Logger.info(this, "Metadata read from: " + storageKey.getPath());
+            objectMap   = (Map<String, Object>) storage.pullObject(storageKey.getGroup(), storageKey.getKey(), this.objectReaderDelegate);
+            Logger.info(this, "Metadata read from: " + storageKey.getKey());
         } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);
@@ -210,10 +210,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         try {
 
-            storage.pushObject(storageKey.getBucket(), storageKey.getPath(),
+            storage.pushObject(storageKey.getGroup(), storageKey.getKey(),
                     this.objectWriterDelegate, (Serializable)metadataMap,
                     this.generateRawBasicMetaData(binary));
-            Logger.info(this, "Metadata wrote on: " + storageKey.getPath());
+            Logger.info(this, "Metadata wrote on: " + storageKey.getKey());
         } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);
@@ -234,16 +234,16 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                                 final GenerateMetaDataConfiguration generateMetaDataConfiguration) {
 
         final StorageKey storageKey = generateMetaDataConfiguration.getStorageKey();
-        if (generateMetaDataConfiguration.isOverride() && storage.existsObject(storageKey.getBucket(), storageKey.getPath())) {
+        if (generateMetaDataConfiguration.isOverride() && storage.existsObject(storageKey.getGroup(), storageKey.getKey())) {
 
             try {
 
-                storage.deleteObject(storageKey.getBucket(), storageKey.getPath());
+                storage.deleteObject(storageKey.getGroup(), storageKey.getKey());
             } catch (Exception e) {
 
                 Logger.error(this.getClass(),
                         String.format("Unable to delete existing metadata file [%s] [%s]",
-                                storageKey.getPath(), e.getMessage()), e);
+                                storageKey.getKey(), e.getMessage()), e);
             }
         }
     } // checkOverride.
@@ -270,10 +270,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             final Storage       storage        = this.getStorageProvider().getStorage(storageType);
 
             this.checkBucket(storageKey, storage);
-            if (storage.existsObject(storageKey.getBucket(), storageKey.getPath())) {
+            if (storage.existsObject(storageKey.getGroup(), storageKey.getKey())) {
 
                 metadataMap =  this.retrieveMetadata(storageKey, storage);
-                Logger.info(this, "Retrieve the meta data from storage, path: " + storageKey.getPath());
+                Logger.info(this, "Retrieve the meta data from storage, path: " + storageKey.getKey());
                 if (null != requestMetaData.getCacheKeySupplier()) {
                     this.putIntoCache(requestMetaData.getCacheKeySupplier().get(),
                             requestMetaData.getWrapMetadataMapForCache().apply(metadataMap));
@@ -295,7 +295,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             try {
 
                 final TikaUtils tikaUtils = new TikaUtils();
-                final Map<String, Object> tikaMetaDataMap = tikaUtils.getForcedMetaDataMap(binary, new Long(maxLength).intValue());
+                final Map<String, Object> tikaMetaDataMap = tikaUtils.getForcedMetaDataMap(binary,  Long.valueOf(maxLength).intValue());
                 return tikaMetaDataMap;
             } catch (DotDataException e) {
 

@@ -150,9 +150,8 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
 
         @Override
         public void close() throws IOException {
-            if (null != this.stream) {
-                this.stream.close();
-            }
+
+            CloseUtils.closeQuietly(this.stream);
         }
     }
 }

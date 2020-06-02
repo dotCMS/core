@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegration
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
+import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -260,7 +261,8 @@ import org.junit.runners.Suite.SuiteClasses;
         SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
-        FolderResourceTest.class
+        FolderResourceTest.class,
+        HashBuilderTest.class
 })
 public class MainSuite {
 

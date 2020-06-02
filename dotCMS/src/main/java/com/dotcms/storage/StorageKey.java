@@ -1,24 +1,30 @@
 package com.dotcms.storage;
 
+/**
+ * Encapsulates a storage key, it has the key (for instance the path)
+ * the group (for instance the bucket, folder, space, etc)
+ * Storage {@link StorageType}
+ * @author jsanca
+ */
 public class StorageKey {
 
-    private final String path;     // todo: rename to key
-    private final String bucket;  // rename to group
+    private final String key;
+    private final String group;
     private final String storage;
 
     private StorageKey(final Builder builder) {
 
-        this.path       = builder.path;
-        this.bucket     = builder.bucket;
+        this.key = builder.key;
+        this.group = builder.group;
         this.storage    = builder.storage;
     }
 
-    public String getPath() {
-        return path;
+    public String getKey() {
+        return key;
     }
 
-    public String getBucket() {
-        return bucket;
+    public String getGroup() {
+        return group;
     }
 
     public String getStorage() {
@@ -27,19 +33,19 @@ public class StorageKey {
 
     public static final class Builder {
 
-        private String path;
-        private String bucket;
+        private String key;
+        private String group;
         private String storage;
 
-        public Builder path(final String path) {
+        public Builder key(final String key) {
 
-            this.path = path;
+            this.key = key;
             return this;
         }
 
-        public Builder bucket(final String bucket) {
+        public Builder group(final String group) {
 
-            this.bucket = bucket;
+            this.group = group;
             return this;
         }
 

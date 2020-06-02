@@ -6,15 +6,15 @@ package com.dotmarketing.exception;
  */
 public class DotCorruptedDataException extends DotRuntimeException {
 
-    public DotCorruptedDataException(String message) {
+    public DotCorruptedDataException(final String message) {
         super(message);
     }
 
-    public DotCorruptedDataException(Throwable cause) {
+    public DotCorruptedDataException(final Throwable cause) {
         super(cause);
     }
 
-    public DotCorruptedDataException(String message, Throwable cause) {
+    public DotCorruptedDataException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }
