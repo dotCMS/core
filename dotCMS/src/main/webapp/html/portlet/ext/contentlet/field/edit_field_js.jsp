@@ -492,21 +492,13 @@ var cmsfile=null;
 
 	function cmsFileBrowser(callback, value, meta) {
 		tinyMCEFilePickerCallback=callback;
-		debugger;
 		if(meta.filetype=="image"){
 			cmsFileBrowserImage.show();
 		}
 		else{
 			cmsFileBrowserFile.show();
 		}
-		setTimeout(()=> {
-			console.log('mce-window');
-			debugger;
-			dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' });
-			dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' });
-		}, 0);
-
-
+		dojo.query('.mce-window .mce-close')[0].click();
 	}
 
 	//Glossary terms search
