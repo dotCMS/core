@@ -433,7 +433,21 @@ var cmsfile=null;
                     if (kind === 'file') {
                         dropZone.style.pointerEvents = "all";
                     }
+                  });
+
+                  editor.on("ExecCommand", function (e) {
+                    if (e.command === 'mceFullScreen'){
+                        if (dropZone.style.position === '') {
+                            dropZone.style.position = 'fixed';
+                            dropZone.style.zIndex = '999';
+                        } else {
+                            dropZone.style.position = '';
+                            dropZone.style.zIndex = '';
+                        }
+                    }
+
 			      });
+
 			      editor.dom.bind(document, "dragleave", function (e) {
 			        dropZone.style.pointerEvents = "none";
 			        return false;
