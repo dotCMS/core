@@ -23,7 +23,6 @@ String insertImageLabel = LanguageUtil.get(pageContext, "insert-image");
 
 %>
 
-
 const dotCMSHasLicense = <%=licenseLevel > licenseStandard%>
 
 var tinyMCEProps = {

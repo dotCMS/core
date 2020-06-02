@@ -47,8 +47,7 @@ public class ContainerRendered extends ContainerRaw {
      *                           the browser.
      */
     public ContainerRendered(final ContainerRaw containerRaw, final Map<String, String> rendered) {
-        super(containerRaw.getContainer(), containerRaw.getContainerStructures(), containerRaw.getContentlets());
-        this.rendered = rendered;
+        this(containerRaw.getContainer(), containerRaw.getContainerStructures(), rendered, containerRaw.getContentlets());
 
     }
 
