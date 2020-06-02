@@ -28,11 +28,9 @@ dotCMS.hasLicense = <%=licenseLevel > licenseStandard%>
 
 var tinyMCEProps = {
     dotLanguageStrings: {
-    <%if(editImage!=null){ %>
-      edit_image: "<%=editImage%>",
-      propertiesLabel: "<%=propertiesLabel%>",
-      insertImageLabel: "<%=insertImageLabel%>"
-    <%} %>
+        edit_image: "<%=editImage%>",
+        propertiesLabel: "<%=propertiesLabel%>",
+        insertImageLabel: "<%=insertImageLabel%>"
     },
     theme: "modern",
     selector: "textarea",
@@ -69,7 +67,6 @@ var tinyMCEProps = {
     image_advtab: true,
     image_caption: true,
     file_picker_callback: function(callback, value, meta) {
-        debugger;
         cmsFileBrowser(callback, value, meta);
     }
 };
