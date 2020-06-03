@@ -266,7 +266,7 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
         ESIndexUtilTest.class,
-        ESReadOnlyMonitorTest.class
+        ESReadOnlyMonitorTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class
 })
