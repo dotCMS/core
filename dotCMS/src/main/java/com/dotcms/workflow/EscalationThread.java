@@ -54,7 +54,7 @@ public class EscalationThread extends DotStatefulJob {
                     // find contentlet for default language
                     final Contentlet contentletByDefaultLanguage =
                             APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false,
-                                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                                task.getLanguageId(),
                                 APILocator.getUserAPI().getSystemUser(), false);
 
                     //No need to escalate if the contentlet already is in the Action Escalated.
@@ -64,6 +64,9 @@ public class EscalationThread extends DotStatefulJob {
                         final String inode          = contentletByDefaultLanguage.getInode();
                         final Contentlet contentlet = APILocator.getContentletAPI().find
                                 (inode, APILocator.getUserAPI().getSystemUser(), false);
+                        
+                        
+                        
                         APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                                 new ContentletDependencies.Builder()
                                         .respectAnonymousPermissions(false)
