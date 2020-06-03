@@ -1,11 +1,15 @@
 package com.dotcms.workflow;
 
+import static com.dotmarketing.db.HibernateUtil.closeSessionSilently;
+import static com.dotmarketing.db.HibernateUtil.commitTransaction;
+import static com.dotmarketing.db.HibernateUtil.rollbackTransaction;
+import static com.dotmarketing.db.HibernateUtil.startTransaction;
+import java.util.List;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.APILocator;
-
-
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -18,11 +22,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-
-import java.util.List;
-import static com.dotmarketing.db.HibernateUtil.*;
 
 public class EscalationThread extends DotStatefulJob {
 
@@ -36,11 +35,11 @@ public class EscalationThread extends DotStatefulJob {
 
             try {
 
-                startTransaction();
+
                 final List<WorkflowTask> tasks = workflowAPI.findExpiredTasks();
 
                 for (final WorkflowTask task : tasks) {
-
+                    startTransaction();
                     final String stepId         = task.getStatus();
                     final WorkflowStep step     = workflowAPI.findStep(stepId);
                     final String actionId       = step.getEscalationAction();
@@ -51,7 +50,7 @@ public class EscalationThread extends DotStatefulJob {
                             "timeout on step '" + step.getName() + "' " +
                             "excecuting escalation action '" + action.getName() + "'");
 
-                    // find contentlet for default language
+                    // find contentlet for the given language
                     final Contentlet contentletByDefaultLanguage =
                             APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false,
                                 task.getLanguageId(),
@@ -75,9 +74,10 @@ public class EscalationThread extends DotStatefulJob {
                                         .workflowActionComments(wfActionComments)
                                         .workflowAssignKey(wfActionAssign).build());
                     }
+                    commitTransaction();
                 }
 
-                commitTransaction();
+
             } catch (Exception ex) {
                 Logger.warn(this, ex.getMessage(), ex);
 
