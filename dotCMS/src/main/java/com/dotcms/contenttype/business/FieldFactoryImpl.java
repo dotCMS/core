@@ -20,7 +20,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
-import com.dotcms.graphql.util.GraphQLUtil;
+import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
 import com.dotcms.rendering.velocity.services.FieldLoader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -250,7 +250,7 @@ public class FieldFactoryImpl implements FieldFactory {
               Collectors.toList());
 
       // check if the field variable is compatible with GraphQL
-      if(!GraphQLUtil.isVariableGraphQLCompatible(throwAwayField)) {
+      if(!ContentAPIGraphQLTypesProvider.INSTANCE.isVariableGraphQLCompatible(throwAwayField)) {
           takenFieldVars.add(throwAwayField.name());
       }
 

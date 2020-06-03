@@ -522,7 +522,8 @@ public class GraphqlAPITest extends IntegrationTestBase {
         final GraphQLFieldDefinition fieldDefinition =
                 schema.getObjectType(testCase.contentTypeName).getFieldDefinition(testCase.fieldVarName);
 
-        GraphQLOutputType expectedType = api.getGraphqlTypeForFieldClass(
+        GraphQLOutputType expectedType = ContentAPIGraphQLTypesProvider.INSTANCE
+                .getGraphqlTypeForFieldClass(
                 (Class<? extends Field>) testCase.fieldType.getSuperclass(), field);
 
         final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
@@ -787,7 +788,12 @@ public class GraphqlAPITest extends IntegrationTestBase {
                     getRelationshipFromField(relationshipField, APILocator.systemUser()))
                     .thenReturn(null);
 
-            final GraphQLSchema schema = new GraphqlAPIImpl(relationshipAPI).getSchema();
+            final GraphqlAPIImpl graphqlAPI = new GraphqlAPIImpl();
+
+            // lets set a mocked relationship api to the ContentAPIGraphQLTypesProvider
+            ContentAPIGraphQLTypesProvider.INSTANCE.setRelationshipAPI(relationshipAPI);
+
+            GraphQLSchema schema = graphqlAPI.getSchema();
 
             final GraphQLFieldDefinition relationshipFieldDefinition = schema
                     .getObjectType(contentType.variable())
@@ -801,6 +807,9 @@ public class GraphqlAPITest extends IntegrationTestBase {
             assertNotNull(titleFieldDefinition);
         } finally {
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+            // restore normal RelationshipAPI for ContentAPIGraphQLTypesProvider
+            ContentAPIGraphQLTypesProvider.INSTANCE.setRelationshipAPI(
+                    APILocator.getRelationshipAPI());
         }
     }
 
