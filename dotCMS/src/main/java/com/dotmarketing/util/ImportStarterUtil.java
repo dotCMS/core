@@ -2,7 +2,6 @@ package com.dotmarketing.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -20,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
@@ -45,7 +43,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.logConsole.model.LogMapperRow;
@@ -444,6 +441,9 @@ public class ImportStarterUtil {
     private void doXMLFileImport(File f) throws Exception {
         doXMLFileImport(f, null);
     }
+    
+    
+    
 
     /**
      * This method takes an XML file and will try to import it via XStream and Hibernate.
@@ -455,16 +455,20 @@ public class ImportStarterUtil {
      * @throws DotDataException
      * @throws HibernateException
      * @throws EncryptorException
+     * @throws SQLException 
+     * @throws DotSecurityException 
+     * @throws DuplicateUserException 
+     * @throws NoSuchMethodException 
+     * @throws InvocationTargetException 
+     * @throws IllegalAccessException 
      */
-    private void doXMLFileImport(File f, ObjectFilter filter) throws DotDataException, HibernateException, EncryptorException {
+    private void doXMLFileImport(File f, ObjectFilter filter) throws Exception {
         if (f == null) {
             return;
         }
 
 
-        Reader charStream = null;
-        try {
-            String _className = null;
+
             Class _importClass = null;
             HibernateUtil _dh = null;
 
@@ -474,17 +478,15 @@ public class ImportStarterUtil {
             boolean logsMappers = false;
 
 
-
+            Pattern classNamePattern = Pattern.compile("_[0-9]{8}");
             Logger.info(this, "**** Importing the file: " + f + " *****");
 
             /* if we have a multipart import file */
-            Pattern p = Pattern.compile("_[0-9]{8}");
-            Matcher m = p.matcher(f.getName());
-            if (m.find()) {
-                _className = f.getName().substring(0, f.getName().lastIndexOf("_"));
-            } else {
-                _className = f.getName().substring(0, f.getName().lastIndexOf("."));
-            }
+            
+            final String _className = classNamePattern.matcher(f.getName()).find() 
+                   ?  f.getName().substring(0, f.getName().lastIndexOf("_"))
+                   :   f.getName().substring(0, f.getName().lastIndexOf("."));
+
 
             if (_className.equals("Counter")) {
                 counter = true;
@@ -710,12 +712,12 @@ public class ImportStarterUtil {
                                     
                                     
                                     Relationship rel = (Relationship) obj;
-                                    
-                                    new DotConnect().setSQL("delete from relationship where inode=? or relation_type_value=?").addParam(rel.getInode()).addParam(rel.getRelationTypeValue()).loadResult();
-                                    new DotConnect().setSQL("delete from inode where inode=?").addParam(rel.getInode()).loadResult();
-                                    
-                                    
-                                    APILocator.getRelationshipAPI().create(Relationship.class.cast(obj));
+                                    if(new DotConnect().setSQL("select count(*) as counter from relationship where relation_type_value=?")
+                                                    .addParam(rel.getRelationTypeValue())
+                                                    .getInt("counter")==0) {
+                                        APILocator.getRelationshipAPI().save(Relationship.class.cast(obj), rel.getInode());
+                                    }
+
                                 } else {
 
                                     Logger.debug(this, "Saving the object: " + obj.getClass() + ", with the id: " + prop);
@@ -748,11 +750,9 @@ public class ImportStarterUtil {
                                 Logger.info(this, "Problematic object: " + obj + " prop:" + prop);
 
 
-                                try {
 
-                                    HibernateUtil.flush();
-                                } catch (Exception e1) {
-                                }
+                                HibernateUtil.flush();
+
                                 continue;
                             }
                         }
@@ -801,17 +801,7 @@ public class ImportStarterUtil {
                     turnIdentityOffMSSQL(tableName);
                 }
             }
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
-        } finally {
-            try {
-                if (charStream != null) {
-                    charStream.close();
-                }
-            } catch (IOException e) {
-                Logger.error(this, e.getMessage(), e);
-            }
-        }
+
     }
 
     private User loadUserFromIdOrEmail(final User u) throws DotDataException, DotSecurityException {

@@ -137,8 +137,7 @@ public class StartupTasksExecutor {
             // This will commit the changes and close the connection
             HibernateUtil.closeAndCommitTransaction();
         }
-        
-        executeUpgrades(firstTimeStart);
+
         
     }
     
@@ -146,7 +145,7 @@ public class StartupTasksExecutor {
     
     
     
-    public void executeUpgrades(boolean firstTimeStart) throws DotDataException {
+    public void executeUpgrades() throws DotDataException {
 
         Logger.info(this, "---");
         Logger.info(this, "");

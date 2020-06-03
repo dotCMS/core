@@ -94,35 +94,19 @@ public class DotCMSInitDb {
 
         // Reindexing the recently added content
         conAPI.refreshAllContent();
-        long recordsToIndex = 0;
-
-        recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
+        long recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
         Logger.info(DotCMSInitDb.class, "Records left to index : " + recordsToIndex);
 
         int counter = 0;
 
         while (recordsToIndex > 0) {
-            if (counter > 600) {
-                try {
-                    Logger.info(DotCMSInitDb.class, "Records left to index : " + APILocator.getReindexQueueAPI().recordsInQueue());
-                } catch (DotDataException e) {
-                    Logger.error(ImportStarterUtil.class,
-                                    e.getMessage() + " while trying to get the number of records left to index", e);
-                }
-                counter = 0;
+            Thread.sleep(2000);
+            recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
+            Logger.info(DotCMSInitDb.class, "Records left to index : " + recordsToIndex);
+            // ten minutes
+            if(++counter>30000) {
+                break;
             }
-            if (counter % 100 == 0) {
-                try {
-                    recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
-                } catch (DotDataException e) {
-                    Logger.error(ImportStarterUtil.class,
-                                    e.getMessage() + " while trying to get the number of records left to index", e);
-                }
-            }
-
-            Thread.sleep(100);
-
-            counter++;
         }
 		
 	}

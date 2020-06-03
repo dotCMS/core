@@ -117,6 +117,8 @@ public class MainServlet extends ActionServlet {
       // Checking for execute upgrades
       try {
         StartupTasksExecutor.getInstance().executeStartUpTasks();
+        StartupTasksExecutor.getInstance().executeUpgrades();
+
       } catch (Exception e1) {
         throw new DotRuntimeException(e1);
       } finally {
