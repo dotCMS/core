@@ -1156,6 +1156,203 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "getAllMessages",
+			"item": [
+				{
+					"name": "getAllMessages Success with default param",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c4b83944-7ff0-4ce8-9bf6-0ae102ae7710",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/default/i18n",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"default",
+								"i18n"
+							]
+						},
+						"description": "If the query param is not set it will use the default language"
+					},
+					"response": []
+				},
+				{
+					"name": "getAllMessages Success with Language And Country Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2295b4d9-6993-475c-97af-bea0f75c1517",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/en_us/i18n",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"en_us",
+								"i18n"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getAllMessages Success with LanguageId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2a0f31b6-69cb-4817-819c-f7d06b1bbebb",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/1/i18n",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"1",
+								"i18n"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getAllMessages BadRequest with LanguageId Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f6f2af93-ad7b-48ee-a2c5-b1b996ba4e04",
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/79875675/i18n",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"79875675",
+								"i18n"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getAllMessages BadRequest with Language And Country Code Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6915d5bc-a516-4db6-ac7d-cfc9e3051cd7",
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/tt_tt/i18n",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"tt_tt",
+								"i18n"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [

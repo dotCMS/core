@@ -624,6 +624,7 @@ public class ContentletAjax {
 		        }
 		    }
             luceneQuery.append("-contentType:forms ");
+            luceneQuery.append("-contentType:Host ");
 		}
 
         final String finalSort = getFinalSort(fields, orderBy, st, structureInodes);
