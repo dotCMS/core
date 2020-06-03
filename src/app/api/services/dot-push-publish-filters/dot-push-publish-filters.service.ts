@@ -18,7 +18,7 @@ export class DotPushPublishFiltersService {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: '/api/v1/pushpublish/filter/'
+                url: '/api/v1/pushpublish/filters/'
             })
             .pipe(pluck('entity'));
     }

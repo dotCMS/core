@@ -5,7 +5,7 @@
     [hideButtons]="eventData.customCode"
     (hide)="close()"
 >
-    <div #customCode [ngClass]="{'hidden': !eventData.customCode}"  class="custom-code" ></div>
+    <div #customCode [ngClass]="{ hidden: !eventData.customCode }" class="custom-code"></div>
     <form
         *ngIf="pushActions && dialogShow && !eventData.customCode"
         [formGroup]="form"
@@ -18,31 +18,26 @@
             <label class="form__label"
                 >{{ dotMessageService.get('contenttypes.content.push_publish.I_want_To') }}:
             </label>
-            <p-selectButton
-                border
-                [options]="pushActions"
-                formControlName="pushActionSelected">
+            <p-selectButton border [options]="pushActions" formControlName="pushActionSelected">
             </p-selectButton>
         </div>
 
-<!--        <div class="form__group">-->
-<!--            <label class="form__label"-->
-<!--                >{{ dotMessageService.get('contenttypes.content.push_publish.filters') }}:-->
-<!--            </label>-->
-<!--            <p-dropdown-->
-<!--                [style]="{ width: '100%' }"-->
-<!--                [options]="filterOptions"-->
-<!--                formControlName="filterKey"-->
-<!--                appendTo="body"-->
-<!--            ></p-dropdown>-->
-<!--        </div>-->
+        <div class="form__group">
+            <label class="form__label"
+                >{{ dotMessageService.get('contenttypes.content.push_publish.filters') }}:
+            </label>
+            <p-dropdown
+                [style]="{ width: '100%' }"
+                [options]="filterOptions"
+                formControlName="filterKey"
+                appendTo="body"
+            ></p-dropdown>
+        </div>
 
         <div class="form__group form-group__two-cols">
-            <div
-                class="form__group push-publish-dialog__publish-date"
-            >
+            <div class="form__group push-publish-dialog__publish-date">
                 <label class="form__label"
-                >{{ dotMessageService.get('contenttypes.content.push_publish.publish_date') }}:
+                    >{{ dotMessageService.get('contenttypes.content.push_publish.publish_date') }}:
                 </label>
                 <div class="push-publish-dialog__calendar">
                     <p-calendar
@@ -59,16 +54,16 @@
                 </div>
                 <dot-field-validation-message
                     message="{{
-                dotMessageService.get('contenttypes.content.push_publish.publish_date_errormsg')
-            }}"
+                        dotMessageService.get(
+                            'contenttypes.content.push_publish.publish_date_errormsg'
+                        )
+                    }}"
                     [field]="form.get('publishdate')"
                 ></dot-field-validation-message>
             </div>
-            <div
-                class="form__group push-publish-dialog__expire-date"
-            >
+            <div class="form__group push-publish-dialog__expire-date">
                 <label class="form__label"
-                >{{ dotMessageService.get('contenttypes.content.push_publish.expire_date') }}:
+                    >{{ dotMessageService.get('contenttypes.content.push_publish.expire_date') }}:
                 </label>
                 <div class="push-publish-dialog__calendar">
                     <p-calendar
@@ -85,8 +80,10 @@
                 </div>
                 <dot-field-validation-message
                     message="{{
-                dotMessageService.get('contenttypes.content.push_publish.expire_date_errormsg')
-            }}"
+                        dotMessageService.get(
+                            'contenttypes.content.push_publish.expire_date_errormsg'
+                        )
+                    }}"
                     [field]="form.get('expiredate')"
                 ></dot-field-validation-message>
             </div>
