@@ -74,7 +74,7 @@ public class DotCMSInitDb {
         ieu.doImport();
 
     }
-    
+    @CloseDBIfOpened
 	private static void loadStarterSite() throws Exception{
 		
 	    loadStarterSiteData() ;

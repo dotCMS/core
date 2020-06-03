@@ -372,7 +372,7 @@ public class ImportStarterUtil {
 
 
         cleanUpDBFromImport();
-        Optional<File> assetDir = tempFiles.stream().filter(f -> "asset".equals(f.getName()) && f.isDirectory()).findAny();
+        Optional<File> assetDir = tempFiles.stream().filter(f -> ("asset".equals(f.getName())||"assets".equals(f.getName())) && f.isDirectory()).findAny();
         if (assetDir.isPresent()) {
             copyAssetDir(assetDir.get());
         }

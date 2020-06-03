@@ -3,7 +3,6 @@ package com.dotmarketing.util;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,7 +19,6 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -87,7 +85,7 @@ public class ExportStarterUtil {
 
         Logger.info(this, "Starting createXMLFiles into " + outputDirectory);
 
-        Set<Class> _tablesToDump = new HashSet<Class>();
+        final Set<Class> _tablesToDump = new HashSet<Class>();
         try {
 
             /* get a list of all our tables */
@@ -114,7 +112,7 @@ public class ExportStarterUtil {
             DotConnect dc = null;
             List _list = null;
             File _writing = null;
-
+            java.text.NumberFormat formatter = new java.text.DecimalFormat("0000000000");
 
             for (Class clazz : _tablesToDump) {
 
@@ -127,7 +125,7 @@ public class ExportStarterUtil {
                 int i= 0;
                 int step = 1000;
                 int total =0;
-                java.text.NumberFormat formatter = new java.text.DecimalFormat("0000000000");
+                
                 /* we will only export 10,000,000 items of any given type */
                 for(i=0;i < 10000000;i=i+step){
 
@@ -190,12 +188,9 @@ public class ExportStarterUtil {
                         break;
                     }
                     if(_list.get(0) instanceof Comparable){
-                        try {
-                        java.util.Collections.sort(_list);
-                        }
-                        catch(java.lang.IllegalArgumentException e) {
-                            throw e;
-                        }
+      
+                    java.util.Collections.sort(_list);
+
                         
                     }
 
@@ -206,7 +201,7 @@ public class ExportStarterUtil {
                     
                     total = total + _list.size();
 
-                    Thread.sleep(10);
+                    Thread.sleep(50);
 
 
                     
@@ -282,7 +277,7 @@ public class ExportStarterUtil {
             file = new File(outputDirectory, "/RuleImportExportObject.json");
             RulesImportExportUtil.getInstance().export(file);
 
-
+            Logger.info(this, "Finished createXMLFiles into " + outputDirectory);
         } catch (Exception e) {
             Logger.error(this,e.getMessage(),e);
             throw new DotRuntimeException(e);
@@ -295,7 +290,7 @@ public class ExportStarterUtil {
 
         Logger.info(this, "Moving assets to back up directory: " + outputDirectory);
 
-        FileUtil.copyDirectory(assetDir, outputDirectory + File.separator + "asset", new AssetFileNameFilter());
+        FileUtil.copyDirectory(assetDir, outputDirectory + File.separator + "assets", new AssetFileNameFilter());
 
     }
     

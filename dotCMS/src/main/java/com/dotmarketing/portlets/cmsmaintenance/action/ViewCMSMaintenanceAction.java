@@ -103,6 +103,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -279,27 +280,30 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		else {
 
 			final boolean dataOnly = Parameter.getBooleanFromString(req.getParameter("dataOnly"), true);
+			final boolean download ="downloadZip".equalsIgnoreCase(cmd);
+            final HttpServletResponse httpResponse = ((ActionResponseImpl) res).getHttpServletResponse();
+
 			
             final File outputDir = dataOnly ? new ExportStarterUtil().createStarterData() : new ExportStarterUtil().createStarterWithAssets();
             final File zipFile = new File(backupFilePath + "/backup_" +  UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_') + ".zip");
             message +="Zipping up to file:" + zipFile.getAbsolutePath();
-            try(final ZipOutputStream zout = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(zipFile.toPath())))){
+            
+            if(download) {
+                httpResponse.setHeader("Content-type", "application/zip");
+                httpResponse.setHeader("Content-Disposition", "attachment; filename=" + zipFile.getName());
+            }
+            
+            try(final OutputStream outStream = (download) 
+                            ? new TeeOutputStream(new BufferedOutputStream(Files.newOutputStream(zipFile.toPath())), httpResponse.getOutputStream()) 
+                            : new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
+                            final ZipOutputStream zout = new ZipOutputStream(outStream)){
                 ZipUtil.zipDirectory(outputDir.getAbsolutePath(), zout);
             }
             
+            Logger.info(this.getClass(), "Wrote starter to :" + zipFile.toPath());
             
-			if(cmd.equals("downloadZip")) {
-
-				ActionResponseImpl responseImpl = (ActionResponseImpl) res;
-				HttpServletResponse httpResponse = responseImpl.getHttpServletResponse();
-				httpResponse.setHeader("Content-type", "application/zip");
-				httpResponse.setHeader("Content-Disposition", "attachment; filename=" + zipFile.getName());
-
-				IOUtils.copy(Files.newInputStream(zipFile.toPath()), httpResponse.getOutputStream());
-           
-			}
 			new TrashUtils().moveFileToTrash(outputDir, "starter");
-			
+			return;
 		}
 
 		if(UtilMethods.isSet(message)){

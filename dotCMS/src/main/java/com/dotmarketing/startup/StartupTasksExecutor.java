@@ -48,7 +48,7 @@ public class StartupTasksExecutor {
 	}
 
 
-	private final String createSQL() {
+	private final String createTableSQL() {
 	    
 	       return (DbConnectionFactory.isPostgres()) 
 	                        ? pgCreate
@@ -59,7 +59,10 @@ public class StartupTasksExecutor {
 	                                : msCreate;
 	}
 
-    
+    /**
+     * This will create the db version table if it does not already exist
+     * @return
+     */
 	private boolean insureDbVersionTable() {
 
         try {
@@ -72,7 +75,10 @@ public class StartupTasksExecutor {
 
     }
     
-    
+    /**
+     * Runs with a separate DB connection
+     * @return
+     */
     private int currentDbVersion() {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             Map<String,Object> results =  new DotConnect().setSQL(select).loadObjectResults().get(0);
@@ -85,10 +91,14 @@ public class StartupTasksExecutor {
         }
     }
     
+    /**
+     * Runs with a separate DB connection
+     * @return
+     */
     private boolean createDbVersionTable() {
 
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-            new DotConnect().setSQL(createSQL()).loadResult(conn);
+            new DotConnect().setSQL(createTableSQL()).loadResult(conn);
             return true;
 
         } catch (Exception e) {
