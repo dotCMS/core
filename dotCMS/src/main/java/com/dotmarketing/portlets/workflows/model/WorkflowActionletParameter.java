@@ -2,6 +2,9 @@ package com.dotmarketing.portlets.workflows.model;
 
 import java.io.Serializable;
 
+/**
+ * This represents a single text area parameter
+ */
 public class WorkflowActionletParameter implements Serializable {
 
 	boolean isRequired;
