@@ -82,6 +82,8 @@ public interface FileStorageAPI {
      */
     Map<String, Object> generateMetaData(final File binary, GenerateMetaDataConfiguration generateMetaDataConfiguration);
 
+    //Map<String, Object> generateAsyncMetaData(final File binary, GenerateMetaDataConfiguration generateMetaDataConfiguration);
+
     /**
      * Retrieve the metadata
      * @param requestMetaData {@link RequestMetaData}

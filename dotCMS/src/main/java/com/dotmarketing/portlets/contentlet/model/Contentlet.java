@@ -1246,11 +1246,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 *
+	 * @deprecated
+	 * @see 
 	 * @param inode
 	 * @param structureInode
 	 * @return
 	 */
+	@Deprecated
 	@JsonIgnore
     public static Object lazyMetadataLoad ( String inode, String structureInode ) {
 
@@ -1295,6 +1297,41 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         }
         return false;
     }
+
+	/**
+	 * Returns the metadata associated to the field, it will expected that the field is actually a binary
+	 * @see #getBinaryMetadata(com.dotcms.contenttype.model.field.Field)
+	 * @param field {@link Field}
+	 * @return Map
+	 */
+	@Deprecated
+    @JsonIgnore
+	public Map<String, Object> getBinaryMetadata (final Field field) {
+
+		return this.getBinaryMetadata(field.getVelocityVarName());
+	}
+
+	/**
+	 * Returns the metadata associated to the field, it will expected that the field is actually a binary
+	 * @param field {@link com.dotcms.contenttype.model.field.Field}
+	 * @return Map
+	 */
+	@JsonIgnore
+	public Map<String, Object> getBinaryMetadata (final com.dotcms.contenttype.model.field.Field field) {
+
+    	return this.getBinaryMetadata(field.variable());
+	}
+
+	/**
+	 *  Returns the metadata associated to the field, it will expected that the field is actually a binary
+	 * @param fieldVariableName {@link String}
+	 * @return Map
+	 */
+	@JsonIgnore
+	public Map<String, Object> getBinaryMetadata (final String fieldVariableName) {
+
+    	return APILocator.getContentletMetadataAPI().getMetadata(this, fieldVariableName);
+	}
 
     /**
 	 * Returns an object from the underlying contentlet Map

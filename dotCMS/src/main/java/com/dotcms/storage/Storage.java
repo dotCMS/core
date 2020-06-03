@@ -14,7 +14,7 @@ import java.util.concurrent.Future;
  * on file system it could be an specific folder, on db a specific type and on s3 an actual bucket.
  * @author jsanca
  */
-public interface Storage {
+public interface Storage { // todo: try to create a ChainStorage which is basically a asset + db
 
     String STORAGE_POOL = "StoragePool";
 
@@ -150,7 +150,5 @@ public interface Storage {
      * @return Future File, the future will return the file when done
      */
     Future<Object> pullObjectAsync (final String groupName, final String path, final ObjectReaderDelegate readerDelegate);
-
-
 
 }

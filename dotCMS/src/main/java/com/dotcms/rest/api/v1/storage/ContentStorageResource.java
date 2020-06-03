@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -53,6 +54,10 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * Resource to expose the storage and metadata
+ * @author jsanca
+ */
 @Path("/v1/storage")
 public class ContentStorageResource {
 
@@ -156,52 +161,57 @@ public class ContentStorageResource {
     }
 
     @PUT
-    @Path("/metadata")
+    @Path("/metadata/content/_generate")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response generateContentletMetadata(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
-                                               final MetadataForm metadataForm) throws IOException, DotSecurityException, DotDataException {
+                                               @QueryParam("inode")                        final String inode,
+                                               @QueryParam("identifier")                   final String identifier,
+                                               @DefaultValue("-1") @QueryParam("language") final String language)
+            throws IOException, DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                                                         .requestAndResponse(request, response)
                                                         .rejectWhenNoUser(true)
                                                         .requiredBackendUser(true).init();
 
-        if (!UtilMethods.isSet(metadataForm) ||
-                (!UtilMethods.isSet(metadataForm.getIdentifier()) && !UtilMethods.isSet(metadataForm.getInode()))) {
+        if (!UtilMethods.isSet(identifier) && !UtilMethods.isSet(inode)) {
 
             throw new BadRequestException("Must send identifier or inode");
         }
 
-        final long languageId = UtilMethods.isSet(metadataForm.getLanguage())?
-                LanguageUtil.getLanguageId(metadataForm.getLanguage()):-1;
+        final long languageId = UtilMethods.isSet(language) && !"-1".equals(language)?
+                LanguageUtil.getLanguageId(language):-1;
 
-        Logger.debug(this, ()-> "Generating the metadata for: " + metadataForm);
+        Logger.debug(this, ()-> "Generating the metadata for: " + (null != inode? inode: identifier));
 
-        final Contentlet contentlet = this.contentStorageHelper.getContentlet(metadataForm.getInode(), metadataForm.getIdentifier(), languageId,
+        final Contentlet contentlet = this.contentStorageHelper.getContentlet(inode, identifier, languageId,
                 ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initDataObject, PageMode.get(request));
 
         return Response.ok(new ResponseEntityView(this.contentletMetadataAPI.generateContentletMetadata(contentlet))).build();
     }
 
     @PUT
-    @Path("/metadata/content/get")
+    @Path("/metadata/content/_get")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getContentMetadata(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
-                                     final MetadataForm metadataForm) throws DotSecurityException, DotDataException {
+                                     @QueryParam("inode")                        final String inode,
+                                     @QueryParam("identifier")                   final String identifier,
+                                     @DefaultValue("-1") @QueryParam("language") final String language,
+                                     final MetadataForm metadataForm)
+            throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .requiredBackendUser(true).init();
 
-        if (!UtilMethods.isSet(metadataForm) ||
-                (!UtilMethods.isSet(metadataForm.getIdentifier()) && !UtilMethods.isSet(metadataForm.getInode()))) {
+        if (!UtilMethods.isSet(identifier) && !UtilMethods.isSet(inode)) {
 
             throw new BadRequestException("Must send identifier or inode");
         }
@@ -211,12 +221,12 @@ public class ContentStorageResource {
             throw new BadRequestException("Must send field");
         }
 
-        final long languageId = UtilMethods.isSet(metadataForm.getLanguage())?
-                LanguageUtil.getLanguageId(metadataForm.getLanguage()):-1;
+        final long languageId = UtilMethods.isSet(language) && !"-1".equals(language)?
+                LanguageUtil.getLanguageId(language):-1;
 
-        Logger.debug(this, ()-> "Generating the metadata for: " + metadataForm);
+        Logger.debug(this, ()-> "Generating the metadata for: " + (null != inode? inode: identifier) + ", " + metadataForm);
 
-        final Contentlet contentlet = this.contentStorageHelper.getContentlet(metadataForm.getInode(), metadataForm.getIdentifier(), languageId,
+        final Contentlet contentlet = this.contentStorageHelper.getContentlet(inode, identifier, languageId,
                 ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initDataObject, PageMode.get(request));
 
         final Map<String, Field> fieldMap = contentlet.getContentType().fieldMap();

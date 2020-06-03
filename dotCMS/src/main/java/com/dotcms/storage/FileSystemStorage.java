@@ -20,33 +20,33 @@ import java.util.concurrent.Future;
 
 /**
  * Represents a Storage on the file system
- * The groups here are folder previously defined, you can subscribe more by using {@link #addBucketMapping(String, File)}
+ * The groups here are folder previously defined, you can subscribe more by using {@link #addGroupMapping(String, File)}
  * @author jsanca 
  */
 public class FileSystemStorage implements Storage {
 
-    private final Map<String, File> buckets = new ConcurrentHashMap<>();
+    private final Map<String, File> groups = new ConcurrentHashMap<>();
 
     /**
      * Adds a mapping between a bucket name and a file
      * @param bucketName {@link String} bucket name
      * @param file {@link File}
      */
-    public void addBucketMapping (final String bucketName, final File file) {
+    public void addGroupMapping(final String bucketName, final File file) {
 
-        this.buckets.put(bucketName, file);
+        this.groups.put(bucketName, file);
     }
 
     @Override
     public boolean existsGroup(final String groupName) {
 
-        return this.buckets.containsKey(groupName) && this.buckets.get(groupName).exists();
+        return this.groups.containsKey(groupName) && this.groups.get(groupName).exists();
     }
 
     @Override
     public boolean existsObject(final String groupName, final String objectPath) {
 
-        return this.existsGroup(groupName) && new File(this.buckets.get(groupName), objectPath).exists();
+        return this.existsGroup(groupName) && new File(this.groups.get(groupName), objectPath).exists();
     }
 
     @Override
@@ -69,13 +69,13 @@ public class FileSystemStorage implements Storage {
 
     public boolean deleteObject(final String bucket, final String path) {
 
-        return new File(this.buckets.get(bucket), path).delete();
+        return new File(this.groups.get(bucket), path).delete();
     }
 
     @Override
     public List<Object> listGroups() {
 
-        return new ImmutableList.Builder<>().addAll(this.buckets.keySet()).build();
+        return new ImmutableList.Builder<>().addAll(this.groups.keySet()).build();
     }
 
     @Override
@@ -90,13 +90,13 @@ public class FileSystemStorage implements Storage {
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.buckets.get(groupName);
+        final File groupFile = this.groups.get(groupName);
 
-        if (null != file && file.exists() && file.canRead() && bucketFile.canWrite()) {
+        if (null != file && file.exists() && file.canRead() && groupFile.canWrite()) {
 
             try {
 
-                final File destBucketFile = new File(bucketFile, path);
+                final File destBucketFile = new File(groupFile, path);
                 FileUtils.copyFile(file, destBucketFile);
             } catch (IOException e) {
 
@@ -124,7 +124,7 @@ public class FileSystemStorage implements Storage {
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.buckets.get(groupName);
+        final File bucketFile = this.groups.get(groupName);
 
         if (bucketFile.canWrite()) {
 
@@ -188,7 +188,7 @@ public class FileSystemStorage implements Storage {
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.buckets.get(groupName);
+        final File bucketFile = this.groups.get(groupName);
 
         if (bucketFile.canRead()) {
 
@@ -219,7 +219,7 @@ public class FileSystemStorage implements Storage {
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.buckets.get(groupName);
+        final File bucketFile = this.groups.get(groupName);
 
         if (bucketFile.canRead()) {
 

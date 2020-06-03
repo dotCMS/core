@@ -388,7 +388,7 @@ public class DataBaseStorage implements Storage {
 
         try (InputStream input = com.liferay.util.FileUtil.createInputStream(file.toPath(), "none")) {
 
-            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();  // todo not sure if I should compress this
+            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             final byte[] buffer = new byte[1024];
             for (int readNum; (readNum = input.read(buffer)) != -1;) {
 
@@ -431,10 +431,10 @@ public class DataBaseStorage implements Storage {
     }
 
     @Override
-    public Future<Object> pushFileAsync(final String bucketName, final String path, final File file, final Map<String, Object> extraMeta) {
+    public Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Object> extraMeta) {
 
         return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
-                ()-> this.pushFile(bucketName, path, file, extraMeta)
+                ()-> this.pushFile(groupName, path, file, extraMeta)
         );
     }
 
@@ -499,7 +499,7 @@ public class DataBaseStorage implements Storage {
             for (final Map<String, Object> hashMap : hashes) {
 
                 final String hash        = (String) hashMap.get("hash");
-                final byte[] bytes       = (byte[]) hashMap.get("data"); // todo: this could be a getInputStream
+                final byte[] bytes       = (byte[]) hashMap.get("data"); // todo: this could be a getInputStream: must
                 final String recoverHash = Try.of(() -> Encryptor.Hashing.sha256().append(bytes).buildUnixHash()).getOrElseThrow(DotRuntimeException::new);
 
                 if (hash.equals(recoverHash)) {

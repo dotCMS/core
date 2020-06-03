@@ -28,8 +28,8 @@ public class StorageProviderInitializer implements DotInitializer {
     private void initFileSystemStorage() {
 
         final FileSystemStorage fileSystemStorage = new FileSystemStorage();
-        final String metadataBucketName = Config.getStringProperty("METADATA_BUCKET_NAME", "dotmetadata");
-        fileSystemStorage.addBucketMapping(metadataBucketName, new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()));
+        final String metadataBucketName = Config.getStringProperty("METADATA_BUCKET_NAME", "dotmetadata"); // todo: wrong one, change to METADATA_GROUP_NAME
+        fileSystemStorage.addGroupMapping(metadataBucketName, new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()));
         APILocator.getFileStorageAPI().getStorageProvider().addStorage(StorageType.FILE_SYSTEM, fileSystemStorage);
     }
 }
