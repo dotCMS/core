@@ -1,9 +1,10 @@
 package com.dotmarketing.util;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
+import java.util.stream.Collectors;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.fixtask.tasks.FixTask00001CheckAssetsMissingIdentifiers;
 import com.dotmarketing.fixtask.tasks.FixTask00003CheckContainersInconsistencies;
@@ -280,9 +281,22 @@ public class TaskLocatorUtil {
 		ret.add(Task05220MakeFileAssetContentTypeBinaryFieldIndexedListed.class);
         ret.add(Task05225RemoveLoadRecordsToIndex.class);
         ret.add(Task05300UpdateIndexNameLength.class);
-		return ret;
+        
+        
+        return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+
+
 	}
 
+	
+    final static private Comparator<Class<?>> classNameComparator = new Comparator<Class<?>>() {
+        public int compare(Class<?> o1, Class<?> o2) {
+            return o1.getName().compareTo(o2.getName());
+        }
+    };
+    
+	
+	
 	/**
 	 * Returns list of tasks that are run <b>every time</b> that dotCMS starts
 	 * up. In the case of a fresh install, these tasks will deploy the default
@@ -302,7 +316,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00002LoadClusterLicenses.class);
 		ret.add(Task00030ClusterInitialize.class);
 		ret.add(Task00040CheckAnonymousUser.class);
-		return ret;
+        return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
 }
