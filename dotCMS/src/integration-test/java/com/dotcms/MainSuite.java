@@ -7,6 +7,7 @@ import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImpl
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
+import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
@@ -14,6 +15,7 @@ import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
@@ -25,6 +27,7 @@ import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.util.TestConfig;
+import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -115,6 +118,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.services.VelocityResourceKeyTest.class,
         com.dotcms.rendering.velocity.services.HTMLPageAssetRenderedTest.class,
         com.dotcms.uuid.shorty.ShortyIdApiTest.class,
+        DotGraphQLHttpServletTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
         com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,
@@ -263,6 +267,8 @@ import org.junit.runners.Suite.SuiteClasses;
         HTMLDiffUtilTest.class,
         ESIndexUtilTest.class,
         ESReadOnlyMonitorTest.class
+        LanguageUtilTest.class,
+        FolderResourceTest.class
 })
 public class MainSuite {
 

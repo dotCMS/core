@@ -18,6 +18,10 @@ elif [[ "${1}" == "unit" || -z "${1}" ]]; then
 
   bash /build/unitTests.sh
 
+elif [[ "${1}" == "curl" || -z "${1}" ]]; then
+
+  bash /build/curlTests.sh
+
 else
     echo "Running user CMD..."
     exec -- "$@"

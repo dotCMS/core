@@ -759,37 +759,43 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return bulkIndexWrapper.getRequestBuilder();
     }
 
+    /**
+     * Generates an ES bulk request that adds the specified {@link ReindexEntry} to the ElasticSearch index.
+     *
+     * @param bulk The {@link BulkIndexWrapper} object containing the Bulk Index Request.
+     * @param idx  The entry containing the information of the Contentlet that will be indexed.
+     *
+     * @throws DotDataException An error occurred when processing this request.
+     */
     @CloseDBIfOpened
-    public void appendBulkRequest(BulkIndexWrapper bulk, final ReindexEntry idx) throws DotDataException {
-        List<ContentletVersionInfo> versions = APILocator.getVersionableAPI().findContentletVersionInfos(idx.getIdentToIndex());
-
+    public void appendBulkRequest(final BulkIndexWrapper bulk, final ReindexEntry idx) throws DotDataException {
+        final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI().findContentletVersionInfos(idx.getIdentToIndex());
         final Map<String, Contentlet> inodes = new HashMap<>();
-
-        for (ContentletVersionInfo cvi : versions) {
-            final String workingInode = cvi.getWorkingInode();
-            final String liveInode = cvi.getLiveInode();
-            inodes.put(workingInode, APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
-            if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
-                inodes.put(liveInode, APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
+        try {
+            for (final ContentletVersionInfo cvi : versions) {
+                final String workingInode = cvi.getWorkingInode();
+                final String liveInode = cvi.getLiveInode();
+                inodes.put(workingInode, APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
+                if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
+                    inodes.put(liveInode, APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
+                }
             }
-        }
-        inodes.values().removeIf(Objects::isNull);
-        if (inodes.isEmpty()) {
-            //If there is no content for this entry, it should be deleted to avoid future attempts that will fail also
-            APILocator.getReindexQueueAPI().deleteReindexEntry(idx);
-            Logger.debug(this, "unable to find versions for content id:" + idx.getIdentToIndex());
-        }
-        for (Contentlet contentlet : inodes.values()) {
-            Logger.debug(this, "indexing: id:" + contentlet.getInode() + " priority: " + idx.getPriority());
-            contentlet.setIndexPolicy(IndexPolicy.DEFER);
-
-            try {
+            inodes.values().removeIf(Objects::isNull);
+            if (inodes.isEmpty()) {
+                // If there is no content for this entry, it should be deleted to avoid future attempts that will fail also
+                APILocator.getReindexQueueAPI().deleteReindexEntry(idx);
+                Logger.debug(this, String.format("Unable to find versions for content id: '%s'. Deleting content " +
+                        "reindex entry.", idx.getIdentToIndex()));
+            }
+            for (final Contentlet contentlet : inodes.values()) {
+                Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'", contentlet.getInode(), idx
+                        .getPriority()));
+                contentlet.setIndexPolicy(IndexPolicy.DEFER);
                 addBulkRequest(bulk, ImmutableList.of(contentlet), idx.isReindex());
-
-            } catch (Exception e) {
-                APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
-
             }
+        } catch (final Exception e) {
+            // An error occurred when trying to reindex the Contentlet. Flag it as "failed"
+            APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
         }
     }
 

@@ -2,6 +2,10 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -1893,6 +1897,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
 	    }
 
+    /**
+     * This method filters out some content types depending on the license level
+     * @param query String with the lucene query where the filter will be applied
+     * @return String Query excluding non allowed content types
+     */
+    private static String getQueryWithValidContentTypes(final String query){
+        if (!LicenseManager.getInstance().isEnterprise()) {
+            final StringBuilder queryBuilder = new StringBuilder(query);
+            queryBuilder.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
+            queryBuilder.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
+            return queryBuilder.toString();
+        }
+
+        return query;
+    }
+
 	/**
 	 * Takes a dotCMS-generated query and translates it into valid terms and
 	 * keywords for accessing the Elastic index.
@@ -1904,6 +1924,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * @return The translated query used to search content in our Elastic index.
 	 */
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
+
+            query = getQueryWithValidContentTypes(query);
 
 	        TranslatedQuery result = CacheLocator.getContentletCache()
                     .getTranslatedQuery(query + " --- " + sortBy);

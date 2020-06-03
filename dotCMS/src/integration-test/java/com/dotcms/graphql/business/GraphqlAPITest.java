@@ -50,6 +50,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.ImmutableTimeField;
 import com.dotcms.contenttype.model.field.ImmutableWysiwygField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -62,6 +63,7 @@ import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -89,6 +91,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class GraphqlAPITest extends IntegrationTestBase {
@@ -750,6 +753,52 @@ public class GraphqlAPITest extends IntegrationTestBase {
             assertTrue(areFileassetFieldsPresent((GraphQLObjectType) imageFieldDefinition.getType()));
 
             assertEquals(CustomFieldType.FILEASSET.getType(), imageFieldDefinition.getType());
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+        }
+    }
+
+    /**
+     * Method to rest: {@link GraphqlAPI#getSchema()}
+     * Given scenario: A bad relationship field which returns null when trying to get the
+     * {@link com.dotmarketing.portlets.structure.model.Relationship} out of it.
+     * Expected result: The schema should be able to generate but without that field present
+     */
+    @Test
+    public void testGetSchema_GivenFailuresInRelationshipField_SchemaShouldStillGenerate()
+            throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            contentType = new ContentTypeDataGen().nextPersisted();
+
+            Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                    .name("relationshipField")
+                    .contentTypeId(contentType.id())
+                    .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                    .relationType(contentType.variable()).build();
+
+            final Field titleField = new FieldDataGen().contentTypeId(contentType.id())
+                    .type(TextField.class).nextPersisted();
+
+            APILocator.getGraphqlAPI().invalidateSchema();
+
+            RelationshipAPI relationshipAPI = Mockito.mock(RelationshipAPI.class);
+            Mockito.when(relationshipAPI.
+                    getRelationshipFromField(relationshipField, APILocator.systemUser()))
+                    .thenReturn(null);
+
+            final GraphQLSchema schema = new GraphqlAPIImpl(relationshipAPI).getSchema();
+
+            final GraphQLFieldDefinition relationshipFieldDefinition = schema
+                    .getObjectType(contentType.variable())
+                    .getFieldDefinition(relationshipField.variable());
+
+            final GraphQLFieldDefinition titleFieldDefinition = schema
+                    .getObjectType(contentType.variable())
+                    .getFieldDefinition(titleField.variable());
+
+            assertNull(relationshipFieldDefinition);
+            assertNotNull(titleFieldDefinition);
         } finally {
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
         }
