@@ -5,9 +5,7 @@ import static com.dotcms.graphql.business.GraphqlAPI.TYPES_AND_FIELDS_VALID_NAME
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
-import static graphql.schema.GraphQLNonNull.nonNull;
 
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -20,7 +18,6 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TagField;
@@ -34,27 +31,23 @@ import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FileFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
-import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
+import com.dotcms.graphql.exception.FieldGenerationException;
+import com.dotcms.graphql.exception.TypeGenerationException;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.model.User;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeReference;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,11 +55,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * This singleton class provides all the {@link GraphQLType}s needed for the Content Delivery API
+ */
 public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     INSTANCE;
 
-    private RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+    private GraphQLFieldGeneratorFactory fieldGeneratorFactory = new GraphQLFieldGeneratorFactory();
 
     private final Map<Class<? extends Field>, GraphQLOutputType> fieldClassGraphqlTypeMap = new HashMap<>();
 
@@ -104,27 +100,22 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 .put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
     }
 
-    @VisibleForTesting
-    protected void setRelationshipAPI(final RelationshipAPI relationshipAPI) {
-        this.relationshipAPI = relationshipAPI;
-    }
-
     @Override
     public Collection<GraphQLType> getTypes() throws DotDataException {
         // we want to generate them always - no cache
-        getContentAPITypes()
-                .forEach((graphQLType)->typesMap.put(graphQLType.getName(), graphQLType));
+        getContentAPITypes().forEach((graphQLType)->
+                typesMap.put(graphQLType.getName(), graphQLType));
+
         return typesMap.values();
     }
 
     Map<String, GraphQLType> getCachedTypesAsMap() throws DotDataException {
         if (!UtilMethods.isSet(typesMap)) {
-            getContentAPITypes()
-                    .forEach((graphQLType)->typesMap.put(graphQLType.getName(), graphQLType));
+            getContentAPITypes().forEach((graphQLType)->
+                    typesMap.put(graphQLType.getName(), graphQLType));
         }
         return typesMap;
     }
-
 
     private Set<GraphQLType> getContentAPITypes() throws DotDataException {
 
@@ -134,24 +125,24 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         List<ContentType> allTypes = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .findAllRespectingLicense();
-        // create all types
-        Map<String, GraphQLObjectType> concreteTypes = new HashMap<>();
 
-        allTypes.forEach((type) -> createContentAPISchemaType(type, concreteTypes));
-
-        // add here the rest of types
-        contentAPITypes.addAll(concreteTypes.values());
+        allTypes.forEach((type) -> {
+            try {
+                contentAPITypes.add(createType(type));
+            }catch (TypeGenerationException e) {
+                Logger.error(this, "Unable to generate GraphQL Type for type: " + type.variable());
+            }
+        });
 
         return contentAPITypes;
     }
 
-    private void createContentAPISchemaType(ContentType contentType,
-            final Map<String, GraphQLObjectType> graphqlObjectTypes) {
+    private GraphQLObjectType createType(ContentType contentType) {
 
-        // skip contentType.variable not sticking to the regex
-        if (!contentType.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)) {
-            return;
-        }
+        DotPreconditions.checkArgument(contentType.variable()
+                .matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
+                "Content Type variable does not conform to naming rules",
+                TypeGenerationException.class);
 
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject()
                 .name(contentType.variable());
@@ -163,7 +154,16 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
         }
 
+        builder.fields(createFieldsForType(contentType));
+
+        builder.withInterface(InterfaceType.CONTENTLET.getType());
+        return builder.build();
+    }
+
+    private List<GraphQLFieldDefinition> createFieldsForType(ContentType contentType) {
         final List<Field> fields = contentType.fields();
+
+        final List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
         fields.forEach((field) -> {
             // skip field.variable not sticking to the regex
@@ -173,71 +173,16 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             }
 
             if (!(field instanceof RowField) && !(field instanceof ColumnField)) {
-                if (field instanceof RelationshipField) {
-                    try {
-                        handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
-                    } catch (DotStateException e) {
-                        Logger.error(this, "Unable to create relationship field", e);
-                    }
-                } else {
-                    builder.field(newFieldDefinition()
-                            .name(field.variable())
-                            .type(field.required()
-                                    ? nonNull(getGraphqlTypeForFieldClass(field.type(), field))
-                                    : getGraphqlTypeForFieldClass(field.type(), field))
-                            .dataFetcher(getGraphqlDataFetcherForFieldClass(field.type()))
-                    );
+                try {
+                    fieldDefinitions.add(fieldGeneratorFactory.getGenerator(field).generateField(field));
+                } catch(FieldGenerationException e) {
+                    Logger.error(this, "Unable to generate GraphQL Field for field: " + field.variable(), e);
                 }
             }
+
         });
 
-        builder.withInterface(InterfaceType.CONTENTLET.getType());
-        final GraphQLObjectType graphQLType = builder.build();
-
-        graphqlObjectTypes.put(graphQLType.getName(), graphQLType);
-    }
-
-    private void handleRelationshipField(final ContentType contentType,
-            GraphQLObjectType.Builder builder,
-            final Field field, final Map<String, GraphQLObjectType> typesMap) {
-
-        final ContentType relatedContentType;
-        try {
-            relatedContentType = getRelatedContentTypeForField(field, APILocator.systemUser());
-        } catch (DotSecurityException | DotDataException e) {
-            throw new DotStateException(
-                    "Unable to create relationship field type for field: " + contentType.variable()
-                            + "." + field.variable(), e);
-        }
-
-        Relationship relationship;
-
-        try {
-            relationship = relationshipAPI.getRelationshipFromField(field,
-                    APILocator.systemUser());
-        } catch (DotDataException | DotSecurityException e) {
-            throw new DotRuntimeException(e);
-        }
-
-        final ContentletRelationships contentletRelationships = new ContentletRelationships(null);
-        final ContentletRelationships.ContentletRelationshipRecords
-                records = contentletRelationships.new ContentletRelationshipRecords(
-                relationship,
-                relationshipAPI.isChildField(relationship, field));
-
-        GraphQLOutputType outputType = typesMap.get(relatedContentType.variable()) != null
-                ? typesMap.get(relatedContentType.variable())
-                : GraphQLTypeReference.typeRef(relatedContentType.variable());
-
-        outputType = records.doesAllowOnlyOne()
-                ? outputType
-                : list(outputType);
-
-        builder.field(newFieldDefinition()
-                .name(field.variable())
-                .type(field.required() ? nonNull(outputType) : outputType)
-                .dataFetcher(new RelationshipFieldDataFetcher())
-        );
+        return fieldDefinitions;
     }
 
     public GraphQLOutputType getGraphqlTypeForFieldClass(final Class<? extends Field> fieldClass,
@@ -251,40 +196,34 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                                 : GraphQLString;
     }
 
-    private DataFetcher getGraphqlDataFetcherForFieldClass(final Class<Field> fieldClass) {
+    public DataFetcher getGraphqlDataFetcherForFieldClass(final Class<Field> fieldClass) {
         return fieldClassGraphqlDataFetcher.get(fieldClass) != null
                 ? fieldClassGraphqlDataFetcher.get(fieldClass)
                 : new FieldDataFetcher();
     }
 
-    private ContentType getRelatedContentTypeForField(final Field field, final User user)
-            throws DotSecurityException, DotDataException {
-        final Relationship relationship = relationshipAPI.getRelationshipFromField(field,
-                user);
-
-        if (relationship == null) {
-            throw new DotDataException("Relationship with name:"
-                    + field.relationType() + " not found. Field var:" + field.variable()
-                    + ". Field ID: " + field.id());
-        }
-
-        final String relatedContentTypeId =
-                relationship.getParentStructureInode().equals(field.contentTypeId())
-                        ? relationship.getChildStructureInode()
-                        : relationship.getParentStructureInode();
-
-        return APILocator.getContentTypeAPI(user).find(relatedContentTypeId);
-    }
-
+    /**
+     * This method determines whether a {@link Field}'s variable is compatible with the
+     * current GraphQL Schema.
+     *<p>
+     * The {@link Field} is deemed compatibly if any of the followings conditions are true:
+     * <ul>
+     *     <li>The field variable does not match any of the inherited fields names from the {@link InterfaceType#getContentletInheritedFields} </li>
+     *     <li>The field variable matches the name of a inherited field but neither of them have a {@link CustomFieldType#getCustomFieldTypes}
+     *     as its mapped GraphQL Type
+     * </ul>
+     * @param field
+     * @return
+     */
     public boolean isVariableGraphQLCompatible(final Field field) {
         // first let's check if there's an inherited field with the same variable
-        if (InterfaceType.getContentletInheritedFields().containsKey(field.name())) {
+        if (InterfaceType.getContentletInheritedFields().containsKey(field.variable())) {
             // now let's check if the graphql types are compatible
 
             // get inherited field's graphql type
             final GraphQLType inheritedFieldGraphQLType = InterfaceType
                     .getContentletInheritedFields()
-                    .get(field.name()).getType();
+                    .get(field.variable()).getType();
 
             // get new field's type
             final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
@@ -296,5 +235,11 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         }
 
         return true;
+    }
+
+    @VisibleForTesting
+    protected void setFieldGeneratorFactory(
+            GraphQLFieldGeneratorFactory fieldGeneratorFactory) {
+        this.fieldGeneratorFactory = fieldGeneratorFactory;
     }
 }

@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -66,6 +67,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
@@ -87,6 +89,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -783,17 +786,10 @@ public class GraphqlAPITest extends IntegrationTestBase {
 
             APILocator.getGraphqlAPI().invalidateSchema();
 
-            RelationshipAPI relationshipAPI = Mockito.mock(RelationshipAPI.class);
-            Mockito.when(relationshipAPI.
-                    getRelationshipFromField(relationshipField, APILocator.systemUser()))
-                    .thenReturn(null);
+            // this mock relationship api will produce errors when generating the rel field
+            setMockRelationshipAPI(relationshipField);
 
-            final GraphqlAPIImpl graphqlAPI = new GraphqlAPIImpl();
-
-            // lets set a mocked relationship api to the ContentAPIGraphQLTypesProvider
-            ContentAPIGraphQLTypesProvider.INSTANCE.setRelationshipAPI(relationshipAPI);
-
-            GraphQLSchema schema = graphqlAPI.getSchema();
+            GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
 
             final GraphQLFieldDefinition relationshipFieldDefinition = schema
                     .getObjectType(contentType.variable())
@@ -808,9 +804,32 @@ public class GraphqlAPITest extends IntegrationTestBase {
         } finally {
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
             // restore normal RelationshipAPI for ContentAPIGraphQLTypesProvider
-            ContentAPIGraphQLTypesProvider.INSTANCE.setRelationshipAPI(
-                    APILocator.getRelationshipAPI());
+            ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(
+                    new GraphQLFieldGeneratorFactory());
         }
+    }
+
+    @NotNull
+    private void setMockRelationshipAPI(Field relationshipField)
+            throws DotDataException, DotSecurityException {
+        RelationshipAPI relationshipAPI = Mockito.mock(RelationshipAPI.class);
+        Mockito.when(relationshipAPI.
+                getRelationshipFromField(relationshipField, APILocator.systemUser()))
+                .thenReturn(null);
+
+        RelationshipFieldGenerator relationshipFieldGenerator =
+                new RelationshipFieldGenerator();
+
+        relationshipFieldGenerator.setRelationshipAPI(relationshipAPI);
+
+        // lets create a mocked FieldGeneratorFactory
+        GraphQLFieldGeneratorFactory fieldGeneratorFactory =
+                Mockito.spy(new GraphQLFieldGeneratorFactory());
+
+        Mockito.doReturn(relationshipFieldGenerator).when(fieldGeneratorFactory)
+                .getGenerator(relationshipField);
+
+        ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(fieldGeneratorFactory);
     }
 
     private boolean areFileassetFieldsPresent(final GraphQLObjectType objectType) {

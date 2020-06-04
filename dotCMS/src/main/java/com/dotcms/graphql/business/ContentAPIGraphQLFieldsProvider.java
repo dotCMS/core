@@ -23,7 +23,10 @@ import java.util.List;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.PredicateUtils;
 
-public enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
+/**
+ * This singleton class provides all the {@link GraphQLFieldDefinition}s needed for the Content Delivery API
+ */
+enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
 
     INSTANCE;
 

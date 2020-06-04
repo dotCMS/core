@@ -43,6 +43,19 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         fieldsProviders.add(ContentAPIGraphQLFieldsProvider.INSTANCE);
     }
 
+    /**
+     * Returns the {@link GraphQLSchema}.
+     * <p>
+     * If the schema hasn't been generated it will generate it and put it into cache.
+     * <p>
+     * The actions that invalidate the cache are:
+     * <ul>
+     * <li>CRUD operations on {@link com.dotcms.contenttype.model.type.ContentType}s
+     * <li>CRUD operations on {@link com.dotcms.contenttype.model.field.Field}s
+     * </ul>
+     * @return the GraphQL schema
+     * @throws DotDataException in case of invalid data
+     */
     @Override
     public GraphQLSchema getSchema() throws DotDataException {
         GraphQLSchema innerSchema = this.schema;
@@ -59,6 +72,9 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         return innerSchema;
     }
 
+    /**
+     * Nullifies the schema so it is regenerated next time it is fetched
+     */
     @Override
     public void invalidateSchema() {
         this.schema = null;
