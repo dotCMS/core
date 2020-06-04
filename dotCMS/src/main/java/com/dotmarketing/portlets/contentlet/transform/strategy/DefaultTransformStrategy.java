@@ -17,30 +17,31 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_AS_MAP;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.NOT_APPLICABLE;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.mapIdentifier;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.mapLanguage;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
+import static com.liferay.portal.language.LanguageUtil.getLiteralLocale;
 
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +60,8 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * Typical constructor
      * @param toolBox
      */
-    DefaultTransformStrategy(final TransformToolbox toolBox) {
+    @VisibleForTesting
+    public DefaultTransformStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
@@ -78,7 +80,6 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             final Set<TransformOptions> options, final User user)
             throws DotDataException, DotSecurityException {
         addCommonProperties(contentlet, map, options);
-        addIdentifier(contentlet, map, options);
         addLanguage(contentlet, map, options);
         addVersionProperties(contentlet, map, options);
         addConstants(contentlet, map, options);
@@ -151,20 +152,33 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
     }
 
     /**
-     * if TransformOptions.USE_IDENTIFIER_AS_MAP is set this will load all the identifier related properties as a single map entry
-     * @param contentlet
-     * @param map
-     * @param options
-     * @throws DotDataException
+     * Lang functions now relocated here.
+     * @param language
+     * @param wrapAsMap
+     * @return
      */
-    private void addIdentifier(final Contentlet contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options) throws DotDataException {
-        if (!options.contains(IDENTIFIER_AS_MAP)) {
-            return;
-        }
+    private Map<String, Object> mapLanguage(final Language language, final boolean wrapAsMap) {
 
-        final Identifier identifier = toolBox.identifierAPI.find(contentlet.getIdentifier());
-        map.putAll(mapIdentifier(identifier,true));
+        final Builder<String, Object> builder = new Builder<>();
+
+        builder
+                .put("languageId", language.getId())
+                .put("language", language.getLanguage())
+                .put("languageCode", language.getLanguageCode())
+                .put("country", language.getCountry())
+                .put("countryCode", language.getCountryCode())
+                .put("languageFlag", getLiteralLocale(language.getLanguageCode(), language.getCountryCode()));
+
+        final String iso = UtilMethods.isSet(language.getCountryCode())
+                ? language.getLanguageCode() + StringPool.DASH + language.getCountryCode()
+                : language.getLanguageCode();
+        builder.put("isoCode", iso.toLowerCase());
+
+        if(wrapAsMap){
+            builder.put("id", language.getId());
+            return ImmutableMap.of("languageMap", builder.build(), "language",language.getLanguage());
+        }
+        return builder.build();
     }
 
 

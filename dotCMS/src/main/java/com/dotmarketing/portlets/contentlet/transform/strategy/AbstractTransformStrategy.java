@@ -1,11 +1,23 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox.privateInternalProperties;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLED_WYSIWYG_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLE_WORKFLOW;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.DONT_VALIDATE_ME;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.DOT_NAME_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.IS_TEST_MODE;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.LAST_REVIEW_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.NULL_PROPERTIES;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.REVIEW_INTERNAL_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_PROGRESS;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
@@ -15,6 +27,25 @@ import java.util.Set;
  * @param <T>
  */
 public abstract class AbstractTransformStrategy<T extends Contentlet> {
+
+    //This set contains all the properties that we want to prevent from making it into the final contentlet or transformed map.
+    public static final Set<String> privateInternalProperties = ImmutableSet
+            .of(NULL_PROPERTIES,
+                DISABLE_WORKFLOW,
+                DONT_VALIDATE_ME,
+                LAST_REVIEW_KEY,
+                REVIEW_INTERNAL_KEY,
+                DISABLED_WYSIWYG_KEY,
+                DOT_NAME_KEY,
+                WORKFLOW_IN_PROGRESS,
+                WORKFLOW_ASSIGN_KEY,
+                WORKFLOW_ACTION_KEY,
+                WORKFLOW_COMMENTS_KEY,
+                DONT_VALIDATE_ME,
+                IS_TEST_MODE
+            );
+
+    static final String NOT_APPLICABLE = "N/A";
 
     protected final TransformToolbox toolBox;
 

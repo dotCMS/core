@@ -7,6 +7,7 @@ import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.META_DA
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYPE_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.UNDERLYING_FILENAME;
+import static com.google.common.collect.ImmutableMap.of;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,6 +40,9 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
+import com.dotmarketing.portlets.contentlet.transform.strategy.AbstractTransformStrategy;
+import com.dotmarketing.portlets.contentlet.transform.strategy.DefaultTransformStrategy;
+import com.dotmarketing.portlets.contentlet.transform.strategy.FileAssetViewStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolverImpl;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
@@ -61,6 +65,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -113,7 +118,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             assertNotNull(transformed.get(HTMLPageAssetAPI.URL_FIELD));
 
             //Forbidden properties Must Not be part of the result
-            for(final String property : TransformToolbox.privateInternalProperties){
+            for(final String property : AbstractTransformStrategy.privateInternalProperties){
                 assertFalse("found private property:" + property,transformed.containsKey(property));
             }
         }
@@ -467,7 +472,13 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 contentHelper
         );
 
-        final StrategyResolverImpl resolver = new StrategyResolverImpl(toolBox);
+        final Map<BaseContentType, Supplier<AbstractTransformStrategy>> strategyTriggeredByBaseType = of(
+                BaseContentType.FILEASSET, () -> new FileAssetViewStrategy(toolBox)
+        );
+
+        final Supplier<DefaultTransformStrategy>  supplier = ()-> new DefaultTransformStrategy(toolBox);
+
+        final StrategyResolverImpl resolver = new StrategyResolverImpl(strategyTriggeredByBaseType, of(), supplier);
 
         final FileAssetContentType fileAssetContentType = mock(FileAssetContentType.class);
         when(fileAssetContentType.baseType()).thenReturn(BaseContentType.FILEASSET);
@@ -497,7 +508,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
-        final Set<TransformOptions> options1 = EnumSet.of(
+        final Set<TransformOptions> options = EnumSet.of(
                 COMMON_PROPS, VERSION_INFO
         );
 
@@ -518,7 +529,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final List<Map<String, Object>> maps = new DotContentletTransformerImpl(
                 singletonList(contentlet),
                 resolver,
-                options1, user).toMaps();
+                options, user).toMaps();
 
         final Map<String, Object> mapView = maps.get(0);
 

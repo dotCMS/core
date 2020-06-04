@@ -2,12 +2,13 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
+import static com.google.common.collect.ImmutableMap.of;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,7 +35,8 @@ public class StrategyResolverImpl implements StrategyResolver {
      * @param strategyTriggeredByOption
      * @param defaultTransformStrategy
      */
-    StrategyResolverImpl(
+    @VisibleForTesting
+    public StrategyResolverImpl(
             final Map<BaseContentType, Supplier<AbstractTransformStrategy>> strategyTriggeredByBaseType,
             final Map<TransformOptions, Supplier<AbstractTransformStrategy>> strategyTriggeredByOption,
             final Supplier<DefaultTransformStrategy> defaultTransformStrategy) {
@@ -46,18 +48,18 @@ public class StrategyResolverImpl implements StrategyResolver {
     /**
      * Main constructor
      */
-    @VisibleForTesting
     public StrategyResolverImpl(final TransformToolbox toolBox) {
         this(
             //These are very specific implementations but most cases will be covered by the default strategy.
-            ImmutableMap.of(
+            of(
                 BaseContentType.FILEASSET, () -> new FileAssetViewStrategy(toolBox),
                 BaseContentType.HTMLPAGE, () -> new PageViewStrategy(toolBox),
                 BaseContentType.DOTASSET, () -> new DotAssetViewStrategy(toolBox)
                 ),
-             ImmutableMap.of(
+             of(
                  CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox),
-                 BINARIES_VIEW, () -> new BinaryViewStrategy(toolBox)
+                 BINARIES_VIEW, () -> new BinaryViewStrategy(toolBox),
+                 IDENTIFIER_VIEW, () -> new IdentifierViewStrategy(toolBox)
              ),
              ()-> new DefaultTransformStrategy(toolBox)
         );

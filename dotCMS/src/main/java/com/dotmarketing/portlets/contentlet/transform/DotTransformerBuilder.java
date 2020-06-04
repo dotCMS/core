@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.contentlet.transform;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_AS_MAP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
@@ -95,7 +95,7 @@ public class DotTransformerBuilder {
      */
     DotTransformerBuilder identifierToMapTransformer(){
         optionsHolder.clear();
-        optionsHolder.add(IDENTIFIER_AS_MAP);
+        optionsHolder.add(IDENTIFIER_VIEW);
         return this;
     }
 

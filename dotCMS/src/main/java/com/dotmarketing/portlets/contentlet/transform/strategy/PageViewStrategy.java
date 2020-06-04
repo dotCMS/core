@@ -5,10 +5,13 @@ import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_F
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
 import com.dotmarketing.beans.IconType;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
 import com.dotmarketing.util.UtilHTML;
 import com.liferay.portal.model.User;
 import java.util.Map;
@@ -19,12 +22,15 @@ import java.util.Set;
  */
 public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
+    private final HTMLPageCache htmlPageCache;
+
     /**
      * Main constructor
      * @param toolBox
      */
     PageViewStrategy(final TransformToolbox toolBox) {
         super(toolBox);
+        htmlPageCache = CacheLocator.getHTMLPageCache();
     }
 
     /**
@@ -34,6 +40,10 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
      */
     @Override
     public HTMLPageAsset fromContentlet(final Contentlet contentlet) {
+        final IHTMLPage page = htmlPageCache.get(contentlet.getInode());
+        if(null != page){
+          return (HTMLPageAsset)page;
+        }
         return toolBox.htmlPageAssetAPI.fromContentlet(contentlet);
     }
 
