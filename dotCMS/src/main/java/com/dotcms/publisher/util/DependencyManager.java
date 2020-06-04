@@ -324,13 +324,13 @@ public class DependencyManager {
 
 		if(UtilMethods.isSet(config.getLuceneQueries())){
 			List<String> contentIds = PublisherUtil.getContentIds( config.getLuceneQueries());
+			contentIds.removeIf(c->publisherFilter.doesExcludeQueryContainsContentletId(c));
 			for(String id : contentIds){
-				List<Contentlet> contentlets = APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false);
+	            Identifier ident = APILocator.getIdentifierAPI().find(id);
+	            final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 				for(Contentlet con : contentlets){
-					if(!publisherFilter.doesExcludeQueryContainsContentletId(con.getIdentifier())) {
-						contents.add(con.getIdentifier(), con.getModDate());
-						contentsSet.add(con.getIdentifier());
-					}
+					contents.add(con.getIdentifier(), con.getModDate());
+					contentsSet.add(con.getIdentifier());
 				}
 			}
 		}
@@ -748,7 +748,7 @@ public class DependencyManager {
 					liveTemplateWP = APILocator.getTemplateAPI()
 							.findLiveTemplate(workingPage.getTemplateId(), user, false);
 					// Templates dependencies
-					if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType())) {
+					if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && workingTemplateWP!=null) {
 						templates.addOrClean(workingPage.getTemplateId(),
 								workingTemplateWP.getModDate());
 						templatesSet.add(workingPage.getTemplateId());
@@ -762,7 +762,7 @@ public class DependencyManager {
 					liveTemplateLP = APILocator.getTemplateAPI()
 							.findLiveTemplate(livePage.getTemplateId(), user, false);
 					// Templates dependencies
-					if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType())) {
+					if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && liveTemplateWP!=null ) {
 						templates.addOrClean(livePage.getTemplateId(), livePage.getModDate());
 						templatesSet.add(livePage.getTemplateId());
 					}
@@ -816,11 +816,11 @@ public class DependencyManager {
 
 						for (final MultiTree multiTree : treeList) {
 							final String contentIdentifier = multiTree.getChild();
-							final List<Contentlet> contentList = APILocator.getContentletAPI()
-									.search("+identifier:" + contentIdentifier, 0, 0, "moddate",
-											user, false);
+							Identifier id = APILocator.getIdentifierAPI().find(contentIdentifier);
+							final List<Contentlet> contentList = APILocator.getContentletAPI().findAllVersions(id, false, user, false);
+
 							for (final Contentlet contentletI : contentList) {
-								if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
+								if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentletI.getIdentifier())) {
 									contents.addOrClean(contentletI.getIdentifier(),
 											contentletI.getModDate());
 									contentsSet.add(contentletI.getIdentifier());
@@ -1216,9 +1216,7 @@ public class DependencyManager {
 						}
 						final Identifier id = APILocator.getIdentifierAPI().find(value);
 						if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
-							contentsWithDependenciesToProcess.addAll(
-									APILocator.getContentletAPI()
-									.search("+identifier:"+id.getId(), 0, 0, "moddate", user, false));
+							contentsWithDependenciesToProcess.addAll(APILocator.getContentletAPI().findAllVersions(id, false, user, false));
 						}
 					} catch (Exception ex) {
 						Logger.debug(this, ex.toString());
@@ -1339,7 +1337,9 @@ public class DependencyManager {
 			Set<Contentlet> allContents = new HashSet<Contentlet>(); // we will put here those already added and the ones from lucene queries
 
 			for(String id : cons){
-				allContents.addAll(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
+                Identifier ident = APILocator.getIdentifierAPI().find(id);
+                final List<Contentlet> contentList = APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
+				allContents.addAll(contentList);
 			}
 
 			processList(allContents,publisherFilter);
