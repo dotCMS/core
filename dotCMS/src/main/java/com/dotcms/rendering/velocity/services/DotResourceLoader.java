@@ -74,7 +74,7 @@ public class DotResourceLoader extends ResourceLoader {
                 }
 
             } catch (Exception e) {
-                Logger.error(this, "filePath: " + filePath + ", msg:" + e.getMessage(), e);
+                Logger.warn(this, "filePath: " + filePath + ", msg:" + e.getMessage(), e);
                 CacheLocator.getVeloctyResourceCache().addMiss(key.path);
                 throw new ResourceNotFoundException("Cannot parse velocity file : " + key.path, e);
             }
