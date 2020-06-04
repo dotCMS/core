@@ -2,7 +2,7 @@
 package com.dotmarketing.db;
 
 import static com.dotmarketing.util.Constants.DATABASE_DEFAULT_DATASOURCE;
-
+import com.dotmarketing.db.listeners.CommitAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -674,6 +674,7 @@ public class DbConnectionFactory {
 
         try {
             if (startTransaction) {
+                CommitAPI.getInstance().startTransaction();
                 DbConnectionFactory.getConnection().setAutoCommit(false);
             }
         } catch (SQLException e) {

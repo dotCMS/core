@@ -842,8 +842,8 @@ public class HibernateUtil {
 		 * Transactions are now used by default
 		 *
 		 */
+		    CommitAPI.getInstance().startTransaction();
 			getSession().connection().setAutoCommit(false);
-			CommitAPI.getInstance().startTransaction();
 			Logger.debug(HibernateUtil.class, "Starting Transaction!");
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to set AutoCommit to false on Hibernate Session ", e);

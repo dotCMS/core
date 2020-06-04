@@ -10,6 +10,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 
 public class CommitAPI {
@@ -111,8 +112,8 @@ public class CommitAPI {
     public void addReindexListenerAsync(final ReindexListener listener) {
         if (!DbConnectionFactory.inTransaction())
             return;
-        syncCommitListeners.get().remove(listener.key(), listener);
-        syncCommitListeners.get().put(listener.key(), listener);
+        asyncCommitListeners.get().remove(listener.key(), listener);
+        asyncCommitListeners.get().put(listener.key(), listener);
     }
 
 
@@ -187,9 +188,14 @@ public class CommitAPI {
     }
 
     public void startTransaction() {
-        syncCommitListeners.get().clear();
-        asyncCommitListeners.get().clear();
-        rollbackListeners.get().clear();
+        if (!DbConnectionFactory.inTransaction()) {
+            syncCommitListeners.get().clear();
+            asyncCommitListeners.get().clear();
+            rollbackListeners.get().clear();
+        }else {
+            Logger.warn(this.getClass(), "Unable to startTransaction - we are already in a transaction");
+        }
+        
     }
 
 
