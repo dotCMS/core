@@ -708,9 +708,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
         List<Map<String, String>> result = dc.loadResults();
         final int before = Integer.parseInt(result.get(0).get("count"));
         dc = new DotConnect();
-        dc.setSQL("SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS " +
-                "(SELECT working_inode, live_inode FROM contentlet_version_info WHERE working_inode = contentlet.inode OR " +
-                "live_inode = contentlet.inode)");
+        final String query = new StringBuilder("SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS")
+                .append(" (SELECT working_inode FROM contentlet_version_info WHERE working_inode = contentlet.inode)")
+                .append(" INTERSECT")
+                .append(" SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS")
+                .append(" (SELECT live_inode FROM contentlet_version_info WHERE live_inode = contentlet.inode)")
+                .toString();
+        dc.setSQL(query);
+        dc.addParam(date);
         dc.addParam(date);
         result = dc.loadResults();
         int oldInodesCount = result.size();
