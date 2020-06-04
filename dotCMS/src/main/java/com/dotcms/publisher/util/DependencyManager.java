@@ -819,12 +819,15 @@ public class DependencyManager {
 							Identifier id = APILocator.getIdentifierAPI().find(contentIdentifier);
 							final List<Contentlet> contentList = APILocator.getContentletAPI().findAllVersions(id, false, user, false);
 
+							contentList.removeIf(c->publisherFilter.doesExcludeQueryContainsContentletId(c.getIdentifier()));
+							
+							
 							for (final Contentlet contentletI : contentList) {
-								if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentletI.getIdentifier())) {
-									contents.addOrClean(contentletI.getIdentifier(),
-											contentletI.getModDate());
-									contentsSet.add(contentletI.getIdentifier());
-								}
+
+								contents.addOrClean(contentletI.getIdentifier(),
+										contentletI.getModDate());
+								contentsSet.add(contentletI.getIdentifier());
+							
 							}
 						}
 					}
