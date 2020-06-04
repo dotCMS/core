@@ -11,6 +11,7 @@ import java.util.Map;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.FactoryLocator;
@@ -31,13 +32,16 @@ import com.google.common.collect.ImmutableList;
 public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     private final ReindexQueueFactory reindexQueueFactory;
+    private final ESReadOnlyMonitor esReadOnlyMonitor;
 
     public ReindexQueueAPIImpl() {
-        this((ReindexQueueFactory) FactoryLocator.getReindexQueueFactory());
+        this(FactoryLocator.getReindexQueueFactory(), ESReadOnlyMonitor.getInstance());
     }
 
-    public ReindexQueueAPIImpl(ReindexQueueFactory reindexQueueFactory) {
+    @VisibleForTesting
+    public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory, final ESReadOnlyMonitor esReadOnlyMonitor) {
         this.reindexQueueFactory = reindexQueueFactory;
+        this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
 
     @Override
@@ -224,7 +228,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
 
         new Thread(
-                () -> ESReadOnlyMonitor.getInstance().start(idx, cause)
+                () -> esReadOnlyMonitor.start(idx, cause)
         ).start();
     }
 
