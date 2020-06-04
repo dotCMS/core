@@ -57,7 +57,7 @@ public class URLMapTest {
 	public void createAssets() throws Exception {
 		try {
 
-			HibernateUtil.setAsyncCommitListenersFinalization(false);
+			//HibernateUtil.setAsyncCommitListenersFinalization(false);
 
 			user = APILocator.getUserAPI().getSystemUser();
 			Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);

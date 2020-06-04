@@ -87,7 +87,7 @@ public class RulesUnderPageAssetsFTest{
     public void testFireRuleUnderLivePage() throws Exception {
         final String folderPath = "/RuleUnderPageFolder/";
         final String pageName = "testFireRuleUnderLivePagePage" + System.currentTimeMillis();
-        HibernateUtil.setAsyncCommitListenersFinalization(false);
+        //HibernateUtil.setAsyncCommitListenersFinalization(false);
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
@@ -156,7 +156,7 @@ public class RulesUnderPageAssetsFTest{
         final String folderPath = "/RuleUnderPageFolder/";
         final String targetFolderPath = "/TargetPageFolder/";
         final String pageName = "copyPageWithRulesPage" + System.currentTimeMillis();
-        HibernateUtil.setAsyncCommitListenersFinalization(false);
+        //HibernateUtil.setAsyncCommitListenersFinalization(false);
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
@@ -245,7 +245,7 @@ public class RulesUnderPageAssetsFTest{
     public void deletePageWithRules() throws Exception {
         final String folderPath = "/DeletePageFolder/";
         final String pageName = "deletePageWithRulesPage" + System.currentTimeMillis();
-        HibernateUtil.setAsyncCommitListenersFinalization(false);
+        //HibernateUtil.setAsyncCommitListenersFinalization(false);
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
@@ -311,7 +311,7 @@ public class RulesUnderPageAssetsFTest{
         final String pageName = "DummyPage"  + System.currentTimeMillis();;
         final String secondPageName = "SecondDummyPage"  + System.currentTimeMillis();
 
-        HibernateUtil.setAsyncCommitListenersFinalization(false);
+        //HibernateUtil.setAsyncCommitListenersFinalization(false);
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);

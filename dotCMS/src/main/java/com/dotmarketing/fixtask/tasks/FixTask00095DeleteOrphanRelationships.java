@@ -1,24 +1,5 @@
 package com.dotmarketing.fixtask.tasks;
 
-import com.dotcms.business.WrapInTransaction;
-import com.dotcms.util.CloseUtils;
-import com.dotmarketing.beans.FixAudit;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.fixtask.FixTask;
-import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
-import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,6 +13,26 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.util.CloseUtils;
+import com.dotmarketing.beans.FixAudit;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.FlushCacheListener;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.fixtask.FixTask;
+import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
+import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
  * Fix broken relationships 
@@ -216,11 +217,18 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
     }
     
     private void flushRelationshipCacheRegion(List<Relationship> inodesToClearInCache) throws DotHibernateException {
-        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+        CommitAPI.getInstance().addFlushCacheAsync(new FlushCacheListener() {
+            
             public void run () {
                 //Invalidating Relationships in Cache
                 inodesToClearInCache.forEach(
                         (Relationship rel) -> CacheLocator.getRelationshipCache().removeRelationshipByInode(rel));
+            }
+            
+            @Override
+            public String key() {
+                // TODO Auto-generated method stub
+                return String.valueOf(inodesToClearInCache.hashCode());
             }
         }); 
     }

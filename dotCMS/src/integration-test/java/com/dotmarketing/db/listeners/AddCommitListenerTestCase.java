@@ -1,4 +1,4 @@
-package com.dotmarketing.db;
+package com.dotmarketing.db.listeners;
 
 class AddCommitListenerTestCase {
     final private boolean asyncReindexCommitListeners;

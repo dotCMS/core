@@ -136,7 +136,7 @@ public class WebDavTest {
 	@Test
 	public void delete_under_host() throws Exception {
 
-		HibernateUtil.setAsyncCommitListenersFinalization(false);
+		//HibernateUtil.setAsyncCommitListenersFinalization(false);
 
 	    User user=APILocator.getUserAPI().getSystemUser();
         String hostid=APILocator.getHostAPI().findByName("demo.dotcms.com", user, false).getIdentifier();

@@ -1,7 +1,14 @@
 package com.dotmarketing.db;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -9,30 +16,11 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import junit.framework.Assert;
-import com.dotcms.repackage.net.sf.hibernate.Session;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertEquals;
 
 @RunWith(DataProviderRunner.class)
 public class HibernateUtilTest {
@@ -154,83 +142,7 @@ public class HibernateUtilTest {
         Assert.assertEquals(title, dc.loadObjectResults().get(0).get("title"));
     }
 
-    @DataProvider
-    public static Object[] testCases() {
 
-        final Runnable reindexRunnable=new ReindexRunnable(Collections.emptyList(), ReindexRunnable.Action.ADDING) {};
-
-        final Runnable flushCacheRunnable = new FlushCacheRunnable() {
-            public void run() {}
-        };
-
-        return new AddCommitListenerTestCase[] {
-                new AddCommitListenerTestCase.Builder()
-                        .asyncReindexCommitListeners(true)
-                        .dotRunnable(reindexRunnable)
-                        .expectedAsyncListeners(1)
-                        .expectedSyncListeners(0)
-                        .createReindexCommitListenerTestCase(),
-
-                new AddCommitListenerTestCase.Builder()
-                        .asyncReindexCommitListeners(false)
-                        .dotRunnable(reindexRunnable)
-                        .expectedAsyncListeners(0)
-                        .expectedSyncListeners(1)
-                        .createReindexCommitListenerTestCase(),
-
-                new AddCommitListenerTestCase.Builder()
-                        .asyncReindexCommitListeners(false)
-                        .asyncCommitListeners(true)
-                        .dotRunnable(reindexRunnable)
-                        .expectedAsyncListeners(0)
-                        .expectedSyncListeners(1)
-                        .createReindexCommitListenerTestCase(),
-
-                new AddCommitListenerTestCase.Builder()
-                        .asyncReindexCommitListeners(true)
-                        .asyncCommitListeners(false)
-                        .dotRunnable(flushCacheRunnable)
-                        .expectedAsyncListeners(0)
-                        .expectedSyncListeners(1)
-                        .createReindexCommitListenerTestCase(),
-
-                new AddCommitListenerTestCase.Builder()
-                        .asyncReindexCommitListeners(false)
-                        .asyncCommitListeners(true)
-                        .dotRunnable(flushCacheRunnable)
-                        .expectedAsyncListeners(1)
-                        .expectedSyncListeners(0)
-                        .createReindexCommitListenerTestCase(),
-        };
-    }
-
-    @Test
-    @UseDataProvider("testCases")
-    public void testAddCommitListener(final AddCommitListenerTestCase testCase) throws DotHibernateException,
-            HibernateException, SQLException {
-        HibernateUtil.getSession().connection().setAutoCommit(false);
-
-        final boolean originalAsyncReindexCommitListenersValue = Config.getBooleanProperty("ASYNC_REINDEX_COMMIT_LISTENERS", true);
-        final boolean originalAsyncCommitListenersValue = Config.getBooleanProperty("ASYNC_COMMIT_LISTENERS", true);
-
-        Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", testCase.isAsyncReindexCommitListeners());
-        Config.setProperty("ASYNC_COMMIT_LISTENERS", testCase.isAsyncCommitListeners());
-
-        try {
-
-            HibernateUtil.addCommitListener(testCase.getDotRunnable());
-
-            final Map<String, Runnable> asyncCommitListeners = HibernateUtil.asyncCommitListeners.get();
-            final Map<String, Runnable> syncCommitListeners = HibernateUtil.syncCommitListeners.get();
-            assertEquals(testCase.getExpectedAsyncListeners(), asyncCommitListeners.size());
-            assertEquals(testCase.getExpectedSyncListeners(), syncCommitListeners.size());
-            HibernateUtil.getSession().connection().setAutoCommit(true);
-
-        } finally {
-            Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", originalAsyncReindexCommitListenersValue);
-            Config.setProperty("ASYNC_COMMIT_LISTENERS", originalAsyncCommitListenersValue);
-        }
-    }
 
 
 }

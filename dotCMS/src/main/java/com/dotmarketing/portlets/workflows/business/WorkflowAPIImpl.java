@@ -50,6 +50,10 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.CommitListener;
+import com.dotmarketing.db.listeners.ReindexListener;
+import com.dotmarketing.db.listeners.RollbackListener;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -1060,17 +1064,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private void consumeWorkflowTask (final WorkflowTask workflowTask) {
 
-		try {
-			HibernateUtil.addCommitListener( () -> {
-				try {
-					this.reindexQueueAPI.addIdentifierReindex(workflowTask.getWebasset());
-				} catch (DotDataException e) {
-					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
-				}
-			});
-		} catch (DotHibernateException e) {
-			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
-		}
+	    try {
+	        Contentlet con  = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(workflowTask.getWebasset());
+	        CommitAPI.getInstance().addReindexListenerAsync(new ReindexListener(con));
+	    }catch(Exception e) {
+	        Logger.warnAndDebug(this.getClass(), e);
+	    }
+	    
+
 	}
 
 	@WrapInTransaction
@@ -1095,14 +1096,29 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
 
 			if (sendSystemEvent) {
-				HibernateUtil.addCommitListener(() -> {
+			    
+	            final Runnable listener = () -> {
 					try {
 						this.systemMessageEventUtil.pushSimpleTextEvent
 								(LanguageUtil.get(user.getLocale(), "Workflow-Step-deleted", step.getName()), user.getUserId());
 					} catch (LanguageException e1) {
 						Logger.error(this.getClass(), e1.getMessage(), e1);
 					}
-				});
+				};
+	            CommitAPI.getInstance().addCommitListenerAsync(new CommitListener() {
+	                
+	                @Override
+	                public void run() {
+	                    listener.run();
+	                    
+	                }
+	                
+	                @Override
+	                public String key() {
+	                    return "Workflow-Step-deleted";
+	                }
+	            });
+				
 			}
 
 			SecurityLogger.logInfo(this.getClass(), ()-> "The Step" + step.getName()
@@ -1110,14 +1126,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		} catch (Exception e) {
 
 
-			HibernateUtil.addRollbackListener(() -> {
+		    
+		    
+			final Runnable listener = () -> {
 				try {
 					this.systemMessageEventUtil.pushSimpleErrorEvent(new ErrorEntity("Workflow-delete-step-error",
 							LanguageUtil.get(user.getLocale(), "Workflow-delete-step-error", step.getName())), user.getUserId());
 				} catch (LanguageException e1) {
 					Logger.error(this.getClass(), e1.getMessage(), e1);
 				}
-			});
+			};
+			
+			CommitAPI.getInstance().addRollBackListener(new RollbackListener("Workflow-delete-step-error", listener));
 
 
 			Logger.error(this.getClass(),

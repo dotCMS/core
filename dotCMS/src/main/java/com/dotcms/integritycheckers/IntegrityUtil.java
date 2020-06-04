@@ -1,21 +1,11 @@
 package com.dotcms.integritycheckers;
 
-import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.repackage.com.csvreader.CsvWriter;
-import com.dotcms.rest.IntegrityResource;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.MaintenanceUtil;
-import com.dotmarketing.util.UtilMethods;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -30,6 +20,20 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.com.csvreader.CsvWriter;
+import com.dotcms.rest.IntegrityResource;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.CommitListener;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.MaintenanceUtil;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * During the push publish process, user structures such as Folders, Content
@@ -402,11 +406,16 @@ public class IntegrityUtil {
         generateDataToFixTable(endpointId, type);
         fixConflicts(endpointId, type);
 
-        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+        CommitAPI.getInstance().addCommitListenerAsync(new CommitListener() {
+            
             @Override
             public void run() {
-
-               IntegrityUtil.this.flushAllCache();
+                IntegrityUtil.this.flushAllCache();
+            }
+            
+            @Override
+            public String key() {
+                return IntegrityUtil.class.getCanonicalName() + "flushall";
             }
         });
 

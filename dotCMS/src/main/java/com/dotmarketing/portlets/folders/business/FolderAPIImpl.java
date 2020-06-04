@@ -2,9 +2,21 @@ package com.dotmarketing.portlets.folders.business;
 
 import static com.dotmarketing.business.APILocator.getPermissionAPI;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.db.HibernateUtil.addCommitListener;
 import static com.liferay.util.StringPool.BLANK;
-
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -38,8 +50,8 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.CommitListener;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -61,20 +73,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class FolderAPIImpl implements FolderAPI  {
 
@@ -810,8 +808,19 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		final boolean move = folderFactory.move(folderToMove, newParentHost);
+        CommitAPI.getInstance().addCommitListenerAsync(new CommitListener() {
+            
+            @Override
+            public void run() {
+                Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user));
+            }
+            
+            @Override
+            public String key() {
+                return "folderFactoryMove";
+            }
+        });
 
-		addCommitListener(Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user)),1000);
 
 		return move;
 	}
@@ -888,24 +897,30 @@ public class FolderAPIImpl implements FolderAPI  {
 	private void addRefreshIndexCommitListener(final Folder parent,
 											   final Host host,
 											   final Folder folder ) throws DotDataException {
-		HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-			@Override
-			public void run() {
-				try {
-					if (folder!=null) {
-
-						FolderAPIImpl.this.contentletAPI.refreshContentUnderFolderPath(folder.getHostId(), folder.getPath());
-					}
-
-					if ( parent != null ) {
-						FolderAPIImpl.this.contentletAPI.refreshContentUnderFolderPath(parent.getHostId(), parent.getPath());
-					} else {
-						FolderAPIImpl.this.contentletAPI.refreshContentUnderHost(host);
-					}
-				} catch (Exception e) {
-					Logger.error(this, e.getMessage(), e);
-				}
-			}
+		CommitAPI.getInstance().addCommitListenerAsync(new CommitListener() {
+            
+            @Override
+            public void run() {
+                try {
+                    if (folder!=null) {
+                        FolderAPIImpl.this.contentletAPI.refreshContentUnderFolderPath(folder.getHostId(), folder.getPath());
+                    }
+                    if ( parent != null ) {
+                        FolderAPIImpl.this.contentletAPI.refreshContentUnderFolderPath(parent.getHostId(), parent.getPath());
+                    } else {
+                        FolderAPIImpl.this.contentletAPI.refreshContentUnderHost(host);
+                    }
+                } catch (Exception e) {
+                    Logger.error(this, e.getMessage(), e);
+                }
+                
+            }
+            
+            @Override
+            public String key() {
+                // TODO Auto-generated method stub
+                return "refresh:" + folder +"|" + parent  +"|" + host;
+            }
 		});
 	}
 

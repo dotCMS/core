@@ -2,12 +2,11 @@ package com.dotmarketing.business;
 
 import java.util.List;
 import java.util.Set;
-
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.FlushCacheListener;
+import com.dotmarketing.db.listeners.RollbackListener;
 
 /**
  * this class wraps our cache administrator and will automatically make cache removes and puts
@@ -20,6 +19,10 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
 
     final DotCacheAdministrator dotcache;
 
+    final CommitAPI commitAPI =  CommitAPI.getInstance();
+    
+    
+    
     public CommitListenerCacheWrapper(DotCacheAdministrator dotcache) {
         this.dotcache = dotcache;
     }
@@ -36,31 +39,40 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
 
     @Override
     public void flushAll() {
-        if (DbConnectionFactory.inTransaction()) {
-            final Runnable runner = new FlushCacheRunnable() {
-                public void run() {
-                    dotcache.flushAll();
-                }
-            };
-            HibernateUtil.addRollbackListener("flushAll" ,runner);
-            HibernateUtil.addCommitListener("flushAll" , runner);
-        }
+        final FlushCacheListener runner = new FlushCacheListener() {
+            public void run() {
+                dotcache.flushAll();
+            }
+            
+            public String key() {
+                return "flushAll";
+            }
+            
+        };
+        
+
+        commitAPI.addFlushCacheAsync(runner);
+        
         
         dotcache.flushAll();
     }
 
     @Override
-    public void flushGroup(String group) {
+    public void flushGroup(final String group) {
         
-        if (DbConnectionFactory.inTransaction()) {
-            final Runnable runner = new FlushCacheRunnable() {
-                public void run() {
-                    dotcache.flushGroup(group);
-                }
-            };
-            HibernateUtil.addRollbackListener("flushGroup" + group,runner);
-            HibernateUtil.addCommitListener("flushGroup" + group, runner);
-    }
+        final FlushCacheListener runner = new FlushCacheListener() {
+            public void run() {
+                dotcache.flushGroup(group);
+            }
+            
+            public String key() {
+                return group;
+            }
+        };
+            
+
+        commitAPI.addFlushCacheAsync(runner);
+
         
         dotcache.flushGroup(group);
     }
@@ -127,29 +139,33 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
     @Override
     public void put(final String key, final Object content, final String group) {
         dotcache.put(key, content, group);
-        if (DbConnectionFactory.inTransaction()) {
-            HibernateUtil.addRollbackListener(group+key,new FlushCacheRunnable() {
-                public void run() {
-                    dotcache.remove(key, group);
-                }
-            });
-        }
+        
+        FlushCacheListener runner = new FlushCacheListener() {
+            public void run() {
+                dotcache.remove(key, group);
+            }
+            public String key() {
+                return key + group;
+            }
+            
+        };
+        commitAPI.addFlushCacheAsync(runner);
+
     }
 
     @Override
     public void remove(final String key, final String group) {
-        if (DbConnectionFactory.inTransaction()) {
-                final String flushKey=String.valueOf(key+group).toLowerCase();
-                final Runnable runner = new FlushCacheRunnable() {
-                    public void run() {
-                        dotcache.remove(key, group);
-                    }
-                };
-                HibernateUtil.addRollbackListener(flushKey,runner);
-                HibernateUtil.addCommitListener(flushKey, runner);
-
-        }
         dotcache.remove(key, group);
+        FlushCacheListener runner = new FlushCacheListener() {
+            public void run() {
+                dotcache.remove(key, group);
+            }
+            public String key() {
+                return key + group;
+            }
+            
+        };  
+        commitAPI.addFlushCacheAsync(runner);
     }
 
     public DotCacheAdministrator getImplementationObject() {

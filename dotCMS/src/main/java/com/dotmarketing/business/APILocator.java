@@ -82,6 +82,7 @@ import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexQueueAPIImpl;
+import com.dotmarketing.db.listeners.CommitAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -679,6 +680,18 @@ public class APILocator extends Locator<APIIndex>{
 	public static TempFileAPI getTempFileAPI() {
 	  return new TempFileAPI();
 	}
+	
+
+    /**
+     * Returns the CommitAPI that allows for CommitListeners to be registered and will be called on
+     * commit
+     * 
+     * @return
+     */
+    public static CommitAPI getCommitAPI() {
+        return CommitAPI.getInstance();
+    }
+	
 	
 	
 	/**

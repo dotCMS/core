@@ -80,22 +80,19 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
         }
 
         if (null == processor.getTask() || processor.getTask().isNew()) {
-            try {
-                HibernateUtil.addCommitListener(() -> {
 
-                    if (null != processor.getTask()) {
-                        if (!UtilMethods.isSet(comment.getWorkflowtaskId())) {
+            HibernateUtil.addCommitListener(() -> {
 
-                            comment.setWorkflowtaskId(processor.getTask().getId());
-                        }
+                if (null != processor.getTask()) {
+                    if (!UtilMethods.isSet(comment.getWorkflowtaskId())) {
 
-                        this.saveComment(contentlet, comment);
+                        comment.setWorkflowtaskId(processor.getTask().getId());
                     }
-                });
-            } catch (DotHibernateException e1) {
 
-                Logger.warn(CommentOnWorkflowActionlet.class, e1.getMessage());
-            }
+                    this.saveComment(contentlet, comment);
+                }
+            });
+           
         } else {
             try {
                 APILocator.getWorkflowAPI().saveComment(comment);

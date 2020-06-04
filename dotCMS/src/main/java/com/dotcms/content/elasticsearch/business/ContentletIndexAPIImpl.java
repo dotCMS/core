@@ -3,61 +3,6 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
-
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.MessageType;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.content.business.DotMappingException;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.FieldFactory;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.reindex.BulkProcessorListener;
-import com.dotmarketing.common.reindex.ReindexEntry;
-import com.dotmarketing.common.reindex.ReindexQueueAPI;
-import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.db.ReindexRunnable;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ThreadUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONObject;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
-import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -96,6 +41,60 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldFactory;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.BulkProcessorListener;
+import com.dotmarketing.common.reindex.ReindexEntry;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.ReindexListener;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -605,7 +604,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else if (!DbConnectionFactory.inTransaction()) {
             addContentToIndex(contentToIndex);
         } else {
-            HibernateUtil.addSyncCommitListener(() -> addContentToIndex(contentToIndex));
+            CommitAPI.getInstance().addReindexListenerSync(new ReindexListener(contentToIndex));
         }
     }
 
@@ -995,8 +994,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             } else {
                 // add a commit listener to index the contentlet if the entire
                 // transaction finish clean
-                HibernateUtil.addCommitListener(content.getInode() + ReindexRunnable.Action.REMOVING,
-                        new RemoveReindexRunnable(content, onlyLive, relationships));
+                CommitAPI.getInstance().addReindexListenerAsync(new RemoveReindexListener(content, onlyLive, relationships));
+                CommitAPI.getInstance().addRollBackListener(new ReindexListener(content ));
+
             }
         } catch (DotDataException | DotSecurityException | DotMappingException e1) {
             throw new DotHibernateException(e1.getMessage(), e1);
@@ -1013,19 +1013,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     /**
      * Remove ReindexRunnable runnable
      */
-    private class RemoveReindexRunnable extends ReindexRunnable {
-
+    private class RemoveReindexListener extends ReindexListener {
         private final Contentlet contentlet;
         private final boolean onlyLive;
         private final List<Relationship> relationships;
 
-        public RemoveReindexRunnable(final Contentlet contentlet, final boolean onlyLive, final List<Relationship> relationships) {
+        public RemoveReindexListener(final Contentlet contentlet, final boolean onlyLive, final List<Relationship> relationships) {
 
-            super(contentlet, ReindexRunnable.Action.REMOVING);
+            super(contentlet, ReindexListener.Action.REMOVING);
             this.contentlet = contentlet;
             this.onlyLive = onlyLive;
             this.relationships = relationships;
         }
+
 
         public void run() {
 

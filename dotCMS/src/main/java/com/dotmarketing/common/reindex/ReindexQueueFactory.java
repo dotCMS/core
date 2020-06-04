@@ -309,7 +309,8 @@ public class ReindexQueueFactory {
 
     protected long recordsInQueue(final Connection conn) throws DotDataException {
         final DotConnect dc = new DotConnect();
-        dc.setSQL("select count(*) as count from dist_reindex_journal");
+        dc.setSQL("select count(*) as count from dist_reindex_journal where priority <= ?");
+        dc.addParam(Priority.ERROR.dbValue());
         final List<Map<String, String>> results = dc.loadResults(conn);
         final String c = results.get(0).get("count");
         return Long.parseLong(c);

@@ -53,7 +53,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
     @BeforeClass
     public static void beforeInit() throws Exception {
-        HibernateUtil.setAsyncCommitListenersFinalization(true);
+        //HibernateUtil.setAsyncCommitListenersFinalization(true);
     }
 
     protected static void setDebugMode (final boolean mode) throws UnsupportedEncodingException {

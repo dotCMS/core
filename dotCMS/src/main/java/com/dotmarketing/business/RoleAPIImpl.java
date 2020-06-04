@@ -431,23 +431,34 @@ public class RoleAPIImpl implements RoleAPI {
 		return roleFactory.loadRoleByKey(key);
 	}
 
-	@WrapInTransaction
+	@CloseDBIfOpened
 	@Override
 	public Role getUserRole(final User user) throws DotDataException {
 
 		Role role = loadRoleByKey(user.getUserId());
-		if(role == null) {
-			role = roleFactory.addUserRole(user);
-		} else if(!role.getName().equals(user.getFullName()) && !role.getName().equalsIgnoreCase("System")) {
-			role.setName(user.getFullName());
-			roleFactory.save(role);
-		}
-		if(!APILocator.getRoleAPI().doesUserHaveRole(user, role)){
-			roleFactory.addRoleToUser(role, user);
+		if(role == null || !role.getName().equals(user.getFullName()) && !role.getName().equalsIgnoreCase("System")|| !APILocator.getRoleAPI().doesUserHaveRole(user, role)){
+		    return saveUserRole(user, role);
 		}
 		return role;
 	}
+	
+    @WrapInTransaction
+    private Role saveUserRole(final User user, Role role) throws DotDataException {
 
+
+        if(role == null) {
+            role = roleFactory.addUserRole(user);
+        } else if(!role.getName().equals(user.getFullName()) && !role.getName().equalsIgnoreCase("System")) {
+            role.setName(user.getFullName());
+            roleFactory.save(role);
+        }
+        if(!APILocator.getRoleAPI().doesUserHaveRole(user, role)){
+            roleFactory.addRoleToUser(role, user);
+        }
+        return role;
+    }
+    
+	@CloseDBIfOpened
 	public boolean doesUserHaveRoles(final String userId, final List<String> roleIds) {
 
 		if (!UtilMethods.isSet(userId) || roleIds == null || roleIds.size() == 0) {

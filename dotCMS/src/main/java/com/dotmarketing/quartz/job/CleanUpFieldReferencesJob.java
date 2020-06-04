@@ -125,7 +125,7 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
         final SimpleTrigger trigger = new SimpleTrigger("deleteFieldStatefulTrigger-" + randomID,
                         "clean_up_field_reference_job_triggers", new Date(startTime));
 
-        HibernateUtil.addCommitListenerNoThrow(Sneaky.sneaked(()-> {
+        HibernateUtil.addCommitListener(Sneaky.sneaked(()-> {
                 Scheduler sched = QuartzUtils.getSequentialScheduler();
                 sched.scheduleJob(jd, trigger);
             }

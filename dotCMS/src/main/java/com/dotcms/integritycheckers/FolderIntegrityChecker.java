@@ -1,22 +1,5 @@
 package com.dotcms.integritycheckers;
 
-import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.repackage.com.csvreader.CsvWriter;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -28,6 +11,23 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.com.csvreader.CsvWriter;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.CommitListener;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * Folder integrity checker implementation
@@ -423,7 +423,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             /*
              Lets reindex all the content under the fixed folder
              */
-            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+            CommitAPI.getInstance().addCommitListenerAsync(new CommitListener() {
+
                 public void run () {
 
                     String folderPath = null;
@@ -443,6 +444,10 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                             Logger.error(this, "Error while reindexing content under folder.", e);
                         }
                     }
+                }
+                @Override
+                public String key() {
+                    return "refresh" + hostId + "|" + parentPath + assetName;
                 }
             });
 

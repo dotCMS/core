@@ -85,15 +85,12 @@ public class LanguageAPIImpl implements LanguageAPI {
         this.factory.deleteLanguage(language);
         Logger.debug(this, ()-> "DeleteLanguage: " + language);
 
-		try {
-			HibernateUtil.addCommitListener(()-> {
 
-				localSystemEventsAPI.asyncNotify(new LanguageDeletedEvent(language));
-			});
-		} catch (DotHibernateException e) {
+		HibernateUtil.addCommitListener(()-> {
 
-			Logger.error(this, e.getMessage(), e);
-		}
+			localSystemEventsAPI.asyncNotify(new LanguageDeletedEvent(language));
+		});
+		 
 	}
 
     @Override

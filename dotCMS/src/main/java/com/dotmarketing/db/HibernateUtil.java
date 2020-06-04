@@ -1,8 +1,27 @@
 package com.dotmarketing.db;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.repackage.net.sf.hibernate.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Savepoint;
+import java.util.Iterator;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import com.dotcms.repackage.net.sf.hibernate.CallbackException;
+import com.dotcms.repackage.net.sf.hibernate.FlushMode;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.Interceptor;
+import com.dotcms.repackage.net.sf.hibernate.MappingException;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.net.sf.hibernate.Query;
+import com.dotcms.repackage.net.sf.hibernate.Session;
+import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
 import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
@@ -10,22 +29,16 @@ import com.dotcms.repackage.net.sf.hibernate.impl.SessionFactoryImpl;
 import com.dotcms.repackage.net.sf.hibernate.type.Type;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.CommitListener;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
-import com.dotmarketing.util.*;
-import com.google.common.annotations.VisibleForTesting;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
-import java.io.*;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Savepoint;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.stream.Collectors;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.WebKeys;
 
 /**
  * This class provides a great number of utility methods that allow developers to interact with
@@ -37,7 +50,7 @@ import java.util.stream.Collectors;
  */
 public class HibernateUtil {
 
-    private static final String LISTENER_SUBMITTER = "dotListenerSubmitter";
+
     private static final String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
 
 	private static Dialect dialect;
@@ -63,34 +76,12 @@ public class HibernateUtil {
 		this.sessionFactory = sessionFac;
 	}
 
-	public enum TransactionListenerStatus {
-		ENABLED, DISABLED;
-	}
 
 	public static final String addToIndex="-add-to-index";
 	public static final String removeFromIndex="-remove-from-index";
 
-	/**
-	 * Status for listeners of thread-local -based transactions. This allows to control whether listeners are appended or not (ENABLED by default)
-	 */
-	private static final ThreadLocal< TransactionListenerStatus > listenersStatus = new ThreadLocal< TransactionListenerStatus >(){
-        protected TransactionListenerStatus initialValue() {
-            return TransactionListenerStatus.ENABLED;
-        }
-    };
 
-	private static final ThreadLocal<Boolean> asyncCommitListenersFinalization = ThreadLocal.withInitial(()->true);
 
-	@VisibleForTesting
-	static final ThreadLocal<Map<String, Runnable>> asyncCommitListeners = ThreadLocal
-			.withInitial(LinkedHashMap::new);
-
-	@VisibleForTesting
-	static final ThreadLocal<Map<String, Runnable>> syncCommitListeners = ThreadLocal
-			.withInitial(LinkedHashMap::new);
-
-    static final ThreadLocal<Map<String, Runnable>> rollbackListeners= ThreadLocal
-            .withInitial(LinkedHashMap::new);
 
 	public HibernateUtil(Class c) {
 		setClass(c);
@@ -674,6 +665,31 @@ public class HibernateUtil {
 		}
 	}
 
+	@Deprecated
+    public static void addCommitListener(final Runnable runner, int nonce) {
+	    addCommitListener(runner);
+    }
+	@Deprecated
+    public static void addCommitListener(final Runnable runner) {
+        
+        CommitAPI.getInstance().addCommitListenerAsync(new CommitListener() {
+            
+            @Override
+            public void run() {
+                runner.run();
+                
+            }
+            
+            @Override
+            public String key() {
+                return UUIDUtil.uuid();
+            }
+        });
+
+        
+    }
+	
+	
 
 
 	private static void getPluginsHBM(String type,Configuration cfg) {
@@ -770,227 +786,12 @@ public class HibernateUtil {
 		}
 	}
 
-	/**
-	 * Returns the listeners status currently associated to the thread-local -based transaction (ENABLED by default)
-	 */
-	public static TransactionListenerStatus getTransactionListenersStatus() {
-		return listenersStatus.get();
-	}
-	/**
-	 * Allows to override the status of the listeners associated to the current thread-local -based transaction (DISABLED if overriden)
-	 * When using TransactionListenerStatus.DISABLED, client code should be aware of controlling the operations that are suppossed to be done by listeners
-	 * @param status TransactionListenerStatus
-	 */
-	public static void setTransactionListenersStatus(TransactionListenerStatus status) {
-		listenersStatus.set(status);
-	}
-
-	public static boolean getAsyncCommitListenersFinalization() {
-		return asyncCommitListenersFinalization.get();
-	}
-
-	public static void setAsyncCommitListenersFinalization(boolean finalizeAsync) {
-		asyncCommitListenersFinalization.set(finalizeAsync);
-	}
-
-	/**
-	 * Allows you to add an asynchronous commit listener to the current database
-	 * session/transaction. This means that the current flow of the application will continue its
-	 * way and the specified commit listener will be spawned subsequently after the transaction has
-	 * been committed or the session has been closed. <p>By default, asynchronous commit listeners
-	 * will be spawned by a new thread. This means that they will not share the same database
-	 * connection information with the main thread of the dotCMS application.</p>
-	 *
-	 * @param runnable The commit listener wrapped as a {@link Runnable} object.
-	 * @param order    in case you want to add an order
-	 *
-	 * @throws DotHibernateException An error occurred when registering the commit listener.
-	 */
-	public static void addCommitListener(final Runnable runnable, final int order) throws
-			DotHibernateException {
-		addCommitListener(new DotOrderedRunnable(runnable, order));
-	}
-
-	/**
-	 * Adds a commit listener to the current database transaction/session. There are several
-	 * types of commit listeners, namely:
-	 * <ul>
-	 * <li>{@link DotSyncRunnable}</li>
-	 * <li>{@link DotOrderedRunnable}</li>
-	 * <li>{@link FlushCacheRunnable}</li>
-	 * <li>{@link ReindexRunnable}</li>
-	 * <li>Among others.</li>
-	 * </ul>
-	 * Commit listeners allow developers to execute code after a transaction has been committed
-	 * or the session has ended.
-	 *
-	 * @param listener The commit listener wrapped as a {@link Runnable} object.
-	 *
-	 * @throws DotHibernateException An error occurred when registering the commit listener.
-	 */
-	public static void addCommitListener(final Runnable listener) throws DotHibernateException {
-	    addCommitListener(UUIDGenerator.generateUuid(),listener);
-	}
-	
-    /**
-     * Adds a commit listener to the current database transaction/session. There are several
-     * types of commit listeners, namely:
-     * <ul>
-     * <li>{@link DotSyncRunnable}</li>
-     * <li>{@link DotOrderedRunnable}</li>
-     * <li>{@link FlushCacheRunnable}</li>
-     * <li>{@link ReindexRunnable}</li>
-     * <li>Among others.</li>
-     * </ul>
-     * Commit listeners allow developers to execute code after a transaction has been committed
-     * or the session has ended.
-     *
-     * @param listener The commit listener wrapped as a {@link Runnable} object.
-     *
-     * @throws DotHibernateException An error occurred when registering the commit listener.
-     */
-    public static void addCommitListenerNoThrow(final Runnable listener)  {
-		addCommitListener(UUIDGenerator.generateUuid(),listener);
-    }
-
-	/**
-	 * Allows you to add an asynchronous commit listener to the current database
-	 * session/transaction. This means that the current flow of the application will take care of
-	 * running the specified commit listener. This is particularly useful when you need to keep
-	 * database objects that were created during the database transaction.
-	 * <p>For example, if you created a temporary table that your commit listener needs to access,
-	 * you will definitely need to create a synchronous listener for it to be able to access the
-	 * such a table as temporary tables are only available for the duration of the transaction or
-	 * the session. With synchronous commit listeners, dotCMS will use the its main execution thread
-	 * to call the listener; therefore, it can access the same database connection and see the
-	 * temporary table.</p>
-	 *
-	 * @param runnable The commit listener wrapped as a {@link Runnable} object.
-	 *
-	 * @throws DotHibernateException An error occurred when registering the commit listener.
-	 */
-	public static void addSyncCommitListener(final Runnable runnable) throws
-			DotHibernateException {
-		addCommitListener(new DotSyncRunnable(runnable));
-	}
-
-	/**
-	 * In case you need to execute the Runnable in an specific order, you can use this class.
-	 */
-	public static class DotOrderedRunnable implements Runnable {
-
-		private final Runnable runnable;
-		private final int      order;
-
-		public DotOrderedRunnable(final Runnable runnable) {
-			this(runnable, 0);
-		}
-
-		public DotOrderedRunnable(final Runnable runnable, final int order) {
-			this.runnable = runnable;
-			this.order    = order;
-		}
-
-		@Override
-		public void run() {
-			runnable.run();
-		}
-
-		public Runnable getRunnable() {
-			return runnable;
-		}
-
-		public int getOrder() {
-			return order;
-		}
-	}
-
-	/**
-	 * Allows you to create a synchronous commit listener, which represents code that will be
-	 * called after a database transaction has been committed or the session has been closed.
-	 * Synchronous listeners will NOT RUN ON A NEW THREAD, they will use the main dotCMS thread.
-	 */
-	public static class DotSyncRunnable implements Runnable {
-
-		private final Runnable runnable;
-		private final int      order;
-
-		public DotSyncRunnable(final Runnable runnable) {
-			this(runnable, 0);
-		}
-		public DotSyncRunnable(final Runnable runnable, final int order) {
-
-			this.runnable = runnable;
-			this.order    = order;
-		}
-
-		@Override
-		public void run() {
-			runnable.run();
-		}
-
-		public Runnable getRunnable() {
-			return runnable;
-		}
-
-		public int getOrder() {
-			return order;
-		}
-	}
 
 
 
-    /**
-     * Adds a commit listener to the current database transaction/session. There are several types of
-     * commit listeners, namely:
-     * <ul>
-     * <li>{@link DotSyncRunnable}</li>
-     * <li>{@link DotOrderedRunnable}</li>
-     * <li>{@link FlushCacheRunnable}</li>
-     * <li>{@link ReindexRunnable}</li>
-     * <li>Among others.</li>
-     * </ul>
-     * Commit listeners allow developers to execute code after a transaction has been committed or the
-     * session has ended. For listeners that are not instances of {@link DotSyncRunnable} or
-     * {@link DotOrderedRunnable} a configuration property called {@code
-     * REINDEX_ON_SAVE_IN_SEPARATE_THREAD} determines whether listeners are executed in a separate
-     * thread, or in the same dotCMS thread. By default, they run in a brand new thread.
-     *
-     * @param tag A unique ID for the specified listener.
-     * @param listener The commit listener wrapped as a {@link Runnable} object.
-     *
-     * @throws DotHibernateException An error occurred when registering the commit listener.
-     */
-    public static void addCommitListener(final String tag, final Runnable listener) {
-        if (DbConnectionFactory.inTransaction() && getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
-            if (listener instanceof DotSyncRunnable) {
-                syncCommitListeners.get().put(tag, listener);
-            } else if (listener instanceof ReindexRunnable && asyncReindexCommitListeners()) {
-                asyncCommitListeners.get().put(tag, listener);
-            } else if (listener instanceof ReindexRunnable) {
-                syncCommitListeners.get().put(tag, listener);
-            } else if (getAsyncCommitListenersFinalization() && asyncCommitListeners()) {
-                asyncCommitListeners.get().put(tag, listener);
-            } else {
-                syncCommitListeners.get().put(tag, listener);
-            }
-        } else {
-            listener.run();
-        }
-    }
 
-	public static void addRollbackListener(Runnable listener) {
-	    addRollbackListener(UUIDGenerator.generateUuid(), listener);
-    }
-	
-	
-    public static void addRollbackListener(final String key, Runnable listener) {
-        if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED && DbConnectionFactory.inTransaction()) {
-            rollbackListeners.get().put(key, listener);
-        }
-    }
-    
-	public static void closeSessionSilently() {
+
+    public static void closeSessionSilently() {
 
 		try {
 			closeSession();
@@ -1000,6 +801,7 @@ public class HibernateUtil {
 	}
 
 	public static void closeSession()  throws DotHibernateException{
+	    final boolean inTransaction = DbConnectionFactory.inTransaction();
 		try{
 			// if there is nothing to close
 			if (null == sessionHolder.get()){
@@ -1009,13 +811,14 @@ public class HibernateUtil {
 
 			if (null != session) {
 				session.flush();
-				if (!session.connection().getAutoCommit()) {
+				if (inTransaction) {
 					Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
 					session.connection().commit();
 					session.connection().setAutoCommit(true);
-					if (!syncCommitListeners.get().isEmpty() || !asyncCommitListeners.get().isEmpty()) {
-						finalizeCommitListeners();
-					}
+					
+					CommitAPI.getInstance().finalize();
+
+					
 				}
 				DbConnectionFactory.closeConnection();
 				session.close();
@@ -1023,95 +826,15 @@ public class HibernateUtil {
 				sessionHolder.set(null);
 			}
 		}catch (Exception e) {
+		    if(inTransaction) {
+		        sessionCleanupAndRollback();
+		    }
 			Logger.error(HibernateUtil.class, e.getMessage(), e);
 			throw new DotHibernateException("Unable to close Hibernate Session ", e);
-		} finally {
-		    syncCommitListeners.get().clear();
-			asyncCommitListeners.get().clear();
-		    rollbackListeners.get().clear();
-		}
+		} 
 	}
 
-	/**
-	 * Traverses the lists of both synchronous and asynchronous commit listeners and starts them
-	 * up. The asynchronous listeners are executed as separate threads, whereas synchronous
-	 * listeners use the main dotCMS thread to run.
-	 */
-	private static void finalizeCommitListeners() {
-		final List<Runnable> asyncListeners = new ArrayList<>(asyncCommitListeners.get().values());
-		final List<Runnable> syncListeners = new ArrayList<>(syncCommitListeners.get().values());
-		asyncCommitListeners.get().clear();
-		syncCommitListeners.get().clear();
 
-		if (!asyncListeners.isEmpty()) {
-
-			final List<Runnable> listeners = getListeners(asyncListeners);
-			final List<Runnable> flushers  = getFlushers(asyncListeners);
-            final DotSubmitter submitter   = DotConcurrentFactory.getInstance().getSubmitter(LISTENER_SUBMITTER);
-
-            if (!listeners.isEmpty()) {
-				submitter.submit(new DotRunnableThread(listeners, true));
-			}
-
-			if (!flushers.isEmpty()) {
-			    submitter.submit(new DotRunnableFlusherThread(flushers, true));
-				submitter.delay(new DotRunnableFlusherThread(flushers, true),
-						Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000), TimeUnit.MILLISECONDS);
-			}
-		}
-
-		if (!syncListeners.isEmpty()) {
-
-			final List<Runnable> listeners = getListeners(syncListeners);
-			final List<Runnable> flushers  = getFlushers(syncListeners);
-			if (!listeners.isEmpty()) {
-				new DotRunnableThread(listeners).run();
-			}
-
-			if (!flushers.isEmpty()) {
-			    new DotRunnableFlusherThread(flushers).run();
-				DateUtil.sleep(Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000));
-				new DotRunnableFlusherThread(flushers, false).run(); // todo: double check this if we still want a thread for the flushers
-			}
-		}
-	}
-
-	private static List<Runnable> getListeners(final List<Runnable> allListeners) {
-		return allListeners.stream().filter(HibernateUtil::isNotFlushCacheRunnable).sorted(HibernateUtil::compare).collect(Collectors.toList());
-	}
-
-	private static int compare(final Runnable runnable, final Runnable runnable1) {
-		return getOrder(runnable).compareTo(getOrder(runnable1));
-	}
-
-	private static Integer getOrder(final Runnable runnable) {
-
-		final int order = (runnable instanceof HibernateUtil.DotSyncRunnable) ?
-				HibernateUtil.DotSyncRunnable.class.cast(runnable).getOrder() : 0;
-
-		return (runnable instanceof HibernateUtil.DotOrderedRunnable) ?
-				HibernateUtil.DotOrderedRunnable.class.cast(runnable).getOrder() : order;
-	}
-
-	private static boolean isNotFlushCacheRunnable(final Runnable listener) {
-
-		return !isFlushCacheRunnable(listener);
-	}
-
-	private static List<Runnable> getFlushers(final List<Runnable> allListeners) {
-		return allListeners.stream().filter(HibernateUtil::isFlushCacheRunnable).collect(Collectors.toList());
-	}
-
-	private static boolean isFlushCacheRunnable(final Runnable listener) {
-
-		return (
-				listener instanceof FlushCacheRunnable ||
-						(listener instanceof HibernateUtil.DotOrderedRunnable
-								&& HibernateUtil.DotOrderedRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable) ||
-						(listener instanceof HibernateUtil.DotSyncRunnable
-								&& HibernateUtil.DotSyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable)
-		);
-	}
 
 	public static void startTransaction()  throws DotHibernateException{
 		try{
@@ -1120,9 +843,7 @@ public class HibernateUtil {
 		 *
 		 */
 			getSession().connection().setAutoCommit(false);
-			rollbackListeners.get().clear();
-			syncCommitListeners.get().clear();
-			asyncCommitListeners.get().clear();
+			CommitAPI.getInstance().startTransaction();
 			Logger.debug(HibernateUtil.class, "Starting Transaction!");
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to set AutoCommit to false on Hibernate Session ", e);
@@ -1134,7 +855,7 @@ public class HibernateUtil {
 	 * @throws DotHibernateException
 	 */
 	public static void commitTransaction()  throws DotHibernateException{
-
+	    final boolean inTransaction = DbConnectionFactory.inTransaction();
 		try{
 			// if there is nothing to close
 			if (null == sessionHolder.get()) {
@@ -1144,22 +865,23 @@ public class HibernateUtil {
 
 			if (null != session) {
 				session.flush();
-				if (!session.connection().getAutoCommit()) {
+				if (inTransaction) {
 					Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
 					session.connection().commit();
 					session.connection().setAutoCommit(true);
-					if (!asyncCommitListeners.get().isEmpty() || !syncCommitListeners.get().isEmpty()) {
-						finalizeCommitListeners();
-					}
+                    CommitAPI.getInstance().finalize();
+      
 				}
 			}
 		}catch (Exception e) {
+		    if(inTransaction) {
+		        sessionCleanupAndRollback();
+		    }
 			Logger.error(HibernateUtil.class, e.getMessage(), e);
 			throw new DotHibernateException("Unable to close Hibernate Session ", e);
-		} finally {
-			syncCommitListeners.get().clear();
-			asyncCommitListeners.get().clear();
-			rollbackListeners.get().clear();
+		}finally {
+		    DbConnectionFactory.closeSilently();
+
 		}
 	}
 
@@ -1204,8 +926,6 @@ public class HibernateUtil {
 	}
 
 	public static void sessionCleanupAndRollback()  throws DotHibernateException{
-		syncCommitListeners.get().clear();
-		asyncCommitListeners.get().clear();
 		Logger.debug(HibernateUtil.class, "sessionCleanupAndRollback");
 		Session session = getSession();
 		session.clear();
@@ -1213,32 +933,18 @@ public class HibernateUtil {
 		try {
 			session.connection().rollback();
 			session.connection().setAutoCommit(true);
+	        session.close();
+	        session = null;
+	        sessionHolder.set(null);
 		} catch (Exception ex) {
-			Logger.debug(HibernateUtil.class, "---------- DotHibernate: error on rollbackTransaction ---------------",
-					ex);
-			Logger.error(HibernateUtil.class, "---------- DotHibernate: error on rollbackTransaction ---------------\n"+ ex);
-			// throw new DotRuntimeException(ex.toString());
+			Logger.warnAndDebug(HibernateUtil.class, "---------- DotHibernate: error on rollbackTransaction ---------------\n"+ ex, ex);
+		}
+		finally{
+		      DbConnectionFactory.closeSilently();
+		      CommitAPI.getInstance().runRollbackListeners();
 		}
 
-		try {
-			DbConnectionFactory.closeConnection();
-			session.close();
-			session = null;
-			sessionHolder.set(null);
-		} catch (Exception ex) {
-			Logger.debug(HibernateUtil.class, "---------- DotHibernate: error on rollbackTransaction ---------------",
-					ex);
-			Logger.error(HibernateUtil.class, "---------- DotHibernate: error on rollbackTransaction ---------------\n"+ ex);
-			// throw new DotRuntimeException(ex.toString());
-		}
 
-		if(rollbackListeners.get().size()>0) {
-            List<Runnable> r = new ArrayList<>(rollbackListeners.get().values());
-            rollbackListeners.get().clear();
-            for(Runnable runnable :r){
-            	runnable.run();
-            }
-        }
 	}
 
     public static Savepoint setSavepoint() throws DotHibernateException {
@@ -1294,13 +1000,5 @@ public class HibernateUtil {
         	throw new DotHibernateException("Unable to evict from Hibernate Session ", e);
         }
     }
-
-    private static boolean asyncReindexCommitListeners() {
-		return Config.getBooleanProperty("ASYNC_REINDEX_COMMIT_LISTENERS", true);
-	}
-
-	private static boolean asyncCommitListeners() {
-		return Config.getBooleanProperty("ASYNC_COMMIT_LISTENERS", true);
-	}
 
 }
