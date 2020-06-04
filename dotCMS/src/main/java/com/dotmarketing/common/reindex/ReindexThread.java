@@ -181,9 +181,8 @@ public class ReindexThread {
       try {
 
         final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
-          Logger.info(this.getClass(), "workingRecords " + workingRecords);
+
         if (!workingRecords.isEmpty()) {
-            Logger.info(this.getClass(), "------------------------------ Processing workingRecords");
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
               || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
@@ -204,10 +203,9 @@ public class ReindexThread {
           bulkProcessor = closeBulkProcessor(bulkProcessor);
           switchOverIfNeeded();
 
-          //Thread.sleep(SLEEP);
+          Thread.sleep(SLEEP);
         }
 
-        Thread.sleep(SLEEP);
       } catch (Exception ex) {
         Logger.error(this, "ReindexThread Exception", ex);
         ThreadUtils.sleep(SLEEP_ON_ERROR);

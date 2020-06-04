@@ -25,13 +25,13 @@ public class ESIndexUtil {
     public static  boolean isReadOnly(final String... indexNames) {
         final GetSettingsRequest request = new GetSettingsRequest().indices(indexNames);
 
-        Logger.info(ESIndexUtil.class, "Checking if current index are read only");
+        Logger.info(ESIndexUtil.class, Thread.currentThread().getName() + "- Checking if current index are read only");
 
         final GetSettingsResponse response = Sneaky.sneak(() ->
                 RestHighLevelClientProvider.getInstance().getClient().indices()
                         .getSettings(request, RequestOptions.DEFAULT));
 
-        Logger.info(ESIndexUtil.class, "RESPONSE Checking if current index are read only");
+        Logger.info(ESIndexUtil.class, Thread.currentThread().getName() + "- RESPONSE Checking if current index are read only");
 
         return Arrays.stream(indexNames).anyMatch((indexName) -> {
             final String readOnlyAllowDelete = response.getSetting(indexName, READ_ONLY_ALLOW_DELETE_SETTING);

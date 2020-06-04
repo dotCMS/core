@@ -1,6 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -20,6 +25,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Run a Monitor If the current indices are in read only mode and try to set them to write mode again.
@@ -66,14 +73,12 @@ public class ESReadOnlyMonitor {
     }
 
     public void start(final ReindexEntry reindexEntry, final String cause){
-        Logger.info(this.getClass(), "Checking to Start " + reindexEntry);
-        Logger.info(this.getClass(), "Started " + started.get() + " " + this.hashCode());
-        if (!started.compareAndSet(false, true)) {
-            Logger.error(this.getClass(), "Reindex failed for :" + reindexEntry + " because " + cause);
+        if (started.compareAndSet(false, true)) {
+            Logger.error(this.getClass(), Thread.currentThread().getName() + " - Reindex failed for :" + reindexEntry + " because " + cause);
 
             if (ESIndexUtil.isAnyCurrentIndicesReadOnly()) {
                 ReindexThread.setCurrentIndexReadOnly(true);
-                sendLargeMessage("es.index.read.only.message");
+                sendMessage("es.index.read.only.message");
                 startMonitor();
             } else {
                 started.set(false);
@@ -81,7 +86,7 @@ public class ESReadOnlyMonitor {
         }
     }
 
-    private void sendLargeMessage(final String messageKey) {
+    private void sendMessage(final String messageKey) {
         try {
             final Role adminRole = roleAPI.loadCMSAdminRole();
             final List<String> usersId = roleAPI.findUsersForRole(adminRole)
@@ -89,7 +94,13 @@ public class ESReadOnlyMonitor {
                     .map(user -> user.getUserId())
                     .collect(Collectors.toList());
 
-            systemMessageEventUtil.pushLargeMessage(LanguageUtil.get(messageKey), usersId);
+            final SystemMessageBuilder message = new SystemMessageBuilder()
+                    .setMessage(LanguageUtil.get(messageKey))
+                    .setSeverity(MessageSeverity.ERROR)
+                    .setType(MessageType.SIMPLE_MESSAGE)
+                    .setLife(TimeUnit.SECONDS.toMillis(5));
+
+            systemMessageEventUtil.pushMessage(message.create(), usersId);
         } catch (final LanguageException | DotDataException | DotSecurityException e) {
             Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
         }
@@ -97,10 +108,9 @@ public class ESReadOnlyMonitor {
 
     private void putCurrentIndicesToWriteMode() {
         try {
-            Logger.info(this.getClass(), "putCurrentIndicesToWriteMode");
             Logger.debug(this.getClass(), "Trying to set the current indices to Write mode");
             ESIndexUtil.putCurrentIndicesToWriteMode();
-            sendLargeMessage("es.index.write.allow.message");
+            sendMessage("es.index.write.allow.message");
             ReindexThread.setCurrentIndexReadOnly(false);
 
             this.stop();
@@ -110,8 +120,6 @@ public class ESReadOnlyMonitor {
     }
 
     private void startMonitor() {
-        Logger.info(this.getClass(), "Starting Monitor");
-
         timer = new Timer(true);
         timer.schedule(new MonitorTimerTask(this), 0, TimeUnit.MINUTES.toMillis(1));
     }

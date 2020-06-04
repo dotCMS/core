@@ -1,6 +1,9 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -21,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
@@ -147,13 +151,25 @@ public class ESReadOnlyMonitorTest {
     private void checkLargeMessageSent(IndiciesInfo indiciesInfo, User user) throws InterruptedException {
         Thread.sleep(100);
 
-        verify(systemMessageEventUtilMock).pushLargeMessage(
-                "At least one of the Elasticsearch current indices are in read only mode",
+        final SystemMessageBuilder messageReadonly = new SystemMessageBuilder()
+                .setMessage("At least one of the Elasticsearch current indices are in read only mode")
+                .setSeverity(MessageSeverity.ERROR)
+                .setType(MessageType.SIMPLE_MESSAGE)
+                .setLife(TimeUnit.SECONDS.toMillis(5));
+
+        verify(systemMessageEventUtilMock).pushMessage(
+                messageReadonly.create(),
                 list(user.getUserId())
         );
 
-        verify(systemMessageEventUtilMock).pushLargeMessage(
-                "Elasticsearch current indices are in write mode again",
+        final SystemMessageBuilder messageWriteModeAgain = new SystemMessageBuilder()
+                .setMessage("Elasticsearch current indices are in write mode again")
+                .setSeverity(MessageSeverity.ERROR)
+                .setType(MessageType.SIMPLE_MESSAGE)
+                .setLife(TimeUnit.SECONDS.toMillis(5));
+
+        verify(systemMessageEventUtilMock).pushMessage(
+                messageWriteModeAgain.create(),
                 list(user.getUserId())
         );
     }

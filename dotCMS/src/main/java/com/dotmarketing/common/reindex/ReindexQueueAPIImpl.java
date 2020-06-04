@@ -221,9 +221,11 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     @Override
     @WrapInTransaction
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
-        Logger.info(this.getClass(), "markAsFailed " + idx);
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
-        ESReadOnlyMonitor.getInstance().start(idx, cause);
+
+        new Thread(
+                () -> ESReadOnlyMonitor.getInstance().start(idx, cause)
+        ).start();
     }
 
 }
