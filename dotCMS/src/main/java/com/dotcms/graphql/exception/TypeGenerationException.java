@@ -1,7 +1,12 @@
 package com.dotcms.graphql.exception;
 
 import com.dotmarketing.exception.DotRuntimeException;
+import graphql.schema.GraphQLType;
 
+
+/**
+ * Runtime Exception thrown when a {@link GraphQLType} can't be generated
+ */
 public class TypeGenerationException extends DotRuntimeException {
 
     public TypeGenerationException(String message) {

@@ -54,6 +54,7 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
     /**
      * Given a {@link ContentType} it creates a {@link GraphQLFieldDefinition} that represents a queryable collection for the type
      * The name of the field will follow the convention "{typeVariable}Collection".
+     * <p>
      * E.g Content Type Variable: Product. Resulting field name: ProductCollection
      * @param type the type we want to build a collection for
      * @return the field definition representing the collection
@@ -91,8 +92,9 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
     /**
      * Given a {@link GraphQLType} it creates a {@link GraphQLFieldDefinition} that represents a queryable collection for the type
      * The name of the field will follow the convention "{typeName}Collection".
+     * <p>
      * E.g Type Name: WidgetBaseType. Resulting field name: WidgetBaseTypeCollection
-     *
+     * <p>
      * This method is meant to be used for BaseTypes
      *
      * @param type the type we want to build a collection for
