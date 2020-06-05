@@ -302,7 +302,7 @@ public class CommitAPI {
         if (listeners.isEmpty()) {
             return;
         }
-        Logger.info(this.getClass(), "Running " + syncCommitListeners.get().size() + " SyncListeners");
+        Logger.info(this.getClass(), "SyncListeners running:"  + asyncCommitListeners.get().size());
         listeners.stream().filter(r -> r instanceof FlushCacheListener).forEach(r -> r.run());
         listeners.stream().filter(r -> r instanceof CommitListener).forEach(r -> r.run());
         listeners.stream().filter(r -> r instanceof ReindexListener).forEach(r -> r.run());
@@ -318,12 +318,13 @@ public class CommitAPI {
         if (listeners.isEmpty()) {
             return;
         }
-        Logger.info(this.getClass(), "Async Queue " + asyncCommitListeners.get().size() + " submitted");
+        Logger.info(this.getClass(), "AsyncListeners Queue:" + asyncQueue.size() + "  Submitting:"  + asyncCommitListeners.get().size());
+
         listeners.stream().filter(r -> r instanceof FlushCacheListener).forEach(r -> submitter.submit(r));
         listeners.stream().filter(r -> r instanceof CommitListener).forEach(r -> submitter.submit(r));
         listeners.stream().filter(r -> r instanceof ReindexListener).forEach(r -> submitter.submit(r));
 
-        Logger.info(this.getClass(), "Async Queue " + asyncQueue.size() + " AsyncListeners Pending");
+        
 
     }
 

@@ -75,7 +75,7 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotSecurityException, DotDataException
      */
     @Override
-    @WrapInTransaction
+    @CloseDBIfOpened
     public Host findDefaultHost(User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         Host host;
@@ -92,7 +92,6 @@ public class HostAPIImpl implements HostAPI {
             throw new DotRuntimeException(e.getMessage(), e);
         }
         
-
     }
 
     /**

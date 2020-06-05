@@ -121,7 +121,7 @@ public class LocalTransaction {
         } finally {
 
             if (isLocalTransaction) {
-                DbConnectionFactory.setAutoCommit(true);
+                DbConnectionFactory.startTransactionIfNeeded();
                 if (isNewConnection) {
                     DbConnectionFactory.closeConnection();
                 }

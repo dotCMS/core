@@ -149,7 +149,7 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
             }
             
         };
-        commitAPI.addFlushCacheAsync(runner);
+        commitAPI.addRollBackListener(runner);
 
     }
 
@@ -166,6 +166,7 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
             
         };  
         commitAPI.addFlushCacheAsync(runner);
+        commitAPI.addRollBackListener(runner);
     }
 
     public DotCacheAdministrator getImplementationObject() {

@@ -66,8 +66,13 @@ public class DbConnectionFactory {
     public static void setAutoCommit(final boolean autoCommit) {
 
         try {
-            getConnection().setAutoCommit(autoCommit);
-        } catch (SQLException e) {
+            if(autoCommit) {
+               commit();
+            }else {
+                startTransactionIfNeeded();
+            }
+            
+        } catch (Exception e) {
             Logger.error(DbConnectionFactory.class,
                     "---------- DBConnectionFactory: error setting the autocommit " + DATABASE_DEFAULT_DATASOURCE,
                     e);
@@ -674,8 +679,8 @@ public class DbConnectionFactory {
 
         try {
             if (startTransaction) {
-                CommitAPI.getInstance().startListeners();
                 DbConnectionFactory.getConnection().setAutoCommit(false);
+                CommitAPI.getInstance().startListeners();
             }
         } catch (SQLException e) {
             Logger.error(DbConnectionFactory.class, e.getMessage(), e);
@@ -689,6 +694,7 @@ public class DbConnectionFactory {
         try {
             if (inTransaction()) {
                 DbConnectionFactory.getConnection().commit();
+                DbConnectionFactory.getConnection().setAutoCommit(true);
                 CommitAPI.getInstance().finalizeListeners();
             }
         } catch (Exception e) {

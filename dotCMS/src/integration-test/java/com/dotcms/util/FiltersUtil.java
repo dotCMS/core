@@ -8,6 +8,8 @@ import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransfor
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.CommitAPI.CommitListenerStatus;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -98,7 +100,9 @@ public class FiltersUtil {
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        CommitAPI.getInstance().forceStatus(CommitListenerStatus.ALLOW_SYNC);
         contentletAPI.publish(contentlet, user, false);
+        
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
@@ -115,6 +119,7 @@ public class FiltersUtil {
         vanityURL.setIndexPolicy(IndexPolicy.FORCE);
         vanityURL.setIndexPolicyDependencies(IndexPolicy.FORCE);
         vanityURL.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        CommitAPI.getInstance().forceStatus(CommitListenerStatus.ALLOW_SYNC);
         contentletAPI.unpublish(vanityURL, user, false);
     }
 
@@ -173,7 +178,7 @@ public class FiltersUtil {
                 return base;
             }
         };
-
+        CommitAPI.getInstance().forceStatus(CommitListenerStatus.ALLOW_SYNC);
         return contentTypeAPI.save(new ImplClassContentTypeTransformer(type).from());
     }
 
