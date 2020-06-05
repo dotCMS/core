@@ -11,7 +11,7 @@ import {
 import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 
 import { Observable, Subject } from 'rxjs';
-import { map, take, takeUntil, filter } from 'rxjs/operators';
+import { take, takeUntil, filter } from 'rxjs/operators';
 
 import * as _ from 'lodash';
 import { SelectItem } from 'primeng/primeng';
@@ -61,7 +61,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     canSave = false;
     dateVarOptions: SelectItem[] = [];
     form: FormGroup;
-    nameFieldLabel: Observable<string>;
+    nameFieldLabel: string;
     workflowsSelected$: Observable<string[]>;
     messagesKey: { [key: string]: string } = {};
 
@@ -72,36 +72,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         private fb: FormBuilder,
         private dotWorkflowService: DotWorkflowService,
         private dotLicenseService: DotLicenseService,
-        public dotMessageService: DotMessageService
-    ) {
-        dotMessageService
-            .getMessages([
-                'contenttypes.action.create',
-                'contenttypes.action.delete',
-                'contenttypes.action.edit',
-                'contenttypes.action.form.cancel',
-                'contenttypes.action.save',
-                'contenttypes.action.update',
-                'contenttypes.form.field.detail.page',
-                'contenttypes.form.field.expire.date.field',
-                'contenttypes.form.field.host_folder.label',
-                'contenttypes.form.hint.error.only.default.scheme.available.in.Community',
-                'contenttypes.form.identifier',
-                'contenttypes.form.label.URL.pattern',
-                'contenttypes.form.label.description',
-                'contenttypes.form.label.publish.date.field',
-                'contenttypes.form.label.workflow',
-                'contenttypes.form.label.workflow.actions',
-                'contenttypes.form.message.no.date.fields.defined',
-                'contenttypes.form.name',
-                'contenttypes.hint.URL.map.pattern.hint1',
-                'dot.common.message.field.required'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messagesKey = messages;
-            });
-    }
+        private dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit(): void {
         this.initFormGroup();
@@ -153,14 +125,11 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         }
     }
 
-    private setNameFieldLabel(): Observable<string> {
-        return this.dotMessageService.messageMap$.pipe(
-            map(() => {
-                const type = this.data.baseType.toLowerCase();
-                return `${this.dotMessageService.get(`contenttypes.content.${type}`)}
-            ${this.dotMessageService.get('contenttypes.form.name')} *`;
-            })
-        );
+    private setNameFieldLabel(): string {
+        const type = this.data.baseType.toLowerCase();
+        return `${this.dotMessageService.get(
+            `contenttypes.content.${type}`
+        )} ${this.dotMessageService.get('contenttypes.form.name')} *`;
     }
 
     private bindActionButtonState(): void {

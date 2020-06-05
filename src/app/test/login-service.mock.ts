@@ -6,7 +6,8 @@ export const mockUser: User = {
     firstName: 'Admin',
     lastName: 'Admin',
     loggedInDate: 123456789,
-    userId: '123'
+    userId: '123',
+    languageId: 'en_US'
 };
 
 export const mockLoginFormResponse = {

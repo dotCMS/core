@@ -39,7 +39,7 @@
     [header]="currentFieldType?.label"
 >
     <p-tabView [activeIndex]="dialogActiveTab" (onChange)="handleTabChange($event.index)">
-        <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.overview']">
+        <p-tabPanel [header]=" 'contenttypes.dropzone.tab.overview' | dm">
             <dot-content-type-fields-properties-form
                 [formFieldData]="currentField"
                 (saveField)="saveFieldsHandler($event)"
@@ -49,7 +49,7 @@
             </dot-content-type-fields-properties-form>
         </p-tabPanel>
         <p-tabPanel
-            [header]="i18nMessages['contenttypes.dropzone.tab.variables']"
+            [header]="'contenttypes.dropzone.tab.variables' | dm"
             [disabled]="!currentField?.id"
         >
             <ng-template pTemplate="content">

@@ -9,6 +9,7 @@ import { NotLicensedService } from '@services/not-licensed-service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotcmsConfigService } from 'dotcms-js';
 import { of } from 'rxjs';
+import { DotMessageService } from '@services/dot-messages-service';
 
 describe('AppComponent', () => {
     let fixture: ComponentFixture<AppComponent>;
@@ -16,6 +17,7 @@ describe('AppComponent', () => {
     let dotCmsConfigService: DotcmsConfigService;
     let dotUiColorsService: DotUiColorsService;
     let notLicensedService: NotLicensedService;
+    let dotMessageService: DotMessageService;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
@@ -29,6 +31,7 @@ describe('AppComponent', () => {
         dotCmsConfigService = de.injector.get(DotcmsConfigService);
         dotUiColorsService = de.injector.get(DotUiColorsService);
         notLicensedService = de.injector.get(NotLicensedService);
+        dotMessageService = de.injector.get(DotMessageService);
 
         spyOn(dotCmsConfigService, 'getConfig').and.returnValue(
             of({
@@ -43,12 +46,17 @@ describe('AppComponent', () => {
         spyOn(dotUiColorsService, 'setColors');
 
         spyOn(notLicensedService, 'init');
+        spyOn(dotMessageService, 'init');
 
         fixture.detectChanges();
     });
 
     it('should init license service', () => {
         expect(notLicensedService.init).toHaveBeenCalledTimes(1);
+    });
+
+    it('should init message service', () => {
+        expect(dotMessageService.init).toHaveBeenCalledTimes(1);
     });
 
     it('should have router-outlet', () => {

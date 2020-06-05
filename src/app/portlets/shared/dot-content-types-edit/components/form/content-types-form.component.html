@@ -1,6 +1,6 @@
 <form [formGroup]="form" class="content-type__form" id="content-type-form" novalidate>
     <div class="form__group">
-        <span dotMdInputtext [label]="nameFieldLabel | async">
+        <span dotMdInputtext [label]="nameFieldLabel">
             <input
                 pInputText
                 type="text"
@@ -14,13 +14,13 @@
         </span>
         <dot-field-validation-message
             [message]="
-                dotMessageService.get('dot.common.message.field.required', nameFieldLabel | async)
+                dotMessageService.get('dot.common.message.field.required', nameFieldLabel)
             "
             [field]="form.get('name')"
         ></dot-field-validation-message>
     </div>
     <div class="form__group">
-        <span dotMdInputtext [label]="messagesKey['contenttypes.form.label.description']">
+        <span dotMdInputtext [label]="'contenttypes.form.label.description' | dm">
             <input
                 pInputText
                 type="text"
@@ -33,7 +33,7 @@
     </div>
     <div class="form__group">
         <label for="content-type-form-host" class="form__label">{{
-            messagesKey['contenttypes.form.field.host_folder.label']
+            'contenttypes.form.field.host_folder.label' | dm
         }}</label>
         <dot-site-selector-field
             id="content-type-form-host"
@@ -44,7 +44,7 @@
     </div>
     <div class="form__group">
         <label for="content-type-form-workflow" class="form__label">{{
-            messagesKey['contenttypes.form.label.workflow']
+            'contenttypes.form.label.workflow' | dm
         }}</label>
         <dot-workflows-selector-field
             id="content-type-form-workflow"
@@ -53,7 +53,7 @@
     </div>
     <div class="form__group" formGroupName="systemActionMappings">
         <label for="content-type-form-workflow" class="form__label">{{
-            messagesKey['contenttypes.form.label.workflow.actions']
+            'contenttypes.form.label.workflow.actions' | dm
         }}</label>
         <dot-workflows-actions-selector-field
             formControlName="NEW"
@@ -65,13 +65,13 @@
         class="form__group-hint"
         *ngIf="form.get('workflows').disabled"
         >{{
-            messagesKey['contenttypes.form.hint.error.only.default.scheme.available.in.Community']
+            'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm
         }}</span
     >
     <div class="form__group">
         <div class="ui-g-6">
             <label for="content-type-form-publish-date-field" class="form__label">{{
-                messagesKey['contenttypes.form.label.publish.date.field']
+                'contenttypes.form.label.publish.date.field' | dm
             }}</label>
             <p-dropdown
                 appendTo="body"
@@ -86,7 +86,7 @@
         </div>
         <div class="ui-g-6">
             <label for="content-type-form-expire-date-field" class="form__label">{{
-                messagesKey['contenttypes.form.field.expire.date.field']
+                'contenttypes.form.field.expire.date.field' | dm
             }}</label>
             <p-dropdown
                 appendTo="body"
@@ -101,7 +101,7 @@
         </div>
     </div>
     <span class="form__group-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{
-        messagesKey['contenttypes.form.message.no.date.fields.defined']
+        'contenttypes.form.message.no.date.fields.defined' | dm
     }}</span>
     <div class="form__group" *ngIf="form.get('detailPage')">
         <dot-page-selector
@@ -110,14 +110,14 @@
             [floatingLabel]="true"
             tabindex="7"
             [style]="{ width: '100%' }"
-            label="{{ messagesKey['contenttypes.form.field.detail.page'] }}"
+            [label]="'contenttypes.form.field.detail.page' | dm"
         ></dot-page-selector>
     </div>
     <div class="form__group form__group--helper" *ngIf="form.get('urlMapPattern')">
         <dot-field-helper
             [message]="messagesKey['contenttypes.hint.URL.map.pattern.hint1']"
         ></dot-field-helper>
-        <span dotMdInputtext [label]="messagesKey['contenttypes.form.label.URL.pattern']">
+        <span dotMdInputtext [label]="'contenttypes.form.label.URL.pattern' | dm">
             <input
                 pInputText
                 type="text"

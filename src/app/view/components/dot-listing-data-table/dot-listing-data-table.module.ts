@@ -5,7 +5,6 @@ import { DotcmsConfigService, LoggerService } from 'dotcms-js';
 import { FormsModule } from '@angular/forms';
 import { FormatDateService } from '@services/format-date-service';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
-import { DotMessageService } from '@services/dot-messages-service';
 import { NgModule } from '@angular/core';
 import { DataTableModule, InputTextModule } from 'primeng/primeng';
 import { TableModule } from 'primeng/table';
@@ -32,8 +31,7 @@ import { DotStringFormatPipe } from '@pipes/dot-string-format/dot-string-format.
         DotCrudService,
         FormatDateService,
         DotcmsConfigService,
-        LoggerService,
-        DotMessageService
+        LoggerService
     ]
 })
 export class DotListingDataTableModule {}
