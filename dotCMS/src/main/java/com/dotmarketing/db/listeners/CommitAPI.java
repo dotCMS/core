@@ -26,10 +26,16 @@ public class CommitAPI {
     }
 
     public static CommitAPI getInstance() {
-
         return apiHolder.api;
-
     }
+    
+    private CommitListenerStatus nextStatus = CommitListenerStatus.ALLOW_ASYNC;
+    
+    
+    public void forceStatus(final CommitListenerStatus status) {
+        this.nextStatus=status;
+    }
+    
     /**
      * Status for listeners of thread-local -based transactions. This allows to control as to which
      * listeners are fired on a commit
@@ -73,11 +79,16 @@ public class CommitAPI {
     final int COMMIT_LISTENER_THREADPOOL_SIZE;
     final ExecutorService submitter;
 
+    
+    final LinkedBlockingDeque<Runnable> asyncQueue;
+    
+    
     private CommitAPI() {
         COMMIT_LISTENER_QUEUE_SIZE = Config.getIntProperty("COMMIT_LISTENER_QUEUE_SIZE", 10000);
         COMMIT_LISTENER_THREADPOOL_SIZE = Config.getIntProperty("COMMIT_LISTENER_THREADPOOL_SIZE", 10);
+        asyncQueue =  new LinkedBlockingDeque<Runnable>(COMMIT_LISTENER_QUEUE_SIZE);
         submitter = new ThreadPoolExecutor(1, COMMIT_LISTENER_THREADPOOL_SIZE, 30, TimeUnit.SECONDS,
-                        new LinkedBlockingDeque<Runnable>(COMMIT_LISTENER_QUEUE_SIZE));
+                        asyncQueue );
 
     }
 
@@ -233,7 +244,8 @@ public class CommitAPI {
         rollbackListeners.get().clear();
         syncCommitListeners.get().clear();
         asyncCommitListeners.get().clear();
-        setCommitListenerStatus(CommitListenerStatus.ALLOW_ASYNC);
+        setCommitListenerStatus(nextStatus);
+        nextStatus = CommitListenerStatus.ALLOW_ASYNC;
     }
 
 
@@ -306,12 +318,12 @@ public class CommitAPI {
         if (listeners.isEmpty()) {
             return;
         }
-        Logger.info(this.getClass(), "Running " + asyncCommitListeners.get().size() + " AsyncListeners");
+        Logger.info(this.getClass(), "Async Queue " + asyncCommitListeners.get().size() + " submitted");
         listeners.stream().filter(r -> r instanceof FlushCacheListener).forEach(r -> submitter.submit(r));
         listeners.stream().filter(r -> r instanceof CommitListener).forEach(r -> submitter.submit(r));
         listeners.stream().filter(r -> r instanceof ReindexListener).forEach(r -> submitter.submit(r));
 
-
+        Logger.info(this.getClass(), "Async Queue " + asyncQueue.size() + " AsyncListeners Pending");
 
     }
 

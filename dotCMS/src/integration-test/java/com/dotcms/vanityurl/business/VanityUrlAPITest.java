@@ -17,6 +17,8 @@ import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.db.listeners.CommitAPI;
+import com.dotmarketing.db.listeners.CommitAPI.CommitListenerStatus;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
