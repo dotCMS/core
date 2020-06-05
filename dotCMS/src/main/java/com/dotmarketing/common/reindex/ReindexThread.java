@@ -328,7 +328,7 @@ public class ReindexThread {
         systemUser.getLocale());
   }
 
-    public static void setCurrentIndexReadOnly(boolean currentIndexReadOnly) {
+    public static void setCurrentIndexReadOnly(final boolean currentIndexReadOnly) {
         ReindexThread.currentIndexReadOnly.set(currentIndexReadOnly);
     }
 }

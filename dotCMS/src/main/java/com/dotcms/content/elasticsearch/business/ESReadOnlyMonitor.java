@@ -4,8 +4,6 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -21,33 +19,26 @@ import com.liferay.portal.language.LanguageUtil;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
 /**
- * Run a Monitor If the current indices are in read only mode and try to set them to write mode again.
- * When the set write mode fail it try again after one minute.
+ * This monitor is run when either the Live or Working indices are in read-only mode.  It attempts to set both Live and Working indices to write mode again.
+ * When setting write-mode fails it will retry after one minute.
  */
 public class ESReadOnlyMonitor {
     private final RoleAPI roleAPI;
     private final SystemMessageEventUtil systemMessageEventUtil;
 
-    private AtomicBoolean started = new AtomicBoolean();
-    private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
-
+    private final AtomicBoolean started = new AtomicBoolean();
     private Timer timer;
 
     private ESReadOnlyMonitor(final SystemMessageEventUtil systemMessageEventUtil, final RoleAPI roleAPI) {
+        super();
         this.systemMessageEventUtil = systemMessageEventUtil;
         this.roleAPI = roleAPI;
         started.set(false);
-
-        scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
-        scheduledThreadPoolExecutor.setContinueExistingPeriodicTasksAfterShutdownPolicy(true);
     }
 
     private ESReadOnlyMonitor() {
@@ -74,9 +65,9 @@ public class ESReadOnlyMonitor {
 
     public void start(final ReindexEntry reindexEntry, final String cause){
         if (started.compareAndSet(false, true)) {
-            Logger.error(this.getClass(), Thread.currentThread().getName() + " - Reindex failed for :" + reindexEntry + " because " + cause);
+            Logger.error(this.getClass(), "Reindex failed for :" + reindexEntry + " because " + cause);
 
-            if (ESIndexUtil.isAnyCurrentIndicesReadOnly()) {
+            if (ESIndexUtil.isEitherLiveOrWokingIndicesReadOnly()) {
                 ReindexThread.setCurrentIndexReadOnly(true);
                 sendMessage("es.index.read.only.message");
                 startMonitor();
@@ -108,18 +99,18 @@ public class ESReadOnlyMonitor {
 
     private void putCurrentIndicesToWriteMode() {
         try {
-            Logger.debug(this.getClass(), "Trying to set the current indices to Write mode");
-            ESIndexUtil.putCurrentIndicesToWriteMode();
+            Logger.debug(this.getClass(), () -> "Trying to set the current indices to Write mode");
+            ESIndexUtil.setLiveAndWorkingIndicesToWriteMode();
             sendMessage("es.index.write.allow.message");
             ReindexThread.setCurrentIndexReadOnly(false);
 
             this.stop();
-        } catch (final ESResponseException e) {
+        } catch (final ElasticsearchResponseException e) {
             Logger.info(ESReadOnlyMonitor.class, ()  -> e.getMessage());
         }
     }
 
-    private void startMonitor() {
+    private synchronized void startMonitor() {
         timer = new Timer(true);
         timer.schedule(new MonitorTimerTask(this), 0, TimeUnit.MINUTES.toMillis(1));
     }

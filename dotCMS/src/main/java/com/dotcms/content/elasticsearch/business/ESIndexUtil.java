@@ -5,7 +5,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -13,36 +13,56 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
 
-import java.io.IOException;
 import java.util.Arrays;
 
-public class ESIndexUtil {
+/**
+ * Provide util methods to set Elasticsearch index properties
+ */
+public final class ESIndexUtil {
     private final static String READ_ONLY_ALLOW_DELETE_SETTING = "index.blocks.read_only_allow_delete";
     private final static String READ_ONLY_SETTING = "index.blocks.read_only";
 
     private ESIndexUtil(){}
 
-    public static  boolean isReadOnly(final String... indexNames) {
-        final GetSettingsRequest request = new GetSettingsRequest().indices(indexNames);
+    /**
+     * Return true if any the the indices are read only, otherwise return false
+     * @param indicesNames names of indices to check
+     * @return
+     */
+    public static  boolean isAnyReadOnly(final String... indicesNames) {
+        final GetSettingsRequest request = new GetSettingsRequest().indices(indicesNames);
 
-        Logger.info(ESIndexUtil.class, Thread.currentThread().getName() + "- Checking if current index are read only");
+        Logger.debug(ESIndexUtil.class, () -> "Checking if current indices are read only");
 
-        final GetSettingsResponse response = Sneaky.sneak(() ->
-                RestHighLevelClientProvider.getInstance().getClient().indices()
-                        .getSettings(request, RequestOptions.DEFAULT));
+        final GetSettingsResponse response = Try.of(() ->
+                RestHighLevelClientProvider
+                        .getInstance()
+                        .getClient()
+                        .indices()
+                        .getSettings(request, RequestOptions.DEFAULT))
+                .getOrElseThrow(DotRuntimeException::new);
 
-        Logger.info(ESIndexUtil.class, Thread.currentThread().getName() + "- RESPONSE Checking if current index are read only");
+        Logger.debug(ESIndexUtil.class, "Response received on checking if any of the provided indices is read only");
 
-        return Arrays.stream(indexNames).anyMatch((indexName) -> {
+        return Arrays.stream(indicesNames).anyMatch((indexName) -> {
             final String readOnlyAllowDelete = response.getSetting(indexName, READ_ONLY_ALLOW_DELETE_SETTING);
             final String readOnly = response.getSetting(indexName, READ_ONLY_SETTING);
 
-            return Boolean.parseBoolean(readOnlyAllowDelete) || Boolean.parseBoolean(readOnly);
+            final boolean isReadOnly = Boolean.parseBoolean(readOnlyAllowDelete) || Boolean.parseBoolean(readOnly);
+            Logger.debug(ESIndexUtil.class, String.format("Index %s read only: %s", indexName, isReadOnly));
+
+            return isReadOnly;
         });
     }
 
-    public static AcknowledgedResponse putReadOnlyToFalse(final String... indexName) {
-        final UpdateSettingsRequest request = new UpdateSettingsRequest(indexName);
+    /**
+     * Send a request to Elasticsearch to put the indices in read-only = false
+     *
+     * @param indicesNames names of indices to change read_only property
+     * @return
+     */
+    public static AcknowledgedResponse putReadOnlyToFalse(final String... indicesNames) {
+        final UpdateSettingsRequest request = new UpdateSettingsRequest(indicesNames);
 
         final Settings.Builder settingBuilder = Settings.builder()
                 .put(READ_ONLY_ALLOW_DELETE_SETTING, false)
@@ -50,23 +70,34 @@ public class ESIndexUtil {
 
         request.settings(settingBuilder);
 
-        return Sneaky.sneak(() ->
-                RestHighLevelClientProvider.getInstance().getClient().indices()
+        return Try.of(() ->
+                RestHighLevelClientProvider
+                        .getInstance()
+                        .getClient()
+                        .indices()
                         .putSettings(request, RequestOptions.DEFAULT)
-        );
+        ).getOrElseThrow(DotRuntimeException::new);
     }
 
-    public static boolean isAnyCurrentIndicesReadOnly() {
+    /**
+     * Return true if the currnet LIVE or WORKING Index is read only, otherwise return false
+     * @return
+     */
+    public static boolean isEitherLiveOrWokingIndicesReadOnly() {
         final IndiciesInfo indiciesInfo = loadIndicesInfo();
-        return ESIndexUtil.isReadOnly(indiciesInfo.getLive(), indiciesInfo.getWorking());
+        return ESIndexUtil.isAnyReadOnly(indiciesInfo.getLive(), indiciesInfo.getWorking());
     }
 
-    public static void putCurrentIndicesToWriteMode() throws ESResponseException {
+    /***
+     * Set to read only to false to the current LIVE and WORKING indices
+     * @throws ElasticsearchResponseException
+     */
+    public static void setLiveAndWorkingIndicesToWriteMode() throws ElasticsearchResponseException {
         final IndiciesInfo indiciesInfo = loadIndicesInfo();
         final AcknowledgedResponse response = ESIndexUtil.putReadOnlyToFalse(indiciesInfo.getLive(), indiciesInfo.getWorking());
 
         if (!response.isAcknowledged()) {
-            throw new ESResponseException(response);
+            throw new ElasticsearchResponseException(response);
         }
     }
 

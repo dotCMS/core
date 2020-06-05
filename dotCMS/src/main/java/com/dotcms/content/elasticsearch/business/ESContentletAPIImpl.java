@@ -4380,11 +4380,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (!isCheckInSafe(contentRelationships, getEsIndexAPI())){
-            throw new DotContentletStateException(
-                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
-        }
-
         if(cats == null) {
             cats = getExistingContentCategories(contentlet);
         }

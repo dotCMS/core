@@ -2,10 +2,13 @@ package com.dotcms.content.elasticsearch.business;
 
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 
-public class ESResponseException extends Exception {
+/**
+ * Throw when a Elasticsearch request fail
+ */
+public class ElasticsearchResponseException extends Exception {
     private final AcknowledgedResponse response;
 
-    public ESResponseException(final AcknowledgedResponse response) {
+    public ElasticsearchResponseException(final AcknowledgedResponse response) {
         super(response.toString());
         this.response  = response;
     }

@@ -71,10 +71,10 @@ public class SystemMessage implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SystemMessage that = (SystemMessage) o;
+    public boolean equals(final Object another) {
+        if (this == another) return true;
+        if (another == null || getClass() != another.getClass()) return false;
+        final SystemMessage that = (SystemMessage) another;
         return life == that.life &&
                 Objects.equals(message, that.message) &&
                 Arrays.equals(portletIdList, that.portletIdList) &&

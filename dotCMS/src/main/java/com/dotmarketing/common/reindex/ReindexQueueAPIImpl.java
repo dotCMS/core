@@ -10,6 +10,7 @@ import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
@@ -227,9 +228,9 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
 
-        new Thread(
-                () -> esReadOnlyMonitor.start(idx, cause)
-        ).start();
+        DotConcurrentFactory.getInstance()
+                .getSubmitter()
+                .submit(() -> esReadOnlyMonitor.start(idx, cause));
     }
 
 }

@@ -12,7 +12,6 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -23,7 +22,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -64,14 +62,14 @@ public class ESReadOnlyMonitorTest {
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
-        putReadOnly(indiciesInfo.getWorking(), false);
-        putReadOnly(indiciesInfo.getLive(), false);
+        setReadOnly(indiciesInfo.getWorking(), false);
+        setReadOnly(indiciesInfo.getLive(), false);
 
         esReadOnlyMonitor.start(reindexEntry, cause);
 
         verify(systemMessageEventUtilMock, never()).pushLargeMessage(any(), any());
 
-        assertEquals(false, ESIndexUtil.isReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
+        assertEquals(false, ESIndexUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
     }
 
     /**
@@ -97,17 +95,17 @@ public class ESReadOnlyMonitorTest {
         when(roleAPIMock.findUsersForRole(adminRole)).thenReturn(list(user));
 
         try {
-            putReadOnly(indiciesInfo.getWorking(), true);
-            putReadOnly(indiciesInfo.getLive(), false);
+            setReadOnly(indiciesInfo.getWorking(), true);
+            setReadOnly(indiciesInfo.getLive(), false);
 
             esReadOnlyMonitor.start(reindexEntry, cause);
 
             Thread.sleep(100);
 
-            checkLargeMessageSent(indiciesInfo, user);
-            assertEquals(false, ESIndexUtil.isReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
+            checkLargeMessageSent(user);
+            assertEquals(false, ESIndexUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
         } finally {
-            putReadOnly(indiciesInfo.getWorking(), false);
+            setReadOnly(indiciesInfo.getWorking(), false);
         }
     }
 
@@ -134,23 +132,21 @@ public class ESReadOnlyMonitorTest {
         when(roleAPIMock.findUsersForRole(adminRole)).thenReturn(list(user));
 
         try {
-            putReadOnly(indiciesInfo.getWorking(), true);
-            putReadOnly(indiciesInfo.getLive(), false);
+            setReadOnly(indiciesInfo.getWorking(), true);
+            setReadOnly(indiciesInfo.getLive(), false);
 
             esReadOnlyMonitor.start(reindexEntry, cause);
-            checkLargeMessageSent(indiciesInfo, user);
+            checkLargeMessageSent(user);
 
             esReadOnlyMonitor.start(reindexEntry, cause);
-            checkLargeMessageSent(indiciesInfo, user);
-            assertEquals(false, ESIndexUtil.isReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
+            checkLargeMessageSent(user);
+            assertEquals(false, ESIndexUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
         } finally {
-            putReadOnly(indiciesInfo.getWorking(), false);
+            setReadOnly(indiciesInfo.getWorking(), false);
         }
     }
 
-    private void checkLargeMessageSent(IndiciesInfo indiciesInfo, User user) throws InterruptedException {
-        Thread.sleep(100);
-
+    private void checkLargeMessageSent(final User user) {
         final SystemMessageBuilder messageReadonly = new SystemMessageBuilder()
                 .setMessage("At least one of the Elasticsearch current indices are in read only mode")
                 .setSeverity(MessageSeverity.ERROR)
@@ -174,7 +170,7 @@ public class ESReadOnlyMonitorTest {
         );
     }
 
-    private static AcknowledgedResponse putReadOnly(final String indexName, final boolean value) {
+    private static AcknowledgedResponse setReadOnly(final String indexName, final boolean value) {
         final UpdateSettingsRequest request = new UpdateSettingsRequest(indexName);
 
         final Settings.Builder settingBuilder = Settings.builder()

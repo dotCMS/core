@@ -133,9 +133,8 @@ public class ReindexQueueAPITest {
 
     /**
      * Method to Test: {@link ReindexQueueAPIImpl#markAsFailed(ReindexEntry, String)}
-     * When: Try to mark a reindex as fail and the
-     * Should: Should call the {@link ReindexQueueFactory#markAsFailed(ReindexEntry, String)}
-     *         and
+     * When: Try to mark a reindex as fail and a {@link DotDataException} in thrown
+     * Should: Should not call the {@link ESReadOnlyMonitor#start(ReindexEntry, String)} )} method
      *
      * @throws DotDataException
      */

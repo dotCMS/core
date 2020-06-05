@@ -3,7 +3,6 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -15,6 +14,8 @@ import com.dotcms.util.IntegrationTestInitService;
 import org.junit.Test;
 
 import static org.jgroups.util.Util.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ESIndexUtilTest {
 
@@ -25,29 +26,29 @@ public class ESIndexUtilTest {
     }
 
     /**
-     * Method to Test: {@link ESIndexUtil#isReadOnly(String...)}
+     * Method to Test: {@link ESIndexUtil#isAnyReadOnly(String...)}
      * When: The Index is not read only
      * Should:return false
      *
      * @throws DotDataException
      */
     @Test
-    public void shouldReturnFalseIfTheCurrentIndicesAreReadOnly() throws DotDataException {
+    public void shouldReturnFalseIfTheCurrentIndicesAreNotReadOnly() throws DotDataException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         try {
             putReadOnly(indiciesInfo.getWorking(), false);
 
-            final boolean readOnly = ESIndexUtil.isReadOnly(indiciesInfo.getWorking());
+            final boolean readOnly = ESIndexUtil.isAnyReadOnly(indiciesInfo.getWorking());
 
-            assertEquals(false, readOnly);
+            assertFalse(readOnly);
         } finally {
             putReadOnly(indiciesInfo.getWorking(), false);
         }
     }
 
     /**
-     * Method to Test: {@link ESIndexUtil#isReadOnly(String...)}
+     * Method to Test: {@link ESIndexUtil#isAnyReadOnly(String...)}
      * When: The Index is read only
      * Should:return true
      *
@@ -60,44 +61,44 @@ public class ESIndexUtilTest {
         try {
             putReadOnly(indiciesInfo.getWorking(), true);
 
-            final boolean readOnly = ESIndexUtil.isReadOnly(indiciesInfo.getWorking());
+            final boolean readOnly = ESIndexUtil.isAnyReadOnly(indiciesInfo.getWorking());
 
-            assertEquals(true, readOnly);
+            assertTrue(readOnly);
         } finally {
             putReadOnly(indiciesInfo.getWorking(), false);
         }
     }
 
     /**
-     * Method to Test: {@link ESIndexUtil#isReadOnly(String...)}
+     * Method to Test: {@link ESIndexUtil#isAnyReadOnly(String...)}
      * When: The Index not exists
      * Should: throw a {@link org.elasticsearch.ElasticsearchStatusException}
      *
      * @throws DotDataException
      */
     @Test (expected = ElasticsearchStatusException.class)
-    public void whenTheIndexNotExistsShouldThrowException() {
-        final boolean readOnly = ESIndexUtil.isReadOnly("not_Exists");
-        assertEquals(true, readOnly);
+    public void whenTheIndexDoesNotExistsShouldThrowException() {
+        ESIndexUtil.isAnyReadOnly("not_Exists");
     }
 
     /**
      * Method to Test: {@link ESIndexUtil#putReadOnlyToFalse(String...)}
      * When: The index exists
-     * Should: should set it to read only
+     * Should: should set it to not read only
      *
      * @throws DotDataException
      */
     @Test
-    public void shouldPutReadonlyInTrue() throws DotDataException {
+    public void shouldPutReadonlyInFalse() throws DotDataException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         try {
+            putReadOnly(indiciesInfo.getWorking(), true);
             ESIndexUtil.putReadOnlyToFalse(indiciesInfo.getWorking());
 
-            final boolean readOnly = ESIndexUtil.isReadOnly(indiciesInfo.getWorking());
+            final boolean readOnly = ESIndexUtil.isAnyReadOnly(indiciesInfo.getWorking());
 
-            assertEquals(true, !readOnly);
+            assertFalse(readOnly);
         } finally {
             putReadOnly(indiciesInfo.getWorking(), false);
         }
@@ -115,8 +116,8 @@ public class ESIndexUtilTest {
     }
 
     /**
-     * Method to Test: {@link ESIndexUtil#isAnyCurrentIndicesReadOnly()}
-     * When: If at least one of the current working index if read only
+     * Method to Test: {@link ESIndexUtil#isEitherLiveOrWokingIndicesReadOnly()}
+     * When: If at least one of the current working index is read only
      * Should: return true
      *
      * @throws DotDataException
@@ -129,16 +130,16 @@ public class ESIndexUtilTest {
             putReadOnly(indiciesInfo.getLive(), false);
             putReadOnly(indiciesInfo.getWorking(), true);
 
-            final boolean anyCurrentIndicesReadOnly = ESIndexUtil.isAnyCurrentIndicesReadOnly();
-            assertEquals(true, anyCurrentIndicesReadOnly);
+            final boolean anyCurrentIndicesReadOnly = ESIndexUtil.isEitherLiveOrWokingIndicesReadOnly();
+            assertTrue(anyCurrentIndicesReadOnly);
         } finally {
             putReadOnly(indiciesInfo.getWorking(), false);
         }
     }
 
     /**
-     * Method to Test: {@link ESIndexUtil#isAnyCurrentIndicesReadOnly()}
-     * When: If at least one of the current live index if read only
+     * Method to Test: {@link ESIndexUtil#isEitherLiveOrWokingIndicesReadOnly()}
+     * When: If at least one of the current live index is read only
      * Should: return true
      *
      * @throws DotDataException
@@ -151,32 +152,32 @@ public class ESIndexUtilTest {
             putReadOnly(indiciesInfo.getLive(), true);
             putReadOnly(indiciesInfo.getWorking(), false);
 
-            final boolean anyCurrentIndicesReadOnly = ESIndexUtil.isAnyCurrentIndicesReadOnly();
-            assertEquals(true, anyCurrentIndicesReadOnly);
+            final boolean anyCurrentIndicesReadOnly = ESIndexUtil.isEitherLiveOrWokingIndicesReadOnly();
+            assertTrue(anyCurrentIndicesReadOnly);
         } finally {
             putReadOnly(indiciesInfo.getLive(), false);
         }
     }
 
     /**
-     * Method to Test: {@link ESIndexUtil#putCurrentIndicesToWriteMode()}
+     * Method to Test: {@link ESIndexUtil#setLiveAndWorkingIndicesToWriteMode()}
      * When: If at least one of the current live index if read only
      * Should: return true
      *
-     * @throws ESResponseException
+     * @throws ElasticsearchResponseException
      * @throws DotDataException
      */
     @Test()
-    public void shouldSetWorkingAndLiveIndexToReadOnly() throws DotDataException, ESResponseException {
+    public void shouldSetWorkingAndLiveIndexToReadOnly() throws DotDataException, ElasticsearchResponseException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         try {
             putReadOnly(indiciesInfo.getLive(), false);
             putReadOnly(indiciesInfo.getWorking(), false);
 
-            ESIndexUtil.putCurrentIndicesToWriteMode();
-            assertEquals(false, ESIndexUtil.isReadOnly(indiciesInfo.getLive()));
-            assertEquals(false, ESIndexUtil.isReadOnly(indiciesInfo.getWorking()));
+            ESIndexUtil.setLiveAndWorkingIndicesToWriteMode();
+            assertFalse(ESIndexUtil.isAnyReadOnly(indiciesInfo.getLive()));
+            assertFalse( ESIndexUtil.isAnyReadOnly(indiciesInfo.getWorking()));
         } finally {
             putReadOnly(indiciesInfo.getLive(), false);
         }
