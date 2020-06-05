@@ -1314,15 +1314,15 @@
 					"response": []
 				},
 				{
-					"name": "getAllMessages BadRequest with Language And Country Code Not Exist",
+					"name": "getAllMessages with Locale Not Exist Return Default Locale Messages",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "6915d5bc-a516-4db6-ac7d-cfc9e3051cd7",
 								"exec": [
-									"pm.test(\"Status code should be 400\", function () {",
-									"    pm.response.to.have.status(400);",
+									"pm.test(\"Status code should be 200, if locale does not exists return default locale\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1336,7 +1336,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v2/languages/tt_tt/i18n",
+							"raw": "{{serverURL}}/api/v2/languages/to_to/i18n",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1344,7 +1344,7 @@
 								"api",
 								"v2",
 								"languages",
-								"tt_tt",
+								"to_to",
 								"i18n"
 							]
 						}
