@@ -25,7 +25,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -67,7 +66,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
@@ -818,9 +816,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 .thenReturn(null);
 
         RelationshipFieldGenerator relationshipFieldGenerator =
-                new RelationshipFieldGenerator();
-
-        relationshipFieldGenerator.setRelationshipAPI(relationshipAPI);
+                new RelationshipFieldGenerator(relationshipAPI);
 
         // lets create a mocked FieldGeneratorFactory
         GraphQLFieldGeneratorFactory fieldGeneratorFactory =

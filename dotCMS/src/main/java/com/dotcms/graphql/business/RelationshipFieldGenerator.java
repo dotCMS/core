@@ -28,11 +28,15 @@ import graphql.schema.GraphQLTypeReference;
  */
 class RelationshipFieldGenerator implements GraphQLFieldGenerator {
 
-    private RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+    private RelationshipAPI relationshipAPI;
 
     @VisibleForTesting
-    protected void setRelationshipAPI(RelationshipAPI relationshipAPI) {
+    public RelationshipFieldGenerator(RelationshipAPI relationshipAPI) {
         this.relationshipAPI = relationshipAPI;
+    }
+
+    public RelationshipFieldGenerator() {
+        this(APILocator.getRelationshipAPI());
     }
 
     @Override
@@ -114,7 +118,7 @@ class RelationshipFieldGenerator implements GraphQLFieldGenerator {
         try {
             type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(relatedContentTypeId);
         } catch (DotSecurityException | DotDataException e) {
-            throw new FieldGenerationException("Unable to find content type with id:" + relatedContentTypeId);
+            throw new FieldGenerationException("Unable to find content type with id:" + relatedContentTypeId, e);
         }
 
         return type;

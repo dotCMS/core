@@ -20,7 +20,6 @@ import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
-import com.dotmarketing.business.APILocator;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;

@@ -33,7 +33,7 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
     @Override
     public Collection<GraphQLFieldDefinition> getFields() throws DotDataException {
         // Each ContentType as query'able collection field
-        List<ContentType> contentTypeList = APILocator.getContentTypeAPI(APILocator.systemUser())
+        final List<ContentType> contentTypeList = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .findAllRespectingLicense();
 
         List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
@@ -80,8 +80,8 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
                             .name("sortBy")
                             .type(GraphQLString)
                             .build())
-                    .type(list((ContentAPIGraphQLTypesProvider.
-                            INSTANCE.getCachedTypesAsMap().get(type.variable()))))
+                    .type(list(ContentAPIGraphQLTypesProvider.
+                            INSTANCE.getCachedTypesAsMap().get(type.variable())))
                     .dataFetcher(new ContentletDataFetcher()).build();
         } catch (DotDataException e) {
             Logger.error("Unable to generate Collection for type: " + type.variable(), e);
@@ -125,7 +125,7 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
                         .name("sortBy")
                         .type(GraphQLString)
                         .build())
-                .type(list((type)))
+                .type(list(type))
                 .description(BASE_TYPE_SUFFIX)
                 .dataFetcher(new ContentletDataFetcher()).build();
     }

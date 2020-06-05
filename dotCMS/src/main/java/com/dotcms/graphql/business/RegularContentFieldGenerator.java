@@ -12,7 +12,7 @@ import graphql.schema.GraphQLFieldDefinition;
  */
 class RegularContentFieldGenerator implements GraphQLFieldGenerator {
 
-    private ContentAPIGraphQLTypesProvider typesProvider =
+    private final ContentAPIGraphQLTypesProvider typesProvider =
             ContentAPIGraphQLTypesProvider.INSTANCE;
 
     @Override
