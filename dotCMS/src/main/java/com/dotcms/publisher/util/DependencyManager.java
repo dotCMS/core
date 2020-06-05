@@ -326,7 +326,7 @@ public class DependencyManager {
 			List<String> contentIds = PublisherUtil.getContentIds( config.getLuceneQueries());
 			contentIds.removeIf(c->publisherFilter.doesExcludeQueryContainsContentletId(c));
 			for(String id : contentIds){
-	            Identifier ident = APILocator.getIdentifierAPI().find(id);
+	            final Identifier ident = APILocator.getIdentifierAPI().find(id);
 	            final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 				for(Contentlet con : contentlets){
 					contents.add(con.getIdentifier(), con.getModDate());
@@ -762,7 +762,7 @@ public class DependencyManager {
 					liveTemplateLP = APILocator.getTemplateAPI()
 							.findLiveTemplate(livePage.getTemplateId(), user, false);
 					// Templates dependencies
-					if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && liveTemplateWP!=null ) {
+					if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && liveTemplateLP!=null ) {
 						templates.addOrClean(livePage.getTemplateId(), livePage.getModDate());
 						templatesSet.add(livePage.getTemplateId());
 					}
@@ -816,14 +816,12 @@ public class DependencyManager {
 
 						for (final MultiTree multiTree : treeList) {
 							final String contentIdentifier = multiTree.getChild();
-							Identifier id = APILocator.getIdentifierAPI().find(contentIdentifier);
+							final Identifier id = APILocator.getIdentifierAPI().find(contentIdentifier);
 							final List<Contentlet> contentList = APILocator.getContentletAPI().findAllVersions(id, false, user, false);
 
-							contentList.removeIf(c->publisherFilter.doesExcludeQueryContainsContentletId(c.getIdentifier()));
-							
-							
-							for (final Contentlet contentletI : contentList) {
+							contentList.removeIf(c->publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentIdentifier));
 
+							for (final Contentlet contentletI : contentList) {
 								contents.addOrClean(contentletI.getIdentifier(),
 										contentletI.getModDate());
 								contentsSet.add(contentletI.getIdentifier());
@@ -1340,7 +1338,7 @@ public class DependencyManager {
 			Set<Contentlet> allContents = new HashSet<Contentlet>(); // we will put here those already added and the ones from lucene queries
 
 			for(String id : cons){
-                Identifier ident = APILocator.getIdentifierAPI().find(id);
+                final Identifier ident = APILocator.getIdentifierAPI().find(id);
                 final List<Contentlet> contentList = APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 				allContents.addAll(contentList);
 			}
