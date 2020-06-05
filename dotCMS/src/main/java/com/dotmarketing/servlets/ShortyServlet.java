@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -35,12 +36,32 @@ public class ShortyServlet extends HttpServlet {
 
   final static String NOT_FOUND = "fileAsset";
 
-  
+
   public final static String SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
-  
-  
+
+  private static final String JPEG_DEFAULT_COMPRESSION_QUALITY = "jpeg.compression.quality";
+  private static int jpegDefaultCompression = 85;
+
+  public void init(ServletConfig config)
+          throws ServletException {
+
+    super.init(config);
+    // Evaluate the default compression quality configured
+    String jpegDefaultCompressionStr = config.getInitParameter(JPEG_DEFAULT_COMPRESSION_QUALITY);
+
+    if (jpegDefaultCompressionStr != null) {
+      try {
+        jpegDefaultCompression = Integer.parseInt(jpegDefaultCompressionStr);
+        Logger.info(this, "Default JPEG compression set to " + Integer.toString(jpegDefaultCompression) + " from servlet init-param");
+      } catch (NumberFormatException nfe) {
+        Logger.info(this, "Default JPEG compression set to " + Integer.toString(jpegDefaultCompression) + " due to misconfiguration in the init-param");
+      }
+    }
+    Logger.info(this, "Default JPEG compression set to " + Integer.toString(jpegDefaultCompression));
+  }
+
   protected void service(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException {
+          throws ServletException, IOException {
     try {
       _serve(request, response);
     } catch (Throwable t) {
@@ -67,13 +88,13 @@ public class ShortyServlet extends HttpServlet {
     // Checking if host is active
     if (!ADMIN_MODE && !APILocator.getVersionableAPI().hasLiveVersion(host)) {
       response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-          LanguageUtil.get("server-unavailable-error-message"));
+              LanguageUtil.get("server-unavailable-error-message"));
       return;
     }
 
     String uri = request.getRequestURI();
-    
-    
+
+
     StringTokenizer tokens = new StringTokenizer(uri, "/");
     if (tokens.countTokens() < 2) {
       response.sendError(404);
@@ -101,10 +122,10 @@ public class ShortyServlet extends HttpServlet {
     boolean jpeg = uri.contains("jpeg");
     boolean jpegp = jpeg && uri.contains("jpegp");
     boolean isImage = jpeg || w+h>0;
-    
-    
-    
-    
+
+
+
+
 
 
     Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(id);
@@ -126,7 +147,7 @@ public class ShortyServlet extends HttpServlet {
 
     if (shorty.type == ShortType.IDENTIFIER) {
       Contentlet con = APILocator.getContentletAPI().findContentletByIdentifier(shorty.longId, false, -1,
-          APILocator.getUserAPI().getSystemUser(), false);
+              APILocator.getUserAPI().getSystemUser(), false);
 
       String field = resolveField(con, fieldName);
 
@@ -134,7 +155,7 @@ public class ShortyServlet extends HttpServlet {
 
     } else {
       Contentlet con =
-          APILocator.getContentletAPI().find(shorty.longId, APILocator.getUserAPI().getSystemUser(), false);
+              APILocator.getContentletAPI().find(shorty.longId, APILocator.getUserAPI().getSystemUser(), false);
 
       String field = resolveField(con, fieldName);
 
@@ -144,16 +165,16 @@ public class ShortyServlet extends HttpServlet {
     if(isImage){
       path += "/filter/";
       path += (w+h > 0) ? "Resize," : "";
-      path += (jpeg) ? "Jpeg/jpeg_q/75" : "";
+      path += (jpeg) ? "Jpeg/jpeg_q/" + jpegDefaultCompression : "";
       path += (jpeg && jpegp) ? "/jpeg_p/1" : "";
       path += (w > 0) ? "/resize_w/" + w : "";
       path += (h > 0) ? "/resize_h/" + h : "";
     }
 
     request.setAttribute(SHORTY_SERVLET_FORWARD_PATH, path);
-    
-    
-    
+
+
+
     RequestDispatcher dispatch = request.getRequestDispatcher(path);
     if(dispatch!=null){
       dispatch.forward(request, response);
