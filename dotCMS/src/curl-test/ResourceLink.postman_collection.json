@@ -240,7 +240,66 @@
 			"response": []
 		},
 		{
-			"name": "Get Resource Link Copy",
+			"name": "Get Resource Link not found field",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "3c77845b-e3c8-4965-a6fa-cb9ae6a90545",
+						"exec": [
+							"",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/content/resourcelink/field/xxxx?identifier={{identifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"content",
+						"resourcelink",
+						"field",
+						"xxxx"
+					],
+					"query": [
+						{
+							"key": "identifier",
+							"value": "{{identifier}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Resource No Results",
 			"event": [
 				{
 					"listen": "test",
@@ -252,18 +311,9 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"",
-							"",
 							"pm.test(\"Includes idPath\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"idPath\");",
-							"});",
-							"",
-							"pm.test(\"Includes version path\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"versionPath\");",
-							"});",
-							"",
-							"pm.test(\"Includes img mime\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"image/jpeg\");",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.eql(\"\");",
 							"});"
 						],
 						"type": "text/javascript"
@@ -289,7 +339,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/content/resourcelink?identifier={{identifier}}",
+					"raw": "{{serverURL}}/api/v1/content/resourcelink?identifier=xxx",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -302,7 +352,7 @@
 					"query": [
 						{
 							"key": "identifier",
-							"value": "{{identifier}}"
+							"value": "xxx"
 						}
 					]
 				}
@@ -312,15 +362,15 @@
 	],
 	"variable": [
 		{
-			"id": "c392dea7-97ac-4ed6-9c73-afa97d4c92b6",
+			"id": "5c15c472-cae5-49ee-9930-d1ace4853f35",
 			"key": "temporalFileId",
-			"value": "temp_d6cf91a711",
+			"value": "temp_d05236d9bc",
 			"type": "string"
 		},
 		{
-			"id": "12422856-2e79-4633-ac7a-4e377b0f1cdd",
+			"id": "03064638-73b3-41db-ba33-b79bd1f3f66a",
 			"key": "identifier",
-			"value": "d003407d-b548-4fe5-b513-b83449fbccdc",
+			"value": "9590455a-c74a-4573-b142-e4f20b547e97",
 			"type": "string"
 		}
 	],
