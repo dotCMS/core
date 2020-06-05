@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 
+import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -32,7 +33,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -44,6 +44,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang.LocaleUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -207,14 +208,19 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("language") final String language){
 
-        final long languageId = "default".equalsIgnoreCase(language) ? APILocator.getLanguageAPI().getDefaultLanguage().getId() : LanguageUtil.getLanguageId(language);
-        final Language language1 = APILocator.getLanguageAPI().getLanguage(languageId);
-        if(!UtilMethods.isSet(language1)){
-            final String message = "Language with Id or Code: "+ language + " does not exist";
-            Logger.error(this,message);
-            throw new IllegalArgumentException(message);
+        Locale locale;
+        if(!org.apache.commons.lang.StringUtils.isNumeric(language)){
+            locale = "default".equalsIgnoreCase(language) ? APILocator.getLanguageAPI().getDefaultLanguage().asLocale() : ConversionUtils.toLocale(language);
+        } else {
+            final Language languageUsingId = APILocator.getLanguageAPI().getLanguage(language);
+            if(!UtilMethods.isSet(languageUsingId)){
+                final String message = "Language with Id: "+ language + " does not exist";
+                Logger.error(this,message);
+                throw new IllegalArgumentException(message);
+            }
+            locale = languageUsingId.asLocale();
         }
-        final Locale locale = language1.asLocale();
+
         final Map allMessagesMap = LanguageUtil.getAllMessagesByLocale(locale);
 
         return Response.ok(new ResponseEntityView(allMessagesMap)).build();
