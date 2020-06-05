@@ -51,8 +51,6 @@ import com.dotmarketing.util.WebKeys;
 public class HibernateUtil {
 
 
-    private static final String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
-
 	private static Dialect dialect;
 	private static SessionFactory sessionFactory;
 
@@ -816,7 +814,7 @@ public class HibernateUtil {
 					session.connection().commit();
 					session.connection().setAutoCommit(true);
 					
-					CommitAPI.getInstance().finalize();
+					CommitAPI.getInstance().finalizeListeners();
 
 					
 				}
@@ -842,8 +840,8 @@ public class HibernateUtil {
 		 * Transactions are now used by default
 		 *
 		 */
-		    CommitAPI.getInstance().startTransaction();
 			getSession().connection().setAutoCommit(false);
+			CommitAPI.getInstance().startListeners();
 			Logger.debug(HibernateUtil.class, "Starting Transaction!");
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to set AutoCommit to false on Hibernate Session ", e);
@@ -869,7 +867,7 @@ public class HibernateUtil {
 					Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
 					session.connection().commit();
 					session.connection().setAutoCommit(true);
-                    CommitAPI.getInstance().finalize();
+                    CommitAPI.getInstance().finalizeListeners();
       
 				}
 			}
@@ -879,9 +877,6 @@ public class HibernateUtil {
 		    }
 			Logger.error(HibernateUtil.class, e.getMessage(), e);
 			throw new DotHibernateException("Unable to close Hibernate Session ", e);
-		}finally {
-		    DbConnectionFactory.closeSilently();
-
 		}
 	}
 
@@ -940,8 +935,8 @@ public class HibernateUtil {
 			Logger.warnAndDebug(HibernateUtil.class, "---------- DotHibernate: error on rollbackTransaction ---------------\n"+ ex, ex);
 		}
 		finally{
-		      DbConnectionFactory.closeSilently();
-		      CommitAPI.getInstance().runRollbackListeners();
+		    CommitAPI.getInstance().finalizeRollback();
+		    DbConnectionFactory.closeSilently();
 		}
 
 

@@ -120,6 +120,7 @@ import com.dotmarketing.comparators.ContentMapComparator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.db.listeners.CommitAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -191,6 +192,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
@@ -8254,31 +8257,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void triggerCommitListenerEvent(final Contentlet contentlet, final User user, final boolean publish) {
 
 
-            if (!contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
+        String hash = Hashing.md5().newHasher()
+            .putString(contentlet.getIdentifier(), Charsets.UTF_8)
+            .putString(user.getUserId(), Charsets.UTF_8)
+            .putBoolean(publish)
+            .hash()
+            .toString();
+        
+        
+        
+        // test mode needs to be sync
+        if (contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
+            CommitAPI.getInstance().addCommitListenerSync("triggerCommitListenerEvent:" + hash, () -> {
+                localSystemEventsAPI.notify(new CommitListenerEvent(contentlet));
 
-                HibernateUtil.addCommitListener(new Runnable() {
-                    public void run() {
-                        //Triggering event listener when this commit listener is executed
-                        localSystemEventsAPI
-                                .asyncNotify(new CommitListenerEvent(contentlet));
-                    }
-                });
-            } else {
-
-                HibernateUtil.addCommitListener(new Runnable() {
-                    public void run() {
-                        //Triggering event listener when this commit listener is executed
-                        localSystemEventsAPI
-                            .notify(new CommitListenerEvent(contentlet));
-                    }
-                });
-            }
-
-            HibernateUtil.addCommitListener(()-> {
-                //Triggering event listener when this commit listener is executed
-                localSystemEventsAPI
-                        .notify(new ContentletPublishEvent(contentlet, user, publish));
             });
+        // everything else, async
+        } else {
+
+            CommitAPI.getInstance().addCommitListenerAsync("triggerCommitListenerEvent:" + hash, () -> {
+                // Triggering event listener when this commit listener is executed
+                localSystemEventsAPI.asyncNotify(new CommitListenerEvent(contentlet));
+
+            });
+
+        } ;
+
+        if(publish) {
+            CommitAPI.getInstance().addCommitListenerAsync("triggerCommitListenerEvent.publish" +hash, () -> {
+                // Triggering event listener when this commit listener is executed
+                localSystemEventsAPI.asyncNotify(new ContentletPublishEvent(contentlet, user, publish));
+            });
+        }
          
     }
 

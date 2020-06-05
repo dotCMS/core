@@ -674,7 +674,7 @@ public class DbConnectionFactory {
 
         try {
             if (startTransaction) {
-                CommitAPI.getInstance().startTransaction();
+                CommitAPI.getInstance().startListeners();
                 DbConnectionFactory.getConnection().setAutoCommit(false);
             }
         } catch (SQLException e) {
@@ -689,7 +689,7 @@ public class DbConnectionFactory {
         try {
             if (inTransaction()) {
                 DbConnectionFactory.getConnection().commit();
-
+                CommitAPI.getInstance().finalizeListeners();
             }
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
@@ -700,6 +700,7 @@ public class DbConnectionFactory {
         try {
             if (inTransaction()) {
                 DbConnectionFactory.getConnection().commit();
+                CommitAPI.getInstance().finalizeListeners();
             }
             closeConnection();
         } catch (Exception e) {
@@ -715,6 +716,7 @@ public class DbConnectionFactory {
             if (inTransaction) {
                 DbConnectionFactory.getConnection().rollback();
                 DbConnectionFactory.getConnection().setAutoCommit(true);
+                CommitAPI.getInstance().finalizeRollback();
             }
         } catch (SQLException e) {
             Logger.error(DbConnectionFactory.class, e.getMessage(), e);

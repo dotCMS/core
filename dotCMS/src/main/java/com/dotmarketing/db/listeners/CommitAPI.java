@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -17,25 +18,34 @@ public class CommitAPI {
 
 
     public enum CommitListenerStatus {
-        ENABLED, DISABLED;
+        DISABLED, ALLOW_SYNC, ALLOW_ASYNC;
+    }
+    
+    private static class apiHolder {
+        static final CommitAPI api = new CommitAPI();
     }
 
+    public static CommitAPI getInstance() {
+
+        return apiHolder.api;
+
+    }
     /**
-     * Status for listeners of thread-local -based transactions. This allows to control whether
-     * listeners are appended or not (ENABLED by default)
+     * Status for listeners of thread-local -based transactions. This allows to control as to which
+     * listeners are fired on a commit
      */
     private final ThreadLocal<CommitListenerStatus> listenersStatus = new ThreadLocal<CommitListenerStatus>() {
         protected CommitListenerStatus initialValue() {
-            return CommitListenerStatus.ENABLED;
+            return CommitListenerStatus.ALLOW_ASYNC;
         }
     };
 
 
     /**
-     * Returns the listeners status currently associated to the thread-local -based transaction (ENABLED
-     * by default)
+     * Returns the listeners status currently associated to the thread-local -based transaction
+     * (ALLOW_ASYNC by default)
      */
-    public CommitListenerStatus getCommitListenerStatus() {
+    public CommitListenerStatus status() {
         return listenersStatus.get();
     }
 
@@ -49,52 +59,106 @@ public class CommitAPI {
     public void setCommitListenerStatus(CommitListenerStatus status) {
         listenersStatus.set(status);
     }
-    
-    final int COMMIT_LISTENER_QUEUE_SIZE ;
-    final int COMMIT_LISTENER_THREADPOOL_SIZE ;
-    final ExecutorService submitter ;
-    
+
+    /**
+     * Sets the commit listener status - convienience method
+     * 
+     * @param status
+     */
+    public void status(CommitListenerStatus status) {
+        this.setCommitListenerStatus(status);
+    }
+
+    final int COMMIT_LISTENER_QUEUE_SIZE;
+    final int COMMIT_LISTENER_THREADPOOL_SIZE;
+    final ExecutorService submitter;
+
     private CommitAPI() {
         COMMIT_LISTENER_QUEUE_SIZE = Config.getIntProperty("COMMIT_LISTENER_QUEUE_SIZE", 10000);
-        COMMIT_LISTENER_THREADPOOL_SIZE= Config.getIntProperty("COMMIT_LISTENER_THREADPOOL_SIZE", 10);
-        submitter = new ThreadPoolExecutor(1, COMMIT_LISTENER_QUEUE_SIZE, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<Runnable>(COMMIT_LISTENER_THREADPOOL_SIZE));
+        COMMIT_LISTENER_THREADPOOL_SIZE = Config.getIntProperty("COMMIT_LISTENER_THREADPOOL_SIZE", 10);
+        submitter = new ThreadPoolExecutor(1, COMMIT_LISTENER_THREADPOOL_SIZE, 30, TimeUnit.SECONDS,
+                        new LinkedBlockingDeque<Runnable>(COMMIT_LISTENER_QUEUE_SIZE));
 
     }
 
 
 
-    private static class apiHolder {
-        static final CommitAPI api = new CommitAPI();
-    }
-
-    public static CommitAPI getInstance() {
-
-        return apiHolder.api;
-
-    }
 
 
-    
+
+
     @VisibleForTesting
     static final ThreadLocal<Map<String, DotListener>> asyncCommitListeners = ThreadLocal.withInitial(LinkedHashMap::new);
 
     @VisibleForTesting
     static final ThreadLocal<Map<String, DotListener>> syncCommitListeners = ThreadLocal.withInitial(LinkedHashMap::new);
-    
+
     @VisibleForTesting
     static final ThreadLocal<Map<String, DotListener>> rollbackListeners = ThreadLocal.withInitial(LinkedHashMap::new);
 
 
-
-    public void addCommitListenerAsync(final CommitListener runnable) {
+    /**
+     * adds this to the end of async CommitListener list
+     */
+    public void addCommitListenerAsync(final String key, final Runnable runnable) {
         if (!DbConnectionFactory.inTransaction())
             return;
-        asyncCommitListeners.get().remove(runnable.key());
-        asyncCommitListeners.get().put(runnable.key(), runnable);
 
+        CommitListener listener=new CommitListener() {
+            
+            @Override
+            public void run() {
+                runnable.run();
+                
+            }
+            
+            @Override
+            public String key() {
+                return key;
+            }
+        };
+        addCommitListenerAsync(listener);
+        
     }
+    
+    /**
+     * adds this to the end of async CommitListener list
+     */
+    public void addCommitListenerSync(final String key, final Runnable runnable) {
+        if (!DbConnectionFactory.inTransaction())
+            return;
 
+        CommitListener listener=new CommitListener() {
+            
+            @Override
+            public void run() {
+                runnable.run();
+                
+            }
+            
+            @Override
+            public String key() {
+                return key;
+            }
+        };
+        addCommitListenerSync(listener);
+        
+    }
+    /**
+     * adds this to the end of async CommitListener list
+     */
+    public void addCommitListenerAsync(final CommitListener listener) {
+        if (!DbConnectionFactory.inTransaction())
+            return;
+        asyncCommitListeners.get().remove(listener.key(), listener);
+        asyncCommitListeners.get().put(listener.key(), listener);
+    }
+    
+    
 
+    /**
+     * adds this to the end of sync CommitListener list
+     */
     public void addCommitListenerSync(final CommitListener listener) {
         if (!DbConnectionFactory.inTransaction())
             return;
@@ -102,6 +166,9 @@ public class CommitAPI {
         syncCommitListeners.get().put(listener.key(), listener);
     }
 
+    /**
+     * adds this to the end of sync CommitListener list
+     */
     public void addReindexListenerSync(final ReindexListener listener) {
         if (!DbConnectionFactory.inTransaction())
             return;
@@ -109,6 +176,9 @@ public class CommitAPI {
         syncCommitListeners.get().put(listener.key(), listener);
     }
 
+    /**
+     * adds this to the end of async CommitListener list
+     */
     public void addReindexListenerAsync(final ReindexListener listener) {
         if (!DbConnectionFactory.inTransaction())
             return;
@@ -116,7 +186,9 @@ public class CommitAPI {
         asyncCommitListeners.get().put(listener.key(), listener);
     }
 
-
+    /**
+     * adds this to the end of sync CommitListener list
+     */
     public void addFlushCacheSync(final FlushCacheListener listener) {
         if (!DbConnectionFactory.inTransaction())
             return;
@@ -125,15 +197,21 @@ public class CommitAPI {
         addRollBackListener(listener);
     }
 
+    /**
+     * adds this to the end of async CommitListener list
+     */
     public void addFlushCacheAsync(final FlushCacheListener listener) {
         if (!DbConnectionFactory.inTransaction())
             return;
         asyncCommitListeners.get().remove(listener.key());
         asyncCommitListeners.get().put(listener.key(), listener);
         addRollBackListener(listener);
-        
+
     }
 
+    /**
+     * adds this to the end of rollback CommitListener list
+     */
     public void addRollBackListener(final RollbackListener runable) {
         if (!DbConnectionFactory.inTransaction())
             return;
@@ -141,61 +219,116 @@ public class CommitAPI {
         rollbackListeners.get().put(runable.key(), runable);
     }
 
+    /**
+     * adds this to the end of rollback CommitListener list
+     */
     public void addRollBackListener(final DotListener listener) {
         addRollBackListener(new RollbackListener(listener));
     }
 
-
     /**
-     * The commit has happened
+     * clears the listeners and resets the state to ALLOW_ASYNC
      */
-    public void finalize() {
-        runSyncListeners();
+    private void resetListeners() {
         rollbackListeners.get().clear();
-        runAsyncListeners();
-
+        syncCommitListeners.get().clear();
+        asyncCommitListeners.get().clear();
+        setCommitListenerStatus(CommitListenerStatus.ALLOW_ASYNC);
     }
 
-    private void runSyncListeners() {
-        final List<Runnable> listeners = new ArrayList<>(syncCommitListeners.get().values());
-        if(!listeners.isEmpty()) {
-            syncCommitListeners.get().clear();
-            listeners.stream().filter(r -> r instanceof FlushCacheListener).forEach(r -> r.run());
-            listeners.stream().filter(r -> r instanceof CommitListener).forEach(r -> r.run());
-            listeners.stream().filter(r -> r instanceof ReindexListener).forEach(r -> r.run());
+
+    /**
+     * This method is fired AFTER a commit and BEFORE a connection is closed and returned to the pool
+     */
+    public void finalizeListeners() {
+        try {
+            if (DbConnectionFactory.inTransaction()) {
+                throw new DotStateException("Commit Listeners need run after a commit has taken place");
+            }
+            switch (status()) {
+                case DISABLED:
+                    return;
+                case ALLOW_SYNC:
+                    syncCommitListeners.get().putAll(asyncCommitListeners.get());
+                    runSyncListeners();
+                    return;
+                default:
+                    runSyncListeners();
+                    runAsyncListeners();
+            }
+
+        } finally {
+            resetListeners();
         }
     }
 
+    /**
+     * This method is fired AFTER a failed commit has been rolled back and BEFORE a connection is closed
+     * and returned to the pool
+     */
+    public void finalizeRollback() {
+        try {
+            if (DbConnectionFactory.inTransaction()) {
+                throw new DotStateException("Rollback Listeners need run after a commit been attempted");
+            }
+            switch (status()) {
+                case DISABLED:
+                    return;
+                default:
+                    runRollbackListeners();
+            }
+        } finally {
+            resetListeners();
+        }
+    }
 
+    /**
+     * Runs the SyncListeners
+     */
+    private void runSyncListeners() {
+        final List<Runnable> listeners = new ArrayList<>(syncCommitListeners.get().values());
+        if (listeners.isEmpty()) {
+            return;
+        }
+        Logger.info(this.getClass(), "Running " + syncCommitListeners.get().size() + " SyncListeners");
+        listeners.stream().filter(r -> r instanceof FlushCacheListener).forEach(r -> r.run());
+        listeners.stream().filter(r -> r instanceof CommitListener).forEach(r -> r.run());
+        listeners.stream().filter(r -> r instanceof ReindexListener).forEach(r -> r.run());
+
+    }
+
+    /**
+     * Runs the AyncListeners
+     */
     private void runAsyncListeners() {
 
         final List<Runnable> listeners = new ArrayList<>(asyncCommitListeners.get().values());
-        if(!listeners.isEmpty()) {
-            asyncCommitListeners.get().clear();
-            listeners.stream().filter(r -> r instanceof FlushCacheListener).forEach(r -> submitter.submit(r));
-            listeners.stream().filter(r -> r instanceof CommitListener).forEach(r -> submitter.submit(r));
-            listeners.stream().filter(r -> r instanceof ReindexListener).forEach(r -> submitter.submit(r));
-            
+        if (listeners.isEmpty()) {
+            return;
         }
+        Logger.info(this.getClass(), "Running " + asyncCommitListeners.get().size() + " AsyncListeners");
+        listeners.stream().filter(r -> r instanceof FlushCacheListener).forEach(r -> submitter.submit(r));
+        listeners.stream().filter(r -> r instanceof CommitListener).forEach(r -> submitter.submit(r));
+        listeners.stream().filter(r -> r instanceof ReindexListener).forEach(r -> submitter.submit(r));
+
+
+
     }
 
-    public void runRollbackListeners() {
-        syncCommitListeners.get().clear();
-        asyncCommitListeners.get().clear();
+    /**
+     * Runs the RollbackListeners
+     */
+    private void runRollbackListeners() {
+        Logger.info(this.getClass(), "Running " + rollbackListeners.get().size() + " RollbackListeners");
         rollbackListeners.get().values().stream().forEach(r -> r.run());
-        rollbackListeners.get().clear();
-
     }
 
-    public void startTransaction() {
+    public void startListeners() {
         if (!DbConnectionFactory.inTransaction()) {
-            syncCommitListeners.get().clear();
-            asyncCommitListeners.get().clear();
-            rollbackListeners.get().clear();
-        }else {
-            Logger.warn(this.getClass(), "Unable to startTransaction - we are already in a transaction");
+            throw new DotStateException("Listeners need to be started in committable transaction");
         }
-        
+        resetListeners();
+
     }
 
 

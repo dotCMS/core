@@ -31,6 +31,7 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
     DBPropertiesDataSourceStrategy(){
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
         final URL resourceURL = loader.getResource(DB_PROPERTIES_FILE_NAME);
+        Logger.info(this.getClass(), "trying db.properties file: " + loader.getResource(DB_PROPERTIES_FILE_NAME));
         if (resourceURL!=null){
             propertiesFile = new File(resourceURL.getPath());
         }

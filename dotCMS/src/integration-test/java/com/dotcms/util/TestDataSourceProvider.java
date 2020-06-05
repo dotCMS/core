@@ -6,6 +6,7 @@ import com.dotmarketing.util.Logger;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Properties;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -36,6 +37,14 @@ public class TestDataSourceProvider implements DotDataSourceStrategy {
 
         try (InputStream resourceStream = loader.getResourceAsStream(dbType + "-db-config.properties")) {
             properties.load(resourceStream);
+            
+            Logger.info(this.getClass(), "Found TEST DB properties:");
+            for(Map.Entry<Object,Object> prop : properties.entrySet()) {
+                Logger.info(this.getClass(), prop.getKey() + " : " + prop.getValue());
+                
+            }
+            
+            
         } catch (Exception e) {
             Logger.error(this.getClass(), "Unable to get properties from file db-config.properties",  e);
             throw new DotRuntimeException(e);
