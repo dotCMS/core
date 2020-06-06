@@ -120,11 +120,8 @@ public class LocalTransaction {
             handleException(isLocalTransaction, e);
         } finally {
 
-            if (isLocalTransaction) {
-                DbConnectionFactory.startTransactionIfNeeded();
-                if (isNewConnection) {
-                    DbConnectionFactory.closeConnection();
-                }
+            if (isLocalTransaction || isNewConnection) {
+                DbConnectionFactory.closeConnection();
             }
         }
 

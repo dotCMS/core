@@ -281,7 +281,7 @@ public class DbConnectionFactory {
     /**
      * Retrieves the list of all valid dataSources setup in the dotCMS
      */
-    @SuppressWarnings("unchecked")
+
     public static ArrayList<String> getAllDataSources() throws NamingException {
         ArrayList<String> results = new ArrayList<String>();
         Context ctx;
@@ -322,7 +322,6 @@ public class DbConnectionFactory {
      * end up calling APIs that expect a DB to be present
      * @return
      */
-    @SuppressWarnings("unchecked")
     public static boolean dbAvailable()  {
        return Try.of(()->getDBType()!=null).getOrElse(false);
     }
@@ -696,7 +695,10 @@ public class DbConnectionFactory {
                 DbConnectionFactory.getConnection().commit();
                 DbConnectionFactory.getConnection().setAutoCommit(true);
                 CommitAPI.getInstance().finalizeListeners();
+            }else {
+                DbConnectionFactory.getConnection().setAutoCommit(true);
             }
+            
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
@@ -704,13 +706,13 @@ public class DbConnectionFactory {
 
     public static void closeAndCommit() throws DotDataException {
         try {
-            if (inTransaction()) {
-                DbConnectionFactory.getConnection().commit();
-                CommitAPI.getInstance().finalizeListeners();
-            }
+            commit();
             closeConnection();
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
+        }
+        finally {
+            closeSilently();
         }
 
     }
