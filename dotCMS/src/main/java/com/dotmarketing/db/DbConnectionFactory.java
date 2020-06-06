@@ -696,7 +696,9 @@ public class DbConnectionFactory {
                 DbConnectionFactory.getConnection().setAutoCommit(true);
                 CommitAPI.getInstance().finalizeListeners();
             }else {
-                DbConnectionFactory.getConnection().setAutoCommit(true);
+                if(connectionExists()) {
+                    DbConnectionFactory.getConnection().setAutoCommit(true);
+                }
             }
             
         } catch (Exception e) {
