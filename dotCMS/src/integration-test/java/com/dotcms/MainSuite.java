@@ -21,6 +21,7 @@ import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
@@ -275,7 +276,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PushPublishFiltersInitializerTest.class,
         PushPublishFilterResourceTest.class,
         PushNowActionletTest.class,
-        Task05305AddPushPublishFilterColumnTest.class
+        Task05305AddPushPublishFilterColumnTest.class,
+        CMSMaintenanceFactoryTest.class
 })
 public class MainSuite {
 
