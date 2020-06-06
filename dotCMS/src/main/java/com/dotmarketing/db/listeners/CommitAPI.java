@@ -18,7 +18,7 @@ public class CommitAPI {
 
 
     public enum CommitListenerStatus {
-        DISABLED, ALLOW_SYNC, ALLOW_ASYNC;
+        DISABLE_LISTENERS, FORCE_SYNC, ALLOW_ASYNC;
     }
     
     private static class apiHolder {
@@ -112,7 +112,7 @@ public class CommitAPI {
      * adds this to the end of async CommitListener list
      */
     public void addCommitListenerAsync(final String key, final Runnable runnable) {
-        if (!DbConnectionFactory.inTransaction())
+        if (disabled())
             return;
 
         CommitListener listener=new CommitListener() {
@@ -136,7 +136,7 @@ public class CommitAPI {
      * adds this to the end of async CommitListener list
      */
     public void addCommitListenerSync(final String key, final Runnable runnable) {
-        if (!DbConnectionFactory.inTransaction())
+        if (disabled())
             return;
 
         CommitListener listener=new CommitListener() {
@@ -159,7 +159,7 @@ public class CommitAPI {
      * adds this to the end of async CommitListener list
      */
     public void addCommitListenerAsync(final CommitListener listener) {
-        if (!DbConnectionFactory.inTransaction())
+        if (disabled())
             return;
         asyncCommitListeners.get().remove(listener.key(), listener);
         asyncCommitListeners.get().put(listener.key(), listener);
@@ -171,7 +171,7 @@ public class CommitAPI {
      * adds this to the end of sync CommitListener list
      */
     public void addCommitListenerSync(final CommitListener listener) {
-        if (!DbConnectionFactory.inTransaction())
+        if (disabled())
             return;
         syncCommitListeners.get().remove(listener.key(), listener);
         syncCommitListeners.get().put(listener.key(), listener);
@@ -181,7 +181,7 @@ public class CommitAPI {
      * adds this to the end of sync CommitListener list
      */
     public void addReindexListenerSync(final ReindexListener listener) {
-        if (!DbConnectionFactory.inTransaction())
+        if (disabled())
             return;
         syncCommitListeners.get().remove(listener.key(), listener);
         syncCommitListeners.get().put(listener.key(), listener);
@@ -258,9 +258,9 @@ public class CommitAPI {
                 throw new DotStateException("Commit Listeners need run after a commit has taken place");
             }
             switch (status()) {
-                case DISABLED:
+                case DISABLE_LISTENERS:
                     return;
-                case ALLOW_SYNC:
+                case FORCE_SYNC:
                     syncCommitListeners.get().putAll(asyncCommitListeners.get());
                     runSyncListeners();
                     return;
@@ -284,7 +284,7 @@ public class CommitAPI {
                 throw new DotStateException("Rollback Listeners need run after a commit been attempted");
             }
             switch (status()) {
-                case DISABLED:
+                case DISABLE_LISTENERS:
                     return;
                 default:
                     runRollbackListeners();
@@ -345,5 +345,12 @@ public class CommitAPI {
     }
 
 
+    private boolean disabled() {
+        return !DbConnectionFactory.inTransaction() ||  CommitListenerStatus.DISABLE_LISTENERS ==status();
+    }
+    
+    
+    
+    
 
 }

@@ -689,7 +689,9 @@ public class DbConnectionFactory {
     }
 
     public static void commit () throws DotDataException {
-
+        if(!connectionExists()) {
+            return;
+        }
         try {
             if (inTransaction()) {
                 DbConnectionFactory.getConnection().commit();

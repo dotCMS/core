@@ -100,7 +100,7 @@ public class FiltersUtil {
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        CommitAPI.getInstance().forceStatus(CommitListenerStatus.ALLOW_SYNC);
+        CommitAPI.getInstance().forceStatus(CommitListenerStatus.FORCE_SYNC);
         contentletAPI.publish(contentlet, user, false);
         
         try {
@@ -119,7 +119,7 @@ public class FiltersUtil {
         vanityURL.setIndexPolicy(IndexPolicy.FORCE);
         vanityURL.setIndexPolicyDependencies(IndexPolicy.FORCE);
         vanityURL.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        CommitAPI.getInstance().forceStatus(CommitListenerStatus.ALLOW_SYNC);
+        CommitAPI.getInstance().forceStatus(CommitListenerStatus.FORCE_SYNC);
         contentletAPI.unpublish(vanityURL, user, false);
     }
 
@@ -178,7 +178,7 @@ public class FiltersUtil {
                 return base;
             }
         };
-        CommitAPI.getInstance().forceStatus(CommitListenerStatus.ALLOW_SYNC);
+        CommitAPI.getInstance().forceStatus(CommitListenerStatus.FORCE_SYNC);
         return contentTypeAPI.save(new ImplClassContentTypeTransformer(type).from());
     }
 

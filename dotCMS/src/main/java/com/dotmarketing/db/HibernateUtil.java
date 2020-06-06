@@ -802,31 +802,23 @@ public class HibernateUtil {
 	    final boolean inTransaction = DbConnectionFactory.inTransaction();
 		try{
 			// if there is nothing to close
-			if (null == sessionHolder.get()){
-				return;
-			}
+            if (null == sessionHolder.get() && !DbConnectionFactory.connectionExists()) {
+                return;
+            }
+            if(inTransaction) {
+                commitTransaction() ;
+            }
+            
 			Session session = getSession();
 
 			if (null != session) {
 				session.flush();
-				if (inTransaction) {
-					Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
-					session.connection().commit();
-					session.connection().setAutoCommit(true);
-					
-					CommitAPI.getInstance().finalizeListeners();
-
-					
-				}
-				DbConnectionFactory.closeConnection();
 				session.close();
 				session = null;
 				sessionHolder.set(null);
 			}
+			
 		}catch (Exception e) {
-		    if(inTransaction) {
-		        sessionCleanupAndRollback();
-		    }
 			Logger.error(HibernateUtil.class, e.getMessage(), e);
 			throw new DotHibernateException("Unable to close Hibernate Session ", e);
 		} 
@@ -840,8 +832,7 @@ public class HibernateUtil {
 		 * Transactions are now used by default
 		 *
 		 */
-			getSession().connection().setAutoCommit(false);
-			CommitAPI.getInstance().startListeners();
+		    DbConnectionFactory.startTransactionIfNeeded();
 			Logger.debug(HibernateUtil.class, "Starting Transaction!");
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to set AutoCommit to false on Hibernate Session ", e);
@@ -856,21 +847,19 @@ public class HibernateUtil {
 	    final boolean inTransaction = DbConnectionFactory.inTransaction();
 		try{
 			// if there is nothing to close
-			if (null == sessionHolder.get()) {
+			if (null == sessionHolder.get() && !DbConnectionFactory.connectionExists()) {
 				return;
 			}
-			Session session = getSession();
-
-			if (null != session) {
-				session.flush();
-				if (inTransaction) {
-					Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
-					session.connection().commit();
-					session.connection().setAutoCommit(true);
-                    CommitAPI.getInstance().finalizeListeners();
-      
-				}
+			
+			if (null != sessionHolder.get()) {
+    			Session session = getSession();
+    			if (null != session) {
+    				session.flush();
+    			}
 			}
+            if (inTransaction) {
+                DbConnectionFactory.commit();
+            }
 		}catch (Exception e) {
 		    if(inTransaction) {
 		        sessionCleanupAndRollback();
@@ -926,16 +915,15 @@ public class HibernateUtil {
 		session.clear();
 
 		try {
-			session.connection().rollback();
-			session.connection().setAutoCommit(true);
+            DbConnectionFactory.rollbackTransaction();
 	        session.close();
 	        session = null;
 	        sessionHolder.set(null);
+
 		} catch (Exception ex) {
 			Logger.warnAndDebug(HibernateUtil.class, "---------- DotHibernate: error on rollbackTransaction ---------------\n"+ ex, ex);
 		}
 		finally{
-		    CommitAPI.getInstance().finalizeRollback();
 		    DbConnectionFactory.closeSilently();
 		}
 
