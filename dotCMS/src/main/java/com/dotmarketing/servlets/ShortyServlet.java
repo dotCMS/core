@@ -56,8 +56,9 @@ public class ShortyServlet extends HttpServlet {
       } catch (NumberFormatException nfe) {
         Logger.info(this, "Default JPEG compression set to " + Integer.toString(jpegDefaultCompression) + " due to misconfiguration in the init-param");
       }
+    } else {
+      Logger.info(this, "Default JPEG compression set to " + Integer.toString(jpegDefaultCompression));
     }
-    Logger.info(this, "Default JPEG compression set to " + Integer.toString(jpegDefaultCompression));
   }
 
   protected void service(HttpServletRequest request, HttpServletResponse response)
