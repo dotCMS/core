@@ -229,7 +229,7 @@
 		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
 		<init-param>
 			<param-name>jpeg.compression.quality</param-name>
-			<param-value>90</param-value>
+			<param-value>85</param-value>
 		</init-param>
 	</servlet>
 	<servlet>
