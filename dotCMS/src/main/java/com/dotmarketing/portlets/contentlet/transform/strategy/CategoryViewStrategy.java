@@ -26,7 +26,7 @@ class CategoryViewStrategy extends AbstractTransformStrategy<Contentlet> {
     }
 
     @Override
-    Map<String, Object> transform(final Contentlet contentlet, final Map<String, Object> map,
+    protected Map<String, Object> transform(final Contentlet contentlet, final Map<String, Object> map,
             final Set<TransformOptions> options, final User user)
             throws DotDataException, DotSecurityException {
 

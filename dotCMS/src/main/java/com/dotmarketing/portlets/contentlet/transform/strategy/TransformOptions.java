@@ -10,8 +10,9 @@ public enum TransformOptions {
     VERSION_INFO(true), //This will include stuff like (live,working,archived, hasLiveVersion)
     LANGUAGE_PROPS(true), // Instructs the DefaultStrategy to include extra language props such as (languageCode, country, isoCode)
     BINARIES(true),   //This instructs strategies to include binaries
+    CATEGORIES_NAME(true),
+    CATEGORIES_INFO(true),
     USE_ALIAS(true),  //This will include stuff like ('live' and 'isLive')
-
 
     LOAD_META, // If this is on meta data will be included for FileAssets
     //Plug additional stuff to manipulate the outcome as a particular type of view

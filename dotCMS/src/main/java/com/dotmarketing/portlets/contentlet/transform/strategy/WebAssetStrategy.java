@@ -2,7 +2,10 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
@@ -25,15 +28,16 @@ public abstract class WebAssetStrategy <T extends Contentlet>  extends
 
     /**
      * Strategy Apply method
-     * @param contentlet
-     * @param map
+     * @param source
+     * @param targetMap
      * @param options
      * @param user
      */
-    public final void apply(final T contentlet, final Map<String, Object> map,
+    public final void apply(final Contentlet source, final Map<String, Object> targetMap,
             final Set<TransformOptions> options, final User user) {
-        super.apply(contentlet, map, options, user);
-        urlOverride(contentlet, map);
+        super.apply(source, targetMap, options, user);
+        urlOverride(source, targetMap);
+        addPath(source, targetMap);
     }
 
     /**
@@ -47,6 +51,16 @@ public abstract class WebAssetStrategy <T extends Contentlet>  extends
             map.put(URL_FIELD, url);
         }
         map.put(URL_FIELD, url);
+    }
+
+    private void addPath(final Contentlet contentlet, final Map<String, Object> map){
+        final String identifierValue = contentlet.getIdentifier();
+        try {
+            final Identifier identifier = toolBox.identifierAPI.find(identifierValue);
+            map.put("path", identifier.getPath());
+        } catch (DotDataException e) {
+            Logger.warn(WebAssetStrategy.class,String.format("Error adding path from identifier: `%s`", identifierValue), e);
+        }
     }
 
 }

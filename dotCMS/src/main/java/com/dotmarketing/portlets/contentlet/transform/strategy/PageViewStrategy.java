@@ -58,7 +58,7 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
      * @throws DotDataException
      */
     @Override
-    public Map<String, Object> transform(final HTMLPageAsset page, final Map<String, Object> map,
+    protected Map<String, Object> transform(final HTMLPageAsset page, final Map<String, Object> map,
             final Set<TransformOptions> options, final User user)
             throws DotSecurityException, DotDataException {
 

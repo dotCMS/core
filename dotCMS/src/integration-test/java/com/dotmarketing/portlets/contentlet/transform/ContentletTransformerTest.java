@@ -57,6 +57,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -308,7 +309,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     public static Object[] listTestCases() throws Exception {
         final User user = APILocator.systemUser();
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-        final int limit = 100;
+        final int limit = 300;
         final boolean respectFrontEndUsers = false;
         return new Object[]{
                 new TestCase(BaseContentType.getBaseContentType(0),
@@ -352,6 +353,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     @UseDataProvider("listTestCases")
     public void Transformer_Backwards_Compatibility_Test(final TestCase testCase) {
 
+        final Set<String> privateInternalProperties = AbstractTransformStrategy.privateInternalProperties;
+
         final List <Contentlet> list = testCase.contentlets;
 
         if(list.isEmpty()){
@@ -374,22 +377,36 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
             final Contentlet original = list.get(i);
             //We compare the transformation results are the same using the default options on the new Transformer
-            final Map<String, Object> objectMap1 = transformedList1.get(i);
+            final Map<String, Object> sourceMap = transformedList1.get(i);
+            final Map<String, Object> copyMap = transformedList2.get(i);
 
-            final Map<String, Object> objectMap2 = transformedList2.get(i);
+            assertTrue(String.format(" baseType `%s` should have same (or more) number of properties " ,baseTypeName),copyMap.size() >= sourceMap.size());
 
-            assertTrue(String.format(" baseType `%s` should have same (or more) number of properties " ,baseTypeName),objectMap2.size() >= objectMap1.size());
+            for (final String propertyName : sourceMap.keySet()) {
 
-            for (final String key1 : objectMap1.keySet()) {
+                final Object object1 = sourceMap.get(propertyName);
+                final Object object2 = copyMap.get(propertyName);
 
-                final Object object1 = objectMap1.get(key1);
-                final Object object2 = objectMap2.get(key1);
+                if(null != object1 && object2 == null &&  privateInternalProperties.contains(propertyName)){
+                   //We're looking at private property that exists in the source but was removed on the copy. which is fine.
+                   continue;
+                }
 
-                assertNotNull(object2);
+                if(object1 instanceof File){
+                    //Binaries are now formatted to their /dA/ path form.
+                    final File conBinary = (File)object1;
+                    final String dAPath = "/dA/%s/%s/%s";
+                    final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName,conBinary.getName());
+                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
+                            baseTypeName, original.getIdentifier(), propertyName), binaryPath, object2);
+                    continue;
+                }
 
-                assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
-                        baseTypeName, original.getIdentifier(), key1), object1,
-                        object2);
+                    assertNotNull(String.format("Object with key `%s` is null why??",object2));
+                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
+                            baseTypeName, original.getIdentifier(), propertyName), object1,
+                            object2);
+
             }
 
         }
@@ -405,16 +422,56 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             final Contentlet contentlet2 = hydrated2.get(i);
             assertEquals(contentlet1.getIdentifier(),contentlet2.getIdentifier());
 
-            for (final String key1 : contentlet1.getMap().keySet()) {
-                final Object object1 = contentlet1.getMap().get(key1);
-                final Object object2 = contentlet2.getMap().get(key1);
+            for (final String propertyName : contentlet1.getMap().keySet()) {
+                final Object object1 = contentlet1.getMap().get(propertyName);
+                final Object object2 = contentlet2.getMap().get(propertyName);
+
+                if(null != object1 && object2 == null &&  privateInternalProperties.contains(propertyName)){
+                    //We're looking at private property that exists in the source but was removed on the copy. which is fine.
+                    continue;
+                }
+
+                if(object1 instanceof File){
+                    //Binaries are now formatted to their /dA/ path form.
+                    final File conBinary = (File)object1;
+                    final String dAPath = "/dA/%s/%s/%s";
+                    final String binaryPath = String.format(dAPath, contentlet1.getMap().get("identifier"),propertyName,conBinary.getName());
+                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
+                            baseTypeName, contentlet1.getIdentifier(), propertyName), binaryPath, object2);
+                    continue;
+                }
 
                 assertNotNull(object2);
                 assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
-                        baseTypeName, contentlet1.getIdentifier(), key1), object1,
+                        baseTypeName, contentlet1.getIdentifier(), propertyName), object1,
                         object2);
             }
         }
+    }
+
+    private ContentType mockFileAssetContentType(){
+        return new FileAssetContentType(){
+
+            @Override
+            public String name() {
+                return "File Asset";
+            }
+
+            @Override
+            public String id() {
+                return "33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d";
+            }
+
+            @Override
+            public String description() {
+                return "Default structure for all uploaded files";
+            }
+
+            @Override
+            public String variable() {
+                return "FileAsset";
+            }
+        };
     }
 
     /**
@@ -425,6 +482,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     public void Test_Contentlet_To_Map_View_For_FileAsset() throws DotDataException, DotSecurityException {
+
+        final String systemUserId =  APILocator.systemUser().getUserId();
 
         final String urlExpected = "/index";
         final String identifier = "identifier";
@@ -445,6 +504,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
         when(identifierObject.getAssetName()).thenReturn(urlExpected);
         when(identifierObject.getId()).thenReturn(identifier);
+        when(identifierObject.getPath()).thenReturn("/path/");
 
         final UserAPI userAPI = mock(UserAPI.class);
 
@@ -506,7 +566,15 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         when(contentlet.getMap()).thenReturn(map);
 
+        when(contentlet.getModUser()).thenReturn(systemUserId);
+
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
+
+        when(contentlet.getTitleImage()).thenReturn(titleImage);
+
+        when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+
+        when(contentlet.getIdentifier()).thenReturn(identifier);
 
         final Set<TransformOptions> options = EnumSet.of(
                 COMMON_PROPS, VERSION_INFO

@@ -24,6 +24,7 @@ import java.util.Set;
 
 /**
  * Entry point class for the Strategies hierarchy
+ * Basically any new behavior desired to be applied to mutate the resulting map should be plugged through one of these.
  * @param <T>
  */
 public abstract class AbstractTransformStrategy<T extends Contentlet> {
@@ -42,7 +43,8 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
                 WORKFLOW_ACTION_KEY,
                 WORKFLOW_COMMENTS_KEY,
                 DONT_VALIDATE_ME,
-                IS_TEST_MODE
+                IS_TEST_MODE,
+                "__NAME__"
             );
 
     static final String NOT_APPLICABLE = "N/A";
@@ -54,7 +56,8 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
     }
 
     /**
-     * Any descendant that has a particular way to retrieve it's own concrete type should override this
+     * Any descendant that has a particular way to retrieve it's own concrete type should override this.
+     * e.g. For File assets it would be fileAssetAPI.fromContentlet(..)
      * @param contentlet
      * @return
      */
@@ -62,16 +65,33 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
          return (T)contentlet;
      }
 
-    abstract Map<String, Object> transform(T contentlet,
+    /**
+     *
+     * @param source
+     * @param map
+     * @param options
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    protected abstract Map<String, Object> transform(T source,
             Map<String, Object> map,
             Set<TransformOptions> options,
             User user) throws DotDataException, DotSecurityException;
 
-    public void apply(final T contentlet, final Map<String, Object> map,
+    /**
+     * This serves as the entry point to apply the transformation
+     * @param source is the original contentlet
+     * @param targetMap is the map grabbed from the copy-contentlet
+     * @param includeOptions
+     * @param user
+     */
+    public void apply(final Contentlet source, final Map<String, Object> targetMap,
             final Set<TransformOptions> includeOptions, final User user) {
-        final T subtype = fromContentlet(contentlet);
+        final T subtype = fromContentlet(source);
         try {
-             transform(subtype, map, includeOptions, user);
+             transform(subtype, targetMap, includeOptions, user);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(AbstractTransformStrategy.class, String.format(
                "Error applying transformation to contentlet with id `%s` ",
@@ -80,6 +100,12 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
         }
     }
 
+    /**
+     * This removes any private property left overs.
+     * This is visible to all descendants but it gets applied always at the end of the transformation chain
+     * Override as required
+     * @param map
+     */
     public void cleanup(final Map<String, Object> map) {
         map.keySet().removeAll(privateInternalProperties);
     }

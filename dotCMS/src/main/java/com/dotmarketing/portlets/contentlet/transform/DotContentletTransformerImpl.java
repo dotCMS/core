@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
@@ -16,6 +17,7 @@ import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +32,7 @@ import java.util.stream.Collectors;
 class DotContentletTransformerImpl implements DotContentletTransformer {
 
     static final Set<TransformOptions> defaultOptions = EnumSet.of(
-            COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES
+            COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES, CATEGORIES_NAME
     );
 
     private User user;
@@ -42,8 +44,8 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
      * Main constructor provides access to set the required APIs
      * @param contentlets input
      * @param strategyResolver strategyResolver
-     * @param options
-     * @param user
+     * @param options bit to instruct what needs to be turned on and off
+     * @param user user
      */
     @VisibleForTesting
     DotContentletTransformerImpl(final List<Contentlet> contentlets,
@@ -64,27 +66,32 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
      * @return List of transformed Maps
      */
     public List<Map<String, Object>> toMaps() {
-        return contentlets.stream().map(this::copy).map(this::transform).collect(CollectionsUtils.toImmutableList());
+        return contentlets.stream().map(source -> Tuple.of(source, copy(source))).map(tuple -> {
+            final Contentlet source =  tuple._1; //This is the source contentlet from cache. We're not supposed to modify this.
+            final Contentlet copyContentlet = tuple._2; //This is the mutable copy we can work on.
+            return transform(source, copyContentlet);
+        }).collect(CollectionsUtils.toImmutableList());
     }
 
     /**
      * This is the main method where individual transformation takes place.
-     * @param contentlet input contentlet
+     * @param copyContentlet input contentlet
      * @return Map holding the transformed properties
      */
-    private Map<String, Object> transform(final Contentlet contentlet) {
-        final ContentType type = contentlet.getContentType();
+    private Map<String, Object> transform(final Contentlet sourceContentlet, final Contentlet copyContentlet) {
+        final ContentType type = sourceContentlet.getContentType();
         if (null != type) {
             Logger.debug(
                     DotContentletTransformerImpl.class, () -> String
                             .format(" BaseType: `%s` Type: `%s`", type.name(),
                                     type.baseType().name()));
         }
-        final Map<String, Object> map = contentlet.getMap();
+        //We'll work directly on the copy. We dont want to mess with anything that already lives on cache.
+        final Map<String, Object> map = copyContentlet.getMap();
 
         strategyResolver.resolveStrategies(type, options).stream()
                 .map(strategy -> {
-                    strategy.apply(contentlet, map, options, user);
+                    strategy.apply(sourceContentlet, map, options, user);
                     return strategy;
                 }).reduce((a, b) -> b).ifPresent(lastStrategy -> lastStrategy.cleanup(map));
 
@@ -97,9 +104,11 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes
      */
     public List<Contentlet> hydrate() {
-        return contentlets.stream().map(this::copy).map(newContentlet -> {
-            transform(newContentlet);
-            return newContentlet;
+        return contentlets.stream().map(source -> Tuple.of(source, copy(source))).map(tuple -> {
+            final Contentlet source =  tuple._1; //This is the source contentlet from cache. We're not supposed to modify this.
+            final Contentlet copyContentlet = tuple._2; //This is the mutable copy we can work on.
+            transform(source, copyContentlet);
+            return copyContentlet;
         }).collect(Collectors.toList());
     }
 

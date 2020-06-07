@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.contentlet.util;
 
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.ContentHelper;
 import com.dotmarketing.beans.Host;
@@ -11,7 +7,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -20,16 +15,11 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ContentletUtil {
 
@@ -144,10 +134,12 @@ public class ContentletUtil {
 			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo)
 			throws DotDataException, IOException {
 
-		Map<String, Object> m = new HashMap<>();
+		//Map<String, Object> m = new HashMap<>();
 
 		sourceContentlet.setTags();
-		final Contentlet contentlet = ContentHelper.getInstance().hydrateContentlet(sourceContentlet);
+		final Contentlet contentlet = ContentHelper.getInstance().hydrateContentlet(sourceContentlet, allCategoriesInfo);
+		return contentlet.getMap();
+/*
 		m.putAll(contentlet.getMap());
 
 		ContentType type=contentlet.getContentType();
@@ -213,6 +205,7 @@ public class ContentletUtil {
         }
 
 		return m;
+ */
 	}
 
 	/**

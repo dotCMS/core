@@ -130,6 +130,7 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
         map.put("extension", "folder");
         map.put("hasTitleImage", StringPool.BLANK);
         map.put("__icon__", IconType.FOLDER.iconName());
+
         return map;
 
     }

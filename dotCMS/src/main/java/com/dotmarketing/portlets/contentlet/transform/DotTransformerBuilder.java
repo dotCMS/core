@@ -1,6 +1,9 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
@@ -12,6 +15,8 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
@@ -134,9 +139,13 @@ public class DotTransformerBuilder {
      * Fine Tuned to be consumed from ContentResource
      * @return
      */
-    public DotTransformerBuilder contentResourceOptions(){
+    public DotTransformerBuilder contentResourceOptions(final boolean allCategoriesInfo){
         optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META));
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME));
+        if(allCategoriesInfo){
+          optionsHolder.remove(CATEGORIES_NAME);
+          optionsHolder.add(CATEGORIES_INFO);
+        }
         return this;
     }
 
@@ -169,6 +178,13 @@ public class DotTransformerBuilder {
                                 providerClassName);
                 Logger.error(DotTransformerBuilder.class, message, e);
                 throw new DotRuntimeException(message, e);
+            }
+        }
+        if (null == user) {
+            try {
+                user = APILocator.getUserAPI().getAnonymousUser();
+            } catch (DotDataException e) {
+                throw new DotRuntimeException(e);
             }
         }
         return new DotContentletTransformerImpl(contentlets, resolver, EnumSet.copyOf(optionsHolder), user);
