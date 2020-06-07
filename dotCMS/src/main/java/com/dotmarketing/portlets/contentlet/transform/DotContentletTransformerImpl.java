@@ -35,7 +35,7 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
             COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES, CATEGORIES_NAME
     );
 
-    private User user;
+    private final User user;
     private final Set<TransformOptions> options;
     private final List<Contentlet> contentlets;
     private final StrategyResolver strategyResolver;

@@ -146,7 +146,7 @@ public class ContentletUtilTest extends IntegrationTestBase {
                 verifyCategoriesForField(contentPrintableMap, CATEGORY_NAME_CONTENT_BELTS,
                         homeCategory, flightsCategory);
             } else {
-                List<Map<String, Object>> list = (List) contentPrintableMap
+                final List<Map<String, Object>> list = (List) contentPrintableMap
                         .get(CATEGORY_NAME_CONTENT);
                 final Map<String, Object> categoryData = list.get(0);
                 final Object categoryValue = categoryData.get(popularCategory.getKey());

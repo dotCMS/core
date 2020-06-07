@@ -10,8 +10,8 @@ public enum TransformOptions {
     VERSION_INFO(true), //This will include stuff like (live,working,archived, hasLiveVersion)
     LANGUAGE_PROPS(true), // Instructs the DefaultStrategy to include extra language props such as (languageCode, country, isoCode)
     BINARIES(true),   //This instructs strategies to include binaries
-    CATEGORIES_NAME(true),
-    CATEGORIES_INFO(true),
+    CATEGORIES_NAME(true), //This instructs to render only the category name (key=name)
+    CATEGORIES_INFO(true), //This instructs rendering much more info
     USE_ALIAS(true),  //This will include stuff like ('live' and 'isLive')
 
     LOAD_META, // If this is on meta data will be included for FileAssets
@@ -21,14 +21,14 @@ public enum TransformOptions {
     BINARIES_VIEW, //This Emulates the old BinaryToMapTransformer. If This one is included then INC_BINARIES is ignored
     CATEGORIES_VIEW; //This emulates the Category To MapTransformer
 
-    private boolean property = false;
+    private boolean defaultProperty;
 
     /**
      * Property Option Marker constructor
-     * @param property
+     * @param defaultProperty
      */
-    TransformOptions(final boolean property) {
-        this.property = property;
+    TransformOptions(final boolean defaultProperty) {
+        this.defaultProperty = defaultProperty;
     }
 
     /**
@@ -41,7 +41,7 @@ public enum TransformOptions {
      * is Property accessor
      * @return
      */
-    public boolean isProperty() {
-        return property;
+    public boolean isDefaultProperty() {
+        return defaultProperty;
     }
 }

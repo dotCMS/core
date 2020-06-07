@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  */
 public class DotFolderTransformerBuilder {
 
-    private FolderAPI folderAPI = APILocator.getFolderAPI();
+    private final FolderAPI folderAPI = APILocator.getFolderAPI();
 
     private User user;
     private Role[] roles;
@@ -63,7 +63,7 @@ public class DotFolderTransformerBuilder {
      */
     public DotFolderTransformerBuilder withUserAndRoles(final User user, final Role... roles){
         this.user = user;
-        this.roles = roles;
+        this.roles = Arrays.copyOf(roles, roles.length);
         return this;
     }
 

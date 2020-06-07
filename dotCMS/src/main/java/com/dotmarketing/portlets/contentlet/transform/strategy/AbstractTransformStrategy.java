@@ -61,7 +61,7 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
      * @param contentlet
      * @return
      */
-     T fromContentlet(Contentlet contentlet){
+     T fromContentlet(final Contentlet contentlet){
          return (T)contentlet;
      }
 

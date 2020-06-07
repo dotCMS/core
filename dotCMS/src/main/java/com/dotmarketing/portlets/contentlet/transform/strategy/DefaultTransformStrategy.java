@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.*;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.BASE_TYPE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.CONTENT_TYPE_KEY;
@@ -13,6 +12,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.LANGUAGEID_K
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.LIVE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_NOT_FOUND;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;

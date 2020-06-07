@@ -83,7 +83,7 @@ public class StrategyResolverImpl implements StrategyResolver {
             final Set<TransformOptions> options) {
         final ImmutableList.Builder<AbstractTransformStrategy> builder = new ImmutableList.Builder<>();
 
-        if(options.stream().anyMatch(TransformOptions::isProperty)){
+        if(options.stream().anyMatch(TransformOptions::isDefaultProperty)){
            builder.add(defaultTransformStrategy.get());
         }
 
