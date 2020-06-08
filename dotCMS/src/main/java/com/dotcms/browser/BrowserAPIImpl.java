@@ -23,7 +23,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -49,8 +48,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
  * @author jsanca
  */
 public class BrowserAPIImpl implements BrowserAPI {
-
-    private final LanguageAPI langAPI       = APILocator.getLanguageAPI();
+    
     private final UserWebAPI userAPI       = WebAPILocator.getUserWebAPI();
     private final FolderAPI folderAPI     = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();

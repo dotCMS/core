@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
             final TargetView targetView) {
         this.permissionAPI = permissionAPI;
         this.user = user;
-        this.roles = roles;
+        this.roles = Arrays.copyOf(roles,roles.length);
         this.folders = folders;
         this.targetView = targetView;
     }

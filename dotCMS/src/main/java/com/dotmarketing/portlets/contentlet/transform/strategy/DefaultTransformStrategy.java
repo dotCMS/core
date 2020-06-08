@@ -268,7 +268,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                             .find(categoryField.values(), user, true);
                     final List<Category> childCategories = new ArrayList<>();
                     if (parentCategory != null) {
-                        for (Category category : cats) {
+                        for (final Category category : cats) {
                             if (toolBox.categoryAPI
                                     .isParent(category, parentCategory, user, true)) {
                                 childCategories.add(category);
