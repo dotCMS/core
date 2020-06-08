@@ -318,7 +318,6 @@ var cmsfile=null;
 		}
 	}
 
-
 	function emmitFieldDataChange(val) {
 			var customEvent = document.createEvent("CustomEvent");
 			customEvent.initCustomEvent("ng-event", false, false,  {
@@ -342,8 +341,7 @@ var cmsfile=null;
 				"image/tiff",
 				"image/png",
 			];
-			const { mimeType, idPath } = results.entity.asset;
-
+			const { mimeType, idPath } = results.entity[asset.titleImage];
 			const image = `
 					<img
 					src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
@@ -356,7 +354,21 @@ var cmsfile=null;
 
 			const link = `<a href="${idPath}">${asset.title}</a>`;
 			const assetToInsert = mimeWhiteList.includes(mimeType) ? image : link;
-			tinymce.execCommand("mceInsertContent", false, assetToInsert);
+        	tinymce.execCommand("mceInsertContent", false, assetToInsert);
+			setAssetDimensionsInEditor();
+
+		});
+	}
+
+	function setAssetDimensionsInEditor () {
+		const images = tinymce.activeEditor.contentDocument.querySelectorAll('img');
+		images.forEach(image => {
+			image.addEventListener('load', () => {
+				if(!image.getAttribute('width')){
+					image.setAttribute('width', image.naturalWidth);
+					image.setAttribute('height', image.naturalHeight);
+				}
+			})
 		});
 	}
 
@@ -370,7 +382,6 @@ var cmsfile=null;
 		})
 		dropzoneEvents = true
   }
-
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
@@ -422,7 +433,21 @@ var cmsfile=null;
                     if (kind === 'file') {
                         dropZone.style.pointerEvents = "all";
                     }
+                  });
+
+                  editor.on("ExecCommand", function (e) {
+                    if (e.command === 'mceFullScreen'){
+                        if (dropZone.style.position === '') {
+                            dropZone.style.position = 'fixed';
+                            dropZone.style.zIndex = '999';
+                        } else {
+                            dropZone.style.position = '';
+                            dropZone.style.zIndex = '';
+                        }
+                    }
+
 			      });
+
 			      editor.dom.bind(document, "dragleave", function (e) {
 			        dropZone.style.pointerEvents = "none";
 			        return false;
@@ -487,9 +512,7 @@ var cmsfile=null;
 		else{
 			cmsFileBrowserFile.show();
 		}
-		dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' })
-		dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' })
-
+		dojo.query('.mce-window .mce-close')[0].click();
 	}
 
 	//Glossary terms search
@@ -671,11 +694,9 @@ var cmsfile=null;
 	}
 
 	function addFileImageCallback(file) {
-		
 		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
-
-		var assetURI = replaceUrlPattern(pattern, file);
-		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
+        var assetURI = replaceUrlPattern(pattern, file);
+        insertAssetInEditor([file])
 	}
 
 

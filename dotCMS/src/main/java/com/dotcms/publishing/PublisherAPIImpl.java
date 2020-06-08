@@ -9,17 +9,28 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishEndEvent;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PublisherAPIImpl implements PublisherAPI {
 
     private final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
-    private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+    private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+    private final Map<String,FilterDescriptor> loadedFilters = new ConcurrentHashMap<>();
+
 
     @Override
     public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException {
@@ -142,4 +153,78 @@ public class PublisherAPIImpl implements PublisherAPI {
         return status;
     }
 
+    @Override
+    public void addFilterDescriptor(final FilterDescriptor filterDescriptor) {
+        this.loadedFilters.put(filterDescriptor.getKey(),filterDescriptor);
+    }
+
+    @Override
+    public List<FilterDescriptor> getFiltersDescriptorsByRole(final User user) throws DotDataException {
+        if(user.isAdmin()){
+            return new ArrayList<>(this.loadedFilters.values());
+        }
+        final List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), true);
+        Logger.info(this,"User Roles: " + roles.toString());
+        final List<FilterDescriptor> filters = new ArrayList<>();
+        for(final Map.Entry<String,FilterDescriptor> filterDescriptorMap : this.loadedFilters.entrySet()){
+            final String filterRoles = filterDescriptorMap.getValue().getRoles();
+            Logger.info(PublisherAPI.class,"File: " +filterDescriptorMap.getKey() + " Roles: " + filterRoles );
+            for(final Role role : roles){
+                if(UtilMethods.isSet(role.getRoleKey()) && filterRoles.contains(role.getRoleKey())){
+                    filters.add(filterDescriptorMap.getValue());
+                }
+            }
+        }
+
+        return filters;
+    }
+
+    @VisibleForTesting
+    public Map<String, FilterDescriptor> getFilterDescriptorMap() {
+        return this.loadedFilters;
+    }
+
+    @Override
+    public FilterDescriptor getFilterDescriptorByKey(final String filterKey) {
+        final FilterDescriptor defaultFilter = getDefaultFilter();
+        return !UtilMethods.isSet(filterKey) ? defaultFilter : this.loadedFilters.getOrDefault(filterKey,defaultFilter);
+    }
+
+    @Override
+    public PublisherFilter createPublisherFilter(final String bundleId)
+            throws DotDataException, DotSecurityException {
+
+        final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
+        final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
+
+        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl((Boolean)filterDescriptor.getFilters().getOrDefault("dependencies",true),
+                (Boolean)filterDescriptor.getFilters().getOrDefault("relationships",true));
+
+        if(filterDescriptor.getFilters().containsKey("excludeClasses")){
+            List.class.cast(filterDescriptor.getFilters().get("excludeClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
+
+        }
+
+        if(filterDescriptor.getFilters().containsKey("excludeDependencyClasses")){
+            List.class.cast(filterDescriptor.getFilters().get("excludeDependencyClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type.toString()));
+        }
+
+        if(filterDescriptor.getFilters().containsKey("excludeQuery")){
+            final String query = filterDescriptor.getFilters().get("excludeQuery").toString();
+            APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
+                .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
+        }
+
+        if(filterDescriptor.getFilters().containsKey("excludeDependencyQuery")){
+            final String query = filterDescriptor.getFilters().get("excludeDependencyQuery").toString();
+            APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
+                .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
+        }
+
+        return publisherFilter;
+    }
+
+    public FilterDescriptor getDefaultFilter(){
+        return this.loadedFilters.values().stream().filter(FilterDescriptor::isDefaultFilter).findFirst().get();
+    }
 }
