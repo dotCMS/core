@@ -101,7 +101,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     }
 
     @Override
-    public Collection<GraphQLType> getTypes() throws DotDataException {
+    public Collection<? extends GraphQLType> getTypes() throws DotDataException {
         // we want to generate them always - no cache
         getContentAPITypes().forEach((graphQLType)->
                 typesMap.put(graphQLType.getName(), graphQLType));

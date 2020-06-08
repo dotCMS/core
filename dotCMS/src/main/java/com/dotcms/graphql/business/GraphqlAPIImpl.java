@@ -38,7 +38,9 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     public GraphqlAPIImpl() {
         typesProviders.add(ContentAPIGraphQLTypesProvider.INSTANCE);
+        typesProviders.add(PageAPIGraphQLTypesProvider.INSTANCE);
         fieldsProviders.add(ContentAPIGraphQLFieldsProvider.INSTANCE);
+        fieldsProviders.add(PageAPIGraphQLFieldsProvider.INSTANCE);
     }
 
     /**
@@ -57,14 +59,14 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     @Override
     public GraphQLSchema getSchema() throws DotDataException {
         GraphQLSchema innerSchema = this.schema;
-        if(innerSchema == null) {
-            synchronized (this) {
-                innerSchema = this.schema;
-                if(innerSchema == null) {
+//        if(innerSchema == null) {
+//            synchronized (this) {
+//                innerSchema = this.schema;
+//                if(innerSchema == null) {
                     this.schema = innerSchema = generateSchema();
-                }
-            }
-        }
+//                }
+//            }
+//        }
 
         printSchema();
         return innerSchema;
