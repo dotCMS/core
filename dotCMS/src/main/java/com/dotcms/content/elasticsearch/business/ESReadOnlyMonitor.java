@@ -34,7 +34,9 @@ public class ESReadOnlyMonitor {
     private final AtomicBoolean started = new AtomicBoolean();
     private Timer timer;
 
-    private ESReadOnlyMonitor(final SystemMessageEventUtil systemMessageEventUtil, final RoleAPI roleAPI) {
+    private ESReadOnlyMonitor(
+            final SystemMessageEventUtil systemMessageEventUtil,
+            final RoleAPI roleAPI) {
         super();
         this.systemMessageEventUtil = systemMessageEventUtil;
         this.roleAPI = roleAPI;
@@ -42,7 +44,10 @@ public class ESReadOnlyMonitor {
     }
 
     private ESReadOnlyMonitor() {
-        this(SystemMessageEventUtil.getInstance(), APILocator.getRoleAPI());
+        this(
+                SystemMessageEventUtil.getInstance(),
+                APILocator.getRoleAPI()
+        );
     }
 
     // Inner class to provide instance of class
@@ -63,17 +68,33 @@ public class ESReadOnlyMonitor {
         return Singleton.INSTANCE;
     }
 
-    public void start(final ReindexEntry reindexEntry, final String cause){
-        if (started.compareAndSet(false, true)) {
-            Logger.error(this.getClass(), "Reindex failed for :" + reindexEntry + " because " + cause);
+    public void start(final String message){
+        if (this.start()) {
+            Logger.error(this.getClass(), message);
+        }
+    }
 
-            if (ESIndexUtil.isEitherLiveOrWokingIndicesReadOnly()) {
+    /**
+     * Start a {@link ESReadOnlyMonitor} is it is not started yet
+     * @return false if a ESReadOnlyMonitor was started before
+     */
+    public boolean start(){
+        if (started.compareAndSet(false, true)) {
+            if (ElasticsearchUtil.isClusterInReadOnlyMode()) {
+                ReindexThread.setCurrentIndexReadOnly(true);
+                sendMessage("es.cluster.read.only.message");
+                startClusterMonitor();
+            } else if (ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly()) {
                 ReindexThread.setCurrentIndexReadOnly(true);
                 sendMessage("es.index.read.only.message");
-                startMonitor();
+                startIndexMonitor();
             } else {
                 started.set(false);
             }
+
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -85,13 +106,16 @@ public class ESReadOnlyMonitor {
                     .map(user -> user.getUserId())
                     .collect(Collectors.toList());
 
-            final SystemMessageBuilder message = new SystemMessageBuilder()
-                    .setMessage(LanguageUtil.get(messageKey))
+            final String message = LanguageUtil.get(messageKey);
+
+            final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
+                    .setMessage(message)
                     .setSeverity(MessageSeverity.ERROR)
                     .setType(MessageType.SIMPLE_MESSAGE)
                     .setLife(TimeUnit.SECONDS.toMillis(5));
 
-            systemMessageEventUtil.pushMessage(message.create(), usersId);
+            Logger.error(ESReadOnlyMonitor.class, message);
+            systemMessageEventUtil.pushMessage(messageBuilder.create(), usersId);
         } catch (final LanguageException | DotDataException | DotSecurityException e) {
             Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
         }
@@ -100,7 +124,7 @@ public class ESReadOnlyMonitor {
     private void putCurrentIndicesToWriteMode() {
         try {
             Logger.debug(this.getClass(), () -> "Trying to set the current indices to Write mode");
-            ESIndexUtil.setLiveAndWorkingIndicesToWriteMode();
+            ElasticsearchUtil.setLiveAndWorkingIndicesToWriteMode();
             sendMessage("es.index.write.allow.message");
             ReindexThread.setCurrentIndexReadOnly(false);
 
@@ -110,27 +134,59 @@ public class ESReadOnlyMonitor {
         }
     }
 
-    private synchronized void startMonitor() {
+    private void putClusterToWriteMode() {
+        Logger.debug(this.getClass(), () -> "Trying to set the current indices to Write mode");
+        ElasticsearchUtil.setClusterToWriteMode();
+        sendMessage("es.cluster.write.allow.message");
+        ReindexThread.setCurrentIndexReadOnly(false);
+
+        this.stop();
+    }
+
+    private void startIndexMonitor() {
+         schedule(new IndexMonitorTimerTask(this));
+    }
+
+    private synchronized void schedule(final TimerTask timerTask) {
         timer = new Timer(true);
-        timer.schedule(new MonitorTimerTask(this), 0, TimeUnit.MINUTES.toMillis(1));
+        timer.schedule(timerTask, 0, TimeUnit.MINUTES.toMillis(1));
     }
 
-    private void stop() {
-       this.timer.cancel();
-       this.timer = null;
-        this.started.set(false);
+    private void startClusterMonitor() {
+        schedule(new ClusterMonitorTimerTask(this));
     }
 
-    private static class MonitorTimerTask extends TimerTask{
+    private synchronized void stop() {
+        if (this.timer != null) {
+            this.timer.cancel();
+            this.timer = null;
+            this.started.set(false);
+        }
+    }
+
+    private static class IndexMonitorTimerTask extends TimerTask{
         private final ESReadOnlyMonitor esReadOnlyMonitor;
 
-        MonitorTimerTask(final ESReadOnlyMonitor esReadOnlyMonitor) {
+        IndexMonitorTimerTask(final ESReadOnlyMonitor esReadOnlyMonitor) {
             this.esReadOnlyMonitor = esReadOnlyMonitor;
         }
 
         @Override
         public void run() {
             this.esReadOnlyMonitor.putCurrentIndicesToWriteMode();
+        }
+    }
+
+    private static class ClusterMonitorTimerTask extends TimerTask{
+        private final ESReadOnlyMonitor esReadOnlyMonitor;
+
+        ClusterMonitorTimerTask(final ESReadOnlyMonitor esReadOnlyMonitor) {
+            this.esReadOnlyMonitor = esReadOnlyMonitor;
+        }
+
+        @Override
+        public void run() {
+            this.esReadOnlyMonitor.putClusterToWriteMode();
         }
     }
 }

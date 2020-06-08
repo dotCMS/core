@@ -230,7 +230,10 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
         DotConcurrentFactory.getInstance()
                 .getSubmitter()
-                .submit(() -> esReadOnlyMonitor.start(idx, cause));
+                .submit(() -> {
+                    final String message = "Reindex failed for :" + idx + " because " + cause;
+                    esReadOnlyMonitor.start(message);
+                });
     }
 
 }

@@ -128,13 +128,13 @@ public class ReindexQueueAPITest {
         reindexQueueAPI.markAsFailed(reindexEntry, cause);
 
         verify(reindexQueueFactory).markAsFailed(reindexEntry, cause);
-        verify(esReadOnlyMonitor).start(reindexEntry, cause);
+        verify(esReadOnlyMonitor).start("Reindex failed for :" + reindexEntry + " because " + cause);
     }
 
     /**
      * Method to Test: {@link ReindexQueueAPIImpl#markAsFailed(ReindexEntry, String)}
      * When: Try to mark a reindex as fail and a {@link DotDataException} in thrown
-     * Should: Should not call the {@link ESReadOnlyMonitor#start(ReindexEntry, String)} )} method
+     * Should: Should not call the {@link ESReadOnlyMonitor#start(String)} )} )} method
      *
      * @throws DotDataException
      */
@@ -156,7 +156,7 @@ public class ReindexQueueAPITest {
             reindexQueueAPI.markAsFailed(reindexEntry, cause);
             throw new AssertException("DotDataException expected");
         } catch (DotDataException e){
-            verify(esReadOnlyMonitor, never()).start(reindexEntry, cause);
+            verify(esReadOnlyMonitor, never()).start("Reindex failed for :" + reindexEntry + " because " + cause);
         }
     }
 
