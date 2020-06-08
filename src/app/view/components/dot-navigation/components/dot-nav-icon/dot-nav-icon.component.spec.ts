@@ -27,7 +27,7 @@ describe('DotNavIconComponent', () => {
         fixture.detectChanges();
         const dotIconComponent: DotIconComponent = de.query(By.css('dot-icon')).componentInstance;
         expect(dotIconComponent).toBeDefined();
-        expect(dotIconComponent.size).toBe('18');
+        expect(dotIconComponent.size).toBe(18);
     });
 
     it('should have font awesome icon', () => {

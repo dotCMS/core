@@ -15,7 +15,8 @@ export class DotCrumbtrailService {
 
     private portletsTitlePathFinder = {
         'content-types-angular': 'contentType.name',
-        'edit-page': 'content.page.title'
+        'edit-page': 'content.page.title',
+        apps: 'data.app.name'
     };
 
     constructor(
@@ -30,7 +31,7 @@ export class DotCrumbtrailService {
                     if (this.URL_EXCLUDES.includes(event.url)) {
                         return this.splitURL(event.url)[0];
                     } else {
-                     return event.url;
+                        return event.url;
                     }
                 }),
                 switchMap(this.getCrumbtrail.bind(this))
@@ -84,7 +85,9 @@ export class DotCrumbtrailService {
 
         let currentData: any = data;
 
-        this.portletsTitlePathFinder[sectionKey].split('.').forEach((key) => (currentData = currentData[key]));
+        this.portletsTitlePathFinder[sectionKey]
+            .split('.')
+            .forEach((key) => (currentData = currentData[key]));
         return currentData;
     }
 

@@ -309,4 +309,45 @@ describe('DotCrumbtrailService', () => {
             }
         ]);
     });
+
+    it('Should set DotApps breadcrumb', () => {
+        mockActivatedRoute.root = {
+            firstChild: {
+                data: new BehaviorSubject({}),
+                firstChild: {
+                    data: new BehaviorSubject({}),
+                    firstChild: {
+                        firstChild: {
+                            firstChild: null,
+                            data: new BehaviorSubject({})
+                        },
+                        data: new BehaviorSubject(
+                            {
+                                data: {
+                                    app: {
+                                        name: 'Google Translate'
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        };
+
+        dotNavigationServiceMock.navigationEnd.next(
+            {
+                url: '/apps/google-translate',
+                urlAfterRedirects: '/apps/google-translate',
+                id: 1,
+            }
+        );
+
+        expect(secondCrumb).toEqual([
+            {
+                label: 'Google Translate',
+                url: ''
+            }
+        ]);
+    });
 });
