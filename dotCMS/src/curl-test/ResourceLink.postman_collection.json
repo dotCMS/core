@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f82236f5-bb37-47b7-92c8-b7c950db1c52",
+		"_postman_id": "aee3d2de-486a-43d1-91fb-74c21c224665",
 		"name": "ResourceLink",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -11,7 +11,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "dd4d3880-bd2e-4cff-8c8d-54270b27a49f",
+						"id": "3923dc9a-42cd-4a7b-9fb8-5cca63fb03d9",
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"",
@@ -86,7 +86,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "a90bc5b7-7f90-4305-80c1-2604a85af86f",
+						"id": "7b01b4d0-0eea-4f4d-8174-74919e55c9bb",
 						"exec": [
 							"console.log(\"temporalFileId\", \"{{temporalFileId}}\")"
 						],
@@ -96,7 +96,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "e1c4d689-cac6-4e46-aaf6-a531a452c4ba",
+						"id": "bdf75a85-526e-4490-a566-7b9e3e017fd5",
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"",
@@ -175,7 +175,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ebd3e30d-2722-4a0f-8bc6-fc677433990c",
+						"id": "8b4b2190-1404-4bf0-aaaa-418141372429",
 						"exec": [
 							"",
 							"pm.test(\"Status code should be 200\", function () {",
@@ -219,7 +219,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/content/resourcelinks?identifier={{identifier}}",
+					"raw": "{{serverURL}}/api/v1/content/resourcelink?identifier={{identifier}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -227,132 +227,12 @@
 						"api",
 						"v1",
 						"content",
-						"resourcelinks"
+						"resourcelink"
 					],
 					"query": [
 						{
 							"key": "identifier",
 							"value": "{{identifier}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Resource Link not found field",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "3c77845b-e3c8-4965-a6fa-cb9ae6a90545",
-						"exec": [
-							"",
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/content/resourcelink/field/xxxx?identifier={{identifier}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"content",
-						"resourcelink",
-						"field",
-						"xxxx"
-					],
-					"query": [
-						{
-							"key": "identifier",
-							"value": "{{identifier}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Resource No Results",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "1c06f536-2e85-4c47-b72c-6efc91049c3e",
-						"exec": [
-							"",
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Includes idPath\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.eql(\"\");",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/content/resourcelinks?identifier=xxx",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"content",
-						"resourcelinks"
-					],
-					"query": [
-						{
-							"key": "identifier",
-							"value": "xxx"
 						}
 					]
 				}
@@ -362,15 +242,15 @@
 	],
 	"variable": [
 		{
-			"id": "653f60d9-5fe1-45a0-9178-457022e1828d",
+			"id": "c392dea7-97ac-4ed6-9c73-afa97d4c92b6",
 			"key": "temporalFileId",
-			"value": "temp_375c8b0a41",
+			"value": "temp_d6cf91a711",
 			"type": "string"
 		},
 		{
-			"id": "9f31b4aa-a46e-43ef-a521-5277a5df5f5c",
+			"id": "12422856-2e79-4633-ac7a-4e377b0f1cdd",
 			"key": "identifier",
-			"value": "3a60f7ae-a2a9-496c-a4f5-348dd39e13ee",
+			"value": "d003407d-b548-4fe5-b513-b83449fbccdc",
 			"type": "string"
 		}
 	],
