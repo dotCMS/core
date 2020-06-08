@@ -149,6 +149,17 @@ public class DotTransformerBuilder {
         return this;
     }
 
+
+    /**
+     * This one does not transform binaries. But still leaves them for use. Meaning the resulting map will still have binaries
+     * @return
+     */
+    public DotTransformerBuilder graphQLDataFetchOptions(){
+        optionsHolder.clear();
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, CATEGORIES_NAME));
+        return this;
+    }
+
     /**
      * Dont know where? to go land here.
      * @return

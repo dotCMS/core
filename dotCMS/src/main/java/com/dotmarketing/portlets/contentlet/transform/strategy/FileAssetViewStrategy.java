@@ -48,8 +48,9 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
     }
 
     @Override
-    protected Map<String, Object> transform(final FileAsset fileAsset, final Map<String, Object> map,
-            final Set<TransformOptions> options, final  User user) throws DotDataException {
+    protected Map<String, Object> transform(final FileAsset fileAsset,
+            final Map<String, Object> map,
+            final Set<TransformOptions> options, final User user) throws DotDataException {
 
         if(isNotSet(fileAsset.getTitle())) {
             final Identifier identifier = toolBox.identifierAPI.find(fileAsset.getIdentifier());

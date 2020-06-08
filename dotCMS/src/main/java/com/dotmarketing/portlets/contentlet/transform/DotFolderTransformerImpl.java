@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotmarketing.beans.IconType;
 import com.dotmarketing.business.APILocator;
@@ -56,7 +57,7 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
             final TargetView targetView) {
         this.permissionAPI = permissionAPI;
         this.user = user;
-        this.roles = Arrays.copyOf(roles,roles.length);
+        this.roles =   isSet(roles) ? Arrays.copyOf(roles, roles.length) : new Role[]{} ;
         this.folders = folders;
         this.targetView = targetView;
     }

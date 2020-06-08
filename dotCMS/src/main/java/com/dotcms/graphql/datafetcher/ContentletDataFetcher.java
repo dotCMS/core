@@ -56,7 +56,7 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                 .collect(Collectors.toList());
 
             final DotContentletTransformer transformer = new DotTransformerBuilder()
-                    .defaultOptions().content(filteredContentletList).build();
+                    .graphQLDataFetchOptions().content(filteredContentletList).build();
             return transformer.hydrate();
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);

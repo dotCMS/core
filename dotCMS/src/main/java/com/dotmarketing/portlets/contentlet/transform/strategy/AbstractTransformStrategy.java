@@ -88,7 +88,7 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
      * @param user
      */
     public void apply(final Contentlet source, final Map<String, Object> targetMap,
-            final Set<TransformOptions> includeOptions, final User user) {
+        final Set<TransformOptions> includeOptions, final User user) {
         final T subtype = fromContentlet(source);
         try {
              transform(subtype, targetMap, includeOptions, user);

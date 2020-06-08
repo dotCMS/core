@@ -48,8 +48,8 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
      * @throws DotSecurityException
      */
     @Override
-    protected Map<String, Object> transform(final Contentlet contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options, final User user) {
+    protected Map<String, Object> transform(final Contentlet contentlet,
+    final Map<String, Object> map, final Set<TransformOptions> options, final User user) {
 
         final List<Field> binaries = contentlet.getContentType().fields(BinaryField.class);
 

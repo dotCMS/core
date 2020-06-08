@@ -20,6 +20,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILTER_BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
@@ -213,8 +214,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * After the execution of this method if the BINARIES flag is turned on
      * all the binary fields will be replaced and transformed by a /dA/.. path.
      */
-    private void addBinaries(final Contentlet contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options) {
+    private void addBinaries(final Contentlet contentlet, final Map<String, Object> map, final Set<TransformOptions> options) {
 
         final List<Field> binaries = contentlet.getContentType().fields(BinaryField.class);
 
@@ -222,16 +222,26 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             return;
         }
 
+        //If we dont want any binaries making it into the final map
+        if(options.contains(FILTER_BINARIES)){
+            binaries.forEach(field -> {
+                map.remove(field.variable());
+            });
+            Logger.info(DefaultTransformStrategy.class, ()->"Transformer was instructed to exclude binaries.");
+            return;
+        }
+
         // if we want to include binaries as they are (java.io.File) this is the flag you should turn on.
-        final boolean includeBinaries = options.contains(BINARIES);
-        for (final Field field : binaries) {
-            try {
-                final String velocityVarName = field.variable();
-                if (map.get(velocityVarName) instanceof File) { //Extra precaution in case we are attempting to process a contentlet that has already been transformed.
-                    final File conBinary = contentlet.getBinary(field.variable());
-                    if (null != conBinary) {
-                        //If we want to see binaries. The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
-                        if (includeBinaries) {
+        if (options.contains(BINARIES)) {
+            for (final Field field : binaries) {
+                try {
+                    final String velocityVarName = field.variable();
+                    //Extra precaution in case we are attempting to process a contentlet that has already been transformed.
+                    if (map.get(velocityVarName) instanceof File) {
+                        final File conBinary = contentlet.getBinary(field.variable());
+                        if (null != conBinary) {
+                            //If we want to see binaries. The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
+
                             if (conBinary.exists()) {
                                 final String dAPath = "/dA/%s/%s/%s";
                                 map.put(field.variable() + "Version",
@@ -243,16 +253,12 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                                 map.put(field.variable() + "ContentAsset",
                                         contentlet.getIdentifier() + "/" + field.variable());
                             }
-                        } else {
-                            //Otherwise lets just remove the binaries from the final map.
-                            //Since we dont want any Files making it into the final json presented to the user.
-                            map.remove(field.variable());
                         }
                     }
+                } catch (IOException e) {
+                    Logger.warn(this,
+                            "Unable to get Binary from field with var " + field.variable());
                 }
-            } catch (IOException e) {
-                Logger.warn(this,
-                        "Unable to get Binary from field with var " + field.variable());
             }
         }
     }

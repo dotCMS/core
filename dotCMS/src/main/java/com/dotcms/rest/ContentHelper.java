@@ -142,19 +142,8 @@ public class ContentHelper {
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes, otherwise will the same instance
      */
     public Contentlet hydrateContentlet(final Contentlet contentlet) {
-       return hydrateContentlet(contentlet, false);
+        return new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
     } // hydrateContentlet.
-
-    /**
-     * Serves as an Entry point to the ContentletToMapTransformer
-     * @See DotTransformerBuilder
-     * @param contentlet
-     * @param allCategoriesInfo
-     * @return
-     */
-    public Contentlet hydrateContentlet(final Contentlet contentlet, final boolean allCategoriesInfo) {
-        return new DotTransformerBuilder().contentResourceOptions(allCategoriesInfo).content(contentlet).build().hydrate().get(0);
-    }
 
     /**
      * Gets if possible the url associated to this asset contentlet

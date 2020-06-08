@@ -16,8 +16,8 @@ class IdentifierViewStrategy extends AbstractTransformStrategy<Contentlet>{
     }
 
     @Override
-    protected Map<String, Object> transform(final Contentlet contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options, final User user) throws DotDataException {
+    protected Map<String, Object> transform(final Contentlet contentlet,
+            final Map<String, Object> map, final Set<TransformOptions> options, final User user) throws DotDataException {
 
         final Identifier identifier = toolBox.identifierAPI.find(contentlet.getIdentifier());
         map.putAll(mapIdentifier(identifier,true));
