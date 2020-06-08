@@ -210,6 +210,8 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
 
     /**
      * This method includes binaries in the resulting view if so is indicated
+     * After the execution of this method if the BINARIES flag is turned on
+     * all the binary fields will be replaced and transformed by a /dA/.. path.
      */
     private void addBinaries(final Contentlet contentlet, final Map<String, Object> map,
             final Set<TransformOptions> options) {
@@ -224,21 +226,28 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         final boolean includeBinaries = options.contains(BINARIES);
         for (final Field field : binaries) {
             try {
-                final File conBinary = contentlet.getBinary(field.variable());
-                if (conBinary != null) {
-                    //If we want to see binaries. The binary-field per se must be replaced by file-name. We dont want to disclose any file specifics.
-                    if (includeBinaries) {
-
-                        if(conBinary.exists()) {
-                            final String dAPath = "/dA/%s/%s/%s";
-                            map.put(field.variable() + "Version", String.format(dAPath, contentlet.getInode(),field.variable(),conBinary.getName()));
-                            map.put(field.variable(), String.format(dAPath, contentlet.getIdentifier(),field.variable(),conBinary.getName()));
-                            map.put(field.variable() + "ContentAsset", contentlet.getIdentifier() + "/" +field.variable());
+                final String velocityVarName = field.variable();
+                if (map.get(velocityVarName) instanceof File) { //Extra precaution in case we are attempting to process a contentlet that has already been transformed.
+                    final File conBinary = contentlet.getBinary(field.variable());
+                    if (null != conBinary) {
+                        //If we want to see binaries. The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
+                        if (includeBinaries) {
+                            if (conBinary.exists()) {
+                                final String dAPath = "/dA/%s/%s/%s";
+                                map.put(field.variable() + "Version",
+                                        String.format(dAPath, contentlet.getInode(),
+                                                field.variable(), conBinary.getName()));
+                                map.put(field.variable(),
+                                        String.format(dAPath, contentlet.getIdentifier(),
+                                                field.variable(), conBinary.getName()));
+                                map.put(field.variable() + "ContentAsset",
+                                        contentlet.getIdentifier() + "/" + field.variable());
+                            }
+                        } else {
+                            //Otherwise lets just remove the binaries from the final map.
+                            //Since we dont want any Files making it into the final json presented to the user.
+                            map.remove(field.variable());
                         }
-
-                    } else {
-                        //Otherwise lets just remove the binaries from the final map. as a precaution.
-                        map.remove(field.variable());
                     }
                 }
             } catch (IOException e) {
