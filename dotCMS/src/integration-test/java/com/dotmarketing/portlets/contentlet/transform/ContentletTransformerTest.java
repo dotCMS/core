@@ -353,14 +353,14 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     @UseDataProvider("listTestCases")
     public void Transformer_Backwards_Compatibility_Test(final TestCase testCase) {
 
-        final Set<String> privateInternalProperties = AbstractTransformStrategy.privateInternalProperties;
-
         final List <Contentlet> list = testCase.contentlets;
 
         if(list.isEmpty()){
            Logger.warn(ContentletTransformerTest.class, String.format("Unable to get test samples of type `%s`",testCase.baseContentType.name()));
            return;
         }
+
+        final Set<String> privateInternalProperties = AbstractTransformStrategy.privateInternalProperties;
 
         final String baseTypeName = testCase.baseContentType.name();
 
@@ -381,6 +381,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             final Map<String, Object> copyMap = transformedList2.get(i);
 
             assertTrue(String.format(" baseType `%s` should have same (or more) number of properties " ,baseTypeName),copyMap.size() >= sourceMap.size());
+            final String assertMessage =  " contentType:`%s` , id: `%s` ,  key: `%s` ";
 
             for (final String propertyName : sourceMap.keySet()) {
 
@@ -397,13 +398,13 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     final File conBinary = (File)object1;
                     final String dAPath = "/dA/%s/%s/%s";
                     final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName,conBinary.getName());
-                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
+                    assertEquals(String.format(assertMessage,
                             baseTypeName, original.getIdentifier(), propertyName), binaryPath, object2);
                     continue;
                 }
 
                     assertNotNull(String.format("Object with key `%s` is null why??",object2));
-                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
+                    assertEquals(String.format(assertMessage,
                             baseTypeName, original.getIdentifier(), propertyName), object1,
                             object2);
 

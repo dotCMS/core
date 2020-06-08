@@ -48,7 +48,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
  * @author jsanca
  */
 public class BrowserAPIImpl implements BrowserAPI {
-    
+
     private final UserWebAPI userAPI       = WebAPILocator.getUserWebAPI();
     private final FolderAPI folderAPI     = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
