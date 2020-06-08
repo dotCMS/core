@@ -12,7 +12,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -37,7 +36,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -47,7 +45,7 @@ import java.util.function.Supplier;
  * Exposes a {@link com.dotmarketing.portlets.contentlet.model.ResourceLink} by inode or id
  * @author jsanca
  */
-@Path("/v1/content/resourcelinks")
+@Path("/v1/content/resourcelink")
 public class ResourceLinkResource {
 
     private final WebResource    webResource;
@@ -101,29 +99,17 @@ public class ResourceLinkResource {
         final User user       = initData.getUser();
         final long languageId = LanguageUtil.getLanguageId(language);
         final PageMode mode   = PageMode.get(request);
+        final Contentlet contentlet = this.getContentlet(inode, identifier, languageId,
+                ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initData, mode);
 
-        try {
-            final Contentlet contentlet = this.getContentlet(inode, identifier, languageId,
-                    () -> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initData, mode);
+        Logger.debug(this, ()-> "Finding the resource link for the contentlet: " + contentlet.getIdentifier());
+        final ResourceLink link     = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet, field);
+        if(link.isDownloadRestricted()) {
 
-            Logger.debug(this, () -> "Finding the resource link for the contentlet: " + contentlet.getIdentifier());
-
-            if (!contentlet.getContentType().fieldMap().containsKey(field)) {
-
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-
-            final ResourceLink link = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet, field);
-            if (link.isDownloadRestricted()) {
-
-                throw new DotSecurityException("The Resource link to the contentlet is restricted.");
-            }
-
-            return Response.ok(new ResponseEntityView(this.toMapView(contentlet, link))).build();
-        }catch (DoesNotExistException e) {
-
-            return Response.ok(new ResponseEntityView(Collections.emptyMap())).build();
+            throw new DotSecurityException("The Resource link to the contentlet is restricted.");
         }
+
+        return Response.ok(new ResponseEntityView(toMapView(link))).build();
     }
 
     private Contentlet getContentlet(final String inode,
@@ -134,38 +120,28 @@ public class ResourceLinkResource {
                                      final PageMode pageMode) throws DotDataException, DotSecurityException {
 
         Contentlet contentlet = null;
-        try {
-            PageMode mode = pageMode;
+        PageMode mode         = pageMode;
 
-            if (UtilMethods.isSet(inode)) {
+        if(UtilMethods.isSet(inode)) {
 
-                Logger.debug(this, () -> "Finding the contentlet by inode: " + inode);
-                contentlet = this.contentletAPI.find
-                        (inode, initDataObject.getUser(), mode.respectAnonPerms);
+            Logger.debug(this, ()-> "Finding the contentlet by inode: " + inode);
+            contentlet = this.contentletAPI.find
+                    (inode, initDataObject.getUser(), mode.respectAnonPerms);
 
-                DotPreconditions.notNull(contentlet, () -> "contentlet-was-not-found", DoesNotExistException.class);
-            } else if (UtilMethods.isSet(identifier)) {
+            DotPreconditions.notNull(contentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
+        } else if (UtilMethods.isSet(identifier)) {
 
-                Logger.debug(this, () -> "Finding the contentlet by identifier: " + identifier);
-                mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
-                final Optional<Contentlet> currentContentlet = language <= 0 ?
-                        Optional.ofNullable(this.contentletAPI.findContentletByIdentifier(identifier, mode.showLive,
-                                sessionLanguage.get(), initDataObject.getUser(), mode.respectAnonPerms)) :
-                        this.contentletAPI.findContentletByIdentifierOrFallback
-                                (identifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
+            Logger.debug(this, ()-> "Finding the contentlet by identifier: " + identifier);
+            mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
+            final Optional<Contentlet> currentContentlet =  language <= 0?
+                    Optional.ofNullable(this.contentletAPI.findContentletByIdentifier(identifier, mode.showLive,
+                            sessionLanguage.get(), initDataObject.getUser() , mode.respectAnonPerms)):
+                    this.contentletAPI.findContentletByIdentifierOrFallback
+                            (identifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
 
-                DotPreconditions.isTrue(currentContentlet.isPresent(), () -> "contentlet-was-not-found", DoesNotExistException.class);
-                contentlet = currentContentlet.get();
+            DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
+            contentlet = currentContentlet.get();
 
-            }
-        } catch (DoesNotExistException e) {
-
-            throw e;
-        } catch(DotRuntimeException e) {
-
-            Logger.error(this, e.getMessage(), e);
-            DotPreconditions.notNull(contentlet, () -> "contentlet-was-not-found", DoesNotExistException.class);
-            throw e;
         }
 
         return contentlet;
@@ -189,7 +165,7 @@ public class ResourceLinkResource {
     @JSONP
     @NoCache
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
-    public Response findResourceLinks(@Context final HttpServletRequest  request,
+    public Response findResourceLink(@Context final HttpServletRequest  request,
                                      @Context final HttpServletResponse response,
                                      @QueryParam("inode")            final String inode,
                                      @QueryParam("identifier")       final String identifier,
@@ -206,42 +182,32 @@ public class ResourceLinkResource {
         final User user       = initData.getUser();
         final long languageId = LanguageUtil.getLanguageId(language);
         final PageMode mode   = PageMode.get(request);
-        try {
-            final Contentlet contentlet = this.getContentlet(inode, identifier, languageId,
-                    () -> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initData, mode);
-            final Map<String, Object> resourceLinkMap = new TreeMap<>();
+        final Contentlet contentlet = this.getContentlet(inode, identifier, languageId,
+                ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initData, mode);
+        final Map<String, Object> resourceLinkMap = new TreeMap<>();
 
-            Logger.debug(this, () -> "Finding the resource links for the contentlet: " + contentlet.getIdentifier());
+        Logger.debug(this, ()-> "Finding the resource links for the contentlet: " + contentlet.getIdentifier());
 
-            for (final Field field : contentlet.getContentType().fields(BinaryField.class)) {
+        for (final Field field : contentlet.getContentType().fields(BinaryField.class)) {
 
-                final String fieldName = field.variable();
-                final ResourceLink link = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet, fieldName);
-                if (link.isDownloadRestricted()) {
+            final String fieldName  = field.variable();
+            final ResourceLink link = new ResourceLink.ResourceLinkBuilder().build(request, user, contentlet, fieldName);
+            if (link.isDownloadRestricted()) {
 
-                    throw new DotSecurityException("The Resource link to the contentlet is restricted.");
-                }
-
-                resourceLinkMap.put(fieldName, this.toMapView(contentlet, link));
+                throw new DotSecurityException("The Resource link to the contentlet is restricted.");
             }
 
-            return Response.ok(new ResponseEntityView(resourceLinkMap)).build();
-        } catch (DoesNotExistException e) {
-
-            return Response.ok(new ResponseEntityView(Collections.emptyList())).build();
+            resourceLinkMap.put(fieldName, toMapView(link));
         }
+
+        return Response.ok(new ResponseEntityView(resourceLinkMap)).build();
     }
 
-    private Map<String, Object> toMapView (final Contentlet contentlet, final ResourceLink link) {
+    private Map<String, Object> toMapView (final ResourceLink link) {
 
-        final ImmutableMap.Builder mapBuilder =
-                 new ImmutableMap.Builder<String, Object>();
-
-        if (contentlet.isFileAsset()) {
-            mapBuilder.put("href", link.getResourceLinkAsString());
-        }
-
-        return mapBuilder.put("text",               link.getResourceLinkUriAsString())
+        return new ImmutableMap.Builder<String, Object>()
+                .put("href",               link.getResourceLinkAsString())
+                .put("text",               link.getResourceLinkUriAsString())
                 .put("mimeType",           link.getMimeType())
                 .put("idPath",             link.getIdPath())
                 .put("versionPath",        link.getVersionPath())
