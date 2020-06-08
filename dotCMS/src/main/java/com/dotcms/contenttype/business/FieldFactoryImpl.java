@@ -249,13 +249,8 @@ public class FieldFactoryImpl implements FieldFactory {
       final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable).collect(
               Collectors.toList());
 
-      // check if the field variable is compatible with GraphQL
-      if(!ContentAPIGraphQLTypesProvider.INSTANCE.isVariableGraphQLCompatible(throwAwayField)) {
-          takenFieldVars.add(throwAwayField.name());
-      }
+      String tryVar = getFieldVariable(throwAwayField, takenFieldVars);
 
-      String tryVar = (throwAwayField.variable() == null)
-          ? suggestVelocityVar(throwAwayField.name(), takenFieldVars) : throwAwayField.variable();
       builder.variable(tryVar);
     }
     builder = FieldBuilder.builder(normalizeData(builder.build()));
@@ -280,7 +275,35 @@ public class FieldFactoryImpl implements FieldFactory {
 
     return retField;
   }
-  
+
+  /**
+   * Returns the field variable to use in the new field being saved
+   *
+   * If the field variable comes null, a new one will be generated based on the name
+   *
+   * If the field variable comes already set, via {@link Field#variable()}, it needs to be GraphQL-compatible
+   * otherwise a {@link DotDataException} is thrown.
+   *
+   * @param throwAwayField the field whose variable will be returned
+   * @param takenFieldVars a list of taken field vars
+   * @return the field variable for the field to be saved
+   * @throws DotDataException in case that the field variable is not valid
+   */
+  private String getFieldVariable(Field throwAwayField, List<String> takenFieldVars)
+          throws DotDataException {
+
+    String variable;
+
+    if(throwAwayField.variable() == null) {
+      variable = suggestVelocityVar(throwAwayField.name(), throwAwayField, takenFieldVars);
+    } else if(ContentAPIGraphQLTypesProvider.INSTANCE.isFieldVariableGraphQLCompatible(throwAwayField.variable(), throwAwayField)) {
+       variable = throwAwayField.variable();
+    } else {
+      throw new DotDataException("Field variable not compatible with GraphQL. Field variable:" + throwAwayField.variable());
+    }
+    return variable;
+  }
+
   private void validateDbColumn(Field field) throws DotDataException {
     
 
@@ -600,10 +623,13 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
   @Override
-public String suggestVelocityVar( String tryVar, List<String> takenFieldsVariables) throws DotDataException {
+public String suggestVelocityVar( String tryVar, Field field, List<String> takenFieldsVariables) throws DotDataException {
 
-    // adds the GraphQL Reserved field names to the "taken fields variables" list
     final List<String> forbiddenFieldVariables = new ArrayList<>(takenFieldsVariables);
+
+    if(! ContentAPIGraphQLTypesProvider.INSTANCE.isFieldVariableGraphQLCompatible(tryVar, field)) {
+      forbiddenFieldVariables.add(tryVar);
+    }
 
     String var = StringUtils.camelCaseLower(tryVar);
     // if we don't get a var back, we are looking at UTF-8 or worse

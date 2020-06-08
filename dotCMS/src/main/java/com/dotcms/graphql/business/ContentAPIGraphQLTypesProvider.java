@@ -212,18 +212,19 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      *     <li>The field variable matches the name of a inherited field but neither of them have a {@link CustomFieldType#getCustomFieldTypes}
      *     as its mapped GraphQL Type
      * </ul>
-     * @param field
+     * @param variable the variable whose compatibility will be checked
+     * @param field the field which the variable will be set to
      * @return
      */
-    public boolean isVariableGraphQLCompatible(final Field field) {
+    public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
         // first let's check if there's an inherited field with the same variable
-        if (InterfaceType.getContentletInheritedFields().containsKey(field.variable())) {
+        if (InterfaceType.getContentletInheritedFields().containsKey(variable)) {
             // now let's check if the graphql types are compatible
 
             // get inherited field's graphql type
             final GraphQLType inheritedFieldGraphQLType = InterfaceType
                     .getContentletInheritedFields()
-                    .get(field.variable()).getType();
+                    .get(variable).getType();
 
             // get new field's type
             final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
