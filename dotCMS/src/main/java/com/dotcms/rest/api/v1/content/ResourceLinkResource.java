@@ -47,7 +47,7 @@ import java.util.function.Supplier;
  * Exposes a {@link com.dotmarketing.portlets.contentlet.model.ResourceLink} by inode or id
  * @author jsanca
  */
-@Path("/v1/content/resourcelink")
+@Path("/v1/content/resourcelinks")
 public class ResourceLinkResource {
 
     private final WebResource    webResource;

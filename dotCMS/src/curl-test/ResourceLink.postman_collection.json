@@ -219,7 +219,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/content/resourcelink?identifier={{identifier}}",
+					"raw": "{{serverURL}}/api/v1/content/resourcelinks?identifier={{identifier}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -227,7 +227,7 @@
 						"api",
 						"v1",
 						"content",
-						"resourcelink"
+						"resourcelinks"
 					],
 					"query": [
 						{
@@ -339,7 +339,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/content/resourcelink?identifier=xxx",
+					"raw": "{{serverURL}}/api/v1/content/resourcelinks?identifier=xxx",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -347,7 +347,7 @@
 						"api",
 						"v1",
 						"content",
-						"resourcelink"
+						"resourcelinks"
 					],
 					"query": [
 						{
@@ -362,15 +362,15 @@
 	],
 	"variable": [
 		{
-			"id": "5c15c472-cae5-49ee-9930-d1ace4853f35",
+			"id": "653f60d9-5fe1-45a0-9178-457022e1828d",
 			"key": "temporalFileId",
-			"value": "temp_d05236d9bc",
+			"value": "temp_375c8b0a41",
 			"type": "string"
 		},
 		{
-			"id": "03064638-73b3-41db-ba33-b79bd1f3f66a",
+			"id": "9f31b4aa-a46e-43ef-a521-5277a5df5f5c",
 			"key": "identifier",
-			"value": "9590455a-c74a-4573-b142-e4f20b547e97",
+			"value": "3a60f7ae-a2a9-496c-a4f5-348dd39e13ee",
 			"type": "string"
 		}
 	],
