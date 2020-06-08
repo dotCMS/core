@@ -5,10 +5,12 @@ import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -25,7 +27,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -47,13 +48,6 @@ import com.liferay.util.StringPool;
 import java.util.Date;
 import java.util.List;
 
-import com.rainerhahnekamp.sneakythrow.Sneaky;
-import org.apache.commons.collections.SetUtils;
-import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.settings.Settings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -127,7 +121,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             //Saving relationship
             final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
 
-            newsContentlet.setIndexPolicy(IndexPolicy.DEFER);
+            newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
                     map(relationship, list(commentsContentlet)),
@@ -187,68 +181,45 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
-    /**
-     * When: The current Indices are read only and try to save a content with relationship
-     * Should: Save the content anyway
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    @Test
-    public void whenTheIndicesAreReadOnlyShouldSaveTheContentAnyway()
-            throws DotSecurityException, DotDataException {
-
-        final ContentType news = getNewsLikeContentType("News");
-        final ContentType comments = getCommentsLikeContentType("Comments");
-        relateContentTypes(news, comments);
-
-        final ContentType newsContentType = contentTypeAPI.find("News");
-        final ContentType commentsContentType = contentTypeAPI.find("Comments");
-
-        Contentlet newsContentlet = null;
-        Contentlet commentsContentlet = null;
+    @Test(expected= DotContentletStateException.class)
+    public void testCheckInWithLegacyRelationshipsAndReadOnlyClusterShouldThrowAnException()
+            throws DotDataException, DotSecurityException {
+        final long time = System.currentTimeMillis();
+        ContentType contentType = null;
+        final ESContentletAPIImpl contentletAPIImpl = new ESContentletAPIImpl();
 
         try {
-            newsContentlet = new ContentletDataGen(newsContentType.id())
-                    .languageId(languageAPI.getDefaultLanguage().getId())
-                    .setProperty("title", "News Test")
-                    .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
-                    .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
-                    .next();
+            contentType = createContentType("test" + time);
 
-            //creates child contentlet
-            commentsContentlet = new ContentletDataGen(commentsContentType.id())
-                    .languageId(languageAPI.getDefaultLanguage().getId())
-                    .setProperty("title", "Comment for News")
-                    .setProperty("email", "testing@dotcms.com")
-                    .setProperty("comment", "Comment for News")
-                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+            final Structure structure = new StructureTransformer(contentType).asStructure();
 
-            //Saving relationship
-            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+            final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+            final ContentletRelationships contentletRelationship = new ContentletRelationships(
+                    contentlet);
 
-            newsContentlet.setIndexPolicy(IndexPolicy.DEFER);
+            final Relationship relationship = new Relationship(structure, structure,
+                    "parent" + contentType.variable(), "child" + contentType.variable(),
+                    RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal(), false, false);
 
-            setReadOnly(true);
+            final ContentletRelationshipRecords relationshipsRecord = contentletRelationship.new ContentletRelationshipRecords(
+                    relationship,
+                    false);
 
-            assertFalse(UtilMethods.isSet(newsContentlet.getIdentifier()));
+            contentletRelationship
+                    .setRelationshipsRecords(CollectionsUtils.list(relationshipsRecord));
 
-            newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
-                    null, user, false);
+            final ESIndexAPI esIndexAPI = Mockito.mock(ESIndexAPI.class);
 
-            assertTrue(UtilMethods.isSet(newsContentlet.getIdentifier()));
-        } finally {
-            setReadOnly(false);
+            contentletAPIImpl.setEsIndexAPI(esIndexAPI);
 
-            ContentletDataGen.archive(newsContentlet);
-            ContentletDataGen.delete(newsContentlet);
+            Mockito.when(esIndexAPI.isClusterInReadOnlyMode()).thenReturn(true);
 
-            ContentletDataGen.archive(commentsContentlet);
-            ContentletDataGen.delete(commentsContentlet);
+            contentletAPIImpl.checkin(contentlet, contentletRelationship, null, null, user, false);
 
-            contentTypeAPI.delete(newsContentType);
-            contentTypeAPI.delete(commentsContentType);
-
+        }finally{
+            if (contentType != null && contentType.id() != null){
+                contentTypeAPI.delete(contentType);
+            }
         }
     }
 
@@ -565,30 +536,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
                 FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
                 .owner(user.getUserId()).build());
-    }
-
-    private static AcknowledgedResponse setReadOnly(final boolean value) {
-        try {
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
-
-            final UpdateSettingsRequest request = new UpdateSettingsRequest(
-                    indiciesInfo.getLive(),
-                    indiciesInfo.getWorking()
-            );
-
-            final Settings.Builder settingBuilder = Settings.builder()
-                    .put("index.blocks.read_only_allow_delete", value)
-                    .put("index.blocks.read_only", value);
-
-            request.settings(settingBuilder);
-
-            return Sneaky.sneak(() ->
-                    RestHighLevelClientProvider.getInstance().getClient().indices()
-                            .putSettings(request, RequestOptions.DEFAULT)
-            );
-        }catch(DotDataException e){
-            throw new DotRuntimeException(e);
-        }
     }
 
 }
