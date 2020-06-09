@@ -172,9 +172,112 @@ function downloadFailedAsJson() {
 
 }
 
+
 function optimizeCallback() {
 	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"Optimize-Done")%>");
 }
+
+
+function deleteIndex(indexName, live){
+
+    if(live && ! confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Delete-Live-Index")) %>")){
+        return;
+    }
+    CMSMaintenanceAjax.deleteIndex(indexName,deleteIndexCallback);
+
+}
+
+function deleteIndexCallback(data){
+
+    refreshIndexStats();
+}
+
+
+function refreshIndexStats(){
+    var x = dijit.byId("indexStatsCp");
+    var y =Math.floor(Math.random()*1123213213);
+
+    x.attr( "href","/html/portlet/ext/cmsmaintenance/index_stats.jsp?r=" + y  );
+
+
+
+}
+
+
+function doReindex(){
+    var shards =1
+    var contentType = dijit.byId('structure').item != null ? dijit.byId('structure').item.id : "DOTALL";
+    if("DOTALL"=== contentType){
+        var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 2)%>);
+        if(!number){
+            return;
+        }
+        shards = parseInt(number);
+        if(shards == null || shards <1){
+            return;
+        }
+    }
+    dijit.byId('structure').reset();
+        
+    fetch('/api/v1/index/reindex?shards=' + shards + '&contentType=' + contentType, {method:'POST'})
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data))
+    .then(refreshIndexStats);
+}
+
+function doCloseIndex(indexName) {
+
+    fetch('/api/v1/index/' + indexName + '?action=close', {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
+}
+
+function doOpenIndex(indexName) {
+
+
+    fetch('/api/v1/index/' + indexName + '?action=open', {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
+}
+
+function doClearIndex(indexName){
+
+    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index"))%>")){
+        return;
+
+    }
+
+    fetch('/api/v1/index/' + indexName + '?action=clear', {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
+}
+
+function doActivateIndex(indexName){
+
+    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index"))%>")){
+        return;
+    }
+
+    fetch('/api/v1/index/' + indexName, {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
+}
+
+
+function doDeactivateIndex(indexName){
+
+    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index"))%>")){
+        return;
+
+    }
+
+    fetch('/api/v1/index/' + indexName + '?action=deactivate', {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
+
+}
+
+
 
 function flushIndiciesCacheCallback(data) {
 	console.log("flushIndiciesCacheCallback",data);
@@ -433,104 +536,6 @@ function refreshCache(){
 		x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats.jsp?r=" + y  );
 	<%}%>
 	x.style =  "height:600px";
-
-}
-
-function deleteIndex(indexName, live){
-
-	if(live && ! confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Delete-Live-Index")) %>")){
-		return;
-	}
-	CMSMaintenanceAjax.deleteIndex(indexName,deleteIndexCallback);
-
-}
-
-function deleteIndexCallback(data){
-
-	refreshIndexStats();
-}
-
-
-function refreshIndexStats(){
-	var x = dijit.byId("indexStatsCp");
-	var y =Math.floor(Math.random()*1123213213);
-
-	x.attr( "href","/html/portlet/ext/cmsmaintenance/index_stats.jsp?r=" + y  );
-
-
-
-}
-
-
-function doReindex(){
-	var shards =1
-    var contentType = dijit.byId('structure').item != null ? dijit.byId('structure').item.id : "DOTALL";
-    if("DOTALL"=== contentType){
-        var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 2)%>);
-		if(!number){
-			return;
-		}
-		shards = parseInt(number);
-	    if(shards == null || shards <1){
-	        return;
-	    }
-    }
-
-		
-    fetch('/api/v1/index/reindex?shards=' + shards + '&contentType=' + contentType, {method:'POST'})
-    .then(response => response.json())
-    .then(data =>checkReindexationCallback(data));
-}
-
-function doCloseIndex(indexName) {
-
-    fetch('/api/v1/index/' + indexName + '?action=close', {method:'PUT'} )
-    .then(response => response.json())
-    .then(refreshIndexStats);
-}
-
-function doOpenIndex(indexName) {
-
-
-    fetch('/api/v1/index/' + indexName + '?action=open', {method:'PUT'} )
-    .then(response => response.json())
-    .then(refreshIndexStats);
-}
-
-function doClearIndex(indexName){
-
-	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index"))%>")){
-		return;
-
-	}
-
-    fetch('/api/v1/index/' + indexName + '?action=clear', {method:'PUT'} )
-    .then(response => response.json())
-    .then(refreshIndexStats);
-}
-
-function doActivateIndex(indexName){
-
-	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index"))%>")){
-		return;
-	}
-
-    fetch('/api/v1/index/' + indexName, {method:'PUT'} )
-    .then(response => response.json())
-    .then(refreshIndexStats);
-}
-
-
-function doDeactivateIndex(indexName){
-
-	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index"))%>")){
-		return;
-
-	}
-
-    fetch('/api/v1/index/' + indexName + '?action=deactivate', {method:'PUT'} )
-    .then(response => response.json())
-    .then(refreshIndexStats);
 
 }
 

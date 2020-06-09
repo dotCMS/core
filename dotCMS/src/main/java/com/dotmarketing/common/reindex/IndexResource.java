@@ -97,11 +97,11 @@ public class IndexResource {
     @Path("/{indexName: .*}")
     @Produces({MediaType.APPLICATION_JSON})
     public Response deactivateIndex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @PathParam("indexName") final String indexName, @QueryParam("actionStr") final String actionStr) throws DotDataException, IOException {
+                    @PathParam("indexName") final String indexName, @QueryParam("action") final String action) throws DotDataException, IOException {
 
         validateUser(request, response);
-        IndexAction action = IndexAction.fromString(actionStr);
-        switch(action){
+        final IndexAction indexAction = IndexAction.fromString(action);
+        switch(indexAction){
             case DEACTIVATE:
                 APILocator.getContentletIndexAPI().deactivateIndex(indexName);
                 break;
@@ -290,6 +290,8 @@ public class IndexResource {
         
         
         APILocator.getReindexQueueAPI().getFailedReindexRecords().stream().forEach(row->{
+            Map<String, Object> failure = new HashMap<>();
+            
             final Contentlet contentlet = Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(row.getIdentToIndex()))
                             .onFailure(e->Logger.warn(IndexResource.class, e.getMessage(), e))
                             .getOrNull();
@@ -297,11 +299,14 @@ public class IndexResource {
                             .onFailure(e->Logger.warn(IndexResource.class, e.getMessage(), e))
                             .getOrElse(HashMap::new);
             
-            conMap.put("TITLE", contentlet.getTitle());
-            
-            conMap.put("REINDEX_FAILURE", row.getLastResult());
-            conMap.put("REINDEX_PRIORITY", row.getPriority());
-            results.put(row.getIdentToIndex(), conMap);
+            failure.put("title", contentlet.getTitle());
+            failure.put("inode", contentlet.getInode());
+            failure.put("identifier", row.getIdentToIndex());
+            failure.put("serverId", row.getServerId());
+            failure.put("failureReason", row.getLastResult());
+            failure.put("priority", row.getPriority());
+            failure.put("contentlet", conMap);
+            results.put(row.getIdentToIndex(), failure);
         });
 
         return Response.ok(new ResponseEntityView(results)).build();
