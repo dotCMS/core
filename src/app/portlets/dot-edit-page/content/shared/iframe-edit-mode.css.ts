@@ -21,6 +21,9 @@ export const getEditPageCss = (timestampId: string): string => {
         border: solid 1px #53c2f9 !important;
         margin-bottom: 40px !important;
         min-height: 120px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
     }
 
     ${timestampId} [data-dot-object="container"].no {
@@ -74,7 +77,9 @@ export const getEditPageCss = (timestampId: string): string => {
     ${timestampId} .dotedit-container__toolbar {
         float: right !important;
         font-size: 0 !important;
-        margin: -15px 8px 0 0 !important;
+        transform: translate(-8px, 17px) !important;
+        z-index: 9999999 !important;
+        position: relative !important;
     }
 
     ${timestampId} .dotedit-container__toolbar button,
@@ -196,6 +201,7 @@ export const getEditPageCss = (timestampId: string): string => {
     }
 
     ${timestampId} .dotedit-menu__list {
+        color: #000 !important;
         background-color: #ffffff !important;
         box-shadow: ${mdShadow1} !important;
         font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
