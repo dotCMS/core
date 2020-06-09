@@ -1,7 +1,10 @@
 package com.dotcms.browser;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +14,7 @@ import java.util.stream.Collectors;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -113,7 +117,108 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     }
 
-    
+    /**
+     * Method to test: testing the pagination of the BrowserAPI, the test creates a site and a folder, them add 100 files and iterate over them with the browser api
+     * Given Scenario: 1)  request items from 0 to 10
+     *                  2) request items form 10 to 60
+     *                  3) request items form 60 to 100
+     *                  4) out of range
+     * ExpectedResult: Must have always 100 files as a total, and should retrieve the respective items per request
+     *
+     */
+
+    @Test()
+    public void test_GetFolderContent_pagination() throws DotDataException, DotSecurityException, IOException {
+
+        // create a folder
+        // create a 100 files
+        // paginate 10 in 100
+        final SiteDataGen   siteDataGen   = new SiteDataGen();
+        final FolderDataGen folderDataGen = new FolderDataGen();
+        final Host          host          = siteDataGen.nextPersisted();
+        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+
+        for (int i = 0; i < 100; ++i) {
+
+            new FileAssetDataGen(FileUtil.createTemporalFile("test", ".txt", "this is a test")).host(host)
+                    .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        }
+
+        Map<String, Object> resultMap = browserAPI.getFolderContent(BrowserQuery.builder()
+                .showDotAssets(true)
+                .showLinks(true)
+                .withHostOrFolderId(folder.getIdentifier())
+                .offset(0)
+                .showFiles(true)
+                .showFolders(true)
+                .showWorking(true)
+                .maxResults(10)
+                .build());
+
+        assertNotNull(resultMap);
+        assertEquals(100l, resultMap.get("total"));
+
+        List<Map<String, Object>> results = (List<Map<String, Object>>)resultMap.get("list");
+        assertNotNull(results);
+        assertEquals(results.size(), 10);
+
+        // 10 - 60
+        resultMap = browserAPI.getFolderContent(BrowserQuery.builder()
+                .showDotAssets(true)
+                .showLinks(true)
+                .withHostOrFolderId(folder.getIdentifier())
+                .offset(10)
+                .showFiles(true)
+                .showFolders(true)
+                .showWorking(true)
+                .maxResults(50)
+                .build());
+
+        assertNotNull(resultMap);
+        assertEquals(100l, resultMap.get("total"));
+
+        results = (List<Map<String, Object>>)resultMap.get("list");
+        assertNotNull(results);
+        assertEquals(results.size(), 50);
+
+        // 60 - 100
+        resultMap = browserAPI.getFolderContent(BrowserQuery.builder()
+                .showDotAssets(true)
+                .showLinks(true)
+                .withHostOrFolderId(folder.getIdentifier())
+                .offset(60)
+                .showFiles(true)
+                .showFolders(true)
+                .showWorking(true)
+                .maxResults(50)
+                .build());
+
+        assertNotNull(resultMap);
+        assertEquals(100l, resultMap.get("total"));
+
+        results = (List<Map<String, Object>>)resultMap.get("list");
+        assertNotNull(results);
+        assertEquals(results.size(), 40);
+
+        // 100 - ...
+        resultMap = browserAPI.getFolderContent(BrowserQuery.builder()
+                .showDotAssets(true)
+                .showLinks(true)
+                .withHostOrFolderId(folder.getIdentifier())
+                .offset(100)
+                .showFiles(true)
+                .showFolders(true)
+                .showWorking(true)
+                .maxResults(150)
+                .build());
+
+        assertNotNull(resultMap);
+        assertEquals(100l, resultMap.get("total"));
+
+        results = (List<Map<String, Object>>)resultMap.get("list");
+        assertNotNull(results);
+        assertEquals(results.size(), 0);
+    }
 
 
 

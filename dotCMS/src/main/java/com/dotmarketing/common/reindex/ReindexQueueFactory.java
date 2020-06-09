@@ -1,7 +1,9 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,6 +26,8 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
+
 import java.util.stream.Collectors;
 
 
@@ -135,24 +139,36 @@ public class ReindexQueueFactory {
 
     @CloseDBIfOpened
     protected List<ReindexEntry> getFailedReindexRecords() throws DotDataException {
-        DotConnect dc = new DotConnect();
-
-        dc.setSQL("SELECT id, ident_to_index, priority, index_val, time_entered FROM dist_reindex_journal WHERE priority >= ?");
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT id, ident_to_index, priority, index_val, time_entered FROM dist_reindex_journal WHERE priority > ?");
         dc.addParam(ReindexQueueFactory.Priority.REINDEX.dbValue());
-        List<Map<String, Object>> failedRecords = dc.loadObjectResults();
-        List<ReindexEntry> failed = new ArrayList<>();
-        for (Map<String, Object> map : failedRecords) {
-            ReindexEntry ridx = new ReindexEntry()
-                    .setId(Long.parseLong((String) map.get("id")))
-                    .setIdentToIndex((String) map.get("ident_to_index"))
-                    .setPriority(Integer.parseInt((String) map.get("priority")))
-                    .setTimeEntered((Date) map.get("time_entered"))
-                    .setLastResult((String) map.get("index_val"));
-            failed.add(ridx);
+        final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
+        final List<ReindexEntry> failed = new ArrayList<>();
+        long identifier;
+        int priority;
+        for (final Map<String, Object> map : failedRecords) {
+            final String indexVal = UtilMethods.isSet(map.get("index_val")) ? String.class.cast(map.get("index_val"))
+                    : StringUtils.EMPTY;
 
+            if (DbConnectionFactory.isOracle()) {
+                BigDecimal rowVal = (BigDecimal) map.get("id");
+                identifier = Long.valueOf(rowVal.toPlainString());
+                rowVal = (BigDecimal) map.get("priority");
+                priority = Integer.valueOf(rowVal.toPlainString());
+            } else {
+                identifier = (Long) map.get("id");
+                priority = Integer.parseInt(map.get("priority").toString());
+            }
+
+            final ReindexEntry ridx = new ReindexEntry()
+                    .setId(identifier)
+                    .setIdentToIndex((String) map.get("ident_to_index"))
+                    .setPriority(priority)
+                    .setTimeEntered((Date) map.get("time_entered"))
+                    .setLastResult(indexVal);
+            failed.add(ridx);
         }
         return failed;
-
     }
 
     protected void deleteReindexEntry(ReindexEntry iJournal) throws DotDataException {

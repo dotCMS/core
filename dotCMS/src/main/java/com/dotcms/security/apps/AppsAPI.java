@@ -186,6 +186,7 @@ public interface AppsAPI {
     Map<String, List<String>> computeSecretWarnings(final AppDescriptor appDescriptor, final Host site, final User user)
             throws DotSecurityException, DotDataException;
 
+
     /**
      *
      * @param user

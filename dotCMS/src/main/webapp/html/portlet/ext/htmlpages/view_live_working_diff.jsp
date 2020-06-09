@@ -8,17 +8,16 @@
     String id = request.getParameter("id");
     long lang = Long.parseLong(request.getParameter("pageLang"));
     User user = APILocator.getUserAPI().getSystemUser();
-    String contentId = request.getParameter("contentId");
-    IHTMLPage p = null;
+    IHTMLPage htmlPage = null;
 
     try {
-        p = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, lang, false, user, false);
+        htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, lang, false, user, false);
     } catch(final Exception e){
         Logger.error(this.getClass(), e.getMessage(), e);
     }
 
-    final HTMLDiffUtilProxy dp = new HTMLDiffUtilProxy();
-    final String x = dp.htmlDiffPage(p, user, contentId, lang);
+    final HTMLDiffUtilProxy proxyUtil = new HTMLDiffUtilProxy();
+    final String diff = proxyUtil.htmlDiffPage(htmlPage, user, request, response);
 %>
 
-<%=x%>
+<%=diff%>

@@ -48,6 +48,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
@@ -130,6 +131,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                 .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
                         Config.getIntProperty("ES_PORT", 9200), esProtocol))
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
+                    
+                    
                     if (sslContextFromPem != null) {
                         httpClientBuilder.setSSLContext(sslContextFromPem);
 
@@ -146,6 +149,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     }
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
+                    httpClientBuilder.setHostnameVerifier(AllowAllHostnameVerifier.INSTANCE);
+                    
                     return httpClientBuilder;
                 })
                 .setFailureListener(new RestClient.FailureListener() {

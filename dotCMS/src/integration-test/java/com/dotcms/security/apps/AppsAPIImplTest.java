@@ -471,6 +471,7 @@ public class AppsAPIImplTest {
                 .withHiddenSecret("requiredNoDefault", "") //Here's the offense.
                 .withHiddenSecret("requiredDefault", "secret-2")
                 .build();
+
         //Save it
         api.saveSecrets(secrets, site, admin);
         final Map<String, List<String>> optionalAppWarning = api.computeSecretWarnings(descriptor, site, admin);
@@ -514,6 +515,7 @@ public class AppsAPIImplTest {
                 .build();
         //Save it
         api.saveSecrets(secrets, site, admin);
+
         final Map<String, List<String>> optionalAppWarning = api.computeSecretWarnings(descriptor, site, admin);
         assertTrue(optionalAppWarning.isEmpty());
 

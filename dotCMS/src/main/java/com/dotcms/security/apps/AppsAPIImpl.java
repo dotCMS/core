@@ -4,7 +4,6 @@ import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.google.common.collect.ImmutableList.of;
 import static java.util.Collections.emptyMap;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -20,6 +19,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
@@ -74,6 +74,7 @@ public class AppsAPIImpl implements AppsAPI {
     private final AppsCache appsCache;
 
     private final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
+            .enable(Feature.STRICT_DUPLICATE_DETECTION)
             //.enable(SerializationFeature.INDENT_OUTPUT)
             .findAndRegisterModules();
 
@@ -455,8 +456,7 @@ public class AppsAPIImpl implements AppsAPI {
                 //Now we need to verify the service-key has a configuration for this host.
                 if(appKeys.contains(appKeyLC)){
                     //And if it does we attempt to delete all the secrets.
-                    final Host host = hostAPI.find(hostId, user, false);
-                    deleteSecrets(key, host, user);
+                    deleteSecrets(key, hostId, user);
                 }
             }
             if(removeDescriptor) {
@@ -502,11 +502,13 @@ public class AppsAPIImpl implements AppsAPI {
             final Set<String> sitesWithConfigurations, final User user)
             throws DotSecurityException, DotDataException {
         final Builder<String, Map<String, List<String>>> builder = ImmutableMap.builder();
-        for (String hostId : sitesWithConfigurations) {
-            final Host site = hostAPI.find(hostId, user, false);
+        for (String siteId : sitesWithConfigurations) {
+            //if this is coming directly from the keyStore it's all lowercase.
+            siteId = Host.SYSTEM_HOST.equalsIgnoreCase(siteId) ? Host.SYSTEM_HOST : siteId;
+            final Host site = hostAPI.find(siteId, user, false);
             if(null != site){
                final Map<String, List<String>> warnings = computeSecretWarnings(appDescriptor, site, user);
-               builder.put(site.getIdentifier(), warnings);
+               builder.put(site.getIdentifier().toLowerCase(), warnings);
             }
         }
         return builder.build();
@@ -615,7 +617,7 @@ public class AppsAPIImpl implements AppsAPI {
                     builder.add(new AppDescriptorMeta(serviceDescriptor, file.getName()));
                     loadedServiceKeys.add(serviceDescriptor.getKey());
                 }
-            } catch (IOException | DotDataValidationException e) {
+            } catch (IOException |  DotDataValidationException e) {
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error reading yml file `%s`.", fileName), e);
             }

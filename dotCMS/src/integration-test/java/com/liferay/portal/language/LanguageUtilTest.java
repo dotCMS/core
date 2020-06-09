@@ -6,12 +6,19 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.SystemException;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.Locale;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class LanguageUtilTest {
 
 
@@ -69,31 +76,61 @@ public class LanguageUtilTest {
         APILocator.getLanguageAPI().deleteLanguage(language);
     }
 
-    @Test
-    public void getLanguageId_existing_base_expected_non_negative_lang_Test() throws DotSecurityException, DotDataException, SystemException {
+    private static class TestCaseLanguageLocale {
+        String localeRequested;
+        long expectedLangId;
 
-        final Language baseLanguage = new LanguageDataGen().languageCode("fr").countryCode(null).nextPersisted();
-        final Language frLanguage   = new LanguageDataGen().languageCode("fr").countryCode("FR").nextPersisted();
-        final long expectedBaseId   = baseLanguage.getId();
-        final long expectedFrId     = frLanguage.getId();
-        Logger.info(this, "Testing fr_CR");
-        Assert.assertEquals(expectedBaseId, LanguageUtil.getLanguageId("fr_CR"));
-        Logger.info(this, "Testing fr-CR");
-        Assert.assertEquals(expectedBaseId, LanguageUtil.getLanguageId("fr-CR"));
-        Logger.info(this, "Testing fr_FR");
-        Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("fr_FR"));
-        Logger.info(this, "Testing FR_FR");
-        Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("FR_FR"));
-        Logger.info(this, "Testing fr-FR");
-        Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("fr-FR"));
-        Logger.info(this, "Testing FR-FR");
-        Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("FR-FR"));
-        Logger.info(this, "Testing fr");
-        Assert.assertEquals(expectedBaseId,   LanguageUtil.getLanguageId("fr"));
-        Logger.info(this, "Testing FR");
-        Assert.assertEquals(expectedBaseId,   LanguageUtil.getLanguageId("FR"));
-        APILocator.getLanguageAPI().deleteLanguage(baseLanguage);
-        APILocator.getLanguageAPI().deleteLanguage(frLanguage);
+        TestCaseLanguageLocale(final String localeRequested,final long expectedLangId){
+            this.localeRequested = localeRequested;
+            this.expectedLangId = expectedLangId;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCasesLanguageLocale() throws Exception {
+
+        // Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+
+        final Language baseLanguage = (UtilMethods.isSet(APILocator.getLanguageAPI().getLanguage("fr",null))) ?
+                APILocator.getLanguageAPI().getLanguage("fr",null) :
+                new LanguageDataGen().languageCode("fr").countryCode(null).nextPersisted();
+        final Language frLanguage   = (UtilMethods.isSet(APILocator.getLanguageAPI().getLanguage("fr","fr"))) ?
+                APILocator.getLanguageAPI().getLanguage("fr","fr") :
+                new LanguageDataGen().languageCode("fr").countryCode("FR").nextPersisted();
+        final long expectedBaseLangId   = baseLanguage.getId();
+        final long expectedFrLangId     = frLanguage.getId();
+
+        return new  Object[]{
+                new TestCaseLanguageLocale("fr_CR",expectedBaseLangId),
+                new TestCaseLanguageLocale("fr-CR",expectedBaseLangId),
+                new TestCaseLanguageLocale("fr_FR",expectedFrLangId),
+                new TestCaseLanguageLocale("FR_FR",expectedFrLangId),
+                new TestCaseLanguageLocale("fr-FR",expectedFrLangId),
+                new TestCaseLanguageLocale("FR-FR",expectedFrLangId),
+                new TestCaseLanguageLocale("FR",expectedBaseLangId),
+                new TestCaseLanguageLocale("fr",expectedBaseLangId),
+
+        };
+    }
+
+    /**
+     * This test is for the getLanguageId under the LanguageUtil.
+     * This method can receive a locale and get the languageId if it exists.
+     * If a language with a specific CountryCode not exists but the base language does, this one should be returned.
+     *
+     */
+    @Test
+    @UseDataProvider("testCasesLanguageLocale")
+    public void test_getLanguageId_DiffLanguageLocale(final TestCaseLanguageLocale testCaseLanguageLocale) {
+        Assert.assertEquals(testCaseLanguageLocale.expectedLangId,LanguageUtil.getLanguageId(testCaseLanguageLocale.localeRequested));
+    }
+
+    @Test
+    public void test_getAllMessagesByLocale_success(){
+        final Locale locale = APILocator.getLanguageAPI().getDefaultLanguage().asLocale();
+        final Map messagesMap = LanguageUtil.getAllMessagesByLocale(locale);
+        Assert.assertNotNull(messagesMap);
     }
 
 }

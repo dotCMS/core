@@ -280,7 +280,9 @@ public class TaskLocatorUtil {
 		ret.add(Task05220MakeFileAssetContentTypeBinaryFieldIndexedListed.class);
         ret.add(Task05225RemoveLoadRecordsToIndex.class);
         ret.add(Task05300UpdateIndexNameLength.class);
+        ret.add(Task05305AddPushPublishFilterColumn.class);
 		ret.add(Task05350AddDotSaltClusterColumn.class);
+
 		return ret;
 	}
 
