@@ -19,7 +19,7 @@ env:
     - TRAVIS_COMMIT_SHORT=${TRAVIS_COMMIT::8}
 
 before_install:
-  - chmod +x .cicd/seed.sh
+  - chmod +x travis/discover_cicd.sh
 
 # Commit message format
 # [travis] -> executes all dbs and unit tests
