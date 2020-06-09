@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.enterprise.license.LicenseLevel;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +77,15 @@ public interface ContentTypeAPI {
    * @throws DotDataException Error occurred when performing the action.
    */
   List<ContentType> findAll() throws DotDataException;
+
+  /**
+   * Finds All the Content Types that exists in the system but takes into consideration the {@link LicenseLevel}.
+   * If the {@link LicenseLevel} is Community, only the content types that are not an {@link com.dotcms.contenttype.model.type.EnterpriseType} will be returned
+   *
+   * @return List of Content Types Objects
+   * @throws DotDataException Error occurred when performing the action.
+   */
+  List<ContentType> findAllRespectingLicense() throws DotDataException;
 
   /**
    * Returns the default structure (Content Generic is the one shipped by dotcms)

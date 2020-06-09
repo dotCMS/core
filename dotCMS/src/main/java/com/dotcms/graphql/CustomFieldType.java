@@ -20,8 +20,10 @@ import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
+import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -135,5 +137,11 @@ public enum CustomFieldType {
 
     public static Collection<GraphQLObjectType> getCustomFieldTypes() {
         return customFieldTypes.values();
+    }
+
+    public static boolean isCustomFieldType(final GraphQLType type) {
+        return  type instanceof GraphQLList ? getCustomFieldTypes()
+                .contains(((GraphQLList) type).getWrappedType())
+                : getCustomFieldTypes().contains(type);
     }
 }

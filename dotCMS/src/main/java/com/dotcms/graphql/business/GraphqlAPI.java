@@ -11,13 +11,11 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 
 public interface GraphqlAPI {
-    GraphQLSchema getSchema() throws DotDataException;
 
-    GraphQLOutputType getGraphqlTypeForFieldClass(final Class<? extends Field> fieldClass, final Field field);
+    String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
+
+    GraphQLSchema getSchema() throws DotDataException;
 
     void invalidateSchema();
 
-    Map<Class<? extends Field>, GraphQLOutputType> getFieldTypesWithCustomGraphQLTypes();
-
-    Collection<GraphQLObjectType> getCustomFieldTypes();
 }
