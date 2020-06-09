@@ -1,0 +1,3 @@
+#!/bin/bash
+
+export DOT_CICD_TARGET=core
