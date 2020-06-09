@@ -123,7 +123,8 @@ public final class ElasticsearchUtil {
                     .getClient().cluster()
                     .getSettings(new ClusterGetSettingsRequest(), RequestOptions.DEFAULT);
 
-            return Boolean.valueOf(response.getSetting("cluster.blocks.read_only"));
+            return Boolean.parseBoolean(response.getSetting("cluster.blocks.read_only"))
+                    || Boolean.parseBoolean(response.getSetting("cluster.blocks.read_only_allow_delete"));
         } catch (IOException e) {
             Logger.warnAndDebug(ESIndexAPI.class, "Error getting ES cluster settings", e);
         }
