@@ -18,14 +18,31 @@ import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * This class should take care of the transformation of asset of type dotAsset
+ */
 public class DotAssetViewStrategy extends WebAssetStrategy<Contentlet> {
 
     private static final String ASSET = "asset";
 
+    /**
+     * Main constructor
+     * @param toolBox
+     */
     DotAssetViewStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
+    /**
+     * Concrete type transform method
+     * @param dotAsset
+     * @param map
+     * @param options
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Override
     protected Map<String, Object> transform(final Contentlet dotAsset,
             final Map<String, Object> map,

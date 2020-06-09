@@ -15,6 +15,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_NOT_FOUND;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.LanguageViewStrategy.mapLanguage;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
@@ -22,11 +23,9 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILTER_BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
-import static com.liferay.portal.language.LanguageUtil.getLiteralLocale;
 
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -42,12 +41,8 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
@@ -65,10 +60,9 @@ import java.util.stream.Collectors;
 public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentlet> {
 
     /**
-     * Typical constructor
+     * Main constructor
      * @param toolBox
      */
-    @VisibleForTesting
     public DefaultTransformStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
@@ -153,44 +147,11 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
     private void addLanguage(final Contentlet contentlet, final Map<String, Object> map,
             final Set<TransformOptions> options) {
         final Language language = toolBox.languageAPI.getLanguage(contentlet.getLanguageId());
-        if (options.contains(LANGUAGE_VIEW)) {
-            map.putAll(mapLanguage(language, true));
+        if (!options.contains(LANGUAGE_PROPS)) {
+             return;
         }
-        if (options.contains(LANGUAGE_PROPS)) {
-            map.putAll(mapLanguage(language, false));
-        }
+        map.putAll(mapLanguage(language, false));
     }
-
-    /**
-     * Lang functions now relocated here.
-     * @param language
-     * @param wrapAsMap
-     * @return
-     */
-    private Map<String, Object> mapLanguage(final Language language, final boolean wrapAsMap) {
-
-        final Builder<String, Object> builder = new Builder<>();
-
-        builder
-                .put("languageId", language.getId())
-                .put("language", language.getLanguage())
-                .put("languageCode", language.getLanguageCode())
-                .put("country", language.getCountry())
-                .put("countryCode", language.getCountryCode())
-                .put("languageFlag", getLiteralLocale(language.getLanguageCode(), language.getCountryCode()));
-
-        final String iso = UtilMethods.isSet(language.getCountryCode())
-                ? language.getLanguageCode() + StringPool.DASH + language.getCountryCode()
-                : language.getLanguageCode();
-        builder.put("isoCode", iso.toLowerCase());
-
-        if(wrapAsMap){
-            builder.put("id", language.getId());
-            return ImmutableMap.of("languageMap", builder.build(), "language",language.getLanguage());
-        }
-        return builder.build();
-    }
-
 
     /**
      * Constant fields are added down here

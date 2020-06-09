@@ -48,7 +48,7 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
     }
 
     /**
-     * Map view method
+     * Transform main method - entry point
      * @param page
      * @param map
      * @param options

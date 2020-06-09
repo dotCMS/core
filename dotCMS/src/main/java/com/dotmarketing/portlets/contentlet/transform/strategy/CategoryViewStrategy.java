@@ -21,10 +21,24 @@ import java.util.stream.Collectors;
  */
 class CategoryViewStrategy extends AbstractTransformStrategy<Contentlet> {
 
+    /**
+     * Main constructor
+     * @param toolBox
+     */
     CategoryViewStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
+    /**
+     *
+     * @param contentlet
+     * @param map
+     * @param options
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Override
     protected Map<String, Object> transform(final Contentlet contentlet,
             final Map<String, Object> map,

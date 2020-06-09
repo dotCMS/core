@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.google.common.collect.ImmutableMap.of;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -59,7 +60,8 @@ public class StrategyResolverImpl implements StrategyResolver {
              of(
                  CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox),
                  BINARIES_VIEW, () -> new BinaryViewStrategy(toolBox),
-                 IDENTIFIER_VIEW, () -> new IdentifierViewStrategy(toolBox)
+                 IDENTIFIER_VIEW, () -> new IdentifierViewStrategy(toolBox),
+                 LANGUAGE_VIEW, ()-> new LanguageViewStrategy(toolBox)
              ),
              ()-> new DefaultTransformStrategy(toolBox)
         );

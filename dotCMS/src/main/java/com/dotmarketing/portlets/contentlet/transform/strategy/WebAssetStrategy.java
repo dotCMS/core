@@ -53,6 +53,11 @@ public abstract class WebAssetStrategy <T extends Contentlet>  extends
         map.put(URL_FIELD, url);
     }
 
+    /**
+     * Identifier path
+     * @param contentlet
+     * @param map
+     */
     private void addPath(final Contentlet contentlet, final Map<String, Object> map){
         final String identifierValue = contentlet.getIdentifier();
         try {

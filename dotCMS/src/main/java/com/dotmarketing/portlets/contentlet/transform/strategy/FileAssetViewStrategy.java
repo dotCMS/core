@@ -23,7 +23,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
@@ -32,12 +31,20 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
 
     private final ContentletCache contentletCache;
 
-    @VisibleForTesting
+    /**
+     * Main Constructor
+     * @param toolBox
+     */
     public FileAssetViewStrategy(final TransformToolbox toolBox) {
         super(toolBox);
         contentletCache = CacheLocator.getContentletCache();
     }
 
+    /**
+     * fromContentlet retrieves the concrete specific type of contentlet
+     * @param contentlet
+     * @return
+     */
     @Override
     public FileAsset fromContentlet(final Contentlet contentlet) {
         final Contentlet cachedContent = contentletCache.get(contentlet.getInode());
@@ -47,6 +54,15 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
         return toolBox.fileAssetAPI.fromContentlet(contentlet);
     }
 
+    /**
+     * Transform entry point
+     * @param fileAsset
+     * @param map
+     * @param options
+     * @param user
+     * @return
+     * @throws DotDataException
+     */
     @Override
     protected Map<String, Object> transform(final FileAsset fileAsset,
             final Map<String, Object> map,

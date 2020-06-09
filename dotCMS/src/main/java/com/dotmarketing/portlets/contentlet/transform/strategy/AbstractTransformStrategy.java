@@ -66,7 +66,7 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
      }
 
     /**
-     *
+     * transform method entry point
      * @param source
      * @param map
      * @param options

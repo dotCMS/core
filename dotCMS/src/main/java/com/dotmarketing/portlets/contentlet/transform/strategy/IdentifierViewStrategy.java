@@ -11,10 +11,23 @@ import java.util.Set;
 
 class IdentifierViewStrategy extends AbstractTransformStrategy<Contentlet>{
 
+    /**
+     * Main Constructor
+     * @param toolBox
+     */
     IdentifierViewStrategy(final TransformToolbox toolBox) {
         super(toolBox);
     }
 
+    /**
+     * transform method entry point
+     * @param contentlet
+     * @param map
+     * @param options
+     * @param user
+     * @return
+     * @throws DotDataException
+     */
     @Override
     protected Map<String, Object> transform(final Contentlet contentlet,
             final Map<String, Object> map, final Set<TransformOptions> options, final User user) throws DotDataException {
