@@ -188,7 +188,7 @@ public class ESReadOnlyMonitorTest {
             Thread.sleep(100);
 
             setReadOnly(indiciesInfo.getWorking(), true);
-            
+
             esReadOnlyMonitor.start(message);
             Thread.sleep(100);
             checkLargeMessageSent(user, 2);
