@@ -19,6 +19,7 @@ import com.liferay.portal.model.User;
 public interface FileAssetAPI {
 	String TITLE_FIELD = "title";
 	String FILE_NAME_FIELD = "fileName";
+	String UNDERLYING_FILENAME = "underlyingFileName";
 	String DESCRIPTION = "description";
 	String SIZE_FIELD = "fileSize";
 	String BINARY_FIELD = "fileAsset";

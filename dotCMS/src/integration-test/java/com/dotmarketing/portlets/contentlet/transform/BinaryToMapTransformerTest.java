@@ -20,7 +20,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -58,12 +57,11 @@ public class BinaryToMapTransformerTest {
                     .setProperty("bin3", testImage)
                     .nextPersisted();
 
-            final BinaryToMapTransformer transformer =
-                    new BinaryToMapTransformer(contentWithBinaries);
-
-            Assert.assertEquals(testImage.getName(), transformer.asMap().get("bin1"));
-            Assert.assertNull(transformer.asMap().get("bin2"));
-            Assert.assertEquals(testImage.getName(), transformer.asMap().get("bin3"));
+            final BinaryToMapTransformer transformer = new BinaryToMapTransformer(contentWithBinaries);
+            final Map<String, Object> map = transformer.asMap();
+            Assert.assertEquals(" binary names must match ", testImage.getName(), map.get("bin1"));
+            Assert.assertNull(map.get("bin2"));
+            Assert.assertEquals(" binary names must match ", testImage.getName(), map.get("bin3"));
 
         } finally {
             ContentTypeDataGen.remove(typeWithBinaries);

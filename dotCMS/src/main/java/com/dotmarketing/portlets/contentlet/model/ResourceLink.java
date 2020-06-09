@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.beans.Host;
@@ -21,15 +23,12 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.lang.text.StrBuilder;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
-
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.text.StrBuilder;
+import org.apache.commons.lang3.StringUtils;
 
 /***
  * This class is the result of a refactoring from an old JSP Snippet that was originally located in:
@@ -192,7 +191,7 @@ public class ResourceLink {
         String replaceUrlPattern(final String pattern, final Contentlet contentlet, final File binary, final Host host) {
 
             final String fileName  = binary.getName();
-            final String path      = "/dA/" + contentlet.getIdentifier() + "/";
+            final String path      = getPath(contentlet);
             final String extension = UtilMethods.getFileExtension(fileName);
             final String shortyId  = contentlet.getIdentifier().replace(StringPool.DASH, StringPool.BLANK).substring(0, 10);
 
@@ -218,8 +217,7 @@ public class ResourceLink {
         Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
                                                                                 final File binary) throws DotDataException {
 
-            final BinaryToMapTransformer transformer = new BinaryToMapTransformer(contentlet);
-            final Map<String, Object> properties = transformer.transform(binary, contentlet,
+            final Map<String, Object> properties = BinaryToMapTransformer.transform(binary, contentlet,
                     APILocator.getContentTypeFieldAPI().byContentTypeAndVar(contentlet.getContentType(), velocityVarName));
 
             final String versionPath = (String)properties.get("versionPath");
@@ -337,6 +335,15 @@ public class ResourceLink {
             return isDownloadPermissionBasedRestricted(contentlet, user);
         }
         return false;
+    }
+
+    /**
+     * Centralized code to get path
+     * @param contentlet
+     * @return
+     */
+    public static String getPath(final Contentlet contentlet){
+        return  "/dA/" + contentlet.getIdentifier() + StringPool.SLASH;
     }
 
 }
