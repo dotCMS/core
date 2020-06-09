@@ -1444,23 +1444,4 @@ public class ESIndexAPI {
 				.readValue(response.getEntity().getContent(), mappingClass));
 	}
 
-    /**
-     * Creates a request to get the value of the setting cluster.blocks.read_only, which returns
-     * true if the Elastic Search cluster is in read only mode
-     * @return boolean
-     */
-	public boolean isClusterInReadOnlyMode(){
-        try {
-            final ClusterGetSettingsResponse response = RestHighLevelClientProvider.getInstance()
-                    .getClient().cluster()
-                    .getSettings(new ClusterGetSettingsRequest(), RequestOptions.DEFAULT);
-
-            return Boolean.valueOf(response.getSetting("cluster.blocks.read_only"));
-        } catch (IOException e) {
-            Logger.warnAndDebug(ESIndexAPI.class, "Error getting ES cluster settings", e);
-        }
-
-        return true;
-    }
-
 }
