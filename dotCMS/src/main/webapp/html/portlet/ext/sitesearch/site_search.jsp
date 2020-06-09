@@ -472,13 +472,17 @@ function doCreateSiteSearch(alias,number) {
 	if(!number || !alias){
 		return;
 	}
-	
+
 	var shards = parseInt(number);
 	if(shards <1){
-		return;	
-	
+		return;
 	}
-	
+
+	if(/[^a-zA-Z0-9-_]/.test(alias.split(/\b\s+/)[0].trim())) {
+		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");
+		return;
+	}
+
 	var xhrArgs = {
        url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/createSiteSearchIndex/shards/" + shards +"/alias/"+alias,
        handleAs: "text",
@@ -506,20 +510,21 @@ function doCreateSiteSearch(alias,number) {
 
 function runNow(action) {
 	//var value = dijit.byId(action).getValue();
-
-	if(action == 'now'){
-		
+	let incremental = dijit.byId('incremental');
+	if(action === 'now'){
 		dojo.query('.showScheduler').style({display:"none"});
 		dojo.query('.showRunNow').style({display:""});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("<%=SiteSearchAPI.ES_SITE_SEARCH_EXECUTE_JOB_NAME%>");
+
+		incremental.attr('disabled',true);
+		incremental.attr('checked',false);
 	}
-	else if (action == 'schedule'){
+	else if (action === 'schedule'){
 		dojo.query('.showScheduler').style({display:""});
 		dojo.query('.showRunNow').style({display:"none"});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("");
+		incremental.attr('disabled',false)
 	}
-
-
 }
 
 function scheduleJob() {
@@ -559,8 +564,11 @@ function submitSchedule() {
 		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Choose-a-Language")) %>");
 		return;
 	}
-	
-	if(/^\s*$/.test(dojo.byId("indexAlias").value)) {
+
+	//Based on the error invalid_alias_name_exception returned by the ES
+	//Alias must not contain the following characters [ , \", *, \\, <, |, ,, >, /, ?]"}]
+	let indexAlias = dojo.byId("indexAlias").value;
+	if( !indexAlias || indexAlias === "" || /[^a-zA-Z0-9-_]/.test(indexAlias.split(/\b\s+/)[0].trim())) {
 		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");
         return;
 	}

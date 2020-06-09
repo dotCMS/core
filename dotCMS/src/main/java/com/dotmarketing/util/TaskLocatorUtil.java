@@ -275,10 +275,12 @@ public class TaskLocatorUtil {
     	ret.add(Task05190UpdateFormsWidgetCodeField.class);
 		ret.add(Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflow.class);
 		ret.add(Task05200WorkflowTaskUniqueKey.class);
-        ret.add(Task05205UpdateIndexNameLength.class);
 		ret.add(Task05210CreateDefaultDotAsset.class);
 		ret.add(Task05215AddSystemWorkflowToDotAssetContentType.class);
 		ret.add(Task05220MakeFileAssetContentTypeBinaryFieldIndexedListed.class);
+        ret.add(Task05225RemoveLoadRecordsToIndex.class);
+        ret.add(Task05300UpdateIndexNameLength.class);
+        ret.add(Task05305AddPushPublishFilterColumn.class);
 		return ret;
 	}
 

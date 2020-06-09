@@ -40,11 +40,6 @@
 		<class>org.apache.velocity.tools.generic.ListTool</class>
 	</tool>
 	<tool>
-		<key>errors</key>
-		<scope>request</scope>
-		<class>org.apache.velocity.tools.struts.ErrorsTool</class>
-	</tool>
-	<tool>
 	  <key>esc</key>
 	  <scope>application</scope>
 	  <class>org.apache.velocity.tools.generic.EscapeTool</class>
@@ -53,18 +48,6 @@
 		<key>sorter</key>
 		<scope>application</scope>
 		<class>org.apache.velocity.tools.generic.SortTool</class>
-	</tool>
-	<tool>
-		<key>messages</key>
-		<scope>request</scope>
-		<class>
-			org.apache.velocity.tools.struts.ActionMessagesTool
-		</class>
-	</tool>
-	<tool>
-		<key>form</key>
-		<scope>request</scope>
-		<class>org.apache.velocity.tools.struts.FormTool</class>
 	</tool>
 	<tool>
 		<key>mill</key>

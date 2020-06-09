@@ -1902,27 +1902,6 @@ CREATE TRIGGER structure_host_folder_trigger BEFORE INSERT OR UPDATE
     ON structure FOR EACH ROW
     EXECUTE PROCEDURE structure_host_folder_check();
 
-CREATE OR REPLACE FUNCTION load_records_to_index(server_id character varying, records_to_fetch int, priority_level int)
-  RETURNS SETOF dist_reindex_journal AS'
-DECLARE
-   dj dist_reindex_journal;
-BEGIN
-
-    FOR dj IN SELECT * FROM dist_reindex_journal
-       WHERE serverid IS NULL
-       AND priority <= priority_level
-       ORDER BY priority ASC
-       LIMIT records_to_fetch
-       FOR UPDATE
-    LOOP
-        UPDATE dist_reindex_journal SET serverid=server_id WHERE id=dj.id;
-        RETURN NEXT dj;
-    END LOOP;
-
-END'
-LANGUAGE 'plpgsql';
-
-
 CREATE OR REPLACE FUNCTION content_versions_check() RETURNS trigger AS '
    DECLARE
        versionsCount integer;
@@ -2363,7 +2342,9 @@ create table publishing_bundle(
   name varchar(255) NOT NULL,
   publish_date TIMESTAMP,
   expire_date TIMESTAMP,
-  owner varchar(100)
+  owner varchar(100),
+  force_push bool,
+  filter_key varchar(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
@@ -2390,8 +2371,6 @@ create table publishing_pushed_assets(
 CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
-
-alter table publishing_bundle add force_push bool ;
 
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 

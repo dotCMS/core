@@ -2,6 +2,7 @@ package com.dotcms.contenttype.model.type;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -162,29 +163,36 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public List<Field> fields() {
     if (innerFields == null) {
       try {
-
         innerFields = APILocator.getContentTypeFieldAPI().byContentTypeId(this.id());
-      } catch (DotDataException e) {
-        throw new DotStateException("unable to load fields:" + e.getMessage(), e);
+      } catch (final DotDataException e) {
+        final String errorMsg = String.format("Unable to load fields for Content Type '%s' [%s]: %s", this.name(),
+                this.id(), e.getMessage());
+        Logger.error(this, errorMsg);
+        throw new DotStateException(errorMsg, e);
       }
     }
     return innerFields;
   }
 
-  
   /**
-   * This method will return a list of fields that are of a specific Field class
-   * e.g. <code>contentType.fields(BinaryField.class);</code> will return all the binary fields
-   * on that content type;
+   * This method will return a list of fields that are of a specific Field class e.g.
+   * <code>contentType.fields(BinaryField.class);</code> will return all the binary fields on that
+   * content type. You can also pass in the ImmutableClass, e.g.
+   * <code>contentType.fields(ImmutableBinaryField.class);</code> will return all the binary fields as
+   * well
+   * 
    * @param clazz
    * @return
    */
   @JsonIgnore
   @Value.Lazy
   public List<Field> fields(final Class<? extends Field> clazz) {
+    final String clazzName = clazz.getName().replace(".Immutable",".");
     return this.fields()
-    .stream()
-    .filter(field -> Try.of(()->field.getClass().asSubclass(clazz)!=null).getOrElse(false))
+        .stream()
+        .filter(field -> 
+        field.getClass().getName().replace(".Immutable",".").equals(clazzName) 
+    )
     .collect(Collectors.toList());
   }
 

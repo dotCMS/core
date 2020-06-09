@@ -30,12 +30,13 @@ public interface UserWebAPI extends UserAPI {
 	 * @param session {@link HttpSession}
 	 * @return User
      */
+	@Deprecated
 	User getLoggedInUser(final HttpSession session);
 
 	/**
 	 * 
 	 * @param req
-	 * @return The logged in user (back-end or front-end), null if no user is logged in 
+	 * @return The logged in user (front-end), null if no user is logged in 
 	 * @throws DotRuntimeException
 	 * @throws SystemException 
 	 * @throws PortalException 
@@ -63,7 +64,7 @@ public interface UserWebAPI extends UserAPI {
 	public abstract boolean isLoggedToFrontend(HttpServletRequest req) throws DotRuntimeException, PortalException, SystemException;
     
 	/**
-     * Returns user if available in the request, throws DotStateException
+     * Returns user if available in the request, otherwise it will return CMS Anonymous User
      * @param req
      * @return  
      * @throws DotRuntimeException

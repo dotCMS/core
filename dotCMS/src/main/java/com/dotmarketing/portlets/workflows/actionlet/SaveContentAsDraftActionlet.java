@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -10,10 +11,12 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
@@ -29,16 +32,27 @@ import java.util.Map;
 public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 
 	private final ContentletAPI   contentletAPI;
-	private final RelationshipAPI relationshipAPI;
 	private final CategoryAPI     categoryAPI;
 	private final PermissionAPI   permissionAPI;
 
 	public SaveContentAsDraftActionlet() {
+		this(
+			APILocator.getContentletAPI(),
+			APILocator.getCategoryAPI(),
+			APILocator.getPermissionAPI()
+		);
+	}
 
-		this.contentletAPI   = APILocator.getContentletAPI();
-		this.relationshipAPI = APILocator.getRelationshipAPI();
-		this.categoryAPI     = APILocator.getCategoryAPI();
-		this.permissionAPI   = APILocator.getPermissionAPI();
+	@VisibleForTesting
+	SaveContentAsDraftActionlet(
+			final ContentletAPI   contentletAPI,
+			final CategoryAPI     categoryAPI,
+			final PermissionAPI   permissionAPI
+	) {
+		super();
+		this.contentletAPI   = contentletAPI;
+		this.categoryAPI     = categoryAPI;
+		this.permissionAPI   = permissionAPI;
 	}
 
 	/**
@@ -64,8 +78,7 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 
 			final Contentlet contentlet             = processor.getContentlet();
 			final User user                         = processor.getUser();
-			List<Category > categories        =
-					this.categoryAPI.getParents(contentlet, user, false);
+			List<Category > categories        = null;
 			final List< Permission > permissions    =
 					this.permissionAPI.getPermissions(contentlet, false, true);
 
@@ -73,33 +86,42 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 					"Saving the content as draft of the contentlet: " + contentlet.getIdentifier());
 
 			contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+			final ContentletDependencies contentletDependencies = processor.getContentletDependencies();
 
-			if (null != processor.getContentletDependencies()) {
+			if (null != contentletDependencies) {
 
-				if(null != processor.getContentletDependencies().getModUser()) {
+				if(null != contentletDependencies.getModUser()) {
 
-					contentlet.setModUser(processor.getContentletDependencies().getModUser().getUserId());
+					contentlet.setModUser(contentletDependencies.getModUser().getUserId());
 				}
 
-				if(null != processor.getContentletDependencies().getCategories()) {
+				if(null != contentletDependencies.getCategories()) {
 
-					categories = processor.getContentletDependencies().getCategories();
+					categories = contentletDependencies.getCategories();
 				}
 
-				if(null != processor.getContentletDependencies().getRelationships()) {
+				if(null != contentletDependencies.getRelationships()) {
 
 					contentletRelationships
-							= processor.getContentletDependencies().getRelationships();
+							= contentletDependencies.getRelationships();
 				}
 			}
 
+			final boolean respectFrontendPermission = contentletDependencies != null ?
+					contentletDependencies.isRespectAnonymousPermissions() : user.isFrontendUser();
+
 			//Keeps existing relationships
-			if (contentletRelationships == null){
-                contentletRelationships = contentletAPI.getAllRelationships(contentlet);
-            }
+
+
+			if (categories == null) {
+				categories = this.categoryAPI.getParents(contentlet, user, respectFrontendPermission);
+				categories = UtilMethods.isSet(categories) ? categories : null;
+			}
 
 			final Contentlet contentletNew = this.contentletAPI.saveDraft(
-							contentlet, contentletRelationships, categories, permissions, user, true);
+					contentlet, contentletRelationships, categories, permissions, user,
+					respectFrontendPermission
+			);
 
 
 			processor.setContentlet(contentletNew);

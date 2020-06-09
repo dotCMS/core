@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
@@ -19,8 +20,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -45,6 +48,8 @@ import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
@@ -70,6 +75,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
     private RestHighLevelClient client;
 
     private static SSLContext sslContextFromPem;
+    private static final String HTTPS_PROTOCOL = "https";
 
     DotRestHighLevelClientProvider() {
         try {
@@ -83,10 +89,14 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private BasicCredentialsProvider getCredentialsProvider() throws IOException, GeneralSecurityException {
         final String esAuthType = getESAuthType();
-
+        final boolean tlsEnabled = Config.getBooleanProperty("ES_TLS_ENABLED", false);
         //Loading TLS certificates
-        if (Config.getBooleanProperty("ES_TLS_ENABLED", true)) {
+        if (tlsEnabled && HTTPS_PROTOCOL
+                .equalsIgnoreCase(Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL))) {
             loadTLSCertificates();
+        } else if (!tlsEnabled){
+            Logger.warn(this.getClass(),
+                    "Elastic RestHighLevelClient will be initialized without certificates");
         }
 
         final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -106,17 +116,41 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
+        final String esProtocol = Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL);
+        final boolean securedConnection = HTTPS_PROTOCOL.equals(esProtocol);
+        if (securedConnection){
+            Logger.info(this.getClass(),
+                    "Initializing Elastic RestHighLevelClient using a secured https connection");
+        } else{
+            Logger.warn(this.getClass(),
+                    "Initializing Elastic RestHighLevelClient using an unsecured http connection");
+        }
+
 
         final RestClientBuilder clientBuilder = RestClient
                 .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
-                        Config.getIntProperty("ES_PORT", 9200), sslContextFromPem != null ? "https" :"http"))
+                        Config.getIntProperty("ES_PORT", 9200), esProtocol))
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
+                    
+                    
                     if (sslContextFromPem != null) {
-                        httpClientBuilder
-                                .setSSLContext(sslContextFromPem);
+                        httpClientBuilder.setSSLContext(sslContextFromPem);
+
+                    } else if (securedConnection){
+                        try {
+                            httpClientBuilder.setSSLContext(SSLContexts
+                                    .custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build());
+                        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+                            Logger.error(this.getClass(),
+                                    "Error setting TrustSelfSignedStrategy for Elastic RestHighLevelClient",
+                                    e);
+                            throw new DotRuntimeException(e);
+                        }
                     }
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
+                    httpClientBuilder.setHostnameVerifier(AllowAllHostnameVerifier.INSTANCE);
+                    
                     return httpClientBuilder;
                 })
                 .setFailureListener(new RestClient.FailureListener() {

@@ -209,7 +209,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "<dt><label for='langcombo+"+this.dialogCounter+"'>"+data[0].title+"</label></dt>";
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' onChange='contentSelector._doSearch()' id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"'>";
+		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' onChange='dijit.byId(\""+this.id+"\")._doSearch()' id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"'>";
 		
 		for (var i = 0; i < data.length; i++) {
 			
@@ -218,7 +218,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			
 				htmlstr += " selected='true' ";
 			}
-			htmlstr += ">"+data[i].language + (data[i].country == "" ? "" : " - " + data[i].country) + "</option>";
+			htmlstr += ">"+data[i].language + (data[i].countryCode == "" ? "" : " (" + data[i].countryCode+")") + "</option>";
 		}
 
 		htmlstr += "</select>";
@@ -263,6 +263,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		var fieldVelocityVarName = field["fieldVelocityVarName"];
 		var fieldContentlet = field["fieldContentlet"];
 		var value = "";
+		var widgetById ='dijit.byId(\'' + this.id +'\')';
 
 		var type = field["fieldFieldType"];
 		if(type=='checkbox'){
@@ -275,7 +276,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				var actual_option = option[i].split("|");
 				if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0) {
 					var checkId=this.structureVelVar+"."+ fieldVelocityVarName + "Field-D"+ this.dialogCounter+"-O"+i;
-					result = result + "<input onChange=\"contentSelector._doSearch()\" type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\"" + actual_option[1] + "\" "+
+					result = result + "<input onChange=\""+ widgetById +"._doSearch()\" type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\"" + actual_option[1] + "\" "+
 					"id=\"" + checkId +"\" "+
 					"name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + this.dialogCounter + "\"> " +
 					actual_option[0] + "<br>\n";
@@ -300,7 +301,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			for(var i = 0; i < option.length; i++){
 				var actual_option = option[i].split("|");
 				if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
-					result = result + "<input onChange=\"contentSelector._doSearch()\" type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field-R"+ this.counter_radio+"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
+					result = result + "<input onChange=\""+ widgetById +"._doSearch()\" type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field-R"+ this.counter_radio+"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
 					if(!this.radiobuttonsIds[this.dialogCounter])
 						this.radiobuttonsIds[this.dialogCounter]=new Array();
 					this.radiobuttonsIds[this.dialogCounter][this.radiobuttonsIds[this.dialogCounter].length] = this.structureVelVar+"."+fieldVelocityVarName + "Field-R"+ this.counter_radio;
@@ -322,9 +323,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			var option = field["fieldValues"].split("\r\n");
 			var result="";
 			if (type=='multi_select')
-				result = result+"<select onChange=\"contentSelector._doSearch()\" dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n";
+				result = result+"<select onChange=\""+ widgetById +"._doSearch()\" dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n";
 			else
-				result = result+"<select onChange=\"contentSelector._doSearch()\" dojoType='dijit.form.FilteringSelect' id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n<option value=\"\">None</option>";
+				result = result+"<select onChange=\""+ widgetById +"._doSearch()\" dojoType='dijit.form.FilteringSelect' id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n<option value=\"\">None</option>";
 
 			for(var i = 0; i < option.length; i++){
 				var actual_option = option[i].split("|");
@@ -358,7 +359,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			result = result + "<tr><td style='padding:0px;'>";
 			result = result +"<textarea id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field" + this.dialogCounter + "\""
 			+ " name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\""
-			+ " cols=\"20\" rows=\"2\" onChange=\"contentSelector._doDebounceSearch()\"  onkeyup=\"suggestTagsForSearch(this,'"
+			+ " cols=\"20\" rows=\"2\" onChange=\""+ widgetById +"._doDebounceSearch()\"  onkeyup=\"suggestTagsForSearch(this,'"
 			+ this.structureVelVar+"."+ fieldVelocityVarName + "suggestedTagsDiv" + this.dialogCounter + "');\" "
 			+ " style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; "
 			+ " height: 50px; width: 100%;\" "
@@ -425,7 +426,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			+ ",'" + this.DOT_FIELD_TYPE + "'"
 			+ ",'" + type + "');";
 
-			return "<input type=\"text\" dojoType=\"dijit.form.DateTextBox\" onKeyUp=\"contentSelector._doDebounceSearch()\" constraints={datePattern:'MM/dd/yyyy'} validate='return false;' invalidMessage=\"\"  id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
+			return "<input type=\"text\" dojoType=\"dijit.form.DateTextBox\" onChange=\""+ widgetById +"._doDebounceSearch()\" onKeyUp=\""+ widgetById +"._doDebounceSearch()\" constraints={datePattern:'MM/dd/yyyy'} validate='return false;' invalidMessage=\"\"  id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
 		}else{
 			var fieldId=this.structureVelVar+"."+ fieldVelocityVarName + "Field" + this.dialogCounter;
 			dijit.registry.remove(fieldId);
@@ -439,7 +440,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			+ ",'" + this.DOT_FIELD_TYPE + "'"
 			+ ",'" + type + "');";
 
-			return "<input type=\"text\" dojoType=\"dijit.form.TextBox\" onKeyUp=\"contentSelector._doDebounceSearch()\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
+			return "<input type=\"text\" dojoType=\"dijit.form.TextBox\" onKeyUp=\""+ widgetById +"._doDebounceSearch()\" data-dojo-props=\"intermediateChanges:true\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
 
 		}
 	},
@@ -553,7 +554,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 //		else
 //		fieldsValues[fieldsValues.length] = this.languageId;
 
-        if(dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
+        if(dijit.byId("langcombo+"+this.dialogCounter) && dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
             fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
         else
             fieldsValues[fieldsValues.length] = "";
@@ -721,7 +722,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             dojo.hitch(this, this._fillResults)
         );
 
-        this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.    
+        this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.
 	},
 
 	_fillResults: function (data) {
@@ -865,10 +866,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             var hasTitleImage = (cellData.hasTitleImage ==='true');
 
             cell.innerHTML = (hasTitleImage) 
-            	? '<img class="listingTitleImg" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+            	? '<img class="listingTitleImg" onError="dijit.byId(\''+ this.id +'\')._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >'
             	: '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>';
 
-            
             cell.setAttribute("style","text-align: center;");
 
 			for (var j = 0; j < this.headers.length; j++) {
@@ -986,8 +986,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		div.innerHTML = "<b> " + this.matchResultsTextValue + " (" + num + ")</b>";
 	},
 
-	_clearSearch: function () {
-
+	_clearSearch: function (event) {
 		dojo.empty(this.results_table);
 
 		if(dijit.byId("langcombo+"+this.dialogCounter))
@@ -1070,7 +1069,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         this.relateDiv.style.display = "none";
         this.generalSearch.set('value', '');
 
-		this._hideMatchingResults ();
+        this._hideMatchingResults();
+        if (event) { //this mean the clear was made by the Clear button and need to load initial results.
+			this._doSearch();
+		}
 	},
 
 	_previousPage: function (){

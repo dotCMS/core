@@ -40,7 +40,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
 
         hostAPI = APILocator.getHostAPI();
         user = APILocator.getUserAPI().getSystemUser();
-        originalHostSize = APILocator.getHostAPI().findAll(user, false).size();
+        originalHostSize = APILocator.getHostAPI().findAllFromDB(user, false).size();
     }
 
     /**
@@ -72,7 +72,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             host = APILocator.getHostAPI().save(host, user, false);
             HibernateUtil.closeAndCommitTransaction();
 
-            Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAll(user, false).size());
+            Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAllFromDB(user, false).size());
 
             contentSet.add(host.getIdentifier());
 
@@ -99,7 +99,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             final HostHandler hostHandler = new HostHandler(config);
             hostHandler.handle(tempDir);
 
-            Assert.assertEquals(originalHostSize, APILocator.getHostAPI().findAll(user, false).size());
+            Assert.assertEquals(originalHostSize, APILocator.getHostAPI().findAllFromDB(user, false).size());
         } finally {
             tempDir.delete();
         }
@@ -131,7 +131,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             host = APILocator.getHostAPI().save(host, user, false);
             HibernateUtil.closeAndCommitTransaction();
 
-            Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAll(user, false).size());
+            Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAllFromDB(user, false).size());
 
             contentSet.add(host.getIdentifier());
 

@@ -13,6 +13,7 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPagi
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
@@ -159,7 +160,7 @@ public class PageResource {
 
 
             final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
-                    PageMode.get(request.getSession()).respectAnonPerms);
+                    PageMode.get(request).respectAnonPerms);
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
@@ -252,7 +253,7 @@ public class PageResource {
         );
 
         final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
-                PageMode.get(request.getSession()).respectAnonPerms);
+                PageMode.get(request).respectAnonPerms);
         request.setAttribute(WebKeys.CURRENT_HOST, host);
         request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
@@ -417,7 +418,9 @@ public class PageResource {
             final IHTMLPage page = pageResourceHelper.getPage(user, pageId, request);
 
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
-            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
+
+            final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries(), language);
 
             return Response.ok(new ResponseEntityView("ok")).build();
         } catch(HTMLPageAssetNotFoundException e) {

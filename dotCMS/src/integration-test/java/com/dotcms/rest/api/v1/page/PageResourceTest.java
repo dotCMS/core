@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.htmlpageasset.business.render.*;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -436,6 +439,7 @@ public class PageResourceTest {
     public void testRenderWithContent() throws DotDataException, DotSecurityException {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1l;
 
         final Structure structure = new StructureDataGen().nextPersisted();
         final Container localContainer = new ContainerDataGen().withStructure(structure,"").friendlyName("container-1-friendly-name").title("container-1-title").nextPersisted();
@@ -461,12 +465,14 @@ public class PageResourceTest {
 
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
         final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
-                .setProperty("body", "body").languageId(1).nextPersisted();
+                .setProperty("body", "body").languageId(languageId).nextPersisted();
 
 
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
         final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer.getIdentifier(), contentlet.getIdentifier(), "1", 1);
         multiTreeAPI.saveMultiTree(multiTree);
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
                 .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
@@ -647,6 +653,8 @@ public class PageResourceTest {
         final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer1.getIdentifier(), contentlet.getIdentifier(), "1", 1);
         multiTreeAPI.saveMultiTree(multiTree);
 
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
+
         final Response response = pageResource
                 .loadJson(request, this.response, pageUri, null, null,
                         String.valueOf(languageId), null);
@@ -715,7 +723,7 @@ public class PageResourceTest {
                 .setProperty("name", "name")
                 .setProperty("keyTag", "keyTag")
                 .host(host)
-                .languageId(1)
+                .languageId(languageId)
                 .nextPersisted();
 
         final Container container = pageRenderTest.getFirstContainer();
@@ -725,6 +733,8 @@ public class PageResourceTest {
                 page.getIdentifier(),
                 Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getIdentifier()
         );
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), null, persona.getIdentifier(),
@@ -763,6 +773,8 @@ public class PageResourceTest {
             final Container container = pageRenderTest.getContainer(id);
             pageRenderTest.createContent(container);
         }
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), "EDIT_MODE", null,
@@ -857,6 +869,7 @@ public class PageResourceTest {
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final String pageName = "testPage-"+System.currentTimeMillis();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
@@ -873,7 +886,7 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(systemUser);
 
         final Contentlet contentlet1 = new ContentletDataGen(contentGenericType.id())
-                .languageId(1)
+                .languageId(languageId)
                 .folder(folder)
                 .host(host)
                 .setProperty("title", "content1")
@@ -928,5 +941,83 @@ public class PageResourceTest {
 
         assertEquals(1, multiTrees.size());
         assertEquals("1", multiTrees.get(0).getRelationType());
+    }
+
+    /**
+     * Method to test: {@link PageResource#saveLayout(HttpServletRequest, HttpServletResponse, PageForm)}
+     * Given Scenario: When a Template have a {@link FileAssetContainer}
+     * ExpectedResult: Should response with the absolute path
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldResponseWith() throws DotDataException, DotSecurityException, IOException {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final User systemUser = APILocator.systemUser();
+        final String modeParam = "PREVIEW_MODE";
+        when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.get(modeParam));
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
+        when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+
+        final String pageName = "testPage-"+System.currentTimeMillis();
+
+        final String testContainer = "/test-get-container" + System.currentTimeMillis();
+        Container container  = new ContainerAsFileDataGen().host(host).folderName(testContainer).nextPersisted();
+
+        container = APILocator.getContainerAPI().find(container.getInode(), systemUser, true);
+
+        final Template template = new TemplateDataGen()
+                .withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
+                .languageId(languageId)
+                .pageURL(pageName)
+                .title(pageName)
+                .nextPersisted();
+
+        page.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        page.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        page.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        APILocator.getContentletAPI().publish(page, systemUser, false);
+
+        when(initDataObject.getUser()).thenReturn(systemUser);
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentGenericType.id())
+                .languageId(languageId)
+                .folder(folder)
+                .host(host)
+                .setProperty("title", "content1")
+                .setProperty("body", "content1")
+                .nextPersisted();
+
+        contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet1.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        APILocator.getContentletAPI().publish(contentlet1, systemUser, false);
+
+        MultiTree multiTree = new MultiTree(page.getIdentifier(), ((FileAssetContainer) container).getPath(), contentlet1.getIdentifier(),"1",0);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), modeParam, null,
+                        String.valueOf(languageId), null);
+
+        final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
+
+        assertEquals(1, htmlPageAssetRendered.getContainers().size());
+        final ContainerRaw containerRaw = htmlPageAssetRendered.getContainers().iterator().next();
+
+        assertEquals(
+                FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container),
+                containerRaw.getContainerView().getPath()
+        );
     }
 }

@@ -210,7 +210,7 @@ public class PublisherTestUtil {
         pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         APILocator.getContentletIndexAPI().addContentToIndex(pageAsset);
-        assertEquals(1, APILocator.getContentletAPI().indexCount("+inode:" + pageAsset.getInode(), user, false));
+        assertEquals(1, APILocator.getContentletAPI().indexCount("+inode:" + pageAsset.getInode() + " " + UUIDGenerator.ulid(), user, false));
 
         return pageAsset;
     }
@@ -464,9 +464,6 @@ public class PublisherTestUtil {
             }
         }
 
-        //Create a new bundle id for this generated bundle
-        final String newBundleId = UUID.randomUUID().toString();
-        pconf.setId( newBundleId );
         final File bundleRoot = BundlerUtil.getBundleRoot( pconf );
 
         // Run bundlers
@@ -492,7 +489,7 @@ public class PublisherTestUtil {
         final File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz" );
 
         final Map<String, Object> bundleData = new HashMap<String, Object>();
-        bundleData.put( "id", newBundleId );
+        bundleData.put( "id", bundleId );
         bundleData.put( FILE, PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() ) );
         return bundleData;
     }

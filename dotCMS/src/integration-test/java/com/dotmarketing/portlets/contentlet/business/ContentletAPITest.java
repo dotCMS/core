@@ -82,6 +82,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
@@ -183,10 +184,21 @@ public class ContentletAPITest extends ContentletBaseTest {
         dotAssetContentlet.setIndexPolicy(IndexPolicy.FORCE);
         dotAssetContentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         dotAssetContentlet = contentletAPI.checkin(dotAssetContentlet, user, false);
+        dotAssetContentlet = contentletAPI.find(dotAssetContentlet.getInode(), user, false);
 
         assertNotNull(dotAssetContentlet);
         assertEquals("The Content Type should be: " + variable,
                 dotAssetContentType.variable(), dotAssetContentlet.getContentType().variable());
+
+        final String contentletTitle = dotAssetContentlet.getTitle();
+
+        assertEquals("the contentlet title should be the binary field name", contentletTitle, tempTestFile.getName());
+
+        dotAssetContentlet.getMap().remove(Contentlet.TITTLE_KEY);
+
+        final String contentletTitle2 = dotAssetContentlet.getTitle();
+
+        assertEquals("the contentlet title should be the binary field name", contentletTitle2, contentletTitle);
     }
 
     @Test
@@ -5113,6 +5125,12 @@ public class ContentletAPITest extends ContentletBaseTest {
             blogContent = contentletAPI.checkin(blogContent, (ContentletRelationships) null, categories,
                 null, user, false);
 
+            // let's check cats saved fine
+            List<Category> contentCats = APILocator.getCategoryAPI().getParents(blogContent, user,
+                    false);
+
+            assertTrue(contentCats.containsAll(categories));
+
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
@@ -6116,12 +6134,18 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //html page is removed
             contentletAPI.archive(htmlPage, user, false);
-            contentletAPI.delete(htmlPage, user, false);
+
+            try {
+                contentletAPI.delete(htmlPage, user, false);
+                assertTrue("DotWorkflowException expected", false );
+            }  catch (DotWorkflowException e) {
+                //Expected
+            }
 
             //verify that the content type was unlinked from the deleted page
             type = contentTypeAPI.find(type.id());
-            assertNull(type.detailPage());
-            assertNull(type.urlMapPattern());
+            assertEquals(htmlPage.getIdentifier(), type.detailPage());
+            assertEquals("/mapPatternForTesting", type.urlMapPattern());
         } finally {
             if (type != null){
                 contentTypeAPI.delete(type);
@@ -6948,22 +6972,26 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentInSpanish.setLanguageId(spanishLanguage.getId());
             contentInSpanish = ContentletDataGen.checkin(contentInSpanish);
 
+            
+            
+            
+            
             assertEquals(2,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier()  + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
             contentInSpanish.setIndexPolicy(IndexPolicy.FORCE);
             ContentletDataGen.archive(contentInSpanish);
             ContentletDataGen.delete(contentInSpanish);
 
             assertEquals(1,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier() + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
             contentInEnglish.setIndexPolicy(IndexPolicy.FORCE);
             ContentletDataGen.archive(contentInEnglish);
             ContentletDataGen.delete(contentInEnglish);
 
             assertEquals(0,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier() + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
         } finally {
             if (contentType != null) {

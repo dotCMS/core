@@ -51,7 +51,7 @@
         "doc_values" : true
       },
       "language": {
-        "type": "integer"
+        "type": "long"
       },
       "author": {
         "type": "text"

@@ -1,7 +1,9 @@
 package com.dotmarketing.factories;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -11,13 +13,18 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
+import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,7 +32,9 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
@@ -68,7 +77,48 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         }
 
     }
-    
+
+    /**
+     * This test checks if the uuid does exact match on the table (same keys)
+     * @throws Exception
+     */
+    @Test
+    public  void testDoesPageContentsHaveContainer_no_prefix() throws Exception {
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = HashBasedTable.create();
+        final String  containerIdentifier = "12345";
+        final String  containeruuid       = "xxx";
+        final ContainerUUID containerUUID = new ContainerUUID(containerIdentifier, containeruuid);
+        final Container container         = new Container();
+        final MultiTreeAPIImpl multiTreeAPI = new MultiTreeAPIImpl();
+
+        container.setIdentifier(containerIdentifier);
+        pageContents.put(containerIdentifier, containeruuid, Sets.newConcurrentHashSet());
+
+        Assert.assertTrue("Should has the container", multiTreeAPI.doesPageContentsHaveContainer(pageContents, containerUUID, container));
+    }
+
+    /**
+     * This test checks if the uuid does match on the table but the table has a diff keys (with a dotParser_ prefix)
+     * @throws Exception
+     */
+    @Test
+    public  void testDoesPageContentsHaveContainer_with_prefix() throws Exception {
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = HashBasedTable.create();
+        final String  containerIdentifier = "12345";
+        final String  containeruuid       = "xxx";
+        final ContainerUUID containerUUID = new ContainerUUID(containerIdentifier, containeruuid);
+        final Container container         = new Container();
+        final MultiTreeAPIImpl multiTreeAPI = new MultiTreeAPIImpl();
+
+        container.setIdentifier(containerIdentifier);
+        pageContents.put(containerIdentifier, ParseContainer.PARSE_CONTAINER_UUID_PREFIX + containeruuid, Sets.newConcurrentHashSet());
+
+        Assert.assertTrue("Should has the container", multiTreeAPI.doesPageContentsHaveContainer(pageContents, containerUUID, container));
+    }
+
+
     @Test
     public  void testDeletes() throws Exception {
         deleteInitialData();
@@ -566,5 +616,172 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertEquals(2, multiTrees.size());
         assertTrue(multiTrees.contains(multiTree1));
         assertTrue(multiTrees.contains(multiTree3));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
+     * When: A Page with content in Spanish and English try to update the MulTree just for English lang
+     * Should: Should keep the Spanish content and replace the English content
+     */
+    @Test
+    public void shouldReplaceEnglishMultiTree() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet enContentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet enContentlet2 = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId())
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+            .setPage(page)
+            .setContainer(container)
+            .setContentlet(enContentlet)
+            .setInstanceID(uniqueId)
+            .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+            .setTreeOrder(1)
+            .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(enContentlet2)
+                .setInstanceID(uniqueId)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(espContentlet)
+                .setInstanceID(uniqueId)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .nextPersisted();
+
+        final Contentlet newEnContentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final MultiTree newMultiTreeEnContent = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(newEnContentlet)
+                .setInstanceID(uniqueId)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .next();
+
+        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                page.getIdentifier(),
+                MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                list(newMultiTreeEnContent),
+                Optional.of(defaultLanguage.getId())
+        );
+
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+
+        final List<String> multiTreeContentlets = multiTrees.stream()
+                .map(multiTree -> multiTree.getContentlet())
+                .collect(Collectors.toList());
+
+        assertEquals(2, multiTreeContentlets.size());
+        assertTrue(multiTreeContentlets.contains(espContentlet.getIdentifier()));
+        assertTrue(multiTreeContentlets.contains(newEnContentlet.getIdentifier()));
+        assertFalse(multiTreeContentlets.contains(enContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
+     * When: A Page with content in Spanish and English try to update the MulTree but without lang
+     * Should: Should replace all the {@link MultiTree}
+     */
+    @Test
+    public void shouldReplaceAllMultiTree() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet enContentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId())
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(enContentlet)
+                .setInstanceID(uniqueId)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(espContentlet)
+                .setInstanceID(uniqueId)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .nextPersisted();
+
+        final Contentlet newEnContentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final MultiTree newMultiTreeEnContent = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(newEnContentlet)
+                .setInstanceID(uniqueId)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .next();
+
+        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                page.getIdentifier(),
+                MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                list(newMultiTreeEnContent),
+                Optional.empty()
+        );
+
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+
+        final List<String> multiTreeContentlets = multiTrees.stream()
+                .map(multiTree -> multiTree.getContentlet())
+                .collect(Collectors.toList());
+
+        assertEquals(1, multiTreeContentlets.size());
+        assertTrue(multiTreeContentlets.contains(newEnContentlet.getIdentifier()));
+        assertFalse(multiTreeContentlets.contains(espContentlet.getIdentifier()));
+        assertFalse(multiTreeContentlets.contains(enContentlet.getIdentifier()));
     }
 }

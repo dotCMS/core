@@ -14,6 +14,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import javax.ws.rs.core.Response;
 
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.util.CollectionsUtils;
 import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
@@ -457,6 +458,8 @@ public class FieldResourceTest {
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
         checkAllFieldsIds(listExpected, contentTypeFromDB.fields());
     }
+
+
 
     /**
      * When try to create a field in a Content Type with a right layout
@@ -979,6 +982,7 @@ public class FieldResourceTest {
             throw new RuntimeException(e);
         }
     }
+
 
     private static HttpServletRequest getHttpRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(

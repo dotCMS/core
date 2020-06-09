@@ -1,19 +1,40 @@
 package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
+import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.enterprise.publishing.remote.DependencyBundlerTest;
+import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
+import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
-import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
-import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotcms.publishing.PublisherFilterImplTest;
+import com.dotcms.publishing.PushPublishFiltersInitializerTest;
+import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
+import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
+import com.dotcms.rest.api.v1.folder.FolderResourceTest;
+import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
+import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
+import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
 import com.dotmarketing.util.TestConfig;
+import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -40,6 +61,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.util.marshal.MarshalUtilsIntegrationTest.class,
         com.dotcms.util.RelationshipUtilTest.class,
         com.dotcms.util.ImportUtilTest.class,
+        com.dotmarketing.util.PageModeTest.class,
+        com.dotmarketing.business.web.UserWebAPIImplTest.class,
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
@@ -65,6 +88,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.visitor.filter.logger.VisitorLoggerTest.class,
         com.dotcms.visitor.filter.characteristics.VisitorCharacterTest.class,
         com.dotcms.graphql.business.GraphqlAPITest.class,
+        com.dotcms.contenttype.test.ContentTypeTest.class,
         com.dotcms.contenttype.test.DeleteFieldJobTest.class,
         com.dotcms.contenttype.test.ContentTypeAPIImplTest.class,
         com.dotcms.contenttype.test.ContentTypeBuilderTest.class,
@@ -95,12 +119,13 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.rendering.velocity.viewtools.content.ContentToolTest.class,
         com.dotcms.rendering.velocity.viewtools.WorkflowToolTest.class,
-        com.dotcms.rendering.velocity.viewtools.BrowserAPITest.class,
+        com.dotcms.browser.BrowserAPITest.class,
         com.dotcms.rendering.velocity.viewtools.LanguageWebAPITest.class,
         com.dotcms.rendering.velocity.viewtools.ContainerWebAPIIntegrationTest.class,
         com.dotcms.rendering.velocity.services.VelocityResourceKeyTest.class,
         com.dotcms.rendering.velocity.services.HTMLPageAssetRenderedTest.class,
         com.dotcms.uuid.shorty.ShortyIdApiTest.class,
+        DotGraphQLHttpServletTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
         com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,
@@ -124,6 +149,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.relationships.RelationshipsResourceTest.class,
         com.dotcms.rest.api.v2.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
+        com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
@@ -230,12 +256,32 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
-        com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
-        com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
-        ServiceIntegrationResourceTest.class,
+        com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
+        AppsAPIImplTest.class,
+        AppsResourceTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
-        RulesAPIImplIntegrationTest.class
+        DotAssetBaseTypeToContentTypeStrategyImplTest.class,
+        RulesAPIImplIntegrationTest.class,
+        FileAssetAPIImplIntegrationTest.class,
+        FileAssetFactoryIntegrationTest.class,
+        FileAssetAPIImplTest.class,
+        UserResourceIntegrationTest.class,
+        SiteSearchJobImplTest.class,
+        IntegrationResourceLinkTest.class,
+        HTMLDiffUtilTest.class,
+        ElasticsearchUtilTest.class,
+        ESReadOnlyMonitorTest.class,
+        LanguageUtilTest.class,
+        FolderResourceTest.class,
+        DependencyBundlerTest.class,
+        BundleFactoryTest.class,
+        PublisherFilterImplTest.class,
+        PushPublishFiltersInitializerTest.class,
+        PushPublishFilterResourceTest.class,
+        PushNowActionletTest.class,
+        Task05305AddPushPublishFilterColumnTest.class,
+        CMSMaintenanceFactoryTest.class
 })
 public class MainSuite {
 

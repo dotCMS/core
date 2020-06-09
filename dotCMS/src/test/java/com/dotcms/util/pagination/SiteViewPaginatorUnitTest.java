@@ -1,5 +1,6 @@
 package com.dotcms.util.pagination;
 
+import static java.util.Collections.emptyMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
@@ -8,8 +9,8 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.rest.api.v1.secret.SiteViewPaginator;
-import com.dotcms.rest.api.v1.secret.view.SiteView;
+import com.dotcms.rest.api.v1.apps.SiteViewPaginator;
+import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -18,13 +19,14 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDUtil;
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Ordering;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -67,11 +69,11 @@ public class SiteViewPaginatorUnitTest {
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         when(contentletAPI.searchIndex(anyString(), anyInt(), anyInt(), eq("title"), any(User.class), anyBoolean())).thenReturn(mockedSearch);
         final Supplier<Set<String>> configuredSitesSupplier = () -> sitesWithIntegrations;
-
-        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, hostAPI, contentletAPI);
+        final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier = () -> ImmutableBiMap.of();
+        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier ,hostAPI, contentletAPI);
         final int limit = sitesWithIntegrations.size();
         final PaginatedArrayList<SiteView> items = paginator
-                .getItems(user, null, limit, 0, null, null, Collections.emptyMap());
+                .getItems(user, null, limit, 0, null, null, emptyMap());
 
         Assert.assertNotNull(items);
         Assert.assertFalse(items.isEmpty());
@@ -122,13 +124,13 @@ public class SiteViewPaginatorUnitTest {
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         when(contentletAPI.searchIndex(anyString(), anyInt(), anyInt(), eq("title"), any(User.class), anyBoolean())).thenReturn(mockedSearch);
         final Supplier<Set<String>> configuredSitesSupplier = () -> sitesWithIntegrations;
-
-        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, hostAPI, contentletAPI);
+        final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier = ImmutableBiMap::of;
+        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier, hostAPI, contentletAPI);
 
         //First batch of 6.
         int limit = sitesWithIntegrations.size();
         final PaginatedArrayList<SiteView> itemsPage1 = paginator
-                .getItems(user, null, limit, 0, null, null, Collections.emptyMap());
+                .getItems(user, null, limit, 0, null, null, emptyMap());
 
         Assert.assertNotNull(itemsPage1);
         Assert.assertFalse(itemsPage1.isEmpty());
@@ -141,7 +143,7 @@ public class SiteViewPaginatorUnitTest {
 
         //Then the rest.
         final PaginatedArrayList<SiteView> itemsPage2 = paginator
-                .getItems(user, null, 100, limit + 1 , null, null, Collections.emptyMap());
+                .getItems(user, null, 100, limit + 1 , null, null, emptyMap());
 
         final List<String> pageNamesPage2 = itemsPage2.stream().map(SiteView::getName).collect(Collectors.toList());
         Assert.assertTrue(Ordering.<String> natural().isOrdered(pageNamesPage2));
@@ -149,7 +151,7 @@ public class SiteViewPaginatorUnitTest {
         //Test a page with both mixed configured and non-configured items are sorted.
         limit = sitesWithIntegrations.size() + 2;
         final PaginatedArrayList<SiteView> itemsPageMixed = paginator
-                .getItems(user, null, limit, 0, null, null, Collections.emptyMap());
+                .getItems(user, null, limit, 0, null, null, emptyMap());
 
         final List<String> pageNamesConfiguredItemsPage = itemsPageMixed.stream()
                 .filter(siteView -> !Host.SYSTEM_HOST.equals(siteView.getId()))
@@ -161,7 +163,6 @@ public class SiteViewPaginatorUnitTest {
                 .filter(siteView -> !siteView.isConfigured()).map(SiteView::getName)
                 .collect(Collectors.toList());
         Assert.assertTrue(Ordering.<String>natural().isOrdered(pageNamesNonConfiguredItemsPage));
-
     }
 
     private Host mockSite(final String identifier,final String name) {

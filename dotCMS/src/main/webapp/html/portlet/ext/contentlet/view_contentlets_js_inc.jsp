@@ -199,15 +199,16 @@
             fillResultsTable(headers, data);
             fillCardView(data)
             const card = getViewCardEl();
-            const list = getListEl();;
+            const list = getListEl();
 
             if (state.view === 'list') {
                 list.style.display = ''
-                card.display = 'none'
+                card.style.display = 'none'
             } else {
                 list.style.display = 'none'
-                card.display = ''
+                card.style.display = ''
             }
+
         }
 
 
@@ -1619,7 +1620,7 @@
                         showDeleted = true;
                 }
 
-                dijit.byId("searchButton").attr("disabled", true);
+                //dijit.byId("searchButton").attr("disabled", true);
                 //dijit.byId("clearButton").attr("disabled", false);
 
                 document.getElementById('fieldsValues').value = fieldsValues;
@@ -1675,6 +1676,7 @@
                 var checkAll = dijit.byId("checkAll");
                 var check;
 
+	            getViewCardEl().value = ''
                 for (var i = 0; i < cbContentInodeList.length; ++i) {
                         check = dijit.byId("checkbox" + i);
                         if(check) {
@@ -1817,7 +1819,7 @@
                     disableBulkAvailableActionsButton();
                 }
             });
-			viewCard.addEventListener('onCardClick', (e) => {
+			viewCard.addEventListener('cardClick', (e) => {
 				openEditModal(e.detail);
 			});
             dojo.byId('metaMatchingResultsDiv').appendChild(viewCard);
@@ -2017,10 +2019,18 @@
                                         cell = row.insertCell (row.cells.length);
                                         cell.setAttribute("align","left");
 									}
-                                    var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
+
+                                    let fieldVarName  = header["fieldVelocityVarName"];
+                                    let fieldVarTitle = cellData[fieldVarName + "_title_"];
+                                    fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
+                                    var value         = titleCell(cellData,fieldVarTitle, i);
                                 }
                                 else{
-                                    var value = cellData[header["fieldVelocityVarName"]];
+
+                                    let fieldVarName  = header["fieldVelocityVarName"];
+                                    let fieldVarTitle = cellData[fieldVarName + "_title_"];
+                                    fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
+                                    var value         = fieldVarTitle;
                                 }
                                 if (value != null){
                                 	cell.innerHTML = value;
@@ -2377,11 +2387,11 @@
                         list.style.display = '';
                     }
 
-                    let dataViewButton = "<dot-data-view-button style=\"margin-right:32px" + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
+                    let dataViewButton = "<dot-data-view-button style=\"margin-left:24px" + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div>" + dataViewButton + "<div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>" + dataViewButton ;
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {

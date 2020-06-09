@@ -6,10 +6,9 @@ import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
@@ -84,6 +83,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
@@ -97,6 +97,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -181,7 +182,11 @@ public class ContentletAjax {
 			result.put("iconClass", UtilHTML.getIconClass(contentlet));
 			result.put("identifier", contentlet.getIdentifier());
 			result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
+			
 			result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
+			if(contentlet.getTitleImage().isPresent()) {
+			    result.put("titleImage", contentlet.getTitleImage().get());
+			}
 			result.put("title", String.valueOf(contentlet.getTitle()));
 			result.put("inode", String.valueOf(contentlet.getInode()));
 			result.put("working", String.valueOf(contentlet.isWorking()));
@@ -503,7 +508,8 @@ public class ContentletAjax {
 	 private <T> List<T> distinct (final List<T> collection, final Function<T, Object> indexKeyFunction) {
 
 		 final Map<Object, T> collectionIndexMap = collection.stream().collect(
-		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing));
+		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing,
+						LinkedHashMap::new));
 
 		return new ArrayList<>(collectionIndexMap.values());
 	 }
@@ -563,12 +569,7 @@ public class ContentletAjax {
 		}
 
 		// Building search params and lucene query
-		StringBuffer luceneQuery = new StringBuffer("-contentType:forms ");
-
-    if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-      luceneQuery.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
-      luceneQuery.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
-    }
+		StringBuffer luceneQuery = new StringBuffer();
 
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
@@ -622,8 +623,8 @@ public class ContentletAjax {
 		            break;
 		        }
 		    }
-		    luceneQuery.append("-contentType:Host ");
-		    luceneQuery.append("-baseType:3 ");
+            luceneQuery.append("-contentType:forms ");
+            luceneQuery.append("-contentType:Host ");
 		}
 
         final String finalSort = getFinalSort(fields, orderBy, st, structureInodes);
@@ -674,17 +675,9 @@ public class ContentletAjax {
                 Optional<Relationship> childRelationship = getRelationshipFromChildField(st, fieldName);
                 if (childRelationship.isPresent()) {
                     //Getting related identifiers from index when filtering by parent
-                    final Contentlet relatedParent = conAPI
-                            .findContentletByIdentifierAnyLanguage(fieldValue);
-                    final List<String> relatedContent = conAPI
-                            .getRelatedContent(relatedParent, childRelationship.get(), true,
-                                    currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
-                                    offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
-                            .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
-
-                    if (relatedQueryByChild.length() > 0) {
-                        relatedQueryByChild.append(StringPool.COMMA);
-                    }
+                    final List<String> relatedContent = getRelatedIdentifiers(currentUser, offset,
+                            relatedQueryByChild, finalSort, fieldValue,
+                            childRelationship);
 
                     relatedQueryByChild.append(fieldName).append(StringPool.COLON).append(fieldValue);
 
@@ -884,10 +877,12 @@ public class ContentletAjax {
 							        if("catchall".equals(fieldName)) {
 							           
 							            luceneQuery.append(" title:'" + fieldValueStr + "'^15 ");
-							            for(String x : fieldValueStr.split("[,|\\s+]")) {
-							                luceneQuery.append(" title:" + x + "^5 ");
-							                
-							            }
+                                        final String[] titleSplit = fieldValueStr.split("[,|\\s+]");
+                                        if (titleSplit.length > 1) {
+                                            for (final String term : titleSplit) {
+                                                luceneQuery.append(" title:" + term + "^5 ");
+                                            }
+                                        }
 							            luceneQuery.append(" title_dotraw:*" + fieldValueStr + "*^5 ");
 							        }
 							        
@@ -995,7 +990,7 @@ public class ContentletAjax {
 			headers.add(fieldMap);
 
 			// if there is a type selected, does not make sense to show it on the list.
-			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode)) {
+			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode) || this.hasManyContentTypes(structureInode)) {
 				fieldMap = new HashMap<>();
 				fieldMap.put("fieldVelocityVarName", "__type__");
 				fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
@@ -1035,12 +1030,13 @@ public class ContentletAjax {
 				ContentType type = con.getContentType();
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
-				for (String fieldContentlet : fieldsMapping.keySet()) {
+				for (final String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
 						fieldValue = (con.getMap().get(fieldContentlet)).toString();
 					}
-					Field field = (Field) fieldsMapping.get(fieldContentlet);
+
+					final Field field = fieldsMapping.get(fieldContentlet);
 					if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -1070,6 +1066,13 @@ public class ContentletAjax {
 						fieldValue = ident.getAssetName();
 					}
 
+					// when a content type is selected and the field is listed and binary, instead of displaying the path, must display just the name
+					if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && field.isListed() && field.getFieldType().equals(
+							Field.FieldType.BINARY.toString())) {
+
+						searchResult.put(fieldContentlet+"_title_", con.getBinary(fieldContentlet).getName());
+					}
+
 					searchResult.put(fieldContentlet, fieldValue);
 				}
 
@@ -1086,6 +1089,9 @@ public class ContentletAjax {
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
+	            if(contentlet.getTitleImage().isPresent()) {
+	                searchResult.put("titleImage", contentlet.getTitleImage().get().variable());
+	            }
 				searchResult.put("modDate", fieldValue);
 				String user = "";
 				User contentEditor = null;
@@ -1180,7 +1186,7 @@ public class ContentletAjax {
 				Long languageId = con.getLanguageId();
 				searchResult.put("languageId", languageId.toString());
 				final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
-				searchResult.put("language", language.getCountryCode() + '_' + language.getLanguageCode());
+				searchResult.put("language", language.toString());
 				searchResult.put("permissions", permissionsSt.toString());
 
 				//Add mimeType
@@ -1189,11 +1195,14 @@ public class ContentletAjax {
 							.getMimeType(APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName()));
 				} else if(type.baseType().getType() == BaseContentType.HTMLPAGE.getType()){
 					searchResult.put("mimeType", "application/dotpage");
+				} else if(type.baseType().getType() == BaseContentType.DOTASSET.getType()){
+					searchResult.put("mimeType", APILocator.getFileAssetAPI()
+							.getMimeType(con.getBinary(DotAssetContentType.ASSET_FIELD_VAR)));
 				} else {
 					searchResult.put("mimeType", "");
 				}
-				final String icon = spanClass.startsWith("uknIcon") ? spanClass.replaceAll("uknIcon","").trim() : spanClass;
-				searchResult.put("__icon__",icon);
+			
+				searchResult.put("__icon__",UtilHTML.getIconClass(con ));
 			} catch (DotSecurityException e) {
 
 				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
@@ -1262,7 +1271,29 @@ public class ContentletAjax {
 		return results;
 	}
 
-    /**
+    List<String> getRelatedIdentifiers(User currentUser, int offset,
+            StringBuilder relatedQueryByChild, String finalSort, String fieldValue,
+            Optional<Relationship> childRelationship) throws DotDataException {
+        final Contentlet relatedParent = conAPI
+                .findContentletByIdentifierAnyLanguage(fieldValue);
+        final List<String> relatedContent = conAPI
+                .getRelatedContent(relatedParent, childRelationship.get(), true,
+                        currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
+                        offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
+                .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
+
+        if (relatedQueryByChild.length() > 0) {
+            relatedQueryByChild.append(StringPool.COMMA);
+        }
+        return relatedContent;
+    }
+
+    private boolean hasManyContentTypes(final String structureInode) {
+
+		return null != structureInode && structureInode.split(StringPool.COMMA).length > 1;
+	}
+
+	/**
      *
      * @param fields
      * @param orderBy
@@ -1885,7 +1916,8 @@ public class ContentletAjax {
 						  .cast(rootCause);
 				  clearBinary = handleValidationException(user, ve, saveContentErrors);
 			  } else {
-				  Logger.error(this, e.getMessage(), e);
+				  Logger.debug(this, e.getMessage(), e);
+				  Logger.error(this, e.getMessage());
 				  saveContentErrors.add(e.getMessage());
 				  callbackData.put("saveContentErrors", saveContentErrors);
 				  callbackData.put("referer", referer);

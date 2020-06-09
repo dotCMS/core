@@ -82,4 +82,21 @@ public class MockRequestTest extends UnitTestBase {
 		assertThat("request isSecure is false", !request.isSecure());
 		assertThat("request is a httprequest ", request instanceof HttpServletRequest);
 	}
+	
+	
+    @Test
+    public void testMockHttpRequestWithNullValues() {
+        final String expectedHostname="localhost";
+        final String expectedUri="/";
+        HttpServletRequest request =    new MockHttpRequest(null,null).request();
+        assertThat("request ip is not null", IP.equals(request.getRemoteAddr()));
+
+        assertThat("request url works", (PROTOCOL + expectedHostname + expectedUri).equals(request.getRequestURL().toString()));
+        assertThat("request uri works", expectedUri.equals(request.getRequestURI()));
+        assertThat("request host works", expectedHostname.equals(request.getServerName()));
+
+        assertThat("request is a httprequest ", request instanceof HttpServletRequest);
+    }
+	    
+	
 }

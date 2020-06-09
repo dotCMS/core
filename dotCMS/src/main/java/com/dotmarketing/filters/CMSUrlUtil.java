@@ -1,11 +1,22 @@
 package com.dotmarketing.filters;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
+import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+import static java.util.stream.Collectors.toSet;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -17,22 +28,19 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
-
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.List;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
-import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
-
-import com.dotcms.contenttype.model.type.BaseContentType;
 
 /**
  * Utilitary class used by the CMS Filter
@@ -47,8 +55,10 @@ public class CMSUrlUtil {
 	private static final String NOT_FOUND = "NOTFOUND";
 	private static final String UNABLE_TO_FIND = "Unable to find ";
 
-	private static final String [] VANITY_FILTERED_LIST_ARRAY =
-			new String[] {"/html","/api","/dotAdmin","/dwr","/webdav","/dA","/contentAsset","/c/","/DOTSASS","/DOTLESS"};
+	public static final Set<String> BACKEND_FILTERED_COLLECTION =
+			Stream.of("/api", "/webdav", "/dA", "/c/", "/contentAsset", "/DOTSASS", "/DOTLESS",
+					"/html", "/dotAdmin", "/custom-elements","/dotcms-webcomponents","/dwr")
+					.collect(Collectors.collectingAndThen(toSet(), Collections::unmodifiableSet));
 
 	/**
 	 * Get the CmsUrlUtil singleton instance
@@ -194,7 +204,7 @@ public class CMSUrlUtil {
 					APILocator.getUserAPI().getSystemUser());
 
 			return APILocator.getURLMapAPI().isUrlPattern(urlMapContext);
-		} catch (final DotDataException e){
+		} catch (final DotDataException | DotSecurityException e){
 			Logger.error(this.getClass(), e.getMessage());
 			return false;
 		}
@@ -317,13 +327,7 @@ public class CMSUrlUtil {
 	public boolean isVanityUrlFiltered(final String url) {
 
 		if (null != url) {
-			for (final String vanityFiltered : VANITY_FILTERED_LIST_ARRAY) {
-
-				if (url.startsWith(vanityFiltered)) {
-
-					return true;
-				}
-			}
+			return BACKEND_FILTERED_COLLECTION.stream().anyMatch(url::startsWith);
 		}
 
 		return false;

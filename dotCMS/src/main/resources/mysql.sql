@@ -1754,44 +1754,6 @@ alter table structure add constraint fk_structure_folder foreign key (folder) re
 alter table structure modify column velocity_var_name varchar(255) not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 
-DROP PROCEDURE IF EXISTS load_records_to_index;
-CREATE PROCEDURE load_records_to_index(IN server_id VARCHAR(100), IN records_to_fetch INT, IN priority_level INT)
-BEGIN
-DECLARE v_id BIGINT;
-DECLARE v_inode_to_index VARCHAR(100);
-DECLARE v_ident_to_index VARCHAR(100);
-DECLARE v_serverid VARCHAR(64);
-DECLARE v_priority INT;
-DECLARE v_time_entered TIMESTAMP;
-DECLARE v_index_val VARCHAR(325);
-DECLARE v_dist_action INT;
-DECLARE cursor_end BOOL DEFAULT FALSE;
-DECLARE cur1 CURSOR FOR SELECT * FROM dist_reindex_journal WHERE serverid IS NULL or serverid='' AND priority <= priority_level ORDER BY priority ASC LIMIT records_to_fetch;
-DECLARE CONTINUE HANDLER FOR NOT FOUND SET cursor_end:=TRUE;
-
-DROP TEMPORARY TABLE IF EXISTS tmp_records_reindex;
-CREATE TEMPORARY TABLE tmp_records_reindex (
-  id BIGINT PRIMARY KEY,
-  inode_to_index varchar(36),
-  ident_to_index varchar(36),
-  dist_action INT,
-  priority INT
-) ENGINE=MEMORY;
-
-OPEN cur1;
-WHILE (NOT cursor_end) DO
-  FETCH cur1 INTO v_id,v_inode_to_index,v_ident_to_index,v_serverid,v_priority,v_time_entered,v_index_val,v_dist_action;
-  IF (NOT cursor_end) THEN
-    UPDATE dist_reindex_journal SET serverid=server_id WHERE id=v_id;
-    INSERT INTO tmp_records_reindex VALUES (v_id, v_inode_to_index, v_ident_to_index, v_dist_action, v_priority);
-  END IF;
-END WHILE;
-CLOSE cur1;
-
-SELECT * FROM tmp_records_reindex;
-
-END;
-#
 DROP TRIGGER IF EXISTS check_parent_path_when_update;
 CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE
 on identifier
@@ -2234,7 +2196,9 @@ create table publishing_bundle(
 	  name varchar(255) NOT NULL,
 	  publish_date DATETIME,
 	  expire_date DATETIME,
-	  owner varchar(100)
+	  owner varchar(100),
+	  force_push tinyint(1),
+	  filter_key varchar(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
@@ -2259,9 +2223,6 @@ CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
 
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
-
-
-alter table publishing_bundle add force_push tinyint(1) ;
 
 -- Cluster Tables
 
