@@ -72,12 +72,22 @@ function submitform(cacheName)
 
 var stillInReindexation = false;
 function checkReindexationCallback (response) {
-	var inFullReindexation = response['inFullReindexation'];
-	var contentCountToIndex = response['contentCountToIndex'];
-	var lastIndexationProgress = response['lastIndexationProgress'];
-	var currentIndexPath = response['currentIndexPath'];
-	var newIndexPath = response['newIndexPath'];
-	var reindexTimeElapsed = response['reindexTimeElapsed'];
+    console.log(response);
+	var inFullReindexation = response.entity.inFullReindexation;
+	var contentCountToIndex = response.entity.contentCountToIndex;
+	var lastIndexationProgress = response.entity.lastIndexationProgress;
+	var currentIndexPath = response.entity.currentIndexPath;
+	var newIndexPath = response.entity.newIndexPath;
+	var reindexTimeElapsed = response.entity.reindexTimeElapsed;
+    var failedRecords = response.entity.errorCount;
+    
+    if(failedRecords > 0){
+        dojo.byId("failedReindexRecordsDiv").style.display="";
+        dojo.byId("failedReindexRecordsMessage").innerHTML= failedRecords;
+        
+    }else{
+        dojo.byId("failedReindexRecordsDiv").style.display="none";
+    }
 
 
 	var reindexationInProgressDiv = document.getElementById("reindexationInProgressDiv");
@@ -116,33 +126,50 @@ function checkReindexationCallback (response) {
 
 function checkReindexation () {
 
-	CMSMaintenanceAjax.getReindexationProgress(checkReindexationCallback);
+    fetch('/api/v1/index/reindex',{cache: 'no-cache'})
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data));
+
 }
+function deleteFailedRecords () {
+
+    fetch('/api/v1/index/failed', {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data));
+
+}
+
 
 /** Stops de re-indexation process and clears the database table that contains 
     the remaining non re-indexed records. */
 function stopReIndexing(){
-	CMSMaintenanceAjax.stopReindexation(checkReindexationCallback);
+    
+    fetch('/api/v1/index/reindex?switch=false', {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data));
+    
+
 }
 
 /** Stops de re-indexation process and clears the database table that contains 
     the remaining non re-indexed records. Moreover, switches the current index 
     to point to the new one. */
 function stopReIndexingAndSwitchover() {
-	dijit.byId('stopReindexAndSwitch').set('label', '<%= LanguageUtil.get(pageContext,"Switching-To-New-Index") %>');
-	dijit.byId('stopReindexAndSwitch').set('disabled', true);
-	CMSMaintenanceAjax.stopReindexationAndSwitchover(checkReindexationCallback);
+    fetch('/api/v1/index/reindex?switch=true', {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data));
+    
 }
 
 /** Downloads the main information of the records that could not be re-indexed 
     as a .CSV file*/
-function downloadFailedAsCsv() {
-	var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-    href += "<portlet:param name='struts_action' value='/ext/cmsmaintenance/view_cms_maintenance' />";
-    href += "<portlet:param name='cmd' value='export-failed-as-csv' />";      
-    href += "<portlet:param name='referer' value='<%= java.net.URLDecoder.decode(referer, "UTF-8") %>' />";       
-    href += "</portlet:actionURL>";
-    window.location.href=href;
+function downloadFailedAsJson() {
+	var href = "/api/v1/index/failed";
+	
+	
+	window.open(href);
+
+
 }
 
 function optimizeCallback() {
@@ -434,85 +461,40 @@ function refreshIndexStats(){
 
 }
 
-function doDownloadIndex(indexName){
-
-
-	window.location="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/downloadIndex/indexName/" + indexName;
-
-}
 
 function doReindex(){
-	var shards;
-
-    if(dijit.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
-    	//document.getElementById('defaultStructure').value = "Rebuild Whole Index";
-    	dojo.byId('defaultStructure').value = "Rebuild Whole Index";
-
-		var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 2)%>);
-
+	var shards =1
+    var contentType = dijit.byId('structure').item != null ? dijit.byId('structure').item.id : "DOTALL";
+    if("DOTALL"=== contentType){
+        var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 2)%>);
 		if(!number){
 			return;
 		}
-			shards = parseInt(number);
-    	}
-    else{
-    		shards =1
-     	 }
-		if(shards <1){
-			return;
-		}
-		if(dijit.byId('structure').item && dijit.byId('structure').item.id){
-		    dijit.byId('structure').setValue(dijit.byId('structure').item.id);
-		}
-		dojo.byId("numberOfShards").value = shards;
-		dijit.byId('idxReindexButton').setDisabled(true);
-		dijit.byId('idxShrinkBtn').setDisabled(true);
-		submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
-		return false;
+		shards = parseInt(number);
+	    if(shards == null || shards <1){
+	        return;
+	    }
+    }
+
+		
+    fetch('/api/v1/index/reindex?shards=' + shards + '&contentType=' + contentType, {method:'POST'})
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data));
 }
 
 function doCloseIndex(indexName) {
-	var xhrArgs = {
 
-        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/closeIndex/indexName/" + indexName,
-
-        handleAs: "text",
-        handle : function(dataOrError, ioArgs) {
-            if (dojo.isString(dataOrError)) {
-                if (dataOrError.indexOf("FAILURE") == 0) {
-                    showDotCMSSystemMessage(dataOrError, true);
-                } else {
-                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Closed"))%>", true);
-                    refreshIndexStats();
-                }
-            } else {
-                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-            }
-        }
-    };
-    dojo.xhrPost(xhrArgs);
+    fetch('/api/v1/index/' + indexName + '?action=close', {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
 }
 
 function doOpenIndex(indexName) {
-	var xhrArgs = {
 
-        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/openIndex/indexName/" + indexName,
 
-        handleAs: "text",
-        handle : function(dataOrError, ioArgs) {
-            if (dojo.isString(dataOrError)) {
-                if (dataOrError.indexOf("FAILURE") == 0) {
-                    showDotCMSSystemMessage(dataOrError, true);
-                } else {
-                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Opened"))%>", true);
-                    refreshIndexStats();
-                }
-            } else {
-                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-            }
-        }
-    };
-    dojo.xhrPost(xhrArgs);
+    fetch('/api/v1/index/' + indexName + '?action=open', {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
 }
 
 function doClearIndex(indexName){
@@ -522,54 +504,23 @@ function doClearIndex(indexName){
 
 	}
 
-	var xhrArgs = {
-
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/clearIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Cleared"))%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
-
+    fetch('/api/v1/index/' + indexName + '?action=clear', {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
 }
+
 function doActivateIndex(indexName){
 
 	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index"))%>")){
 		return;
-
 	}
 
-	var xhrArgs = {
-
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/activateIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Activated"))%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
+    fetch('/api/v1/index/' + indexName, {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
 }
+
+
 function doDeactivateIndex(indexName){
 
 	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index"))%>")){
@@ -577,150 +528,14 @@ function doDeactivateIndex(indexName){
 
 	}
 
-	var xhrArgs = {
-
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/deactivateIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Deactivated"))%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
+    fetch('/api/v1/index/' + indexName + '?action=deactivate', {method:'PUT'} )
+    .then(response => response.json())
+    .then(refreshIndexStats);
 
 }
 
-function hideRestoreIndex() {
-    dijit.byId("restoreIndexDialog").hide();
-}
 
-function hideRestoreSnapshotIndex() {
-    dijit.byId("restoreSnapshotDialog").hide();
-    refreshIndexStats();
-}
 
-function showRestoreIndexDialog(indexName) {
-	dojo.byId("indexToRestore").value=indexName;
-	var dialog=dijit.byId("restoreIndexDialog");
-	dialog.set('title','Restore index '+indexName);
-	dojo.byId("uploadFileName").innerHTML='';
-	dijit.byId('uploadSubmit').set('disabled',false);
-	dojo.query('#uploadProgress').style({display:"none"});
-	connectUploadEvents();
-	dojo.byId("uploadWarningLive").style.display="none";
-	dojo.byId("uploadWarningWorking").style.display="none";
-	dialog.show();
-}
-
-function showRestoreSnapshotDialog() {
-	  var dialog=dijit.byId("restoreSnapshotDialog");
-	  dojo.byId("uploadSnapshotFileName").innerHTML='';
-	  dijit.byId('uploadSnapshotSubmit').set('disabled',false);
-	  dojo.query('#uploadSnapshotProgress').style({display:"none"});
-	  dialog.show();
-	}
-
-function doRestoreIndex() {
-	if(dojo.byId("uploadFileName").innerHTML=='') {
-		showDotCMSErrorMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "No-File-Selected"))%>");
-	}
-	else {
-		dijit.byId('uploadSubmit').set('disabled',true);
-	    dojo.query('#uploadProgress').style({display:"block"});
-	    dijit.byId("restoreIndexUploader").submit();
-	}
-}
-
-function restoreUploadCompleted() {
-	hideRestoreIndex();
-}
-
-function restoreSnapshotUploadCompleted() {
-	hideRestoreSnapshotIndex();
-}
-
-dojo.ready(function() {
-	dojo.require("dojox.form.Uploader");
-    dojo.require("dojox.embed.Flash");
-    if(dojox.embed.Flash.available){
-      dojo.require("dojox.form.uploader.plugins.Flash");
-    }else{
-      dojo.require("dojox.form.uploader.plugins.IFrame");
-    }
-});
-
-function connectUploadEvents() {
-	var uploader=dijit.byId("restoreIndexUploader");
-	dojo.connect(uploader, "onChange", function(dataArray){
-		 dojo.forEach(dataArray, function(data){
-			    dojo.byId("uploadFileName").innerHTML=data.name;
-			    var uploadName=data.name;
-			    var indexName=dojo.byId("indexToRestore").value;
-
-			    if(indexName.indexOf("working")==0 && uploadName.indexOf("working")!=0)
-			    	dojo.byId("uploadWarningWorking").style.display="block";
-			    else
-			    	dojo.byId("uploadWarningWorking").style.display="none";
-
-			    if(indexName.indexOf("live")==0 && uploadName.indexOf("live")!=0)
-			    	dojo.byId("uploadWarningLive").style.display="block";
-                else
-                	dojo.byId("uploadWarningLive").style.display="none";
-		 });
-	});
-	dojo.connect(uploader, "onComplete", function(dataArray) {
-           hideRestoreIndex();
-           showDotCMSSystemMessage("Upload Complete. Index Restores in background");
-    });
-}
-
-function doCreateWorking() {
-	dijit.byId('addIndex').show();
-	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 2)%>;
-	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/shards/";
-}
-
-function doCreateLive() {
-	dijit.byId('addIndex').show();
-	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 2)%>;
-	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/";
-}
-
-function shardCreating(){	
-	dijit.byId('addIndex').hide();
-	var shards = document.getElementById('shards').value;
-	if(shards <1){
-		return;
-	}
-	
-	var xhrArgs = {
-       url: shardsUrl + shards,
-       handleAs: "text",
-       handle : function(dataOrError, ioArgs) {
-           if (dojo.isString(dataOrError)) {
-               if (dataOrError.indexOf("FAILURE") == 0) {
-                   showDotCMSSystemMessage(dataOrError, true);
-               } else {
-                   showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
-                   refreshIndexStats();
-
-               }
-           } else {
-               showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-           }
-       }
-    };
-    dojo.xhrPost(xhrArgs);
-}
 
 function dohighlight(id) {
 	dojo.addClass(id,"highlight");
@@ -1396,13 +1211,29 @@ dd.leftdl {
                             <button dojoType="dijit.form.Button"  iconClass="resolveIcon" id="stopReindexAndSwitch" onClick="stopReIndexingAndSwitchover();">
                                 <%= LanguageUtil.get(pageContext,"Stop-Reindexation-And-Make-Active") %>
                             </button>
-                            <button dojoType="dijit.form.Button"  iconClass="downloadIcon" onClick="downloadFailedAsCsv();">
-                                <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-CSV") %>
-                            </button>
                         </td>
                     </tr>
                 </table>
             </div>
+            <div id="failedReindexRecordsDiv" style="display:none;border:1px solid silver;background-color:#ffdddd;border-radius:10px;width:50%;padding-bottom:15px;margin:auto;text-align: center">
+                
+                <div style="padding:15px;margin:auto;text-align: center;font-weight: bold;">
+                    <span id="failedReindexRecordsMessage"></span> <%= LanguageUtil.get(pageContext,"Contents-Failed-Reindex") %>
+                </div>
+          
+                   <button dojoType="dijit.form.Button"  onClick="downloadFailedAsJson();">
+                       <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-JSON") %>
+                   </button>
+                    &nbsp; &nbsp; 
+                   <button dojoType="dijit.form.Button"  onClick="deleteFailedRecords();">
+                       <%= LanguageUtil.get(pageContext,"Delete-Failed-Reindex-Records") %>
+                   </button>
+            
+            </div>
+
+
+
+
 
             <div id="indexStatsCp"  dojoType="dijit.layout.ContentPane"></div>
 

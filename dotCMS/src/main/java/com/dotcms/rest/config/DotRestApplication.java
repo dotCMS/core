@@ -57,6 +57,7 @@ import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
+import com.dotmarketing.common.reindex.IndexResource;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -153,6 +154,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(BrowserResource.class)
 			.add(ResourceLinkResource.class)
 			.add(PushPublishFilterResource.class)
+	        .add(IndexResource.class)
 			.build();
 
 

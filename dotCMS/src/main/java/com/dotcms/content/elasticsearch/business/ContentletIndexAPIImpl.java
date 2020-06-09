@@ -1140,6 +1140,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         removeContentFromIndex(content, true);
     }
 
+    @CloseDBIfOpened
     public void removeContentFromIndexByStructureInode(final String structureInode)
             throws DotDataException, DotSecurityException {
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser()).find(structureInode);

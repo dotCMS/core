@@ -210,4 +210,11 @@ public interface ReindexQueueAPI {
 
     void deleteReindexEntry(String identiferToDelete) throws DotDataException;
 
+    /**
+     * returns if there are any records that have been marked as failed
+     * @return
+     * @throws DotDataException
+     */
+    long failedRecordCount() throws DotDataException;
+
 }

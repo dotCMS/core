@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -1313,7 +1313,14 @@ public interface ContentletAPIPreHook {
 	public default boolean refresh(Structure structure){
       return true;
     }
-
+    /**
+     * 
+     * @param structure
+     * @return
+     */
+    public default boolean refresh(ContentType type){
+      return true;
+    }
 	/**
 	 * 
 	 * @param content

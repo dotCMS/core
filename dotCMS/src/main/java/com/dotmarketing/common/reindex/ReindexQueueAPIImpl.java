@@ -82,6 +82,14 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public long recordsInQueue() throws DotDataException {
         return recordsInQueue(DbConnectionFactory.getConnection());
     }
+    
+    @Override
+    @CloseDBIfOpened
+    public long failedRecordCount() throws DotDataException {
+        return reindexQueueFactory.failedRecordCount();
+    }
+    
+    
 
     @CloseDBIfOpened
     @Override
