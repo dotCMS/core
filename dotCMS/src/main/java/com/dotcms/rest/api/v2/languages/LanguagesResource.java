@@ -2,8 +2,10 @@ package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 
+import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -19,6 +21,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
@@ -27,9 +30,15 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -44,7 +53,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.LocaleUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -192,14 +200,14 @@ public class LanguagesResource {
     /**
      * Gets all the Messages from the language passed.
      * If default is passed it will get the messages for the default language.
+     * Checks also if the language exists in dotcms to get all language keys and
+     * language variables.
      *
-     * @param request
-     * @param response
-     * @param language languageId or languageCountryCode e.g en_us, it_it
+     * @param language languageCode e.g en, it or languageCode_CountryCode e.g en_us, it_it
      * @return all the messages of the language
      */
     @GET
-    @Path("{language}/i18n")
+    @Path("{language}/keys")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -208,22 +216,59 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("language") final String language){
 
-        Locale locale;
-        if(!org.apache.commons.lang.StringUtils.isNumeric(language)){
-            locale = "default".equalsIgnoreCase(language) ? APILocator.getLanguageAPI().getDefaultLanguage().asLocale() : ConversionUtils.toLocale(language);
-        } else {
-            final Language languageUsingId = APILocator.getLanguageAPI().getLanguage(language);
-            if(!UtilMethods.isSet(languageUsingId)){
-                final String message = "Language with Id: "+ language + " does not exist";
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredAnonAccess(AnonymousAccess.READ)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(false).init();
+
+        final User user = initData.getUser();
+
+        final Locale locale = "default".equalsIgnoreCase(language) ? APILocator.getLanguageAPI().getDefaultLanguage().asLocale() : ConversionUtils.toLocale(language);
+        final Locale[] locales = LanguageUtil.getAvailableLocales();
+        for(int i=0;i<locales.length;i++){
+            final Locale currentLocale = locales[i];
+            if(currentLocale.getLanguage().equalsIgnoreCase(locale.getLanguage())){
+                if(UtilMethods.isSet(locale.getCountry())){
+                    if(currentLocale.getCountry().equalsIgnoreCase(locale.getCountry())){
+                        break;
+                    }
+                }else{
+                    break;
+                }
+
+            } else if(i == (locales.length-1)){
+                final String message = "Locale: "+ locale + " not found in Portal.properties file";
                 Logger.error(this,message);
-                throw new IllegalArgumentException(message);
+                throw new DoesNotExistException(message);
             }
-            locale = languageUsingId.asLocale();
         }
 
-        final Map allMessagesMap = LanguageUtil.getAllMessagesByLocale(locale);
+        //Messages in the properties file
+        final Map mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(locale);
 
-        return Response.ok(new ResponseEntityView(allMessagesMap)).build();
+        final Map result = new TreeMap(mapPropertiesFile);
+
+        final Language language1 = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(),locale.getCountry());
+        if(UtilMethods.isSet(language1)) {
+            //Language Keys
+            final Map mapLanguageKeys = APILocator.getLanguageAPI()
+                    .getLanguageKeys(locale.getLanguage()).stream().collect(
+                            Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
+
+            result.putAll(mapLanguageKeys);
+
+            //Language Variable
+            long langId = language1.getId();
+            final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
+                    user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
+                    KeyValue::getKey,KeyValue::getValue));
+
+            result.putAll(mapLanguageVariables);
+
+        }
+
+
+        return Response.ok(new ResponseEntityView(result)).build();
     }
 
     private Language saveOrUpdateLanguage(final String languageId, final LanguageForm form) {
