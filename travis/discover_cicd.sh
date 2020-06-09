@@ -2,4 +2,7 @@
 
 source .cicd/seed.source
 
-sh -c "`curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/master/seed/install-dot-cicd.sh`"
+script="$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/master/seed/install-dot-cicd.sh)"
+echo ${script}
+
+sh -c ${script}
