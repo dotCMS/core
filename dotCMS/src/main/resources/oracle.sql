@@ -2403,7 +2403,9 @@ create table publishing_bundle(
 	  name varchar2(255) NOT NULL,
 	  publish_date TIMESTAMP,
 	  expire_date TIMESTAMP,
-	  owner varchar2(100)
+	  owner varchar2(100),
+	  force_push number(1,0),
+	  filter_key varchar2(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
@@ -2430,8 +2432,6 @@ create table publishing_pushed_assets(
 CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
-
-alter table publishing_bundle add force_push number(1,0) ;
 
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 

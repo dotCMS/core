@@ -1,5 +1,13 @@
 package com.dotcms.contenttype.test;
 
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
@@ -28,6 +36,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.contenttype.model.type.EnterpriseType;
 import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
@@ -52,7 +61,6 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -77,13 +85,6 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -95,14 +96,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
-import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
@@ -2188,5 +2187,31 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
 			}
 		}
+	}
+
+	/**
+	 * Method to rest: {@link ContentTypeAPI#findAllRespectingLicense()}
+	 * Given scenario: No EE license
+	 * Expected result: {@link EnterpriseType}s not included in returned List
+	 */
+	@Test
+	public void test_findAllRespectingLicense_whenCommunity_ExcludeEETypes() throws Exception {
+		runNoLicense(() -> {
+			assertTrue(APILocator.getContentTypeAPI(APILocator.systemUser()).findAllRespectingLicense()
+					.stream().noneMatch((type)->type instanceof EnterpriseType));
+
+		});
+	}
+
+	/**
+	 * Method to rest: {@link ContentTypeAPI#findAllRespectingLicense()}
+	 * Given scenario: Valid EE license
+	 * Expected result: {@link EnterpriseType}s included in returned List
+	 */
+	@Test
+	public void test_findAllRespectingLicense_whenLicense_IncludeEETypes() throws Exception {
+		assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser()).findAllRespectingLicense()
+				.stream().noneMatch((type) -> type instanceof EnterpriseType));
+
 	}
 }

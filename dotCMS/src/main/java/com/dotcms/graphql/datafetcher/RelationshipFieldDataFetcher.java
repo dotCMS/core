@@ -55,7 +55,9 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
 
-            List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user, true, isChildField);
+            List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user,
+                    true, isChildField, contentlet.getLanguageId(), contentlet.isLive());
+            
             if (UtilMethods.isSet(relatedContent)) {
                 final DotContentletTransformer transformer = new DotTransformerBuilder()
                         .defaultOptions().content(relatedContent).build();
