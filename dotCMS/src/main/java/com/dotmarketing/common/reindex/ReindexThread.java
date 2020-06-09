@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in the
@@ -70,6 +69,8 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
  */
 public class ReindexThread {
 
+    private static AtomicBoolean currentIndexReadOnly = new AtomicBoolean();
+
     private enum ThreadState {
         STOPPED, PAUSED, RUNNING;
     }
@@ -104,16 +105,16 @@ public class ReindexThread {
             new ThreadFactoryBuilder().setNameFormat("reindex-thread-%d").build()
     );
 
-    
+
     private final static AtomicBoolean rebuildBulkIndexer=new AtomicBoolean(false);
-    
+
     public static void rebuildBulkIndexer() {
       Logger.warn(ReindexThread.class, "------------------------");
       Logger.warn(ReindexThread.class, "ReindexThread BulkProcessor needs to be Rebuilt");
       Logger.warn(ReindexThread.class, "------------------------");
       ReindexThread.rebuildBulkIndexer.set(true);
     }
-    
+
     private ReindexThread() {
 
         this(APILocator.getReindexQueueAPI(), APILocator.getNotificationAPI(), APILocator.getUserAPI(), APILocator.getRoleAPI(),
@@ -154,7 +155,7 @@ public class ReindexThread {
         return contentletsIndexed;
     }
 
-    
+
     private BulkProcessor closeBulkProcessor(final BulkProcessor bulkProcessor) throws InterruptedException {
       if(bulkProcessor!=null) {
         bulkProcessor.awaitClose(BULK_PROCESSOR_AWAIT_TIMEOUT, TimeUnit.SECONDS);
@@ -162,9 +163,9 @@ public class ReindexThread {
       rebuildBulkIndexer.set(false);
       return null;
     }
-    
-    
-    
+
+
+
   /**
    * This method is constantly verifying the existence of records in the {@code dist_reindex_journal}
    * table. If a record is found, then it must be added to the Elastic index. If that's not possible,
@@ -176,9 +177,10 @@ public class ReindexThread {
     BulkProcessorListener bulkProcessorListener = null;
     while (STATE != ThreadState.STOPPED) {
       try {
+
         final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
+
         if (!workingRecords.isEmpty()) {
-          
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
               || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
@@ -190,17 +192,18 @@ public class ReindexThread {
             bulkProcessorListener.workingRecords.putAll(workingRecords);
             indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
             contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
-          // otherwise, reindex normally  
-          } else {
-            reindexWithBulkRequest(workingRecords);
+          // otherwise, reindex normally
+          } else if (!currentIndexReadOnly.get()){
+              reindexWithBulkRequest(workingRecords);
           }
         } else {
-          
+
           bulkProcessor = closeBulkProcessor(bulkProcessor);
           switchOverIfNeeded();
 
           Thread.sleep(SLEEP);
         }
+
       } catch (Exception ex) {
         Logger.error(this, "ReindexThread Exception", ex);
         ThreadUtils.sleep(SLEEP_ON_ERROR);
@@ -323,4 +326,7 @@ public class ReindexThread {
         systemUser.getLocale());
   }
 
+    public static void setCurrentIndexReadOnly(final boolean currentIndexReadOnly) {
+        ReindexThread.currentIndexReadOnly.set(currentIndexReadOnly);
+    }
 }
