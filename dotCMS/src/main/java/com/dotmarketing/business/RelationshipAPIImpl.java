@@ -5,9 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.RelationshipFactory;
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -506,9 +504,6 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         dc.addParam(newRelationship.getRelationTypeValue());
         dc.addParam(oldRelationship.getRelationTypeValue());
         dc.loadResult();
-
-        //Delete the old relationship
-        //APILocator.getRelationshipAPI().delete(oldRelationship);
 
         //Reindex both Content Types, so the content show the relationships
         contentletAPI.refresh(oldRelationship.getParentStructure());
