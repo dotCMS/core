@@ -16,8 +16,6 @@ jobs:
           .cicd/discover.sh
       - name: Build DotCMS Image
         run: |
-          echo "OJO:>> $(pwd)"
-          echo "OJO:>> $(ls -las dotcicd)"
           find dotcicd -name buildBase.sh
           dotcicd/library/pipeline/github/core/buildBase.sh
         env:
