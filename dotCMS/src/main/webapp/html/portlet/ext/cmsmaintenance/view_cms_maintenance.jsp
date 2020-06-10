@@ -197,14 +197,61 @@ function deleteIndexCallback(data){
 }
 
 
+
+const indexTableRowTmpl = (data) => `<tr class="${data.rowClass} showPointer" id="${data.indexName}Row">
+    <td  align="center" class="showPointer">${data.state}</td>
+    <td  class="showPointer" >${data.indexName}</td>
+    <td>${data.created}</td>
+    <td align="center">${data.documentCount}</td>
+    <td align="center">${data.numberOfShards}</td>
+    <td align="center">${data.numberOfReplicas}</td>
+    <td align="center">${data.size}</td>
+    <td align="center">
+          <div onclick="showIndexClusterStatus('${data.indexName}')"  style='cursor:pointer;background:${data.indexColor}; width:20px;height:20px;'></div>
+    </td>
+</tr>`;
+
+/**
+ * 
+ */
+function paintStatusTable(data){
+    
+    const indexTable = document.getElementById("indexStatsCp");
+    
+    indexTable.innerHTML="";
+    
+    console.log("found rows:" + indexTable.rows.length);
+    data.entity.forEach(function (item, index) {
+        const data = {};
+        data.rowClass= item.active ? "trIdxActive" : item.building ? "trIdxBuilding" : "trIdxNothing";
+        data.state = item.active ? "<%= LanguageUtil.get(pageContext,"active") %>" : item.building ? "<%= LanguageUtil.get(pageContext,"building") %>" : "";
+        data.indexName = item.indexName;
+        data.created = item.created;
+        data.indexColor=item.health.status; 
+        data.numberOfReplicas=item.health.numberOfReplicas; 
+        data.numberOfShards=item.health.numberOfShards; 
+        data.documentCount=(item.status === undefined) ? "n/a"  : item.status.documentCount; 
+        data.size=(item.status === undefined) ? "n/a"  : item.status.size; 
+
+        let row  = indexTable.insertRow();
+        row.outerHTML = indexTableRowTmpl(data);
+      });
+
+}
+
+
 function refreshIndexStats(){
     var x = dijit.byId("indexStatsCp");
     var y =Math.floor(Math.random()*1123213213);
+    
 
     x.attr( "href","/html/portlet/ext/cmsmaintenance/index_stats.jsp?r=" + y  );
-
-
-
+    
+    /**
+    fetch('/api/v1/index', {cache: 'no-cache'})
+    .then(response => response.json())
+    .then(data =>paintStatusTable(data))   
+    **/
 }
 
 
@@ -580,6 +627,22 @@ function hideAllThreads() {
     document.getElementById('threadList').innerHTML = "";
 }
 
+/**
+* Remove all the elements with a given class name
+* @param rowsClass
+ */
+const cleanTable = function (rowsClass) {
+
+    //First we need to remove the old rows
+    var currentItems = dojo.query( "." + rowsClass );
+    if ( currentItems.length ) {
+        for ( i = 0; i < currentItems.length; i++ ) {
+            dojo.destroy( currentItems[i] );
+        }
+    }
+};
+
+
 function getSysInfo() {
 
     var tableId = "sysInfo";
@@ -608,20 +671,7 @@ function getSysInfo() {
     });
 }
 
-/**
-* Remove all the elements with a given class name
-* @param rowsClass
- */
-var cleanTable = function (rowsClass) {
 
-    //First we need to remove the old rows
-    var currentItems = dojo.query( "." + rowsClass );
-    if ( currentItems.length ) {
-        for ( i = 0; i < currentItems.length; i++ ) {
-            dojo.destroy( currentItems[i] );
-        }
-    }
-};
 
 /**
 * Creates a tr node and add it to a table
@@ -1232,10 +1282,6 @@ dd.leftdl {
                    </button>
             
             </div>
-
-
-
-
 
             <div id="indexStatsCp"  dojoType="dijit.layout.ContentPane"></div>
 

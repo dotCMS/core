@@ -75,12 +75,27 @@ public class IndexResource {
                 
             }
             return ACTIVATE;
-            
-            
         }
-        
-        
     }
+    
+    @CloseDBIfOpened
+    @GET
+    @JSONP
+    @NoCache
+    @Path("/")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getIndexStatus(@Context final HttpServletRequest request,
+                    @Context final HttpServletResponse response) throws DotDataException {
+
+        
+        final InitDataObject init = validateUser(request, response);
+
+
+
+        return Response.ok(new ResponseEntityView(IndexResourceHelper.getInstance().indexStatsList())).build();
+
+    }
+    
     
     
     @CloseDBIfOpened
