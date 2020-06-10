@@ -11,6 +11,7 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsRequest;
 import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsResponse;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
+import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -136,19 +137,32 @@ public final class ElasticsearchUtil {
      * Set the Elasticsearch cluster to read only = false
      * @return
      */
-    public static AcknowledgedResponse setClusterToWriteMode() {
-        final ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest();
+    public static void setClusterToWriteMode() throws ElasticsearchResponseException {
 
-        final Settings.Builder settingBuilder = Settings.builder()
-                .put("cluster.blocks.read_only", false);
+        final String[] properties = new String[]{"cluster.blocks.read_only", "cluster.blocks.read_only_allow_delete"};
 
-        request.persistentSettings(settingBuilder);
+        for (final String property : properties) {
+            final ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest();
 
-        return Sneaky.sneak(() ->
-                RestHighLevelClientProvider.getInstance().getClient()
+            final Settings.Builder settingBuilder = Settings.builder()
+                    .put(property, false);
+
+            request.persistentSettings(settingBuilder);
+
+            try {
+                final ClusterUpdateSettingsResponse response = RestHighLevelClientProvider.getInstance()
+                        .getClient()
                         .cluster()
-                        .putSettings(request, RequestOptions.DEFAULT)
-        );
+                        .putSettings(request, RequestOptions.DEFAULT);
+
+                if (!response.isAcknowledged()) {
+                    throw new ElasticsearchResponseException(response);
+                }
+            } catch (IOException e){
+                throw new DotRuntimeException(e);
+            }
+        }
+
     }
 
     private static IndiciesInfo loadIndicesInfo() {
