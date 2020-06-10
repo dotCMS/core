@@ -13,6 +13,8 @@ function prepareCICD() {
   mkdir ${CICD_FOLDER}
 }
 
+
+
 # Clones and checkout a provided repo url with branch (optional)
 function gitCloneAndCheckout() {
   local CICD_REPO=$1
