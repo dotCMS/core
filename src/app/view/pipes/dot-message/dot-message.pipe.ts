@@ -7,7 +7,9 @@ import { DotMessageService } from '@services/dot-messages-service';
 export class DotMessagePipe implements PipeTransform {
     constructor(private dotMessageService: DotMessageService) {}
 
-    transform(value: string): string {
-        return value === undefined || value === '' ? '' : this.dotMessageService.get(value);
+    transform(value: string, args?: string[]): string {
+        return value === undefined || value === ''
+            ? ''
+            : this.dotMessageService.get(value, ...args);
     }
 }

@@ -111,7 +111,7 @@ export class DotMessageService {
     }
 
     private geti18nURL(lang: string): string {
-        return `/api/v2/languages/${lang ? lang : 'default'}/i18n`;
+        return `/api/v2/languages/${lang ? lang : 'default'}/keys`;
     }
 
     // Replace {n} in the string with the strings in the args array
