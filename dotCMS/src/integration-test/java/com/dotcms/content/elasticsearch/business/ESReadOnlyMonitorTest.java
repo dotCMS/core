@@ -13,6 +13,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -21,6 +24,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +33,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
+@RunWith(DataProviderRunner.class)
 public class ESReadOnlyMonitorTest {
 
     private static ESReadOnlyMonitor esReadOnlyMonitor;
@@ -49,6 +54,16 @@ public class ESReadOnlyMonitorTest {
         esReadOnlyMonitor = ESReadOnlyMonitor.getInstance(systemMessageEventUtilMock, roleAPIMock);
     }
 
+    @DataProvider
+    public static Object[] clusterReadOnlyProperties() {
+        return new String[]{"cluster.blocks.read_only", "cluster.blocks.read_only_allow_delete"};
+    }
+
+    @DataProvider
+    public static Object[] indexReadOnlyProperties() {
+        return new String[]{"index.blocks.read_only", "index.blocks.read_only_allow_delete"};
+    }
+
     /**
      * Method to Test: {@link ESReadOnlyMonitor#start(String)}
      * When: If the LIVE and WORKING current index are not read only
@@ -57,13 +72,14 @@ public class ESReadOnlyMonitorTest {
      * @throws DotDataException
      */
     @Test
-    public void shouldNotSendLargeMessage() throws DotDataException, IOException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldNotSendLargeMessage(final String propertyName) throws DotDataException, IOException {
         final String message = "message";
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
-        setReadOnly(indiciesInfo.getWorking(), "index.blocks.read_only", false);
-        setReadOnly(indiciesInfo.getLive(), "index.blocks.read_only", false);
+        setReadOnly(indiciesInfo.getWorking(), propertyName, false);
+        setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
         esReadOnlyMonitor.start(message);
 
@@ -80,7 +96,8 @@ public class ESReadOnlyMonitorTest {
      * @throws DotDataException
      */
     @Test
-    public void shouldSendLargeMessage() throws DotDataException, DotSecurityException, InterruptedException, IOException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldSendLargeMessage(final String propertyName) throws DotDataException, DotSecurityException, InterruptedException, IOException {
         final String message = "message";
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
@@ -94,8 +111,8 @@ public class ESReadOnlyMonitorTest {
         when(roleAPIMock.findUsersForRole(adminRole)).thenReturn(list(user));
 
         try {
-            setReadOnly(indiciesInfo.getWorking(), "index.blocks.read_only", true);
-            setReadOnly(indiciesInfo.getLive(), "index.blocks.read_only", false);
+            setReadOnly(indiciesInfo.getWorking(), propertyName, true);
+            setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
             esReadOnlyMonitor.start(message);
 
@@ -104,7 +121,7 @@ public class ESReadOnlyMonitorTest {
             checkLargeMessageSent(user);
             assertEquals(false, ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
         } finally {
-            setReadOnly(indiciesInfo.getWorking(), "index.blocks.read_only", false);
+            setReadOnly(indiciesInfo.getWorking(), propertyName, false);
         }
     }
 
@@ -116,7 +133,8 @@ public class ESReadOnlyMonitorTest {
      * @throws DotDataException
      */
     @Test
-    public void shouldSendLargeMessageIfTheClusterIsInReadOnly() throws DotDataException, DotSecurityException, InterruptedException, IOException {
+    @UseDataProvider("clusterReadOnlyProperties")
+    public void shouldSendLargeMessageIfTheClusterIsInReadOnly(final String propertyName) throws DotDataException, DotSecurityException, InterruptedException, IOException {
         final String message = "message";
 
         final Role adminRole = mock(Role.class);
@@ -128,7 +146,7 @@ public class ESReadOnlyMonitorTest {
         when(roleAPIMock.findUsersForRole(adminRole)).thenReturn(list(user));
 
         try {
-            setClusterAsReadOnly("cluster.blocks.read_only", true);
+            setClusterAsReadOnly(propertyName, true);
 
             esReadOnlyMonitor.start(message);
 
@@ -137,7 +155,7 @@ public class ESReadOnlyMonitorTest {
             checkClusterLargeMessageSent(user);
             assertEquals(false, ElasticsearchUtil.isClusterInReadOnlyMode());
         } finally {
-            setClusterAsReadOnly("cluster.blocks.read_only", false);
+            setClusterAsReadOnly(propertyName, false);
         }
     }
 
@@ -149,8 +167,9 @@ public class ESReadOnlyMonitorTest {
      * @throws DotDataException
      */
     @Test
-    public void shouldNotSendLargeMessageWhenClusterIsNotReadOnly() throws DotDataException, IOException {
-        setClusterAsReadOnly("cluster.blocks.read_only", false);
+    @UseDataProvider("clusterReadOnlyProperties")
+    public void shouldNotSendLargeMessageWhenClusterIsNotReadOnly(final String propertyName) throws DotDataException, IOException {
+        setClusterAsReadOnly(propertyName, false);
 
         esReadOnlyMonitor.start();
 
@@ -167,7 +186,8 @@ public class ESReadOnlyMonitorTest {
      * @throws DotDataException
      */
     @Test
-    public void shouldSendLargeMessageTwice() throws DotDataException, DotSecurityException, IOException, InterruptedException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldSendLargeMessageTwice(final String propertyName) throws DotDataException, DotSecurityException, IOException, InterruptedException {
         final String message = "message";
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
@@ -181,20 +201,20 @@ public class ESReadOnlyMonitorTest {
         when(roleAPIMock.findUsersForRole(adminRole)).thenReturn(list(user));
 
         try {
-            setReadOnly(indiciesInfo.getWorking(), "index.blocks.read_only", true);
-            setReadOnly(indiciesInfo.getLive(), "index.blocks.read_only", false);
+            setReadOnly(indiciesInfo.getWorking(), propertyName, true);
+            setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
             esReadOnlyMonitor.start(message);
             Thread.sleep(100);
 
-            setReadOnly(indiciesInfo.getWorking(), "index.blocks.read_only", true);
+            setReadOnly(indiciesInfo.getWorking(), propertyName, true);
 
             esReadOnlyMonitor.start(message);
             Thread.sleep(100);
             checkLargeMessageSent(user, 2);
             assertEquals(false, ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
         } finally {
-            setReadOnly(indiciesInfo.getWorking(), "index.blocks.read_only", false);
+            setReadOnly(indiciesInfo.getWorking(), propertyName, false);
         }
     }
 
@@ -206,7 +226,8 @@ public class ESReadOnlyMonitorTest {
      * @throws DotDataException
      */
     @Test
-    public void shouldSendLargeMessageJustOnce() throws DotDataException, DotSecurityException, IOException, InterruptedException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldSendLargeMessageJustOnce(final String propertyName) throws DotDataException, DotSecurityException, IOException, InterruptedException {
         final String message = "message";
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
@@ -220,8 +241,8 @@ public class ESReadOnlyMonitorTest {
         when(roleAPIMock.findUsersForRole(adminRole)).thenReturn(list(user));
 
         try {
-            setReadOnly(indiciesInfo.getWorking(), "index.blocks.read_only", true);
-            setReadOnly(indiciesInfo.getLive(), "index.blocks.read_only", false);
+            setReadOnly(indiciesInfo.getWorking(), propertyName, true);
+            setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
             esReadOnlyMonitor.start(message);
             esReadOnlyMonitor.start(message);
@@ -229,7 +250,7 @@ public class ESReadOnlyMonitorTest {
             checkLargeMessageSent(user, 1);
             assertEquals(false, ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
         } finally {
-            setReadOnly(indiciesInfo.getWorking(), "index.blocks.read_only", false);
+            setReadOnly(indiciesInfo.getWorking(), propertyName, false);
         }
     }
 
@@ -290,8 +311,7 @@ public class ESReadOnlyMonitorTest {
         final UpdateSettingsRequest request = new UpdateSettingsRequest(indexName);
 
         final Settings.Builder settingBuilder = Settings.builder()
-                .put("index.blocks.read_only_allow_delete", value)
-                .put("index.blocks.read_only", value);
+                .put(propertyName, value);
 
         request.settings(settingBuilder);
 
