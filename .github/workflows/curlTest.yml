@@ -24,18 +24,11 @@ jobs:
           dotcicd/library/pipeline/github/core/buildIntegration.sh ${{ secrets.DOTCMS_LICENSE }}
         env:
           PROJECT_ID: cicd-246518
-#      - name: Curl Test Image Build
-#        run: |
-#          export CURRENT_BRANCH=$(basename $GITHUB_REF)
-#          docker build -t gcr.io/$PROJECT_ID/curl-tests-image:$GITHUB_RUN_NUMBER \
-#            --build-arg BUILD_FROM=COMMIT \
-#            --build-arg BUILD_ID=$CURRENT_BRANCH \
-#            --build-arg BUILD_HASH=$GITHUB_SHA \
-#            --build-arg LICENSE_KEY=${{ secrets.DOTCMS_LICENSE }} \
-#            --build-arg FROM_IMAGE=gcr.io/$PROJECT_ID/integration-tests-image:$GITHUB_RUN_NUMBER \
-#            ./docker/tests/curl/
-#        env:
-#          PROJECT_ID: cicd-246518
+      - name: Build Curl Tests Image
+        run: |
+          dotcicd/library/pipeline/github/core/buildCurl.sh
+        env:
+          PROJECT_ID: cicd-246518
 #      - name: Curl Tests Compose
 #        run: |
 #          docker-compose \
