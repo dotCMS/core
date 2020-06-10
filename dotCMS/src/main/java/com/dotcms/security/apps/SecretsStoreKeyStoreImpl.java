@@ -85,7 +85,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     @VisibleForTesting
     private char[] loadStorePassword() {
         return getFromCache(SECRETS_KEYSTORE_PASSWORD_KEY,
-                () -> Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY, digest(ClusterFactory.getClusterId()))
+                () -> Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY, digest(ClusterFactory.getClusterSalt()))
                                 .toCharArray());
 
     }
@@ -441,6 +441,6 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         Files.copy(secretStoreFile.toPath(), secretStoreFileBak.toPath());
         secretStoreFile.delete();
 
-        Logger.info(SecretsStoreKeyStoreImpl.class, ()->String.format("KeyStore %s has been removed and backed up", secretsKeyStorePath));
+        Logger.info(SecretsStoreKeyStoreImpl.class, ()->String.format("KeyStore `%s` has been removed a backup has been created.", secretsKeyStorePath));
     }
 }

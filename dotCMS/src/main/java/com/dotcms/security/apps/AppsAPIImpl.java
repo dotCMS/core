@@ -791,14 +791,17 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     * On the event of a Company Key reset. We need to react and handle it as best we can
+     * On the event of a Key reset. We need to react and handle it as best we can.
      * @param user
      * @throws DotDataException
      */
     @Override
     public void resetSecrets(final User user)
             throws DotDataException, IOException {
+       //Since we just regenerated the key Company. Accessing it is near impossible.
+       //Best we can do is create a backup and recreate an empty one.
        secretsStore.backupAndRemoveKeyStore();
+       //Clear cache forces reloading the yml app descriptors.
        appsCache.clearCache();
     }
 

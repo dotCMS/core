@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -15,17 +16,22 @@ import java.sql.SQLException;
 
 public class Task05350AddDotSaltClusterColumn implements StartupTask {
 
-    private static final String SELECT = "select cluster_id from dot_cluster";
-    private static final String UPDATE = "update dot_cluster set cluster_salt = ? WHERE cluster_id = ? ";
+    private static final String SELECT = "SELECT cluster_id FROM dot_cluster";
+    private static final String UPDATE = "UPDATE dot_cluster SET cluster_salt = ? WHERE cluster_id = ? ";
 
-    private static final String POSTGRES_SQL_ADD_DOT_CLUSTER_SALT_COLUMN = "alter table dot_cluster add column cluster_salt varchar(256);";
-    private static final String MSSQL_ADD_DOT_CLUSTER_SALT_COLUMN = "alter table dot_cluster add cluster_salt varchar(256);";
-    private static final String MYSQL_ADD_DOT_CLUSTER_SALT_COLUMN = "alter table dot_cluster add cluster_salt varchar(256);";
-    private static final String ORACLE_ADD_DOT_CLUSTER_SALT_COLUMN = "alter table dot_cluster add cluster_salt varchar(256);";
+    private static final String POSTGRES_SQL_ADD_DOT_CLUSTER_SALT_COLUMN = " ALTER TABLE dot_cluster ADD cluster_salt VARCHAR(256)";
+    private static final String MSSQL_ADD_DOT_CLUSTER_SALT_COLUMN = " ALTER TABLE dot_cluster ADD cluster_salt VARCHAR(256)";
+    private static final String MYSQL_ADD_DOT_CLUSTER_SALT_COLUMN = " ALTER TABLE dot_cluster ADD cluster_salt VARCHAR(256)";
+    private static final String ORACLE_ADD_DOT_CLUSTER_SALT_COLUMN = " ALTER TABLE dot_cluster ADD cluster_salt VARCHAR(256)";
 
     @Override
     public boolean forceRun() {
-        return true;
+        try {
+            return !new DotDatabaseMetaData().getColumnNames(DbConnectionFactory.getConnection(), "dot_cluster").contains("cluster_salt");
+        } catch (SQLException e) {
+            Logger.error(this, e.getMessage(),e);
+            return false;
+        }
     }
 
     @Override

@@ -188,7 +188,7 @@ public interface AppsAPI {
 
 
     /**
-     *
+     * The On secrets key reset is handled down here.
      * @param user
      * @throws DotDataException
      * @throws IOException
