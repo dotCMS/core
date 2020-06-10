@@ -204,6 +204,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                             //If we want to see binaries. The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
 
                             if (conBinary.exists()) {
+                                //TODO: in a near future this must be read from a pre-cached metadata.
                                 final String dAPath = "/dA/%s/%s/%s";
                                 map.put(field.variable() + "Version",
                                         String.format(dAPath, contentlet.getInode(),
@@ -234,7 +235,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         final boolean includeCategoryName = options.contains(CATEGORIES_NAME);
         if (includeCategoryName || allCategoriesInfo) {
             try {
-                final List<Category> cats = toolBox.categoryAPI.getParents(contentlet, user, true);
+                final List<Category> categories = toolBox.categoryAPI.getParents(contentlet, user, true);
                 final List<CategoryField> categoryFields = contentlet.getContentType()
                         .fields(CategoryField.class).stream().filter(Objects::nonNull)
                         .map(CategoryField.class::cast).collect(Collectors.toList());
@@ -244,7 +245,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                             .find(categoryField.values(), user, true);
                     final List<Category> childCategories = new ArrayList<>();
                     if (parentCategory != null) {
-                        for (final Category category : cats) {
+                        for (final Category category : categories) {
                             if (toolBox.categoryAPI
                                     .isParent(category, parentCategory, user, true)) {
                                 childCategories.add(category);
