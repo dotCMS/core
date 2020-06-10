@@ -8,8 +8,8 @@ jobs:
     steps:
       - name: prepare dot-cicd
         run: |
-          chmod +x ./cicd/discover.sh
-          ./cicd/discover.sh
+          chmod +x .cicd/discover.sh
+          .cicd/discover.sh
   build-job:
     name: build base images
     runs-on: ubuntu-latest
