@@ -19,7 +19,7 @@ env:
     - TRAVIS_COMMIT_SHORT=${TRAVIS_COMMIT::8}
 
 before_install:
-  - chmod +x travis/discover_cicd.sh
+  - chmod +x .cicd/discover.sh
 
 before_script:
   - source .cicd/seed.source
@@ -118,7 +118,7 @@ jobs:
         - PROVIDER_DB_PASSWORD=mssqldotCMS2019
 
 install:
-  - travis/discover_cicd.sh
+  - .cicd/discover.sh
   - dotcicd/library/pipeline/travis/core/environment_vars.sh
   - dotcicd/library/pipeline/travis/core/install_gcloud.sh
 

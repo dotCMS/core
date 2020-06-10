@@ -2,9 +2,16 @@ name: Release workflow
 on: [push, pull_request]
 
 jobs:
-  build-job:
-    name: Core Curl Tests
+  setup-cicd-job:
+    name: setup dot-cicd
     runs-on: ubuntu-latest
+    script: |
+      chmod +x ./cicd/discover.sh
+      ./cicd/discover.sh
+  build-job:
+    name: build base images
+    runs-on: ubuntu-latest
+    needs: setup-cicd-job
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
