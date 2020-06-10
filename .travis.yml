@@ -21,6 +21,9 @@ env:
 before_install:
   - chmod +x travis/discover_cicd.sh
 
+before_script:
+  - source .cicd/seed.source
+
 # Commit message format
 # [travis] -> executes all dbs and unit tests
 # [travis unit]
