@@ -8,4 +8,4 @@
 #export DOT_CICD_TOOL="travis"
 #export DOT_CICD_PERSIST="google"
 export DOT_CICD_TARGET=core
-export DOT_CICD_BRANCH="issue-18504-postman-tests-on-github-actions"
+#export DOT_CICD_BRANCH="issue-18504-postman-tests-on-github-actions"
