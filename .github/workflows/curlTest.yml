@@ -5,9 +5,11 @@ jobs:
   setup-cicd-job:
     name: setup dot-cicd
     runs-on: ubuntu-latest
-    script: |
-      chmod +x ./cicd/discover.sh
-      ./cicd/discover.sh
+    steps:
+      - name: prepare dot-cicd
+        script: |
+          chmod +x ./cicd/discover.sh
+          ./cicd/discover.sh
   build-job:
     name: build base images
     runs-on: ubuntu-latest
