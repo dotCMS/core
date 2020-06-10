@@ -19,6 +19,11 @@ jobs:
           dotcicd/library/pipeline/github/core/buildBase.sh ${{ secrets.DOTCMS_LICENSE }}
         env:
           PROJECT_ID: cicd-246518
+      - name: Build Integration Tests Image
+        run: |
+          dotcicd/library/pipeline/github/core/buildIntegration.sh ${{ secrets.DOTCMS_LICENSE }}
+        env:
+          PROJECT_ID: cicd-246518
 #      - name: Curl Test Image Build
 #        run: |
 #          export CURRENT_BRANCH=$(basename $GITHUB_REF)
