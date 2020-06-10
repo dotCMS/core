@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.mockito.Mockito;
 
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -623,12 +624,12 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 			for (Field field : testFields) {
 				// make sure variables work
 
-				String suggestion = fieldFactory.suggestVelocityVar(field.name(), ImmutableList.of());
-				String suggestion2 = fieldFactory.suggestVelocityVar(field.variable(),
+				String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+				String suggestion2 = fieldFactory.suggestVelocityVar(field.variable(), field,
 						testFields.stream().map(Field::variable).collect(Collectors.toList()));
 				try {
 					assertThat("we are not munging up existing vars", field.variable().equals(
-							fieldFactory.suggestVelocityVar(field.variable(), ImmutableList.of())));
+							fieldFactory.suggestVelocityVar(field.variable(), field, ImmutableList.of())));
 					assertThat("we are suggesting good names", suggestion != null);
 					assertThat("we should not suggest an existing variable name ",
 							(!field.variable().equals(suggestion2)));
@@ -646,7 +647,8 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 		testFields = new ArrayList<>();
 		for (String key : testingNames.keySet()) {
-			String suggest = fieldFactory.suggestVelocityVar(key,
+			Field field = Mockito.mock(Field.class);
+			String suggest = fieldFactory.suggestVelocityVar(key, field,
 					testFields.stream().map(Field::variable).collect(Collectors.toList()));
 			
 
@@ -683,7 +685,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
         List<Field> testFields = new ArrayList<>();
         for (String key : testingNames) {
-            String suggest = fieldFactory.suggestVelocityVar(key, testFields
+            String suggest = fieldFactory.suggestVelocityVar(key, Mockito.mock(Field.class), testFields
 					.stream().map(Field::variable).collect(Collectors.toList()));
             
             assertThat("variable " + key + " " + " returned an a generic fieldVar:" + suggest , suggest.startsWith(FieldFactory.GENERIC_FIELD_VAR));
