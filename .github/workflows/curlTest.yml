@@ -2,23 +2,24 @@ name: Release workflow
 on: [push, pull_request]
 
 jobs:
-  setup-cicd-job:
-    name: setup dot-cicd
-    runs-on: ubuntu-latest
-    steps:
-      - name: prepare dot-cicd
-        run: |
-          chmod +x .cicd/discover.sh
-          .cicd/discover.sh
-  build-job:
+  core-cicd-job:
     name: build base images
     runs-on: ubuntu-latest
-    needs: setup-cicd-job
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
+      - name: Prepare dot-cicd
+        run: |
+          echo "OJO:>> $(pwd)"
+          echo "OJO:>> $(ls -las)"
+          echo "OJO:>> $(ls -las ../)"
+          chmod +x .cicd/discover.sh
+          .cicd/discover.sh
+          echo "OJO:>> $(pwd)"
+          echo "OJO:>> $(ls -las)"
+          echo "OJO:>> $(ls -las ../)"
       - name: build dotcms image
         run: |
           dotcicd/library/pipeline/github/core/buildBase.sh
