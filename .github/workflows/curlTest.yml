@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   core-cicd-job:
-    name: build base images
+    name: Core CI/CD
     runs-on: ubuntu-latest
     steps:
       - name: Checkout core
@@ -12,16 +12,13 @@ jobs:
           fetch-depth: 1
       - name: Prepare dot-cicd
         run: |
-          echo "OJO:>> $(pwd)"
-          echo "OJO:>> $(ls -las)"
-          echo "OJO:>> $(ls -las ../)"
           chmod +x .cicd/discover.sh
           .cicd/discover.sh
-          echo "OJO:>> $(pwd)"
-          echo "OJO:>> $(ls -las)"
-          echo "OJO:>> $(ls -las ../)"
       - name: build dotcms image
         run: |
+          echo "OJO:>> $(pwd)"
+          echo "OJO:>> $(ls -las)"
+          echo "OJO:>> $(ls -las dotcicd)"
           dotcicd/library/pipeline/github/core/buildBase.sh
         env:
           PROJECT_ID: cicd-246518

@@ -19,6 +19,7 @@ env:
     - TRAVIS_COMMIT_SHORT=${TRAVIS_COMMIT::8}
 
 before_install:
+  - exit 1
   - chmod +x .cicd/discover.sh
 
 before_script:
