@@ -5,6 +5,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishEndEvent;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
@@ -38,6 +39,7 @@ public class PublisherAPIImpl implements PublisherAPI {
         return publish( config, new PublishStatus() );
     }
 
+    @CloseDBIfOpened
     @Override
     public PublishStatus publish ( PublisherConfig config, PublishStatus status ) throws DotPublishingException {
 
@@ -183,13 +185,15 @@ public class PublisherAPIImpl implements PublisherAPI {
     public Map<String, FilterDescriptor> getFilterDescriptorMap() {
         return this.loadedFilters;
     }
-
+    
+    @CloseDBIfOpened
     @Override
     public FilterDescriptor getFilterDescriptorByKey(final String filterKey) {
         final FilterDescriptor defaultFilter = getDefaultFilter();
         return !UtilMethods.isSet(filterKey) ? defaultFilter : this.loadedFilters.getOrDefault(filterKey,defaultFilter);
     }
-
+    
+    @CloseDBIfOpened
     @Override
     public PublisherFilter createPublisherFilter(final String bundleId)
             throws DotDataException, DotSecurityException {
