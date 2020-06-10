@@ -16,8 +16,7 @@ jobs:
           .cicd/discover.sh
       - name: Build DotCMS Image
         run: |
-          find dotcicd -name buildBase.sh
-          dotcicd/library/pipeline/github/core/buildBase.sh
+          dotcicd/library/pipeline/github/core/buildBase.sh ${{ secrets.DOTCMS_LICENSE }}
         env:
           PROJECT_ID: cicd-246518
 #      - name: Curl Test Image Build
