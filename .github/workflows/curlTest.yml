@@ -19,6 +19,7 @@ jobs:
           echo "OJO:>> $(pwd)"
           echo "OJO:>> $(ls -las)"
           echo "OJO:>> $(ls -las dotcicd)"
+          find dotcicd -name buildBase.sh
           dotcicd/library/pipeline/github/core/buildBase.sh
         env:
           PROJECT_ID: cicd-246518
