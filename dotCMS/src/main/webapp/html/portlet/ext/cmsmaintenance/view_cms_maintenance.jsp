@@ -187,14 +187,15 @@ function deleteIndex(indexName, live){
     if(live && ! confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Delete-Live-Index")) %>")){
         return;
     }
-    CMSMaintenanceAjax.deleteIndex(indexName,deleteIndexCallback);
+    
+    fetch('/api/v1/index/' + indexName, {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json())
+    .then(refreshIndexStats());
+    
 
 }
 
-function deleteIndexCallback(data){
 
-    refreshIndexStats();
-}
 
 
 

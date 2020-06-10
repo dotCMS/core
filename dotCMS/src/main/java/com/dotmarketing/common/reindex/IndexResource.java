@@ -49,6 +49,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 @Path("/v1/index")
@@ -106,9 +107,16 @@ public class IndexResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response deleteIndex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                     @PathParam("indexName") final String indexName) {
-
+        
         final InitDataObject init = validateUser(request, response);
-        return Response.ok(new ResponseEntityView(APILocator.getContentletIndexAPI().delete(indexName))).build();
+        
+        APILocator.getContentletIndexAPI().delete(indexName);
+        String message = "Index:" + indexName + " deleted";
+        
+        sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
+        
+        
+        return Response.ok().build();
 
 
     }
@@ -141,7 +149,9 @@ public class IndexResource {
                 APILocator.getContentletIndexAPI().activateIndex(indexName);
             
         }
-
+        String message = indexAction.name().toLowerCase() + " " + indexName;
+        
+        sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
         
         
         return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
@@ -237,7 +247,7 @@ public class IndexResource {
 
         String message = LanguageUtil.get("message.cmsmaintenance.cache.indexrebuilt", init.getUser());
 
-        sendAdminMessage(message, MessageSeverity.INFO, 10000);
+        sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 10000);
 
         return Response.ok(new ResponseEntityView(message)).build();
 
@@ -256,7 +266,7 @@ public class IndexResource {
         String message = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(),"message.cmsmaintenance.cache.indexoptimized")).get();
 
 
-        sendAdminMessage(message, MessageSeverity.INFO, 0);
+        sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 0);
         return Response.ok().build();
     }
 
@@ -281,7 +291,7 @@ public class IndexResource {
         message=message.replace("{1}", String.valueOf(data.get("failedShards")));
         
         
-        sendAdminMessage(message, MessageSeverity.INFO, 5000);
+        sendAdminMessage(message, MessageSeverity.INFO, init.getUser(),5000);
         
         
         
@@ -370,7 +380,7 @@ public class IndexResource {
         return Response.ok(new ResponseEntityView(true)).build();
     }
 
-    private void sendAdminMessage(String message, MessageSeverity severity, long millis) {
+    private void sendAdminMessage(String message, MessageSeverity severity, User user, long millis) {
     
     
             final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
@@ -382,8 +392,8 @@ public class IndexResource {
                  .setSeverity(severity)
                  .setLife(millis)
                  .create();
-             List<String> users = Try.of(()->APILocator.getRoleAPI().findUserIdsForRole(APILocator.getRoleAPI().loadCMSAdminRole())).getOrElse(ImmutableList.of());
-             SystemMessageEventUtil.getInstance().pushMessage(systemMessage, users);
+           
+             SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
         }
        
 
