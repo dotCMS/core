@@ -165,18 +165,22 @@ function stopReIndexingAndSwitchover() {
     as a .CSV file*/
 function downloadFailedAsJson() {
 	var href = "/api/v1/index/failed";
-	
-	
 	window.open(href);
+}
 
+
+function optimizeIndices(){
+    fetch('/api/v1/index/optimize', {method:'POST',cache: 'no-cache'} )
+    .then(response => response.json());
 
 }
 
 
-function optimizeCallback() {
-	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"Optimize-Done")%>");
-}
+function flushIndiciesCache(){
+    fetch('/api/v1/index/cache', {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json());
 
+}
 
 function deleteIndex(indexName, live){
 
@@ -279,13 +283,6 @@ function doDeactivateIndex(indexName){
 
 
 
-function flushIndiciesCacheCallback(data) {
-	console.log("flushIndiciesCacheCallback",data);
-	var message = "<%=LanguageUtil.get(pageContext,"maintenance.index.cache.flush.message")%>";
-	message=message.replace("{0}", data.successfulShards);
-	message=message.replace("{1}", data.failedShards);
-    showDotCMSSystemMessage(message);
-}
 
 function checkFixAsset()
 {
@@ -1173,7 +1170,7 @@ dd.leftdl {
                             <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> 
                         </td>
                         <td align="center">
-                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
+                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="optimizeIndices()">
                                 <%= LanguageUtil.get(pageContext,"Optimize-Index") %>
                             </button>
                          </td>
@@ -1183,7 +1180,7 @@ dd.leftdl {
                             <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %> 
                         </td>
                         <td align="center">
-                            <button dojoType="dijit.form.Button"  onClick="CMSMaintenanceAjax.flushIndiciesCache(flushIndiciesCacheCallback)">
+                            <button dojoType="dijit.form.Button"  onClick="flushIndiciesCache()">
                                 <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush") %>
                             </button>
                          </td>

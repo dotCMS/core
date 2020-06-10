@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ClusterStats;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -37,6 +44,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.language.LanguageException;
@@ -75,7 +83,7 @@ public class IndexResource {
     }
     
     
-
+    @CloseDBIfOpened
     @DELETE
     @JSONP
     @NoCache
@@ -84,13 +92,13 @@ public class IndexResource {
     public Response deleteIndex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                     @PathParam("indexName") final String indexName) {
 
-        validateUser(request, response);
+        final InitDataObject init = validateUser(request, response);
         return Response.ok(new ResponseEntityView(APILocator.getContentletIndexAPI().delete(indexName))).build();
 
 
     }
 
-
+    @CloseDBIfOpened
     @PUT
     @JSONP
     @NoCache
@@ -99,7 +107,7 @@ public class IndexResource {
     public Response deactivateIndex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                     @PathParam("indexName") final String indexName, @QueryParam("action") final String action) throws DotDataException, IOException {
 
-        validateUser(request, response);
+        final InitDataObject init = validateUser(request, response);
         final IndexAction indexAction = IndexAction.fromString(action);
         switch(indexAction){
             case DEACTIVATE:
@@ -129,7 +137,7 @@ public class IndexResource {
     
     
     
-    
+    @CloseDBIfOpened
     @GET
     @JSONP
     @NoCache
@@ -138,7 +146,7 @@ public class IndexResource {
     public Response getReindexationProgress(@Context final HttpServletRequest request,
                     @Context final HttpServletResponse response) throws DotDataException {
 
-        validateUser(request, response);
+        final InitDataObject init = validateUser(request, response);
 
         return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
 
@@ -147,7 +155,7 @@ public class IndexResource {
     private final String DOTALL="DOTALL";
     
     
-    
+    @CloseDBIfOpened
     @POST
     @JSONP
     @NoCache
@@ -155,7 +163,7 @@ public class IndexResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                     @QueryParam("shards") int shards, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
-        validateUser(request, response);
+        final InitDataObject init = validateUser(request, response);
         shards = (shards <= 0) ? Config.getIntProperty("es.index.number_of_shards", 2) : shards;
 
         System.setProperty("es.index.number_of_shards", String.valueOf(shards));
@@ -175,7 +183,7 @@ public class IndexResource {
 
 
     }
-
+    @CloseDBIfOpened
     @DELETE
     @JSONP
     @NoCache
@@ -185,21 +193,21 @@ public class IndexResource {
                     @Context final HttpServletResponse response, 
                     @DefaultValue("true") @QueryParam("switch") boolean switchMe)
                     throws DotDataException {
-        validateUser(request, response);
+        final InitDataObject init = validateUser(request, response);
         
         if(!APILocator.getContentletIndexAPI().isInFullReindex()) {
             return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
         }
+        
         if(switchMe) {
             APILocator.getContentletIndexAPI().stopFullReindexationAndSwitchover();
         }else {
-            
             APILocator.getContentletIndexAPI().stopFullReindexation();
         }
         return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
     }
 
-
+    @CloseDBIfOpened
     @POST
     @JSONP
     @NoCache
@@ -214,34 +222,55 @@ public class IndexResource {
 
         String message = LanguageUtil.get("message.cmsmaintenance.cache.indexrebuilt", init.getUser());
 
-
+        sendAdminMessage(message, MessageSeverity.INFO, 10000);
 
         return Response.ok(new ResponseEntityView(message)).build();
 
 
     }
-
+    @CloseDBIfOpened
     @POST
     @JSONP
     @NoCache
     @Path("/optimize")
     public Response optimizeIndices(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
-        validateUser(request, response);
+        final InitDataObject init = validateUser(request, response);
         ContentletIndexAPI api = APILocator.getContentletIndexAPI();
         List<String> indices = api.listDotCMSIndices();
+        api.optimize(indices);
+        String message = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(),"message.cmsmaintenance.cache.indexoptimized")).get();
 
-        return Response.ok(new ResponseEntityView(api.optimize(indices))).build();
+
+        sendAdminMessage(message, MessageSeverity.INFO, 0);
+        return Response.ok().build();
     }
 
+    @CloseDBIfOpened
     @DELETE
     @JSONP
     @NoCache
     @Path("/cache")
     public Response flushIndiciesCache(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
-        validateUser(request, response);
+        final InitDataObject init = validateUser(request, response);
         ContentletIndexAPI api = APILocator.getContentletIndexAPI();
         List<String> indices = api.listDotCMSIndices();
-        return Response.ok(new ResponseEntityView(APILocator.getESIndexAPI().flushCaches(indices))).build();
+        
+        
+        Map<String, Integer> data = APILocator.getESIndexAPI().flushCaches(indices);
+        String message = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(),"maintenance.index.cache.flush.message")).get();
+        
+        
+        
+        
+        message=message.replace("{0}", String.valueOf(data.get("successfulShards")));
+        message=message.replace("{1}", String.valueOf(data.get("failedShards")));
+        
+        
+        sendAdminMessage(message, MessageSeverity.INFO, 5000);
+        
+        
+        
+        return Response.ok(new ResponseEntityView(data)).build();
 
     }
 
@@ -251,7 +280,7 @@ public class IndexResource {
 
     }
 
-
+    @CloseDBIfOpened
     @GET
     @JSONP
     @NoCache
@@ -276,7 +305,8 @@ public class IndexResource {
         }
         return Response.ok(new ResponseEntityView(builder.build())).build();
     }
-
+    
+    @CloseDBIfOpened
     @GET
     @JSONP
     @NoCache
@@ -285,7 +315,7 @@ public class IndexResource {
     public Response downloadRemainingRecordsAsCsv(@Context final HttpServletRequest request,
                     @Context final HttpServletResponse response) throws DotDataException {
         validateUser(request, response);
-        Map<String, Object> results = new HashMap<>();
+        List<Map<String, Object>> results = new ArrayList<>();
         
         
         
@@ -294,7 +324,7 @@ public class IndexResource {
             
             final Contentlet contentlet = Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(row.getIdentToIndex()))
                             .onFailure(e->Logger.warn(IndexResource.class, e.getMessage(), e))
-                            .getOrNull();
+                            .getOrElse(Contentlet::new);
             Map<String, Object> conMap = Try.of(() -> new ContentletToMapTransformer(contentlet).toMaps().get(0))
                             .onFailure(e->Logger.warn(IndexResource.class, e.getMessage(), e))
                             .getOrElse(HashMap::new);
@@ -306,13 +336,13 @@ public class IndexResource {
             failure.put("failureReason", row.getLastResult());
             failure.put("priority", row.getPriority());
             failure.put("contentlet", conMap);
-            results.put(row.getIdentToIndex(), failure);
+            results.add(failure);
         });
 
-        return Response.ok(new ResponseEntityView(results)).build();
+        return Response.ok(results).build();
     }
 
-
+    @CloseDBIfOpened
     @DELETE
     @JSONP
     @NoCache
@@ -320,10 +350,32 @@ public class IndexResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response deleteFailedRecords(@Context final HttpServletRequest request, @Context final HttpServletResponse response)
                     throws DotDataException {
-        validateUser(request, response);
+        final InitDataObject init = validateUser(request, response);
         APILocator.getReindexQueueAPI().deleteFailedRecords();
         return Response.ok(new ResponseEntityView(true)).build();
     }
 
+    private void sendAdminMessage(String message, MessageSeverity severity, long millis) {
+    
+    
+            final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+    
+    
+            
+            SystemMessage systemMessage = systemMessageBuilder.setMessage(message)
+                 .setType(MessageType.SIMPLE_MESSAGE)
+                 .setSeverity(severity)
+                 .setLife(millis)
+                 .create();
+             List<String> users = Try.of(()->APILocator.getRoleAPI().findUserIdsForRole(APILocator.getRoleAPI().loadCMSAdminRole())).getOrElse(ImmutableList.of());
+             SystemMessageEventUtil.getInstance().pushMessage(systemMessage, users);
+        }
+       
+
+   
+    
+    
+    
+    
 
 }
