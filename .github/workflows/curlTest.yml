@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: prepare dot-cicd
-        script: |
+        run: |
           chmod +x ./cicd/discover.sh
           ./cicd/discover.sh
   build-job:
