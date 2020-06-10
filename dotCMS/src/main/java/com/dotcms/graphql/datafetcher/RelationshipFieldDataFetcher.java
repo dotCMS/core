@@ -56,7 +56,9 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
 
-            List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user, true, isChildField);
+            List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user,
+                    true, isChildField, contentlet.getLanguageId(), contentlet.isLive());
+            
             if (UtilMethods.isSet(relatedContent)) {
                 objectToReturn = records.doesAllowOnlyOne()
                     ? new ContentletToMapTransformer(relatedContent).hydrate().get(0)

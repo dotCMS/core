@@ -84,7 +84,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
         containerViews.setQuery(allContainers.getQuery());
         containerViews.addAll(
                 allContainers.stream()
-                        .map(container -> new ContainerView(container, currentHost))
+                        .map(container -> new ContainerView(container))
                         .collect(Collectors.toList())
         );
         return containerViews;

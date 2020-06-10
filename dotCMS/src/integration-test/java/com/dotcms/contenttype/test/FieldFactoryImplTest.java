@@ -1,6 +1,8 @@
 package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactory;
@@ -27,6 +29,9 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.beans.Host;
@@ -47,6 +52,7 @@ import java.util.stream.Collectors;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.mockito.Mockito;
 
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -83,9 +89,124 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		}
 	}
 
-
-
+    /**
+     * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#selectByContentTypeInDb(String)}
+     * Given Scenario: Get content type fields filtering by content type id using default order (sort_order, velocity_var_name asc)
+     * ExpectedResult: Fields must be returned in correct order
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
 	@Test
+	public void testSelectByContentTypeInDb() throws DotDataException, DotSecurityException {
+	    ContentType contentType = null;
+
+	    try {
+            contentType = getContentTypeForTest(null);
+            validateFieldsOrder(fieldFactory.selectByContentTypeInDb(contentType.id()));
+        } finally {
+	        if (contentType != null && contentType.id() != null){
+	            contentTypeApi.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#byContentTypeVar(String)}
+     * Given Scenario: Get content type fields filtering by content type variable using default order (sort_order, velocity_var_name asc)
+     * ExpectedResult: Fields must be returned in correct order
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testSelectByContentTypeVarInDb() throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+
+        try {
+            contentType = getContentTypeForTest(null);
+            validateFieldsOrder(fieldFactory.byContentTypeVar(contentType.variable()));
+        } finally {
+            if (contentType != null && contentType.id() != null){
+                contentTypeApi.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#byContentTypeIdFieldRelationTypeInDb(String, String)}
+     * Given Scenario: Get content type fields filtering by content type id and relation type using default order (sort_order, velocity_var_name asc)
+     * ExpectedResult: Fields must be returned in correct order
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testSelectByContentTypeIdFieldRelationTypeInDb()
+            throws DotDataException, DotSecurityException {
+        final String testRelationType = "testRelationType" + System.currentTimeMillis();
+        ContentType contentType = null;
+
+        try{
+            contentType = getContentTypeForTest(testRelationType);
+
+            assertEquals("aliases", fieldFactory
+                    .byContentTypeIdFieldRelationTypeInDb(contentType.id(), testRelationType).get()
+                    .variable());
+
+        } finally {
+            if (contentType != null && contentType.id() != null){
+                contentTypeApi.delete(contentType);
+            }
+        }
+
+    }
+
+    /**
+     * Verify tests results given a list of fields
+     * @param resultFields Fields to be validated
+     */
+    private void validateFieldsOrder(final List<Field> resultFields) {
+        assertNotNull(resultFields);
+        assertEquals(5, resultFields.size());
+
+        //Verify order
+        assertEquals("aliases", resultFields.get(0).variable());
+        assertEquals("fields0", resultFields.get(1).variable());
+        assertEquals("fields1", resultFields.get(2).variable());
+        assertEquals("hostName", resultFields.get(3).variable());
+        assertEquals("tagStorage", resultFields.get(4).variable());
+    }
+
+    /**
+     * Create a content type with fields that contain the same sort_order and relationType
+     * @param testRelationType {@link String} to be used as relationType
+     * @return {@link ContentType}
+     * @throws DotDataException
+     */
+    private ContentType getContentTypeForTest(final String testRelationType) throws DotDataException {
+        final ContentTypeDataGen dataGen = new ContentTypeDataGen();
+
+        //Add new fields
+        final List<Field> inputFields = new ArrayList<>();
+        inputFields.add(new FieldDataGen().velocityVarName("fields0").relationType(testRelationType).next());
+        inputFields.add(new FieldDataGen().velocityVarName("fields1").relationType(testRelationType).next());
+        inputFields.add(new FieldDataGen().velocityVarName("hostName").relationType(testRelationType).next());
+        inputFields.add(new FieldDataGen().velocityVarName("aliases").relationType(testRelationType).next());
+        inputFields.add(new FieldDataGen().velocityVarName("tagStorage").relationType(testRelationType).next());
+
+        dataGen.fields(inputFields);
+
+        final ContentType contentType = dataGen.nextPersisted();
+
+        //Set the same sort_order in all fields
+        DotConnect dc = new DotConnect();
+        dc.setSQL("update field set sort_order = 1 where structure_inode = ?");
+        dc.addParam(contentType.id());
+        dc.loadResult();
+
+        return contentType;
+    }
+
+
+    @Test
 	public void testFieldVariables() throws Exception {
 		List<Field> fields = fieldFactory.byContentTypeId(newsLikeContentType.id());
 		final int runs = 10;
@@ -503,12 +624,12 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 			for (Field field : testFields) {
 				// make sure variables work
 
-				String suggestion = fieldFactory.suggestVelocityVar(field.name(), ImmutableList.of());
-				String suggestion2 = fieldFactory.suggestVelocityVar(field.variable(),
+				String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+				String suggestion2 = fieldFactory.suggestVelocityVar(field.variable(), field,
 						testFields.stream().map(Field::variable).collect(Collectors.toList()));
 				try {
 					assertThat("we are not munging up existing vars", field.variable().equals(
-							fieldFactory.suggestVelocityVar(field.variable(), ImmutableList.of())));
+							fieldFactory.suggestVelocityVar(field.variable(), field, ImmutableList.of())));
 					assertThat("we are suggesting good names", suggestion != null);
 					assertThat("we should not suggest an existing variable name ",
 							(!field.variable().equals(suggestion2)));
@@ -526,7 +647,8 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 		testFields = new ArrayList<>();
 		for (String key : testingNames.keySet()) {
-			String suggest = fieldFactory.suggestVelocityVar(key,
+			Field field = Mockito.mock(Field.class);
+			String suggest = fieldFactory.suggestVelocityVar(key, field,
 					testFields.stream().map(Field::variable).collect(Collectors.toList()));
 			
 
@@ -563,7 +685,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
         List<Field> testFields = new ArrayList<>();
         for (String key : testingNames) {
-            String suggest = fieldFactory.suggestVelocityVar(key, testFields
+            String suggest = fieldFactory.suggestVelocityVar(key, Mockito.mock(Field.class), testFields
 					.stream().map(Field::variable).collect(Collectors.toList()));
             
             assertThat("variable " + key + " " + " returned an a generic fieldVar:" + suggest , suggest.startsWith(FieldFactory.GENERIC_FIELD_VAR));
