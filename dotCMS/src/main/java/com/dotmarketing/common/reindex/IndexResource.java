@@ -55,6 +55,9 @@ import io.vavr.control.Try;
 @Path("/v1/index")
 public class IndexResource {
 
+    private ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
+    
+    
     public IndexResource() {
 
 
@@ -86,7 +89,7 @@ public class IndexResource {
     @Path("/")
     @Produces({MediaType.APPLICATION_JSON})
     public Response getIndexStatus(@Context final HttpServletRequest request,
-                    @Context final HttpServletResponse response) throws DotDataException {
+                    @Context final HttpServletResponse response)  {
 
         
         final InitDataObject init = validateUser(request, response);
@@ -109,15 +112,19 @@ public class IndexResource {
                     @PathParam("indexName") final String indexName) {
         
         final InitDataObject init = validateUser(request, response);
+
+        if(indexExists(indexName) ){
+            return Response.status(404).build();
+        }
         
-        APILocator.getContentletIndexAPI().delete(indexName);
+        idxApi.delete(indexName);
+
         String message = "Index:" + indexName + " deleted";
         
         sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
         
         
-        return Response.ok().build();
-
+        return getIndexStatus(request, response);
 
     }
 
@@ -132,6 +139,12 @@ public class IndexResource {
 
         final InitDataObject init = validateUser(request, response);
         final IndexAction indexAction = IndexAction.fromString(action);
+        
+        if(indexExists(indexName) ){
+            return Response.status(404).build();
+        }
+        
+        
         switch(indexAction){
             case DEACTIVATE:
                 APILocator.getContentletIndexAPI().deactivateIndex(indexName);
@@ -154,7 +167,7 @@ public class IndexResource {
         sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
         
         
-        return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
+        return getIndexStatus(request, response);
 
 
 
@@ -204,7 +217,7 @@ public class IndexResource {
             APILocator.getContentletAPI().refreshAllContent();
         }
 
-        return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
+        return getReindexationProgress(request, response);
 
 
     }
@@ -229,7 +242,7 @@ public class IndexResource {
         }else {
             APILocator.getContentletIndexAPI().stopFullReindexation();
         }
-        return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
+        return getReindexationProgress(request, response);
     }
 
     @CloseDBIfOpened
@@ -300,8 +313,11 @@ public class IndexResource {
     }
 
     private InitDataObject validateUser(final HttpServletRequest request, final HttpServletResponse response) {
-        return new WebResource.InitBuilder(request, response).requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-                        .requiredPortlet("maintenance").init();
+        return new WebResource
+                        .InitBuilder(request, response)
+                        .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                        .requiredPortlet("maintenance")
+                        .init();
 
     }
 
@@ -324,9 +340,12 @@ public class IndexResource {
                         ImmutableMap.<String, Object>builder().put("clusterName", clusterStats.getClusterName());
 
         for (NodeStats stats : clusterStats.getNodeStats()) {
-            builder.put("name", stats.getName()).put("master", stats.isMaster()).put("host", stats.getHost())
-                            .put("address", stats.getTransportAddress()).put("size", stats.getSize())
-                            .put("count", stats.getDocCount());
+            builder.put("name", stats.getName())
+                .put("master", stats.isMaster())
+                .put("host", stats.getHost())
+                .put("address", stats.getTransportAddress())
+                .put("size", stats.getSize())
+                .put("count", stats.getDocCount());
         }
         return Response.ok(new ResponseEntityView(builder.build())).build();
     }
@@ -380,23 +399,35 @@ public class IndexResource {
         return Response.ok(new ResponseEntityView(true)).build();
     }
 
-    private void sendAdminMessage(String message, MessageSeverity severity, User user, long millis) {
     
     
-            final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
-    
-    
-            
-            SystemMessage systemMessage = systemMessageBuilder.setMessage(message)
-                 .setType(MessageType.SIMPLE_MESSAGE)
-                 .setSeverity(severity)
-                 .setLife(millis)
-                 .create();
-           
-             SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
-        }
+    /**
+     * sends an admin growl message
+     * @param message
+     * @param severity
+     * @param user
+     * @param millis
+     */
+    @CloseDBIfOpened
+    private void sendAdminMessage(final String message, final MessageSeverity severity, final User user, final long millis) {
+
+
+        final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+
+
+
+        SystemMessage systemMessage = systemMessageBuilder.setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
+                        .setSeverity(severity).setLife(millis).create();
+
+        SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
+    }
        
 
+    private boolean indexExists(final String indexName) {
+        return !idxApi.listDotCMSIndices().contains(indexName) && !idxApi.listDotCMSClosedIndices().contains(indexName) ;
+    
+        
+    }
    
     
     

@@ -11,7 +11,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexStats;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
+import com.google.common.collect.ImmutableList;
 import io.vavr.control.Try;
 
 
@@ -35,14 +35,14 @@ public class IndexResourceHelper {
     
 
 
-    public List<Map<String,Object>> indexStatsList() throws DotDataException {
+    public List<Map<String,Object>> indexStatsList()  {
 
 
         Map<String,ClusterIndexHealth> clusterHealth = esapi.getClusterHealth();
         List<String> openIndicies=idxApi.listDotCMSIndices();
         List<String> closedIndices=idxApi.listDotCMSClosedIndices();
-        List<String> currentIdx =idxApi.getCurrentIndex();
-        List<String> newIdx =idxApi.getNewIndex();
+        List<String> currentIdx = Try.of(()->idxApi.getCurrentIndex()).getOrElse(ImmutableList.of());
+        List<String> newIdx =Try.of(()->idxApi.getNewIndex()).getOrElse(ImmutableList.of());
         Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
         List<Map<String,Object>> indexList = new ArrayList<>();
         
