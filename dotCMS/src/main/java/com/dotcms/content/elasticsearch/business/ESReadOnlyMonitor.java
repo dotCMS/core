@@ -135,12 +135,16 @@ public class ESReadOnlyMonitor {
     }
 
     private void putClusterToWriteMode() {
-        Logger.debug(this.getClass(), () -> "Trying to set the current indices to Write mode");
-        ElasticsearchUtil.setClusterToWriteMode();
-        sendMessage("es.cluster.write.allow.message");
-        ReindexThread.setCurrentIndexReadOnly(false);
+        try{
+            Logger.debug(this.getClass(), () -> "Trying to set the current indices to Write mode");
+            ElasticsearchUtil.setClusterToWriteMode();
+            sendMessage("es.cluster.write.allow.message");
+            ReindexThread.setCurrentIndexReadOnly(false);
 
-        this.stop();
+            this.stop();
+        } catch (final ElasticsearchResponseException e) {
+            Logger.info(ESReadOnlyMonitor.class, ()  -> e.getMessage());
+        }
     }
 
     private void startIndexMonitor() {
