@@ -32,11 +32,11 @@ jobs:
         env:
           PROJECT_ID: cicd-246518
       - name: Run Unit Tests
-          run: |
-            dotcicd/library/pipeline/github/core/runUnit.sh
-          env:
-            PROJECT_ID: cicd-246518
-            EXPORT_REPORTS: true
+        run: |
+          dotcicd/library/pipeline/github/core/runUnit.sh
+        env:
+          PROJECT_ID: cicd-246518
+          EXPORT_REPORTS: true
 #      - name: Run Curl Tests
 #        run: |
 #          dotcicd/library/pipeline/github/core/runCurl.sh
