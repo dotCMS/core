@@ -760,7 +760,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         Contentlet banner2 = contentletAPI.checkout(banner1.getInode(), APILocator.systemUser(), false);
 
         banner2.setLanguageId(language2.getId());
-        banner2.setInode("");
 
         banner2 = contentletAPI.checkin(banner2, user, false);
 
@@ -796,7 +795,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         Contentlet banner2 = contentletAPI.checkout(banner1.getInode(), APILocator.systemUser(), false);
 
         banner2.setLanguageId(language2.getId());
-        banner2.setInode("");
 
         banner2 = contentletAPI.checkin(banner2, user, false);
 
@@ -836,7 +834,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         Contentlet banner2 = contentletAPI.checkout(banner1.getInode(), APILocator.systemUser(), false);
 
         banner2.setLanguageId(language2.getId());
-        banner2.setInode("");
 
         banner2 = contentletAPI.checkin(banner2, user, false);
 
