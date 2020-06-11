@@ -16,35 +16,37 @@ jobs:
           .cicd/discover.sh
       - name: Build DotCMS Image
         run: |
-          dotcicd/library/pipeline/github/core/buildBase.sh ${{ secrets.DOTCMS_LICENSE }}
+          dotcicd/library/pipeline/github/core/buildBase.sh
         env:
           PROJECT_ID: cicd-246518
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Build Integration Tests Image
         run: |
-          dotcicd/library/pipeline/github/core/buildIntegration.sh ${{ secrets.DOTCMS_LICENSE }}
+          dotcicd/library/pipeline/github/core/buildIntegration.sh
         env:
           PROJECT_ID: cicd-246518
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Build Curl Tests Image
         run: |
           dotcicd/library/pipeline/github/core/buildCurl.sh
         env:
           PROJECT_ID: cicd-246518
-#      - name: Curl Tests Compose
+      - name: Run Unit Tests
+          run: |
+            dotcicd/library/pipeline/github/core/runUnit.sh
+          env:
+            PROJECT_ID: cicd-246518
+            EXPORT_REPORTS: true
+#      - name: Run Curl Tests
 #        run: |
-#          docker-compose \
-#            -f ./docker/tests/curl/travis-curl-service.yml \
-#            -f ./docker/tests/shared/sidecar-service-compose.yml \
-#            -f ./docker/tests/shared/$DB_TYPE-docker-compose.yml \
-#            -f ./docker/tests/shared/open-distro-docker-compose.yml \
-#            up \
-#            --abort-on-container-exit
+#          dotcicd/library/pipeline/github/core/runCurl.sh
 #        env:
 #          PROJECT_ID: cicd-246518
+#          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
 #          IMAGE_BASE_NAME: gcr.io/cicd-246518/curl-tests-image:${{ github.run_number }}
-#          DB_TYPE: postgres
 #          EXPORT_REPORTS: true
+#          DB_TYPE: postgres
 #          PROVIDER_DB_USERNAME: postgres
 #          PROVIDER_DB_PASSWORD: postgres
-#          BUILD_ID: ${{ github.ref }}
-#          BUILD_HASH: ${{ github.sha }}
+
 
