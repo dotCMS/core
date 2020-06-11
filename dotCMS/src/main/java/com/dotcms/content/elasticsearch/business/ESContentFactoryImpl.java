@@ -984,14 +984,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
 	    
 	    // Looking content up this way can avoid any DB hits as these calls are all cached.
-	    final List<Language> langs = APILocator.getLanguageAPI().getLanguages();
-	    for(final Language language : langs) {
-	        final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-	        if(cvi != null  && UtilMethods.isSet(cvi.getIdentifier()) && !cvi.isDeleted()) {
-	            return find(cvi.getWorkingInode());
-	        }
-	    }
-	    return null;
+	    return findContentletByIdentifierAnyLanguage(identifier, false);
+
+    }
+
+    @Override
+    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
+
+        // Looking content up this way can avoid any DB hits as these calls are all cached.
+        final List<Language> langs = APILocator.getLanguageAPI().getLanguages();
+        for(final Language language : langs) {
+            final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
+            if(cvi != null  && UtilMethods.isSet(cvi.getIdentifier()) && (includeDeleted || !cvi.isDeleted())) {
+                return find(cvi.getWorkingInode());
+            }
+        }
+        return null;
 
     }
 
