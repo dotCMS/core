@@ -34,7 +34,7 @@ public abstract class SelectableValuesField extends Field{
 
 		if(iDate().before(legacyFieldDate))return;
 		if(values()!=null){
-	        String[] tempVals = StringUtil.split(values().replaceAll("\r\n","|").trim(), "|");
+	        final String[] tempVals = StringUtil.split(values().replaceAll("\r\n","|").trim(), "|");
 			for(int i=1;i<tempVals.length;i+= 2){
 				try{
 					if(dataType() == DataTypes.FLOAT){
@@ -43,17 +43,17 @@ public abstract class SelectableValuesField extends Field{
 						Integer.parseInt(tempVals[i]);
 					}
 					else if(dataType() == DataTypes.BOOL){
-						String x = "1".equals(tempVals[i]) ? "true" : "0".equals(tempVals[i]) ? "false" : tempVals[i];
-	
-						Boolean y = BooleanUtils.toBooleanObject(x);
+						final String x = "1".equals(tempVals[i]) ? "true" : "0".equals(tempVals[i]) ? "false" : tempVals[i];
+						final Boolean y = BooleanUtils.toBooleanObject(x);
 						if(null==y){
-							throw new DotStateException("invalid boolean");
-						}
+                            throw new DotStateException(String.format("Value of field '%s' [%s], CT ID [%] of type " +
+                                    "'%s' is not a valid boolean: %s", name(), id(), contentTypeId(), dataType(), x));
+                        }
 					}
-				}catch (Exception e) {
-					throw new DotStateException("Values entered are not valid for this datatype" + dataType() + " " + values(),e);
-	
-				}
+				} catch (final Exception e) {
+                    throw new DotStateException(String.format("Value of field '%s' [%s], CT ID [%] of type '%s' is " +
+                            "not valid: %s", name(), id(), contentTypeId(), dataType(), values()), e);
+                }
 			}
 		}
 	}
