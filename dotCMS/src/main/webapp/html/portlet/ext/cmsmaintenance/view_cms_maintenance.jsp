@@ -179,6 +179,7 @@ function optimizeIndices(){
 function flushIndiciesCache(){
     fetch('/api/v1/index/cache', {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json());
+    
 
 }
 
@@ -191,7 +192,7 @@ function deleteIndex(indexName, live){
     fetch('/api/v1/index/' + indexName, {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json())
     .then(refreshIndexStats());
-    
+    setTimeout("refreshIndexStats()", 5000);
 
 }
 
