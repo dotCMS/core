@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
@@ -274,12 +275,15 @@ public class RelationshipAPITest extends IntegrationTestBase {
         // Migrate Relationship
         relationshipAPI.convertRelationshipToRelationshipField(relationship);
 
-        //Verify the relationship still exists
-        assertNotNull(relationshipAPI.byInode(relationship.getInode()));
+        //Check old relationship does not exists
+        assertNull(relationshipAPI.byInode(relationship.getInode()));
+
+        final Relationship newRelationship = relationshipAPI
+                .byContentType(contentletParent.getContentType()).get(0);
 
         //Check Content is still related
         relatedContent = APILocator.getContentletAPI()
-                .getRelatedContent(contentletParent, relationship, user, false);
+                .getRelatedContent(contentletParent, newRelationship, user, false);
         assertNotNull(relatedContent);
         assertEquals(relationshipList.size(), relatedContent.size());
 
