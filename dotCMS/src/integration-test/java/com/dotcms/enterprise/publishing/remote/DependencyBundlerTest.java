@@ -4,12 +4,14 @@ import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParse
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -21,6 +23,7 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.DependencyManager;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
@@ -563,6 +566,35 @@ public class DependencyBundlerTest extends IntegrationTestBase {
         Assert.assertTrue(listOfAssetsWithNewFilter.getContentlets().contains(parentContentlet.getIdentifier()));
         Assert.assertFalse(listOfAssetsWithNewFilter.getContentlets().contains(childContentlet.getIdentifier()));
         Assert.assertTrue(listOfAssetsWithNewFilter.getRelationships().isEmpty());
+    }
+
+    /**
+     * Method to test: {@link DependencyManager#setDependencies()}
+     * Given Scenario: If a page has a Template that was deleted, we should be able to generate the bundle without issues.
+     * ExpectedResult: The bundle should be generated without issues and the page added to the bundle.
+     */
+    @Test
+    public void Test_GenerateBundle_PageWithTemplateDeleted_PageSuccessfullyAddedToBundle() throws Exception {
+        //Create Template
+        final Template template = new TemplateDataGen().nextPersisted();
+        //Create Folder
+        final Folder folder = new FolderDataGen().nextPersisted();
+        //Create Page
+        final HTMLPageAsset pageAsset = new HTMLPageDataGen(folder, template).nextPersisted();
+        Assert.assertEquals(template.getIdentifier(),pageAsset.getTemplateId());
+        //Delete Template
+        final boolean isTemplateDeleted = APILocator.getTemplateAPI().delete(template,systemUser,false);
+        Assert.assertTrue(isTemplateDeleted);
+        //Create bundle
+        final Bundle bundle = createBundle("TestBundle"+System.currentTimeMillis(),false,"");
+        //Add assets to the bundle
+        PublisherAPI.getInstance().saveBundleAssets(Arrays.asList(pageAsset.getIdentifier()),bundle.getId(),
+                systemUser);
+        //Generate Bundle, will return several dependencySet with the assets that will be added to the bundle
+        final PushPublisherConfig listOfAssetsInBundle = generateBundle(bundle.getId(), Operation.PUBLISH);
+        Assert.assertNotNull(listOfAssetsInBundle);
+        Assert.assertTrue(listOfAssetsInBundle.getContentlets().contains(pageAsset.getIdentifier()));
+
     }
 
 
