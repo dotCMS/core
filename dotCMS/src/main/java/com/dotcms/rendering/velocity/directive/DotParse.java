@@ -52,7 +52,7 @@ public class DotParse extends DotDirective {
      * In case than an upper component needs to overrides the language to get the version of the
      * content, you can use this method to do it in advance. note: the change will just affect the calls
      * to dotParse at request scope.
-     * 
+     *
      * @param request {@link HttpServletRequest}
      * @param identifier {@link String} contentlet identifier
      * @param languageId {@link Long} language identifier
@@ -77,26 +77,26 @@ public class DotParse extends DotDirective {
     String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params, final String[] arguments) {
 
 
-        String templatePath = arguments[0];
+        final String templatePath = arguments[0];
 
         final User user = params.user;
         final HttpServletRequest request = (HttpServletRequest) context.get("request");
 
 
         try {
-            Optional<Tuple2<Identifier, String>> optIdAndField = resolveDotAsset(context, params, templatePath);
+            Optional<Tuple2<Identifier, String>> optIdAndField = resolveDotAsset(params, templatePath);
 
             if (!optIdAndField.isPresent()) {
-                optIdAndField = resolveFileAsset(context, params, templatePath);
+                optIdAndField = resolveFileAsset(params, templatePath);
             }
-            
-            
+
+
             if (!optIdAndField.isPresent()) {
                 throwNotResourceNotFoundException(params, templatePath);
             }
-            
-            
-            Tuple2<Identifier, String> idAndField = optIdAndField.get();
+
+
+            final Tuple2<Identifier, String> idAndField = optIdAndField.get();
 
             final long languageId = getContentLanguageId(request, idAndField._1.getId(), params.language.getId());
 
@@ -127,7 +127,7 @@ public class DotParse extends DotDirective {
                             params.mode.showLive ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
 
             // We found the resource but not the version we are looking for
-            if (null == inode) {
+            if (!UtilMethods.isSet(inode)) {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
@@ -148,7 +148,7 @@ public class DotParse extends DotDirective {
                 writer.append(editIcon);
             }
 
-            return null != fileToServe ? fileToServe.getAbsolutePath() : null;
+            return UtilMethods.isSet(fileToServe) ? fileToServe.getAbsolutePath() : null;
         } catch (ResourceNotFoundException e) {
             Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: " + e.getMessage());
             if (e.getStackTrace().length > 0) {
@@ -177,7 +177,7 @@ public class DotParse extends DotDirective {
 
 
 
-    private Optional<Tuple2<Identifier, String>> resolveDotAsset(final Context context, final RenderParams params,
+    private Optional<Tuple2<Identifier, String>> resolveDotAsset(final RenderParams params,
                     final String templatePath) throws DotDataException, DotSecurityException {
 
         // if we have a dotAsset
@@ -188,7 +188,7 @@ public class DotParse extends DotDirective {
         final StringTokenizer tokens = new StringTokenizer(templatePath, StringPool.FORWARD_SLASH);
 
         if (tokens.countTokens() < 2) {
-            String errorMessage = String.format("No resource found for [%s]", templatePath);
+            final String errorMessage = String.format("No resource found for [%s]", templatePath);
             throw new ResourceNotFoundException(errorMessage);
         }
 
@@ -201,7 +201,7 @@ public class DotParse extends DotDirective {
             return Optional.empty();
         }
 
-        ShortyId shorty = shortOpt.get();
+        final ShortyId shorty = shortOpt.get();
         final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
                         ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, params.mode.showLive,
                                         params.language.getId(), params.user, false)
@@ -211,27 +211,27 @@ public class DotParse extends DotDirective {
         if (!conOpt.isPresent()) {
             return Optional.empty();
         }
-        
-        Identifier identifier = APILocator.getIdentifierAPI().find(conOpt.get().getIdentifier());
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(conOpt.get().getIdentifier());
         return Optional.of(Tuple.of(identifier, fieldVar));
 
 
     }
 
-    private Optional<Tuple2<Identifier, String>> resolveFileAsset(final Context context, final RenderParams params,
+    private Optional<Tuple2<Identifier, String>> resolveFileAsset(final RenderParams params,
                     String templatePath) throws DotDataException, DotSecurityException {
         final User user = params.user;
         Host host = params.currentHost;
         // if we have a host
         if (templatePath.startsWith(hostIndicator)) {
             templatePath = templatePath.substring(hostIndicator.length(), templatePath.length());
-            String hostName = templatePath.substring(0, templatePath.indexOf('/'));
+            final String hostName = templatePath.substring(0, templatePath.indexOf('/'));
             templatePath = templatePath.substring(templatePath.indexOf('/'), templatePath.length());
             host = APILocator.getHostAPI().resolveHostName(hostName, user, params.mode.respectAnonPerms);
         }
 
 
-        Identifier identifier = APILocator.getIdentifierAPI().find(host, templatePath);
+        final Identifier identifier = APILocator.getIdentifierAPI().find(host, templatePath);
         return Optional.of(Tuple.of(identifier, FileAssetAPI.BINARY_FIELD));
     }
 
