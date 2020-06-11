@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegration
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
+import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
@@ -264,7 +265,8 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
         LanguageUtilTest.class,
-        FolderResourceTest.class
+        FolderResourceTest.class,
+        Task05225RemoveLoadRecordsToIndexTest.class
 })
 public class MainSuite {
 
