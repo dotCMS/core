@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.liferay.portal.model.User;
 import java.util.Map;
@@ -42,8 +43,10 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
     public HTMLPageAsset fromContentlet(final Contentlet contentlet) {
         final IHTMLPage page = htmlPageCache.get(contentlet.getInode());
         if(null != page){
+          Logger.debug(PageViewStrategy.class, ()->String.format(" Page cache Hit `%s`",contentlet.getInode()));
           return (HTMLPageAsset)page;
         }
+        Logger.debug(PageViewStrategy.class, ()->String.format(" Page cache Miss `%s`",contentlet.getInode()));
         return toolBox.htmlPageAssetAPI.fromContentlet(contentlet);
     }
 

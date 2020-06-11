@@ -49,8 +49,10 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
     public FileAsset fromContentlet(final Contentlet contentlet) {
         final Contentlet cachedContent = contentletCache.get(contentlet.getInode());
         if(cachedContent instanceof FileAsset){
+           Logger.debug(FileAssetViewStrategy.class, ()->String.format(" FileAsset cache hit `%s`",contentlet.getInode()));
            return (FileAsset)cachedContent;
         }
+        Logger.debug(FileAssetViewStrategy.class, ()->String.format(" FileAsset cache miss `%s`",contentlet.getInode()));
         return toolBox.fileAssetAPI.fromContentlet(contentlet);
     }
 
