@@ -53,14 +53,26 @@ public abstract class ContentletFactory {
 	
 	/**
 	 * This method gets a Contentlet object given the inode
-	 * @param id
+	 * @param inode
 	 * @return 
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
 	protected abstract Contentlet find(String inode) throws DotDataException, DotSecurityException;
-	
-	/**
+
+    /**
+     * Retrieves a contentlet from the database by its identifier and the working version.
+     * It includes archive content if includeDeleted is true
+     * @param identifier
+     * @param includeDeleted
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier,
+            boolean includeDeleted) throws DotDataException, DotSecurityException;
+
+    /**
 	 * Returns a live Contentlet Object for a given language
 	 * @param languageId
 	 * @param contentletId
