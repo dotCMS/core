@@ -87,6 +87,7 @@ dot-avatar {
     font-size: $font-size-medium;
     line-height: $basic-padding * 2;
     margin-top: $basic-padding;
+    margin-right: $basic-padding * 3;
 }
 
 ::ng-deep .ui-card-body {
