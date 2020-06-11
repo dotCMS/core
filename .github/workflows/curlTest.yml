@@ -26,11 +26,6 @@ jobs:
         env:
           PROJECT_ID: cicd-246518
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-      - name: Build Curl Tests Image
-        run: |
-          dotcicd/library/pipeline/github/core/buildCurl.sh
-        env:
-          PROJECT_ID: cicd-246518
       - name: Run Unit Tests
         run: |
           dotcicd/library/pipeline/github/core/runUnit.sh
