@@ -16,6 +16,7 @@ import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
+import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
@@ -281,7 +282,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PushPublishFilterResourceTest.class,
         PushNowActionletTest.class,
         Task05305AddPushPublishFilterColumnTest.class,
-        CMSMaintenanceFactoryTest.class
+        CMSMaintenanceFactoryTest.class,
+        DotParseTest.class
 })
 public class MainSuite {
 
