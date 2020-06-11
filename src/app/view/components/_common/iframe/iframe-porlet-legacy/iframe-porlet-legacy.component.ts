@@ -1,8 +1,8 @@
-import { pluck, map, withLatestFrom, mergeMap } from 'rxjs/operators';
-import { Component, OnInit } from '@angular/core';
+import { pluck, map, withLatestFrom, mergeMap, takeUntil } from 'rxjs/operators';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, UrlSegment } from '@angular/router';
 
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 
 import { SiteService, LoggerService } from 'dotcms-js';
 
@@ -17,9 +17,12 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
     templateUrl: 'iframe-porlet-legacy.component.html'
 })
-export class IframePortletLegacyComponent implements OnInit {
+export class IframePortletLegacyComponent implements OnInit, OnDestroy {
+    canAccessPortlet: boolean;
     url: BehaviorSubject<string> = new BehaviorSubject('');
     isLoading = false;
+
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private contentletService: DotContentTypeService,
@@ -44,7 +47,20 @@ export class IframePortletLegacyComponent implements OnInit {
                 this.reloadIframePortlet();
             }
         });
-        this.setIframeSrc();
+
+        this.route.data
+            .pipe(pluck('canAccessPortlet'), takeUntil(this.destroy$))
+            .subscribe((canAccessPortlet: boolean) => {
+                if (canAccessPortlet) {
+                    this.setIframeSrc();
+                }
+                this.canAccessPortlet = canAccessPortlet;
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -74,7 +90,10 @@ export class IframePortletLegacyComponent implements OnInit {
 
     private setIframeSrc(): void {
         // We use the query param to load a page in edit mode in the iframe
-        const queryUrl$ = this.route.queryParams.pipe(pluck('url'), map((url: string) => url));
+        const queryUrl$ = this.route.queryParams.pipe(
+            pluck('url'),
+            map((url: string) => url)
+        );
 
         queryUrl$.subscribe((queryUrl: string) => {
             if (queryUrl) {
@@ -86,7 +105,10 @@ export class IframePortletLegacyComponent implements OnInit {
     }
 
     private setPortletUrl(): void {
-        const portletId$ = this.route.params.pipe(pluck('id'), map((id: string) => id));
+        const portletId$ = this.route.params.pipe(
+            pluck('id'),
+            map((id: string) => id)
+        );
 
         portletId$
             .pipe(
@@ -95,11 +117,10 @@ export class IframePortletLegacyComponent implements OnInit {
                         map((urlSegment: UrlSegment[]) => urlSegment[0].path)
                     )
                 ),
-                mergeMap(
-                    ([id, url]) =>
-                        url === 'add'
-                            ? this.contentletService.getUrlById(id)
-                            : this.dotMenuService.getUrlById(id)
+                mergeMap(([id, url]) =>
+                    url === 'add'
+                        ? this.contentletService.getUrlById(id)
+                        : this.dotMenuService.getUrlById(id)
                 )
             )
             .subscribe((url: string) => {

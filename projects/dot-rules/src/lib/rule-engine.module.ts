@@ -47,6 +47,7 @@ import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/do
 import { AppRulesComponent } from './app.component';
 import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.module';
 import { RuleViewService } from './services/dot-view-rule-service';
+import { DotUnlicenseModule } from './components/dot-unlicense/dot-unlicense.module';
 
 
 @NgModule({
@@ -66,7 +67,8 @@ import { RuleViewService } from './services/dot-view-rule-service';
         CalendarModule,
         DotAutocompleteTagsModule,
         HttpModule,
-        DotAutofocusModule
+        DotAutofocusModule,
+        DotUnlicenseModule
     ],
     declarations: [
         AddToBundleDialogComponent,

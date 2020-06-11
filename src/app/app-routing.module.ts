@@ -12,6 +12,7 @@ import { MenuGuardService } from '@services/guards/menu-guard.service';
 import { PublicAuthGuardService } from '@services/guards/public-auth-guard.service';
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
+import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 
 const PORTLETS_ANGULAR = [
     {
@@ -80,7 +81,10 @@ const PORTLETS_IFRAME = [
                             '@portlets/dot-porlet-detail/dot-portlet-detail.module#DotPortletDetailModule',
                         path: ':asset'
                     }
-                ]
+                ],
+                resolve: {
+                    canAccessPortlet: DotIframePortletLegacyResolver
+                }
             },
             {
                 path: '',

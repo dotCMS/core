@@ -1,4 +1,4 @@
-import { of as observableOf } from 'rxjs';
+import { of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
@@ -11,6 +11,27 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { SiteService, LoginService, DotPushPublishDialogService } from 'dotcms-js';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { LoginServiceMock } from '@tests/login-service.mock';
+
+const routeDatamock = {
+    canAccessPortlet: true
+};
+
+class ActivatedRouteMock {
+    get data() {
+        return of(routeDatamock);
+    }
+
+    get parent() {
+        return {
+            url: of([
+                {
+                    path: 'an-url'
+                }
+            ])
+        };
+    }
+}
 
 describe('IframePortletLegacyComponent', () => {
     let comp: IframePortletLegacyComponent;
@@ -30,19 +51,14 @@ describe('IframePortletLegacyComponent', () => {
                 DotCustomEventHandlerService,
                 DotPushPublishDialogService,
                 DotMenuService,
-                LoginService,
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
                 SiteService,
                 {
                     provide: ActivatedRoute,
-                    useValue: {
-                        parent: {
-                            url: observableOf([
-                                {
-                                    path: 'an-url'
-                                }
-                            ])
-                        }
-                    }
+                    useClass: ActivatedRouteMock
                 }
             ]
         });
@@ -50,19 +66,14 @@ describe('IframePortletLegacyComponent', () => {
         fixture = DOTTestBed.createComponent(IframePortletLegacyComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        dotIframe = de.query(By.css('dot-iframe'));
         dotMenuService = de.injector.get(DotMenuService);
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
         route = de.injector.get(ActivatedRoute);
     }));
 
-    it('should have dot-iframe component', () => {
-        expect(dotIframe).toBeDefined();
-    });
-
     it('should set query param url to the dot-iframe src', () => {
-        route.queryParams = observableOf({ url: 'hello/world' });
-        route.params = observableOf({ id: 'portlet-id' });
+        route.queryParams = of({ url: 'hello/world' });
+        route.params = of({ id: 'portlet-id' });
 
         let src: string;
         comp.url.subscribe((url) => {
@@ -75,10 +86,10 @@ describe('IframePortletLegacyComponent', () => {
     });
 
     it('should set router param id to the dot-iframe src', () => {
-        route.queryParams = observableOf({});
-        route.params = observableOf({ id: 'portlet-id' });
+        route.queryParams = of({});
+        route.params = of({ id: 'portlet-id' });
 
-        spyOn(dotMenuService, 'getUrlById').and.returnValue(observableOf('fake-url'));
+        spyOn(dotMenuService, 'getUrlById').and.returnValue(of('fake-url'));
 
         let src: string;
 
@@ -93,7 +104,12 @@ describe('IframePortletLegacyComponent', () => {
     });
 
     it('should handle custom events', () => {
+        route.queryParams = of({ url: 'hello/world' });
+        route.params = of({ id: 'portlet-id' });
         spyOn(dotCustomEventHandlerService, 'handle');
+        fixture.detectChanges();
+
+        dotIframe = de.query(By.css('dot-iframe'));
 
         dotIframe.triggerEventHandler('custom', {
             this: {
@@ -106,5 +122,11 @@ describe('IframePortletLegacyComponent', () => {
                 is: 'a custom event'
             }
         });
+    });
+
+    it('should load Not Licensed component when no license and enterprise portlet ', () => {
+        routeDatamock.canAccessPortlet = false;
+        fixture.detectChanges();
+        expect(de.query(By.css('dot-not-licensed-component'))).toBeTruthy();
     });
 });

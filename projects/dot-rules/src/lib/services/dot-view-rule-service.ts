@@ -1,4 +1,3 @@
-
 import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 
@@ -6,10 +5,11 @@ import { Subject, Observable } from 'rxjs';
 export class RuleViewService {
     private _message: Subject<DotRuleMessage> = new Subject();
 
-    public showErrorMessage(message: string, allowClose = true): void {
+    public showErrorMessage(message: string, allowClose = true, errorKey = ''): void {
         this._message.next({
-            message: message,
-            allowClose: allowClose
+            message,
+            allowClose,
+            errorKey
         });
     }
 
@@ -21,4 +21,5 @@ export class RuleViewService {
 export interface DotRuleMessage {
     message: string;
     allowClose: boolean;
+    errorKey?: string;
 }

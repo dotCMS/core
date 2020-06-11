@@ -1,18 +1,14 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Routes } from '@angular/router';
 
 import { NotLicensedComponent } from './not-licensed.component';
+import { ButtonModule } from 'primeng/button';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
-const routes: Routes = [
-    {
-        component: NotLicensedComponent,
-        path: ''
-    }
-];
 
 @NgModule({
-    imports: [CommonModule, RouterModule.forChild(routes)],
-    declarations: [NotLicensedComponent]
+    imports: [CommonModule, ButtonModule, DotIconModule],
+    declarations: [NotLicensedComponent],
+    exports: [NotLicensedComponent]
 })
 export class NotLicensedModule {}

@@ -10,6 +10,8 @@ import { PIPES } from '../../../../components';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { RouterModule } from '@angular/router';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
+import { DotIframePortletLegacyResolver } from './service/dot-iframe-porlet-legacy-resolver.service';
+import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
 
 @NgModule({
     declarations: [IframeComponent, IframePortletLegacyComponent, ...PIPES],
@@ -20,8 +22,9 @@ import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-o
         SearchableDropDownModule,
         DotLoadingIndicatorModule,
         RouterModule,
-        DotOverlayMaskModule
+        DotOverlayMaskModule,
+        NotLicensedModule
     ],
-    providers: [IframeOverlayService, DotCustomEventHandlerService]
+    providers: [IframeOverlayService, DotCustomEventHandlerService, DotIframePortletLegacyResolver]
 })
 export class IFrameModule {}

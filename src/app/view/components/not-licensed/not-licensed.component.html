@@ -1,1 +1,22 @@
-<div class="ui negative message cw-message">Enterprise License required</div>
+<dot-icon [name]="unlicenseData.icon" [size]="120"></dot-icon>
+<h4>{{ messagesKey[unlicenseData.titleKey] }}</h4>
+<p>{{ messagesKey[unlicenseData.titleKey] }} {{ messagesKey['only-available-in-enterprise'] }}</p>
+<ul>
+    <li>
+        <a target="_blank" href="https://dotcms.com/product/features/feature-list">{{
+            messagesKey['Learn-more-about-dotCMS-Enterprise']
+        }}</a>
+    </li>
+    <li>
+        <a target="_blank" href="https://dotcms.com/contact-us/">{{
+            messagesKey['Contact-Us-for-more-Information']
+        }}</a>
+    </li>
+</ul>
+<p>
+    <a
+        class="ui-link"
+        href="https://dotcms.com/licensing/request-a-license-3/index"
+        [innerText]="messagesKey['request.a.trial.license']"
+    ></a>
+</p>

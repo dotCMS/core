@@ -1,0 +1,67 @@
+@import "../../styles/rule-engine.scss";
+
+.portlet-wrapper {
+    align-items: center;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+}
+
+.unlicense-content {
+    text-align: center;
+
+    i,
+    h4 {
+        color: $gray-light;
+    }
+
+    h4 {
+        font-size: $font-size-xx-large;
+        font-weight: 400;
+        margin: $basic-padding * 2 0;
+    }
+
+    i {
+        border: 7px solid;
+        border-radius: 10px;
+        font-size: 120px;
+    }
+
+    p {
+        font-size: $font-size-medium;
+        font-weight: 400;
+        line-height: 1.5em;
+    }
+
+    ul {
+        display: inline-block;
+
+        li {
+            line-height: 1.5em;
+            list-style-type: disc;
+            text-align: left;
+
+            a {
+                color: var(--color-main);
+                font-size: $font-size-medium;
+            }
+        }
+    }
+}
+
+.request-license-button {
+    background: var(--color-main);
+    border: solid 1px transparent;
+    border-radius: 2px;
+    color: #fff;
+    display: inline-block;
+    line-height: 36px;
+    padding: 0 $basic-padding * 3;
+    text-decoration: none;
+    text-transform: uppercase;
+
+    &:hover {
+        background: var(--color-main_mod);
+        border: solid 1px transparent;
+    }
+}

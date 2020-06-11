@@ -1,0 +1,21 @@
+@import "variables";
+
+:host {
+    align-items: center;
+    background-color: $white;
+    box-shadow: $md-shadow-4;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 48px - #{$toolbar-height});
+    justify-content: center;
+    padding: $basic-padding * 4;
+}
+
+h4 {
+    margin: 0;
+}
+
+dot-icon::ng-deep .material-icons,
+h4 {
+    color: $gray-light;
+}

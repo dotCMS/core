@@ -24,12 +24,12 @@ const I8N_BASE = 'api.sites.ruleengine';
     selector: 'cw-rule-engine',
     template: `
   <div class="cw-modal-glasspane"  [class.cw-loading]="loading" *ngIf="loading"></div>
-  <div *ngIf="!loading && globalError" class="ui negative message cw-message">
-    <div class="header">{{globalError}}</div>
-    <p>Please contact an administrator</p>
-
-    <i *ngIf="showCloseButton" class="material-icons" class="close-button" (click)="globalError = ''">X</i>
+  <div *ngIf="!loading && globalError && globalError.errorKey !== 'dotcms.api.error.license.required'" class="ui negative message cw-message">
+    <div class="header">{{ globalError.message }}</div>
+    <p>{{ rsrc('contact.admin.error') | async }}</p>
+    <i *ngIf="showCloseButton" class="material-icons" class="close-button" (click)="globalError.message = ''">X</i>
   </div>
+  <dot-unlicense *ngIf="!loading && globalError && globalError.errorKey === 'dotcms.api.error.license.required'"></dot-unlicense>
 <div class="cw-rule-engine" *ngIf="!loading && showRules">
   <div class="cw-header">
     <div flex layout="row" >
@@ -125,7 +125,7 @@ export class RuleEngineComponent implements OnDestroy {
     updateConditionParameter: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
     @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
 
-    globalError: string;
+    globalError: DotRuleMessage;
     showCloseButton: boolean;
 
     filterText: string;
@@ -151,7 +151,7 @@ export class RuleEngineComponent implements OnDestroy {
         this.ruleViewService.message
             .pipe(takeUntil(this.destroy$))
             .subscribe((dotRuleMessage: DotRuleMessage) => {
-                this.globalError = dotRuleMessage.message;
+                this.globalError = dotRuleMessage;
                 this.showCloseButton = dotRuleMessage.allowClose;
             });
 

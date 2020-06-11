@@ -2,6 +2,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotLicenseService } from './dot-license.service';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
+import { of } from 'rxjs';
 
 let lastConnection: any;
 
@@ -61,5 +62,43 @@ describe('DotLicenseService', () => {
         mockConnectionLicenseResponse(400);
 
         expect(result).toBe(true);
+    });
+
+    it('should return true with any URL and user has license', () => {
+        spyOn(this.dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+        let result: boolean;
+        this.dotLicenseService
+            .canAccessEnterprisePortlet('/whatever')
+            .subscribe((res) => (result = res));
+
+        expect(result).toBe(true);
+    });
+
+    it('should return true when URL is not enterprise and user do not has license', () => {
+        spyOn(this.dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+        let result: boolean;
+        this.dotLicenseService
+            .canAccessEnterprisePortlet('/whatever')
+            .subscribe((res) => (result = res));
+
+        expect(result).toBe(true);
+    });
+
+    it('should return false when URL is enterprise and user do not has license', () => {
+        spyOn(this.dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+        const urls = [
+            '/rules',
+            '/c/publishing-queue',
+            '/c/site-search',
+            '/c/time-machine',
+            '/c/workflow-schemes',
+            '/c/es-search',
+            '/forms'
+        ];
+        urls.forEach((url) => {
+            return this.dotLicenseService
+                .canAccessEnterprisePortlet(url)
+                .subscribe((res) => expect(res).toBe(false));
+        });
     });
 });

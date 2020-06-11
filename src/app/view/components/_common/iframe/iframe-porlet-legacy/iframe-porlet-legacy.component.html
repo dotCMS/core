@@ -1,7 +1,13 @@
-<dot-iframe
-    #iframe
-    (custom)="onCustomEvent($event)"
-    [isLoading]="isLoading"
-    [src]="url | async">
-</dot-iframe>
+<ng-template [ngIf]="canAccessPortlet" [ngIfElse]="notLicense">
+    <dot-iframe
+        #iframe
+        (custom)="onCustomEvent($event)"
+        [isLoading]="isLoading"
+        [src]="url | async"
+    >
+    </dot-iframe>
+</ng-template>
+<ng-template #notLicense>
+    <dot-not-licensed-component></dot-not-licensed-component>
+</ng-template>
 <router-outlet></router-outlet>
