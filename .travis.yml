@@ -18,7 +18,6 @@ env:
     - TRAVIS_WORKER_MAX_LOG_LENGTH=20000000
     - TRAVIS_COMMIT_SHORT=${TRAVIS_COMMIT::8}
 
-
 before_script:
   - source .cicd/seed.source
 
@@ -113,7 +112,7 @@ jobs:
 #        - PROVIDER_DB_PASSWORD=mssqldotCMS2019
 
 install:
-  - .cicd/discover.sh travis
+  - .cicd/discover.sh "travis"
   - dotcicd/library/pipeline.sh environmentVars
   - dotcicd/library/pipeline.sh installGCloud
 

@@ -13,7 +13,7 @@ jobs:
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh
-          .cicd/discover.sh github
+          .cicd/discover.sh "github"
 #      - name: Build DotCMS Image
 #        run: |
 #          dotcicd/library/pipeline.sh buildBase
