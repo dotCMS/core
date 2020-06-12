@@ -1,9 +1,9 @@
 package com.dotcms.graphql.business;
 
 import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLString;
 
 import com.dotcms.graphql.InterfaceType;
-import com.dotcms.graphql.datafetcher.page.PagePropertiesDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import graphql.schema.GraphQLOutputType;
@@ -22,28 +22,28 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     public Collection<? extends GraphQLType> getTypes() {
 
         final Map<String, TypeFetcher> pageFields = new HashMap<>(InterfaceType.getContentFields());
-        pageFields.put("cachettl", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("canEdit", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("canLock", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("canRead", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("deleted", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("friendlyName", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("hasTitleImage", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("httpsRequired", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("liveInode", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("pageURI", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("pageUrl", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("shortyLive", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("shortyWorking", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("sortOrder", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("templateIdentifier", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("url", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("workingInode", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("wfExpireDate", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("wfExpireTime", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("wfNeverExpire", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("wfPublishDate", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
-        pageFields.put("wfPublishTime", new TypeFetcher(GraphQLBoolean, new PagePropertiesDataFetcher()));
+        pageFields.put("cachettl", new TypeFetcher(GraphQLString));
+        pageFields.put("canEdit", new TypeFetcher(GraphQLBoolean));
+        pageFields.put("canLock", new TypeFetcher(GraphQLBoolean));
+        pageFields.put("canRead", new TypeFetcher(GraphQLBoolean));
+        pageFields.put("deleted", new TypeFetcher(GraphQLBoolean));
+        pageFields.put("friendlyName", new TypeFetcher(GraphQLString));
+        pageFields.put("hasTitleImage", new TypeFetcher(GraphQLBoolean));
+        pageFields.put("httpsRequired", new TypeFetcher(GraphQLBoolean));
+        pageFields.put("liveInode", new TypeFetcher(GraphQLString));
+        pageFields.put("pageURI", new TypeFetcher(GraphQLString));
+        pageFields.put("pageUrl", new TypeFetcher(GraphQLString));
+        pageFields.put("shortyLive", new TypeFetcher(GraphQLString));
+        pageFields.put("shortyWorking", new TypeFetcher(GraphQLString));
+        pageFields.put("sortOrder", new TypeFetcher(GraphQLString));
+        pageFields.put("templateIdentifier", new TypeFetcher(GraphQLString));
+        pageFields.put("url", new TypeFetcher(GraphQLString));
+        pageFields.put("workingInode", new TypeFetcher(GraphQLString));
+        pageFields.put("wfExpireDate", new TypeFetcher(GraphQLString));
+        pageFields.put("wfExpireTime", new TypeFetcher(GraphQLString));
+        pageFields.put("wfNeverExpire", new TypeFetcher(GraphQLString));
+        pageFields.put("wfPublishDate", new TypeFetcher(GraphQLString));
+        pageFields.put("wfPublishTime", new TypeFetcher(GraphQLString));
 
         typeMap.put("Page", TypeUtil.createObjectType("Page", pageFields));
 
