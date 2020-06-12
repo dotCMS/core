@@ -22,12 +22,14 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -228,18 +230,23 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         String hostIdentifier=map.get("hostIdentifier");
         String langid=map.get("langid");
 
-        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
-        datestr=Long.toString(sdf.parse(datestr).getTime());
+        
+        Date future = Try.of(()->new Date(Long.parseLong(map.get("date")))).getOrElse(new Date(0));
+        
 
-        if(!new Date().before(new Date(Long.parseLong(datestr))))
+        
+        if(future.before(new Date())){
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-        else {
-            req.getSession().setAttribute("tm_host",
-                    APILocator.getHostAPI().find(hostIdentifier, getUser(), false));
-            req.getSession().setAttribute("tm_date", datestr);
-            req.getSession().setAttribute("tm_lang", langid);
-            req.getSession().setAttribute("dotcache", "refresh");
+            return;
         }
+        PageMode.setPageMode(req, PageMode.LIVE);
+        req.getSession().setAttribute("tm_host",
+                APILocator.getHostAPI().find(hostIdentifier, getUser(), false));
+        req.getSession().setAttribute("tm_date", datestr);
+        req.getSession().setAttribute("tm_lang", langid);
+        req.getSession().setAttribute("dotcache", "refresh");
+        
+        
     }
 
     public void stopBrowsing(HttpServletRequest req, HttpServletResponse resp) throws Exception {
