@@ -176,14 +176,22 @@ public class ESIndexResource {
             Map<String, Object> conMap = Try.of(() -> new ContentletToMapTransformer(contentlet).toMaps().get(0))
                             .onFailure(e->Logger.warn(ESIndexResource.class, e.getMessage(), e))
                             .getOrElse(HashMap::new);
-            
-            failure.put("title", contentlet.getTitle());
-            failure.put("inode", contentlet.getInode());
+
             failure.put("identifier", row.getIdentToIndex());
             failure.put("serverId", row.getServerId());
             failure.put("failureReason", row.getLastResult());
             failure.put("priority", row.getPriority());
-            failure.put("contentlet", conMap);
+            if(contentlet!=null) {
+                try {
+                    failure.put("title", contentlet.getTitle());
+                    failure.put("inode", contentlet.getInode());
+                    failure.put("contentlet", conMap);
+                }
+                catch(Exception e) {
+                    Logger.warn(this.getClass(), "unable to map content:" + e, e);
+                }
+            }
+            
             results.add(failure);
         });
 
