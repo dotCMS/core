@@ -23,6 +23,7 @@ jobs:
 #          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Build Integration Tests Image
         run: |
+          export DOT_CICD_CLOUD_PROVIDER=github
           source dotcicd/library/pipeline.sh buildIntegration
         env:
           PROJECT_ID: cicd-246518
