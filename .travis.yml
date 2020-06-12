@@ -118,8 +118,8 @@ jobs:
 
 install:
   - .cicd/discover.sh
-  - dotcicd/library/pipeline.sh environmentVars
-  - dotcicd/library/pipeline.sh installGCloud
+  - dotcicd/library/pipeline/travis/core/environment_vars.sh
+  - dotcicd/library/pipeline/travis/core/install_gcloud.sh
 
 # https://docs.travis-ci.com/user/notifications/#configuring-slack-notifications
 # https://docs.travis-ci.com/user/encryption-keys/#usage
