@@ -119,7 +119,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					}%>
 
 
-				<tr class="<%=(active) ? "trIdxActive" : (building) ? "trIdxBuilding" : "trIdxNothing" %>" id="<%=x%>Row">
+				<tr class="showPointer <%=(active) ? "trIdxActive" : (building) ? "trIdxBuilding" : "trIdxNothing" %>" id="<%=x%>Row">
 					<td  align="center" class="showPointer">
 						<%if(active){ %>
 							<%= LanguageUtil.get(pageContext,"active") %>

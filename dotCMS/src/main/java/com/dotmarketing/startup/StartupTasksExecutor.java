@@ -81,9 +81,9 @@ public class StartupTasksExecutor {
      */
     private int currentDbVersion() {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-            Map<String,Object> results =  new DotConnect().setSQL(select).loadObjectResults().get(0);
-            return  ((Long) results.get("count_versions"))>0
-                        ? ((int) results.get("db_version"))
+            DotConnect db =  new DotConnect().setSQL(select);
+            return  db.getInt("count_versions") >0
+                        ? db.getInt("db_version")
                         : 0;
 
         } catch (Exception e) {
