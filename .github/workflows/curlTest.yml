@@ -2,7 +2,7 @@ name: Release workflow
 on: [pull_request, push]
 
 jobs:
-  core-cicd-job:
+  core-cicd-tests-job:
     name: Core CI/CD
     runs-on: ubuntu-latest
     steps:
@@ -14,27 +14,27 @@ jobs:
         run: |
           chmod +x .cicd/discover.sh
           .cicd/discover.sh
-      - name: Build DotCMS Image
-        run: |
-          dotcicd/library/pipeline/github/core/buildBase.sh
-        env:
-          PROJECT_ID: cicd-246518
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+#      - name: Build DotCMS Image
+#        run: |
+#          dotcicd/library/pipeline.sh buildBase
+#        env:
+#          PROJECT_ID: cicd-246518
+#          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Build Integration Tests Image
         run: |
-          dotcicd/library/pipeline/github/core/buildIntegration.sh
+          dotcicd/library/pipeline.sh buildIntegration
         env:
           PROJECT_ID: cicd-246518
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Run Unit Tests
         run: |
-          dotcicd/library/pipeline/github/core/runUnit.sh
+          dotcicd/library/pipeline.sh runUnit
         env:
           PROJECT_ID: cicd-246518
           EXPORT_REPORTS: true
 #      - name: Run Curl Tests
 #        run: |
-#          dotcicd/library/pipeline/github/core/runCurl.sh
+#          dotcicd/library/pipeline.sh runCurl
 #        env:
 #          PROJECT_ID: cicd-246518
 #          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}

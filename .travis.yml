@@ -47,39 +47,39 @@ if: >-
 # https://docs.travis-ci.com/user/build-stages
 jobs:
   include:
-    - stage: build base images
-      name: build dotcms image
-      script: bash dotcicd/library/pipeline/travis/core/buildBase.sh
+#    - stage: build base images
+#      name: build dotcms image
+#      script: bash dotcicd/library/pipeline.sh buildBase
     - name: build integration image
-      script: bash dotcicd/library/pipeline/travis/core/buildIntegration.sh
+      script: bash dotcicd/library/pipeline.sh buildIntegration
     - stage: run tests
       name: unit tests
-      script: bash dotcicd/library/pipeline/travis/core/runUnit.sh
+      script: bash dotcicd/library/pipeline.sh runUnit
 #    - name: postgres integration tests
-#      script: bash dotcicd/library/pipeline/travis/core/runIntegration.sh
+#      script: bash dotcicd/library/pipeline.sh runIntegration
 #      if: >-
 #        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
 #      env: DB_TYPE=postgres
 #    - name: mysql integration tests
-#      script: bash dotcicd/library/pipeline/travis/core/runIntegration.sh
+#      script: bash dotcicd/library/pipeline.sh runIntegration
 #      if: >-
 #        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
 #        OR commit_message =~ /(\[travis\]|\[travis mysql\])/
 #      env: DB_TYPE=mysql
 #    - name: oracle integration tests
-#      script: bash dotcicd/library/pipeline/travis/core/runIntegration.sh
+#      script: bash dotcicd/library/pipeline.sh runIntegration
 #      if: >-
 #        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
 #        OR commit_message =~ /(\[travis\]|\[travis oracle\])/
 #      env: DB_TYPE=oracle
 #    - name: mssql integration tests
-#      script: bash dotcicd/library/pipeline/travis/core/runIntegration.sh
+#      script: bash dotcicd/library/pipeline.sh runIntegration
 #      if: >-
 #        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
 #        OR commit_message =~ /(\[travis\]|\[travis mssql\])/
 #      env: DB_TYPE=mssql
 #    - name: postgres postman tests
-#      script: bash dotcicd/library/pipeline/travis/core/runCurl.sh
+#      script: bash dotcicd/library/pipeline.sh runCurl
 #      if: >-
 #        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
 #      env:
@@ -87,7 +87,7 @@ jobs:
 #        - PROVIDER_DB_USERNAME=postgres
 #        - PROVIDER_DB_PASSWORD=postgres
 #    - name: mysql postman tests
-#      script: bash dotcicd/library/pipeline/travis/core/runCurl.sh
+#      script: bash dotcicd/library/pipeline.sh runCurl
 #      if: >-
 #        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
 #        OR commit_message =~ /(\[travis\]|\[travis mysql\])/
@@ -96,7 +96,7 @@ jobs:
 #        - PROVIDER_DB_USERNAME=mysql
 #        - PROVIDER_DB_PASSWORD=mysql
 ##    - name: oracle postman tests
-##      script: bash dotcicd/library/pipeline/travis/core/runCurl.sh
+##      script: bash dotcicd/library/pipeline.sh runCurl
 ##      if: >-
 ##        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
 ##        OR commit_message =~ /(\[travis\]|\[travis oracle\])/
@@ -105,7 +105,7 @@ jobs:
 ##        - PROVIDER_DB_USERNAME=oracle
 ##        - PROVIDER_DB_PASSWORD=oracle
 #    - name: mssql postman tests
-#      script: bash dotcicd/library/pipeline/travis/core/runCurl.sh
+#      script: bash dotcicd/library/pipeline.sh runCurl
 #      if: >-
 #        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
 #        OR commit_message =~ /(\[travis\]|\[travis mssql\])/
@@ -116,8 +116,8 @@ jobs:
 
 install:
   - .cicd/discover.sh
-  - dotcicd/library/pipeline/travis/core/environment_vars.sh
-  - dotcicd/library/pipeline/travis/core/install_gcloud.sh
+  - dotcicd/library/pipeline.sh environmentVars
+  - dotcicd/library/pipeline.sh installGCloud
 
 # https://docs.travis-ci.com/user/notifications/#configuring-slack-notifications
 # https://docs.travis-ci.com/user/encryption-keys/#usage
