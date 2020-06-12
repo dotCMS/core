@@ -5,6 +5,9 @@ jobs:
   core-cicd-tests-job:
     name: Core CI/CD
     runs-on: ubuntu-latest
+    env:
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
@@ -12,7 +15,6 @@ jobs:
           fetch-depth: 1
       - name: Prepare dot-cicd
         run: |
-          export DOT_CICD_CLOUD_PROVIDER=github
           chmod +x .cicd/discover.sh
           .cicd/discover.sh
 #      - name: Build DotCMS Image
