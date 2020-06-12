@@ -126,21 +126,25 @@ public class BundlePublisherResource {
 
 
 	@WrapInTransaction
-	private void publishBundle(final String fileName,
+	private void publishBundle(final String fileNameSent,
 								  final String groupId,
 								  final String endpointId,
-								  final String bundleName,
+								  final String bundleNameSent,
 								  final boolean forcePush,
 								  final HttpServletRequest request,
 								  final String remoteIP,
 								  final PublishingEndPoint sendingEndPointByAddress) throws Exception {
 
+    	final String fileName = UtilMethods.isSet(fileNameSent) ? fileNameSent : generatedBundleFileName();
+		final String bundleName =  UtilMethods.isSet(bundleNameSent) ? bundleNameSent : fileName;
+
 		try (InputStream bundleStream = request.getInputStream()) {
 
 			final String bundlePath         = ConfigUtils.getBundlePath()+ File.separator + MY_TEMP;
 			final String bundleFolder       = fileName.substring(0, fileName.indexOf(".tar.gz"));
+			final String sendingEndPoint = sendingEndPointByAddress != null ? sendingEndPointByAddress.getId() : remoteIP;
 			final PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(
-					sendingEndPointByAddress.getId(), sendingEndPointByAddress.getId(), bundleFolder, true);
+					sendingEndPoint, sendingEndPoint, bundleFolder, true);
 
 			if(bundleName.trim().length() > 0) {
 				// save bundle if it doesn't exists
@@ -172,6 +176,10 @@ public class BundlePublisherResource {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 			throw e;
 		}
+	}
+
+	private String generatedBundleFileName() {
+		return String.format("bundle_$s.tar.gz" + System.currentTimeMillis());
 	}
 
 	private boolean isAdmin(final User user) {
