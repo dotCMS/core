@@ -19,14 +19,7 @@ env:
     - TRAVIS_COMMIT_SHORT=${TRAVIS_COMMIT::8}
 
 before_install:
-  - chmod +x travis/curl.sh
-  - chmod +x travis/environment_vars.sh
-  - chmod +x travis/install_gcloud.sh
-  - chmod +x travis/printStoragePaths.sh
-  - chmod +x travis/submit.sh
-  - chmod +x travis/submitCurl.sh
-  - chmod +x travis/integration.sh
-  - chmod +x travis/unit.sh
+  - chmod +x travis/discover_cicd.sh
 
 # Commit message format
 # [travis] -> executes all dbs and unit tests
@@ -51,45 +44,50 @@ if: >-
 # https://docs.travis-ci.com/user/build-stages
 jobs:
   include:
-    - stage: build image
-      script: bash travis/submit.sh
-    - stage: build curl image
-      script: bash travis/submitCurl.sh
-    - stage: tests
+    - stage: build base images
+      name: build dotcms image
+      script: bash dotcicd/library/pipeline/travis/core/buildBase.sh
+    - name: build integration image
+      script: bash dotcicd/library/pipeline/travis/core/buildIntegration.sh
+    - stage: build ext images
+      name: build postman image
+      script: bash dotcicd/library/pipeline/travis/core/buildCurl.sh
+    - stage: run tests
       name: unit tests
-      script: bash travis/unit.sh
-    - script: bash travis/integration.sh
+      script: bash dotcicd/library/pipeline/travis/core/runUnit.sh
+    - name: postgres integration tests
+      script: bash dotcicd/library/pipeline/travis/core/runIntegration.sh
       if: >-
         commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
       env: DB_TYPE=postgres
-      name: postgres
-    - script: bash travis/integration.sh
+    - name: mysql integration tests
+      script: bash dotcicd/library/pipeline/travis/core/runIntegration.sh
       if: >-
         (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
         OR commit_message =~ /(\[travis\]|\[travis mysql\])/
       env: DB_TYPE=mysql
-      name: mysql
-    - script: bash travis/integration.sh
+    - name: oracle integration tests
+      script: bash dotcicd/library/pipeline/travis/core/runIntegration.sh
       if: >-
         (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
         OR commit_message =~ /(\[travis\]|\[travis oracle\])/
       env: DB_TYPE=oracle
-      name: oracle
-    - script: bash travis/integration.sh
+    - name: mssql integration tests
+      script: bash dotcicd/library/pipeline/travis/core/runIntegration.sh
       if: >-
         (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
         OR commit_message =~ /(\[travis\]|\[travis mssql\])/
       env: DB_TYPE=mssql
-      name: mssql
-    - script: bash travis/curl.sh
+    - name: postgres postman tests
+      script: bash dotcicd/library/pipeline/travis/core/runCurl.sh
       if: >-
-          commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
+        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
       env:
         - DB_TYPE=postgres
         - PROVIDER_DB_USERNAME=postgres
         - PROVIDER_DB_PASSWORD=postgres
-      name: curl tests postgres
-    - script: bash travis/curl.sh
+    - name: mysql postman tests
+      script: bash dotcicd/library/pipeline/travis/core/runCurl.sh
       if: >-
         (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
         OR commit_message =~ /(\[travis\]|\[travis mysql\])/
@@ -97,29 +95,29 @@ jobs:
         - DB_TYPE=mysql
         - PROVIDER_DB_USERNAME=mysql
         - PROVIDER_DB_PASSWORD=mysql
-      name: curl tests mysql
-    - script: bash travis/curl.sh
-      if: >-
-        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
-        OR commit_message =~ /(\[travis\]|\[travis oracle\])/
-      env:
-        - DB_TYPE=oracle
-        - PROVIDER_DB_USERNAME=oracle
-        - PROVIDER_DB_PASSWORD=oracle
-      name: curl tests oracle
-    - script: bash travis/curl.sh
+#    - name: oracle postman tests
+#      script: bash dotcicd/library/pipeline/travis/core/runCurl.sh
+#      if: >-
+#        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+#        OR commit_message =~ /(\[travis\]|\[travis oracle\])/
+#      env:
+#        - DB_TYPE=oracle
+#        - PROVIDER_DB_USERNAME=oracle
+#        - PROVIDER_DB_PASSWORD=oracle
+    - name: mssql postman tests
+      script: bash dotcicd/library/pipeline/travis/core/runCurl.sh
       if: >-
         (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
         OR commit_message =~ /(\[travis\]|\[travis mssql\])/
       env:
         - DB_TYPE=mssql
         - PROVIDER_DB_USERNAME=sa
-        - PROVIDER_DB_PASSWORD=dotCMS12345
-      name: curl tests mssql
+        - PROVIDER_DB_PASSWORD=mssqldotCMS2019
 
 install:
-  - travis/environment_vars.sh
-  - travis/install_gcloud.sh
+  - travis/discover_cicd.sh
+  - dotcicd/library/pipeline/travis/core/environment_vars.sh
+  - dotcicd/library/pipeline/travis/core/install_gcloud.sh
 
 # https://docs.travis-ci.com/user/notifications/#configuring-slack-notifications
 # https://docs.travis-ci.com/user/encryption-keys/#usage

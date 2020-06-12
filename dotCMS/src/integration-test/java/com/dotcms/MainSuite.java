@@ -1,6 +1,8 @@
 package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.enterprise.publishing.remote.DependencyBundlerTest;
@@ -268,6 +270,8 @@ import org.junit.runners.Suite.SuiteClasses;
         SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
+        ElasticsearchUtilTest.class,
+        ESReadOnlyMonitorTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
         DependencyBundlerTest.class,

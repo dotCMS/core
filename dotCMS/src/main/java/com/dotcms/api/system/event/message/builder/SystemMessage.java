@@ -4,6 +4,8 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -66,5 +68,24 @@ public class SystemMessage implements Serializable {
                 ", severity=" + severity +
                 ", type=" + type +
                 '}';
+    }
+
+    @Override
+    public boolean equals(final Object another) {
+        if (this == another) return true;
+        if (another == null || getClass() != another.getClass()) return false;
+        final SystemMessage that = (SystemMessage) another;
+        return life == that.life &&
+                Objects.equals(message, that.message) &&
+                Arrays.equals(portletIdList, that.portletIdList) &&
+                severity == that.severity &&
+                type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(message, life, severity, type);
+        result = 31 * result + Arrays.hashCode(portletIdList);
+        return result;
     }
 } // E:O:F:SystemMessage.
