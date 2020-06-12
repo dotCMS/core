@@ -238,7 +238,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
-        final IHTMLPage page = htmlPageUrl.getHTMLPage();
+        final HTMLPageAsset page = htmlPageUrl.getHTMLPage();
 
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
@@ -404,7 +404,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             return urlMapInfo != null ? urlMapInfo.getUrlMapped() : htmlPage.getURI();
         }
 
-        public IHTMLPage getHTMLPage() {
+        public HTMLPageAsset getHTMLPage() {
             return htmlPage;
         }
 

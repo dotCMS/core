@@ -56,7 +56,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             pageAsset.getMap().put("URLMapContent", pageUrl.getUrlMapInfo());
 
             final DotContentletTransformer transformer = new DotTransformerBuilder()
-                    .graphQLDataFetchOptions().content(pageAsset).build();
+                    .graphQLDataFetchOptions().content(pageAsset).forUser(user).build();
 
             return transformer.hydrate().get(0);
         } catch (Exception e) {
