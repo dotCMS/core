@@ -18,6 +18,9 @@ env:
     - TRAVIS_WORKER_MAX_LOG_LENGTH=20000000
     - TRAVIS_COMMIT_SHORT=${TRAVIS_COMMIT::8}
 
+before_install:
+  - chmod +x .cicd/discover.sh
+
 before_script:
   - source .cicd/seed.source
 
