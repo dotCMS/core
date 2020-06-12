@@ -24,6 +24,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * This class is deprecated as it has proven to lack flexibility
+ * @deprecated As of 5.3.1 instead use {@link DotContentletTransformerImpl}
+ */
+@Deprecated
 public class ContentletToMapTransformer {
 
     private static final String NA = "N/A";

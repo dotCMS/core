@@ -1,5 +1,3 @@
-<%@page import="com.dotcms.enterprise.LicenseUtil"%>
-<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
@@ -9,23 +7,6 @@
 
 <% Contentlet contentlet =  (Contentlet) APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(request.getParameter("id"));  %>
 
-
-
-<%if( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
-	<div class="portlet-wrapper">
-		<div class="subNavCrumbTrail">
-			<ul id="subNavCrumbUl">
-				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.rules")%></a>
-				</li>
-
-			</ul>
-			<div class="clear"></div>
-		</div>
-		<jsp:include page="/WEB-INF/jsp/rules/not_licensed.jsp"></jsp:include>
-
-	</div>
-<%return;}%>
 
 	
 	<div id="rules-engine-container" class="portlet-wrapper">
