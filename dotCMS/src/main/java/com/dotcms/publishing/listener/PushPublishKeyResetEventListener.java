@@ -16,7 +16,7 @@ import java.util.List;
  * Once registered this listener takes care or recreating the Push-Publish Auth-Keys
  * First decrypting the old content using the original Key then re-inserting it using the new Key.
  */
-public class PushPublishKeyResetEventListener implements EventSubscriber<CompanyKeyResetEvent> {
+public final class PushPublishKeyResetEventListener implements EventSubscriber<CompanyKeyResetEvent> {
 
     private final PublishingEndPointAPI publishingEndPointAPI;
 

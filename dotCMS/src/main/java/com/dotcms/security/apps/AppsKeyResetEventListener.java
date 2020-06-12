@@ -10,7 +10,7 @@ import java.io.IOException;
 /**
  * Once registered this listener takes care of resetting the
  */
-public class AppsKeyResetEventListener implements EventSubscriber<CompanyKeyResetEvent> {
+public final class AppsKeyResetEventListener implements EventSubscriber<CompanyKeyResetEvent> {
 
     private final AppsAPI appsAPI;
 

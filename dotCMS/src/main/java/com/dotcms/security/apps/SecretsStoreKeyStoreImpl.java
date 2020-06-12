@@ -431,9 +431,8 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     public void backupAndRemoveKeyStore() throws IOException {
         final File secretStoreFile = new File(secretsKeyStorePath);
         if (!secretStoreFile.exists()) {
-            final String error = String.format("KeyStore file `%s` does NOT exist therefore it can not be backed-up. ",secretsKeyStorePath);
-            Logger.warn(SecretsStoreKeyStoreImpl.class, error);
-            throw new DotRuntimeException(error);
+            Logger.warn(SecretsStoreKeyStoreImpl.class, String.format("KeyStore file `%s` does NOT exist therefore it can not be backed-up. ",secretsKeyStorePath));
+            return;
         }
         final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
         final String name = secretStoreFile.getName();

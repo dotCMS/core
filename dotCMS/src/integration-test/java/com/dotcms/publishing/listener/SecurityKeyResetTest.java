@@ -2,94 +2,81 @@ package com.dotcms.publishing.listener;
 
 import static com.dotcms.publisher.business.PublisherTestUtil.createEndpoint;
 import static com.dotcms.publisher.business.PublisherTestUtil.createEnvironment;
-import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.bundle.business.BundleAPI;
-import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
-import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.struts.MultiMessageResources;
-import com.liferay.portal.struts.MultiMessageResourcesFactory;
-import java.io.File;
-import java.util.ArrayList;
+import com.liferay.util.Encryptor;
+import java.security.Key;
 import java.util.List;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class SecurityKeyResetTest extends IntegrationTestBase {
 
-     @BeforeClass
-     public static void prepare() throws Exception {
-          //Setting web app environment
-          IntegrationTestInitService.getInstance().init();
+    @BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
+    }
 
-          //If I don't set this we'll end-up getting a ClassCasException at LanguageVariablesHandler.java:75
-          when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
-                  .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
+    /**
+     * Given scenario: This basically tests that after a key reset the push publish endpoint are
+     * still usable for decrypting important stuff using the new key; Expected: The endpoints that
+     * were using the key that got re-generated remain usable.
+     */
+    @Test
+    public void Test_Push_Publish_Endpoints_Have_Valid_Keys_After_Key_Reset_Expect_Success() throws Exception {
 
-          LicenseTestUtil.getLicense();
-/*
-          contentletAPI = APILocator.getContentletAPI();
+        final PublishingEndPointAPI publisherEndPointAPI = APILocator.getPublisherEndPointAPI();
 
-          final User user = mock(User.class);
-          when(user.getUserId()).thenReturn(ADMIN_DEFAULT_ID);
-          when(user.getEmailAddress()).thenReturn(ADMIN_DEFAULT_MAIL);
-          when(user.getFullName()).thenReturn(ADMIN_NAME);
-          when(user.getLocale()).thenReturn(Locale.getDefault());
+        final List<PublishingEndPoint> allEndPoints = publisherEndPointAPI.getAllEndPoints();
+        for (final PublishingEndPoint endPoint : allEndPoints) {
+            publisherEndPointAPI.deleteEndPointById(endPoint.getId());
+        }
 
-          final WebResource webResource = mock(WebResource.class);
-          final InitDataObject dataObject = mock(InitDataObject.class);
-          when(dataObject.getUser()).thenReturn(user);
-          when(webResource
-                  .init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(),
-                          anyString())).thenReturn(dataObject);
+        final CompanyAPI companyAPI = CompanyAPIFactory.getInstance().getCompanyAPI();
+        final Company company = companyAPI.getDefaultCompany();
 
-          languageAPI = APILocator.getLanguageAPI();
+        //This tests only makes sense if we reuse the same endpoint for both attempts
+        final String seedText = "12345678";
+        final Key originalKey = company.getKeyObj();
+        final User admin = TestUserUtils.getAdminUser();
+        final Environment environment = createEnvironment(admin);
+        PublishingEndPoint endpoint = createEndpoint(environment, originalKey, seedText);
+        final String authKeyBefore = endpoint.getAuthKey().toString();
 
-          host = new SiteDataGen().nextPersisted();
+        Assert.assertTrue(PushPublisher.retriveEndpointKeyDigest(endpoint).isPresent());
 
-          adminUser = TestUserUtils.getAdminUser();
-*/
-     }
+        //Regenerate the company key spawns an event that should be handled by anyone who might be affected by the change in the keys.
+        final Company updatedCompany = companyAPI.regenerateKey(company, admin);
 
-     @Test
-     public void Test_Push_Publish_After_Key_Reset_Expect_Success() throws Exception{
+        //Refresh endpoint to see the newly reset key
+        endpoint = publisherEndPointAPI.findEndPointById(endpoint.getId());
 
-          final List<String> assetIds = new ArrayList<>();
-          final PublisherAPI publisherAPI = PublisherAPI.getInstance();
-          final BundleAPI bundleAPI = APILocator.getBundleAPI();
-          Bundle bundle = null;
+        final String authKeyAfter = endpoint.getAuthKey().toString();
+        //After the company key reset event the endpoint should have changed.
+        Assert.assertNotEquals(authKeyBefore, authKeyAfter);
 
-          final List<Contentlet> contentlets = new ArrayList<>();
-          final Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
+        Assert.assertTrue(PushPublisher.retriveEndpointKeyDigest(endpoint).isPresent());
 
-               //final Contentlet contentlet = contentletDataGen.host(host).setProperty("title","lang is "+language.toString()).languageId(language.getId()).nextPersisted();
-               //assetIds.add(contentlet.getIdentifier());
-               //contentlets.add(contentlet);
+        //the company so we can access the new Key that
+        final String decryptedText = Encryptor.decrypt(updatedCompany.getKeyObj(), authKeyAfter);
+        Assert.assertEquals("These two must match", seedText, decryptedText);
 
+    }
 
-          File file = null;
-           User admin = TestUserUtils.getAdminUser();
-
-              Environment environment = createEnvironment(admin);
-              PublishingEndPoint endpoint = createEndpoint(environment);
-
-               //Save the endpoint.
-               bundle = new Bundle("testBundle", null, null, admin.getUserId());
-               bundleAPI.saveBundle(bundle);
-
-               publisherAPI.saveBundleAssets(assetIds, bundle.getId(), admin);
-     }
 
 }

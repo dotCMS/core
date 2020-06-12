@@ -504,7 +504,7 @@ public class CMSConfigResource {
     @Path ("/regenerateKey")
     @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
-    public Response regenerateKey ( @Context HttpServletRequest request,
+    public Response regenerateKey ( @Context final HttpServletRequest request,
             @Context final HttpServletResponse response) throws JSONException, IOException {
         try {
             final InitDataObject initData =
