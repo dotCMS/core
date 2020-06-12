@@ -18,7 +18,7 @@ env:
     - TRAVIS_WORKER_MAX_LOG_LENGTH=20000000
     - TRAVIS_COMMIT_SHORT=${TRAVIS_COMMIT::8}
     - DOT_CICD_CLOUD_PROVIDER=travis
-    - DOT_CICD_TARGETR=core
+    - DOT_CICD_TARGET=core
 
 before_install:
   - chmod +x .cicd/discover.sh
