@@ -52,10 +52,10 @@ jobs:
 #      name: build dotcms image
 #      script: bash dotcicd/library/pipeline.sh buildBase
     - name: build integration image
-      script: bash source .cicd/seed.source && dotcicd/library/pipeline.sh buildIntegration
+      script: bash dotcicd/library/pipeline.sh buildIntegration
     - stage: run tests
       name: unit tests
-      script: bash source .cicd/seed.source && dotcicd/library/pipeline.sh runUnit
+      script: bash dotcicd/library/pipeline.sh runUnit
 #    - name: postgres integration tests
 #      script: bash dotcicd/library/pipeline.sh runIntegration
 #      if: >-
