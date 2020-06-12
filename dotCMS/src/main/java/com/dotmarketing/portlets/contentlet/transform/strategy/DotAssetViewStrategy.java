@@ -52,6 +52,7 @@ public class DotAssetViewStrategy extends WebAssetStrategy<Contentlet> {
         String fileName = "unknown";
         long fileSize = 0L;
         try {
+            //TODO: in a near future this must be read from a pre-cached metadata.
             final File asset = dotAsset.getBinary(ASSET);
             fileName = asset.getName();
             fileSize = asset.length();

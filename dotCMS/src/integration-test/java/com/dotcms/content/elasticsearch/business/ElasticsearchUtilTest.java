@@ -4,6 +4,9 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -13,19 +16,32 @@ import org.elasticsearch.common.settings.Settings;
 import org.junit.BeforeClass;
 import com.dotcms.util.IntegrationTestInitService;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 
 import static org.jgroups.util.Util.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(DataProviderRunner.class)
 public class ElasticsearchUtilTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+    }
+
+    @DataProvider
+    public static Object[] clusterReadOnlyProperties() {
+        return new String[]{"cluster.blocks.read_only", "cluster.blocks.read_only_allow_delete"};
+    }
+
+    @DataProvider
+    public static Object[] indexReadOnlyProperties() {
+        return new String[]{"index.blocks.read_only", "index.blocks.read_only_allow_delete"};
     }
 
     /**
@@ -36,17 +52,18 @@ public class ElasticsearchUtilTest {
      * @throws DotDataException
      */
     @Test
-    public void shouldReturnFalseIfTheCurrentIndicesAreNotReadOnly() throws DotDataException, IOException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldReturnFalseIfTheCurrentIndicesAreNotReadOnly(final String propertyName) throws DotDataException, IOException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         try {
-            putReadOnly(indiciesInfo.getWorking(), false);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, false);
 
             final boolean readOnly = ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking());
 
             assertFalse(readOnly);
         } finally {
-            putReadOnly(indiciesInfo.getWorking(), false);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, false);
         }
     }
 
@@ -58,17 +75,18 @@ public class ElasticsearchUtilTest {
      * @throws DotDataException
      */
     @Test
-    public void shouldReturnTrueIfTheCurrentIndicesAreReadOnly() throws DotDataException, IOException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldReturnTrueIfTheCurrentIndicesAreReadOnly(final String propertyName) throws DotDataException, IOException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         try {
-            putReadOnly(indiciesInfo.getWorking(), true);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, true);
 
             final boolean readOnly = ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking());
 
             assertTrue(readOnly);
         } finally {
-            putReadOnly(indiciesInfo.getWorking(), false);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, false);
         }
     }
 
@@ -92,18 +110,19 @@ public class ElasticsearchUtilTest {
      * @throws DotDataException
      */
     @Test
-    public void shouldPutReadonlyInFalse() throws DotDataException, IOException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldPutReadonlyInFalse(final String propertyName) throws DotDataException, IOException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         try {
-            putReadOnly(indiciesInfo.getWorking(), true);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, true);
             ElasticsearchUtil.putReadOnlyToFalse(indiciesInfo.getWorking());
 
             final boolean readOnly = ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking());
 
             assertFalse(readOnly);
         } finally {
-            putReadOnly(indiciesInfo.getWorking(), false);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, false);
         }
     }
 
@@ -126,17 +145,18 @@ public class ElasticsearchUtilTest {
      * @throws DotDataException
      */
     @Test()
-    public void shouldReturnTrueWhenWorkingIndexIsReadOnly() throws DotDataException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldReturnTrueWhenWorkingIndexIsReadOnly(final String propertyName) throws DotDataException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         try {
-            putReadOnly(indiciesInfo.getLive(), false);
-            putReadOnly(indiciesInfo.getWorking(), true);
+            putReadOnly(indiciesInfo.getLive(), propertyName, false);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, true);
 
             final boolean anyCurrentIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
             assertTrue(anyCurrentIndicesReadOnly);
         } finally {
-            putReadOnly(indiciesInfo.getWorking(), false);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, false);
         }
     }
 
@@ -148,17 +168,18 @@ public class ElasticsearchUtilTest {
      * @throws DotDataException
      */
     @Test()
-    public void shouldReturnTrueWhenLiveIndexIsReadOnly() throws DotDataException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldReturnTrueWhenLiveIndexIsReadOnly(final String propertyName) throws DotDataException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         try {
-            putReadOnly(indiciesInfo.getLive(), true);
-            putReadOnly(indiciesInfo.getWorking(), false);
+            putReadOnly(indiciesInfo.getLive(), propertyName, true);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, false);
 
             final boolean anyCurrentIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
             assertTrue(anyCurrentIndicesReadOnly);
         } finally {
-            putReadOnly(indiciesInfo.getLive(), false);
+            putReadOnly(indiciesInfo.getLive(), propertyName, false);
         }
     }
 
@@ -171,18 +192,19 @@ public class ElasticsearchUtilTest {
      * @throws DotDataException
      */
     @Test()
-    public void shouldSetWorkingAndLiveIndexToReadOnly() throws DotDataException, ElasticsearchResponseException, IOException {
+    @UseDataProvider("indexReadOnlyProperties")
+    public void shouldSetWorkingAndLiveIndexToReadOnly(final String propertyName) throws DotDataException, ElasticsearchResponseException, IOException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         try {
-            putReadOnly(indiciesInfo.getLive(), false);
-            putReadOnly(indiciesInfo.getWorking(), false);
+            putReadOnly(indiciesInfo.getLive(), propertyName, false);
+            putReadOnly(indiciesInfo.getWorking(), propertyName, false);
 
             ElasticsearchUtil.setLiveAndWorkingIndicesToWriteMode();
             assertFalse(ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getLive()));
             assertFalse( ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking()));
         } finally {
-            putReadOnly(indiciesInfo.getLive(), false);
+            putReadOnly(indiciesInfo.getLive(), propertyName, false);
         }
     }
 
@@ -192,9 +214,10 @@ public class ElasticsearchUtilTest {
      * Should: set read only property to false
      */
     @Test
-    public void setClusterReadOnlyModeToFalse(){
+    @UseDataProvider("clusterReadOnlyProperties")
+    public void setClusterReadOnlyModeToFalse(final String propertyName) throws ElasticsearchResponseException {
         try {
-            setClusterAsReadOnly(true);
+            setClusterAsReadOnly(propertyName, true);
 
             final boolean clusterInReadOnlyMode = ElasticsearchUtil.isClusterInReadOnlyMode();
             assertTrue(clusterInReadOnlyMode);
@@ -202,7 +225,7 @@ public class ElasticsearchUtilTest {
             ElasticsearchUtil.setClusterToWriteMode();
             assertFalse(ElasticsearchUtil.isClusterInReadOnlyMode());
         }finally {
-            setClusterAsReadOnly(false);
+            setClusterAsReadOnly(propertyName, false);
         }
     }
 
@@ -212,8 +235,9 @@ public class ElasticsearchUtilTest {
      * Should: return false
      */
     @Test
-    public void shouldReturnFalseWhenTheClusterIsNotInReadOnlyMode(){
-        setClusterAsReadOnly(false);
+    @UseDataProvider("clusterReadOnlyProperties")
+    public void shouldReturnFalseWhenTheClusterIsNotInReadOnlyMode(final String propertyName){
+        setClusterAsReadOnly(propertyName, false);
         assertFalse(ElasticsearchUtil.isClusterInReadOnlyMode());
     }
 
@@ -223,21 +247,21 @@ public class ElasticsearchUtilTest {
      * Should: return true
      */
     @Test
-    public void shouldReturnFalseWhenTheClusterIsInReadOnlyMode(){
+    @UseDataProvider("clusterReadOnlyProperties")
+    public void shouldReturnFalseWhenTheClusterIsInReadOnlyMode(final String propertyName){
         try {
-            setClusterAsReadOnly(true);
+            setClusterAsReadOnly(propertyName, true);
             assertTrue(ElasticsearchUtil.isClusterInReadOnlyMode());
         }finally {
-            setClusterAsReadOnly(false);
+            setClusterAsReadOnly(propertyName, false);
         }
     }
 
-    private static AcknowledgedResponse putReadOnly(final String indexName, final boolean value) {
+    private static AcknowledgedResponse putReadOnly(final String indexName, final String propertyName, final boolean value) {
         final UpdateSettingsRequest request = new UpdateSettingsRequest(indexName);
 
         final Settings.Builder settingBuilder = Settings.builder()
-                .put("index.blocks.read_only_allow_delete", value)
-                .put("index.blocks.read_only", value);
+                .put(propertyName, value);
 
         request.settings(settingBuilder);
 
@@ -247,11 +271,11 @@ public class ElasticsearchUtilTest {
         );
     }
 
-    private static AcknowledgedResponse setClusterAsReadOnly(final boolean value) {
+    private static AcknowledgedResponse setClusterAsReadOnly(final String propertyName, final boolean value) {
         final ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest();
 
         final Settings.Builder settingBuilder = Settings.builder()
-                .put("cluster.blocks.read_only", value);
+                .put(propertyName, value);
 
         request.persistentSettings(settingBuilder);
 

@@ -57,6 +57,7 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
             for (final Field field : binaries) {
                 try {
                     map.put(field.variable() + "Map", transform(field, contentlet));
+                    //TODO: in a near future this must be read from a pre-cached metadata.
                     final File conBinary = contentlet.getBinary(field.variable());
                     if (conBinary != null) {
                         //This clearly replaces the binary by a string which is the expected output on BinaryToMapTransformer.
@@ -77,6 +78,7 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
     public static Map<String, Object> transform(final Field field, final Contentlet contentlet) {
         File file;
         try {
+            //TODO: in a near future this must be read from a pre-cached metadata.
             file = contentlet.getBinary(field.variable());
         } catch (IOException e) {
             throw new DotStateException(e);

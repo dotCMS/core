@@ -8,6 +8,10 @@ import java.util.List;
  */
 public interface DotContentletTransformer extends DotMapViewTransformer {
 
+    /**
+     * A hydrate method typically will add all the extra params but still return a contentlet.
+     * @return list of contentlets
+     */
     List<Contentlet> hydrate();
 
 }

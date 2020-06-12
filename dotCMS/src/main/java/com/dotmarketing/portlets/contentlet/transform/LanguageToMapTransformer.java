@@ -1,8 +1,9 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import static java.util.Collections.emptyMap;
+
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -18,13 +19,9 @@ public class LanguageToMapTransformer implements FieldsToMapTransformer {
             throw new DotStateException("Contentlet needs an inode to get fields");
         }
 
-        final List<Map<String, Object>> maps =
-                new DotTransformerBuilder().languageToMapTransformer().content(con).build().toMaps();
-        if (maps.isEmpty()) {
-            this.mapOfMaps = Collections.emptyMap();
-        } else {
-            this.mapOfMaps = maps.get(0);
-        }
+        final List<Map<String, Object>> maps = new DotTransformerBuilder().languageToMapTransformer().content(con).build().toMaps();
+        this.mapOfMaps = maps.stream().findFirst().orElse(emptyMap());
+
     }
 
     @Override

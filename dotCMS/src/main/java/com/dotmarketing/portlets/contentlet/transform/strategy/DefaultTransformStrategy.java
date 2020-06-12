@@ -45,7 +45,6 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -199,24 +198,24 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                     final String velocityVarName = field.variable();
                     //Extra precaution in case we are attempting to process a contentlet that has already been transformed.
                     if (map.get(velocityVarName) instanceof File) {
-                        final File conBinary = contentlet.getBinary(field.variable());
+                        final File conBinary = (File) map.get(velocityVarName); //contentlet.getBinary(field.variable());
                         if (null != conBinary) {
-                            //If we want to see binaries. The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
-
-                            if (conBinary.exists()) {
-                                final String dAPath = "/dA/%s/%s/%s";
-                                map.put(field.variable() + "Version",
-                                        String.format(dAPath, contentlet.getInode(),
-                                                field.variable(), conBinary.getName()));
-                                map.put(field.variable(),
-                                        String.format(dAPath, contentlet.getIdentifier(),
-                                                field.variable(), conBinary.getName()));
-                                map.put(field.variable() + "ContentAsset",
-                                        contentlet.getIdentifier() + "/" + field.variable());
-                            }
+                            //The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
+                            //TODO: in a near future this must be read from a pre-cached metadata.
+                            final String dAPath = "/dA/%s/%s/%s";
+                            map.put(field.variable() + "Version",
+                                    String.format(dAPath, contentlet.getInode(),
+                                            field.variable(), conBinary.getName()));
+                            map.put(field.variable(),
+                                    String.format(dAPath, contentlet.getIdentifier(),
+                                            field.variable(), conBinary.getName()));
+                            map.put(field.variable() + "ContentAsset",
+                                    contentlet.getIdentifier() + "/" + field.variable());
+                        } else {
+                            Logger.warn(FileAssetViewStrategy.class,"We're missing a binary");
                         }
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     Logger.warn(this,
                             "Unable to get Binary from field with var " + field.variable());
                 }
@@ -234,7 +233,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         final boolean includeCategoryName = options.contains(CATEGORIES_NAME);
         if (includeCategoryName || allCategoriesInfo) {
             try {
-                final List<Category> cats = toolBox.categoryAPI.getParents(contentlet, user, true);
+                final List<Category> categories = toolBox.categoryAPI.getParents(contentlet, user, true);
                 final List<CategoryField> categoryFields = contentlet.getContentType()
                         .fields(CategoryField.class).stream().filter(Objects::nonNull)
                         .map(CategoryField.class::cast).collect(Collectors.toList());
@@ -244,7 +243,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                             .find(categoryField.values(), user, true);
                     final List<Category> childCategories = new ArrayList<>();
                     if (parentCategory != null) {
-                        for (final Category category : cats) {
+                        for (final Category category : categories) {
                             if (toolBox.categoryAPI
                                     .isParent(category, parentCategory, user, true)) {
                                 childCategories.add(category);
