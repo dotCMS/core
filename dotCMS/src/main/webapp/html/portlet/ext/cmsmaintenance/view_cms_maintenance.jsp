@@ -125,14 +125,14 @@ function checkReindexationCallback (response) {
 
 function checkReindexation () {
 
-    fetch('/api/v1/index/reindex',{cache: 'no-cache'})
+    fetch('/api/v1/esindex/reindex',{cache: 'no-cache'})
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data));
 
 }
 function deleteFailedRecords () {
 
-    fetch('/api/v1/index/failed', {method:'DELETE',cache: 'no-cache'} )
+    fetch('/api/v1/esindex/failed', {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data));
 
@@ -143,7 +143,7 @@ function deleteFailedRecords () {
     the remaining non re-indexed records. */
 function stopReIndexing(){
     
-    fetch('/api/v1/index/reindex?switch=false', {method:'DELETE',cache: 'no-cache'} )
+    fetch('/api/v1/esindex/reindex?switch=false', {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data));
     
@@ -154,7 +154,7 @@ function stopReIndexing(){
     the remaining non re-indexed records. Moreover, switches the current index 
     to point to the new one. */
 function stopReIndexingAndSwitchover() {
-    fetch('/api/v1/index/reindex?switch=true', {method:'DELETE',cache: 'no-cache'} )
+    fetch('/api/v1/esindex/reindex?switch=true', {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data));
     
@@ -163,20 +163,20 @@ function stopReIndexingAndSwitchover() {
 /** Downloads the main information of the records that could not be re-indexed 
     as a .CSV file*/
 function downloadFailedAsJson() {
-	var href = "/api/v1/index/failed";
+	var href = "/api/v1/esindex/failed";
 	window.open(href);
 }
 
 
 function optimizeIndices(){
-    fetch('/api/v1/index/optimize', {method:'POST',cache: 'no-cache'} )
+    fetch('/api/v1/esindex/optimize', {method:'POST',cache: 'no-cache'} )
     .then(response => response.json());
 
 }
 
 
 function flushIndiciesCache(){
-    fetch('/api/v1/index/cache', {method:'DELETE',cache: 'no-cache'} )
+    fetch('/api/v1/esindex/cache', {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json());
 
 }
@@ -187,7 +187,7 @@ function deleteIndex(indexName, live){
         return;
     }
     
-    fetch('/api/v1/index/' + indexName, {method:'DELETE',cache: 'no-cache'} )
+    fetch('/api/v1/esindex/' + indexName, {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json())
     .then(()=>refreshIndexStats());
     
@@ -224,7 +224,7 @@ function doReindex(){
     }
     dijit.byId('structure').reset();
         
-    fetch('/api/v1/index/reindex?shards=' + shards + '&contentType=' + contentType, {method:'POST'})
+    fetch('/api/v1/esindex/reindex?shards=' + shards + '&contentType=' + contentType, {method:'POST'})
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data))
     .then(()=>refreshIndexStats());
@@ -232,7 +232,7 @@ function doReindex(){
 
 function doCloseIndex(indexName) {
 
-    fetch('/api/v1/index/' + indexName + '?action=close', {method:'PUT'} )
+    fetch('/api/v1/esindex/' + indexName + '?action=close', {method:'PUT'} )
     .then(response => response.json())
     .then(()=>refreshIndexStats());
 }
@@ -240,7 +240,7 @@ function doCloseIndex(indexName) {
 function doOpenIndex(indexName) {
 
 
-    fetch('/api/v1/index/' + indexName + '?action=open', {method:'PUT'} )
+    fetch('/api/v1/esindex/' + indexName + '?action=open', {method:'PUT'} )
     .then(response => response.json())
     .then(()=>refreshIndexStats());
 }
@@ -252,7 +252,7 @@ function doClearIndex(indexName){
 
     }
 
-    fetch('/api/v1/index/' + indexName + '?action=clear', {method:'PUT'} )
+    fetch('/api/v1/esindex/' + indexName + '?action=clear', {method:'PUT'} )
     .then(response => response.json())
     .then(()=>refreshIndexStats());
 }
@@ -263,7 +263,7 @@ function doActivateIndex(indexName){
         return;
     }
 
-    fetch('/api/v1/index/' + indexName, {method:'PUT'} )
+    fetch('/api/v1/esindex/' + indexName, {method:'PUT'} )
     .then(response => response.json())
     
     .then(()=>refreshIndexStats());
@@ -277,7 +277,7 @@ function doDeactivateIndex(indexName){
 
     }
 
-    fetch('/api/v1/index/' + indexName + '?action=deactivate', {method:'PUT'} )
+    fetch('/api/v1/esindex/' + indexName + '?action=deactivate', {method:'PUT'} )
     .then(response => response.json())
     .then(()=>refreshIndexStats());
 
