@@ -1,0 +1,475 @@
+{
+	"info": {
+		"_postman_id": "83b5b4b0-5bff-48ac-8b41-86d3cf2cdd3a",
+		"name": "ResourceLink2",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Temp File",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e8b269ff-797f-4138-a3e9-bd43a4c50f29",
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"File name check\", function () {",
+							"    pm.expect(jsonData.tempFiles[0].fileName).to.eql('250px-Bocas2.jpg');",
+							"});",
+							"pm.collectionVariables.set(\"temporalFileId\", jsonData.tempFiles[0].id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "referer",
+						"value": "localhost",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/temp/byUrl",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"temp",
+						"byUrl"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create DotAsset",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "f53833df-a2ac-4805-a2ba-e70dc9b5d5bc",
+						"exec": [
+							"console.log(\"temporalFileId\", \"{{temporalFileId}}\")"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "a7bdc724-2586-4516-b821-e44870a48568",
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"contentlet\":\n    {\n        \"baseType\":\"dotAsset\",\n        \"asset\":\"{{temporalFileId}}\",\n        \"tags\":\"test\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW?indexPolicy=WAIT_FOR",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"NEW"
+					],
+					"query": [
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Validate credentials",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8d1c43c3-111c-47a6-b00c-612b2626a1f3",
+						"exec": [
+							"",
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Includes idPath\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"idPath\");",
+							"});",
+							"",
+							"pm.test(\"Includes version path\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"versionPath\");",
+							"});",
+							"",
+							"pm.test(\"Includes img mime\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"image/jpeg\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/content/resourcelinks?identifier={{identifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"content",
+						"resourcelinks"
+					],
+					"query": [
+						{
+							"key": "identifier",
+							"value": "{{identifier}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Resource Link by Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "eec9edd3-a628-4731-8390-c9a43361bd0b",
+						"exec": [
+							"",
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Includes idPath\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"idPath\");",
+							"});",
+							"",
+							"pm.test(\"Includes version path\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"versionPath\");",
+							"});",
+							"",
+							"pm.test(\"Includes img mime\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"image/jpeg\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/content/resourcelinks?identifier={{identifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"content",
+						"resourcelinks"
+					],
+					"query": [
+						{
+							"key": "identifier",
+							"value": "{{identifier}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Resource Link by Inode",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "4d137c32-e597-4e4b-9948-0f119e8992b5",
+						"exec": [
+							"",
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Includes idPath\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"idPath\");",
+							"});",
+							"",
+							"pm.test(\"Includes version path\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"versionPath\");",
+							"});",
+							"",
+							"pm.test(\"Includes img mime\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"image/jpeg\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/content/resourcelinks?identifier={{identifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"content",
+						"resourcelinks"
+					],
+					"query": [
+						{
+							"key": "identifier",
+							"value": "{{identifier}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Resource Link invalid Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "86796289-3b0a-4ba0-85ee-dfab8dc7feaa",
+						"exec": [
+							"",
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Includes idPath\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"idPath\");",
+							"});",
+							"",
+							"pm.test(\"Includes version path\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"versionPath\");",
+							"});",
+							"",
+							"pm.test(\"Includes img mime\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"image/jpeg\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/content/resourcelinks?identifier={{identifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"content",
+						"resourcelinks"
+					],
+					"query": [
+						{
+							"key": "identifier",
+							"value": "{{identifier}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"id": "9e31983e-0ea0-4583-a8b0-f1e314a1d6f2",
+			"key": "temporalFileId",
+			"value": "temp_9587642305",
+			"type": "string"
+		},
+		{
+			"id": "84c229ef-ba30-42bd-bffe-1bf661a840b5",
+			"key": "identifier",
+			"value": "9dfad985-9359-4ef9-bfe9-4776988f3513",
+			"type": "string"
+		},
+		{
+			"id": "edcec39a-0ebf-452d-8323-9a7cc7cd4775",
+			"key": "inode",
+			"value": "77108dce-1df8-47f8-923f-fa53b7f369c9",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}
