@@ -18,9 +18,6 @@ env:
     - TRAVIS_WORKER_MAX_LOG_LENGTH=20000000
     - TRAVIS_COMMIT_SHORT=${TRAVIS_COMMIT::8}
 
-before_install:
-  - chmod +x .cicd/discover.sh
-
 before_script:
   - source .cicd/seed.source
 
@@ -51,10 +48,10 @@ jobs:
 #      name: build dotcms image
 #      script: bash dotcicd/library/pipeline.sh buildBase
     - name: build integration image
-      script: bash dotcicd/library/pipeline.sh buildIntegration
+      script: bash source .cicd/seed.source && dotcicd/library/pipeline.sh buildIntegration
     - stage: run tests
       name: unit tests
-      script: bash dotcicd/library/pipeline.sh runUnit
+      script: bash source .cicd/seed.source && dotcicd/library/pipeline.sh runUnit
 #    - name: postgres integration tests
 #      script: bash dotcicd/library/pipeline.sh runIntegration
 #      if: >-

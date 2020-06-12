@@ -22,13 +22,13 @@ jobs:
 #          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Build Integration Tests Image
         run: |
-          dotcicd/library/pipeline.sh buildIntegration
+          source .cicd/seed.source && dotcicd/library/pipeline.sh buildIntegration
         env:
           PROJECT_ID: cicd-246518
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Run Unit Tests
         run: |
-          dotcicd/library/pipeline.sh runUnit
+          source .cicd/seed.source &&  dotcicd/library/pipeline.sh runUnit
         env:
           PROJECT_ID: cicd-246518
           EXPORT_REPORTS: true
