@@ -41,7 +41,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -70,7 +69,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     private final Map<String, GraphQLType> typesMap = new HashMap<>();
 
-    {
+    ContentAPIGraphQLTypesProvider() {
         // custom type mappings
         this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
         this.fieldClassGraphqlTypeMap
@@ -122,7 +121,9 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
 
-        contentAPITypes.add(ExtendedScalars.DateTime);
+        contentAPITypes.add(CustomFieldType.SITE.getType());
+
+//        contentAPITypes.add(ExtendedScalars.DateTime);
 
         List<ContentType> allTypes = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .findAllRespectingLicense();
@@ -209,8 +210,8 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      *<p>
      * The {@link Field} is deemed compatibly if any of the followings conditions are true:
      * <ul>
-     *     <li>The field variable does not match any of the inherited fields names from the {@link InterfaceType#getContentletInheritedFields} </li>
-     *     <li>The field variable matches the name of a inherited field but neither of them have a {@link CustomFieldType#getCustomFieldTypes}
+     *     <li>The field variable does not match any of the inherited fields names from the {@link InterfaceType#getContentFields()} </li>
+     *     <li>The field variable matches the name of a inherited field but neither of them have a {@link CustomFieldType}
      *     as its mapped GraphQL Type
      * </ul>
      * @param variable the variable whose compatibility will be checked
@@ -219,12 +220,12 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      */
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
         // first let's check if there's an inherited field with the same variable
-        if (InterfaceType.getContentletInheritedFields().containsKey(variable)) {
+        if (InterfaceType.getContentFields().containsKey(variable)) {
             // now let's check if the graphql types are compatible
 
             // get inherited field's graphql type
             final GraphQLType inheritedFieldGraphQLType = InterfaceType
-                    .getContentletInheritedFields()
+                    .getContentFields()
                     .get(variable).getType();
 
             // get new field's type

@@ -476,12 +476,12 @@ dependencies {
     //XML Tool dependency
     compile group: 'jaxen', name: 'jaxen', version: '1.1.6'
 
-    compile 'com.graphql-java:graphql-java:11.0'
-    compile ('com.graphql-java-kickstart:graphql-java-servlet:7.1.1'){
+//    compile 'com.graphql-java:graphql-java:11.0'
+    compile ('com.graphql-java-kickstart:graphql-java-servlet:9.1.0'){
         exclude(group: 'com.fasterxml.jackson.core')
         exclude(group: 'com.fasterxml.jackson.datatype')
     }
-    compile 'com.graphql-java:graphql-java-extended-scalars:1.0'
+//    compile 'com.graphql-java:graphql-java-extended-scalars:1.0'
 
     compile 'net.jodah:failsafe:1.1.1'
     compile 'com.rainerhahnekamp:sneakythrow:1.1.0'

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl.HTMLPageUrl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.util.PageMode;
@@ -62,6 +63,9 @@ public interface HTMLPageAssetRenderedAPI {
             final HttpServletRequest request,
             final HttpServletResponse response)
                 throws DotSecurityException, DotDataException;
+
+    HTMLPageUrl getHtmlPageAsset(PageContext context,
+            HttpServletRequest request) throws DotSecurityException, DotDataException;
 
     /***
      * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in

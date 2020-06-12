@@ -2,6 +2,10 @@ package com.dotcms.graphql.util;
 
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 
+import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import graphql.GraphQLException;
 import java.util.Map;
 
 import graphql.schema.DataFetcher;
@@ -34,17 +38,22 @@ public class TypeUtil {
 
     public static GraphQLObjectType createObjectType(final String typeName,
             final Map<String, TypeFetcher> fieldsTypesAndFetchers) {
+
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(typeName);
 
-        fieldsTypesAndFetchers.keySet().forEach((key)->{
-            builder.field(newFieldDefinition()
-                    .name(key)
-                    .type(fieldsTypesAndFetchers.get(key).getType())
-                    .dataFetcher(fieldsTypesAndFetchers.get(key).getDataFetcher()!=null
-                            ?fieldsTypesAndFetchers.get(key).getDataFetcher()
-                            :new PropertyDataFetcher<String>(key))
-            );
-        });
+        for (String key : fieldsTypesAndFetchers.keySet()) {
+            try {
+                builder.field(newFieldDefinition()
+                        .name(key)
+                        .type(fieldsTypesAndFetchers.get(key).getType())
+                        .dataFetcher(fieldsTypesAndFetchers.get(key).getDataFetcher() != null
+                                ? fieldsTypesAndFetchers.get(key).getDataFetcher()
+                                : new PropertyDataFetcher<String>(key))
+                );
+            } catch (GraphQLException e) {
+                Logger.error("Error creating GraphQL Type. Type name: " + typeName, e);
+            }
+        }
 
         return builder.build();
     }

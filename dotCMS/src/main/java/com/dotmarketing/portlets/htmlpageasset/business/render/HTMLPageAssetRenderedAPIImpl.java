@@ -130,6 +130,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .build(false, context.getPageMode());
     }
 
+    @Override
+    public HTMLPageUrl getHtmlPageAsset(final PageContext context,
+            final HttpServletRequest request) throws DotSecurityException, DotDataException {
+        final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
+        return getHtmlPageAsset(context, host, request);
+    }
 
     @Override
     public PageView getPageRendered(
@@ -384,6 +390,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             } catch(DotDataException | DotSecurityException e) {
                 throw new DotRuntimeException(e);
             }
+        }
+
+        public URLMapInfo getUrlMapInfo() {
+            return urlMapInfo;
         }
 
         public String getPageUrl() {
