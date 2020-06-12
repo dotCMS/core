@@ -12,8 +12,9 @@ jobs:
           fetch-depth: 1
       - name: Prepare dot-cicd
         run: |
+          export DOT_CICD_CLOUD_PROVIDER=github
           chmod +x .cicd/discover.sh
-          .cicd/discover.sh github
+          .cicd/discover.sh
 #      - name: Build DotCMS Image
 #        run: |
 #          dotcicd/library/pipeline.sh buildBase
@@ -22,13 +23,13 @@ jobs:
 #          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Build Integration Tests Image
         run: |
-          source .cicd/seed.source && dotcicd/library/pipeline.sh buildIntegration
+          source dotcicd/library/pipeline.sh buildIntegration
         env:
           PROJECT_ID: cicd-246518
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Run Unit Tests
         run: |
-          source .cicd/seed.source &&  dotcicd/library/pipeline.sh runUnit
+          source dotcicd/library/pipeline.sh runUnit
         env:
           PROJECT_ID: cicd-246518
           EXPORT_REPORTS: true
