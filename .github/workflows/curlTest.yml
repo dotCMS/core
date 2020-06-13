@@ -32,11 +32,13 @@ jobs:
       - name: Run Unit Tests
         run: |
           source dotcicd/library/pipeline.sh runUnit
+        if: succeeded() || failed()
       - name: Run Integration Tests
         run: |
           source dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: postgres
+        if: succeeded() || failed()
 
 #      - name: Run Curl Tests
 #        run: |
