@@ -9,6 +9,7 @@ jobs:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       PROJECT_ID: cicd-246518
+      EXPORT_REPORTS: true
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
@@ -31,8 +32,12 @@ jobs:
       - name: Run Unit Tests
         run: |
           source dotcicd/library/pipeline.sh runUnit
+      - name: Run Integration Tests
+        run: |
+          source dotcicd/library/pipeline.sh runIntegration
         env:
-          EXPORT_REPORTS: true
+          databaseType: postgres
+
 #      - name: Run Curl Tests
 #        run: |
 #          dotcicd/library/pipeline.sh runCurl
