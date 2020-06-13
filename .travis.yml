@@ -23,9 +23,6 @@ env:
 before_install:
   - chmod +x .cicd/discover.sh
 
-before_script:
-  - source .cicd/seed.source
-
 # Commit message format
 # [travis] -> executes all dbs and unit tests
 # [travis unit]
@@ -118,8 +115,8 @@ jobs:
 
 install:
   - .cicd/discover.sh
-  - dotcicd/library/pipeline/travis/core/environment_vars.sh
-  - dotcicd/library/pipeline/travis/core/install_gcloud.sh
+  - dotcicd/library/pipeline.sh environmentVars
+  - dotcicd/library/pipeline.sh installGCloud
 
 # https://docs.travis-ci.com/user/notifications/#configuring-slack-notifications
 # https://docs.travis-ci.com/user/encryption-keys/#usage
