@@ -1,4 +1,4 @@
-name: Release workflow
+name: Run Dockerized Tests
 on: [pull_request, push]
 
 jobs:
