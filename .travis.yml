@@ -49,8 +49,8 @@ jobs:
 #    - stage: build base images
 #      name: build dotcms image
 #      script: bash dotcicd/library/pipeline.sh buildBase
-    - name: build integration image
-      script: bash dotcicd/library/pipeline.sh buildIntegration
+    - name: build base tests image
+      script: bash dotcicd/library/pipeline.sh buildBaseTests
     - stage: run tests
       name: unit tests
       script: bash dotcicd/library/pipeline.sh runUnit
