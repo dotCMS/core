@@ -674,7 +674,7 @@ public class DotWebdavHelper {
 	}
 
 	private File writeDataIfEmptyFile(Folder folder, String fileName, File fileData) throws IOException{
-		if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+		if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", true)){
 			Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
 			FileUtil.write(fileData, emptyFileData);
 		}
