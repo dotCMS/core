@@ -26,8 +26,8 @@ public class StartupTasksExecutor {
 	private final String oraCreate = "CREATE TABLE \"DB_VERSION\" ( \"DB_VERSION\" INTEGER NOT NULL , \"DATE_UPDATE\" TIMESTAMP NOT NULL, PRIMARY KEY (\"DB_VERSION\") )";
 	private final String msCreate  = "CREATE TABLE db_version (	db_version int NOT NULL , date_update datetime NOT NULL, PRIMARY KEY (db_version) )";
 
-	private final String select = "SELECT count(*) as count_versions, max(db_version) AS db_version FROM db_version";
-
+	private final String SELECT = "SELECT max(db_version) AS test FROM db_version";
+	private final String INSERT = "INSERT INTO db_version (db_version,date_update) VALUES (?,?)";
 
 
 	final boolean firstTimeStart;
@@ -81,10 +81,8 @@ public class StartupTasksExecutor {
      */
     private int currentDbVersion() {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-            DotConnect db =  new DotConnect().setSQL(select);
-            return  db.getInt("count_versions") >0
-                        ? db.getInt("db_version")
-                        : 0;
+            DotConnect db =  new DotConnect().setSQL(SELECT);
+            return  db.loadInt("test");
 
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -99,6 +97,7 @@ public class StartupTasksExecutor {
 
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             new DotConnect().setSQL(createTableSQL()).loadResult(conn);
+            new DotConnect().setSQL(INSERT).addParam(0).addParam(new Date()).loadResult(conn);
             return true;
 
         } catch (Exception e) {
@@ -189,7 +188,7 @@ public class StartupTasksExecutor {
                     }
  
                     new DotConnect()
-                        .setSQL("INSERT INTO db_version (db_version,date_update) VALUES (?,?)")
+                        .setSQL(INSERT)
                         .addParam(taskId)
                         .addParam(new Date())
                         .loadResult();

@@ -122,9 +122,38 @@ public class ReindexQueueFactory {
 
     protected void deleteReindexAndFailedRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL("DELETE From dist_reindex_journal where priority >= ?");
+        dc.setSQL("DELETE From dist_reindex_journal where priority >= ? and  priority < ? ");
         dc.addParam(Priority.REINDEX.dbValue());
         dc.loadResult();
+    }
+    
+
+    /**
+     * deletes reindex records (when a full reindex has been fired) - and excludes stucture or host index records.
+     * @throws DotDataException
+     */
+    protected void deleteReindexRecords() throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL("DELETE From dist_reindex_journal where priority >= ? and  priority < ? ");
+        dc.addParam(Priority.REINDEX.dbValue());
+        dc.addParam(Priority.ERROR.dbValue());
+        dc.loadResult();
+    }
+    
+    /**
+     * returns if there are any reindex records in the queue
+     * @throws DotDataException
+     */
+    protected boolean hasReindexRecords() throws DotDataException {
+        DotConnect dc = new DotConnect();
+        String sql = (DbConnectionFactory.isMsSql()) 
+                        ? "SELECT TOP 1 from dist_reindex_journal where priority >= ? and  priority < ?"
+                                : "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
+        dc.setSQL(sql);
+        
+        dc.addParam(Priority.REINDEX.dbValue());
+        dc.addParam(Priority.ERROR.dbValue());
+        return !dc.loadResults().isEmpty();
     }
 
     protected void deleteFailedRecords() throws DotDataException {

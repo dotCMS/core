@@ -379,7 +379,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void stopFullReindexationAndSwitchover() throws  DotDataException {
         try {
             ReindexThread.pause();
-            queueApi.deleteReindexAndFailedRecords();
+            queueApi.deleteReindexRecords();
             this.reindexSwitchover(true);
         } finally {
             ReindexThread.unpause();
@@ -454,7 +454,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @CloseDBIfOpened
     public boolean isInFullReindex() throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        return info.getReindexWorking() != null && info.getReindexLive() != null;
+        return queueApi.hasReindexRecords() || (info.getReindexWorking() != null && info.getReindexLive() != null);
+
     }
 
     @CloseDBIfOpened
@@ -644,7 +645,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void stopFullReindexation() throws DotDataException {
         try {
             ReindexThread.pause();
-            queueApi.deleteReindexAndFailedRecords();
+            queueApi.deleteReindexRecords();
             fullReindexAbort();
         } finally {
             ReindexThread.unpause();
@@ -1243,15 +1244,24 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
 
-    public void activateIndex(String indexName) throws DotDataException {
+    public void activateIndex(final String indexName) throws DotDataException {
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
-
+        if(indexName==null) {
+            throw new DotRuntimeException("Index cannot be null");
+        }
         if (IndexType.WORKING.is(indexName)) {
             builder.setWorking(esIndexApi.getNameWithClusterIDPrefix(indexName));
+            if(esIndexApi.getNameWithClusterIDPrefix(indexName).equals(info.getReindexWorking())) {
+                builder.setReindexWorking(null);
+            }
         } else if (IndexType.LIVE.is(indexName)) {
             builder.setLive(esIndexApi.getNameWithClusterIDPrefix(indexName));
+            if(esIndexApi.getNameWithClusterIDPrefix(indexName).equals(info.getReindexLive())) {
+                builder.setReindexLive(null);
+            }
         }
+        
         APILocator.getIndiciesAPI().point(builder.build());
     }
 

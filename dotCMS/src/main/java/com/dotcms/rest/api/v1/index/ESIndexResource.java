@@ -314,15 +314,13 @@ public class ESIndexResource {
                     throws DotDataException {
         final InitDataObject init = auth(request, response);
         
-        if(!APILocator.getContentletIndexAPI().isInFullReindex()) {
-            return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
-        }
-        
+
         if(switchMe) {
             APILocator.getContentletIndexAPI().stopFullReindexationAndSwitchover();
         }else {
             APILocator.getContentletIndexAPI().stopFullReindexation();
         }
+        sendAdminMessage("reindex stopped", MessageSeverity.INFO,init.getUser(), 5000);
         return getReindexationProgress(request, response);
     }
     

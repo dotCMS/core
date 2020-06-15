@@ -11,6 +11,7 @@ import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import io.vavr.control.Try;
 
 public class ESReindexationProcessStatus implements Serializable {
     private static final ContentletIndexAPIImpl indexAPI = new ContentletIndexAPIImpl();
@@ -59,21 +60,21 @@ public class ESReindexationProcessStatus implements Serializable {
     @CloseDBIfOpened
     public static Map<String, Object> getProcessIndexationMap() throws DotDataException {
         Map<String, Object> theMap = new Hashtable<String, Object>();
-
-        theMap.put("inFullReindexation", inFullReindexation());
+        boolean inFullReindexation = inFullReindexation();
+        theMap.put("inFullReindexation", inFullReindexation);
 
         theMap.put("errorCount", APILocator.getReindexQueueAPI().failedRecordCount());
         
         
-        
         // no reason to hit db if not needed
-        if (inFullReindexation()) {
+        if (inFullReindexation) {
             final int countToIndex = getContentCountToIndex();
+            final String timeElapsed = indexAPI.reindexTimeElapsed().orElse("n/a");
             theMap.put("contentCountToIndex", countToIndex);
             theMap.put("lastIndexationProgress", getLastIndexationProgress(countToIndex));
             theMap.put("currentIndexPath", currentIndexPath());
             theMap.put("newIndexPath", getNewIndexPath());
-            theMap.put("reindexTimeElapsed", indexAPI.reindexTimeElapsed().orElse(null));
+            theMap.put("reindexTimeElapsed",timeElapsed );
         }
         return theMap;
     }

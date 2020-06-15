@@ -74,3 +74,5 @@ docker/tests/integration/license
 docker/tests/integration/backup
 
 dot-cicd/
+dotCMS/dotcms5-glowroot.launch
+dotCMS/dotcms5-postgres.launch
