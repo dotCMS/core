@@ -3,7 +3,7 @@ on: [pull_request, push]
 
 jobs:
   run-unit-integration-tests-job:
-    name: Core Unit/Integration Tests
+    name: Core Tests
     runs-on: ubuntu-latest
     env:
       DOT_CICD_CLOUD_PROVIDER: github
