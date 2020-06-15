@@ -29,7 +29,7 @@ public class IndexResourceHelper {
     }
 
     
-    static IndexResourceHelper getInstance() {
+    public static IndexResourceHelper getInstance() {
         return IndexResourceHelperHolder.helper;
     }
     
