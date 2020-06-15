@@ -1,8 +1,6 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
@@ -11,8 +9,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRend
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -20,7 +16,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 public class PageDataFetcher implements DataFetcher<Contentlet> {
@@ -52,7 +47,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             HTMLPageUrl pageUrl = APILocator.getHTMLPageAssetRenderedAPI()
                     .getHtmlPageAsset(pageContext, request);
 
-            HTMLPageAsset pageAsset = (HTMLPageAsset) pageUrl.getHTMLPage();
+            HTMLPageAsset pageAsset = pageUrl.getHTMLPage();
             pageAsset.getMap().put("URLMapContent", pageUrl.getUrlMapInfo());
 
             final DotContentletTransformer transformer = new DotTransformerBuilder()

@@ -18,7 +18,7 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
 
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
-    private User user;
+    private final User user;
 
     private DotGraphQLContext(DataLoaderRegistry dataLoaderRegistry, Subject subject, HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse, User user) {
