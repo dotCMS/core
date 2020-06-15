@@ -113,7 +113,7 @@
     </div>
     <div class="form__group form__group--helper" *ngIf="form.get('urlMapPattern')">
         <dot-field-helper
-            [message]="messagesKey['contenttypes.hint.URL.map.pattern.hint1']"
+            [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"
         ></dot-field-helper>
         <span dotMdInputtext [label]="'contenttypes.form.label.URL.pattern' | dm">
             <input

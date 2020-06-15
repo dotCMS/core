@@ -1,15 +1,15 @@
 <dot-icon [name]="unlicenseData.icon" [size]="120"></dot-icon>
-<h4>{{ messagesKey[unlicenseData.titleKey] }}</h4>
-<p>{{ messagesKey[unlicenseData.titleKey] }} {{ messagesKey['only-available-in-enterprise'] }}</p>
+<h4>{{ unlicenseData.titleKey | dm }}</h4>
+<p>{{ unlicenseData.titleKey | dm }} {{ 'only-available-in-enterprise' | dm }}</p>
 <ul>
     <li>
         <a target="_blank" href="https://dotcms.com/product/features/feature-list">{{
-            messagesKey['Learn-more-about-dotCMS-Enterprise']
+            'Learn-more-about-dotCMS-Enterprise' | dm
         }}</a>
     </li>
     <li>
         <a target="_blank" href="https://dotcms.com/contact-us/">{{
-            messagesKey['Contact-Us-for-more-Information']
+            'Contact-Us-for-more-Information' | dm
         }}</a>
     </li>
 </ul>
@@ -17,6 +17,6 @@
     <a
         class="ui-link"
         href="https://dotcms.com/licensing/request-a-license-3/index"
-        [innerText]="messagesKey['request.a.trial.license']"
+        [innerText]="'request.a.trial.license' | dm"
     ></a>
 </p>

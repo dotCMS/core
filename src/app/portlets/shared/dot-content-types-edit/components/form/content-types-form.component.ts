@@ -63,7 +63,6 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     form: FormGroup;
     nameFieldLabel: string;
     workflowsSelected$: Observable<string[]>;
-    messagesKey: { [key: string]: string } = {};
 
     private originalValue: DotCMSContentType;
     private destroy$: Subject<boolean> = new Subject<boolean>();

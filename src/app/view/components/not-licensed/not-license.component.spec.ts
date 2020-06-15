@@ -30,7 +30,6 @@ describe('NotLicensedComponent', () => {
     let fixture: ComponentFixture<NotLicensedComponent>;
     let de: DebugElement;
     let dotLicenseService: DotLicenseService;
-    let component: NotLicensedComponent;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
@@ -48,7 +47,6 @@ describe('NotLicensedComponent', () => {
         fixture = DOTTestBed.createComponent(NotLicensedComponent);
         de = fixture.debugElement;
         dotLicenseService = de.injector.get(DotLicenseService);
-        component = de.componentInstance;
         spyOn(dotLicenseService, 'unlicenseData');
         dotLicenseService.unlicenseData.next(portletData);
         fixture.detectChanges();
@@ -59,23 +57,23 @@ describe('NotLicensedComponent', () => {
         expect(de.query(By.css('dot-icon')).componentInstance.name).toEqual(portletData.icon);
         expect(de.query(By.css('dot-icon')).componentInstance.size).toEqual(120);
         expect(de.query(By.css('h4')).nativeElement.innerText).toEqual(
-            component.messagesKey['portlet.title']
+            messageServiceMock.get('portlet.title')
         );
         expect(de.query(By.css('h4 ~ p')).nativeElement.innerText).toEqual(
-            `${component.messagesKey['portlet.title']} ${component.messagesKey['only-available-in-enterprise']}`
+            `${messageServiceMock.get('portlet.title')} ${messageServiceMock.get('only-available-in-enterprise')}`
         );
         expect(links[0].nativeElement.innerText).toEqual(
-            component.messagesKey['Learn-more-about-dotCMS-Enterprise']
+            messageServiceMock.get('Learn-more-about-dotCMS-Enterprise')
         );
         expect(links[0].nativeElement.href).toEqual(
             'https://dotcms.com/product/features/feature-list'
         );
         expect(links[1].nativeElement.innerText).toEqual(
-            component.messagesKey['Contact-Us-for-more-Information']
+            messageServiceMock.get('Contact-Us-for-more-Information')
         );
         expect(links[1].nativeElement.href).toEqual('https://dotcms.com/contact-us/');
         expect(links[2].nativeElement.innerText).toEqual(
-            component.messagesKey['request.a.trial.license'].toUpperCase()
+            messageServiceMock.get('request.a.trial.license').toUpperCase()
         );
         expect(links[2].nativeElement.href).toEqual(
             'https://dotcms.com/licensing/request-a-license-3/index'
