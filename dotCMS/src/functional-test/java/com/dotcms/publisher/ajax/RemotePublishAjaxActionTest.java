@@ -27,6 +27,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.liferay.util.EncryptorException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -126,7 +127,7 @@ public class RemotePublishAjaxActionTest {
 	 * @throws InterruptedException
 	 */
 	@Test
-	public void retry_issue5097 () throws DotSecurityException, DotDataException, IOException, JSONException, DotPublisherException, InterruptedException {
+	public void retry_issue5097 () throws DotSecurityException, DotDataException, IOException, JSONException, DotPublisherException, InterruptedException, EncryptorException {
 
 		EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();

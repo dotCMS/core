@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.mock.request.HttpHeaderHandlerHttpServletRequestWrapper;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -29,6 +30,7 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.EncryptorException;
 
 import java.io.File;
 import java.io.IOException;
@@ -185,9 +187,9 @@ public class BundlePublisherResource {
 			//Start thread
 
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
-
-				// todo: shouldn't be handle by the DotConcurrent?
-				new Thread(new PublishThread(fileName, groupId, endpointId, status)).start();
+				DotConcurrentFactory.getInstance()
+						.getSubmitter()
+						.submit(new PublishThread(fileName, groupId, endpointId, status));
 			}
 
 			return bundle;
@@ -219,7 +221,7 @@ public class BundlePublisherResource {
      */
     public static boolean isValidToken (final String token,
 										final String remoteIP,
-										final PublishingEndPoint publishingEndPoint) throws IOException {
+										final PublishingEndPoint publishingEndPoint) throws IOException, EncryptorException {
 
         //My key
         final  Optional<String> endpointKeyDigest = PushPublisher.retriveEndpointKeyDigest(publishingEndPoint);
