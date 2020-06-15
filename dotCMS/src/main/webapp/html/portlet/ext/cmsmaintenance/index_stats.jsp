@@ -182,7 +182,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<%for(String x : indices){%>
 			<%boolean active =currentIdx.contains(x);%>
 			<%boolean building =newIdx.contains(x);%>
-			<%if(building)continue; %>
+
 			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;"
 			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
