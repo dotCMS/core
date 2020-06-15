@@ -173,8 +173,7 @@ public class CompanyAPIFactory implements Serializable {
         public Company regenerateKey(final Company company, final User user)
                 throws DotDataException, DotSecurityException {
             try {
-                if (!APILocator.getRoleAPI()
-                        .doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
+                if (!user.isAdmin()) {
                     throw new DotSecurityException(String.format(
                             "User `%s` does not have permission to regenerate company Key operation.",
                             user.getUserId()));

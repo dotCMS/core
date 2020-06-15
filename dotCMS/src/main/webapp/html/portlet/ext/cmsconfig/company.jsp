@@ -5,7 +5,7 @@
 
 <%@page import="com.dotcms.rest.api.v1.system.ConfigurationHelper"%>
 <%
-boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
+final boolean hasAdminRole = user.isAdmin();
 %>
 
 <script type="text/javascript">

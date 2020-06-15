@@ -517,7 +517,7 @@ public class CMSConfigResource {
             final User user = initData.getUser();
             final CompanyAPI companyAPI = APILocator.getCompanyAPI();
             final Company defaultCompany = companyAPI.getDefaultCompany();
-            final Company updatedCompany = APILocator.getCompanyAPI().regenerateKey(defaultCompany, user);
+            final Company updatedCompany = companyAPI.regenerateKey(defaultCompany, user);
             return Response.ok(new ResponseEntityView(updatedCompany.getKeyDigest())).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception calling regenerateKey." , e);
