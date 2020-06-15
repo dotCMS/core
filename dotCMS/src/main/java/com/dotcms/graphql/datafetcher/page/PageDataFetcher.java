@@ -18,6 +18,13 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import javax.servlet.http.HttpServletRequest;
 
+/**
+ * This DataFetcher returns a {@link HTMLPageAsset} given an URL. It also takes optional parameters
+ * to find a specific version of the page: languageId and pageMode.
+ *
+ * The returned page includes extra properties set by a page transformer.
+ *
+ */
 public class PageDataFetcher implements DataFetcher<Contentlet> {
     @Override
     public Contentlet get(final DataFetchingEnvironment environment) throws Exception {

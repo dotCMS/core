@@ -11,6 +11,9 @@ import graphql.schema.GraphQLNonNull;
 import java.util.Collection;
 import java.util.Collections;
 
+/**
+ * Singleton class that provides all the {@link GraphQLFieldDefinition}s needed for the Page API
+ */
 public enum PageAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
 
     INSTANCE;

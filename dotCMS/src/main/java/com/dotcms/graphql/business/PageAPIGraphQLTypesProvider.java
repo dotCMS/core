@@ -12,6 +12,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Singleton class that provides all the {@link GraphQLType}s needed for the Page API
+ */
+
 public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     INSTANCE;
