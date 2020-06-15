@@ -13,10 +13,7 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -26,6 +23,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -70,6 +68,7 @@ public class BundlePublisherResource {
     @POST
     @Path ("/publish")
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response publish(
 			@QueryParam("FILE_NAME")   final String fileName,
 			@QueryParam("AUTH_TOKEN")  final String authTokenDigest,
@@ -82,29 +81,46 @@ public class BundlePublisherResource {
 			@Context final HttpServletRequest  request,
 			@Context final HttpServletResponse response
 	) throws Exception {
-
 		final ResourceResponse responseResource = new ResourceResponse(
 				CollectionsUtils.map("type", type, "callback", callback));
 		final String remoteIP = UtilMethods.isSet(request.getRemoteHost())?
 				request.getRemoteHost() : request.getRemoteAddr();
 		final PublishingEndPoint sendingEndPointByAddress =
 				this.endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
-		final InitDataObject initDataObject = this.init(authTokenDigest, request, response);
 
-		if (null == initDataObject || !this.isAdmin(initDataObject.getUser())) {
+		final boolean isPPByToken = sendingEndPointByAddress == null;
 
-			if (sendingEndPointByAddress == null || !isValidToken(authTokenDigest, remoteIP, sendingEndPointByAddress)) {
-
-				Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " invalid endpoint or token");
-				return responseResource.responseError(HttpStatus.SC_UNAUTHORIZED);
-			}
+		if (isPPByToken && authTokenDigest == null) {
+			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " JWT token expected");
+			return responseResource.responseError(HttpStatus.SC_UNAUTHORIZED);
 		}
 
-		this.publishBundle(fileName, groupId, endpointId, bundleName,
+		if (request.getInputStream().isFinished()) {
+			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " bundle expected");
+			return responseResource.responseError(HttpStatus.SC_BAD_REQUEST);
+		}
+
+		final InitDataObject initDataObject = this.init(authTokenDigest, request, response);
+
+		if (isPPByToken && null == initDataObject || !this.isAdmin(initDataObject.getUser())) {
+			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " not permission");
+			return responseResource.responseError(HttpStatus.SC_UNAUTHORIZED);
+		} else if (!isPPByToken &&
+				(sendingEndPointByAddress == null || !isValidToken(authTokenDigest, remoteIP, sendingEndPointByAddress))) {
+			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " invalid endpoint or token");
+			return responseResource.responseError(HttpStatus.SC_UNAUTHORIZED);
+		}
+
+		final Bundle bundle = this.publishBundle(fileName, groupId, endpointId, bundleName,
 				forcePush, request, remoteIP, sendingEndPointByAddress);
 
-		return Response.status(HttpStatus.SC_OK).build();
+		if (isPPByToken && bundle != null) {
+			return Response.ok((bundle)).build();
+		} else {
+			return Response.ok().build();
+		}
 	}
+
 
 	final InitDataObject init (final String authTokenDigest, final HttpServletRequest  request,
 							   final HttpServletResponse response) {
@@ -126,7 +142,7 @@ public class BundlePublisherResource {
 
 
 	@WrapInTransaction
-	private void publishBundle(final String fileNameSent,
+	private Bundle publishBundle(final String fileNameSent,
 								  final String groupId,
 								  final String endpointId,
 								  final String bundleNameSent,
@@ -138,6 +154,8 @@ public class BundlePublisherResource {
     	final String fileName = UtilMethods.isSet(fileNameSent) ? fileNameSent : generatedBundleFileName();
 		final String bundleName =  UtilMethods.isSet(bundleNameSent) ? bundleNameSent : fileName;
 
+		Bundle bundle = null;
+
 		try (InputStream bundleStream = request.getInputStream()) {
 
 			final String bundlePath         = ConfigUtils.getBundlePath()+ File.separator + MY_TEMP;
@@ -148,10 +166,10 @@ public class BundlePublisherResource {
 
 			if(bundleName.trim().length() > 0) {
 				// save bundle if it doesn't exists
-				final Bundle foundBundle = APILocator.getBundleAPI().getBundleById(bundleFolder);
-				if (foundBundle == null || foundBundle.getId() == null) {
+				bundle = APILocator.getBundleAPI().getBundleById(bundleFolder);
+				if (bundle == null || bundle.getId() == null) {
 
-					final Bundle bundle = new Bundle();
+					bundle = new Bundle();
 					bundle.setId(bundleFolder);
 					bundle.setName(bundleName);
 					bundle.setPublishDate(Calendar.getInstance().getTime());
@@ -165,11 +183,14 @@ public class BundlePublisherResource {
 			FileUtil.writeToFile(bundleStream, bundlePath + fileName);
 
 			//Start thread
+
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 
 				// todo: shouldn't be handle by the DotConcurrent?
 				new Thread(new PublishThread(fileName, groupId, endpointId, status)).start();
 			}
+
+			return bundle;
 		} catch (Exception e) {
 
 			Logger.error(PublisherQueueJob.class, "Error caused by remote call of: "+remoteIP);
@@ -179,7 +200,7 @@ public class BundlePublisherResource {
 	}
 
 	private String generatedBundleFileName() {
-		return String.format("bundle_$s.tar.gz" + System.currentTimeMillis());
+		return String.format("bundle_%d.tar.gz", System.currentTimeMillis());
 	}
 
 	private boolean isAdmin(final User user) {
