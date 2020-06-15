@@ -105,15 +105,15 @@ describe('DotMyAccountComponent', () => {
             const cancel = de.nativeElement.querySelector('.dialog__button-cancel');
             const save = de.nativeElement.querySelector('.dialog__button-accept');
 
-            expect(firstName.innerText).toBe(comp.i18nMessages['First-Name']);
-            expect(lasttName.innerText).toBe(comp.i18nMessages['Last-Name']);
-            expect(email.innerText).toBe(comp.i18nMessages['email-address']);
-            expect(currentPassword.innerText).toBe(comp.i18nMessages['current-password']);
-            expect(changePassword.innerText).toBe(comp.i18nMessages['change-password']);
-            expect(newPassword.innerText).toBe(comp.i18nMessages['new-password']);
-            expect(confirmPassword.innerText).toBe(comp.i18nMessages['re-enter-new-password']);
-            expect(cancel.innerText).toBe(comp.i18nMessages['modes.Close'].toUpperCase());
-            expect(save.innerText).toBe(comp.i18nMessages['save'].toUpperCase());
+            expect(firstName.innerText).toBe(messageServiceMock.get('First-Name'));
+            expect(lasttName.innerText).toBe(messageServiceMock.get('Last-Name'));
+            expect(email.innerText).toBe(messageServiceMock.get('email-address'));
+            expect(currentPassword.innerText).toBe(messageServiceMock.get('current-password'));
+            expect(changePassword.innerText).toBe(messageServiceMock.get('change-password'));
+            expect(newPassword.innerText).toBe(messageServiceMock.get('new-password'));
+            expect(confirmPassword.innerText).toBe(messageServiceMock.get('re-enter-new-password'));
+            expect(cancel.innerText).toBe(messageServiceMock.get('modes.Close').toUpperCase());
+            expect(save.innerText).toBe(messageServiceMock.get('save').toUpperCase());
         });
     });
 

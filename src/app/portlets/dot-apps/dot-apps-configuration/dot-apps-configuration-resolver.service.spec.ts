@@ -4,8 +4,6 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-messages-service';
 
 class AppsServicesMock {
     getConfigurationList(_serviceKey: string) {}
@@ -20,21 +18,11 @@ activatedRouteSnapshotMock.paramMap = {};
 describe('DotAppsConfigurationListResolver', () => {
     let dotAppsServices: DotAppsService;
     let dotAppsConfigurationListResolver: DotAppsConfigurationResolver;
-    const messages = {
-        'apps.confirmation.delete.all.button': 'Delete All',
-        'apps.confirmation.title': 'Are you sure?',
-        'apps.key': 'Key:',
-        'apps.confirmation.delete.all.message': 'Delete all?',
-        'apps.confirmation.accept': 'Ok',
-        'apps.search.placeholder': 'Search'
-    };
-    const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async(() => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
                 DotAppsConfigurationResolver,
-                { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAppsService, useClass: AppsServicesMock },
                 {
                     provide: ActivatedRouteSnapshot,
@@ -75,7 +63,7 @@ describe('DotAppsConfigurationListResolver', () => {
         dotAppsConfigurationListResolver
             .resolve(activatedRouteSnapshotMock)
             .subscribe((fakeContentType: any) => {
-                expect(fakeContentType).toEqual({app: response, messages});
+                expect(fakeContentType).toEqual(response);
             });
         expect(dotAppsServices.getConfigurationList).toHaveBeenCalledWith('123');
     });

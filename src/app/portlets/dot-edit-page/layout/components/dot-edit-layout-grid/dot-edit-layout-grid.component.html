@@ -5,8 +5,8 @@
         [ngStyle]="{ 'top.px': i ? (206 + 8) * i : 0 }"
     >
         <dot-icon-button-tooltip
-            [tooltipText]="messages['editpage.layout.css.class.add.to.row']"
-            (click)="addRowClass(i, messages['editpage.layout.css.class.add.to.row'])"
+            [tooltipText]="'editpage.layout.css.class.add.to.row' | dm"
+            (click)="addRowClass(i, dotMessageService.get('editpage.layout.css.class.add.to.row'))"
             icon="more_horiz"
         >
         </dot-icon-button-tooltip>
@@ -28,11 +28,11 @@
             <dot-icon-button-tooltip
                 class="box__add-box-class-button"
                 icon="more_horiz"
-                (click)="addColumnClass(i, messages['editpage.layout.css.class.add.to.box'])"
-                [tooltipText]="messages['editpage.layout.css.class.add.to.box']"
+                (click)="addColumnClass(i, dotMessageService.get('editpage.layout.css.class.add.to.box'))"
+                [tooltipText]="'editpage.layout.css.class.add.to.box' | dm"
             ></dot-icon-button-tooltip>
             <dot-icon-button-tooltip
-                [tooltipText]="messages['editpage.action.delete']"
+                [tooltipText]="'editpage.action.delete' | dm"
                 icon="close"
                 (click)="onRemoveContainer(i)"
             ></dot-icon-button-tooltip>
@@ -50,7 +50,7 @@
 >
     <form *ngIf="addClassDialogShow" [formGroup]="form" novalidate>
         <div class="form__group">
-            <span dotMdInputtext [label]="messages['editpage.layout.css.class.names']">
+            <span dotMdInputtext [label]="'editpage.layout.css.class.names' | dm">
                 <input
                     class="box__add-class-text"
                     dotAutofocus

@@ -6,6 +6,7 @@ import { DotContainerSelectorModule } from '@components/dot-container-selector/d
 import { ButtonModule } from 'primeng/primeng';
 import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
 import { FormsModule } from '@angular/forms';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotEditLayoutSidebarComponent],
@@ -15,7 +16,8 @@ import { FormsModule } from '@angular/forms';
         FormsModule,
         DotContainerSelectorModule,
         ButtonModule,
-        DotSidebarPropertiesModule
+        DotSidebarPropertiesModule,
+        DotPipesModule
     ],
     exports: [DotEditLayoutSidebarComponent],
     providers: []

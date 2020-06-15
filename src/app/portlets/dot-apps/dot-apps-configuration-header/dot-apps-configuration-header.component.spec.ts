@@ -41,19 +41,26 @@ describe('DotAppsConfigurationHeaderComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            imports: [CommonModule, DotAvatarModule, DotCopyButtonModule, NgxMdModule],
-            declarations: [DotAppsConfigurationHeaderComponent],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                {
-                    provide: DotRouterService,
-                    useClass: MockDotRouterService
-                }
-            ]
-        });
-    }));
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                imports: [
+                    CommonModule,
+                    DotAvatarModule,
+                    DotCopyButtonModule,
+                    NgxMdModule
+                ],
+                declarations: [DotAppsConfigurationHeaderComponent],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    {
+                        provide: DotRouterService,
+                        useClass: MockDotRouterService
+                    }
+                ]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotAppsConfigurationHeaderComponent);
@@ -85,7 +92,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
             expect(
                 de.query(By.css('.dot-apps-configuration__description__link_show-more'))
                     .nativeElement.outerText
-            ).toBe(component.messagesKey['apps.confirmation.description.show.more']);
+            ).toBe(messageServiceMock.get('apps.confirmation.description.show.more'));
         });
     });
 

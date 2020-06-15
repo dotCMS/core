@@ -4,9 +4,10 @@ import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 import { RouterModule } from '@angular/router';
 import { TooltipModule } from 'primeng/primeng';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
-    imports: [CommonModule, RouterModule, TooltipModule, DotIconModule],
+    imports: [CommonModule, RouterModule, TooltipModule, DotIconModule, DotPipesModule],
     declarations: [DotEditPageNavComponent],
     exports: [DotEditPageNavComponent],
     providers: []

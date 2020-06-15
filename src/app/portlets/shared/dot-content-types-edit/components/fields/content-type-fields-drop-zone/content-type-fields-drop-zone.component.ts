@@ -22,7 +22,7 @@ import { FieldUtil } from '../util/field-util';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { takeUntil, take } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import * as _ from 'lodash';
@@ -64,16 +64,11 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     removeFields = new EventEmitter<DotCMSContentTypeField[]>();
 
     hideButtons = false;
-
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
-
     private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        public dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         private fieldDragDropService: FieldDragDropService,
         private fieldPropertyService: FieldPropertyService,
         private dotEventsService: DotEventsService,
@@ -123,34 +118,19 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnInit(): void {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.dropzone.action.save',
-                'contenttypes.dropzone.action.cancel',
-                'contenttypes.dropzone.action.edit',
-                'contenttypes.dropzone.action.create.field',
-                'contenttypes.dropzone.empty.message',
-                'contenttypes.dropzone.tab.overview',
-                'contenttypes.dropzone.tab.variables',
-                'contenttypes.dropzone.empty.message'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.i18nMessages = messages;
-                this.dialogActions = {
-                    accept: {
-                        action: () => {
-                            this.propertiesForm.saveFieldProperties();
-                        },
-                        label: this.i18nMessages['contenttypes.dropzone.action.save'],
-                        disabled: true
-                    },
-                    cancel: {
-                        label: this.i18nMessages['contenttypes.dropzone.action.cancel'],
-                        action: () => {}
-                    }
-                };
-            });
+        this.dialogActions = {
+            accept: {
+                action: () => {
+                    this.propertiesForm.saveFieldProperties();
+                },
+                label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
+                disabled: true
+            },
+            cancel: {
+                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel'),
+                action: () => {}
+            }
+        };
 
         this.fieldDragDropService.fieldDropFromSource$
             .pipe(takeUntil(this.destroy$))

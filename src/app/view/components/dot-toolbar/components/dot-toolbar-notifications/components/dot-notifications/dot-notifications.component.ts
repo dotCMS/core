@@ -1,7 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
 import { INotification } from '@models/notifications';
-import { DotMessageService } from '@services/dot-messages-service';
 
 @Component({
     selector: 'dot-notifications-item',
@@ -9,18 +8,12 @@ import { DotMessageService } from '@services/dot-messages-service';
     templateUrl: 'dot-notifications-item.component.html'
 })
 export class DotNotificationsItemComponent implements OnInit {
-    @Input()
-    data;
+    @Input() data;
 
-    @Output()
-    clear = new EventEmitter<Object>();
+    @Output() clear = new EventEmitter<Object>();
 
     showLinkAction = false;
     showTitleLinked = false;
-
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
 
     private notificationIcons: Object = {
         ERROR: 'exclamation-triangle',
@@ -28,13 +21,9 @@ export class DotNotificationsItemComponent implements OnInit {
         WARNING: 'ban'
     };
 
-    constructor(private dotMessageService: DotMessageService) {}
+    constructor() {}
 
     ngOnInit(): void {
-        this.dotMessageService.getMessages(['notifications_dismiss']).subscribe((res) => {
-            this.i18nMessages = res;
-        });
-
         // TODO: hand more than one action
         const actions = this.data.actions ? this.data.actions[0] : null;
         this.showLinkAction =

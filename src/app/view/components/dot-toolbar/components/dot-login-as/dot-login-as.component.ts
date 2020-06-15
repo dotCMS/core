@@ -47,10 +47,6 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     errorMessage: string;
     dialogActions: DotDialogActions;
 
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
-
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -81,32 +77,18 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
             };
         });
 
-        this.dotMessageService
-            .getMessages([
-                'Change',
-                'cancel',
-                'loginas.select.loginas.user',
-                'loginas.input.loginas.password',
-                'loginas.error.wrong-credentials',
-                'login-as'
-            ])
-            .pipe(take(1))
-            .subscribe((res) => {
-                this.i18nMessages = res;
-
-                this.dialogActions = {
-                    accept: {
-                        label: this.i18nMessages['Change'],
-                        action: () => {
-                            this.formEl.ngSubmit.emit();
-                        },
-                        disabled: true
-                    },
-                    cancel: {
-                        label: this.i18nMessages['cancel']
-                    },
-                };
-            });
+        this.dialogActions = {
+            accept: {
+                label: this.dotMessageService.get('Change'),
+                action: () => {
+                    this.formEl.ngSubmit.emit();
+                },
+                disabled: true
+            },
+            cancel: {
+                label: this.dotMessageService.get('cancel')
+            },
+        };
     }
 
     ngOnDestroy(): void {
@@ -147,7 +129,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
                     if (response.errorsMessages) {
                         this.errorMessage = response.errorsMessages;
                     } else {
-                        this.errorMessage = this.i18nMessages['loginas.error.wrong-credentials'];
+                        this.errorMessage = this.dotMessageService.get('loginas.error.wrong-credentials');
                         this.passwordElem.nativeElement.focus();
                     }
                 }

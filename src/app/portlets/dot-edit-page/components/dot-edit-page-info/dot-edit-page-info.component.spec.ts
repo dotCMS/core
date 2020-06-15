@@ -27,29 +27,31 @@ describe('DotEditPageInfoComponent', () => {
     let de: DebugElement;
     let siteService: SiteService;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotEditPageInfoComponent],
-            imports: [DotApiLinkModule, DotCopyButtonModule],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                },
-                {
-                    provide: SiteService,
-                    useClass: SiteServiceMock
-                },
-                {
-                    provide: LOCATION_TOKEN,
-                    useValue: {
-                        protocol: 'http:',
-                        port: '9876'
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DotEditPageInfoComponent],
+                imports: [DotApiLinkModule, DotCopyButtonModule],
+                providers: [
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    },
+                    {
+                        provide: SiteService,
+                        useClass: SiteServiceMock
+                    },
+                    {
+                        provide: LOCATION_TOKEN,
+                        useValue: {
+                            protocol: 'http:',
+                            port: '9876'
+                        }
                     }
-                }
-            ]
-        }).compileComponents();
-    }));
+                ]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotEditPageInfoComponent);

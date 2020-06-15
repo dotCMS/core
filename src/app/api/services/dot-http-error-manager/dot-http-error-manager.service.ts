@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import {Observable, of} from 'rxjs';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotMessageService } from '../dot-messages-service';
 import { Injectable } from '@angular/core';
@@ -7,7 +7,6 @@ import { ResponseView, LoginService, HttpCode } from 'dotcms-js';
 
 import { DotAlertConfirmService } from '../dot-alert-confirm';
 import { Response } from '@angular/http';
-import { take, map } from 'rxjs/operators';
 
 export interface DotHttpErrorHandled {
     redirected: boolean;
@@ -49,41 +48,18 @@ export class DotHttpErrorManagerService {
      * @memberof DotHttpErrorManagerService
      */
     handle(err: ResponseView): Observable<DotHttpErrorHandled> {
-        return this.getMessages().pipe(
-            map(() => {
-                const result: DotHttpErrorHandled = {
-                    redirected: this.callErrorHandler(err.response),
-                    status: err.status
-                };
+        const result: DotHttpErrorHandled = {
+            redirected: this.callErrorHandler(err.response),
+            status: err.status
+        };
 
-                if (
-                    err['bodyJsonObject'].error &&
-                    this.contentletIsForbidden(err['bodyJsonObject'].error)
-                ) {
-                    result.status = HttpCode.FORBIDDEN;
-                }
-                return result;
-            })
-        );
-    }
-
-    private getMessages(): Observable<any> {
-        return this.dotMessageService
-            .getMessages([
-                'dot.common.http.error.403.header',
-                'dot.common.http.error.403.message',
-                'dot.common.http.error.404.header',
-                'dot.common.http.error.404.message',
-                'dot.common.http.error.500.header',
-                'dot.common.http.error.500.message',
-                'dot.common.http.error.403.license.message',
-                'dot.common.http.error.403.license.header',
-                'dot.common.http.error.400.header',
-                'dot.common.http.error.400.message',
-                'dot.common.http.error.204.license.message',
-                'dot.common.http.error.204.license.header'
-            ])
-            .pipe(take(1));
+        if (
+            err['bodyJsonObject'].error &&
+            this.contentletIsForbidden(err['bodyJsonObject'].error)
+        ) {
+            result.status = HttpCode.FORBIDDEN;
+        }
+        return of(result);
     }
 
     private callErrorHandler(response: Response): boolean {

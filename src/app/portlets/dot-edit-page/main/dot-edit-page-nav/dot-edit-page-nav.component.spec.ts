@@ -224,7 +224,7 @@ describe('DotEditPageNavComponent', () => {
             });
 
             it('should have code option disabled because user can not edit the page thus the layout or template', () => {
-                fixture.componentInstance.pageState = new DotPageRenderState(mockUser, 
+                fixture.componentInstance.pageState = new DotPageRenderState(mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPageAdvanceTemplate,
                         page: {

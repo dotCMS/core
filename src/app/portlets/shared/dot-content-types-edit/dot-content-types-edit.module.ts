@@ -72,6 +72,7 @@ import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { FormatDateService } from '@services/format-date-service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [
@@ -121,6 +122,7 @@ import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
         DotCopyButtonModule,
         DotDialogModule,
         DotDirectivesModule,
+        DotPipesModule,
         DotSecondaryToolbarModule,
         DotFieldHelperModule,
         DotFieldValidationMessageModule,

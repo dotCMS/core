@@ -38,7 +38,8 @@
             <input
                 #searchInput
                 pInputText
-                [placeholder]="searchPlaceholder$ | async"
+                [placeholder]="'search' | dm
+"
                 type="text"
                 class="searchable-dropdown__search-inputfield"
                 (click)="$event.stopPropagation()"

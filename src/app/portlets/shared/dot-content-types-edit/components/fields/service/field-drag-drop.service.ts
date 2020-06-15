@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, merge } from 'rxjs';
 import { DragulaService } from 'ng2-dragula';
-import { filter, map, tap, take } from 'rxjs/operators';
+import { filter, map, tap } from 'rxjs/operators';
 import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from 'dotcms-models';
 import * as _ from 'lodash';
 import { FieldUtil } from '../util/field-util';
@@ -35,23 +35,12 @@ export class FieldDragDropService {
     private draggedEvent = false;
     private currentFullRowEl: HTMLElement = null;
     private currentColumnOvered: Element;
-    private i18nMessages: { [key: string]: string } = {};
 
     constructor(
         private dragulaService: DragulaService,
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService
     ) {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.fullrow.dialog.header',
-                'contenttypes.fullrow.dialog.message',
-                'contenttypes.fullrow.dialog.accept'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.i18nMessages = messages;
-            });
 
         const dragulaOver$ = dragulaService.over();
         const dragulaDropModel$ = dragulaService.dropModel();
@@ -66,10 +55,10 @@ export class FieldDragDropService {
 
                 if (wasDrop(target)) {
                     this.dotAlertConfirmService.alert({
-                        header: this.i18nMessages['contenttypes.fullrow.dialog.header'],
-                        message: this.i18nMessages['contenttypes.fullrow.dialog.message'],
+                        header: this.dotMessageService.get('contenttypes.fullrow.dialog.header'),
+                        message: this.dotMessageService.get('contenttypes.fullrow.dialog.message'),
                         footerLabel: {
-                            accept: this.i18nMessages['contenttypes.fullrow.dialog.accept']
+                            accept: this.dotMessageService.get('contenttypes.fullrow.dialog.accept')
                         }
                     });
                 }

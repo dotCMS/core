@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { FieldProperty } from '../field-properties.model';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup } from '@angular/forms';
-import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-default-value-property',
@@ -14,21 +13,11 @@ export class DefaultValuePropertyComponent implements OnInit {
     errorLabel: string;
     private errorLabelsMap = new Map<string, string>();
 
-    constructor(public dotMessageService: DotMessageService) {}
+    constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.field.properties.default_value.label',
-                'contenttypes.field.properties.default_value.error.format',
-                'contenttypes.field.properties.default_value.immutable_date.error.format',
-                'contenttypes.field.properties.default_value.immutable_date_time.error.format'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: any) => {
-                this.setErrorLabelMap(messages);
-                this.errorLabel = this.getErrorLabel(this.property.field.clazz);
-            });
+        this.setErrorLabelMap();
+        this.errorLabel = this.getErrorLabel(this.property.field.clazz);
     }
 
     private getErrorLabel(clazz: string): string {
@@ -37,18 +26,22 @@ export class DefaultValuePropertyComponent implements OnInit {
             : this.errorLabelsMap.get('default');
     }
 
-    private setErrorLabelMap(messages: string[]): void {
+    private setErrorLabelMap(): void {
         this.errorLabelsMap.set(
             'com.dotcms.contenttype.model.field.ImmutableDateField',
-            messages['contenttypes.field.properties.default_value.immutable_date.error.format']
+            this.dotMessageService.get(
+                'contenttypes.field.properties.default_value.immutable_date.error.format'
+            )
         );
         this.errorLabelsMap.set(
             'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-            messages['contenttypes.field.properties.default_value.immutable_date_time.error.format']
+            this.dotMessageService.get(
+                'contenttypes.field.properties.default_value.immutable_date_time.error.format'
+            )
         );
         this.errorLabelsMap.set(
             'default',
-            messages['contenttypes.field.properties.default_value.error.format']
+            this.dotMessageService.get('contenttypes.field.properties.default_value.error.format')
         );
     }
 }

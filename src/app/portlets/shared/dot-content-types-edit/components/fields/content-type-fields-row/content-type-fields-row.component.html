@@ -15,7 +15,7 @@
             *ngIf="!column.fields.length"
             class="row-header__remove"
             icon="delete"
-            [tooltipText]="i18nMessages['contenttypes.action.delete']"
+            [tooltipText]="'contenttypes.action.delete' | dm"
             (click)="remove(i)"
         >
         </dot-icon-button-tooltip>

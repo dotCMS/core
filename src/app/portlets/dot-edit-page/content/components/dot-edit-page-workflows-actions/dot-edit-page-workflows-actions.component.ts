@@ -1,13 +1,5 @@
 import { of as observableOf, Observable } from 'rxjs';
-import {
-    Component,
-    Input,
-    OnChanges,
-    SimpleChanges,
-    OnInit,
-    Output,
-    EventEmitter
-} from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
 import { DotCMSWorkflowAction } from 'dotcms-models';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
@@ -24,12 +16,10 @@ import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-
     templateUrl: './dot-edit-page-workflows-actions.component.html',
     styleUrls: ['./dot-edit-page-workflows-actions.component.scss']
 })
-export class DotEditPageWorkflowsActionsComponent implements OnInit, OnChanges {
-    @Input()
-    page: DotPage;
+export class DotEditPageWorkflowsActionsComponent implements OnChanges {
+    @Input() page: DotPage;
 
-    @Output()
-    fired: EventEmitter<any> = new EventEmitter();
+    @Output() fired: EventEmitter<any> = new EventEmitter();
 
     actionsAvailable: boolean;
     actions: Observable<MenuItem[]>;
@@ -41,10 +31,6 @@ export class DotEditPageWorkflowsActionsComponent implements OnInit, OnChanges {
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotGlobalMessageService: DotGlobalMessageService
     ) {}
-
-    ngOnInit() {
-        this.dotMessageService.getMessages(['editpage.actions.fire.confirmation']).subscribe();
-    }
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes.page) {
@@ -88,7 +74,7 @@ export class DotEditPageWorkflowsActionsComponent implements OnInit, OnChanges {
                                 this.fired.emit();
                                 return this.getWorkflowActions(newInode);
                             }),
-                            catchError((error) => {
+                            catchError(error => {
                                 this.httpErrorManagerService.handle(error);
                                 return currentMenuActions;
                             })

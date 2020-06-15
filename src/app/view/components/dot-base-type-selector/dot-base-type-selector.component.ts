@@ -12,10 +12,8 @@ import { DotContentTypeService } from '@services/dot-content-type/dot-content-ty
     styleUrls: ['./dot-base-type-selector.component.scss']
 })
 export class DotBaseTypeSelectorComponent implements OnInit {
-    @Input()
-    value: SelectItem;
-    @Output()
-    selected = new EventEmitter<string>();
+    @Input() value: SelectItem;
+    @Output() selected = new EventEmitter<string>();
 
     options: Observable<SelectItem[]>;
 
@@ -25,29 +23,21 @@ export class DotBaseTypeSelectorComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages(['contenttypes.selector.any.content.type'])
-            .pipe(take(1))
-            .subscribe(() => {
-                this.options = this.dotContentTypeService.getAllContentTypes().pipe(
-                    take(1),
-                    map((structures: StructureTypeView[]) =>
-                        this.setOptions(
-                            this.dotMessageService.get('contenttypes.selector.any.content.type'),
-                            structures
-                        )
-                    )
-                );
-            });
+        this.options = this.dotContentTypeService
+            .getAllContentTypes()
+            .pipe(take(1), map((structures: StructureTypeView[]) => this.setOptions(structures)));
     }
 
     change(item: SelectItem) {
         this.selected.emit(item.value);
     }
 
-    setOptions(allOptions: string, baseTypes: StructureTypeView[]): SelectItem[] {
+    setOptions(baseTypes: StructureTypeView[]): SelectItem[] {
         return [
-            { label: allOptions, value: '' },
+            {
+                label: this.dotMessageService.get('contenttypes.selector.any.content.type'),
+                value: ''
+            },
             ...baseTypes.map((structure: StructureTypeView) => ({
                 label: structure.label,
                 value: structure.name

@@ -7,34 +7,25 @@ import { DotMessageService } from '@services/dot-messages-service';
     templateUrl: './dot-template-additional-actions-menu.component.html'
 })
 export class DotTemplateAdditionalActionsMenuComponent implements OnInit {
-    @Input()
-    inode: string;
+    @Input() inode: string;
     items: MenuItem[];
 
     constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        const keys = [
-            'template.action.additional.permissions',
-            'template.action.additional.history',
-            'template.action.additional.properties'
+        this.items = [
+            {
+                label: this.dotMessageService.get('template.action.additional.properties'),
+                routerLink: `template/${this.inode}/properties`
+            },
+            {
+                label: this.dotMessageService.get('template.action.additional.permissions'),
+                routerLink: `template/${this.inode}/permissions`
+            },
+            {
+                label: this.dotMessageService.get('template.action.additional.history'),
+                routerLink: `template/${this.inode}/history`
+            }
         ];
-
-        this.dotMessageService.getMessages(keys).subscribe((messages) => {
-            this.items = [
-                {
-                    label: messages['template.action.additional.properties'],
-                    routerLink: `template/${this.inode}/properties`
-                },
-                {
-                    label: messages['template.action.additional.permissions'],
-                    routerLink: `template/${this.inode}/permissions`
-                },
-                {
-                    label: messages['template.action.additional.history'],
-                    routerLink: `template/${this.inode}/history`
-                }
-            ];
-        });
     }
 }

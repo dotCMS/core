@@ -1,5 +1,5 @@
 <dot-dialog
-    [header]="i18nMessages['my-account']"
+    [header]="'my-account' | dm"
     [(visible)]="visible"
     [actions]="dialogActions"
     (hide)="close.emit()"
@@ -9,7 +9,7 @@
 
     <form #myAccountForm="ngForm" class="my-account">
         <div class="form__group">
-            <span dotMdInputtext label="{{ i18nMessages['First-Name'] }}">
+            <span dotMdInputtext label="{{ 'First-Name' | dm }}">
                 <input pInputText id="dot-my-account-first-name-input"
                     #firstNameInput="ngModel"
                     name="givenName"
@@ -18,9 +18,9 @@
                     required/>
             </span>
         </div>
-        <p class="error-message" id="dot-my-account-first-name-error-message" [hidden]="firstNameInput.valid || firstNameInput.pristine">{{ getRequiredMessage(i18nMessages['First-Name']) }}</p>
+        <p class="error-message" id="dot-my-account-first-name-error-message" [hidden]="firstNameInput.valid || firstNameInput.pristine">{{ getRequiredMessage('First-Name' | dm) }}</p>
         <div class="form__group">
-            <span dotMdInputtext label="{{ i18nMessages['Last-Name'] }}">
+            <span dotMdInputtext label="{{ 'Last-Name' | dm }}">
                 <input pInputText id="dot-my-account-last-name-input"
                     #lastNameInput="ngModel"
                     name="surname"
@@ -29,9 +29,9 @@
                     required/>
             </span>
         </div>
-        <p class="error-message" id="dot-my-account-last-name-error-message" [hidden]="lastNameInput.valid || lastNameInput.pristine">{{ getRequiredMessage(i18nMessages['Last-Name']) }}</p>
+        <p class="error-message" id="dot-my-account-last-name-error-message" [hidden]="lastNameInput.valid || lastNameInput.pristine">{{ getRequiredMessage('Last-Name' | dm) }}</p>
         <div class="form__group">
-            <span dotMdInputtext label="{{ i18nMessages['email-address'] }}">
+            <span dotMdInputtext label="{{ 'email-address' | dm }}">
                 <input pInputText id="dot-my-account-email-input"
                     #emailInput="ngModel"
                     name="email"
@@ -43,11 +43,11 @@
             </span>
         </div>
         <div class="error-message" [hidden]="emailInput.valid || emailInput.pristine">
-            <p *ngIf="emailInput.errors && emailInput.errors.required" id="dot-my-account-email-required-error-message">{{ getRequiredMessage(i18nMessages['email-address']) }}</p>
-            <p *ngIf="emailInput.errors && emailInput.errors.pattern" id="dot-my-account-email-invalid-error-message">{{ stringFormat.formatMessage(i18nMessages['errors.email'], i18nMessages['email-address']) }}</p>
+            <p *ngIf="emailInput.errors && emailInput.errors.required" id="dot-my-account-email-required-error-message">{{ getRequiredMessage('email-address' | dm) }}</p>
+            <p *ngIf="emailInput.errors && emailInput.errors.pattern" id="dot-my-account-email-invalid-error-message">{{ stringFormat.formatMessage('errors.email' | dm, 'email-address' | dm) }}</p>
         </div>
         <div class="form__group">
-            <span dotMdInputtext label="{{ i18nMessages['current-password'] }}">
+            <span dotMdInputtext label="{{ 'current-password' | dm }}">
                 <input pPassword id="dot-my-account-current-password-input"
                     #currentPasswordInput="ngModel"
                     name="password"
@@ -60,11 +60,11 @@
         </div>
         <div class="form__group">
             <p-checkbox (onChange)="toggleChangePasswordOption()" binary="true"
-                         id="dot-my-account-change-password-option" label="{{ i18nMessages['change-password'] }}">
+                         id="dot-my-account-change-password-option" label="{{ 'change-password' | dm }}">
             </p-checkbox>
         </div>
         <div class="form__group">
-            <span dotMdInputtext label="{{ i18nMessages['new-password'] }}">
+            <span dotMdInputtext label="{{ 'new-password' | dm }}">
                 <input pPassword id="dot-my-account-new-password-input"
                     #passwordInput="ngModel"
                     name="newPassword"
@@ -75,7 +75,7 @@
             </span>
         </div>
         <div class="form__group">
-            <span dotMdInputtext label="{{ i18nMessages['re-enter-new-password'] }}">
+            <span dotMdInputtext label="{{ 're-enter-new-password' | dm }}">
                 <input pPassword id="dot-my-account-confirm-new-password-input"
                     #confirmPasswordInput="ngModel"
                     name="confirmPassword"
@@ -86,6 +86,6 @@
                     [disabled]="!changePasswordOption"/>
             </span>
         </div>
-        <p class="error-message" [hidden]="!(passwordInput.dirty && confirmPasswordInput.dirty) || passwordMatch">{{ i18nMessages['error.forgot.password.passwords.dont.match'] }}</p>
+        <p class="error-message" [hidden]="!(passwordInput.dirty && confirmPasswordInput.dirty) || passwordMatch">{{ 'error.forgot.password.passwords.dont.match' | dm }}</p>
     </form>
 </dot-dialog>

@@ -1,3 +1,3 @@
-<h6>{{ dotMessageService.get('editpage.layout.designer.sidebar') }}</h6>
+<h6>{{ 'editpage.layout.designer.sidebar' | dm }}</h6>
 <dot-sidebar-properties (change)="updateAndPropagate()" [(ngModel)]="value" class="dot-layout-designer__sidebar-properties"></dot-sidebar-properties>
 <dot-container-selector (change)="updateAndPropagate($event)" [data]="containers"></dot-container-selector>

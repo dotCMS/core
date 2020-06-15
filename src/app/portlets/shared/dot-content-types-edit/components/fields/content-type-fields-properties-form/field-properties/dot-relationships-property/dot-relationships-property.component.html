@@ -1,6 +1,6 @@
 <div class="form__group relationship__type" *ngIf="!editing">
     <p-radioButton
-        [label]="i18nMessages['contenttypes.field.properties.relationship.new.label']"
+        [label]="'contenttypes.field.properties.relationship.new.label' | dm"
         [value]="STATUS_NEW"
         [(ngModel)]="status"
         (click)="clean()"
@@ -8,7 +8,7 @@
     </p-radioButton>
 
     <p-radioButton
-        [label]="i18nMessages['contenttypes.field.properties.relationship.existing.label']"
+        [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
         [value]="STATUS_EXISTING"
         [(ngModel)]="status"
         (click)="clean()"

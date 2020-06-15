@@ -19,10 +19,6 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     pushHistoryURL: string;
     relationshipURL: string;
 
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
-
     actions: MenuItem[];
 
     constructor(
@@ -34,25 +30,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
 
     ngOnInit(): void {
         this.fieldDragDropService.setBagOptions();
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.tab.fields.header',
-                'contenttypes.sidebar.layouts.title',
-                'contenttypes.tab.permissions.header',
-                'contenttypes.tab.publisher.push.history.header',
-                'contenttypes.tab.relationship.header',
-                'contenttypes.dropzone.rows.add',
-                'contenttypes.content.row',
-                'contenttypes.dropzone.rows.tab_divider',
-                'contenttypes.content.variable',
-                'contenttypes.form.identifier',
-                'contenttypes.action.edit'
-            ])
-            .pipe(take(1))
-            .subscribe((res) => {
-                this.i18nMessages = res;
-                this.loadActions();
-            });
+        this.loadActions();
     }
 
     ngOnChanges(changes): void {
@@ -76,13 +54,13 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     private loadActions(): void {
         this.actions = [
             {
-                label: this.i18nMessages['contenttypes.dropzone.rows.add'],
+                label: this.dotMessageService.get('contenttypes.dropzone.rows.add'),
                 command: () => {
                     this.fireAddRowEvent();
                 }
             },
             {
-                label: this.i18nMessages['contenttypes.dropzone.rows.tab_divider'],
+                label: this.dotMessageService.get('contenttypes.dropzone.rows.tab_divider'),
                 command: () => {
                     this.dotEventsService.notify('add-tab-divider');
                 }

@@ -8,14 +8,14 @@
                     pButton
                     secondary
                     type="button"
-                    [label]="messagesKey['Cancel']"
+                    [label]="'Cancel' | dm"
                     (click)="goToApps(apps.key)"
                 ></button>
                 <button
                     pButton
                     type="button"
                     (click)="onSubmit()"
-                    [label]="messagesKey['Save']"
+                    [label]="'Save' | dm"
                     [disabled]="!formValid"
                 ></button>
             </div>
@@ -29,7 +29,7 @@
                 (valid)="formValid = $event"
             ></dot-apps-configuration-detail-form>
             <div *ngIf="apps.allowExtraParams">
-                <h5>{{ messagesKey['apps.custom.properties'] }}</h5>
+                <h5>{{ 'apps.custom.properties' | dm }}</h5>
                 <dot-key-value
                     [autoFocus]="false"
                     [showHiddenField]="true"

@@ -3,7 +3,6 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { take } from 'rxjs/operators';
 import { FieldUtil } from '../util/field-util';
 
 /**
@@ -30,34 +29,18 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     @Output()
     removeRow: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
 
-    i18nMessages: any = {};
-
     constructor(
         private dotMessageService: DotMessageService,
         private dotDialogService: DotAlertConfirmService
     ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.dropzone.rows.empty.message',
-                'contenttypes.action.delete',
-                'contenttypes.confirm.message.delete.field',
-                'contenttypes.confirm.message.delete.row',
-                'contenttypes.content.field',
-                'contenttypes.content.row',
-                'contenttypes.action.cancel'
-            ])
-            .pipe(take(1))
-            .subscribe((res) => {
-                this.i18nMessages = res;
-                document
-                    .querySelector('html')
-                    .style.setProperty(
-                        '--empty-message',
-                        `"${this.i18nMessages['contenttypes.dropzone.rows.empty.message']}"`
-                    );
-            });
+        document
+            .querySelector('html')
+            .style.setProperty(
+            '--empty-message',
+            `"${this.dotMessageService.get('contenttypes.dropzone.rows.empty.message')}"`
+        );
     }
 
     /**
@@ -71,16 +54,16 @@ export class ContentTypeFieldsRowComponent implements OnInit {
             accept: () => {
                 this.removeField.emit(field);
             },
-            header: `${this.i18nMessages['contenttypes.action.delete']} ${
-                this.i18nMessages['contenttypes.content.field']
+            header: `${this.dotMessageService.get('contenttypes.action.delete')} ${
+                this.dotMessageService.get('contenttypes.content.field')
             }`,
             message: this.dotMessageService.get(
                 'contenttypes.confirm.message.delete.field',
                 field.name
             ),
             footerLabel: {
-                accept: this.i18nMessages['contenttypes.action.delete'],
-                reject: this.i18nMessages['contenttypes.action.cancel']
+                accept: this.dotMessageService.get('contenttypes.action.delete'),
+                reject: this.dotMessageService.get('contenttypes.action.cancel')
             }
         });
     }

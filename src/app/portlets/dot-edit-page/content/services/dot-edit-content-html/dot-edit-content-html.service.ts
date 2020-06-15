@@ -73,13 +73,6 @@ export class DotEditContentHtmlService {
             }
         );
 
-        this.dotMessageService
-            .getMessages([
-                'editpage.content.add.already.title',
-                'editpage.content.add.already.message'
-            ])
-            .subscribe();
-
         if (!this.docClickHandlers) {
             this.docClickHandlers = {};
             this.setGlobalClickHandlers();

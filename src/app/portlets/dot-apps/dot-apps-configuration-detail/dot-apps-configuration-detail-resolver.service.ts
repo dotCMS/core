@@ -1,10 +1,9 @@
-import { Observable, forkJoin, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
-import { take, switchMap } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
-import { DotMessageService } from '@services/dot-messages-service';
-import { DotAppsResolverData } from '../dot-apps-configuration/dot-apps-configuration-resolver.service';
+import { DotApps } from '@models/dot-apps/dot-apps.model';
 
 /**
  * Returns app configuration detail from the api
@@ -14,35 +13,14 @@ import { DotAppsResolverData } from '../dot-apps-configuration/dot-apps-configur
  * @implements {Resolve<DotAppsResolverData>}
  */
 @Injectable()
-export class DotAppsConfigurationDetailResolver implements Resolve<DotAppsResolverData> {
+export class DotAppsConfigurationDetailResolver implements Resolve<DotApps> {
     constructor(
-        private dotAppsService: DotAppsService,
-        public dotMessageService: DotMessageService
+        private dotAppsService: DotAppsService
     ) {}
 
-    resolve(route: ActivatedRouteSnapshot): Observable<DotAppsResolverData> {
+    resolve(route: ActivatedRouteSnapshot): Observable<DotApps> {
         const appKey = route.paramMap.get('appKey');
         const id = route.paramMap.get('id');
-        const appConfigurations$ = this.dotAppsService.getConfiguration(appKey, id).pipe(take(1));
-        const messages$: Observable<{
-            [key: string]: string;
-        }> = this.dotMessageService
-            .getMessages([
-                'apps.key',
-                'apps.custom.properties',
-                'apps.form.dialog.success.header',
-                'apps.form.dialog.success.message',
-                'apps.custom.properties',
-                'ok',
-                'Cancel',
-                'Save'
-            ])
-            .pipe(take(1));
-
-        return forkJoin([appConfigurations$, messages$]).pipe(
-            switchMap(([app, messages]) => {
-                return of({ messages, app });
-            })
-        );
+        return this.dotAppsService.getConfiguration(appKey, id).pipe(take(1));
     }
 }

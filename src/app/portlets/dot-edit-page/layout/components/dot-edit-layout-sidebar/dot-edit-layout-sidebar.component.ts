@@ -1,9 +1,8 @@
-import { Component, OnInit, forwardRef } from '@angular/core';
+import { Component, forwardRef } from '@angular/core';
 import { DotLayoutSideBar } from '../../../shared/models/dot-layout-sidebar.model';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotContainerColumnBox } from '../../../shared/models/dot-container-column-box.model';
 import { DotEditLayoutService } from '../../../shared/services/dot-edit-layout.service';
-import { DotMessageService } from '@services/dot-messages-service';
 
 /**
  * Component in charge of update the model that will be used in the sidebar display containers
@@ -22,20 +21,11 @@ import { DotMessageService } from '@services/dot-messages-service';
         }
     ]
 })
-export class DotEditLayoutSidebarComponent implements OnInit, ControlValueAccessor {
+export class DotEditLayoutSidebarComponent implements ControlValueAccessor {
     containers: DotContainerColumnBox[];
     value: DotLayoutSideBar;
 
-    constructor(
-        private dotEditLayoutService: DotEditLayoutService,
-        public dotMessageService: DotMessageService
-    ) {}
-
-    ngOnInit() {
-        this.dotMessageService
-            .getMessages(['editpage.layout.designer.sidebar'])
-            .subscribe();
-    }
+    constructor(private dotEditLayoutService: DotEditLayoutService) {}
 
     /**
      * Returns DotContainerColumnBox model.
@@ -46,7 +36,7 @@ export class DotEditLayoutSidebarComponent implements OnInit, ControlValueAccess
      */
     getModel(containers: DotContainerColumnBox[]): DotLayoutSideBar {
         if (containers) {
-            this.value.containers = containers.map((item) => {
+            this.value.containers = containers.map(item => {
                 return {
                     identifier: item.container.identifier,
                     uuid: item.uuid

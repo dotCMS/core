@@ -1,4 +1,4 @@
-import { debounceTime, map } from 'rxjs/operators';
+import { debounceTime } from 'rxjs/operators';
 import {
     Component,
     ElementRef,
@@ -17,8 +17,7 @@ import {
     AfterContentInit
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { DotMessageService } from '@services/dot-messages-service';
-import { fromEvent, Observable } from 'rxjs';
+import { fromEvent } from 'rxjs';
 import { OverlayPanel, PrimeTemplate } from 'primeng/primeng';
 import * as _ from 'lodash';
 
@@ -111,15 +110,15 @@ export class SearchableDropdownComponent
 
     valueString = '';
     value: any;
-    searchPlaceholder$: Observable<string>;
     overlayPanelMinHeight: string;
     options: any[];
     label: string;
     externalSelectTemplate: TemplateRef<any>;
     externalItemListTemplate: TemplateRef<any>;
 
-    constructor(private dotMessageService: DotMessageService) {}
+    constructor() {}
 
+    // tslint:disable-next-line:no-shadowed-variable
     propagateChange = (_: any) => {};
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -130,9 +129,6 @@ export class SearchableDropdownComponent
     }
 
     ngOnInit(): void {
-        this.searchPlaceholder$ = this.dotMessageService
-            .getMessages(['search'])
-            .pipe(map((messages) => messages['search']));
         fromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500))
             .subscribe((keyboardEvent: Event) => {

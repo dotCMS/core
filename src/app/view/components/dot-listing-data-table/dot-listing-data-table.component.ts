@@ -14,7 +14,6 @@ import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
 import { LoggerService } from 'dotcms-js';
 import { FormatDateService } from '@services/format-date-service';
-import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService, OrderDirection } from '@services/paginator';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 
@@ -47,12 +46,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     dateColumns: DataTableColumn[];
     loading = true;
 
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
-
     constructor(
-        public dotMessageService: DotMessageService,
         public loggerService: LoggerService,
         public paginatorService: PaginatorService,
         private formatDateService: FormatDateService
@@ -78,10 +72,6 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
 
     ngOnInit(): void {
         this.globalSearch.nativeElement.focus();
-
-        this.dotMessageService.getMessages(['global-search']).subscribe(res => {
-            this.i18nMessages = res;
-        });
     }
 
     handleRowClick($event): void {

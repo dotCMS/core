@@ -25,6 +25,7 @@ import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const routes: Routes = [
     {
@@ -43,6 +44,7 @@ const routes: Routes = [
         RouterModule.forChild(routes),
         DotContentletEditorModule,
         DotDirectivesModule,
+        DotPipesModule,
         DotWhatsChangedModule,
         DotFormSelectorModule,
         TooltipModule,

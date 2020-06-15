@@ -1,7 +1,7 @@
 <dot-dialog
     width="500px"
     *ngIf="visible"
-    [header]="messagesKey['modes.persona.add.persona']"
+    [header]="'modes.persona.add.persona' | dm"
     [visible]="visible"
     [actions]="dialogActions"
     [appendToBody]="true"

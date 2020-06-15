@@ -1,40 +1,23 @@
-import { Component, EventEmitter, Input, OnInit, Output, HostListener } from '@angular/core';
+import { Component, EventEmitter, Input, Output, HostListener } from '@angular/core';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
-import { DotMessageService } from '@services/dot-messages-service';
-import { take, map } from 'rxjs/operators';
-import { Observable } from 'rxjs';
 
 @Component({
     selector: 'dot-persona-selector-option',
     templateUrl: './dot-persona-selector-option.component.html',
     styleUrls: ['./dot-persona-selector-option.component.scss']
 })
-export class DotPersonaSelectorOptionComponent implements OnInit {
-    @Input()
-    canDespersonalize = true;
+export class DotPersonaSelectorOptionComponent {
+    @Input() canDespersonalize = true;
 
-    @Input()
-    persona: DotPersona;
+    @Input() persona: DotPersona;
 
-    @Input()
-    selected: boolean;
+    @Input() selected: boolean;
 
-    @Output()
-    change = new EventEmitter<DotPersona>();
+    @Output() change = new EventEmitter<DotPersona>();
 
-    @Output()
-    delete = new EventEmitter<DotPersona>();
+    @Output() delete = new EventEmitter<DotPersona>();
 
-    deleteLabel$: Observable<string>;
-
-    constructor(private dotMessageService: DotMessageService) {}
-
-    ngOnInit() {
-        this.deleteLabel$ = this.dotMessageService.getMessages(['modes.persona.personalized']).pipe(
-            take(1),
-            map((messages: { [key: string]: string }) => messages['modes.persona.personalized'])
-        );
-    }
+    constructor() {}
 
     @HostListener('click', ['$event'])
     onClick(_$event: MouseEvent) {

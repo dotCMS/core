@@ -31,13 +31,19 @@ describe('DotAppsConfigurationListComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            imports: [CommonModule, ButtonModule, DotAppsConfigurationItemModule],
-            declarations: [DotAppsConfigurationListComponent],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
-    }));
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                imports: [
+                    CommonModule,
+                    ButtonModule,
+                    DotAppsConfigurationItemModule
+                ],
+                declarations: [DotAppsConfigurationListComponent],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotAppsConfigurationListComponent);
@@ -52,10 +58,6 @@ describe('DotAppsConfigurationListComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should load messages keys', () => {
-            expect(component.messagesKey).toBe(messages);
-        });
-
         it('should set messages/values in DOM correctly', () => {
             expect(
                 fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
@@ -64,7 +66,7 @@ describe('DotAppsConfigurationListComponent', () => {
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-configuration-list__show-more'))
                     .nativeElement.outerText
-            ).toBe(component.messagesKey['apps.configurations.show.more'].toUpperCase());
+            ).toBe(messageServiceMock.get('apps.configurations.show.more').toUpperCase());
         });
 
         it('should emit action for edit --> Site Item', () => {

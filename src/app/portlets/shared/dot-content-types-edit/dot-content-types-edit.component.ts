@@ -51,7 +51,6 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     data: DotCMSContentType;
     dialogActions: DotDialogActions;
     layout: DotCMSContentTypeLayoutRow[];
-    messagesKey: { [key: string]: string } = {};
     show: boolean;
     templateInfo = {
         icon: '',
@@ -70,7 +69,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
         private dotRouterService: DotRouterService,
         private fieldService: FieldService,
         private route: ActivatedRoute,
-        public dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         public router: Router,
         private dotEditContentTypeCacheService: DotEditContentTypeCacheService
     ) {}
@@ -87,48 +86,22 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 this.layout = contentType.layout;
             });
 
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.action.create',
-                'contenttypes.action.edit',
-                'contenttypes.action.update',
-                'contenttypes.content.content',
-                'contenttypes.content.create.contenttype',
-                'contenttypes.content.edit.contenttype',
-                'contenttypes.content.fileasset',
-                'contenttypes.content.form',
-                'contenttypes.content.htmlpage',
-                'contenttypes.content.key_value',
-                'contenttypes.content.persona',
-                'contenttypes.content.vanity_url',
-                'contenttypes.content.variable',
-                'contenttypes.content.widget',
-                'contenttypes.content.dotasset',
-                'contenttypes.form.identifier',
-                'contenttypes.dropzone.rows.add',
-                'contenttypes.dropzone.rows.tab_divider'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messagesKey = messages;
+        this.contentTypeActions = [
+            {
+                label: this.dotMessageService.get('contenttypes.dropzone.rows.add'),
+                command: () => this.notifyAddEvt('add-row')
+            },
+            {
+                label: this.dotMessageService.get('contenttypes.dropzone.rows.tab_divider'),
+                command: () => this.notifyAddEvt('add-tab-divider')
+            }
+        ];
 
-                this.contentTypeActions = [
-                    {
-                        label: this.messagesKey['contenttypes.dropzone.rows.add'],
-                        command: () => this.notifyAddEvt('add-row')
-                    },
-                    {
-                        label: this.messagesKey['contenttypes.dropzone.rows.tab_divider'],
-                        command: () => this.notifyAddEvt('add-tab-divider')
-                    }
-                ];
+        if (!this.isEditMode()) {
+            this.startFormDialog();
+        }
 
-                if (!this.isEditMode()) {
-                    this.startFormDialog();
-                }
-
-                this.dialogCloseable = this.isEditMode();
-            });
+        this.dialogCloseable = this.isEditMode();
 
         this.setTemplateInfo();
     }
@@ -156,7 +129,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      */
     startFormDialog(): void {
         this.show = true;
-        this.setEditContentletDialogOptions(this.messagesKey);
+        this.setEditContentletDialogOptions();
     }
 
     /**
@@ -164,23 +137,21 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     setTemplateInfo(): void {
-        this.dotMessageService.messageMap$.pipe(take(1)).subscribe(() => {
-            const type = this.contentTypesInfoService.getLabel(this.data.baseType);
-            const contentTypeName = this.messagesKey[`contenttypes.content.${type}`];
+        const type = this.contentTypesInfoService.getLabel(this.data.baseType);
+        const contentTypeName = this.dotMessageService.get(`contenttypes.content.${type}`);
 
-            this.templateInfo = {
-                icon: this.contentTypesInfoService.getIcon(type),
-                header: this.isEditMode()
-                    ? this.dotMessageService.get(
-                          'contenttypes.content.edit.contenttype',
-                          contentTypeName
-                      )
-                    : this.dotMessageService.get(
-                          'contenttypes.content.create.contenttype',
-                          contentTypeName
-                      )
-            };
-        });
+        this.templateInfo = {
+            icon: this.contentTypesInfoService.getIcon(type),
+            header: this.isEditMode()
+                ? this.dotMessageService.get(
+                    'contenttypes.content.edit.contenttype',
+                    contentTypeName
+                )
+                : this.dotMessageService.get(
+                    'contenttypes.content.create.contenttype',
+                    contentTypeName
+                )
+        };
     }
 
     /**
@@ -307,13 +278,13 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
         this.dotEventsService.notify(typeEvt);
     }
 
-    private setEditContentletDialogOptions(messages: { [key: string]: string }): void {
+    private setEditContentletDialogOptions(): void {
         this.dialogActions = {
             accept: {
                 disabled: true,
                 label: this.isEditMode()
-                    ? messages['contenttypes.action.update']
-                    : messages['contenttypes.action.create'],
+                    ? this.dotMessageService.get('contenttypes.action.update')
+                    : this.dotMessageService.get('contenttypes.action.create'),
                 action: () => {
                     this.contentTypesForm.submitForm();
                 }

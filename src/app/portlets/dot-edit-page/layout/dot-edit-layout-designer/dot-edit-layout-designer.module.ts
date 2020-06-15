@@ -29,6 +29,7 @@ import { DotThemeSelectorModule } from '../components/dot-theme-selector/dot-the
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotEditLayoutDesignerComponent, DotLayoutDesignerComponent],
@@ -54,7 +55,8 @@ import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
         ToolbarModule,
         TooltipModule,
         DotSecondaryToolbarModule,
-        DotEditPageViewAsControllerModule
+        DotEditPageViewAsControllerModule,
+        DotPipesModule
     ],
     exports: [DotEditLayoutDesignerComponent],
     providers: [DotEditLayoutService, DotPageLayoutService, TemplateContainersCacheService]

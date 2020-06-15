@@ -33,9 +33,6 @@ export class DotEditPageStateControllerComponent implements OnInit, OnChanges {
     lockWarn = false;
     mode: DotPageMode;
     options: SelectItem[] = [];
-
-    private messages: { [key: string]: string };
-
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
@@ -47,28 +44,7 @@ export class DotEditPageStateControllerComponent implements OnInit, OnChanges {
 
     ngOnChanges(changes: SimpleChanges) {
         const pageState = changes.pageState.currentValue;
-
-        if (this.messages) {
-            this.options = this.getStateModeOptions(pageState);
-        } else {
-            this.dotMessageService
-                .getMessages([
-                    'editpage.toolbar.edit.page',
-                    'editpage.toolbar.live.page',
-                    'editpage.toolbar.preview.page',
-                    'editpage.content.steal.lock.confirmation.message.header',
-                    'editpage.content.steal.lock.confirmation.message',
-                    'editpage.personalization.confirm.message',
-                    'editpage.personalization.confirm.header',
-                    'editpage.personalization.confirm.with.lock'
-                ])
-                .pipe(take(1))
-                .subscribe((messages: { [key: string]: string }) => {
-                    this.messages = messages;
-                    this.options = this.getStateModeOptions(pageState);
-                });
-        }
-
+        this.options = this.getStateModeOptions(pageState);
         /*
             When the page is lock but the page is being load from an user that can lock the page
             we want to show the lock off so the new user can steal the lock
@@ -167,7 +143,7 @@ export class DotEditPageStateControllerComponent implements OnInit, OnChanges {
         };
 
         return {
-            label: this.messages[`editpage.toolbar.${mode}.page`],
+            label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
             value: DotPageMode[mode.toLocaleUpperCase()],
             disabled: disabled[mode]
         };
@@ -245,8 +221,8 @@ export class DotEditPageStateControllerComponent implements OnInit, OnChanges {
             this.dotAlertConfirmService.confirm({
                 accept: resolve,
                 reject: reject,
-                header: this.messages['editpage.content.steal.lock.confirmation.message.header'],
-                message: this.messages['editpage.content.steal.lock.confirmation.message']
+                header: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message.header'),
+                message: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message')
             });
         });
     }

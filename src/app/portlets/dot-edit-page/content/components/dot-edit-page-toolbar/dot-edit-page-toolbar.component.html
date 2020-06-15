@@ -11,7 +11,7 @@
             tiny
             type="button"
             class="edit-page-toolbar__cancel"
-            [label]="messagesKey['dot.common.cancel']"
+            [label]="'dot.common.cancel' | dm"
             (click)="cancel.emit($event)"
         ></button>
         <dot-edit-page-workflows-actions
@@ -25,7 +25,7 @@
 
         <p-checkbox
             class="dot-edit__what-changed-button"
-            [label]="messagesKey['dot.common.whats.changed']"
+            [label]="'dot.common.whats.changed' | dm"
             *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
             (onChange)="whatschange.emit($event)"
         ></p-checkbox>

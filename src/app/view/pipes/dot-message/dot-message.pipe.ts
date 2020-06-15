@@ -8,8 +8,6 @@ export class DotMessagePipe implements PipeTransform {
     constructor(private dotMessageService: DotMessageService) {}
 
     transform(value: string, args?: string[]): string {
-        return value === undefined || value === ''
-            ? ''
-            : this.dotMessageService.get(value, ...args);
+        return value ? this.dotMessageService.get(value, ...args) : '';
     }
 }

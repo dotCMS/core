@@ -1,9 +1,8 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { DotApps, DotAppsSaveData, DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 import { ActivatedRoute } from '@angular/router';
 import { pluck, take } from 'rxjs/operators';
 import * as _ from 'lodash';
-import { DotAppsResolverData } from '../dot-apps-configuration/dot-apps-configuration-resolver.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
@@ -15,8 +14,6 @@ import { DotKeyValueUtil } from '@components/dot-key-value/util/dot-key-value-ut
     styleUrls: ['./dot-apps-configuration-detail.component.scss']
 })
 export class DotAppsConfigurationDetailComponent implements OnInit {
-    @ViewChild('searchInput')
-    messagesKey: { [key: string]: string } = {};
     apps: DotApps;
 
     dynamicVariables: DotKeyValue[];
@@ -33,11 +30,9 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     ngOnInit() {
         this.route.data
             .pipe(pluck('data'), take(1))
-            .subscribe(({ messages, app }: DotAppsResolverData) => {
+            .subscribe(( app: DotApps) => {
                 this.apps = app;
                 this.formFields = this.getSecrets(app.sites[0].secrets);
-                this.messagesKey = messages;
-
                 this.dynamicVariables = this.transformSecretsToKeyValue(
                     this.getSecrets(app.sites[0].secrets, true)
                 );

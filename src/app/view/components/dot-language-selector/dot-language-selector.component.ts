@@ -8,12 +8,9 @@ import {
     SimpleChanges,
     OnChanges
 } from '@angular/core';
-import { take, map } from 'rxjs/operators';
-import { Observable } from 'rxjs';
-
+import { take } from 'rxjs/operators';
 import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
 import { DotLanguage } from '@models/dot-language/dot-language.model';
-import { DotMessageService } from '@services/dot-messages-service';
 
 @Component({
     selector: 'dot-language-selector',
@@ -26,18 +23,10 @@ export class DotLanguageSelectorComponent implements OnInit, OnChanges {
     @HostBinding('class.disabled') disabled: boolean;
 
     options: DotLanguage[] = [];
-    label$: Observable<string>;
 
-    constructor(
-        private dotLanguagesService: DotLanguagesService,
-        private dotMessageService: DotMessageService
-    ) {}
+    constructor(private dotLanguagesService: DotLanguagesService) {}
 
     ngOnInit() {
-        this.label$ = this.dotMessageService.getMessages(['editpage.viewas.label.language']).pipe(
-            map((messages: { [key: string]: string }) => messages['editpage.viewas.label.language'])
-        );
-
         this.loadOptions();
     }
 

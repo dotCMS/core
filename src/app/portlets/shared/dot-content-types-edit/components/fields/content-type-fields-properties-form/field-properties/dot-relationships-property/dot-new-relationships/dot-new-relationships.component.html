@@ -1,5 +1,5 @@
 <div class="form__group">
-    <label for="" class="form__label">{{i18nMessages['contenttypes.field.properties.relationships.contentType.label']}}*</label>
+    <label for="" class="form__label">{{'contenttypes.field.properties.relationships.contentType.label' | dm}}*</label>
     <dot-searchable-dropdown
         (change)="triggerChanged()"
         (filterChange)="getContentTypeList($event)"
@@ -8,7 +8,7 @@
         [data]="contentTypeCurrentPage | async"
         [disabled]="editing"
         [pageLinkSize]="paginatorService.maxLinksPage"
-        [placeholder]="i18nMessages['contenttypes.field.properties.relationship.new.content_type.placeholder']"
+        [placeholder]="'contenttypes.field.properties.relationship.new.content_type.placeholder' | dm"
         [rows]="paginatorService.paginationPerPage"
         [totalRecords]="paginatorService.totalRecords"
         labelPropertyName="name"
@@ -17,7 +17,7 @@
     </dot-searchable-dropdown>
 </div>
 <div class="form__group">
-    <label for="" class="form__label">{{i18nMessages['contenttypes.field.properties.relationships.label']}}</label>
+    <label for="" class="form__label">{{'contenttypes.field.properties.relationships.label' | dm}}</label>
     <dot-cardinality-selector
         [value]="cardinality"
         [disabled]="editing"

@@ -7,6 +7,7 @@ import { InputTextModule, CheckboxModule, PasswordModule } from 'primeng/primeng
 import { DotMyAccountComponent } from './dot-my-account.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     imports: [
@@ -16,7 +17,8 @@ import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module
         FormsModule,
         DotDialogModule,
         CommonModule,
-        CheckboxModule
+        CheckboxModule,
+        DotPipesModule
     ],
     exports: [DotMyAccountComponent],
     declarations: [DotMyAccountComponent],

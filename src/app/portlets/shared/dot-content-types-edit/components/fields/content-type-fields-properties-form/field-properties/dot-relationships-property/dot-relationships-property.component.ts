@@ -2,10 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup } from '@angular/forms';
 import * as _ from 'lodash';
-import { take } from 'rxjs/operators';
 import { FieldProperty } from '../field-properties.model';
 import { DotRelationshipsPropertyValue } from './model/dot-relationships-property-value.model';
-
 
 /**
  *Component for relationships property field
@@ -33,28 +31,8 @@ export class DotRelationshipsPropertyComponent implements OnInit {
 
     beforeValue: DotRelationshipsPropertyValue;
 
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
-
-    constructor(
-        public dotMessageService: DotMessageService) {
-
-    }
+    constructor(private dotMessageService: DotMessageService) {}
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.field.properties.relationship.existing.label',
-                'contenttypes.field.properties.relationship.new.label',
-                'contenttypes.field.properties.relationships.new.error.required',
-                'contenttypes.field.properties.relationships.edit.error.required'
-            ])
-            .pipe(take(1))
-            .subscribe((res) => {
-                this.i18nMessages = res;
-            });
-
-
         this.beforeValue = _.cloneDeep(this.group.get(this.property.name).value);
         this.editing = !!this.group.get(this.property.name).value.velocityVar;
     }
@@ -85,9 +63,8 @@ export class DotRelationshipsPropertyComponent implements OnInit {
      * @memberof DotRelationshipsPropertyComponent
      */
     getValidationErrorMessage(): string {
-        return this.status === this.STATUS_NEW ?
-            this.i18nMessages['contenttypes.field.properties.relationships.new.error.required'] :
-            this.i18nMessages['contenttypes.field.properties.relationships.edit.error.required'];
+        return this.status === this.STATUS_NEW
+            ? this.dotMessageService.get('contenttypes.field.properties.relationships.new.error.required')
+            : this.dotMessageService.get('contenttypes.field.properties.relationships.edit.error.required');
     }
-
 }

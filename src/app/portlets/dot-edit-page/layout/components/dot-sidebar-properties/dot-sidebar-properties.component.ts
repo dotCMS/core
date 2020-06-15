@@ -1,5 +1,4 @@
 import { Component, OnInit, ViewChild, forwardRef, Output, EventEmitter } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotLayoutSideBar } from '../../../shared/models/dot-layout-sidebar.model';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
@@ -19,27 +18,14 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 })
 export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccessor {
     value: DotLayoutSideBar;
-    @ViewChild('overlay')
-    overlay: any;
-    @Output()
-    change: EventEmitter<String> = new EventEmitter();
+    @ViewChild('overlay') overlay: any;
+    @Output() change: EventEmitter<String> = new EventEmitter();
 
-    constructor(
-        public dotMessageService: DotMessageService,
-        private dotEventsService: DotEventsService
-    ) {}
+    constructor(private dotEventsService: DotEventsService) {}
 
     propagateChange = (_: any) => {};
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'editpage.layout.sidebar.width.small',
-                'editpage.layout.sidebar.width.medium',
-                'editpage.layout.sidebar.width.large',
-                'editpage.layout.sidebar.action.open'
-            ])
-            .subscribe();
         this.value = {
             containers: [],
             location: '',

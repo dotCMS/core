@@ -1,11 +1,11 @@
 <div
     class="dot-persona-selector__container"
-    [pTooltip]="disabled ? messages['editpage.personalization.content.add.message'] : null"
+    [pTooltip]="disabled ? ('editpage.personalization.content.add.message' | dm) : null"
     [tooltipPosition]="disabled ? 'bottom' : null"
 >
 
     <dot-avatar
-        [label]="persona?.name || messages['modes.persona.no.persona']"
+        [label]="persona?.name || ('modes.persona.no.persona' | dm)"
         [showDot]="persona?.personalized || false"
         [size]="32"
         [url]="persona?.photo || ''"
@@ -17,12 +17,12 @@
         >
             {{
                 isEditMode
-                    ? messages['modes.persona.selector.title.edit']
-                    : messages['modes.persona.selector.title.preview']
+                    ? ('modes.persona.selector.title.edit' | dm)
+                    : ('modes.persona.selector.title.preview' | dm)
             }}
         </span>
         <span class="dot-persona-selector__name">{{
-            persona?.name || messages['modes.persona.no.persona']
+            persona?.name || ('modes.persona.no.persona' | dm)
         }}</span>
 
     </div>

@@ -13,7 +13,7 @@ import { DotLayoutBody } from '../../../shared/models/dot-layout-body.model';
 import { DotLayoutGrid } from '@portlets/dot-edit-page/shared/models/dot-layout-grid.model';
 import { DotMessageService } from '@services/dot-messages-service';
 import { Subject } from 'rxjs';
-import { takeUntil, take } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 interface DotAddClass {
     setter: (string) => void;
@@ -39,8 +39,7 @@ interface DotAddClass {
     ]
 })
 export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlValueAccessor {
-    @ViewChild(NgGrid)
-    ngGrid: NgGrid;
+    @ViewChild(NgGrid) ngGrid: NgGrid;
 
     form: FormGroup;
     value: DotLayoutBody;
@@ -49,8 +48,6 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
     addClassDialogShow = false;
     addClassDialogActions: DotDialogActions;
     addClassDialogHeader: string;
-
-    messages: { [key: string]: string } = {};
 
     gridConfig: NgGridConfig = <NgGridConfig>{
         margins: [0, 8, 8, 0],
@@ -81,31 +78,12 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
     constructor(
         private dotDialogService: DotAlertConfirmService,
         private dotEditLayoutService: DotEditLayoutService,
-        public dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         private dotEventsService: DotEventsService,
         public fb: FormBuilder
     ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'dot.common.dialog.accept',
-                'dot.common.dialog.reject',
-                'editpage.action.cancel',
-                'editpage.action.delete',
-                'editpage.action.save',
-                'editpage.confirm.header',
-                'editpage.confirm.message.delete',
-                'editpage.confirm.message.delete.warning',
-                'editpage.layout.css.class.add.to.box',
-                'editpage.layout.css.class.add.to.row',
-                'editpage.layout.css.class.names'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messages = messages;
-            });
-
         this.dotEventsService
             .listen('dot-side-nav-toggle')
             .pipe(takeUntil(this.destroy$))
@@ -275,7 +253,6 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
         });
     }
 
-
     /**
      * Add style class to a row
      *
@@ -286,7 +263,7 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
     addRowClass(index: number, title: string): void {
         this.addClass({
             getter: () => this.grid.getRowClass(index) || '',
-            setter: (value) => this.grid.setRowClass(value, index),
+            setter: value => this.grid.setRowClass(value, index),
             title
         });
     }
@@ -336,7 +313,7 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
             ? this.dotEditLayoutService.getDotLayoutGridBox(this.value)
             : DotLayoutGrid.getDefaultGrid();
 
-            this.rowClass = this.grid.getAllRowClass();
+        this.rowClass = this.grid.getAllRowClass();
     }
 
     private removeContainer(index: number): void {
@@ -358,11 +335,8 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
     }
 
     private resizeGrid(timeOut?): void {
-        setTimeout(
-            () => {
-                this.ngGrid.triggerResize();
-            },
-            timeOut ? timeOut : 0
-        );
+        setTimeout(() => {
+            this.ngGrid.triggerResize();
+        }, timeOut ? timeOut : 0);
     }
 }

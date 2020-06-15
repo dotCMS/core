@@ -19,13 +19,13 @@
                 pInputText
                 type="text"
                 class="dot-edit-layout__toolbar-template-name"
-                placeholder="{{ dotMessageService.get('editpage.layout.toolbar.template.name') }} *"
+                placeholder="{{ 'editpage.layout.toolbar.template.name' | dm }} *"
                 *ngIf="saveAsTemplate"
                 formControlName="title"
             />
             <p-checkbox
                 class="dot-edit-layout__toolbar-save-template"
-                label="{{ dotMessageService.get('editpage.layout.toolbar.save.template') }}"
+                label="{{ 'editpage.layout.toolbar.save.template' | dm }}"
                 *ngIf="editTemplate && isLayout() && pageState.canCreateTemplate"
                 binary="true"
                 (onChange)="saveAsTemplateHandleChange($event)"
@@ -36,7 +36,7 @@
                 tiny
                 type="button"
                 (click)="onCancel()"
-                label="{{ dotMessageService.get('dot.common.cancel') }}"
+                label="{{ 'dot.common.cancel' | dm }}"
                 class="dot-edit-layout__toolbar-action-cancel"
             ></button>
             <button
@@ -44,7 +44,7 @@
                 tiny
                 type="submit"
                 [disabled]="!isModelUpdated || !form.valid"
-                label="{{ dotMessageService.get('editpage.layout.toolbar.action.save') }}"
+                label="{{ 'editpage.layout.toolbar.action.save' | dm }}"
                 class="dot-edit-layout__toolbar-save"
             ></button>
             <dot-template-addtional-actions-menu
@@ -60,11 +60,7 @@
         <ng-template #permission>
             <div
                 class="dot-edit__layout-actions-themes"
-                pTooltip="{{
-                    dotMessageService.get(
-                        'org.dotcms.frontend.content.submission.not.proper.permissions'
-                    )
-                }}"
+                pTooltip="{{ 'org.dotcms.frontend.content.submission.not.proper.permissions' | dm }}"
                 tooltipPosition="left"
             >
                 <button
@@ -74,7 +70,7 @@
                     type="button"
                     class="dot-edit-layout__toolbar-action-themes"
                     icon="fa fa-paint-brush"
-                    label="{{ dotMessageService.get('editpage.layout.theme.button.label') }}"
+                    label="{{'editpage.layout.theme.button.label' | dm }}"
                     (click)="themeDialogVisibility = !themeDialogVisibility"
                     disabled="false"
                 ></button>

@@ -3,9 +3,9 @@
     class="page-info__locked-by-message"
     *ngIf="show"
 >
-    {{ dotMessageService.get('editpage.toolbar.page.locked.by.user', pageState.page.lockedByName) }}
+    {{ 'editpage.toolbar.page.locked.by.user' | dm:[pageState.page.lockedByName]}}
 </span>
 
 <span #lockedPageMessage class="page-info__cant-edit-message" *ngIf="!pageState.page.canEdit">
-    {{ dotMessageService.get('editpage.toolbar.page.cant.edit') }}
+    {{ 'editpage.toolbar.page.cant.edit' | dm }}
 </span>

@@ -1,6 +1,6 @@
 <form [formGroup]="form" >
     <div class="form__group">
-        <label for="content-type-form-host" class="form__label">{{messagesKey['modes.persona.host']}}</label>
+        <label for="content-type-form-host" class="form__label">{{'modes.persona.host' | dm}}</label>
         <dot-site-selector-field
             id="content-type-form-host"
             formControlName="hostFolder"
@@ -9,24 +9,24 @@
     </div>
 
     <div class="form__group">
-        <label for="persona-name" class="form__label">{{messagesKey['modes.persona.name']}}</label>
+        <label for="persona-name" class="form__label">{{'modes.persona.name' | dm}}</label>
         <input id="persona-name" dotAutofocus type="text" (keyup)="setKeyTag()" formControlName="name" name="name" pInputText />
         <dot-field-validation-message
-            [message]="messagesKey['modes.persona.name.error.required']"
+            [message]="'modes.persona.name.error.required' | dm"
             [field]="form.get('name')">
         </dot-field-validation-message>
     </div>
 
     <div class="form__group">
-        <label for="persona-keyTag" class="form__label">{{messagesKey['modes.persona.key.tag']}}</label>
+        <label for="persona-keyTag" class="form__label">{{'modes.persona.key.tag' | dm}}</label>
         <input id="persona-keyTag" type="text" formControlName="keyTag" name="keyTag" pInputText />
     </div>
 
     <div class="form__group">
-        <label for="persona-image" class="form__label">{{messagesKey['modes.persona.upload.file']}}</label>
+        <label for="persona-image" class="form__label">{{'modes.persona.upload.file' | dm}}</label>
         <p-fileUpload  *ngIf="!tempUploadedFile"
                        id="persona-image"
-                       [chooseLabel]="messagesKey['dot.common.choose']"
+                       [chooseLabel]="'dot.common.choose' | dm"
                        url="/api/v1/temp"
                        accept="image/*,.webp"
                        (onUpload)="onFileUpload($event)"
@@ -37,13 +37,13 @@
         <div class="form__file-detail" *ngIf="tempUploadedFile" >
             <img [src]="tempUploadedFile.thumbnailUrl">
             <span>{{tempUploadedFile.fileName}}</span>
-            <button tiny pButton secondary [label]="messagesKey['dot.common.remove']" (click)="removeImage()"></button>
+            <button tiny pButton secondary [label]="'dot.common.remove' | dm" (click)="removeImage()"></button>
         </div>
     </div>
     <div class="form__group">
-        <label for="persona-other-tags" class="form__label">{{messagesKey['modes.persona.other.tags']}}</label>
+        <label for="persona-other-tags" class="form__label">{{'modes.persona.other.tags' | dm}}</label>
         <dot-autocomplete-tags id="persona-other-tags" formControlName="tags"
-            [placeholder]="messagesKey['modes.persona.select.tags.placeholder']"
+            [placeholder]="'modes.persona.select.tags.placeholder' | dm"
         ></dot-autocomplete-tags>
     </div>
 </form>

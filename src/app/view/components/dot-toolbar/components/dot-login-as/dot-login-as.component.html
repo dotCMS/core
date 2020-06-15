@@ -1,5 +1,5 @@
 <dot-dialog
-    [header]="i18nMessages['login-as']"
+    [header]="'login-as' | dm"
     [(visible)]="visible"
     [actions]="dialogActions"
     (hide)="close()"
@@ -18,14 +18,14 @@
                     [pageLinkSize]="paginationService.maxLinksPage"
                     [rows]="paginationService.paginationPerPage"
                     [totalRecords]="paginationService.totalRecords"
-                    placeholder="{{ i18nMessages['loginas.select.loginas.user'] }}"
+                    placeholder="{{ 'loginas.select.loginas.user' | dm }}"
                     formControlName="loginAsUser"
                     labelPropertyName="fullName"
                     width="100%">
                 </dot-searchable-dropdown>
             </div>
             <div class="form__group" *ngIf="needPassword">
-                <input pPassword #password [feedback]="false" formControlName="password" id="dot-login-as-password" type="password" placeholder="{{ i18nMessages['loginas.input.loginas.password'] }}" floatingPlaceholder="false"/>
+                <input pPassword #password [feedback]="false" formControlName="password" id="dot-login-as-password" type="password" placeholder="{{ 'loginas.input.loginas.password' | dm }}" floatingPlaceholder="false"/>
             </div>
         </form>
     </div>

@@ -24,7 +24,6 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     @HostBinding('class.disabled') disabled: boolean;
 
     options: DotDevice[] = [];
-    label: string;
 
     constructor(
         private dotDevicesService: DotDevicesService,
@@ -32,13 +31,7 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages(['editpage.viewas.default.device', 'editpage.viewas.label.device'])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.label = messages['editpage.viewas.label.device'];
-                this.loadOptions();
-            });
+        this.loadOptions();
     }
 
     ngOnChanges(changes: SimpleChanges) {

@@ -13,6 +13,10 @@ describe('DotMessagePipe', () => {
         pipe = new DotMessagePipe((messageServiceMock as unknown) as DotMessageService);
     });
 
+    it('should return empty string param is undefined', () => {
+        expect(pipe.transform(undefined)).toEqual('');
+    });
+
     it('should return message requested', () => {
         expect(pipe.transform('apps.search.placeholder')).toEqual('Search');
     });

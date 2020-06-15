@@ -1,9 +1,6 @@
 import { Component, Input, EventEmitter, Output, OnInit, SimpleChanges, OnChanges } from '@angular/core';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
-import { DotMessageService } from '@services/dot-messages-service';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { take } from 'rxjs/operators';
-
 
 /**
  *Selector for relationships cardinalities
@@ -33,24 +30,10 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
 
     cardinality: DotRelationshipCardinality;
 
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
-
     constructor(
-        public dotMessageService: DotMessageService,
         private dotRelationshipService: DotRelationshipService) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.field.properties.relationship.cardinality.placeholder',
-            ])
-            .pipe(take(1))
-            .subscribe((res) => {
-                this.i18nMessages = res;
-            });
-
         this.dotRelationshipService.loadCardinalities().subscribe((cardinalities: DotRelationshipCardinality[]) => {
             this.options = cardinalities;
 

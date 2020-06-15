@@ -1,23 +1,14 @@
-import { Component, OnInit, Input, EventEmitter, Output } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
+import { Component, Input, EventEmitter, Output } from '@angular/core';
 
 @Component({
     selector: 'dot-reorder-menu',
     templateUrl: './dot-reorder-menu.component.html'
 })
-export class DotReorderMenuComponent implements OnInit {
-    @Input()
-    url: string;
-    @Output()
-    close: EventEmitter<any> = new EventEmitter();
+export class DotReorderMenuComponent {
+    @Input() url: string;
+    @Output() close: EventEmitter<any> = new EventEmitter();
 
-    constructor(private dotMessageService: DotMessageService) {}
-
-    ngOnInit() {
-        this.dotMessageService
-            .getMessages(['editpage.content.contentlet.menu.reorder.title'])
-            .subscribe();
-    }
+    constructor() {}
 
     /**
      * Handle close event from the iframe

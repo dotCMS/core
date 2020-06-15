@@ -54,34 +54,36 @@ describe('DotAppsListComponent', () => {
         'apps.search.placeholder': 'Search'
     });
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            imports: [
-                RouterTestingModule.withRoutes([
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                imports: [
+                    RouterTestingModule.withRoutes([
+                        {
+                            component: DotAppsListComponent,
+                            path: ''
+                        }
+                    ]),
+                    DotAppsCardModule,
+                    InputTextModule
+                ],
+                declarations: [DotAppsListComponent],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
                     {
-                        component: DotAppsListComponent,
-                        path: ''
-                    }
-                ]),
-                DotAppsCardModule,
-                InputTextModule
-            ],
-            declarations: [DotAppsListComponent],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                {
-                    provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
-                },
-                {
-                    provide: DotRouterService,
-                    useClass: MockDotRouterService
-                },
-                { provide: DotAppsService, useClass: AppsServicesMock },
-                DotAppsListResolver
-            ]
-        });
-    }));
+                        provide: ActivatedRoute,
+                        useClass: ActivatedRouteMock
+                    },
+                    {
+                        provide: DotRouterService,
+                        useClass: MockDotRouterService
+                    },
+                    { provide: DotAppsService, useClass: AppsServicesMock },
+                    DotAppsListResolver
+                ]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotAppsListComponent);
@@ -101,7 +103,7 @@ describe('DotAppsListComponent', () => {
 
     it('should set messages to Search Input', () => {
         expect(fixture.debugElement.query(By.css('input')).nativeElement.placeholder).toBe(
-            component.messagesKey['apps.search.placeholder']
+            messageServiceMock.get('apps.search.placeholder')
         );
     });
 

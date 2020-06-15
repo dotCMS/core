@@ -11,6 +11,7 @@ import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
 import { NgxMdModule } from 'ngx-md';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     imports: [
@@ -22,7 +23,8 @@ import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-head
         DotCopyButtonModule,
         DotAppsConfigurationHeaderModule,
         DotAppsConfigurationListModule,
-        NgxMdModule
+        NgxMdModule,
+        DotPipesModule
     ],
     declarations: [DotAppsConfigurationComponent],
     exports: [DotAppsConfigurationComponent],

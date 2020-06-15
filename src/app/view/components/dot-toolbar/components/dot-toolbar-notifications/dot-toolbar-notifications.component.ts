@@ -3,7 +3,6 @@ import { Component, ViewEncapsulation, ViewChild, OnInit } from '@angular/core';
 import { DotcmsEventsService, LoginService } from 'dotcms-js';
 import { INotification } from '@models/notifications';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { DotMessageService } from '@services/dot-messages-service';
 import { NotificationsService } from '@services/notifications-service';
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 
@@ -14,21 +13,15 @@ import { DotDropdownComponent } from '@components/_common/dot-dropdown-component
     templateUrl: 'dot-toolbar-notifications.component.html'
 })
 export class DotToolbarNotificationsComponent implements OnInit {
-    @ViewChild(DotDropdownComponent)
-    dropdown: DotDropdownComponent;
+    @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
     existsMoreToLoad = false;
     notifications: INotification[] = [];
     notificationsUnreadCount = 0;
-
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
 
     private isNotificationsMarkedAsRead = false;
     private showNotifications = false;
 
     constructor(
-        private dotMessageService: DotMessageService,
         public iframeOverlayService: IframeOverlayService,
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
@@ -36,16 +29,6 @@ export class DotToolbarNotificationsComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.dotMessageService
-            .getMessages([
-                'notifications_dismissall',
-                'notifications_title',
-                'notifications_load_more'
-            ])
-            .subscribe((res) => {
-                this.i18nMessages = res;
-            });
-
         this.getNotifications();
         this.subscribeToNotifications();
 
@@ -53,8 +36,8 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     dismissAllNotifications(): void {
-        const items = this.notifications.map((item) => item.id);
-        this.notificationService.dismissNotifications({ items: items }).subscribe((res) => {
+        const items = this.notifications.map(item => item.id);
+        this.notificationService.dismissNotifications({ items: items }).subscribe(res => {
             // TODO: I think we should get here res and err
             if (res.errors.length) {
                 return;
@@ -69,12 +52,12 @@ export class DotToolbarNotificationsComponent implements OnInit {
 
         this.notificationService
             .dismissNotifications({ items: [notificationId] })
-            .subscribe((res) => {
+            .subscribe(res => {
                 if (res.errors.length) {
                     return;
                 }
 
-                this.notifications = this.notifications.filter((item) => {
+                this.notifications = this.notifications.filter(item => {
                     return item.id !== notificationId;
                 });
 
@@ -89,7 +72,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     loadMore(): void {
-        this.notificationService.getAllNotifications().subscribe((res) => {
+        this.notificationService.getAllNotifications().subscribe(res => {
             this.notificationsUnreadCount = res.entity.count;
             this.notifications = res.entity.notifications;
             this.existsMoreToLoad = false;
@@ -112,7 +95,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     private getNotifications(): void {
-        this.notificationService.getLastNotifications().subscribe((res) => {
+        this.notificationService.getLastNotifications().subscribe(res => {
             this.notificationsUnreadCount = res.entity.totalUnreadNotifications;
             this.notifications = res.entity.notifications;
             this.existsMoreToLoad = res.entity.total > res.entity.notifications.length;

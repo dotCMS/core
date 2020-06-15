@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { DotMessageService } from '@services/dot-messages-service';
 import * as _ from 'lodash';
 import { Subject } from 'rxjs';
 import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
@@ -19,33 +18,12 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
 
     form: FormGroup;
     tempUploadedFile: DotCMSTempFile;
-    messagesKey: { [key: string]: string } = {};
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        public dotMessageService: DotMessageService,
-        private fb: FormBuilder,
-        private siteService: SiteService
-    ) {}
+    constructor(private fb: FormBuilder, private siteService: SiteService) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'modes.persona.upload.file',
-                'modes.persona.name',
-                'modes.persona.key.tag',
-                'dot.common.choose',
-                'dot.common.remove',
-                'modes.persona.host',
-                'modes.persona.name.error.required',
-                'modes.persona.other.tags',
-                'modes.persona.select.tags.placeholder'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messagesKey = messages;
-            });
         this.initPersonaForm();
     }
 

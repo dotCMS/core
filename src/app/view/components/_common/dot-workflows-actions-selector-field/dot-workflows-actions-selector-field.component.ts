@@ -9,11 +9,10 @@ import {
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 import { SelectItemGroup, SelectItem, Dropdown } from 'primeng/primeng';
 
 import { DotCMSWorkflowAction, DotCMSWorkflow } from 'dotcms-models';
-import { DotMessageService } from '@services/dot-messages-service';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
 interface DropdownEvent {
@@ -40,16 +39,13 @@ export class DotWorkflowsActionsSelectorFieldComponent
 
     actions$: Observable<SelectItemGroup[]>;
     disabled = false;
-    placeholder$: Observable<string>;
     value: string;
 
     constructor(
-        private dotWorkflowsActionsSelectorFieldService: DotWorkflowsActionsSelectorFieldService,
-        private dotMessageService: DotMessageService
+        private dotWorkflowsActionsSelectorFieldService: DotWorkflowsActionsSelectorFieldService
     ) {}
 
     ngOnInit() {
-        this.placeholder$ = this.getPlaceholder();
         this.actions$ = this.dotWorkflowsActionsSelectorFieldService.get().pipe(
             tap((actions: SelectItemGroup[]) => {
                 const actionsIds = this.getActionsIds(actions);
@@ -118,16 +114,5 @@ export class DotWorkflowsActionsSelectorFieldComponent
         return actions.reduce((acc: string[], { items }: SelectItemGroup) => {
             return [...acc, ...items.map((item: SelectItem) => item.value)];
         }, []);
-    }
-
-    private getPlaceholder(): Observable<string> {
-        return this.dotMessageService
-            .getMessages(['contenttypes.selector.workflow.action'])
-            .pipe(
-                map(
-                    (message: { [key: string]: string }) =>
-                        message['contenttypes.selector.workflow.action']
-                )
-            );
     }
 }

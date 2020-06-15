@@ -1,12 +1,5 @@
 import { Observable, Subject } from 'rxjs';
-import {
-    Component,
-    Input,
-    Output,
-    EventEmitter,
-    ViewChild,
-    AfterViewInit
-} from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, AfterViewInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { OnInit, OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -14,7 +7,7 @@ import { LoggerService } from 'dotcms-js';
 import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';
 import { DotBundle } from '@models/dot-bundle/dot-bundle';
 import { Dropdown } from 'primeng/primeng';
-import { mergeMap, map, tap, take, takeUntil } from 'rxjs/operators';
+import { map, tap, take, takeUntil } from 'rxjs/operators';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
@@ -31,65 +24,45 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
     dialogShow = false;
     dialogActions: DotDialogActions;
 
-    @Input()
-    assetIdentifier: string;
+    @Input() assetIdentifier: string;
 
-    @Output()
-    cancel = new EventEmitter<boolean>();
+    @Output() cancel = new EventEmitter<boolean>();
 
-    @ViewChild('formEl')
-    formEl: HTMLFormElement;
+    @ViewChild('formEl') formEl: HTMLFormElement;
 
-    @ViewChild('addBundleDropdown')
-    addBundleDropdown: Dropdown;
+    @ViewChild('addBundleDropdown') addBundleDropdown: Dropdown;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private addToBundleService: AddToBundleService,
         public fb: FormBuilder,
-        public dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         public loggerService: LoggerService
     ) {}
 
     ngOnInit() {
-        const keys = [
-            'contenttypes.content.add_to_bundle',
-            'contenttypes.content.add_to_bundle.select',
-            'contenttypes.content.add_to_bundle.type',
-            'contenttypes.content.add_to_bundle.errormsg',
-            'contenttypes.content.add_to_bundle.form.cancel',
-            'contenttypes.content.add_to_bundle.form.add'
-        ];
-
         this.initForm();
 
-        this.bundle$ = this.dotMessageService.getMessages(keys).pipe(
+        this.bundle$ = this.addToBundleService.getBundles().pipe(
             take(1),
-            mergeMap((messages: {[key: string]: string}) => {
-                return this.addToBundleService.getBundles().pipe(
-                    take(1),
-                    map((bundles: DotBundle[]) => {
-                        setTimeout(() => {
-                            this.placeholder = bundles.length
-                                ? messages['contenttypes.content.add_to_bundle.select']
-                                : messages['contenttypes.content.add_to_bundle.type'];
-                        }, 0);
+            map((bundles: DotBundle[]) => {
+                setTimeout(() => {
+                    this.placeholder = bundles.length
+                        ? this.dotMessageService.get('contenttypes.content.add_to_bundle.select')
+                        : this.dotMessageService.get('contenttypes.content.add_to_bundle.type');
+                }, 0);
 
-                        this.form
-                            .get('addBundle')
-                            .setValue(
-                                this.getDefaultBundle(bundles)
-                                    ? this.getDefaultBundle(bundles).name
-                                    : ''
-                            );
-                        return bundles;
-                    }),
-                    tap(() => {
-                        this.setDialogConfig(messages, this.form);
-                        this.dialogShow = true;
-                    })
-                );
+                this.form
+                    .get('addBundle')
+                    .setValue(
+                        this.getDefaultBundle(bundles) ? this.getDefaultBundle(bundles).name : ''
+                    );
+                return bundles;
+            }),
+            tap(() => {
+                this.setDialogConfig(this.form);
+                this.dialogShow = true;
             })
         );
     }
@@ -167,23 +140,23 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
     private getDefaultBundle(bundles: DotBundle[]): DotBundle {
         const lastBundle: DotBundle = JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED));
         // return lastBundle ? this.bundle$.find(bundle => bundle.name === lastBundle.name) : null;
-        return lastBundle ? bundles.find((bundle) => bundle.name === lastBundle.name) : null;
+        return lastBundle ? bundles.find(bundle => bundle.name === lastBundle.name) : null;
     }
 
-    private setDialogConfig(messages: {[key: string]: string}, form: FormGroup): void {
+    private setDialogConfig(form: FormGroup): void {
         this.dialogActions = {
             accept: {
                 action: () => {
                     this.submitForm();
                 },
-                label: messages['contenttypes.content.add_to_bundle.form.add'],
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle.form.add'),
                 disabled: !form.valid
             },
             cancel: {
                 action: () => {
                     this.close();
                 },
-                label: messages['contenttypes.content.add_to_bundle.form.cancel']
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle.form.cancel')
             }
         };
 

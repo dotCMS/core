@@ -1,7 +1,6 @@
 import { Component, OnInit, Input, ViewEncapsulation, forwardRef } from '@angular/core';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
-import { DotMessageService } from '@services/dot-messages-service';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { Observable } from 'rxjs';
 @Component({
@@ -25,15 +24,10 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
     pushEnvironments$: Observable<any>;
     selectedEnvironments: DotEnvironment[];
     selectedEnvironmentIds: string[] = [];
-    messages: {
-        [key: string]: string;
-    } = {};
-
     value: string[];
 
     constructor(
-        private pushPublishService: PushPublishService,
-        public dotMessageService: DotMessageService
+        private pushPublishService: PushPublishService
     ) {}
 
     ngOnInit() {
@@ -49,11 +43,6 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
                 this.valueChange('', this.selectedEnvironments);
             }
         });
-        this.dotMessageService
-            .getMessages(['contenttypes.content.push_publish.select_environment'])
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messages = messages;
-            });
     }
 
     propagateChange = (_: any) => {};

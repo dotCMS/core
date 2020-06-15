@@ -9,14 +9,14 @@
         {{ app.name }}
     </span>
     <div class="dot-apps-configuration__service-key">
-        {{ messagesKey['apps.key'] }}
+        {{ 'apps.key' | dm }}
         <dot-copy-button [copy]="app.key" [label]="app.key"></dot-copy-button>
     </div>
     <span class="dot-apps-configuration__configurations"
         >{{
             app.configurationsCount
-                ? app.configurationsCount + ' ' + messagesKey['apps.configurations']
-                : messagesKey['apps.no.configurations']
+                ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
+                : ('apps.no.configurations' | dm)
         }}
     </span>
     <div
@@ -32,8 +32,8 @@
             (click)="showMore = !showMore"
             >{{
                 showMore
-                    ? messagesKey['apps.confirmation.description.show.less']
-                    : messagesKey['apps.confirmation.description.show.more']
+                    ? ('apps.confirmation.description.show.less'| dm)
+                    : ('apps.confirmation.description.show.more'| dm)
             }}</a
         >
     </div>

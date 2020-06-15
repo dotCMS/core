@@ -12,6 +12,7 @@ import { ActionMenuButtonModule } from '../_common/action-menu-button/action-men
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 import { RouterModule } from '@angular/router';
 import { DotStringFormatPipe } from '@pipes/dot-string-format/dot-string-format.pipe';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotListingDataTableComponent, DotStringFormatPipe],
@@ -25,13 +26,9 @@ import { DotStringFormatPipe } from '@pipes/dot-string-format/dot-string-format.
         InputTextModule,
         ActionMenuButtonModule,
         DotIconModule,
-        RouterModule
+        RouterModule,
+        DotPipesModule
     ],
-    providers: [
-        DotCrudService,
-        FormatDateService,
-        DotcmsConfigService,
-        LoggerService
-    ]
+    providers: [DotCrudService, FormatDateService, DotcmsConfigService, LoggerService]
 })
 export class DotListingDataTableModule {}

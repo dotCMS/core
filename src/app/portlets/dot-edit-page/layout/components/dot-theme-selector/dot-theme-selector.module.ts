@@ -14,6 +14,7 @@ import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { PaginatorService } from '@services/paginator';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotThemeSelectorComponent],
@@ -27,7 +28,8 @@ import { PaginatorService } from '@services/paginator';
         InputTextModule,
         DataGridModule,
         DotDialogModule,
-        DotIconModule
+        DotIconModule,
+        DotPipesModule
     ],
     exports: [DotThemeSelectorComponent],
     providers: [DotThemesService, PaginatorService]

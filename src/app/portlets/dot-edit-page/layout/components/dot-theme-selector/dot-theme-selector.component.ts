@@ -1,6 +1,6 @@
 import { fromEvent as observableFromEvent, Observable } from 'rxjs';
 
-import { debounceTime, take } from 'rxjs/operators';
+import { debounceTime } from 'rxjs/operators';
 import {
     Component,
     OnInit,
@@ -53,36 +53,25 @@ export class DotThemeSelectorComponent implements OnInit {
     dialogActions: DotDialogActions;
 
     constructor(
-        public dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         public paginatorService: PaginatorService,
         private siteService: SiteService
     ) {}
 
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'editpage.layout.theme.header',
-                'editpage.layout.theme.search',
-                'editpage.layout.theme.no.records.found',
-                'dot.common.apply',
-                'dot.common.cancel'
-            ])
-            .pipe(take(1))
-            .subscribe(() => {
-                this.dialogActions = {
-                    accept: {
-                        label: this.dotMessageService.get('dot.common.apply'),
-                        disabled: true,
-                        action: () => {
-                            this.apply();
-                        }
-                    },
-                    cancel: {
-                        label: this.dotMessageService.get('dot.common.cancel')
-                    }
-                };
-            });
+        this.dialogActions = {
+            accept: {
+                label: this.dotMessageService.get('dot.common.apply'),
+                disabled: true,
+                action: () => {
+                    this.apply();
+                }
+            },
+            cancel: {
+                label: this.dotMessageService.get('dot.common.cancel')
+            }
+        };
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.setExtraParams('hostId', this.siteService.currentSite.identifier);
         this.paginatorService.paginationPerPage = 8;

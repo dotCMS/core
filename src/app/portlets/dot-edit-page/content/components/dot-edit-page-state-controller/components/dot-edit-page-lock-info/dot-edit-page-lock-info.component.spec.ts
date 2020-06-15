@@ -29,7 +29,7 @@ describe('DotEditPageLockInfoComponent', () => {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 }
-            ]
+            ],
         }).compileComponents();
     }));
 
@@ -89,7 +89,7 @@ describe('DotEditPageLockInfoComponent', () => {
 
             it('should have message', () => {
                 expect(lockedMessage.nativeElement.textContent.trim()).toEqual(
-                    'Page is locked by...'
+                    messageServiceMock.get('editpage.toolbar.page.locked.by.user')
                 );
             });
 
@@ -128,7 +128,7 @@ describe('DotEditPageLockInfoComponent', () => {
                 fixture.detectChanges();
             });
 
-            it('should have don\'t have permissions messages', () => {
+            it("should have don't have permissions messages", () => {
                 const lockedMessage: DebugElement = de.query(
                     By.css('.page-info__cant-edit-message')
                 );

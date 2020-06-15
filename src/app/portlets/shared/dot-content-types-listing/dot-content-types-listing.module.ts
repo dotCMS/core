@@ -7,14 +7,15 @@ import { DotContentTypeService } from '@services/dot-content-type';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     imports: [
         CommonModule,
         DotListingDataTableModule,
         DotBaseTypeSelectorModule,
-        DotAddToBundleModule
+        DotAddToBundleModule,
+        DotPipesModule
     ],
     declarations: [DotContentTypesPortletComponent],
     exports: [DotContentTypesPortletComponent],

@@ -1,7 +1,7 @@
 <dot-icon name="language" big></dot-icon>
 
 <div class="device-selector__field">
-    <label for="device-selector">{{ label$ | async }}</label>
+    <label for="device-selector">{{ 'editpage.viewas.label.language' | dm }}</label>
     <p-dropdown
         (onChange)="change($event.value)"
         [(ngModel)]="value"

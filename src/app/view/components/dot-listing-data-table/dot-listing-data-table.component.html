@@ -1,7 +1,7 @@
 <dot-action-header [options]="actionHeaderOptions">
     <input #gf pInputText type="text"
            (input)="dataTable.filterGlobal($event.target.value, 'contains')"
-           placeholder="{{ i18nMessages['global-search'] }}"
+           placeholder="{{ 'global-search' | dm }}"
            [(ngModel)]="filter"
            (keydown.arrowdown)="focusFirstRow()"
     />

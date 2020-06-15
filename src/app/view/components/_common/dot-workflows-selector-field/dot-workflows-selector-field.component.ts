@@ -2,9 +2,7 @@ import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service'
 import { Observable } from 'rxjs';
 import { DotCMSWorkflow } from 'dotcms-models';
 import { Component, OnInit, forwardRef } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
-import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-workflows-selector-field',
@@ -20,15 +18,10 @@ import { take } from 'rxjs/operators';
 })
 export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor, OnInit {
     options$: Observable<DotCMSWorkflow[]>;
-    label$: Observable<string>;
     value: DotCMSWorkflow[] = [];
     disabled = false;
-    messagesKey: { [key: string]: string } = {};
 
-    constructor(
-        private dotWorkflowService: DotWorkflowService,
-        public dotMessageService: DotMessageService
-    ) {}
+    constructor(private dotWorkflowService: DotWorkflowService) {}
 
     propagateChange = (_: any) => {};
 
@@ -46,12 +39,6 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
 
     ngOnInit() {
         this.options$ = this.dotWorkflowService.get();
-        this.dotMessageService
-            .getMessages(['dot.common.select.workflows', 'dot.common.archived'])
-            .pipe(take(1))
-            .subscribe(res => {
-                this.messagesKey = res;
-            });
     }
 
     /**

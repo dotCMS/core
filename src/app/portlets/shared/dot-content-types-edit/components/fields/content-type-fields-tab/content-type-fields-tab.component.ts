@@ -2,7 +2,6 @@ import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { take } from 'rxjs/operators';
 
 /**
  * Display Tab Field
@@ -25,7 +24,6 @@ export class ContentTypeFieldsTabComponent implements OnInit {
     @Output()
     removeTab: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
 
-    i18nMessages: any = {};
     label: string;
 
     constructor(
@@ -34,17 +32,6 @@ export class ContentTypeFieldsTabComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.action.delete',
-                'contenttypes.confirm.message.delete.field',
-                'contenttypes.content.field',
-                'contenttypes.action.cancel'
-            ])
-            .pipe(take(1))
-            .subscribe((res) => {
-                this.i18nMessages = res;
-            });
         this.label = this.fieldTab.divider.name;
     }
 
@@ -78,16 +65,16 @@ export class ContentTypeFieldsTabComponent implements OnInit {
             accept: () => {
                 this.removeTab.emit(this.fieldTab);
             },
-            header: `${this.i18nMessages['contenttypes.action.delete']} ${
-                this.i18nMessages['contenttypes.content.field']
+            header: `${this.dotMessageService.get('contenttypes.action.delete')} ${
+                this.dotMessageService.get('contenttypes.content.field')
             }`,
             message: this.dotMessageService.get(
                 'contenttypes.confirm.message.delete.field',
                 this.fieldTab.divider.name
             ),
             footerLabel: {
-                accept: this.i18nMessages['contenttypes.action.delete'],
-                reject: this.i18nMessages['contenttypes.action.cancel']
+                accept: this.dotMessageService.get('contenttypes.action.delete'),
+                reject: this.dotMessageService.get('contenttypes.action.cancel')
             }
         });
     }

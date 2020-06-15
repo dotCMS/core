@@ -34,6 +34,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 class MockDotUiColorsService {
     setColors() {}
@@ -48,7 +49,7 @@ const dotEventSocketURLFactory = () => {
 
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
-        imports: [...NGFACES_MODULES, CommonModule, FormsModule, ReactiveFormsModule],
+        imports: [...NGFACES_MODULES, CommonModule, FormsModule, ReactiveFormsModule, DotPipesModule],
         providers: [
             { provide: ConnectionBackend, useClass: MockBackend },
             { provide: RequestOptions, useClass: BaseRequestOptions },

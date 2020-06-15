@@ -43,32 +43,6 @@ export class DotContentTypesPortletComponent implements OnInit {
     public rowActions: DotDataTableAction[];
     public addToBundleIdentifier: string;
 
-    private i18nKeys = [
-        'Content-Type',
-        'contenttypes.action.cancel',
-        'contenttypes.action.delete',
-        'contenttypes.confirm.message.delete.type',
-        'contenttypes.content.add_to_bundle',
-        'contenttypes.content.content',
-        'contenttypes.content.fileasset',
-        'contenttypes.content.form',
-        'contenttypes.content.htmlpage',
-        'contenttypes.content.key_value',
-        'contenttypes.content.persona',
-        'contenttypes.content.push_publish',
-        'contenttypes.content.vanity_url',
-        'contenttypes.content.variable',
-        'contenttypes.content.widget',
-        'contenttypes.content.dotasset',
-        'contenttypes.fieldname.entries',
-        'contenttypes.fieldname.last_edit_date',
-        'contenttypes.fieldname.structure.name',
-        'contenttypes.form.label.description',
-        'message.structure.cantdelete',
-        'message.structure.delete.structure.and.content',
-        'dot.common.view'
-    ];
-
     constructor(
         private contentTypesInfoService: DotContentTypesInfoService,
         private crudService: DotCrudService,
@@ -79,20 +53,19 @@ export class DotContentTypesPortletComponent implements OnInit {
         private pushPublishService: PushPublishService,
         private route: ActivatedRoute,
         private router: Router,
-        public dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         private dotPushPublishDialogService: DotPushPublishDialogService
     ) {}
 
     ngOnInit() {
         forkJoin(
-            this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentTypeService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),
             this.pushPublishService
                 .getEnvironments()
                 .pipe(map((environments: DotEnvironment[]) => !!environments.length), take(1)),
             this.route.data.pipe(pluck('filterBy'), take(1))
-        ).subscribe(([_messages, contentTypes, isEnterprise, environments, filterBy]) => {
+        ).subscribe(([ contentTypes, isEnterprise, environments, filterBy]) => {
             const baseTypes: StructureTypeView[] = contentTypes;
             const rowActionsMap = {
                 pushPublish: isEnterprise && environments,

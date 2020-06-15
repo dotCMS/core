@@ -1,10 +1,10 @@
 <p-overlayPanel appendTo="body" #overlay>
     <div class="dot-sidebar-properties__radio-buttons-container">
-        <p-radioButton name="sidebarWidth" value="small" [label]="dotMessageService.get('editpage.layout.sidebar.width.small')" [(ngModel)]="value.width"
+        <p-radioButton name="sidebarWidth" value="small" [label]="'editpage.layout.sidebar.width.small' | dm" [(ngModel)]="value.width"
             (click)="changeSidebarSize()"></p-radioButton>
-        <p-radioButton name="sidebarWidth" value="medium" [label]="dotMessageService.get('editpage.layout.sidebar.width.medium')"
+        <p-radioButton name="sidebarWidth" value="medium" [label]="'editpage.layout.sidebar.width.medium' | dm"
             [(ngModel)]="value.width" (click)="changeSidebarSize()"></p-radioButton>
-        <p-radioButton name="sidebarWidth" value="large" [label]="dotMessageService.get('editpage.layout.sidebar.width.large')" [(ngModel)]="value.width"
+        <p-radioButton name="sidebarWidth" value="large" [label]="'editpage.layout.sidebar.width.large' | dm" [(ngModel)]="value.width"
             (click)="changeSidebarSize()"></p-radioButton>
     </div>
 </p-overlayPanel>

@@ -3,12 +3,12 @@
     [actions]="dialogActions"
     (hide)="hideDialog()"
     [cssClass]="paginatorService.totalRecords > paginatorService.paginationPerPage ? 'paginator' : ''"
-    [header]="dotMessageService.get('editpage.layout.theme.header')">
+    [header]="'editpage.layout.theme.header' | dm">
 
     <dot-site-selector #siteSelector (change)="siteChange($event)" [archive]="false"></dot-site-selector>
     <div class="dot-theme-search-box">
         <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
-        <input #searchInput pInputText placeholder="{{ dotMessageService.get('editpage.layout.theme.search') }}" type="text" class="searchable-dropdown__search-field"
+        <input #searchInput pInputText placeholder="{{ 'editpage.layout.theme.search' | dm}}" type="text" class="searchable-dropdown__search-field"
         />
     </div>
     <div class="dot-theme-container">
@@ -19,7 +19,7 @@
             [rows]="paginatorService?.paginationPerPage"
             [totalRecords]="paginatorService?.totalRecords"
             [lazy]="true" (onLazyLoad)="paginate($event)"
-            [emptyMessage]="dotMessageService.get('editpage.layout.theme.no.records.found')"
+            [emptyMessage]="'editpage.layout.theme.no.records.found' | dm"
             [alwaysShowPaginator]="false">
 
             <ng-template let-theme pTemplate="item">

@@ -15,6 +15,6 @@
     secondary
     class="dot-apps-configuration-list__show-more"
     *ngIf="!hideLoadDataButton"
-    [label]="messagesKey['apps.configurations.show.more']"
+    [label]="'apps.configurations.show.more' | dm "
     (click)="loadNext()"
 ></button>

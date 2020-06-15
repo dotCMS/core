@@ -8,7 +8,7 @@
     [(ngModel)]="selectedEnvironments"
     [options]="pushEnvironments$ | async"
     appendTo="body"
-    [defaultLabel]="messages['contenttypes.content.push_publish.select_environment']"
+    [defaultLabel]="'contenttypes.content.push_publish.select_environment' | dm"
     optionLabel="name"
 >
 </p-multiSelect>

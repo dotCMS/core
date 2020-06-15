@@ -5,7 +5,6 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
-import { DotMessageService } from '@services/dot-messages-service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
@@ -26,8 +25,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         private dotContentletEditorService: DotContentletEditorService,
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
-        private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        public dotMessageService: DotMessageService
+        private dotCustomEventHandlerService: DotCustomEventHandlerService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -51,7 +49,6 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
 
         this.pageUrl = this.route.snapshot.queryParams.url;
         this.subscribeIframeCloseAction();
-        this.dotMessageService.getMessages(['editpage.toolbar.nav.properties']);
     }
 
     ngOnDestroy(): void {

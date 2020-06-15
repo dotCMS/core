@@ -1,7 +1,6 @@
 import { pluck, take } from 'rxjs/operators';
-import * as _ from 'lodash';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { CoreWebService } from 'dotcms-js';
 import { DotLocalstorageService } from '@services/dot-localstorage/dot-localstorage.service';
@@ -57,26 +56,6 @@ export class DotMessageService {
             : key;
     }
 
-    /**
-     * Get the messages objects as an Observable
-     * @returns Observable<any>
-     */
-    get messageMap$(): Observable<any> {
-        return of(this.messageMap);
-    }
-
-    /**
-     * Public method to get messages, will get from object messageMap in memory.
-     * @param keys
-     * @returns any
-     */
-    getMessages(keys: String[]): Observable<any> {
-        return Observable.create(observer => {
-            observer.next(_.pick(this.messageMap, keys));
-            observer.complete();
-        });
-    }
-
     setRelativeDateMessages(languageId: string): void {
         const relativeDateKeys = [
             'relativetime.future',
@@ -93,12 +72,12 @@ export class DotMessageService {
             'relativetime.y',
             'relativetime.yy'
         ];
-        this.getMessages(relativeDateKeys).subscribe(res => {
-            const relativeDateMessages = _.mapKeys(res, (_value, key: string) => {
-                return key.replace('relativetime.', '');
-            });
-            this.formatDateService.setLang(languageId.split('_')[0], relativeDateMessages);
-        });
+
+        const relativeDateMessages = Object.assign(
+            {},
+            ...relativeDateKeys.map(p => ({ [p.split('.')[1]]: this.messageMap[p] }))
+        );
+        this.formatDateService.setLang(languageId.split('_')[0], relativeDateMessages);
     }
 
     private getAll(lang: string): Observable<{ [key: string]: string }> {

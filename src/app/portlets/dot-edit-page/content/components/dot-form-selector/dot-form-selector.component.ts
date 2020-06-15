@@ -9,7 +9,6 @@ import {
     SimpleChanges
 } from '@angular/core';
 import { DotCMSContentType } from 'dotcms-models';
-import { DotMessageService } from '@services/dot-messages-service';
 import { LazyLoadEvent, DataTable } from 'primeng/primeng';
 import { take } from 'rxjs/operators';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
@@ -20,43 +19,24 @@ import { PaginatorService } from '@services/paginator';
     templateUrl: './dot-form-selector.component.html',
     styleUrls: ['./dot-form-selector.component.scss'],
     providers: [PaginatorService]
-
 })
 export class DotFormSelectorComponent implements OnInit, OnChanges {
-    @Input()
-    show = false;
+    @Input() show = false;
 
-    @Output()
-    select = new EventEmitter<DotCMSContentType>();
+    @Output() select = new EventEmitter<DotCMSContentType>();
 
-    @Output()
-    close = new EventEmitter<any>();
+    @Output() close = new EventEmitter<any>();
 
-    @ViewChild('datatable')
-    datatable: DataTable;
+    @ViewChild('datatable') datatable: DataTable;
 
-    @ViewChild('dialog')
-    dotDialog: DotDialogComponent;
+    @ViewChild('dialog') dotDialog: DotDialogComponent;
 
     items: DotCMSContentType[];
     contentMinHeight: string;
-    messages: {
-        [key: string]: string;
-    } = {};
 
-    constructor(
-        public paginatorService: PaginatorService,
-        private dotMessageService: DotMessageService
-    ) {}
+    constructor(public paginatorService: PaginatorService) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages(['contenttypes.form.name', 'Select', 'modes.Add-Form'])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messages = messages;
-            });
-
         this.paginatorService.paginationPerPage = 5;
         this.paginatorService.url = 'v1/contenttype?type=FORM';
     }
@@ -65,11 +45,9 @@ export class DotFormSelectorComponent implements OnInit, OnChanges {
             if (changes.show.currentValue) {
                 this.contentMinHeight =
                     this.paginatorService.totalRecords > this.paginatorService.paginationPerPage
-                        ? `${
-                              this.dotDialog.dialog.nativeElement
-                                  .querySelector('.ui-datatable')
-                                  .getBoundingClientRect().height
-                          }px`
+                        ? `${this.dotDialog.dialog.nativeElement
+                              .querySelector('.ui-datatable')
+                              .getBoundingClientRect().height}px`
                         : '';
             }
         }, 0);

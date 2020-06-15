@@ -36,7 +36,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
         private loggerService: LoggerService,
         private route: ActivatedRoute,
         public loginPageStateService: DotLoginPageStateService,
-        public dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService
     ) {}
 
     ngOnInit() {

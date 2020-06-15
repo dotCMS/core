@@ -1,5 +1,5 @@
 <li class="notification-item {{ data.level | lowercase }}">
-    <button pButton icon="fa fa-times" (click)="onClear()" class="notification-item__close" title="{{ i18nMessages['notifications_dismiss'] }}" id="{{ 'notification-item-button-close-' + data.id }}"></button>
+    <button pButton icon="fa fa-times" (click)="onClear()" class="notification-item__close" title="{{ 'notifications_dismiss' | dm }}" id="{{ 'notification-item-button-close-' + data.id }}"></button>
 
     <div class="notification-item__wrapper">
         <i [class]="getIconName(data.level)"></i>

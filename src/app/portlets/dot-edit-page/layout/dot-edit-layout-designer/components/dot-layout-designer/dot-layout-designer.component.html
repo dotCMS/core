@@ -1,6 +1,6 @@
-<div class="dot-layout-designer" [formGroup]="group" *ngIf="(messages$ | async) as messages">
+<div class="dot-layout-designer" [formGroup]="group">
     <div class="dot-layout-designer__header" *ngIf="group.get('header').value">
-        {{ messages['editpage.layout.designer.header'] }}
+        {{ 'editpage.layout.designer.header' | dm}}
     </div>
     <div class="dot-layout-designer__main">
         <div
@@ -24,6 +24,6 @@
         </div>
     </div>
     <div class="dot-layout-designer__footer" *ngIf="group.get('footer').value">
-        {{ messages['editpage.layout.designer.footer'] }}
+        {{ 'editpage.layout.designer.footer' | dm }}
     </div>
 </div>

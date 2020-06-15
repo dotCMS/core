@@ -74,7 +74,7 @@ describe('DotAppsCardComponent', () => {
                 fixture.debugElement.query(By.css('.dot-apps-card__configurations')).nativeElement
                     .textContent
             ).toContain(
-                `${component.app.configurationsCount} ${component.messagesKey['apps.configurations']}`
+                `${component.app.configurationsCount} ${messageServiceMock.get('apps.configurations')}`
             );
 
             expect(
@@ -103,7 +103,7 @@ describe('DotAppsCardComponent', () => {
             expect(warningIcon.attributes['name']).toBe('warning');
             expect(warningIcon.attributes['size']).toBe('18');
             expect(warningIcon.attributes['ng-reflect-text']).toBe(
-                `${component.app.sitesWithWarnings} ${component.messagesKey['apps.invalid.configurations']}`
+                `${component.app.sitesWithWarnings} ${messageServiceMock.get('apps.invalid.configurations')}`
             );
         });
 
@@ -125,7 +125,7 @@ describe('DotAppsCardComponent', () => {
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-card__configurations')).nativeElement
                     .textContent
-            ).toContain(component.messagesKey['apps.no.configurations']);
+            ).toContain(messageServiceMock.get('apps.no.configurations'));
         });
     });
 });

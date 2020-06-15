@@ -21,27 +21,16 @@ export class DotAddPersonaDialogComponent implements OnInit {
     @Output() createdPersona: EventEmitter<DotPersona> = new EventEmitter();
     @ViewChild('personaForm') personaForm: DotCreatePersonaFormComponent;
 
-    messagesKey: { [key: string]: string } = {};
     dialogActions: DotDialogActions;
 
     constructor(
-        public dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         public dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'modes.persona.add.persona',
-                'dot.common.dialog.accept',
-                'dot.common.dialog.reject'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messagesKey = messages;
-                this.setDialogActions();
-            });
+        this.setDialogActions();
     }
 
     /**
@@ -97,11 +86,11 @@ export class DotAddPersonaDialogComponent implements OnInit {
                 action: () => {
                     this.savePersona();
                 },
-                label: this.messagesKey['dot.common.dialog.accept'],
+                label: this.dotMessageService.get('dot.common.dialog.accept'),
                 disabled: true
             },
             cancel: {
-                label: this.messagesKey['dot.common.dialog.reject'],
+                label: this.dotMessageService.get('dot.common.dialog.reject'),
                 action: () => {
                     this.closeDialog();
                 }

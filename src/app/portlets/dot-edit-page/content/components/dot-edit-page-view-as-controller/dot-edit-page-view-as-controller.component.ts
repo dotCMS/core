@@ -18,10 +18,7 @@ import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/
 })
 export class DotEditPageViewAsControllerComponent implements OnInit {
     isEnterpriseLicense$: Observable<boolean>;
-    messages: { [key: string]: string } = {};
-
-    @Input()
-    pageState: DotPageRenderState;
+    @Input() pageState: DotPageRenderState;
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
@@ -33,16 +30,6 @@ export class DotEditPageViewAsControllerComponent implements OnInit {
 
     ngOnInit(): void {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
-        this.dotMessageService
-            .getMessages([
-                'editpage.viewas.previewing',
-                'editpage.personalization.delete.confirm.header',
-                'editpage.personalization.delete.confirm.message'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messages = messages;
-            });
     }
 
     /**

@@ -8,7 +8,6 @@ import {
     ElementRef
 } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
-import { take } from 'rxjs/operators';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
@@ -20,12 +19,9 @@ import { DotKeyValueUtil } from '../util/dot-key-value-util';
     templateUrl: './dot-key-value-table-input-row.component.html'
 })
 export class DotKeyValueTableInputRowComponent implements OnInit {
-    @ViewChild('saveButton')
-    saveButton: ElementRef;
-    @ViewChild('keyCell')
-    keyCell: ElementRef;
-    @ViewChild('valueCell')
-    valueCell: ElementRef;
+    @ViewChild('saveButton') saveButton: ElementRef;
+    @ViewChild('keyCell') keyCell: ElementRef;
+    @ViewChild('valueCell') valueCell: ElementRef;
 
     @Input() autoFocus = true;
     @Input() showHiddenField: boolean;
@@ -34,31 +30,18 @@ export class DotKeyValueTableInputRowComponent implements OnInit {
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
     saveDisabled: Boolean = false;
-    messages: { [key: string]: string } = {};
     elemRef: ElementRef;
     variable: DotKeyValue = { key: '', hidden: false, value: '' };
 
     constructor(
-        public dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         private dotMessageDisplayService: DotMessageDisplayService
     ) {}
 
     ngOnInit(): void {
-        this.dotMessageService
-            .getMessages([
-                'keyValue.key_input.placeholder',
-                'keyValue.value_input.placeholder',
-                'Save',
-                'Cancel',
-                'keyValue.error.duplicated.variable'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messages = messages;
-                if (this.autoFocus) {
-                    this.keyCell.nativeElement.focus();
-                }
-            });
+        if (this.autoFocus) {
+            this.keyCell.nativeElement.focus();
+        }
     }
 
     /**
@@ -78,8 +61,8 @@ export class DotKeyValueTableInputRowComponent implements OnInit {
         if (isKeyVariableDuplicated && DotKeyValueUtil.isEventBlur($event)) {
             this.dotMessageDisplayService.push({
                 life: 3000,
-                message: this.messages['keyValue.error.duplicated.variable'].replace(
-                    '{0}',
+                message: this.dotMessageService.get(
+                    'keyValue.error.duplicated.variable',
                     (<HTMLInputElement>$event.target).value
                 ),
                 severity: DotMessageSeverity.ERROR,

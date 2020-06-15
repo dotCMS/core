@@ -9,8 +9,6 @@ import {
     OnChanges,
     SimpleChanges
 } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
-import { take } from 'rxjs/operators';
 import * as _ from 'lodash';
 import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
 import { DotKeyValueUtil } from '../util/dot-key-value-util';
@@ -21,10 +19,8 @@ import { DotKeyValueUtil } from '../util/dot-key-value-util';
     templateUrl: './dot-key-value-table-row.component.html'
 })
 export class DotKeyValueTableRowComponent implements OnInit, OnChanges {
-    @ViewChild('saveButton')
-    saveButton: ElementRef;
-    @ViewChild('valueCell')
-    valueCell: ElementRef;
+    @ViewChild('saveButton') saveButton: ElementRef;
+    @ViewChild('valueCell') valueCell: ElementRef;
 
     @Input() showHiddenField: boolean;
     @Input() isHiddenField: boolean;
@@ -32,34 +28,18 @@ export class DotKeyValueTableRowComponent implements OnInit, OnChanges {
     @Input() variableIndex: number;
     @Input() variablesList: DotKeyValue[] = [];
 
-    @Output()
-    save: EventEmitter<DotKeyValue> = new EventEmitter(false);
-    @Output()
-    cancel: EventEmitter<number> = new EventEmitter(false);
-    @Output()
-    delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
+    @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
+    @Output() cancel: EventEmitter<number> = new EventEmitter(false);
+    @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
     variableCopy: DotKeyValue;
     showEditMenu: Boolean = false;
     saveDisabled: Boolean = false;
-    messages: { [key: string]: string } = {};
     elemRef: ElementRef;
 
-    constructor(public dotMessageService: DotMessageService) {}
+    constructor() {}
 
     ngOnInit(): void {
-        this.dotMessageService
-            .getMessages([
-                'keyValue.key_input.placeholder',
-                'keyValue.value_input.placeholder',
-                'Save',
-                'Cancel',
-                'keyValue.error.duplicated.variable'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messages = messages;
-            });
         this.variableCopy = _.cloneDeep(this.variable);
     }
 

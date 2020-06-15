@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { take, switchMap } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 interface DotEditPopupMenuItem {
     label: string;
@@ -48,19 +48,9 @@ export class DotEditContentToolbarHtmlService {
      * @memberof DotEditContentToolbarHtmlService
      */
     addContainerToolbar(doc: Document): void {
-        this.dotMessageService
-            .getMessages([
-                'editpage.content.container.action.add',
-                'editpage.content.container.menu.content',
-                'editpage.content.container.menu.widget',
-                'editpage.content.container.menu.form',
-                'dot.common.license.enterprise.only.error',
-                'dot.common.contentlet.max.limit.error'
-            ])
-            .pipe(
-                switchMap(this.dotLicenseService.isEnterprise.bind(this.dotLicenseService)),
-                take(1)
-            )
+        this.dotLicenseService
+            .isEnterprise()
+            .pipe(take(1))
             .subscribe((isEnterpriseLicense: boolean) => {
                 this.isEnterpriseLicense = isEnterpriseLicense;
 
@@ -94,23 +84,12 @@ export class DotEditContentToolbarHtmlService {
      * @memberof DotEditContentToolbarHtmlService
      */
     addContentletMarkup(doc: Document): void {
-        this.dotMessageService
-            .getMessages([
-                'editpage.content.container.action.edit.vtl',
-                'editpage.content.contentlet.menu.drag',
-                'editpage.content.contentlet.menu.edit',
-                'editpage.content.contentlet.menu.remove'
-            ])
-            .subscribe(() => {
-                const contentletQuery = `[data-dot-object="contentlet"][data-dot-has-page-lang-version="true"]`;
-                const contentlets: HTMLDivElement[] = Array.from(
-                    doc.querySelectorAll(contentletQuery)
-                );
+        const contentletQuery = `[data-dot-object="contentlet"][data-dot-has-page-lang-version="true"]`;
+        const contentlets: HTMLDivElement[] = Array.from(doc.querySelectorAll(contentletQuery));
 
-                contentlets.forEach((contentlet: HTMLDivElement) => {
-                    this.addToolbarToContentlet(contentlet);
-                });
-            });
+        contentlets.forEach((contentlet: HTMLDivElement) => {
+            this.addToolbarToContentlet(contentlet);
+        });
     }
 
     addToolbarToContentlet(contentlet: HTMLElement) {
@@ -298,9 +277,9 @@ export class DotEditContentToolbarHtmlService {
                 ${items
                     .map((item: DotEditPopupMenuItem) => {
                         return `
-                            <li class="dotedit-menu__item ${
-                                item.disabled ? 'dotedit-menu__item--disabled' : ''
-                            }"
+                            <li class="dotedit-menu__item ${item.disabled
+                                ? 'dotedit-menu__item--disabled'
+                                : ''}"
                                 ${item.tooltip ? 'dot-title="' + item.tooltip + '"' : ''}">
                                     <a
                                         data-dot-object="popup-menu-item"
@@ -319,7 +298,7 @@ export class DotEditContentToolbarHtmlService {
 
     private getDotEditPopupMenuItemDataSet(datasets: { [propName: string]: string }): string {
         return Object.keys(datasets)
-            .map((key) => `data-dot-${key}="${datasets[key]}"`)
+            .map(key => `data-dot-${key}="${datasets[key]}"`)
             .join(' ');
     }
 }

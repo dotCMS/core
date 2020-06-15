@@ -22,7 +22,7 @@
         tiny
         class="field__actions-delete"
         icon="delete"
-        [tooltipText]="i18nMessages['contenttypes.action.delete']"
+        [tooltipText]="'contenttypes.action.delete' | dm"
         (click)="removeItem($event)"
     >
     </dot-icon-button-tooltip>
@@ -30,7 +30,7 @@
         tiny
         class="field__actions-edit"
         icon="edit"
-        [tooltipText]="i18nMessages['contenttypes.action.edit']"
+        [tooltipText]="'contenttypes.action.edit' | dm"
         (click)="this.onClick($event)"
     >
     </dot-icon-button-tooltip>

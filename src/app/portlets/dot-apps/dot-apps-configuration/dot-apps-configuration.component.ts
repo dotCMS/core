@@ -9,7 +9,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { LazyLoadEvent } from 'primeng/primeng';
 import { PaginatorService } from '@services/paginator';
-import { DotAppsResolverData } from './dot-apps-configuration-resolver.service';
+import { DotMessageService } from '@services/dot-messages-service';
 
 @Component({
     selector: 'dot-apps-configuration',
@@ -17,9 +17,7 @@ import { DotAppsResolverData } from './dot-apps-configuration-resolver.service';
     styleUrls: ['./dot-apps-configuration.component.scss']
 })
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
-    @ViewChild('searchInput')
-    searchInput: ElementRef;
-    messagesKey: { [key: string]: string } = {};
+    @ViewChild('searchInput') searchInput: ElementRef;
     apps: DotApps;
 
     hideLoadDataButton: boolean;
@@ -33,17 +31,16 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
         private dotAppsService: DotAppsService,
         private dotRouterService: DotRouterService,
         private route: ActivatedRoute,
+        private dotMessageService: DotMessageService,
         public paginationService: PaginatorService
     ) {}
 
     ngOnInit() {
-        this.route.data
-            .pipe(pluck('data'), take(1))
-            .subscribe(({ messages, app }: DotAppsResolverData) => {
-                this.apps = app;
-                this.apps.sites = [];
-                this.messagesKey = messages;
-            });
+
+        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApps) => {
+            this.apps = app;
+            this.apps.sites = [];
+        });
 
         observableFromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500), takeUntil(this.destroy$))
@@ -138,10 +135,10 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
                     });
             },
             reject: () => {},
-            header: this.messagesKey['apps.confirmation.title'],
-            message: this.messagesKey['apps.confirmation.delete.all.message'],
+            header: this.dotMessageService.get('apps.confirmation.title'),
+            message: this.dotMessageService.get('apps.confirmation.delete.all.message'),
             footerLabel: {
-                accept: this.messagesKey['apps.confirmation.accept']
+                accept: this.dotMessageService.get('apps.confirmation.accept')
             }
         });
     }

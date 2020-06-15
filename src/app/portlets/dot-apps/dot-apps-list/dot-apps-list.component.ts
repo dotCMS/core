@@ -1,6 +1,5 @@
 import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
-import { take, debounceTime, pluck, takeUntil } from 'rxjs/operators';
+import { debounceTime, pluck, takeUntil } from 'rxjs/operators';
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
 import * as _ from 'lodash';
@@ -16,27 +15,18 @@ import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 export class DotAppsListComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput')
     searchInput: ElementRef;
-    messagesKey: { [key: string]: string } = {};
     apps: DotApps[];
     appsCopy: DotApps[];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        public dotMessageService: DotMessageService,
         private route: ActivatedRoute,
         private dotRouterService: DotRouterService,
         private dotAppsService: DotAppsService
     ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages(['apps.search.placeholder'])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messagesKey = messages;
-            });
-
         this.route.data
             .pipe(pluck('appsServices'), takeUntil(this.destroy$))
             .subscribe((apps: DotApps[]) => {

@@ -32,7 +32,7 @@ describe('DotPushPublishFiltersService', () => {
 
     it('should get hit pp filters url', () => {
         service.get().subscribe();
-        expect(lastConnection[0].request.url).toBe('/api/v1/pushpublish/filter/');
+        expect(lastConnection[0].request.url).toBe('/api/v1/pushpublish/filters/');
     });
 
     it('should return entity', () => {

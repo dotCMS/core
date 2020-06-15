@@ -4,7 +4,7 @@
     [pageLinkSize]="dotPaginatorService.maxLinksPage"
     [rows]="dotPaginatorService.paginationPerPage"
     [totalRecords]="dotPaginatorService.totalRecords"
-    [placeholder]="i18nMessages['contenttypes.field.properties.relationship.existing.placeholder']"
+    [placeholder]="'contenttypes.field.properties.relationship.existing.placeholder' | dm"
     labelPropertyName="label"
     (change)="triggerChanged($event.relationship)"
     (filterChange)="handleFilterChange($event)"

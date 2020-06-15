@@ -1,7 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { DotClipboardUtil } from 'src/app/api/util/clipboard/ClipboardUtil';
 import { DotMessageService } from '@services/dot-messages-service';
-import { take } from 'rxjs/operators';
 
 /**
  * Icon button to copy to clipboard the string you pass to it,
@@ -16,14 +15,9 @@ import { take } from 'rxjs/operators';
     templateUrl: './dot-copy-button.component.html',
     styleUrls: ['./dot-copy-button.component.scss']
 })
-
 export class DotCopyButtonComponent implements OnInit {
     @Input() copy = '';
     @Input() label: string;
-
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
 
     private _tooltipText: string;
 
@@ -42,16 +36,7 @@ export class DotCopyButtonComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages(['Copy', 'Copied'])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.i18nMessages = messages;
-
-                if (!this.tooltipText) {
-                    this.tooltipText = this.tooltipText || this.i18nMessages['Copy'];
-                }
-            });
+        this.tooltipText = this.tooltipText || this.dotMessageService.get('Copy');
     }
 
     /**
@@ -66,7 +51,7 @@ export class DotCopyButtonComponent implements OnInit {
             .copy(this.copy)
             .then(() => {
                 const original = this.tooltipText;
-                this.tooltipText = this.i18nMessages['Copied'];
+                this.tooltipText = this.dotMessageService.get('Copied');
 
                 setTimeout(() => {
                     this.tooltipText = original;

@@ -55,7 +55,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     editForm = false;
     showIframe = true;
     reorderMenuUrl = '';
-    messagesKey: { [key: string]: string } = {};
     showOverlay = false;
 
     private readonly customEventsHandler;
@@ -129,7 +128,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.dotLoadingIndicatorService.show();
 
-        this.getMessages();
         this.setInitalData();
         this.subscribeSwitchSite();
         this.subscribeIframeCustomEvents();
@@ -324,24 +322,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 }
             }
         });
-    }
-
-    private getMessages(): void {
-        this.dotMessageService
-            .getMessages([
-                'editpage.content.contentlet.remove.confirmation_message.message',
-                'editpage.content.contentlet.remove.confirmation_message.header',
-                'dot.common.message.saving',
-                'dot.common.message.saved',
-                'dot.common.content.search',
-                'editpage.content.save.changes.confirmation.header',
-                'editpage.content.save.changes.confirmation.message',
-                'an-unexpected-system-error-occurred'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messagesKey = messages;
-            });
     }
 
     private iframeActionsHandler(event: any): Function {

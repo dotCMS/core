@@ -16,7 +16,7 @@
                         class="field-value-input"
                         autocomplete="false"
                         [type]="variableCopy.hidden ? 'password' : 'text'"
-                        [placeholder]="messages['keyValue.value_input.placeholder']"
+                        [placeholder]="'keyValue.value_input.placeholder' | dm"
                         (focus)="editFieldInit()"
                         (keyup)="editFieldInit()"
                         (keydown.escape)="onCancel($event)"
@@ -32,7 +32,7 @@
                         ********
                     </span>
                     <span class="empty-placeholder" *ngIf="!variableCopy.value">
-                        {{ messages['keyValue.value_input.placeholder'] }}
+                        {{ 'keyValue.value_input.placeholder' | dm }}
                     </span>
                 </ng-template>
             </p-cellEditor>
@@ -52,7 +52,7 @@
                 secondary
                 tiny
                 class="dot-key-value-table-row__variables-actions-edit-cancel"
-                [label]="messages['Cancel']"
+                [label]="'Cancel' | dm"
                 (click)="onCancel($event)"
             ></button>
             <button
@@ -60,7 +60,7 @@
                 pButton
                 tiny
                 class="dot-key-value-table-row__variables-actions-edit-save"
-                [label]="messages['Save']"
+                [label]="'Save' | dm"
                 [disabled]="saveDisabled"
                 (click)="saveVariable()"
             ></button>

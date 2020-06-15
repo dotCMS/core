@@ -14,14 +14,14 @@
     <div class="toolbar-notifications">
         <div class="toolbar-notifications__heading">
             <h3 class="toolbar-notifications__title" id="dot-toolbar-notifications-title">
-                {{ i18nMessages['notifications_title'] }}
+                {{ 'notifications_title' | dm }}
             </h3>
             <button
                 pButton
                 icon="fa fa-trash-o"
                 id="dot-toolbar-notifications-button-dismiss-all"
                 (click)="dismissAllNotifications()"
-                title="{{ i18nMessages['notifications_dismissall'] }}"
+                title="{{ 'notifications_dismissall' | dm }}"
             ></button>
         </div>
         <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
@@ -39,7 +39,7 @@
                 id="dot-toolbar-notifications-button-load-more"
                 *ngIf="existsMoreToLoad"
                 (click)="loadMore()"
-                label="{{ i18nMessages['notifications_load_more'] }}"
+                label="{{ 'notifications_load_more' | dm }}"
             ></button>
         </div>
     </div>

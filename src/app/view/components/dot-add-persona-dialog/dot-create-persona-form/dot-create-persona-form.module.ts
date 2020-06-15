@@ -12,6 +12,7 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     imports: [
@@ -24,7 +25,8 @@ import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-
         DotAutofocusModule,
         ButtonModule,
         AutoCompleteModule,
-        DotAutocompleteTagsModule
+        DotAutocompleteTagsModule,
+        DotPipesModule
     ],
     declarations: [DotCreatePersonaFormComponent],
     exports: [DotCreatePersonaFormComponent]

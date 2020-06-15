@@ -47,36 +47,38 @@ describe('DotEditPageStateControllerComponent', () => {
     let de: DebugElement;
     let deHost: DebugElement;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotEditPageStateControllerComponent,
-                DotEditPageLockInfoComponent
-            ],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: mockDotMessageService
-                },
-                {
-                    provide: DotPageStateService,
-                    useClass: DotPageStateServiceMock
-                },
-                {
-                    provide: DotPersonalizeService,
-                    useClass: DotPersonalizeServiceMock
-                },
-                {
-                    provide: DotAlertConfirmService,
-                    useValue: {
-                        confirm: jasmine.createSpy()
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [
+                    TestHostComponent,
+                    DotEditPageStateControllerComponent,
+                    DotEditPageLockInfoComponent
+                ],
+                providers: [
+                    {
+                        provide: DotMessageService,
+                        useValue: mockDotMessageService
+                    },
+                    {
+                        provide: DotPageStateService,
+                        useClass: DotPageStateServiceMock
+                    },
+                    {
+                        provide: DotPersonalizeService,
+                        useClass: DotPersonalizeServiceMock
+                    },
+                    {
+                        provide: DotAlertConfirmService,
+                        useValue: {
+                            confirm: jasmine.createSpy()
+                        }
                     }
-                }
-            ],
-            imports: [InputSwitchModule, SelectButtonModule]
-        }).compileComponents();
-    }));
+                ],
+                imports: [InputSwitchModule, SelectButtonModule]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(TestHostComponent);

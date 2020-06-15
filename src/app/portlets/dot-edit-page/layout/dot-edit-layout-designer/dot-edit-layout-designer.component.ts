@@ -63,33 +63,10 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
         private loginService: LoginService,
         private dotPageLayoutService: DotPageLayoutService,
         private templateContainersCacheService: TemplateContainersCacheService,
-        public dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService
     ) {}
 
     ngOnInit(): void {
-        this.dotMessageService
-            .getMessages([
-                'common.validation.name.error.required',
-                'dot.common.cancel',
-                'dot.common.message.saved',
-                'dot.common.message.saving',
-                'editpage.layout.dialog.edit.page',
-                'editpage.layout.dialog.edit.page',
-                'editpage.layout.dialog.edit.template',
-                'editpage.layout.dialog.edit.template',
-                'editpage.layout.dialog.header',
-                'editpage.layout.dialog.header',
-                'editpage.layout.dialog.info',
-                'editpage.layout.dialog.info',
-                'editpage.layout.theme.button.label',
-                'editpage.layout.toolbar.action.save',
-                'editpage.layout.toolbar.save.template',
-                'editpage.layout.toolbar.template.name',
-                'org.dotcms.frontend.content.submission.not.proper.permissions'
-            ])
-            .pipe(take(1))
-            .subscribe();
-
         this.setupLayout();
 
         if (this.shouldShowDialog()) {

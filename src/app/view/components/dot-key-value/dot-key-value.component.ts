@@ -1,14 +1,4 @@
-import {
-    Component,
-    Input,
-    SimpleChanges,
-    OnChanges,
-    OnInit,
-    Output,
-    EventEmitter
-} from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
-import { take } from 'rxjs/operators';
+import { Component, Input, SimpleChanges, OnChanges, Output, EventEmitter } from '@angular/core';
 import * as _ from 'lodash';
 import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
 import { DotKeyValueUtil } from './util/dot-key-value-util';
@@ -18,7 +8,7 @@ import { DotKeyValueUtil } from './util/dot-key-value-util';
     styleUrls: ['./dot-key-value.component.scss'],
     templateUrl: './dot-key-value.component.html'
 })
-export class DotKeyValueComponent implements OnInit, OnChanges {
+export class DotKeyValueComponent implements OnChanges {
     @Input() autoFocus = true;
     @Input() showHiddenField: boolean;
     @Input() variables: DotKeyValue[] = [];
@@ -26,24 +16,8 @@ export class DotKeyValueComponent implements OnInit, OnChanges {
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
     variablesBackup: DotKeyValue[] = [];
-    messages: { [key: string]: string } = {};
 
-    constructor(public dotMessageService: DotMessageService) {}
-
-    ngOnInit(): void {
-        this.dotMessageService
-            .getMessages([
-                'keyValue.key_header.label',
-                'keyValue.value_header.label',
-                'keyValue.actions_header.label',
-                'keyValue.value_no_rows.label',
-                'keyValue.hidden_header.label'
-            ])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messages = messages;
-            });
-    }
+    constructor() {}
 
     ngOnChanges(_changes: SimpleChanges): void {
         this.variablesBackup = _.cloneDeep(this.variables);

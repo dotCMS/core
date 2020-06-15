@@ -1,7 +1,6 @@
 import { Component, OnInit, Input, ElementRef, ViewChild, Inject } from '@angular/core';
 
 import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
-import { DotMessageService } from '@services/dot-messages-service';
 import { SiteService } from 'dotcms-js';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -27,28 +26,16 @@ export class DotEditPageInfoComponent implements OnInit {
 
     url$: Observable<string>;
     apiLink: string;
-    copyTooltipText: Observable<string>;
 
     constructor(
         private siteService: SiteService,
-        public dotMessageService: DotMessageService,
         @Inject(LOCATION_TOKEN) private location: Location
     ) {}
 
     ngOnInit() {
-        this.copyTooltipText = this.dotMessageService
-            .getMessages(['dot.common.message.pageurl.copy.clipboard'])
-            .pipe(
-                map(
-                    (messages: { [key: string]: string }) =>
-                        messages['dot.common.message.pageurl.copy.clipboard']
-                )
-            );
-
         this.url$ = this.getFullUrl(this.pageState.page.pageURI);
-        this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${
-            this.pageState.page.languageId
-        }`;
+        this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this
+            .pageState.page.languageId}`;
     }
 
     /**

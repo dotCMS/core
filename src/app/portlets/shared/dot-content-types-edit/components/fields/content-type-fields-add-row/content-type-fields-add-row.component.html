@@ -1,15 +1,15 @@
 <div class="dot-add-rows__container">
     <div class="dot-add-rows-button__container" *ngIf="rowState === 'add'"
         [ngClass]="{'dot-add-rows__add': rowState === 'add'}">
-        <p-splitButton 
-            label="{{ i18nMessages['contenttypes.dropzone.rows.add'] }}" 
+        <p-splitButton
+            label="{{ 'contenttypes.dropzone.rows.add' | dm }}"
             (onClick)="setColumnSelect()"
             [disabled]="disabled"
             [model]="actions"></p-splitButton>
     </div>
 
     <div class="dot-add-rows-columns-list__container" *ngIf="rowState === 'select'">
-        <div class="dot-add-rows-columns-list__title">{{ i18nMessages['contenttypes.content.add_column_title'] }}</div>
+        <div class="dot-add-rows-columns-list__title">{{ 'contenttypes.content.add_column_title' | dm }}</div>
         <dot-icon-button icon="close" (click)="showAddView()"></dot-icon-button>
         <ul #colContainer class="dot-add-rows-columns-list"
             [ngClass]="{'dot-add-rows__select': rowState === 'select'}">

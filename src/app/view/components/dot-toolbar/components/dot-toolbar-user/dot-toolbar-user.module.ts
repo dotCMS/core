@@ -6,6 +6,7 @@ import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
 import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
 import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     imports: [
@@ -13,7 +14,8 @@ import { DotToolbarUserComponent } from './dot-toolbar-user.component';
         DotDropdownModule,
         DotGravatarModule,
         DotLoginAsModule,
-        DotMyAccountModule
+        DotMyAccountModule,
+        DotPipesModule
     ],
     declarations: [DotToolbarUserComponent],
     exports: [DotToolbarUserComponent]

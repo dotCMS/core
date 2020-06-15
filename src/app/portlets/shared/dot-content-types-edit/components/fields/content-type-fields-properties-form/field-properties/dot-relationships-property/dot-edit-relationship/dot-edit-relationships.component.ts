@@ -1,8 +1,7 @@
 import { Component, OnInit, EventEmitter, Output } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator';
 import { of as observableOf, Observable } from 'rxjs';
-import { map, flatMap, toArray, take, switchMap } from 'rxjs/operators';
+import { map, flatMap, toArray, switchMap } from 'rxjs/operators';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 import { DotRelationship } from '../model/dot-relationship.model';
 import { DotEditContentTypeCacheService } from '../services/dot-edit-content-type-cache.service';
@@ -40,29 +39,14 @@ export class DotEditRelationshipsComponent implements OnInit {
 
     currentPage: Observable<{label: string, relationship: DotRelationship}[]>;
 
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
-
     private cardinalities: CardinalitySorted;
 
     constructor(
-        public dotMessageService: DotMessageService,
         public dotPaginatorService: PaginatorService,
         private dotEditContentTypeCacheService: DotEditContentTypeCacheService,
         private dotRelationshipService: DotRelationshipService) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.field.properties.relationship.existing.label',
-                'contenttypes.field.properties.relationship.existing.placeholder',
-            ])
-            .pipe(take(1))
-            .subscribe((res) => {
-                this.i18nMessages = res;
-            });
-
         this.dotPaginatorService.url = 'v1/relationships';
     }
 

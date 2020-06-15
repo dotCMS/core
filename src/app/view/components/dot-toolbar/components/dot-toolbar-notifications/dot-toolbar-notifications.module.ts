@@ -9,9 +9,10 @@ import {
 } from './components/dot-notifications/dot-notifications.component';
 import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
 import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
-    imports: [CommonModule, DotDropdownModule, ButtonModule, DotCustomTimeModule],
+    imports: [CommonModule, DotDropdownModule, ButtonModule, DotCustomTimeModule, DotPipesModule],
     exports: [DotToolbarNotificationsComponent],
     declarations: [
         DotToolbarNotificationsComponent,

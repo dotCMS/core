@@ -1,6 +1,6 @@
 <div [formGroup]="group">
     <p-checkbox
-        [label]="i18nMessages[setCheckboxLabel(property.name)]"
+        [label]="setCheckboxLabel(property.name) | dm"
         [value]="property.value"
         [formControlName]="property.name"
         binary="true">

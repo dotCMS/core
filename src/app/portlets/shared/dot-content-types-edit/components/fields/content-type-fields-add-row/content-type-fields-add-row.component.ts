@@ -11,7 +11,7 @@ import {
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { takeUntil, take } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
 import { MenuItem } from 'primeng/primeng';
 
@@ -30,7 +30,6 @@ import { MenuItem } from 'primeng/primeng';
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     rowState = 'add';
     selectedColumnIndex = 0;
-    i18nMessages = {};
     actions: MenuItem[];
 
     @Input() columns: number[] = [1, 2, 3, 4];
@@ -48,12 +47,12 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     constructor(
         private dotEventsService: DotEventsService,
         private hotkeysService: HotkeysService,
-        public dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService
     ) {}
 
     ngOnInit(): void {
         this.setKeyboardEvent('ctrl+a', this.setColumnSelect.bind(this));
-        this.loadMessages();
+        this.loadActions();
         this.dotEventsService
             .listen('add-row')
             .pipe(takeUntil(this.destroy$))
@@ -158,8 +157,8 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      */
     setColumnValue(col: number): string {
         return col === 0
-            ? `${col + 1} ${this.i18nMessages['contenttypes.content.single_column']}`
-            : `${col + 1} ${this.i18nMessages['contenttypes.content.many_columns']}`;
+            ? `${col + 1} ${this.dotMessageService.get('contenttypes.content.single_column')}`
+            : `${col + 1} ${this.dotMessageService.get('contenttypes.content.many_columns')}`;
     }
 
     /**
@@ -182,32 +181,16 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
         this.setKeyboardEvent('enter', this.emitColumnNumber.bind(this));
     }
 
-    private loadMessages(): void {
-        const i18nKeys = [
-            ...this.toolTips,
-            'contenttypes.dropzone.rows.add',
-            'contenttypes.dropzone.rows.tab_divider'
-        ];
-
-        this.dotMessageService
-            .getMessages(i18nKeys)
-            .pipe(take(1))
-            .subscribe(res => {
-                this.i18nMessages = res;
-                this.loadActions();
-            });
-    }
-
     private loadActions(): void {
         this.actions = [
             {
-                label: this.i18nMessages['contenttypes.dropzone.rows.add'],
+                label: this.dotMessageService.get('contenttypes.dropzone.rows.add'),
                 command: () => {
                     this.setColumnSelect();
                 }
             },
             {
-                label: this.i18nMessages['contenttypes.dropzone.rows.tab_divider'],
+                label: this.dotMessageService.get('contenttypes.dropzone.rows.tab_divider'),
                 command: () => {
                     this.dotEventsService.notify('add-tab-divider');
                 }

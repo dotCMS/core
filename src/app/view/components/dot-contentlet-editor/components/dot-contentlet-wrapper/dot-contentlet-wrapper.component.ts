@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, EventEmitter, Output } from '@angular/core';
+import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -18,7 +18,7 @@ export interface DotCMSEditPageEvent {
     templateUrl: './dot-contentlet-wrapper.component.html',
     styleUrls: ['./dot-contentlet-wrapper.component.scss']
 })
-export class DotContentletWrapperComponent implements OnInit {
+export class DotContentletWrapperComponent{
     @Input()
     header = '';
 
@@ -66,16 +66,6 @@ export class DotContentletWrapperComponent implements OnInit {
                 }
             };
         }
-    }
-
-    ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'editcontentlet.lose.dialog.header',
-                'editcontentlet.lose.dialog.message',
-                'editcontentlet.lose.dialog.accept'
-            ])
-            .subscribe();
     }
 
     /**

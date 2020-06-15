@@ -5,14 +5,16 @@ import { TestBed } from '@angular/core/testing';
 describe('DotDOMHtmlUtilService', () => {
     let dotDOMHtmlUtilService: DotDOMHtmlUtilService;
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [DotDOMHtmlUtilService],
-            imports: []
-        });
+    beforeEach(
+        async(() => {
+            TestBed.configureTestingModule({
+                providers: [DotDOMHtmlUtilService],
+                imports: []
+            });
 
-        dotDOMHtmlUtilService = TestBed.get(DotDOMHtmlUtilService);
-    }));
+            dotDOMHtmlUtilService = TestBed.get(DotDOMHtmlUtilService);
+        })
+    );
 
     it('should create a link element', () => {
         const href = 'https://testing/test.css';

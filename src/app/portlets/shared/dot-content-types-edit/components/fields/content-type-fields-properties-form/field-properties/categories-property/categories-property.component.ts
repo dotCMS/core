@@ -3,7 +3,6 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { PaginatorService } from '@services/paginator';
 import { FormGroup } from '@angular/forms';
-import { take } from 'rxjs/operators';
 import { DotCMSContentTypeFieldCategories } from 'dotcms-models';
 
 /**
@@ -25,26 +24,12 @@ export class CategoriesPropertyComponent implements OnInit {
     group: FormGroup;
     placeholder: string;
 
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
-
     constructor(
-        public dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         public paginationService: PaginatorService
     ) {}
 
     ngOnInit(): void {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.field.properties.category.label',
-                'contenttypes.field.properties.category.error.required'
-            ])
-            .pipe(take(1))
-            .subscribe((res) => {
-                this.i18nMessages = res;
-            });
-
         this.placeholder = !this.property.value
             ? this.dotMessageService.get('contenttypes.field.properties.category.label')
             : this.property.value;
@@ -71,7 +56,7 @@ export class CategoriesPropertyComponent implements OnInit {
 
     private getCategoriesList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe((items) => {
+        this.paginationService.getWithOffset(offset).subscribe(items => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.categoriesCurrentPage = items.splice(0);
         });

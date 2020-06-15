@@ -145,8 +145,8 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
 
-            resolver.resolve(route).subscribe((state: DotPageRenderState) => {
-                expect(state).toEqual(mock);
+            resolver.resolve(route).subscribe((state: DotPageRenderState) => {;
+                expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
@@ -173,7 +173,7 @@ describe('DotEditPageResolver', () => {
             dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
 
             resolver.resolve(route).subscribe((state: DotPageRenderState) => {
-                expect(state).toEqual(mock);
+                expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(

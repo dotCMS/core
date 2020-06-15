@@ -1,7 +1,7 @@
 <div [formGroup]="group">
-    <label class="form__label">{{ i18nMessages['contenttypes.field.properties.hint.label'] }}</label>
-    <input 
-        pInputText 
-        type="text" 
+    <label class="form__label">{{ 'contenttypes.field.properties.hint.label' | dm }}</label>
+    <input
+        pInputText
+        type="text"
         [formControlName]="property.name">
 </div>

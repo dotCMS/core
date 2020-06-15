@@ -7,13 +7,13 @@
                     pInputText
                     #searchInput
                     type="text"
-                    [placeholder]="messagesKey['apps.search.placeholder']"
+                    [placeholder]="'apps.search.placeholder' | dm"
                 />
                 <button
                     pButton
                     link
                     icon="fa fa-trash-o"
-                    [label]="messagesKey['apps.confirmation.delete.all.button']"
+                    [label]="'apps.confirmation.delete.all.button' | dm"
                     [disabled]="!apps.configurationsCount"
                     (click)="deleteAllConfigurations()"
                 ></button>

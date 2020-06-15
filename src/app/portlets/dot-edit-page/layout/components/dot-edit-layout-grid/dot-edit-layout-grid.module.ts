@@ -1,4 +1,3 @@
-
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
@@ -11,6 +10,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotEditLayoutGridComponent],
@@ -26,7 +26,8 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
         ReactiveFormsModule,
         DotIconButtonTooltipModule,
         DotAutofocusModule,
-        MdInputTextModule
+        MdInputTextModule,
+        DotPipesModule
     ],
     exports: [DotEditLayoutGridComponent],
     providers: []

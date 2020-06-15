@@ -19,11 +19,7 @@ export class DotAlertConfirmService {
     constructor(
         public confirmationService: ConfirmationService,
         private dotMessageService: DotMessageService
-    ) {
-        this.dotMessageService
-            .getMessages(['dot.common.dialog.accept', 'dot.common.dialog.reject'])
-            .subscribe();
-    }
+    ) {}
 
     /**
      * Get the confirmDialogOpened notification as an Observable

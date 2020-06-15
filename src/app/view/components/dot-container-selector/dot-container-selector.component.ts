@@ -1,5 +1,4 @@
 import { DotContainer } from '@models/container/dot-container.model';
-import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { DotContainerColumnBox } from '@portlets/dot-edit-page/shared/models/dot-container-column-box.model';
@@ -20,13 +19,11 @@ export class DotContainerSelectorComponent implements OnInit {
 
     constructor(
         public paginationService: PaginatorService,
-        public dotMessageService: DotMessageService,
         private templateContainersCacheService: TemplateContainersCacheService
     ) {}
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/containers';
-        this.dotMessageService.getMessages(['editpage.container.add.label']).subscribe();
     }
 
     /**

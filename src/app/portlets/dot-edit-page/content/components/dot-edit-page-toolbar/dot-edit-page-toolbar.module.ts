@@ -9,6 +9,7 @@ import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-ed
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     imports: [
@@ -22,7 +23,8 @@ import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
         DotSecondaryToolbarModule,
         DotGlobalMessageModule,
         FormsModule,
-        ToolbarModule
+        ToolbarModule,
+        DotPipesModule
     ],
     exports: [DotEditPageToolbarComponent],
     declarations: [DotEditPageToolbarComponent]

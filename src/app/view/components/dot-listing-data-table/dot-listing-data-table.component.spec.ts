@@ -16,7 +16,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { PaginatorService } from '@services/paginator';
-import { ActionHeaderComponent } from './action-header/action-header';
+import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';

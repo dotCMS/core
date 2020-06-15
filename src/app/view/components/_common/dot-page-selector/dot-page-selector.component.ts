@@ -47,13 +47,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
 
     constructor(
         private dotPageSelectorService: DotPageSelectorService,
-        public dotMessageService: DotMessageService
-    ) {
-        this.dotMessageService
-            .getMessages(['page.selector.no.sites.results', 'page.selector.no.page.results', 'page.selector.hint'])
-            .pipe(take(1))
-            .subscribe();
-    }
+        private dotMessageService: DotMessageService
+    ) {}
 
     propagateChange = (_: any) => {};
 
@@ -108,7 +103,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotPageSelectorComponent
      */
     search(param: any): void {
-        if ( this.validSearch(param)) {
+        if (this.validSearch(param)) {
             this.dotPageSelectorService
                 .search(this.cleanQuery(param.query))
                 .pipe(take(1))
@@ -199,8 +194,11 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         this.onSelect(this.results.data[0]);
     }
 
-    private validSearch (param: any): boolean {
-       return this.cleanInput(param).length && (!param.query.startsWith('//') ? param.query.length >= 3 : true);
+    private validSearch(param: any): boolean {
+        return (
+            this.cleanInput(param).length &&
+            (!param.query.startsWith('//') ? param.query.length >= 3 : true)
+        );
     }
 
     private cleanInput(event: any): string {

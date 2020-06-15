@@ -1,8 +1,7 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { DotWorkflowTaskDetailService } from '@components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 import { ActivatedRoute } from '@angular/router';
 import { DotMessageService } from '@services/dot-messages-service';
-import { take } from 'rxjs/operators';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
@@ -12,7 +11,7 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
     template:
         '<dot-workflow-task-detail (close)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>'
 })
-export class DotWorkflowTaskComponent implements AfterViewInit {
+export class DotWorkflowTaskComponent implements OnInit {
     constructor(
         private dotWorkflowTaskDetailService: DotWorkflowTaskDetailService,
         private dotMessageService: DotMessageService,
@@ -21,16 +20,11 @@ export class DotWorkflowTaskComponent implements AfterViewInit {
         private dotIframeService: DotIframeService
     ) {}
 
-    ngAfterViewInit(): void {
-        this.dotMessageService
-            .getMessages(['workflow.task.dialog.header'])
-            .pipe(take(1))
-            .subscribe(() => {
-                this.dotWorkflowTaskDetailService.view({
-                    header: this.dotMessageService.get('workflow.task.dialog.header'),
-                    id: this.route.snapshot.params.asset
-                });
-            });
+    ngOnInit() {
+        this.dotWorkflowTaskDetailService.view({
+            header: this.dotMessageService.get('workflow.task.dialog.header'),
+            id: this.route.snapshot.params.asset
+        });
     }
 
     /**

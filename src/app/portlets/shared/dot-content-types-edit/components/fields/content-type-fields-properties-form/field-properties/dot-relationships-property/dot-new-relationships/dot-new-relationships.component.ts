@@ -1,10 +1,16 @@
-import { Component, OnInit, Input, Output, EventEmitter, SimpleChanges, OnChanges } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
+import {
+    Component,
+    OnInit,
+    Input,
+    Output,
+    EventEmitter,
+    SimpleChanges,
+    OnChanges
+} from '@angular/core';
 import { PaginatorService } from '@services/paginator';
 import { DotCMSContentType } from 'dotcms-models';
 import { Observable } from 'rxjs';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
-import { take } from 'rxjs/operators';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 
 @Component({
@@ -14,47 +20,25 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
     styleUrls: ['./dot-new-relationships.component.scss']
 })
 export class DotNewRelationshipsComponent implements OnInit, OnChanges {
-    @Input()
-    cardinality: number;
+    @Input() cardinality: number;
 
-    @Input()
-    velocityVar: string;
+    @Input() velocityVar: string;
 
-    @Input()
-    editing: boolean;
+    @Input() editing: boolean;
 
-    @Output()
-    change: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
+    @Output() change: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
     contentTypeCurrentPage: Observable<DotCMSContentType[]>;
 
     contentType: DotCMSContentType;
     currentCardinalityIndex: number;
 
-    i18nMessages: {
-        [key: string]: string;
-    } = {};
-
     constructor(
-        public dotMessageService: DotMessageService,
         public paginatorService: PaginatorService,
-        private contentTypeService: DotContentTypeService) {
-
-    }
+        private contentTypeService: DotContentTypeService
+    ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'contenttypes.field.properties.relationship.new.label',
-                'contenttypes.field.properties.relationship.new.content_type.placeholder',
-                'contenttypes.field.properties.relationships.label',
-                'contenttypes.field.properties.relationships.contentType.label'
-            ])
-            .pipe(take(1))
-            .subscribe((res) => {
-                this.i18nMessages = res;
-            });
-
         this.paginatorService.url = 'v1/contenttype';
     }
 
@@ -76,7 +60,8 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
      */
     triggerChanged(): void {
         this.change.next({
-            velocityVar: this.velocityVar || (this.contentType ? this.contentType.variable :  undefined),
+            velocityVar:
+                this.velocityVar || (this.contentType ? this.contentType.variable : undefined),
             cardinality: this.currentCardinalityIndex
         });
     }
@@ -112,7 +97,7 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
                 velocityVar = velocityVar.split('.')[0];
             }
 
-            this.contentTypeService.getContentType(velocityVar).subscribe((contentType) => {
+            this.contentTypeService.getContentType(velocityVar).subscribe(contentType => {
                 this.contentType = contentType;
             });
         } else {

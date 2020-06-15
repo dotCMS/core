@@ -1,5 +1,5 @@
 <div [formGroup]="group">
-    <label class="form__label">{{ i18nMessages['categories'] }}</label>
+    <label class="form__label">{{ 'categories' | dm }}</label>
     <dot-searchable-dropdown #searchableDropdown
         [data]="categoriesCurrentPage"
         [formControlName]="property.name"
@@ -14,6 +14,6 @@
 
     <dot-field-validation-message
         [field]="group.controls[property.name]"
-        [message]="i18nMessages['contenttypes.field.properties.category.error.required']">
+        [message]="'contenttypes.field.properties.category.error.required' | dm">
     </dot-field-validation-message>
 </div>

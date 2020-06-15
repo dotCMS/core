@@ -1,4 +1,3 @@
-import { of as observableOf, Observable } from 'rxjs';
 
 /**
  * Mock of DotMessageService.
@@ -10,11 +9,10 @@ import { of as observableOf, Observable } from 'rxjs';
  *           'Structure-Name': 'Content Type Name',
  *           'Variable': 'Variable Name'
  *       });
- *       messageServiceMock.getMessages(['Structure-Name', 'Description']);
+ *       messageServiceMock.get('Structure-Name');
  * </code>
  * Return:
  * {
- *      'Description': 'Description',
  *      'Structure-Name': 'Content Type Name',
  * }
  * @export
@@ -23,20 +21,10 @@ import { of as observableOf, Observable } from 'rxjs';
 export class MockDotMessageService {
     constructor(private messages: MessageConfig) {}
 
-    public getMessages(_keys: string[]): Observable<any> {
-        return observableOf(this.messages);
-    }
-
-    get messageMap$(): Observable<any> {
-        return observableOf(this.messages);
-    }
-
     get(key: string, ...args: string[]): string {
-        if (args.length) {
-            return this.messages[key] ? this.formatMessage(this.messages[key], args) : key;
-        } else {
-            return this.messages[key] || key;
-        }
+        return this.messages[key]
+            ? args.length ? this.formatMessage(this.messages[key], args) : this.messages[key]
+            : key;
     }
 
     private formatMessage(message: string, args: string[]): string {

@@ -1,7 +1,7 @@
 <dot-icon name="devices" big></dot-icon>
 
 <div class="device-selector__field">
-    <label for="device-selector">{{ label }}</label>
+    <label for="device-selector">{{ 'editpage.viewas.label.device' | dm }}</label>
     <p-dropdown
         (onChange)="change($event.value)"
         [(ngModel)]="value"
