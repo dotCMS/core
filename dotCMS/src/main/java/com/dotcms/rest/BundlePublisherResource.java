@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.mock.request.HttpHeaderHandlerHttpServletRequestWrapper;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -180,8 +181,9 @@ public class BundlePublisherResource {
 
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 
-				// todo: shouldn't be handle by the DotConcurrent?
-				new Thread(new PublishThread(fileName, groupId, endpointId, status)).start();
+				DotConcurrentFactory.getInstance()
+						.getSubmitter()
+						.submit(new PublishThread(fileName, groupId, endpointId, status));
 			}
 
 			return bundle;
