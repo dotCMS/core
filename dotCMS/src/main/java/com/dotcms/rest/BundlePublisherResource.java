@@ -21,10 +21,6 @@ import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -36,8 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -117,7 +111,7 @@ public class BundlePublisherResource {
 				forcePush, request, remoteIP, sendingEndPointByAddress);
 
 		if (isPPByToken && bundle != null) {
-			return Response.ok((bundle)).build();
+			return Response.ok(bundle).build();
 		} else {
 			return Response.ok().build();
 		}
