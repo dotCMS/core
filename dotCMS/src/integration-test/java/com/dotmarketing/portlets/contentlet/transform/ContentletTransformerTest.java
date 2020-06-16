@@ -45,7 +45,8 @@ import com.dotmarketing.portlets.contentlet.transform.strategy.DefaultTransformS
 import com.dotmarketing.portlets.contentlet.transform.strategy.FileAssetViewStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolverImpl;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
-import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
+import com.dotcms.api.APIProvider;
+import com.dotcms.api.APIProvider.Builder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -143,13 +144,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         contentlet.getMap().put(Contentlet.LANGUAGEID_KEY, 1L);
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
-        final TransformToolbox toolbox = new TransformToolbox(
-                APILocator.getIdentifierAPI(),
-                APILocator.getHostAPI(), APILocator.getLanguageAPI(),
-                APILocator.getFileAssetAPI(), APILocator.getVersionableAPI(),
-                APILocator.getUserAPI(), APILocator.getContentletAPI(),
-                APILocator.getHTMLPageAssetAPI(), APILocator.getCategoryAPI(),
-                contentHelper);
+        final APIProvider toolbox = new Builder().withContentHelper(contentHelper).build();
 
         final StrategyResolverImpl resolver = new StrategyResolverImpl(toolbox);
 
@@ -174,12 +169,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         };
         final String identifier = "1234";
 
-        final TransformToolbox toolbox = new TransformToolbox(APILocator.getIdentifierAPI(),
-                APILocator.getHostAPI(), APILocator.getLanguageAPI(),
-                APILocator.getFileAssetAPI(), APILocator.getVersionableAPI(),
-                APILocator.getUserAPI(), APILocator.getContentletAPI(),
-                APILocator.getHTMLPageAssetAPI(), APILocator.getCategoryAPI(),
-                contentHelper);
+        final APIProvider toolbox = new Builder().withContentHelper(contentHelper).build();
 
         final StrategyResolverImpl resolver = new StrategyResolverImpl(toolbox);
 
@@ -213,13 +203,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             }
         };
 
-        final TransformToolbox toolBox = new TransformToolbox(APILocator.getIdentifierAPI(),
-                APILocator.getHostAPI(), APILocator.getLanguageAPI(), APILocator.getFileAssetAPI(),
-                APILocator.getVersionableAPI(), APILocator.getUserAPI(),
-                APILocator.getContentletAPI(),
-                APILocator.getHTMLPageAssetAPI(),
-                APILocator.getCategoryAPI(),
-                contentHelper);
+        final APIProvider toolBox = new Builder().withContentHelper(contentHelper).build();
 
         final StrategyResolverImpl resolver = new StrategyResolverImpl(toolBox);
 
@@ -520,18 +504,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             }
         };
 
-        final TransformToolbox toolBox = new TransformToolbox(
-                identifierAPI,
-                APILocator.getHostAPI(),
-                APILocator.getLanguageAPI(),
-                fileAssetAPI,
-                APILocator.getVersionableAPI(),
-                APILocator.getUserAPI(),
-                APILocator.getContentletAPI(),
-                APILocator.getHTMLPageAssetAPI(),
-                APILocator.getCategoryAPI(),
-                contentHelper
-        );
+        final APIProvider toolBox = new Builder().withIdentifierAPI(identifierAPI)
+                .withFileAssetAPI(fileAssetAPI).withUserAPI(APILocator.getUserAPI())
+                .withContentHelper(contentHelper).build();
 
         final Map<BaseContentType, Supplier<AbstractTransformStrategy>> strategyTriggeredByBaseType = of(
                 BaseContentType.FILEASSET, () -> new FileAssetViewStrategy(toolBox)

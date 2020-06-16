@@ -41,7 +41,7 @@ public class TypeUtil {
 
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(typeName);
 
-        for (String key : fieldsTypesAndFetchers.keySet()) {
+        for (final String key : fieldsTypesAndFetchers.keySet()) {
             try {
                 builder.field(newFieldDefinition()
                         .name(key)

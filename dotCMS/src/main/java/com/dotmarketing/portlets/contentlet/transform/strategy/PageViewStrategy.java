@@ -4,10 +4,10 @@ import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYP
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
+import com.dotcms.api.APIProvider;
 import com.dotmarketing.beans.IconType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -29,16 +29,14 @@ import java.util.Set;
 public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
     private final HTMLPageCache htmlPageCache;
-    private final PermissionAPI permissionAPI;
 
     /**
      * Main constructor
      * @param toolBox
      */
-    PageViewStrategy(final TransformToolbox toolBox) {
+    PageViewStrategy(final APIProvider toolBox) {
         super(toolBox);
         htmlPageCache = CacheLocator.getHTMLPageCache();
-        permissionAPI = APILocator.getPermissionAPI();
     }
 
     /**
@@ -89,8 +87,8 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
         map.put("workingInode",  info.getWorkingInode());
         map.put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()));
-        map.put("canEdit", this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user, false));
-        map.put("canRead", this.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(), user, false));
+        map.put("canEdit", toolBox.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user, false));
+        map.put("canRead", toolBox.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(), user, false));
         map.put("liveInode", info.getLiveInode());
         map.put("shortyLive", APILocator.getShortyAPI().shortify(info.getLiveInode()));
         map.put("canLock", canLock(page, user));
@@ -106,7 +104,7 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
     private boolean canLock(final HTMLPageAsset page, User user)  {
         try {
-            APILocator.getContentletAPI().canLock(page, user);
+            toolBox.contentletAPI.canLock(page, user);
             return true;
         } catch (DotLockException e) {
             return false;
@@ -115,7 +113,7 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
     private String getLockedByUserName(final ContentletVersionInfo info) throws DotDataException {
         try {
-            return APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName();
+            return toolBox.userAPI.loadUserById(info.getLockedBy()).getFullName();
         } catch (DotSecurityException e) {
             return null;
         }

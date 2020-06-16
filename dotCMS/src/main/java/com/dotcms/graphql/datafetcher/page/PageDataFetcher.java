@@ -38,23 +38,23 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final String pageModeAsString = environment.getArgument("pageMode")
                     != null ? environment.getArgument("pageMode") : PageMode.LIVE.name();
 
-            PageMode mode = PageMode.get(pageModeAsString);
+            final PageMode mode = PageMode.get(pageModeAsString);
 
             // we need to set the language to the request
             if(UtilMethods.isSet(languageId)) {
                 request.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
             }
 
-            PageContext pageContext = PageContextBuilder.builder()
+            final PageContext pageContext = PageContextBuilder.builder()
                     .setUser(user)
                     .setPageUri(url)
                     .setPageMode(mode)
                     .build();
 
-            HTMLPageUrl pageUrl = APILocator.getHTMLPageAssetRenderedAPI()
+            final HTMLPageUrl pageUrl = APILocator.getHTMLPageAssetRenderedAPI()
                     .getHtmlPageAsset(pageContext, request);
 
-            HTMLPageAsset pageAsset = pageUrl.getHTMLPage();
+            final HTMLPageAsset pageAsset = pageUrl.getHTMLPage();
             pageAsset.getMap().put("URLMapContent", pageUrl.getUrlMapInfo());
 
             final DotContentletTransformer transformer = new DotTransformerBuilder()

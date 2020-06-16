@@ -27,6 +27,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
+import com.dotcms.api.APIProvider;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -62,7 +63,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * Main constructor
      * @param toolBox
      */
-    public DefaultTransformStrategy(final TransformToolbox toolBox) {
+    public DefaultTransformStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 

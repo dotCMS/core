@@ -64,6 +64,17 @@ public interface HTMLPageAssetRenderedAPI {
             final HttpServletResponse response)
                 throws DotSecurityException, DotDataException;
 
+    /**
+     * Returns a {@link HTMLPageUrl} given a {@link PageContext}
+     *
+     * @param context {@link PageContext} object with the request parameters
+     * @param request servlet request
+     * @return the resulting HTMLPageURL
+     * @throws DotSecurityException The user does not have the specified permissions to perform
+     * this action.
+     * @throws DotDataException
+     */
+
     HTMLPageUrl getHtmlPageAsset(PageContext context,
             HttpServletRequest request) throws DotSecurityException, DotDataException;
 
