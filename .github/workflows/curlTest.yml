@@ -10,6 +10,7 @@ jobs:
       DOT_CICD_TARGET: core
       PROJECT_ID: cicd-246518
       EXPORT_REPORTS: true
+      TEST_RESULTS_PUSH_TOKEN: ${{ secrets.TEST_RESULTS_PUSH_TOKEN }}
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
@@ -26,8 +27,6 @@ jobs:
       - name: Run Unit Tests
         run: |
           source dotcicd/library/pipeline.sh runUnit
-        env:
-          TEST_RESULTS_PUSH_TOKEN: ${{ secrets.TEST_RESULTS_PUSH_TOKEN }}
 #      - name: Run Integration Tests
 #        run: |
 #          source dotcicd/library/pipeline.sh runIntegration
