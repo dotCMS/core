@@ -1620,4 +1620,8 @@ public interface ContentletAPIPostHook {
     default void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship, boolean hasParent){
 
     }
+
+    default void findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted){
+
+    }
 }

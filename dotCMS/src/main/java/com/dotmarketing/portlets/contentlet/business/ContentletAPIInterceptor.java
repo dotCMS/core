@@ -836,6 +836,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(String identifier, final boolean includeDeleted) throws DotDataException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        Contentlet c = conAPI.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
+        for(ContentletAPIPostHook post : postHooks){
+            post.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
+        }
+        return c;
+    }
+
 	@Override
 	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){

@@ -117,8 +117,19 @@ public interface ContentletAPI {
 	 */
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
-	/**
-	 * Retrieves a contentlet from the database by its identifier and the working version
+    /**
+     * Retrieves a contentlet from the database by its identifier and the working version.
+     * It includes archive content if includeDeleted is true
+     * @param identifier
+     * @param includeDeleted
+     * @return Contentlet object
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    Contentlet findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted) throws DotDataException;
+
+    /**
+	 * Retrieves a contentlet from the database by its identifier and the working version. Ignores archived content
 	 * @param identifier
 	 * @return Contentlet object
 	 * @throws DotSecurityException
