@@ -68,7 +68,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
   @VisibleForTesting
   public VanityUrlAPIImpl(final ContentletAPI contentletAPI, 
-      final LanguageAPI languageAPI, 
+      final LanguageAPI languageAPI,
       final UserAPI userAPI,
       final VanityUrlCache cache) {
     this.contentletAPI = contentletAPI;
@@ -83,17 +83,15 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
    * order to avoid retrieving data that has not been updated in the ES index yet. This initialization
    * routine will also add Vanity URLs located under System Host.
    *
-   * @param siteId String site id
-   * @param languageId Long language id
-   * @return A list of VanityURLs
+   * @param host Site to populate vanity urls
    */
   private void populateVanityURLsCacheBySite(final Host host) {
     if(host==null || host.getIdentifier()==null) {
         throw new DotStateException("Host cannot be null. Got:" + host);
     }
     Logger.info(this.getClass(), "Populating Vanity URLS for :" + host.getHostname()); 
-    for (Language lang : languageAPI.getLanguages()) {
-      cache.putSiteMappings(host, lang, findInDb(host, lang));
+    for (Language language : languageAPI.getLanguages()) {
+      cache.putSiteMappings(host, language, findInDb(host, language));
     }
   }
 
@@ -111,20 +109,18 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
    * method moved from using the ES index to using a SQL query in order to avoid situations where the
    * index was not fully updated when reading new data.
    *
-   * @param siteId The Identifier of the Site whose Vanity URLs will be retrieved.
-   * @param languageId The language ID used to created the Vanity URLs.
-   * @param includeSystemHost If set to {@code true}, the results will include Vanity URLs that were
-   *        created under System Host. Otherwise, set to {@code false}.
+   * @param host The Site whose Vanity URLs will be retrieved.
+   * @param language The language used to created the Vanity URLs.
    *
    * @return The list of Vanity URLs.
    */
   @Override
   @CloseDBIfOpened
-  public List<CachedVanityUrl> findInDb(final Host host, Language lang) {
+  public List<CachedVanityUrl> findInDb(final Host host, final Language language) {
 
     try {
       final List<Map<String, Object>> vanityUrls =
-          new DotConnect().setSQL(SELECT_LIVE_VANITY_URL_INODES).addParam(host.getIdentifier()).addParam(lang.getId()).loadObjectResults();
+          new DotConnect().setSQL(SELECT_LIVE_VANITY_URL_INODES).addParam(host.getIdentifier()).addParam(language.getId()).loadObjectResults();
       final List<String> vanityUrlInodes =
           vanityUrls.stream().map(vanity -> vanity.get("live_inode").toString()).collect(Collectors.toList());
       final List<Contentlet> contentlets = this.contentletAPI.findContentlets(vanityUrlInodes);
@@ -134,7 +130,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     } catch (final Exception e) {
       Logger.error(this,
           String.format("An error occurred when retrieving Vanity URLs: siteId=[%s], " + "languageId=[%s], includeSystemHost=[%s]",
-              host.getIdentifier(), lang.getId()),
+              host.getIdentifier(), language.getId()),
           e);
       throw new DotStateException(e);
     }
@@ -145,14 +141,14 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   
   
   
-  private List<CachedVanityUrl> load(Host host, Language lang){
-    List<CachedVanityUrl> cachedVanities = cache.getSiteMappings(host, lang);
+  private List<CachedVanityUrl> load(final Host host, final Language language){
+    List<CachedVanityUrl> cachedVanities = cache.getSiteMappings(host, language);
     if(cachedVanities==null) {
       synchronized (VanityUrlAPI.class) {
-        cachedVanities = cache.getSiteMappings(host, lang);
+        cachedVanities = cache.getSiteMappings(host, language);
         if(cachedVanities==null) {
-          cachedVanities=findInDb(host, lang);
-          cache.putSiteMappings(host, lang, findInDb(host, lang));
+          cachedVanities=findInDb(host, language);
+          cache.putSiteMappings(host, language, findInDb(host, language));
         }
       }
     }
@@ -164,38 +160,38 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   
   @CloseDBIfOpened
   @Override
-  public Optional<CachedVanityUrl> resolveVanityUrl(final String url, final Host host, final Language lang) {
+  public Optional<CachedVanityUrl> resolveVanityUrl(final String url, final Host host, final Language language) {
 
 
     // 404 short circuit
-    Optional<CachedVanityUrl> shortCircuit = cache.getDirectMapping(url, host, lang);
+    Optional<CachedVanityUrl> shortCircuit = cache.getDirectMapping(url, host, language);
     if(shortCircuit!=null) {
         return shortCircuit;
     }
 
 
     // tries specific site first
-    Optional<CachedVanityUrl> matched =load(host, lang).parallelStream().filter(vc -> vc.url.equalsIgnoreCase(url) || vc.pattern.matcher(url).find()).findFirst();
+    Optional<CachedVanityUrl> matched =load(host, language).parallelStream().filter(vc -> vc.url.equalsIgnoreCase(url) || vc.pattern.matcher(url).find()).findFirst();
 
     
     // try language fallback
-    if (!matched.isPresent()  && !languageAPI.getDefaultLanguage().equals(lang) && languageFallback ) {
+    if (!matched.isPresent()  && !languageAPI.getDefaultLanguage().equals(language) && languageFallback ) {
       matched = resolveVanityUrl(url, host, languageAPI.getDefaultLanguage());
     }
     
     // tries SYSTEM_HOST
     if (!matched.isPresent() && !APILocator.systemHost().equals(host)) {
-      matched = load(APILocator.systemHost(), lang).parallelStream().filter(vc -> vc.pattern.matcher(url).find()).findFirst();
+      matched = load(APILocator.systemHost(), language).parallelStream().filter(vc -> vc.pattern.matcher(url).find()).findFirst();
     }
     
     // if this is the /cmsHomePage vanity
     if (!matched.isPresent() && StringPool.FORWARD_SLASH.equals(url)) {
-        matched = resolveVanityUrl(LEGACY_CMS_HOME_PAGE, host, lang);
+        matched = resolveVanityUrl(LEGACY_CMS_HOME_PAGE, host, language);
     }
     
     
     // whatever we have, stick it into the cache so it can be remembered
-    cache.putDirectMapping(host, lang, url, matched);
+    cache.putDirectMapping(host, language, url, matched);
 
 
     return matched;

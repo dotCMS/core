@@ -11,7 +11,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import io.vavr.control.Try;
 
 /**
- * Class used to create {@link Contentlet} objects of type Persona for test purposes
+ * Class used to create {@link Contentlet} objects of type {@link com.dotcms.vanityurl.model.VanityUrl} for test purposes
  *
  * @author Nollymar Longa
  */
@@ -34,13 +34,13 @@ public class VanityUrlDataGen extends ContentletDataGen {
     this.folder(Try.of(()->APILocator.getFolderAPI().findSystemFolder()).getOrElseThrow(e->new DotRuntimeException(e)));
   }
 
-  public VanityUrlDataGen uri(String uri) {
+  public VanityUrlDataGen uri(final String uri) {
     this.uri = uri;
     return this;
   }
 
   
-  public VanityUrlDataGen forwardTo(String forwardTo) {
+  public VanityUrlDataGen forwardTo(final String forwardTo) {
     this.forwardTo = forwardTo;
     return this;
   }
@@ -50,25 +50,25 @@ public class VanityUrlDataGen extends ContentletDataGen {
     return this;
   }
   
-  public VanityUrlDataGen title(String title) {
+  public VanityUrlDataGen title(final String title) {
     this.title = title;
     return this;
   }
 
-  public VanityUrlDataGen action(int action) {
+  public VanityUrlDataGen action(final int action) {
     this.action = action;
     return this;
   }
 
-  public VanityUrlDataGen order(int order) {
+  public VanityUrlDataGen order(final int order) {
     this.order = order;
     return this;
   }
-  public VanityUrlDataGen folder(Folder folder) {
+  public VanityUrlDataGen folder(final Folder folder) {
     this.folder = folder;
     return this;
   }
-  public VanityUrlDataGen language(long language) {
+  public VanityUrlDataGen language(final long language) {
     this.language = language;
     return this;
   }

@@ -4149,7 +4149,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 )
                         ); // end synchronized block
             } catch (final Throwable t) {
-              t.printStackTrace();
+              Logger.warn(getClass(),t.getMessage(),t);
                  bubbleUpException(t);
             }
 

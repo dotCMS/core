@@ -44,7 +44,7 @@ public class CachedVanityUrl implements Serializable {
         this(vanityUrl.getIdentifier(),vanityUrl.getURI(),vanityUrl.getLanguageId(),vanityUrl.getSite(),vanityUrl.getForwardTo(),vanityUrl.getAction());
     }
 
-    public CachedVanityUrl(String vanityUrlId,String url, long languageId, String siteId,String forwardTo,int response) {
+    public CachedVanityUrl(final String vanityUrlId, final String url, final long languageId, final String siteId, final String forwardTo, final int response) {
         final String regex = normalize(url);
         this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         this.vanityUrlId = vanityUrlId;
