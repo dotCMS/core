@@ -71,7 +71,7 @@ public class ESReadOnlyMonitorTest {
      *
      * @throws DotDataException
      */
-    //@Test
+    @Test
     @UseDataProvider("indexReadOnlyProperties")
     public void shouldNotSendLargeMessage(final String propertyName) throws DotDataException, IOException {
         final String message = "message";
@@ -95,7 +95,7 @@ public class ESReadOnlyMonitorTest {
      *
      * @throws DotDataException
      */
-    //@Test
+    @Test
     @UseDataProvider("indexReadOnlyProperties")
     public void shouldSendLargeMessage(final String propertyName) throws DotDataException, DotSecurityException, InterruptedException, IOException {
         final String message = "message";
@@ -132,7 +132,7 @@ public class ESReadOnlyMonitorTest {
      *
      * @throws DotDataException
      */
-    //@Test
+    @Test
     @UseDataProvider("clusterReadOnlyProperties")
     public void shouldSendLargeMessageIfTheClusterIsInReadOnly(final String propertyName) throws DotDataException, DotSecurityException, InterruptedException, IOException {
         final String message = "message";
@@ -166,7 +166,7 @@ public class ESReadOnlyMonitorTest {
      *
      * @throws DotDataException
      */
-    //@Test
+    @Test
     @UseDataProvider("clusterReadOnlyProperties")
     public void shouldNotSendLargeMessageWhenClusterIsNotReadOnly(final String propertyName) throws DotDataException, IOException {
         setClusterAsReadOnly(propertyName, false);
@@ -224,7 +224,7 @@ public class ESReadOnlyMonitorTest {
      *
      * @throws DotDataException
      */
-    //@Test
+    @Test
     public void shouldSendLargeMessageTwice() throws DotDataException, DotSecurityException, IOException, InterruptedException {
         final String propertyName = "index.blocks.read_only";
         final String message = "message";
@@ -266,7 +266,7 @@ public class ESReadOnlyMonitorTest {
      *
      * @throws DotDataException
      */
-    //@Test
+    @Test
     @UseDataProvider("indexReadOnlyProperties")
     public void shouldSendLargeMessageJustOnce(final String propertyName) throws DotDataException, DotSecurityException, IOException, InterruptedException {
         final String message = "message";
