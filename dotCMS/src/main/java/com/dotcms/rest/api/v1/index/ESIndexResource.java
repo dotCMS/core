@@ -46,7 +46,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
-
+import com.dotmarketing.common.reindex.IndexResourceHelper;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -535,7 +535,7 @@ public class ESIndexResource {
         
         final InitDataObject init = auth(request, response);
 
-        return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
+        return Response.ok(new ResponseEntityView(IndexResourceHelper.getInstance().indexStatsList())).build();
 
     }
     
