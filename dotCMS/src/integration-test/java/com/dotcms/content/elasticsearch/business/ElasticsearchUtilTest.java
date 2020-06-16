@@ -20,6 +20,8 @@ import org.junit.runner.RunWith;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import static org.jgroups.util.Util.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -257,6 +259,50 @@ public class ElasticsearchUtilTest {
         }
     }
 
+    /**
+     * Method to Test: {@link ElasticsearchUtil#isClusterInReadOnlyMode()}
+     * When: The cluster is set in minutes
+     * Should: return the right valus in millis
+     */
+    @Test
+    public void whenIntervalUpdateIsSetInMinutes(){
+        try {
+            setClusterUpdateInterval("2m");
+            final long millisExpected = Duration.ofMinutes(2).toMillis();
+            assertEquals(millisExpected, ElasticsearchUtil.getClusterUpdateInterval());
+        }finally {
+            setClusterUpdateInterval("30s");
+        }
+    }
+
+
+    /**
+     * Method to Test: {@link ElasticsearchUtil#isClusterInReadOnlyMode()}
+     * When: The cluster is set in seconds
+     * Should: return the right valus in millis
+     */
+    @Test
+    public void whenIntervalUpdateIsSetInDefaultValue(){
+        final long millisExpected = Duration.ofSeconds(30).toMillis();
+        assertEquals(millisExpected, ElasticsearchUtil.getClusterUpdateInterval());
+    }
+
+    /**
+     * Method to Test: {@link ElasticsearchUtil#isClusterInReadOnlyMode()}
+     * When: The cluster is set in the default value
+     * Should: return 30s in millis
+     */
+    @Test
+    public void whenIntervalUpdateIsSetInSeconds(){
+        try {
+            setClusterUpdateInterval("60s");
+            final long millisExpected = Duration.ofSeconds(60).toMillis();
+            assertEquals(millisExpected, ElasticsearchUtil.getClusterUpdateInterval());
+        }finally {
+            setClusterUpdateInterval("30s");
+        }
+    }
+
     private static AcknowledgedResponse putReadOnly(final String indexName, final String propertyName, final boolean value) {
         final UpdateSettingsRequest request = new UpdateSettingsRequest(indexName);
 
@@ -276,6 +322,21 @@ public class ElasticsearchUtilTest {
 
         final Settings.Builder settingBuilder = Settings.builder()
                 .put(propertyName, value);
+
+        request.persistentSettings(settingBuilder);
+
+        return Sneaky.sneak(() ->
+                RestHighLevelClientProvider.getInstance().getClient()
+                        .cluster()
+                        .putSettings(request, RequestOptions.DEFAULT)
+        );
+    }
+
+    private static AcknowledgedResponse setClusterUpdateInterval(final String value) {
+        final ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest();
+
+        final Settings.Builder settingBuilder = Settings.builder()
+                .put("cluster.info.update.interval", value);
 
         request.persistentSettings(settingBuilder);
 

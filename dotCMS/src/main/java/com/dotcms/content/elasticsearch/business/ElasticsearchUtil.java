@@ -20,6 +20,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 
 /**
@@ -119,18 +120,46 @@ public final class ElasticsearchUtil {
      * @return boolean
      */
     public static boolean isClusterInReadOnlyMode(){
-        try {
-            final ClusterGetSettingsResponse response = RestHighLevelClientProvider.getInstance()
-                    .getClient().cluster()
-                    .getSettings(new ClusterGetSettingsRequest(), RequestOptions.DEFAULT);
+        final ClusterGetSettingsResponse response = getClusterSettings();
 
-            return Boolean.parseBoolean(response.getSetting("cluster.blocks.read_only"))
-                    || Boolean.parseBoolean(response.getSetting("cluster.blocks.read_only_allow_delete"));
-        } catch (IOException e) {
-            Logger.warnAndDebug(ESIndexAPI.class, "Error getting ES cluster settings", e);
+        return Boolean.parseBoolean(response.getSetting("cluster.blocks.read_only"))
+                || Boolean.parseBoolean(response.getSetting("cluster.blocks.read_only_allow_delete"));
+    }
+
+    /**
+     * Return how often Elasticsearch check on disk usage for each node in the cluster
+     * @return boolean
+     */
+    public static long getClusterUpdateInterval(){
+        final ClusterGetSettingsResponse response = getClusterSettings();
+        final String intervalString = response.getSetting("cluster.info.update.interval");
+        final long intervalInMillis = getIntervalInMillis(intervalString);
+
+        return intervalInMillis;
+    }
+
+    private static long getIntervalInMillis(final String intervalString) {
+        final long interval = Long.parseLong(intervalString.substring(0, intervalString.length() - 1).trim());
+
+        if (intervalString.endsWith("m")) {
+            return Duration.ofMinutes(interval).toMillis();
+        } else {
+            return Duration.ofSeconds(interval).toMillis();
         }
 
-        return true;
+
+    }
+
+
+    private static ClusterGetSettingsResponse getClusterSettings() {
+         try {
+            return RestHighLevelClientProvider.getInstance()
+                            .getClient().cluster()
+                            .getSettings(new ClusterGetSettingsRequest(), RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            Logger.warnAndDebug(ESIndexAPI.class, "Error getting ES cluster settings", e);
+            throw new DotRuntimeException(e);
+        }
     }
 
     /**
