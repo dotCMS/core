@@ -348,7 +348,7 @@ public class PushPublisher extends Publisher {
 	}
 
     /**
-     *
+     * Return a end point token
      * @param token
      * @return
      * @throws IOException

@@ -195,7 +195,10 @@ public class BundlePublisherResource {
 			return bundle;
 		} catch (Exception e) {
 
-			Logger.error(PublisherQueueJob.class, "Error caused by remote call of: "+remoteIP);
+			Logger.error(
+					PublisherQueueJob.class,
+					String.format("Error caused by remote call of: Remote IP - %s, bundle name - %s, end point- %s",
+							remoteIP, bundleNameSent,  endpointId));
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 			throw e;
 		}
