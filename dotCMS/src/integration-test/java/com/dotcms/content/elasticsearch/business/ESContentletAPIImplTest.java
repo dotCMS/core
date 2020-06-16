@@ -434,7 +434,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * Method to test: {@link ESContentletAPIImpl#filterRelatedContent(Contentlet, Relationship, User, boolean, Boolean, int, int)}
      * Given Scenario: When a related content is obtained from the index and in database this content
      *                  doesn't exist (the index hasn't been updated yet), the returned list should not
-     *                  contain this "dirty" related content
+     *                  contain this "dirty" related content. Only applies for legacy relationships
      * ExpectedResult: The method should return an empty list
      * @throws DotDataException
      * @throws DotSecurityException
@@ -487,11 +487,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
             final ESContentletAPIImpl contentletAPIImpl = Mockito.spy(new ESContentletAPIImpl());
 
-            Mockito.doReturn(new Contentlet()).when(contentletAPIImpl)
-                    .findContentletByIdentifierAnyLanguage(commentsContentlet.getIdentifier());
+            Mockito.doReturn(new Contentlet()).when(contentletAPIImpl).
+                    findContentletByIdentifierAnyLanguage(commentsContentlet.getIdentifier(), true);
 
             Mockito.doReturn(new Contentlet()).when(contentletAPIImpl)
-                    .findContentletByIdentifierAnyLanguage(newsContentlet.getIdentifier());
+                    .findContentletByIdentifierAnyLanguage(newsContentlet.getIdentifier(), true);
 
             //Pull related content from comment child
             List<Contentlet> result = contentletAPIImpl
@@ -508,6 +508,158 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
             assertNotNull(result);
             assertEquals(0,result.size());
+
+        } finally {
+            if (newsContentlet != null && UtilMethods.isSet(newsContentlet.getInode())) {
+                ContentletDataGen.remove(newsContentlet);
+            }
+
+            if (commentsContentlet != null && UtilMethods.isSet(commentsContentlet.getInode())) {
+                ContentletDataGen.remove(commentsContentlet);
+            }
+
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#getRelatedContent(Contentlet, Relationship, User, boolean)}
+     * Given Scenario: A child is related to an archived parent. Only applies for legacy relationships
+     * ExpectedResult: The method should return a contentlet list with the archived parent
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testGetArchivedRelatedParent()
+            throws DotDataException, DotSecurityException {
+
+        final ContentType news = getNewsLikeContentType("News");
+        final ContentType comments = getCommentsLikeContentType("Comments");
+        relateContentTypes(news, comments);
+
+        final ContentType newsContentType = contentTypeAPI.find("News");
+        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+
+        Contentlet newsContentlet = null;
+        Contentlet commentsContentlet = null;
+
+        try {
+            //creates parent contentlet
+            ContentletDataGen dataGen = new ContentletDataGen(newsContentType.id());
+
+            //English version
+            newsContentlet = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
+                    .setProperty("title", "News Test")
+                    .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+                    .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+                    .next();
+
+            //creates child contentlet
+            dataGen = new ContentletDataGen(commentsContentType.id());
+            commentsContentlet = dataGen
+                    .languageId(languageAPI.getDefaultLanguage().getId())
+                    .setProperty("title", "Comment for News")
+                    .setProperty("email", "testing@dotcms.com")
+                    .setProperty("comment", "Comment for News")
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            //Saving relationship
+            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+
+            newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            newsContentlet = contentletAPI.checkin(newsContentlet,
+                    map(relationship, list(commentsContentlet)),
+                    null, user, false);
+
+            //archive parent
+            contentletAPI.archive(newsContentlet, user, false);
+
+            CacheLocator.getContentletCache().remove(commentsContentlet);
+            CacheLocator.getContentletCache().remove(newsContentlet);
+
+            //Pull related content from comment child
+            List<Contentlet> result = contentletAPI
+                    .getRelatedContent(commentsContentlet, relationship, user, false);
+
+            assertNotNull(result);
+            assertEquals(1,result.size());
+            assertEquals(newsContentlet.getIdentifier(), result.get(0).getIdentifier());
+
+        } finally {
+            if (newsContentlet != null && UtilMethods.isSet(newsContentlet.getInode())) {
+                ContentletDataGen.remove(newsContentlet);
+            }
+
+            if (commentsContentlet != null && UtilMethods.isSet(commentsContentlet.getInode())) {
+                ContentletDataGen.remove(commentsContentlet);
+            }
+
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#getRelatedContent(Contentlet, Relationship, User, boolean)}
+     * Given Scenario: A parent is related to an archived child. Only applies for legacy relationships
+     * ExpectedResult: The method should return a contentlet list with the archived child
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testGetArchivedRelatedChild()
+            throws DotDataException, DotSecurityException {
+
+        final ContentType news = getNewsLikeContentType("News");
+        final ContentType comments = getCommentsLikeContentType("Comments");
+        relateContentTypes(news, comments);
+
+        final ContentType newsContentType = contentTypeAPI.find("News");
+        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+
+        Contentlet newsContentlet = null;
+        Contentlet commentsContentlet = null;
+
+        try {
+            //creates parent contentlet
+            ContentletDataGen dataGen = new ContentletDataGen(newsContentType.id());
+
+            //English version
+            newsContentlet = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
+                    .setProperty("title", "News Test")
+                    .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+                    .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+                    .next();
+
+            //creates child contentlet
+            dataGen = new ContentletDataGen(commentsContentType.id());
+            commentsContentlet = dataGen
+                    .languageId(languageAPI.getDefaultLanguage().getId())
+                    .setProperty("title", "Comment for News")
+                    .setProperty("email", "testing@dotcms.com")
+                    .setProperty("comment", "Comment for News")
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            //Saving relationship
+            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+
+            newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            newsContentlet = contentletAPI.checkin(newsContentlet,
+                    map(relationship, list(commentsContentlet)),
+                    null, user, false);
+
+            //archive parent
+            contentletAPI.archive(commentsContentlet, user, false);
+
+            CacheLocator.getContentletCache().remove(commentsContentlet);
+            CacheLocator.getContentletCache().remove(newsContentlet);
+
+            //Pull related content from comment child
+            List<Contentlet> result = contentletAPI
+                    .getRelatedContent(newsContentlet, relationship, user, false);
+
+            assertNotNull(result);
+            assertEquals(1,result.size());
+            assertEquals(commentsContentlet.getIdentifier(), result.get(0).getIdentifier());
 
         } finally {
             if (newsContentlet != null && UtilMethods.isSet(newsContentlet.getInode())) {

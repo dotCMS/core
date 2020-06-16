@@ -1901,4 +1901,8 @@ public interface ContentletAPIPreHook {
     default boolean invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship, boolean hasParent){
         return true;
     }
+
+    default boolean findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted) {
+        return true;
+    }
 }
