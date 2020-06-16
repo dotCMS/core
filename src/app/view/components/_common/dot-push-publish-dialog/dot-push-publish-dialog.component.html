@@ -16,7 +16,7 @@
     >
         <div class="form__group">
             <label class="form__label"
-                >{{ dotMessageService.get('contenttypes.content.push_publish.I_want_To') }}:
+                >{{ 'contenttypes.content.push_publish.I_want_To' | dm }}:
             </label>
             <p-selectButton border [options]="pushActions" formControlName="pushActionSelected">
             </p-selectButton>
@@ -24,7 +24,7 @@
 
         <div class="form__group">
             <label class="form__label"
-                >{{ dotMessageService.get('contenttypes.content.push_publish.filters') }}:
+                >{{ 'contenttypes.content.push_publish.filters' | dm }}:
             </label>
             <p-dropdown
                 [style]="{ width: '100%' }"
@@ -37,7 +37,7 @@
         <div class="form__group form-group__two-cols">
             <div class="form__group push-publish-dialog__publish-date">
                 <label class="form__label"
-                    >{{ dotMessageService.get('contenttypes.content.push_publish.publish_date') }}:
+                    >{{ 'contenttypes.content.push_publish.publish_date' | dm }}:
                 </label>
                 <div class="push-publish-dialog__calendar">
                     <p-calendar
@@ -53,17 +53,13 @@
                     ></p-calendar>
                 </div>
                 <dot-field-validation-message
-                    message="{{
-                        dotMessageService.get(
-                            'contenttypes.content.push_publish.publish_date_errormsg'
-                        )
-                    }}"
+                    message="{{ 'contenttypes.content.push_publish.publish_date_errormsg' | dm }}"
                     [field]="form.get('publishdate')"
                 ></dot-field-validation-message>
             </div>
             <div class="form__group push-publish-dialog__expire-date">
                 <label class="form__label"
-                    >{{ dotMessageService.get('contenttypes.content.push_publish.expire_date') }}:
+                    >{{ 'contenttypes.content.push_publish.expire_date' | dm }}:
                 </label>
                 <div class="push-publish-dialog__calendar">
                     <p-calendar
@@ -79,27 +75,21 @@
                     ></p-calendar>
                 </div>
                 <dot-field-validation-message
-                    message="{{
-                        dotMessageService.get(
-                            'contenttypes.content.push_publish.expire_date_errormsg'
-                        )
-                    }}"
+                    message="{{ 'contenttypes.content.push_publish.expire_date_errormsg' | dm}}"
                     [field]="form.get('expiredate')"
                 ></dot-field-validation-message>
             </div>
         </div>
         <div class="form__group">
             <label class="form__label"
-                >{{ dotMessageService.get('contenttypes.content.push_publish.push_to') }}:
+                >{{ 'contenttypes.content.push_publish.push_to' | dm }}:
             </label>
             <dot-push-publish-env-selector
                 [assetIdentifier]="assetIdentifier"
                 formControlName="environment"
             ></dot-push-publish-env-selector>
             <dot-field-validation-message
-                message="{{
-                    dotMessageService.get('contenttypes.content.push_publish.push_to_errormsg')
-                }}"
+                message="{{ 'contenttypes.content.push_publish.push_to_errormsg' | dm }}"
                 [field]="form.get('environment')"
             ></dot-field-validation-message>
         </div>

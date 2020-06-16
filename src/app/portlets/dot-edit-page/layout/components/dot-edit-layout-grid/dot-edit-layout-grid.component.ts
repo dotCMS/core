@@ -233,7 +233,7 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
      * @param {string} title
      * @memberof DotEditLayoutGridComponent
      */
-    addColumnClass(index: number, title: string): void {
+    addColumnClass(index: number): void {
         this.addClass({
             getter: () => {
                 return this.grid.boxes[index].config.payload
@@ -249,7 +249,7 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
                     this.grid.boxes[index].config.payload.styleClass = value;
                 }
             },
-            title
+            title: this.dotMessageService.get('editpage.layout.css.class.add.to.box')
         });
     }
 
@@ -260,11 +260,11 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
      * @param {string} title
      * @memberof DotEditLayoutGridComponent
      */
-    addRowClass(index: number, title: string): void {
+    addRowClass(index: number): void {
         this.addClass({
             getter: () => this.grid.getRowClass(index) || '',
             setter: value => this.grid.setRowClass(value, index),
-            title
+            title: this.dotMessageService.get('editpage.layout.css.class.add.to.row')
         });
     }
 

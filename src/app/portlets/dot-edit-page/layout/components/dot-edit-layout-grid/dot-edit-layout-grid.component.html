@@ -6,7 +6,7 @@
     >
         <dot-icon-button-tooltip
             [tooltipText]="'editpage.layout.css.class.add.to.row' | dm"
-            (click)="addRowClass(i, dotMessageService.get('editpage.layout.css.class.add.to.row'))"
+            (click)="addRowClass(i)"
             icon="more_horiz"
         >
         </dot-icon-button-tooltip>
@@ -28,7 +28,7 @@
             <dot-icon-button-tooltip
                 class="box__add-box-class-button"
                 icon="more_horiz"
-                (click)="addColumnClass(i, dotMessageService.get('editpage.layout.css.class.add.to.box'))"
+                (click)="addColumnClass(i)"
                 [tooltipText]="'editpage.layout.css.class.add.to.box' | dm"
             ></dot-icon-button-tooltip>
             <dot-icon-button-tooltip

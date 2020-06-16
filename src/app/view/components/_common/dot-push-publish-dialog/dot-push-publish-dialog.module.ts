@@ -8,6 +8,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPushPublishFiltersService } from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
 import { DotPushPublishDialogComponent } from '@components/_common/dot-push-publish-dialog/dot-push-publish-dialog.component';
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotPushPublishDialogComponent],
@@ -22,7 +23,8 @@ import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.ser
         ReactiveFormsModule,
         DropdownModule,
         DotFieldValidationMessageModule,
-        SelectButtonModule
+        SelectButtonModule,
+        DotPipesModule
     ]
 })
 export class DotPushPublishDialogModule {}

@@ -7,6 +7,7 @@ import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
 import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotAddToBundleComponent],
@@ -18,7 +19,8 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
         DotDialogModule,
         ReactiveFormsModule,
         DropdownModule,
-        DotFieldValidationMessageModule
+        DotFieldValidationMessageModule,
+        DotPipesModule
     ],
     providers: [AddToBundleService, DotCurrentUserService]
 })
