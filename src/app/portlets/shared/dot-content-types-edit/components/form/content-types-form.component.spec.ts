@@ -494,6 +494,14 @@ describe('ContentTypesFormComponent', () => {
                         owner: null,
                         ownerContentType: false,
                         ownerScheme: false
+                    },
+                    PUBLISH: {
+                        identifier: '123',
+                        systemAction: '',
+                        workflowAction: null,
+                        owner: null,
+                        ownerContentType: false,
+                        ownerScheme: false
                     }
                 }
             };

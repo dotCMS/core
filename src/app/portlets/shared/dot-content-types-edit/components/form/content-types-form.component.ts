@@ -25,7 +25,8 @@ import {
     DotCMSContentTypeLayoutRow,
     DotCMSSystemActionMappings,
     DotCMSSystemActionType,
-    DotCMSWorkflow
+    DotCMSWorkflow,
+    DotCMSSystemAction
 } from 'dotcms-models';
 import { FieldUtil } from '../fields/util/field-util';
 
@@ -43,20 +44,15 @@ import { FieldUtil } from '../fields/util/field-util';
     templateUrl: 'content-types-form.component.html'
 })
 export class ContentTypesFormComponent implements OnInit, OnDestroy {
-    @ViewChild('name')
-    name: ElementRef;
+    @ViewChild('name') name: ElementRef;
 
-    @Input()
-    data: DotCMSContentType;
+    @Input() data: DotCMSContentType;
 
-    @Input()
-    layout: DotCMSContentTypeLayoutRow[];
+    @Input() layout: DotCMSContentTypeLayoutRow[];
 
-    @Output()
-    onSubmit: EventEmitter<DotCMSContentType> = new EventEmitter();
+    @Output() onSubmit: EventEmitter<DotCMSContentType> = new EventEmitter();
 
-    @Output()
-    valid: EventEmitter<boolean> = new EventEmitter();
+    @Output() valid: EventEmitter<boolean> = new EventEmitter();
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
@@ -207,10 +203,13 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private getActionIdentifier(actionMap: DotCMSSystemActionMappings): string {
         if (Object.keys(actionMap).length) {
             const item = actionMap[DotCMSSystemActionType.NEW];
-            return typeof item !== 'string' ? item.workflowAction.id : '';
+            return this.getWorkflowActionId(item);
         }
-
         return '';
+    }
+
+    private getWorkflowActionId(item: DotCMSSystemAction | string): string {
+        return item && typeof item !== 'string' ? item.workflowAction.id : '';
     }
 
     private getProp(item: string): string {
@@ -237,10 +236,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private initWorkflowField(): void {
         this.dotLicenseService
             .isEnterprise()
-            .pipe(
-                take(1),
-                filter((isEnterpriseLicense: boolean) => isEnterpriseLicense)
-            )
+            .pipe(take(1), filter((isEnterpriseLicense: boolean) => isEnterpriseLicense))
             .subscribe(() => {
                 this.enableWorkflowFormControls();
             });
