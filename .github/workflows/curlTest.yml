@@ -26,45 +26,45 @@ jobs:
       - name: Run Unit Tests
         run: |
           source dotcicd/library/pipeline.sh runUnit
-      - name: Run Integration Tests
-        run: |
-          source dotcicd/library/pipeline.sh runIntegration
-        env:
-          databaseType: postgres
-        if: always()
-  run-curl-tests-job:
-    name: Core Curl (Postman) Tests
-    runs-on: ubuntu-latest
-    env:
-      DOT_CICD_CLOUD_PROVIDER: github
-      DOT_CICD_TARGET: core
-      PROJECT_ID: cicd-246518
-      EXPORT_REPORTS: true
-    steps:
-      - name: Checkout core
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-      - name: Prepare dot-cicd
-        run: |
-          chmod +x .cicd/discover.sh && .cicd/discover.sh
-      - name: Build DotCMS Image
-        run: |
-          dotcicd/library/pipeline.sh buildBase
-        env:
-          PROJECT_ID: cicd-246518
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-      - name: Build Tests Base Image
-        run: |
-          source dotcicd/library/pipeline.sh buildTestsBase
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-      - name: Run Curl Tests
-        run: |
-          dotcicd/library/pipeline.sh runCurl
-        env:
-          PROJECT_ID: cicd-246518
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-          databaseType: postgres
-          PROVIDER_DB_USERNAME: postgres
-          PROVIDER_DB_PASSWORD: postgres
+#      - name: Run Integration Tests
+#        run: |
+#          source dotcicd/library/pipeline.sh runIntegration
+#        env:
+#          databaseType: postgres
+#        if: always()
+#  run-curl-tests-job:
+#    name: Core Curl (Postman) Tests
+#    runs-on: ubuntu-latest
+#    env:
+#      DOT_CICD_CLOUD_PROVIDER: github
+#      DOT_CICD_TARGET: core
+#      PROJECT_ID: cicd-246518
+#      EXPORT_REPORTS: true
+#    steps:
+#      - name: Checkout core
+#        uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 1
+#      - name: Prepare dot-cicd
+#        run: |
+#          chmod +x .cicd/discover.sh && .cicd/discover.sh
+#      - name: Build DotCMS Image
+#        run: |
+#          dotcicd/library/pipeline.sh buildBase
+#        env:
+#          PROJECT_ID: cicd-246518
+#          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+#      - name: Build Tests Base Image
+#        run: |
+#          source dotcicd/library/pipeline.sh buildTestsBase
+#        env:
+#          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+#      - name: Run Curl Tests
+#        run: |
+#          dotcicd/library/pipeline.sh runCurl
+#        env:
+#          PROJECT_ID: cicd-246518
+#          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+#          databaseType: postgres
+#          PROVIDER_DB_USERNAME: postgres
+#          PROVIDER_DB_PASSWORD: postgres
