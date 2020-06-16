@@ -611,10 +611,10 @@
     <script type="text/javascript">
 
         function serveFile(doStuff,conInode,velVarNm){
-
             if(doStuff != ''){
-                window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm ,'fileWin','toolbar=no,resizable=yes,width=400,height=300');
-            }else{
+                window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+            } else {
+                window.open('/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
             }
         }
 
