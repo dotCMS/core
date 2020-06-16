@@ -581,32 +581,21 @@
 									"    pm.expect(imageFieldJson.fileAsset.mime).to.eql(\"image/jpeg\");",
 									"    ",
 									"    // metaData",
-									"    imageFieldJson.metaData.forEach(checkMetadata);",
+									"    pm.expect(imageFieldJson.metaData.length).to.eql(6);",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"fileSize\", \"5494\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"length\", \"5494\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"contentType\", \"image/jpeg\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"content\", \"\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"height\", \"186\")).to.be.true;",
 									"",
-									"    function checkMetadata(value, index, array) {",
-									"        if(value.key==\"fileSize\") {",
-									"            pm.expect(value.value).to.eql(\"5494\");",
-									"        } else if(value.key==\"length\") {",
-									"            pm.expect(value.value).to.eql(\"5494\");",
-									"        } else if(value.key==\"width\") {",
-									"            pm.expect(value.value).to.eql(\"139\");",
-									"        } else if(value.key==\"contentType\") {",
-									"            pm.expect(value.value).to.eql(\"image/jpeg\");",
-									"        } else if(value.key==\"content\") {",
-									"            pm.expect(value.value).to.eql(\"\");",
-									"        } else if(value.key==\"height\") {",
-									"            pm.expect(value.value).to.eql(\"186\");",
-									"        } ",
-									"    }",
-									"",
+									"    ",
 									"    ",
 									"});",
 									"",
 									"pm.test(\"File Field attributes should be present\", function () {",
 									"     // File field",
 									"    var fileFieldJson = jsonData.data[collectionName][0][fileFieldVariable];",
-									"",
-									"        console.log(fileFieldJson);",
 									"    ",
 									"    // general attributes",
 									"    pm.expect(fileFieldJson.fileName).to.eql(\"Readme18005.md\");",
@@ -619,22 +608,25 @@
 									"    pm.expect(fileFieldJson.fileAsset.size).to.eql(2260);",
 									"    pm.expect(fileFieldJson.fileAsset.mime).to.be.null;",
 									"    ",
-									"    fileFieldJson.metaData.forEach(checkMetadata);",
-									"",
-									"    function checkMetadata(value, index, array) {",
-									"        if(value.key==\"fileSize\") {",
-									"            pm.expect(value.value).to.eql(\"2260\");",
-									"        } else if(value.key==\"length\") {",
-									"            pm.expect(value.value).to.eql(\"2260\");",
-									"        } else if(value.key==\"contentType\") {",
-									"            pm.expect(value.value).to.eql(\"text/plain; charset=ISO-8859-1\");",
-									"        } else if(value.key==\"content\") {",
-									"            pm.expect(value.value.includes(\"How to run the REST endpoints tests\")).to.be.true;",
-									"        } ",
-									"    }",
+									"    pm.expect(fileFieldJson.metaData.length).to.eql(4);",
+									"    ",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"2260\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"2260\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"How to run the REST endpoints tests\", \"\")).to.be.true;",
 									"    ",
 									"});",
 									"",
+									"function hasProperty(metaData, name, value) {",
+									"        var hasProperty = false;",
+									"        metaData.forEach(function (item) {",
+									"            if(item.key==name && item.value==value) {",
+									"                hasProperty = true;",
+									"            }",
+									"        });",
+									"",
+									"        return hasProperty;",
+									"    }",
 									""
 								],
 								"type": "text/javascript"
@@ -1026,103 +1018,103 @@
 	],
 	"variable": [
 		{
-			"id": "da6518f7-bdc8-4db1-94d5-f427f0fb4d16",
+			"id": "030afd7c-3e49-4d20-9838-cdd79c6cb151",
 			"key": "languageId",
 			"value": 1592344965881,
 			"type": "number"
 		},
 		{
-			"id": "95993f58-6b41-4d3d-a653-fde9b5aba1d3",
+			"id": "f1c1fc18-5965-4ddc-babb-f1bbc1ccf71f",
 			"key": "contentId",
 			"value": null,
 			"type": "any"
 		},
 		{
-			"id": "db173e38-2daf-4c72-b498-1272b62691bc",
+			"id": "95c7a647-40c5-4281-bfbd-045b01b362fa",
 			"key": "contentTypeVariable",
-			"value": "MyCustomType24482793",
+			"value": "MyCustomType04435502",
 			"type": "string"
 		},
 		{
-			"id": "6cfd7e6f-989d-431d-9b98-e70a0c94c087",
+			"id": "8b601674-54c2-4cc9-b95d-5f8dd7476ad4",
 			"key": "contentIdentifier",
-			"value": "59b3d3d5-10e9-4c8a-89a3-272bb27f179e",
+			"value": "6671180f-c0e0-4419-b995-af851738f87e",
 			"type": "string"
 		},
 		{
-			"id": "5f21069c-abf2-457b-8889-66f34fe46f4a",
+			"id": "26133ad8-24cc-4201-ad8a-0dc4372a73eb",
 			"key": "structureVariable",
 			"value": "myStructure94983807",
 			"type": "string"
 		},
 		{
-			"id": "89111052-edc0-40c0-ac0d-9a935028d19a",
+			"id": "020f75ff-eb98-44b6-a782-218701285e79",
 			"key": "imageContentTypeVariable",
-			"value": "MyImageType21095889",
+			"value": "MyImageType12648465",
 			"type": "string"
 		},
 		{
-			"id": "3b633a5b-94d5-4995-9954-b96906ceb4d9",
+			"id": "25c3fcd6-1401-4da7-9350-9118893a0c07",
 			"key": "imageContentIdentifier",
-			"value": null,
-			"type": "any"
+			"value": "0bcb8b89-cf47-4e44-98a0-a83cd7172471",
+			"type": "string"
 		},
 		{
-			"id": "46735162-a335-4409-be9e-f3a01d0ba695",
+			"id": "038e4397-19d3-4d12-a432-48244288f8a3",
 			"key": "imageFieldVariable",
 			"value": "myImage",
 			"type": "string"
 		},
 		{
-			"id": "7b243fc2-b0eb-42bb-a648-0c0c254b7919",
+			"id": "c2d95fa2-d847-4548-90c3-b787fda983a1",
 			"key": "showOnMenu",
 			"value": true,
 			"type": "boolean"
 		},
 		{
-			"id": "acb699a9-e90a-4765-b7fc-84baaa537e30",
+			"id": "c5b60cef-c338-42da-833b-02226f169312",
 			"key": "sortOrder",
 			"value": 2,
 			"type": "number"
 		},
 		{
-			"id": "117c6bf7-03c2-4a42-a183-a2f4947999e1",
+			"id": "2a27ff55-8172-4f52-92a7-03a1a2ab03e5",
 			"key": "fileFieldVariable",
 			"value": "myFile",
 			"type": "string"
 		},
 		{
-			"id": "d0665ef0-ce03-49e3-94ca-18eba96cd022",
+			"id": "4ccbdc32-c46a-407f-9639-902ba20e2afe",
 			"key": "fileContentIdentifier",
-			"value": null,
-			"type": "any"
+			"value": "0d55229d-1722-4b39-9ca5-7a9532b2b8aa",
+			"type": "string"
 		},
 		{
-			"id": "3ebdab63-e224-44c0-bf37-964d3b465f1c",
+			"id": "70c8d557-5b38-4c9a-9d4f-25866acdec7b",
 			"key": "childContentTypeVariable",
 			"value": "childType35543008",
 			"type": "string"
 		},
 		{
-			"id": "4a46a4b7-6525-4d2c-a69e-4074e4686507",
+			"id": "95788299-e84f-49b6-8559-2a3abb43a3c6",
 			"key": "parentContentTypeVariable",
 			"value": "parentType67172229",
 			"type": "string"
 		},
 		{
-			"id": "fa583fb3-0f4b-4b18-b6d7-510f804b22be",
+			"id": "6a5cf7da-1f8c-45a9-8b9a-db58831c2538",
 			"key": "relFieldVariable",
 			"value": "rel",
 			"type": "string"
 		},
 		{
-			"id": "b5c8998f-3b05-4614-9604-b9a06868d52b",
+			"id": "deb8e953-e041-4227-84ed-2e07323e68be",
 			"key": "childContentIdentifier",
 			"value": "fd292a50-e913-4974-9833-525345883311",
 			"type": "string"
 		},
 		{
-			"id": "7ab7b9a6-79ea-4def-98e1-1369d4d573d4",
+			"id": "4d46c788-93d7-4ac6-ac1d-20f47b606f88",
 			"key": "parentContentIdentifier",
 			"value": "4248d7bd-9a72-413a-85fc-dd80eeb10335",
 			"type": "string"
