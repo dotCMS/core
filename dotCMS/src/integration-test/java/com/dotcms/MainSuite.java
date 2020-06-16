@@ -34,6 +34,7 @@ import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
+import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
@@ -275,6 +276,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ESReadOnlyMonitorTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
+        Task05225RemoveLoadRecordsToIndexTest.class,
         PushPublishBundleGeneratorTest.class,
         BundleFactoryTest.class,
         PublisherFilterImplTest.class,
