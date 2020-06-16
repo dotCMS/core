@@ -52,32 +52,32 @@ jobs:
     - name: build tests base image
       script: bash dotcicd/library/pipeline.sh buildTestsBase
     - stage: run tests
-      name: unit tests
-      script: bash dotcicd/library/pipeline.sh runUnit
-    - name: postgres integration tests
-      script: bash dotcicd/library/pipeline.sh runIntegration
-      if: >-
-        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
-      env: DB_TYPE=postgres
-    - name: mysql integration tests
-      script: bash dotcicd/library/pipeline.sh runIntegration
-      if: >-
-        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
-        OR commit_message =~ /(\[travis\]|\[travis mysql\])/
-      env: DB_TYPE=mysql
-    - name: oracle integration tests
-      script: bash dotcicd/library/pipeline.sh runIntegration
-      if: >-
-        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
-        OR commit_message =~ /(\[travis\]|\[travis oracle\])/
-      env: DB_TYPE=oracle
-    - name: mssql integration tests
-      script: bash dotcicd/library/pipeline.sh runIntegration
-      if: >-
-        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
-        OR commit_message =~ /(\[travis\]|\[travis mssql\])/
-      env: DB_TYPE=mssql
-    - name: postgres postman tests
+#      name: unit tests
+#      script: bash dotcicd/library/pipeline.sh runUnit
+#    - name: postgres integration tests
+#      script: bash dotcicd/library/pipeline.sh runIntegration
+#      if: >-
+#        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
+#      env: DB_TYPE=postgres
+#    - name: mysql integration tests
+#      script: bash dotcicd/library/pipeline.sh runIntegration
+#      if: >-
+#        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+#        OR commit_message =~ /(\[travis\]|\[travis mysql\])/
+#      env: DB_TYPE=mysql
+#    - name: oracle integration tests
+#      script: bash dotcicd/library/pipeline.sh runIntegration
+#      if: >-
+#        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+#        OR commit_message =~ /(\[travis\]|\[travis oracle\])/
+#      env: DB_TYPE=oracle
+#    - name: mssql integration tests
+#      script: bash dotcicd/library/pipeline.sh runIntegration
+#      if: >-
+#        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+#        OR commit_message =~ /(\[travis\]|\[travis mssql\])/
+#      env: DB_TYPE=mssql
+      name: postgres postman tests
       script: bash dotcicd/library/pipeline.sh runCurl
       if: >-
         commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
