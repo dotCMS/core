@@ -5,6 +5,7 @@
     box-shadow: $md-shadow-4;
     display: flex;
     height: 100%;
+    overflow: auto;
     padding: $basic-padding * 3;
 
     &::ng-deep listing-data-table tr {
