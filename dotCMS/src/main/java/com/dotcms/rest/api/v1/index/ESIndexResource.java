@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.index;
 
+import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -211,7 +212,40 @@ public class ESIndexResource {
         return Response.ok(new ResponseEntityView(true)).build();
     }
 
-    
+    @CloseDBIfOpened
+    @POST
+    @JSONP
+    @NoCache
+    @Path("/optimize")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response optimizeIndices(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
+        final InitDataObject init = auth(request, response);
+        final ContentletIndexAPI api = APILocator.getContentletIndexAPI();
+        final List<String> indices = api.listDotCMSIndices();
+        api.optimize(indices);
+        final String message = Try.of(()-> LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(),"message.cmsmaintenance.cache.indexoptimized")).get();
+        sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 0);
+        return Response.ok().build();
+    }
+
+    @CloseDBIfOpened
+    @DELETE
+    @JSONP
+    @NoCache
+    @Path("/cache")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response flushIndiciesCache(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
+        final InitDataObject init = auth(request, response);
+        final ContentletIndexAPI api = APILocator.getContentletIndexAPI();
+        final List<String> indices = api.listDotCMSIndices();
+        final Map<String, Integer> data = APILocator.getESIndexAPI().flushCaches(indices);
+        String message = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(),"maintenance.index.cache.flush.message")).get();
+        message=message.replace("{0}", String.valueOf(data.get("successfulShards")));
+        message=message.replace("{1}", String.valueOf(data.get("failedShards")));
+        sendAdminMessage(message, MessageSeverity.INFO, init.getUser(),5000);
+        return Response.ok(new ResponseEntityView(data)).build();
+
+    }
 
 
     @Deprecated
