@@ -20,13 +20,14 @@ public class TypeTestCase {
     final String fieldVarName;
     final Class<? extends Field> fieldType;
     final boolean fieldRequired;
+    final String description;
 
 
     private TypeTestCase(
         final List<BiFunction<String, BaseContentType, ContentType>> operations, final String contentTypeName,
         final BaseContentType baseType, final String expectedGraphQLInterfaceToInherit,
         final List<Consumer<AssertionParams>> assertions, final String fieldVarName, final Class<? extends Field> fieldType,
-        final boolean fieldRequired) {
+        final boolean fieldRequired, final String description) {
         this.operations = operations;
         this.contentTypeName = contentTypeName;
         this.baseType = baseType;
@@ -35,6 +36,7 @@ public class TypeTestCase {
         this.fieldVarName = fieldVarName;
         this.fieldType = fieldType;
         this.fieldRequired = fieldRequired;
+        this.description = description;
     }
 
     List<BiFunction<String, BaseContentType, ContentType>> getOperations() {
@@ -59,6 +61,7 @@ public class TypeTestCase {
         private String fieldVarName;
         private Class<? extends Field> fieldType;
         private boolean fieldRequired;
+        private String description;
 
 
         public Builder setFieldVarName(String fieldVarName) {
@@ -101,9 +104,15 @@ public class TypeTestCase {
             return this;
         }
 
+        public Builder description(final String description) {
+            this.description = description;
+            return this;
+        }
+
         public TypeTestCase build() {
             return new TypeTestCase(operations, contentTypeName, baseType,
-                expectedGraphQLInterfaceToInherit, assertions, fieldVarName, fieldType, fieldRequired);
+                expectedGraphQLInterfaceToInherit, assertions, fieldVarName, fieldType,
+                    fieldRequired, description);
         }
     }
 
@@ -117,5 +126,10 @@ public class TypeTestCase {
             this.typeName = typeName;
             this.expectedInterfaceName = baseTypeName;
         }
+    }
+
+    @Override
+    public String toString() {
+        return description;
     }
 }
