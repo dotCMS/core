@@ -4,10 +4,7 @@ import java.io.Serializable;
 import java.security.Key;
 import java.security.Provider;
 
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Logger;
 import com.liferay.util.EncryptorException;
 
 /**
@@ -65,18 +62,6 @@ public interface Encryptor extends Serializable {
 
         return com.liferay.util.Encryptor.decrypt(key, encryptedString);
     }
-
-	default String decrypt(final String encryptedString) throws EncryptorException {
-		try{
-
-			final Key key = PublicCompanyFactory.getDefaultCompany().getKeyObj();
-			return decrypt(key, encryptedString);
-		} catch(EncryptorException e){
-
-			Logger.debug(PublicEncryptionFactory.class, e.getMessage(), e);
-			throw new DotRuntimeException("decryption Failed", e);
-		}
-	}
 
 	/**
 	 * Allows to verify if a plain text String is unmodified based on the

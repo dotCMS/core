@@ -131,11 +131,6 @@ public class EncryptorFactory implements Serializable {
         }
 
         @Override
-        public String decrypt(final String encryptedString) throws EncryptorException {
-            return Encryptor.super.decrypt(encryptedString);
-        }
-
-        @Override
         public String digest(String text) {
 
             return Encryptor.super.digest(text);

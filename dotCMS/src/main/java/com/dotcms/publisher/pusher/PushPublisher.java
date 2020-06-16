@@ -47,7 +47,6 @@ import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFai
 import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsSuccessEvent;
 import com.dotcms.system.event.local.type.pushpublish.SinglePushPublishEndpointFailureEvent;
 import com.dotcms.util.CloseUtils;
-import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -55,7 +54,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.EncryptorException;
 import org.apache.logging.log4j.ThreadContext;
 import org.glassfish.jersey.client.ClientProperties;
 import org.quartz.JobDetail;
@@ -353,16 +351,15 @@ public class PushPublisher extends Publisher {
      * @return
      * @throws IOException
      */
-	public static Optional<String> retriveEndpointKeyDigest(final PublishingEndPoint endpoint)
-			throws IOException, EncryptorException {
-
-	  	if(endpoint==null || endpoint.getAuthKey() ==null) {
-			Logger.warn(PushPublisher.class,"Endpoint or endpoint key is null:" + endpoint);
-			return Optional.empty();
-	  	}
-
-		final String token = EncryptorFactory.getInstance().getEncryptor().decrypt(endpoint.getAuthKey().toString());
-	 	String key = null;
+	public static Optional<String> retriveEndpointKeyDigest(final PublishingEndPoint endpoint) throws IOException { // todo: create a method that allows to receives a key and use the com.dotcms.util.security.Encryptor instead PublicEncryptionFactory
+	  
+	  if(endpoint==null || endpoint.getAuthKey() ==null) {
+	    Logger.warn(PushPublisher.class,"Endpoint or endpoint key is null:" + endpoint);
+	    return Optional.empty();
+	  }
+	  
+	  String token = PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString());
+		String key = null;
 		if(token.contains(File.separator)) {
 			File tokenFile = new File(token);
 			if(tokenFile != null && tokenFile.exists())
