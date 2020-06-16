@@ -107,6 +107,7 @@ import java.io.Writer;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -628,12 +629,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			_sendToReferral(req, res, referer);
 		}else if(cmd != null && cmd.equals("export")){
 			try {
-				String structureInode = req.getParameter("expStructureInode");
+				final String contentTypeId = req.getParameter("expStructureInode");
+				final ActionResponseImpl resImpl = (ActionResponseImpl) res;
+				final HttpServletResponse response = resImpl.getHttpServletResponse();
 
-				ActionResponseImpl resImpl = (ActionResponseImpl) res;
-				HttpServletResponse response = resImpl.getHttpServletResponse();
-
-				downloadToExcel(response, user,searchContentlets(req,res,config,form,user,"Excel"), structureInode);
+                final Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId);
+                final String startMsg = String.format("Exporting contents of type '%s' to CSV file. Please wait...",
+                        contentType.getName());
+                notificationAPI.info(startMsg, user.getUserId());
+                Logger.info(this, String.format("Exporting contents of type ID '%s' to CSV file. Retrieving results" +
+                        " from ES index...", contentTypeId));
+				downloadToExcel(response, user,searchContentlets(req,res,config,form,user,"Excel"), contentTypeId);
 			} catch (Exception ae) {
 				_handleException(ae, req);
 			}
@@ -1989,12 +1995,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	public void downloadToExcel(HttpServletResponse response, User user, List<Map<String, String>> contentletList, String contentTypeInode) throws DotSecurityException{
 		PrintWriter writer = null;
 		if(contentletList.size() > 0) {
-			String[] inodes = new String[0];
-
-			Structure contentType = null;
 			List<Map<String, String>> contentlets = contentletList;
-
-			List<String> contentletsInodes = new ArrayList<String>();
+			Logger.info(this, String.format("Generating CSV data. Mapping content list of type '%s'", contentTypeInode));
+			final List<String> contentletsInodes = new ArrayList<>();
 			Map<String, String> contentletMap;
 			for (int i = 2; i < contentlets.size(); ++i) {
 				Object map = contentlets.get(i);
@@ -2004,24 +2007,27 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 			}
 
-			inodes = contentletsInodes.toArray(new String[0]);
+            final String[] inodes = contentletsInodes.toArray(new String[0]);
 
-			List<Contentlet> contentletsList2 = new ArrayList<Contentlet>();
+			final List<Contentlet> contentletsList2 = new ArrayList<>();
 			for(String inode  : inodes){
 				Contentlet contentlet = new Contentlet();
 				try{
 					contentlet = conAPI.find(inode, user, false);
 				}catch (DotDataException ex){
-					Logger.error(this, "Unable to find contentlet with indoe " + inode);
+					Logger.warn(this, "Unable to find contentlet with Inode: " + inode);
 				}
 				contentletsList2.add(contentlet);
 			}
+			final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
+            int totalSize = 0;
 			// If contentletList.size() then contentletsList2 are not empty
-			contentType = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeInode);
-
+            final Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeInode);
+            final String csvFileName = contentType.getName() + "_contents_" + UtilMethods.dateToHTMLDate(new java
+                    .util.Date(), "M_d_yyyy") + ".csv";
 			try {
 				response.setContentType("application/octet-stream; charset=UTF-8");
-				response.setHeader("Content-Disposition", "attachment; filename=\""+contentType.getName()+"_contents_" + UtilMethods.dateToHTMLDate(new java.util.Date(),"M_d_yyyy") +".csv\"");
+				response.setHeader("Content-Disposition", "attachment; filename=\"" + csvFileName +"\"");
 				writer = response.getWriter();
 
 				List<Field> contentTypeFields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
@@ -2036,9 +2042,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 
 				writer.print("\r\n");
+				int counter = 0;
+				int loggingPoint = 2000;
+                totalSize = contentletsList2.size();
 				for(Contentlet content :  contentletsList2 ){
-
-					List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
+                    counter += 1;
+                    if (counter % loggingPoint == 0) {
+                        Logger.info(this, String.format("Exporting %d out of %d contentlet(s)", counter, totalSize));
+                    }
+					List<Category> catList = catAPI.getParents(content, user, false);
 					writer.print(content.getIdentifier());
 					Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
 					writer.print("," +lang.getLanguageCode());
@@ -2117,9 +2129,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							} else {
 								writer.print(","+text);
 							}
-						}catch(Exception e){
+						} catch (final Exception e) {
 							writer.print(",");
-							Logger.error(this,e.getMessage(),e);
+                            Logger.error(this, String.format("An error occurred when exporting field '%s' [%s] to CSV" +
+                                    " file '%s': %s", field.getFieldName(), field.getInode(), csvFileName, e.getMessage()), e);
 						}
 					}
 					writer.print("\r\n");
@@ -2127,11 +2140,19 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				writer.flush();
 				writer.close();
 				HibernateUtil.closeSession();
-			}catch(Exception p){
-				Logger.error(this,p.getMessage(),p);
+			} catch (final Exception p) {
+                final String errorMsg = String.format("An error occurred when exporting contents of type '%s' [%s] to" +
+                        " CSV file '%s': %s", contentType.getName(), contentTypeInode, csvFileName, p.getMessage());
+                notificationAPI.info(errorMsg, user.getUserId());
+                Logger.error(this, errorMsg, p);
 			}
-		}
-		else {
+            final DecimalFormat decimalFormat = new DecimalFormat("###,###");
+            final String endMsg = String.format("A total of %s contents of type '%s' [%s] have been successfully " +
+                            "exported to CSV file '%s'", decimalFormat.format(totalSize), contentType.getName(),
+                    contentTypeInode, csvFileName);
+            notificationAPI.info(endMsg, user.getUserId());
+            Logger.info(this, endMsg);
+        } else {
 			try {writer.print("\r\n");} catch (Exception e) {	Logger.debug(this,"Error: download to excel "+e);	}
 		}
 	}
