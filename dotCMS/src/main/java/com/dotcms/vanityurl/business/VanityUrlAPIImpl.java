@@ -52,12 +52,12 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           + " where s.structuretype= 7 and c.structure_inode=s.inode "
           + " and cvi.live_inode=c.inode and cvi.identifier = i.id  and i.host_inode = ? and cvi.lang =? ";
 
-  public static final String URL_SUFFIX = "/";
-  public static final String LEGACY_CMS_HOME_PAGE = "/cmsHomePage";
-  private final ContentletAPI contentletAPI;
+  public static final String   URL_SUFFIX = "/";
+  public static final String   LEGACY_CMS_HOME_PAGE = "/cmsHomePage";
+  private final ContentletAPI  contentletAPI;
   private final VanityUrlCache cache;
-  private final LanguageAPI languageAPI;
-  private final boolean languageFallback = Config.getBooleanProperty("DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE", false) ;
+  private final LanguageAPI    languageAPI;
+  private final boolean        languageFallback = Config.getBooleanProperty("DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE", false) ;
 
   public VanityUrlAPIImpl()  {
     this(APILocator.getContentletAPI(),
@@ -90,7 +90,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         throw new DotStateException("Host cannot be null. Got:" + host);
     }
     Logger.info(this.getClass(), "Populating Vanity URLS for :" + host.getHostname()); 
-    for (Language language : languageAPI.getLanguages()) {
+    for (final Language language : languageAPI.getLanguages()) {
       cache.putSiteMappings(host, language, findInDb(host, language));
     }
   }
@@ -98,7 +98,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
   @Override
   public void populateAllVanityURLsCache() throws DotDataException {
-    for (Host host : Try.of(() -> APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), false)).getOrElse(ImmutableList.of())) {
+    for (final Host host : Try.of(() -> APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), false)).getOrElse(ImmutableList.of())) {
       populateVanityURLsCacheBySite(host);
     }
     populateVanityURLsCacheBySite(APILocator.getHostAPI().findSystemHost());
@@ -125,7 +125,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           vanityUrls.stream().map(vanity -> vanity.get("live_inode").toString()).collect(Collectors.toList());
       final List<Contentlet> contentlets = this.contentletAPI.findContentlets(vanityUrlInodes);
 
-      return contentlets.stream().map(c -> new CachedVanityUrl(this.fromContentlet(c))).collect(Collectors.toList());
+      return contentlets.stream().map(contentlet -> new CachedVanityUrl(this.fromContentlet(contentlet))).collect(Collectors.toList());
 
     } catch (final Exception e) {
       Logger.error(this,
@@ -141,19 +141,20 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   
   
   
-  private List<CachedVanityUrl> load(final Host host, final Language language){
+  private List<CachedVanityUrl> load(final Host host, final Language language) {
+
     List<CachedVanityUrl> cachedVanities = cache.getSiteMappings(host, language);
-    if(cachedVanities==null) {
+    if(cachedVanities == null) {
       synchronized (VanityUrlAPI.class) {
         cachedVanities = cache.getSiteMappings(host, language);
         if(cachedVanities==null) {
-          cachedVanities=findInDb(host, language);
-          cache.putSiteMappings(host, language, findInDb(host, language));
+          cachedVanities = findInDb(host, language);
+          cache.putSiteMappings(host, language, cachedVanities);
         }
       }
     }
-    return cachedVanities;
 
+    return cachedVanities;
   }
   
 
@@ -164,28 +165,33 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
 
     // 404 short circuit
-    Optional<CachedVanityUrl> shortCircuit = cache.getDirectMapping(url, host, language);
+    final Optional<CachedVanityUrl> shortCircuit = cache.getDirectMapping(url, host, language);
     if(shortCircuit!=null) {
         return shortCircuit;
     }
 
 
     // tries specific site first
-    Optional<CachedVanityUrl> matched =load(host, language).parallelStream().filter(vc -> vc.url.equalsIgnoreCase(url) || vc.pattern.matcher(url).find()).findFirst();
+    Optional<CachedVanityUrl> matched = load(host, language).parallelStream()
+            .filter(cachedVanityUrl ->
+                    cachedVanityUrl.url.equalsIgnoreCase(url) || cachedVanityUrl.pattern.matcher(url).find()).findFirst();
 
     
     // try language fallback
-    if (!matched.isPresent()  && !languageAPI.getDefaultLanguage().equals(language) && languageFallback ) {
+    if (!matched.isPresent()  && !languageAPI.getDefaultLanguage().equals(language) && languageFallback) {
+
       matched = resolveVanityUrl(url, host, languageAPI.getDefaultLanguage());
     }
     
     // tries SYSTEM_HOST
     if (!matched.isPresent() && !APILocator.systemHost().equals(host)) {
-      matched = load(APILocator.systemHost(), language).parallelStream().filter(vc -> vc.pattern.matcher(url).find()).findFirst();
+
+        matched = load(APILocator.systemHost(), language).parallelStream().filter(vc -> vc.pattern.matcher(url).find()).findFirst();
     }
     
     // if this is the /cmsHomePage vanity
     if (!matched.isPresent() && StringPool.FORWARD_SLASH.equals(url)) {
+
         matched = resolveVanityUrl(LEGACY_CMS_HOME_PAGE, host, language);
     }
     
@@ -195,7 +201,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
 
     return matched;
-  } // isVanityUrl
+  } // resolveVanityUrl
 
   
   @CloseDBIfOpened
@@ -234,7 +240,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     vanityUrl.setFolder(contentlet.getFolder());
     CacheLocator.getContentletCache().add(vanityUrl);
     return vanityUrl;
-  } // getVanityUrlFromContentlet.
+  } // fromContentlet.
 
   
   @CloseDBIfOpened
