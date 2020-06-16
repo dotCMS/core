@@ -122,7 +122,7 @@ public class ReindexQueueFactory {
 
     protected void deleteReindexAndFailedRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL("DELETE From dist_reindex_journal where priority >= ? and  priority < ? ");
+        dc.setSQL("DELETE From dist_reindex_journal where priority >= ?");
         dc.addParam(Priority.REINDEX.dbValue());
         dc.loadResult();
     }
