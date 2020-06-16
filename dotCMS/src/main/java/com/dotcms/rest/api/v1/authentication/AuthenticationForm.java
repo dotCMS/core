@@ -1,14 +1,14 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
+import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.util.SecurityLogger;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @JsonDeserialize(builder = AuthenticationForm.Builder.class)
 public class AuthenticationForm extends Validated {

@@ -6,6 +6,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -356,8 +357,8 @@ public class AppsResourceTest extends IntegrationTestBase {
                     Function.identity()));
             Assert.assertEquals(secretsAfterDelete.get("param2").getSecret().getString(),"v1");
             //The deleted secrets should have returned to show their default vales defined in the yml descriptor.
-            Assert.assertNull(secretsAfterDelete.get("param1").getSecret());
-            Assert.assertNull(secretsAfterDelete.get("param3").getSecret());
+            assertNull(secretsAfterDelete.get("param1").getSecret());
+            assertNull(secretsAfterDelete.get("param3").getSecret());
 
         }
     }
@@ -547,6 +548,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                         final boolean hidden = Boolean.parseBoolean(deserializedView.get("hidden").toString());
                         final String value = deserializedView.get("value").toString();
                         assertNotNull(deserializedView.get("required"));
+                        assertNull(deserializedView.get("warnings"));
 
                         Assert.assertEquals(
                                 "If it comes back as hidden it's because the descriptor also says it is hidden ",

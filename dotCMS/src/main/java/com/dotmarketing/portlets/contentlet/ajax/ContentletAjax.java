@@ -6,10 +6,9 @@ import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
@@ -183,7 +182,11 @@ public class ContentletAjax {
 			result.put("iconClass", UtilHTML.getIconClass(contentlet));
 			result.put("identifier", contentlet.getIdentifier());
 			result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
+			
 			result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
+			if(contentlet.getTitleImage().isPresent()) {
+			    result.put("titleImage", contentlet.getTitleImage().get());
+			}
 			result.put("title", String.valueOf(contentlet.getTitle()));
 			result.put("inode", String.valueOf(contentlet.getInode()));
 			result.put("working", String.valueOf(contentlet.isWorking()));
@@ -566,12 +569,7 @@ public class ContentletAjax {
 		}
 
 		// Building search params and lucene query
-		StringBuffer luceneQuery = new StringBuffer("-contentType:forms ");
-
-    if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-      luceneQuery.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
-      luceneQuery.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
-    }
+		StringBuffer luceneQuery = new StringBuffer();
 
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
@@ -625,8 +623,8 @@ public class ContentletAjax {
 		            break;
 		        }
 		    }
-		    luceneQuery.append("-contentType:Host ");
-		    luceneQuery.append("-baseType:3 ");
+            luceneQuery.append("-contentType:forms ");
+            luceneQuery.append("-contentType:Host ");
 		}
 
         final String finalSort = getFinalSort(fields, orderBy, st, structureInodes);
@@ -677,17 +675,9 @@ public class ContentletAjax {
                 Optional<Relationship> childRelationship = getRelationshipFromChildField(st, fieldName);
                 if (childRelationship.isPresent()) {
                     //Getting related identifiers from index when filtering by parent
-                    final Contentlet relatedParent = conAPI
-                            .findContentletByIdentifierAnyLanguage(fieldValue);
-                    final List<String> relatedContent = conAPI
-                            .getRelatedContent(relatedParent, childRelationship.get(), true,
-                                    currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
-                                    offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
-                            .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
-
-                    if (relatedQueryByChild.length() > 0) {
-                        relatedQueryByChild.append(StringPool.COMMA);
-                    }
+                    final List<String> relatedContent = getRelatedIdentifiers(currentUser, offset,
+                            relatedQueryByChild, finalSort, fieldValue,
+                            childRelationship);
 
                     relatedQueryByChild.append(fieldName).append(StringPool.COLON).append(fieldValue);
 
@@ -887,10 +877,12 @@ public class ContentletAjax {
 							        if("catchall".equals(fieldName)) {
 							           
 							            luceneQuery.append(" title:'" + fieldValueStr + "'^15 ");
-							            for(String x : fieldValueStr.split("[,|\\s+]")) {
-							                luceneQuery.append(" title:" + x + "^5 ");
-							                
-							            }
+                                        final String[] titleSplit = fieldValueStr.split("[,|\\s+]");
+                                        if (titleSplit.length > 1) {
+                                            for (final String term : titleSplit) {
+                                                luceneQuery.append(" title:" + term + "^5 ");
+                                            }
+                                        }
 							            luceneQuery.append(" title_dotraw:*" + fieldValueStr + "*^5 ");
 							        }
 							        
@@ -1097,6 +1089,9 @@ public class ContentletAjax {
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
+	            if(contentlet.getTitleImage().isPresent()) {
+	                searchResult.put("titleImage", contentlet.getTitleImage().get().variable());
+	            }
 				searchResult.put("modDate", fieldValue);
 				String user = "";
 				User contentEditor = null;
@@ -1200,11 +1195,14 @@ public class ContentletAjax {
 							.getMimeType(APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName()));
 				} else if(type.baseType().getType() == BaseContentType.HTMLPAGE.getType()){
 					searchResult.put("mimeType", "application/dotpage");
+				} else if(type.baseType().getType() == BaseContentType.DOTASSET.getType()){
+					searchResult.put("mimeType", APILocator.getFileAssetAPI()
+							.getMimeType(con.getBinary(DotAssetContentType.ASSET_FIELD_VAR)));
 				} else {
 					searchResult.put("mimeType", "");
 				}
-				final String icon = spanClass.startsWith("uknIcon") ? spanClass.replaceAll("uknIcon","").trim() : spanClass;
-				searchResult.put("__icon__",icon);
+			
+				searchResult.put("__icon__",UtilHTML.getIconClass(con ));
 			} catch (DotSecurityException e) {
 
 				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
@@ -1273,7 +1271,24 @@ public class ContentletAjax {
 		return results;
 	}
 
-	private boolean hasManyContentTypes(final String structureInode) {
+    List<String> getRelatedIdentifiers(User currentUser, int offset,
+            StringBuilder relatedQueryByChild, String finalSort, String fieldValue,
+            Optional<Relationship> childRelationship) throws DotDataException {
+        final Contentlet relatedParent = conAPI
+                .findContentletByIdentifierAnyLanguage(fieldValue);
+        final List<String> relatedContent = conAPI
+                .getRelatedContent(relatedParent, childRelationship.get(), true,
+                        currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
+                        offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
+                .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
+
+        if (relatedQueryByChild.length() > 0) {
+            relatedQueryByChild.append(StringPool.COMMA);
+        }
+        return relatedContent;
+    }
+
+    private boolean hasManyContentTypes(final String structureInode) {
 
 		return null != structureInode && structureInode.split(StringPool.COMMA).length > 1;
 	}

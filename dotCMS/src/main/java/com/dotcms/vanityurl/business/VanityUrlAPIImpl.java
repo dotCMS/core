@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
@@ -32,7 +31,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
@@ -98,6 +96,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
       cache.putSiteMappings(host, lang, findInDb(host, lang));
     }
   }
+
 
   @Override
   public void populateAllVanityURLsCache() throws DotDataException {
@@ -166,6 +165,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   @CloseDBIfOpened
   @Override
   public Optional<CachedVanityUrl> resolveVanityUrl(final String url, final Host host, final Language lang) {
+
 
     // 404 short circuit
     Optional<CachedVanityUrl> shortCircuit = cache.getDirectMapping(url, host, lang);

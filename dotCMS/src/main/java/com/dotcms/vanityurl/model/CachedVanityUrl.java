@@ -56,14 +56,19 @@ public class CachedVanityUrl implements Serializable {
         this.order    = 0;
     }
     
-    
-    public Tuple2<String, String> processForward(final String url) {
+    /**
+     * rewrites the vanity with the matching groups if needed, returns
+     * the rewritten url, parameters from the request
+     * @param urlIn
+     * @return
+     */
+    final Tuple2<String, String> processForward(final String urlIn) {
       String newForward = this.forwardTo;
       String queryString = null;
       if(pattern!=null) {
-        Matcher matcher = pattern.matcher(url);
+        Matcher matcher = pattern.matcher(urlIn);
         if (matcher.matches() && forwardTo.indexOf(GROUP_REPLACEMENT_PREFIX)>-1) {
-          for(int i=1;i<matcher.groupCount();i++) {
+          for(int i=1;i<=matcher.groupCount();i++) {
             newForward=newForward.replace("$"+i, matcher.group(i));
           }
         }
@@ -115,14 +120,16 @@ public class CachedVanityUrl implements Serializable {
         final String queryString = rewritten._2;
 
 
+        // if the vanity is a redirect
         if (this.response==301 || this.response==302 ) {
             response.setStatus(this.response);
             response.setHeader("Location", rewrite);
             return new VanityUrlResult(rewrite, queryString, true);
         }
         
+        // if the vanity is a proxy request
         if (this.response==200 && UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
-            Try.run(()-> new CircuitBreakerUrl(rewrite).doOut(response)).onFailure(e->{throw new DotRuntimeException(e);});
+            Try.run(()-> new CircuitBreakerUrl(rewrite + queryString!=null ? "?" + queryString : "").doOut(response)).onFailure(e->{throw new DotRuntimeException(e);});
             return new VanityUrlResult(rewrite, queryString, true);
         }
 

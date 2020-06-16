@@ -7,7 +7,6 @@ import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.PUBLISH;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_PUBLISH;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
@@ -117,8 +116,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -147,7 +144,7 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
 import org.glassfish.jersey.internal.util.Base64;
@@ -989,8 +986,6 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         //step 1 System Workflow Actions.
         assertTrue(systemActions.stream().anyMatch(action -> SAVE.equals(action.getName())));
-        assertTrue(systemActions.stream()
-               .anyMatch(action -> SAVE_PUBLISH.equals(action.getName())));
         return systemActions;
     }
 
@@ -1651,10 +1646,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                         .cast(response1.getEntity());
                 brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView1.getEntity()));
-                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, brandNewContentlet);
 
                 // update existing by content inode.
-                formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
+                formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text,inputFile2Text);
                 final HttpServletRequest request2 = mock(HttpServletRequest.class);
                 final Response response2 = workflowResource
                         .fireActionMultipart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(),null,"-1", formDataMultiPart);
@@ -1664,7 +1659,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                         .cast(response2.getEntity());
                 String identifier = brandNewContentlet.getIdentifier();
                 brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView2.getEntity()));
-                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, brandNewContentlet);
                 assertEquals(identifier, brandNewContentlet.getIdentifier());
 
                 // update existing by identifier
@@ -1678,7 +1673,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final ResponseEntityView fireEntityView3 = ResponseEntityView.class
                         .cast(response3.getEntity());
                 brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView3.getEntity()));
-                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, brandNewContentlet);
                 assertEquals(identifier, brandNewContentlet.getIdentifier());
             } finally {
                 if(null != brandNewContentlet){
@@ -1735,23 +1730,28 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         return formDataMultiPart;
     }
 
-    private void checkBrandNewContentlet(String fieldNameTitle, String fieldNameFile1, String fieldNameFile2, String inputFile1Text, String inputFile2Text, Contentlet brandNewContentlet) throws IOException {
+    private void checkBrandNewContentlet(String fieldNameTitle, String fieldNameFile1, String fieldNameFile2, Contentlet brandNewContentlet) throws IOException {
         assertNotNull(brandNewContentlet);
         assertNotNull(brandNewContentlet.getMap());
         assertTrue(brandNewContentlet.getMap().containsKey(fieldNameTitle));
         assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile1));
         assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile2));
         assertEquals("Test", brandNewContentlet.getMap().get("title"));
-        final File file1 = brandNewContentlet.getBinary("file1");
-        final File file2 = brandNewContentlet.getBinary("file2");
-        assertNotNull(file1);
-        assertNotNull(file1);
-        final String fileString1 = IOUtils.toString(new FileReader(file1));
-        final String fileString2 = IOUtils.toString(new FileReader(file2));
-        assertNotNull(fileString1);
-        assertNotNull(fileString2);
-        assertEquals(inputFile1Text, fileString1);
-        assertEquals(inputFile2Text, fileString2);
+
+        final String dAPath1 =  (String)brandNewContentlet.get("file1");
+        final String dAPath2 =  (String)brandNewContentlet.get("file2");
+
+        final String dAPathFormat = "/dA/%s/%s/%s";
+
+        assertEquals("File dAPath don't match",dAPath1,String.format(dAPathFormat, brandNewContentlet.getIdentifier(), "file1", FilenameUtils.getName(dAPath1)));
+        assertEquals("File dAPath don't match",dAPath2,String.format(dAPathFormat, brandNewContentlet.getIdentifier(), "file2", FilenameUtils.getName(dAPath2)));
+
+        final String dAPathVersion1 =  (String)brandNewContentlet.get("file1Version");
+        final String dAPathVersion2 =  (String)brandNewContentlet.get("file2Version");
+
+        assertEquals("Version file don't match",dAPathVersion1,String.format(dAPathFormat, brandNewContentlet.getInode(), "file1", FilenameUtils.getName(dAPathVersion1)));
+        assertEquals("Version file don't match",dAPathVersion2,String.format(dAPathFormat, brandNewContentlet.getInode(), "file2", FilenameUtils.getName(dAPathVersion2)));
+
     }
 
     @Test

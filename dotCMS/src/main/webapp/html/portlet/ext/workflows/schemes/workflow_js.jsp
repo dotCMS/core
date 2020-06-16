@@ -1,5 +1,5 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%response.setContentType("text/html");%>
+<%response.setContentType("text/javascript");%>
 dojo.require("dijit.form.Form");
 dojo.require("dijit.form.Button");
 dojo.require("dijit.form.ValidationTextBox");

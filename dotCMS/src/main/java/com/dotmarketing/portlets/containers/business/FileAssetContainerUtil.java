@@ -503,7 +503,23 @@ public class FileAssetContainerUtil {
      * @throws DotDataException
      */
     public String getFullPath(final FileAssetContainer container) {
-        return builder(HOST_INDICATOR, container.getHost().getHostname(), container.getPath()).toString();
+        return getFullPath(container.getHost(), container.getPath());
     }
 
+    public String getFullPath(final String containerPath) {
+        try {
+            if (isFullPath(containerPath)) {
+                return containerPath;
+            } else {
+                final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+                return getFullPath(currentHost, containerPath);
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private String getFullPath(final Host host, final String containerPath) {
+        return builder(HOST_INDICATOR, host.getHostname(), containerPath).toString();
+    }
 }

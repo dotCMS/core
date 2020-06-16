@@ -1,10 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -50,20 +46,25 @@ import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
-
-import com.dotcms.util.*;
-
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.ThreadContextUtil;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -159,6 +160,18 @@ import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.control.Try;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.BeanUtils;
+
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -189,18 +202,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
 
-import io.vavr.control.Try;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.BeanUtils;
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -219,7 +224,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
 
     private final ContentletIndexAPIImpl  indexAPI;
-    private ESIndexAPI            esIndexAPI;
     private final ESContentFactoryImpl  contentFactory;
     private final PermissionAPI         permissionAPI;
     private final CategoryAPI           categoryAPI;
@@ -252,13 +256,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     };
 
     private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
+    private ESReadOnlyMonitor esReadOnlyMonitor;
 
     /**
      * Default class constructor.
      */
-    public ESContentletAPIImpl () {
+    @VisibleForTesting
+    public ESContentletAPIImpl (final ESReadOnlyMonitor esReadOnlyMonitor) {
         indexAPI = new ContentletIndexAPIImpl();
-        esIndexAPI = new ESIndexAPI();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
@@ -271,7 +276,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi=  APILocator.getTempFileAPI();
+        this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
+
+    public ESContentletAPIImpl () {
+        this(ESReadOnlyMonitor.getInstance());
+    }
+
 
     @Override
     public SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
@@ -441,8 +452,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:" + live, e);
         }
     }
-    
-    
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException {
+        try {
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
+
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
+        }
+    }
     
     
     @CloseDBIfOpened
@@ -455,6 +475,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
     }
+
 
     @CloseDBIfOpened
     @Override
@@ -1511,16 +1532,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, User user,
-            boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+    public List<Contentlet> getRelatedContent(final Contentlet contentlet, final Relationship rel, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
             return getRelatedContent(contentlet, rel, null, user, respectFrontendRoles);
-        } catch (Exception e) {
-            final String errorMessage =
-                    "Unable to look up related content for contentlet with identifier "
-                            + contentlet.getIdentifier() + " and title " + contentlet.getTitle()
-                            + ". Relationship Name: " + rel.getRelationTypeValue();
+        } catch (final Exception e) {
+            final String errorMessage = String.format("Related content for contentlet with " +
+                    "identifier '%s', title '%s', Relationship Name '%s' was not found: %s", contentlet.getIdentifier(), contentlet
+                    .getTitle(), rel.getRelationTypeValue(), e.getMessage());
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
@@ -1531,29 +1550,47 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    /**
+     * Returns the list of child Contentlets related to the specified Contentlet based on a given Relationship.
+     *
+     * @param contentlet           The {@link Contentlet} whose child Contentlets will be retrieved.
+     * @param rel                  The {@link Relationship} used to get the child Contentlets.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
+     *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
+     *                             false}.
+     * @param limit                The limit to the amount of results that will be returned.
+     * @param offset               The offset applied to the result, mostly for pagination purposes.
+     *
+     * @return The list of {@link Contentlet} objects that are the children of the specified Contentlet.
+     *
+     * @throws DotSecurityException The user executing this action does not have the required permissions.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
     private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, int limit, int offset)
+            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
             throws DotSecurityException, DotDataException {
-
-        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
+        final boolean HAS_PARENT = Boolean.TRUE;
+        final boolean WORKING_VERSION = Boolean.FALSE;
+        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, true, false, "tree_order", limit, offset);
-        } else{
+                    .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+        } else {
 
             final List<Contentlet> result = new ArrayList<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
             SearchResponse response;
-
+            final boolean DONT_PULL_PARENTS = Boolean.FALSE;
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet, relationshipName, false, false, user,
+                        .esSearchRelated(contentlet, relationshipName, DONT_PULL_PARENTS, WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
-            } else{
+            } else {
                 //Search for related content in other versions of the same contentlet
                 response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, false, false, user,
+                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, DONT_PULL_PARENTS, WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
@@ -1561,8 +1598,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return result;
             }
 
-            for (SearchHit sh : response.getHits()) {
-                Map<String, Object> sourceMap = sh.getSourceAsMap();
+            for (final SearchHit sh : response.getHits()) {
+                final Map<String, Object> sourceMap = sh.getSourceAsMap();
                 if (sourceMap.get(relationshipName) != null) {
                     List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(relationshipName));
 
@@ -1573,10 +1610,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     relatedIdentifiers.stream().forEach(child -> {
                         try {
-                            result.add(findContentletByIdentifierAnyLanguage(
-                                    child));
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+                            final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(child, true);
+                            if (null != mappedContentlet && UtilMethods.isSet(mappedContentlet.getIdentifier())) {
+                                result.add(mappedContentlet);
+                            } else {
+                                Logger.warn(this, String.format("Child Contentlet with ID '%s' for relationship '%s' " +
+                                                "was not found. Verify that it exists in the database", child,
+                                        rel.getRelationTypeValue()));
+                            }
+                        } catch (final Exception e) {
+                            throw new RuntimeException(String.format("An error occurred when mapping Child related " +
+                                    "content '%s': %s", child, e.getMessage()), e);
                         }
                     });
                 }
@@ -1586,37 +1630,61 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    /**
+     * Returns the list of parent Contentlets related to the specified Contentlet based on a given Relationship.
+     *
+     * @param contentlet           The {@link Contentlet} whose parent Contentlets will be retrieved.
+     * @param rel                  The {@link Relationship} used to get the parent Contentlets.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
+     *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
+     *                             false}.
+     * @param limit                The limit to the amount of results that will be returned.
+     * @param offset               The offset applied to the result, mostly for pagination purposes.
+     *
+     * @return The list of {@link Contentlet} objects that are the parents of the specified Contentlet.
+     *
+     * @throws DotSecurityException The user executing this action does not have the required permissions.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, int limit, int offset)
+            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
             throws DotSecurityException, DotDataException {
-
-        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
+        final boolean HAS_NO_PARENT = Boolean.FALSE;
+        final boolean WORKING_VERSION = Boolean.FALSE;
+        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, false, false, "tree_order", limit, offset);
-        } else{
+                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+        } else {
             final Map<String, Contentlet> relatedMap = new HashMap<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
             SearchResponse response;
-
+            final boolean PULL_PARENTS = Boolean.TRUE;
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
-                    .esSearchRelated(contentlet, relationshipName, true,false, user,
+                    .esSearchRelated(contentlet, relationshipName, PULL_PARENTS, WORKING_VERSION, user,
                             respectFrontendRoles, limit, offset, null);
-            } else{
+            } else {
                 response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, true,false, user,
+                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, PULL_PARENTS, WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
             if (response.getHits() != null) {
-                for (SearchHit sh : response.getHits()) {
+                for (final SearchHit sh : response.getHits()) {
                     final Map<String, Object> sourceMap = sh.getSourceAsMap();
                     final String identifier = (String) sourceMap.get("identifier");
                     if (identifier != null && !relatedMap.containsKey(identifier)) {
-                        relatedMap
-                                .put(identifier, findContentletByIdentifierAnyLanguage(identifier));
+                        final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(identifier, true);
+                        if (null != mappedContentlet && UtilMethods.isSet(mappedContentlet.getIdentifier())) {
+                            relatedMap.put(identifier, mappedContentlet);
+                        } else {
+                            Logger.warn(this, String.format("Parent Contentlet with ID '%s' for relationship '%s' was" +
+                                            " not found. Verify that it exists in the database", identifier,
+                                    rel.getRelationTypeValue()));
+                        }
                     }
                 }
             }
@@ -1634,13 +1702,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
-            String sortBy, final long language, final Boolean live)
+    public List<Contentlet> getRelatedContent(final Contentlet contentlet, final Relationship rel,
+            final Boolean pullByParent, final User user, final boolean respectFrontendRoles, final int limit, final int offset,
+            final String sortBy, final long language, final Boolean live)
             throws DotDataException {
+        String fieldVariable = rel.getRelationTypeValue();
         try {
-            String fieldVariable = rel.getRelationTypeValue();
-
             if (rel.isRelationshipField()) {
                 if ((relationshipAPI.sameParentAndChild(rel) && pullByParent != null
                         && pullByParent) || (relationshipAPI
@@ -1656,13 +1723,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, pullByParent, limit,
                             offset, sortBy, language, live);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             final String id = contentlet!=null ? contentlet.getIdentifier() : "null";
             final String relName = rel!=null ? rel.getRelationTypeValue() : "null";
-
-            final String errorMessage =
-                    "Unable to look up related content for contentlet with identifier "
-                            + id + ". Relationship name: " + relName;
+            final String errorMessage = String.format("Unable to look up related content for contentlet with " +
+                    "identifier '%s', Relationship name '%s'(%s): %s", id, relName, fieldVariable, e.getMessage());
 
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
@@ -1703,15 +1768,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     @Deprecated
-    public List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, boolean pullByParent,
-                                                       User user, boolean respectFrontendRoles)
+    public List<Contentlet> getRelatedContentFromIndex(final Contentlet contentlet, final Relationship rel, final boolean pullByParent,
+                                                       final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
         try {
             return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1, null);
-        } catch (Exception e){
-            final String errorMessage = "Unable to look up related content for contentlet with identifier "
-                    + contentlet.getIdentifier() + ". Relationship Name: " + rel.getRelationTypeValue();
+        } catch (final Exception e) {
+            final String errorMessage = String.format("Unable to look up related content for contentlet from Index " +
+                    "with identifier '%s', Relationship Name '%s': %s", contentlet.getIdentifier(), rel.getRelationTypeValue
+                    (), e.getMessage());
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class, errorMessage + ". An empty list will be returned", e);
@@ -4339,7 +4405,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (!isCheckInSafe(contentRelationships, getEsIndexAPI())){
+        if (!isCheckInSafe(contentRelationships)){
+            this.esReadOnlyMonitor.start();
             throw new DotContentletStateException(
                     "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
         }
@@ -4535,6 +4602,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     //We should not store the tags inside the field, the relation must only exist on the tag_inode table
                     contentlet.setStringProperty(field.variable(), "");
+                } else if(value!=null && value.equals("")) { // empty string means wiping out the tags
+                    tagsValues.put(field.variable(), value);
                 }
             }
             
@@ -4556,6 +4625,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for ( Entry<String, String> tagEntry : tagsValues.entrySet() ) {
                 //From the given CSV tags names list search for the tag objects and if does not exist create them
                 List<Tag> list = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
+
+                // empty string for tag field value wipes out existing tags
+                if(UtilMethods.isSet(list) || tagEntry.getValue().equals("")) {
+                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(),
+                            tagEntry.getKey());
+                }
+
                 for ( Tag tag : list ) {
                     //Relate the found/created tag with this contentlet
                     tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
@@ -5065,16 +5141,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    @VisibleForTesting
-    ESIndexAPI getEsIndexAPI() {
-        return esIndexAPI;
-    }
-
-    @VisibleForTesting
-    void setEsIndexAPI(ESIndexAPI esIndexAPI) {
-        this.esIndexAPI = esIndexAPI;
-    }
-
     /**
      * Method that verifies if a check in operation can be executed.
      * It is safe to execute a checkin if write operations can be performed on the ES cluster.
@@ -5083,12 +5149,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @return
      */
     @VisibleForTesting
-    boolean isCheckInSafe(final ContentletRelationships relationships, final ESIndexAPI esIndexAPI) {
+    boolean isCheckInSafe(final ContentletRelationships relationships) {
 
         if (relationships != null && relationships.getRelationshipsRecords().size() > 0) {
-            boolean isClusterReadOnly = esIndexAPI.isClusterInReadOnlyMode();
+            final boolean isClusterReadOnly = ElasticsearchUtil.isClusterInReadOnlyMode();
+            final boolean isEitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
 
-            if (isClusterReadOnly && hasLegacyRelationships(relationships)) {
+            if (
+                    (isEitherLiveOrWorkingIndicesReadOnly || isClusterReadOnly)
+                            && hasLegacyRelationships(relationships)) {
                 return false;
             }
         }

@@ -50,6 +50,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.ImmutableTimeField;
 import com.dotcms.contenttype.model.field.ImmutableWysiwygField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -62,6 +63,7 @@ import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -85,10 +87,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class GraphqlAPITest extends IntegrationTestBase {
@@ -519,7 +523,8 @@ public class GraphqlAPITest extends IntegrationTestBase {
         final GraphQLFieldDefinition fieldDefinition =
                 schema.getObjectType(testCase.contentTypeName).getFieldDefinition(testCase.fieldVarName);
 
-        GraphQLOutputType expectedType = api.getGraphqlTypeForFieldClass(
+        GraphQLOutputType expectedType = ContentAPIGraphQLTypesProvider.INSTANCE
+                .getGraphqlTypeForFieldClass(
                 (Class<? extends Field>) testCase.fieldType.getSuperclass(), field);
 
         final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
@@ -644,40 +649,33 @@ public class GraphqlAPITest extends IntegrationTestBase {
 
     }
 
-    @DataProvider
-    public static List<Object> dataProviderEEContentTypes() throws Exception {
-        // data provider needs stuff to get initialized because of API access
-        IntegrationTestInitService.getInstance().init();
+    @Test
+    public void testGetSchema_GivenNoEELicense_EnterpriseTypesShouldNotBeAvailableInSchema() throws Exception{
 
         // filter only Enterprise content types
-        final List<ContentType> eeTypes = APILocator
+        List<ContentType> eeTypes = APILocator
                 .getContentTypeAPI(APILocator.systemUser()).findAll().stream()
                 .filter((type)->type instanceof EnterpriseType).collect(Collectors.toList());
 
-        // returns a List of Tuple (typeName, baseType)
-        return eeTypes.stream().map((type)->
-                new Tuple2<>("my"+type.variable(), type.baseType())
-        ).collect(Collectors.toList());
-    }
+        List<Tuple2<String, BaseContentType>> eeTypesList = eeTypes.stream().map((type)->
+                        new Tuple2<>("my"+type.variable(), type.baseType())).collect(Collectors.toList());
 
-    @Test
-    @UseDataProvider("dataProviderEEContentTypes")
-    public void testGetSchema_GivenNoEELicense_EnterpriseTypesShouldNotBeAvailableInSchema(
-            final Tuple2<String, BaseContentType> testCase) throws Exception{
-        ContentType customType = null;
+        for (Tuple2<String, BaseContentType> testCase : eeTypesList) {
+            ContentType customType = null;
 
-        try {
-            // create custom persona type. 1=typeName, 2=BaseType
-            customType = createType(testCase._1,
-                    testCase._2);
+            try {
+                // create custom persona type. 1=typeName, 2=BaseType
+                customType = createType(testCase._1,
+                        testCase._2);
 
-            runNoLicense(() -> {
-                final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
-                assertNull(schema.getType(testCase._1));
-            });
-        } finally {
-            if(customType!=null) {
-                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
+                runNoLicense(() -> {
+                    final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+                    assertNull(schema.getType(testCase._1));
+                });
+            } finally {
+                if(customType!=null) {
+                    APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
+                }
             }
         }
     }
@@ -760,6 +758,74 @@ public class GraphqlAPITest extends IntegrationTestBase {
         } finally {
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
         }
+    }
+
+    /**
+     * Method to rest: {@link GraphqlAPI#getSchema()}
+     * Given scenario: A bad relationship field which returns null when trying to get the
+     * {@link com.dotmarketing.portlets.structure.model.Relationship} out of it.
+     * Expected result: The schema should be able to generate but without that field present
+     */
+    @Test
+    public void testGetSchema_GivenFailuresInRelationshipField_SchemaShouldStillGenerate()
+            throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            contentType = new ContentTypeDataGen().nextPersisted();
+
+            Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                    .name("relationshipField")
+                    .contentTypeId(contentType.id())
+                    .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                    .relationType(contentType.variable()).build();
+
+            final Field titleField = new FieldDataGen().contentTypeId(contentType.id())
+                    .type(TextField.class).nextPersisted();
+
+            APILocator.getGraphqlAPI().invalidateSchema();
+
+            // this mock relationship api will produce errors when generating the rel field
+            setMockRelationshipAPI(relationshipField);
+
+            GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+
+            final GraphQLFieldDefinition relationshipFieldDefinition = schema
+                    .getObjectType(contentType.variable())
+                    .getFieldDefinition(relationshipField.variable());
+
+            final GraphQLFieldDefinition titleFieldDefinition = schema
+                    .getObjectType(contentType.variable())
+                    .getFieldDefinition(titleField.variable());
+
+            assertNull(relationshipFieldDefinition);
+            assertNotNull(titleFieldDefinition);
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+            // restore normal RelationshipAPI for ContentAPIGraphQLTypesProvider
+            ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(
+                    new GraphQLFieldGeneratorFactory());
+        }
+    }
+
+    @NotNull
+    private void setMockRelationshipAPI(Field relationshipField)
+            throws DotDataException, DotSecurityException {
+        RelationshipAPI relationshipAPI = Mockito.mock(RelationshipAPI.class);
+        Mockito.when(relationshipAPI.
+                getRelationshipFromField(relationshipField, APILocator.systemUser()))
+                .thenReturn(null);
+
+        RelationshipFieldGenerator relationshipFieldGenerator =
+                new RelationshipFieldGenerator(relationshipAPI);
+
+        // lets create a mocked FieldGeneratorFactory
+        GraphQLFieldGeneratorFactory fieldGeneratorFactory =
+                Mockito.spy(new GraphQLFieldGeneratorFactory());
+
+        Mockito.doReturn(relationshipFieldGenerator).when(fieldGeneratorFactory)
+                .getGenerator(relationshipField);
+
+        ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(fieldGeneratorFactory);
     }
 
     private boolean areFileassetFieldsPresent(final GraphQLObjectType objectType) {
