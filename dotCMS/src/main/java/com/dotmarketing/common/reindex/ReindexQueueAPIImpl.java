@@ -10,16 +10,17 @@ import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -32,13 +33,16 @@ import com.google.common.collect.ImmutableList;
 public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     private final ReindexQueueFactory reindexQueueFactory;
+    private final ESReadOnlyMonitor esReadOnlyMonitor;
 
     public ReindexQueueAPIImpl() {
-        this((ReindexQueueFactory) FactoryLocator.getReindexQueueFactory());
+        this(FactoryLocator.getReindexQueueFactory(), ESReadOnlyMonitor.getInstance());
     }
 
-    public ReindexQueueAPIImpl(ReindexQueueFactory reindexQueueFactory) {
+    @VisibleForTesting
+    public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory, final ESReadOnlyMonitor esReadOnlyMonitor) {
         this.reindexQueueFactory = reindexQueueFactory;
+        this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
 
     @Override
@@ -219,14 +223,17 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         reindexQueueFactory.deleteReindexEntry(identiferToDelete);
     }
 
-
-
     @Override
     @WrapInTransaction
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
-        Logger.warn(this.getClass(), "Reindex failed for :" + idx + " because " + cause);
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
 
+        DotConcurrentFactory.getInstance()
+                .getSubmitter()
+                .submit(() -> {
+                    final String message = "Reindex failed for :" + idx + " because " + cause;
+                    esReadOnlyMonitor.start(message);
+                });
     }
 
 }

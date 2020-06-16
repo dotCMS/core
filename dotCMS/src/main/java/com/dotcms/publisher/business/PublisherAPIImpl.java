@@ -900,7 +900,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			Bundle publishBundle = APILocator.getBundleAPI().getBundleById(bundleId);
 			List<Environment> envsToSendTo = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleId);
 
-			Bundle deleteBundle = new Bundle(publishBundle.getName(), publishDate, expireDate, user.getUserId(), publishBundle.isForcePush());
+			Bundle deleteBundle = new Bundle(publishBundle.getName(), publishDate, expireDate, user.getUserId(), publishBundle.isForcePush(),publishBundle.getFilterKey());
 	    	APILocator.getBundleAPI().saveBundle(deleteBundle, envsToSendTo);
 
 	        addContentsToUnpublish( ids, deleteBundle.getId(), expireDate, user );
