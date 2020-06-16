@@ -283,6 +283,7 @@ public class ElasticsearchUtilTest {
      */
     @Test
     public void whenIntervalUpdateIsSetInDefaultValue(){
+        setClusterUpdateInterval(null);
         final long millisExpected = Duration.ofSeconds(30).toMillis();
         assertEquals(millisExpected, ElasticsearchUtil.getClusterUpdateInterval());
     }

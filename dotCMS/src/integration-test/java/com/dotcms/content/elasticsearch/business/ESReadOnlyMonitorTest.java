@@ -116,7 +116,9 @@ public class ESReadOnlyMonitorTest {
 
             esReadOnlyMonitor.start(message);
 
-            Thread.sleep(100);
+            final long timeToWait = ESReadOnlyMonitor.getInstance().timeToWaitAfterWriteModeSet + TimeUnit.MINUTES.toMillis(1);
+
+            Thread.sleep(timeToWait);
 
             checkLargeMessageSent(user);
             assertEquals(false, ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
@@ -150,7 +152,9 @@ public class ESReadOnlyMonitorTest {
 
             esReadOnlyMonitor.start(message);
 
-            Thread.sleep(100);
+            final long timeToWait = ESReadOnlyMonitor.getInstance().timeToWaitAfterWriteModeSet + TimeUnit.MINUTES.toMillis(1);
+
+            Thread.sleep(timeToWait);
 
             checkClusterLargeMessageSent(user);
             assertEquals(false, ElasticsearchUtil.isClusterInReadOnlyMode());
@@ -287,8 +291,11 @@ public class ESReadOnlyMonitorTest {
 
             esReadOnlyMonitor.start(message);
             esReadOnlyMonitor.start(message);
-            Thread.sleep(100);
-            checkLargeMessageSent(user, 1);
+
+            final long timeToWait = ESReadOnlyMonitor.getInstance().timeToWaitAfterWriteModeSet + TimeUnit.MINUTES.toMillis(1);
+
+            Thread.sleep(timeToWait);
+            checkLargeMessageSent(user, 2);
             assertEquals(false, ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
         } finally {
             setReadOnly(indiciesInfo.getWorking(), propertyName, false);

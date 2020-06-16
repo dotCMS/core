@@ -86,20 +86,28 @@ public class ESReadOnlyMonitor {
      * @return false if a ESReadOnlyMonitor was started before
      */
     public boolean start(){
+
+        final boolean clusterInReadOnlyMode = ElasticsearchUtil.isClusterInReadOnlyMode();
+        final boolean eitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
+
+        if (clusterInReadOnlyMode) {
+            sendMessage("es.cluster.read.only.message");
+        } else if (eitherLiveOrWorkingIndicesReadOnly) {
+            sendMessage("es.index.read.only.message");
+        }
+
         if (started.compareAndSet(false, true)) {
-            if (ElasticsearchUtil.isClusterInReadOnlyMode()) {
+            if (clusterInReadOnlyMode) {
                 ReindexThread.setCurrentIndexReadOnly(true);
-                sendMessage("es.cluster.read.only.message");
                 startClusterMonitor();
-            } else if (ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly()) {
+            } else if (eitherLiveOrWorkingIndicesReadOnly) {
                 ReindexThread.setCurrentIndexReadOnly(true);
-                sendMessage("es.index.read.only.message");
                 startIndexMonitor();
             } else {
                 started.set(false);
             }
 
-            return true;
+            return this.started.get();
         } else {
             return false;
         }
@@ -188,8 +196,8 @@ public class ESReadOnlyMonitor {
         public void run() {
             while(true) {
                 try {
-                    this.putRequestFunction.sendRequest();
 
+                    this.putRequestFunction.sendRequest();
                     Thread.sleep(esReadOnlyMonitor.timeToWaitAfterWriteModeSet);
 
                     if (!this.readOnlyCheckerFunction.isReadOnly()) {

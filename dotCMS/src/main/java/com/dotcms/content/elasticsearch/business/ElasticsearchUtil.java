@@ -29,6 +29,7 @@ import java.util.Arrays;
 public final class ElasticsearchUtil {
     private final static String READ_ONLY_ALLOW_DELETE_SETTING = "index.blocks.read_only_allow_delete";
     private final static String READ_ONLY_SETTING = "index.blocks.read_only";
+    public static final String ES_DEFAULT_VALUE = "30s";
 
     private ElasticsearchUtil(){}
 
@@ -133,7 +134,7 @@ public final class ElasticsearchUtil {
     public static long getClusterUpdateInterval(){
         final ClusterGetSettingsResponse response = getClusterSettings();
         final String intervalString = response.getSetting("cluster.info.update.interval");
-        final long intervalInMillis = getIntervalInMillis(intervalString);
+        final long intervalInMillis = getIntervalInMillis(intervalString == null ? ES_DEFAULT_VALUE : intervalString);
 
         return intervalInMillis;
     }
