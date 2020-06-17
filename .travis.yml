@@ -21,7 +21,6 @@ env:
     - DOT_CICD_TARGET=core
 
 before_install:
-  - exit 1
   - chmod +x .cicd/discover.sh
 
 # Commit message format
@@ -37,12 +36,13 @@ before_install:
 # https://docs.travis-ci.com/user/conditions-v1
 # https://docs.travis-ci.com/user/conditional-builds-stages-jobs/
 if: >-
-  type = pull_request
-  OR type = api
-  OR branch = master
-  OR branch =~ ^release-
-  OR branch =~ ^test-
-  OR commit_message =~ /(\[travis\]|\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\]|\[travis curl\])/
+  1 = 0
+#  type = pull_request
+#  OR type = api
+#  OR branch = master
+#  OR branch =~ ^release-
+#  OR branch =~ ^test-
+#  OR commit_message =~ /(\[travis\]|\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\]|\[travis curl\])/
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
