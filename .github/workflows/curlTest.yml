@@ -1,5 +1,5 @@
 name: Run Dockerized Tests
-on: [pull_request, push]
+on: [pull_request]
 
 jobs:
   run-unit-integration-tests-job:
@@ -12,6 +12,7 @@ jobs:
       EXPORT_REPORTS: true
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
