@@ -205,7 +205,7 @@ public class VanityUrlAPITest {
 
 
     /**
-     * This makes sure that if you have a pattern than matches a regular url, e.g. /saftey
+     * This makes sure that if you have a pattern than matches a regular url, e.g. /safety
      * that it does act like a regex and catch urls below it, e.g. it should not match /saftey/health/preventing-injuries-illnesses
      * @throws Exception
      */
@@ -216,7 +216,7 @@ public class VanityUrlAPITest {
 
         final String title = "VanityURL" + System.currentTimeMillis();
         final String site = defaultHost.getIdentifier();
-        final String uri = "/saftey" + System.currentTimeMillis();
+        final String uri = "/safety" + System.currentTimeMillis();
         final String forwardTo = "/products/";
         final int action = 301;
         final int order = 1;
@@ -232,7 +232,7 @@ public class VanityUrlAPITest {
         
         Optional<CachedVanityUrl> vanityResolved = vanityUrlAPI.resolveVanityUrl(requestUir, defaultHost, defaultLanguage);
 
-        // does not match /saftey
+        // does not match /safety
         assert(!vanityResolved.isPresent());
         
         
@@ -247,7 +247,7 @@ public class VanityUrlAPITest {
         
         vanityResolved = vanityUrlAPI.resolveVanityUrl(requestUir, defaultHost, defaultLanguage);
 
-        // DOES match /saftey.*
+        // DOES match /safety.*
         assert(vanityResolved.isPresent());
         
 
