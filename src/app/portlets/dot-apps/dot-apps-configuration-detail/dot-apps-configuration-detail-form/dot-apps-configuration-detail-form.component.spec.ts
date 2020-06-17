@@ -42,13 +42,34 @@ const secrets = [
         required: false,
         type: 'BOOL',
         value: 'true'
+    },
+    {
+        dynamic: false,
+        name: 'select',
+        hidden: false,
+        hint: 'This is Select!',
+        label: 'Select label:',
+        options: [
+            {
+                label: 'uno',
+                value: '1'
+            },
+            {
+                label: 'dos',
+                value: '2'
+            }
+        ],
+        required: true,
+        type: 'SELECT',
+        value: '1'
     }
 ];
 
 const formState = {
     name: secrets[0].value,
     password: secrets[1].value,
-    enabled: JSON.parse(secrets[2].value)
+    enabled: JSON.parse(secrets[2].value),
+    select: secrets[3].options[0].value
 };
 
 describe('DotAppsConfigurationDetailFormComponent', () => {
@@ -156,6 +177,29 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(row.query(By.css('input')).nativeElement.value).toBe(secrets[2].value);
             expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
                 secrets[2].hint
+            );
+        });
+
+        it('should load Label, Select & Hint with right attributes', () => {
+            const row = fixture.debugElement.queryAll(
+                By.css('.dot-apps-configuration-detail__form-row')
+            )[3];
+            expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[3].label);
+            expect(
+                row.query(By.css('label')).nativeElement.classList.contains('form__label')
+            ).toBeTruthy();
+            expect(
+                row.query(By.css('label')).nativeElement.classList.contains('required')
+            ).toBeTruthy();
+            expect(row.query(By.css('p-dropdown')).nativeElement.id).toBe(secrets[3].name);
+            expect(row.query(By.css('p-dropdown')).componentInstance.options).toBe(
+                secrets[3].options
+            );
+            expect(row.query(By.css('p-dropdown')).componentInstance.value).toBe(
+                secrets[3].options[0].value
+            );
+            expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
+                secrets[3].hint
             );
         });
 

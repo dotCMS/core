@@ -10,6 +10,15 @@ import {
 import { FormControl, FormGroup, Validators, NgForm } from '@angular/forms';
 import { DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 
+const getFieldValueFn = {
+    BOOL: (field: DotAppsSecrets) => {
+        return field.value ? JSON.parse(field.value) : field.value;
+    },
+    SELECT: (field: DotAppsSecrets) => {
+        return field.value === '' ? field.options[0].value : field.value;
+    }
+};
+
 @Component({
     selector: 'dot-apps-configuration-detail-form',
     templateUrl: './dot-apps-configuration-detail-form.component.html',
@@ -48,7 +57,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
     }
 
     private getFieldValue(field: DotAppsSecrets): string | boolean {
-        return field.value && field.type === 'BOOL' ? JSON.parse(field.value) : field.value;
+        return getFieldValueFn[field.type] ? getFieldValueFn[field.type](field) : field.value;
     }
 
     private emitValues(): void {

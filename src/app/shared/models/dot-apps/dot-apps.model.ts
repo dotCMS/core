@@ -1,3 +1,5 @@
+import { SelectItem } from "primeng/primeng";
+
 export interface DotApps {
     allowExtraParams: boolean;
     configurationsCount?: number;
@@ -23,6 +25,7 @@ export interface DotAppsSecrets {
     hint: string;
     label: string;
     name: string;
+    options?: SelectItem[];
     required: boolean;
     type: string;
     value: string;

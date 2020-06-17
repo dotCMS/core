@@ -1,6 +1,12 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CheckboxModule, InputTextareaModule, InputTextModule, TooltipModule } from 'primeng/primeng';
+import {
+    CheckboxModule,
+    InputTextareaModule,
+    InputTextModule,
+    TooltipModule,
+    DropdownModule
+} from 'primeng/primeng';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -11,6 +17,7 @@ import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
         CheckboxModule,
         CommonModule,
         DotIconModule,
+        DropdownModule,
         InputTextareaModule,
         InputTextModule,
         ReactiveFormsModule,
