@@ -36,6 +36,7 @@ import static org.mockito.Mockito.*;
 @RunWith(DataProviderRunner.class)
 public class ESReadOnlyMonitorTest {
 
+    final long timeToWait = TimeUnit.MINUTES.toMillis(3);
     private static ESReadOnlyMonitor esReadOnlyMonitor;
     private SystemMessageEventUtil systemMessageEventUtilMock;
     private RoleAPI roleAPIMock;
@@ -116,8 +117,6 @@ public class ESReadOnlyMonitorTest {
 
             esReadOnlyMonitor.start(message);
 
-            final long timeToWait = ESReadOnlyMonitor.getInstance().timeToWaitAfterWriteModeSet + TimeUnit.MINUTES.toMillis(1);
-
             Thread.sleep(timeToWait);
 
             checkLargeMessageSent(user);
@@ -151,8 +150,6 @@ public class ESReadOnlyMonitorTest {
             setClusterAsReadOnly(propertyName, true);
 
             esReadOnlyMonitor.start(message);
-
-            final long timeToWait = ESReadOnlyMonitor.getInstance().timeToWaitAfterWriteModeSet + TimeUnit.MINUTES.toMillis(1);
 
             Thread.sleep(timeToWait);
 
@@ -213,7 +210,7 @@ public class ESReadOnlyMonitorTest {
 
             setReadOnly(indiciesInfo.getWorking(), propertyName, true);
 
-            Thread.sleep(ESReadOnlyMonitor.getInstance().timeToWaitAfterWriteModeSet + TimeUnit.MINUTES.toMillis(1));
+            Thread.sleep(timeToWait);
             //checkLargeMessageSent(user, 1);
             assertEquals(false, ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
         } finally {
@@ -247,7 +244,6 @@ public class ESReadOnlyMonitorTest {
             setReadOnly(indiciesInfo.getWorking(), propertyName, true);
             setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
-            final long timeToWait = ESReadOnlyMonitor.getInstance().timeToWaitAfterWriteModeSet + TimeUnit.MINUTES.toMillis(1);
             esReadOnlyMonitor.start(message);
 
             Thread.sleep(timeToWait);
@@ -292,10 +288,8 @@ public class ESReadOnlyMonitorTest {
             esReadOnlyMonitor.start(message);
             esReadOnlyMonitor.start(message);
 
-            final long timeToWait = ESReadOnlyMonitor.getInstance().timeToWaitAfterWriteModeSet + TimeUnit.MINUTES.toMillis(1);
-
             Thread.sleep(timeToWait);
-            checkLargeMessageSent(user, 2);
+            checkLargeMessageSent(user, 1);
             assertEquals(false, ElasticsearchUtil.isAnyReadOnly(indiciesInfo.getWorking(), indiciesInfo.getLive()));
         } finally {
             setReadOnly(indiciesInfo.getWorking(), propertyName, false);
