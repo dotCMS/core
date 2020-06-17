@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e4c02256-efdf-4443-b440-e9b6969ae17d",
+		"_postman_id": "8ebdc33c-110c-4f94-adf0-6d4844cc5ee1",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"id": "b0d7f45a-38fa-4230-9b5b-e370cad0a87a",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -77,7 +77,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "599e89fa-c26c-4a5c-b6cf-9283cf40ce40",
+								"id": "11cff9ca-b5d7-44d0-a36d-f4a1d9613a4c",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
@@ -135,7 +135,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"id": "d93b684a-c5a6-4794-8c5d-9d3faa57ea2d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -194,7 +194,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "eb12ad0e-11d3-4593-8356-6972c0959cd6",
+								"id": "f0ccfb65-eed7-4957-b0cf-509296b1cfbb",
 								"exec": [
 									"pm.test(\"Content in new Language should be retrieved\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -244,7 +244,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "599e89fa-c26c-4a5c-b6cf-9283cf40ce40",
+								"id": "88c92ddb-bd41-4abb-bd39-314c0c2d95dd",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"imageContentTypeVariable\", jsonData.entity[0].variable);"
@@ -302,7 +302,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "599e89fa-c26c-4a5c-b6cf-9283cf40ce40",
+								"id": "f2d75aa1-040b-4f5e-8e76-2858ce83563d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -365,7 +365,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"id": "59ef896e-c8d5-494d-aff9-973197df63ca",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
@@ -376,7 +376,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "44a75151-9352-470d-a945-be432bcc14e3",
+								"id": "141f88b9-e401-4a7c-a477-96b173f13642",
 								"exec": [
 									""
 								],
@@ -405,7 +405,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "GraphQL/Test GraphQL Image Field fields /tommylee18005.jpeg"
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
 								}
 							],
 							"options": {
@@ -439,7 +439,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"id": "974446be-0beb-4bed-af7a-db9195f0bc86",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
@@ -469,7 +469,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "GraphQL/Test GraphQL Image Field fields /Readme18005.md"
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/Readme18005.md"
 								}
 							],
 							"options": {
@@ -503,7 +503,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"id": "8c9e38ef-0ed8-4b2b-a354-dfd2e823c32f",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -556,7 +556,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ad7d33a0-ba48-4d15-9b92-6866ec93c006",
+								"id": "2e6ec58b-9957-48c6-a96c-a7eb2efb7a04",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
@@ -672,7 +672,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8a5f7d79-1a4f-4c26-91d5-02af64120c41",
+								"id": "46e91aba-8d25-44d1-86c3-dbc8287ce600",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -735,7 +735,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "613a34d7-d03d-435d-8151-d7df48524be2",
+								"id": "33d07a12-5450-4f75-9b79-74cfdce51d40",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentTypeVariable\", jsonData.entity[0].variable);"
@@ -793,7 +793,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ce3e7469-4883-4c1f-8d5b-c96cb39f8f8c",
+								"id": "efb2bbf5-73e3-4a3d-8a6f-a89df40bd3bd",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
@@ -852,7 +852,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bfbc43af-3428-4503-bf17-de462b161d8c",
+								"id": "55b8d053-9d63-4c0c-813c-4f26ec31f2a1",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentIdentifier\", jsonData.entity.identifier);"
@@ -911,7 +911,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "dff742a8-5027-4c0f-9480-516e38dfc047",
+								"id": "ab0baa96-788c-46ca-9974-a89af8227466",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentIdentifier\", jsonData.entity.identifier);"
@@ -970,7 +970,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4d5d3d9f-9766-4c84-a2f3-2b601d3c48c5",
+								"id": "9141c398-72ef-4683-b385-0159820a21a5",
 								"exec": [
 									"pm.test(\"Content parent and child content returned in requested language\", function () {",
 									"    var jsonData = pm.response.json();",
