@@ -43,15 +43,8 @@ jobs:
           else
             echo ::set-env name=allDbs::false
           fi
-
-          if [[ "${TYPE}" == "pull_request" || "${TYPE}" == "api" || "${BRANCH}" == "master" || "${BRANCH}" =~ ^release* || "${BRANCH}" =~ ^test* || "${COMMIT_MESSG}" =~ [travis]|[travis postgres]|[travis mysql]|[travis oracle]|[travis mssql]|[travis unit]|[travis curl] ]]; then
-            echo ::set-env name=globalRun::true
-          else
-            echo ::set-env name=globalRun::false
-          fi
       - name: Prepare dot-cicd
         run: |
-          echo "${{ env.globalRun }}"
           chmod +x .cicd/discover.sh && .cicd/discover.sh
         if: env.globalRun
       - name: Build Tests Base Image
@@ -62,11 +55,13 @@ jobs:
       - name: Run Unit Tests
         run: |
           source dotcicd/library/pipeline.sh runUnit
+        continue-on-error: true
       - name: Run Integration Tests - postgres
         run: |
           source dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: postgres
+        continue-on-error: true
         if: (!startsWith(env.commitMsg, '[github mysql]') && !startsWith(env.commitMsg, '[github oracle]') && !startsWith(env.commitMsg, '[github mssql]')) || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github postgres]')
 #      - name: Run Integration Tests - mysql
 #        run: |
