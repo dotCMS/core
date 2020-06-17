@@ -280,7 +280,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myImageType{{$randomBankAccount}}\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
+							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myImageType{{$randomBankAccount}}\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -343,7 +343,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": false,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 2,\n              \"unique\": false\n       },\n\t   {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\"\n\t   }\n\t]\n}"
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": false,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 2,\n              \"unique\": false\n       },\n\t   {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\"\n\t   }\n\t]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -399,7 +399,7 @@
 							"formdata": [
 								{
 									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
 									"type": "text"
 								},
 								{
@@ -463,7 +463,7 @@
 							"formdata": [
 								{
 									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
 									"type": "text"
 								},
 								{
@@ -524,7 +524,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -605,22 +605,24 @@
 									"    ",
 									"    // fileAsset",
 									"    pm.expect(fileFieldJson.fileAsset.name).to.eql(\"Readme18005.md\");",
-									"    pm.expect(fileFieldJson.fileAsset.size).to.eql(2260);",
+									"    pm.expect(fileFieldJson.fileAsset.size).to.eql(14);",
 									"    pm.expect(fileFieldJson.fileAsset.mime).to.be.null;",
 									"    ",
 									"    pm.expect(fileFieldJson.metaData.length).to.eql(4);",
+									"",
+									"    // console.log(fileFieldJson.metaData)",
 									"    ",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"2260\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"2260\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\")).to.be.true;",
 									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"How to run the REST endpoints tests\", \"\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"content\", \"This is a test\")).to.be.true;",
 									"    ",
 									"});",
 									"",
 									"function hasProperty(metaData, name, value) {",
 									"        var hasProperty = false;",
 									"        metaData.forEach(function (item) {",
-									"            if(item.key==name && item.value==value) {",
+									"            if(item.key==name && item.value.trim()==value) {",
 									"                hasProperty = true;",
 									"            }",
 									"        });",
@@ -1018,103 +1020,103 @@
 	],
 	"variable": [
 		{
-			"id": "030afd7c-3e49-4d20-9838-cdd79c6cb151",
+			"id": "7d9c2556-6b8f-4dda-9fb0-3fc7286e5a6f",
 			"key": "languageId",
 			"value": 1592344965881,
 			"type": "number"
 		},
 		{
-			"id": "f1c1fc18-5965-4ddc-babb-f1bbc1ccf71f",
+			"id": "d2f1c30d-4478-4098-8b56-2f8dedfab228",
 			"key": "contentId",
 			"value": null,
 			"type": "any"
 		},
 		{
-			"id": "95c7a647-40c5-4281-bfbd-045b01b362fa",
+			"id": "1496f810-3743-42a6-851e-68e534850cab",
 			"key": "contentTypeVariable",
-			"value": "MyCustomType04435502",
+			"value": "MyCustomType62924696",
 			"type": "string"
 		},
 		{
-			"id": "8b601674-54c2-4cc9-b95d-5f8dd7476ad4",
+			"id": "025d84bd-9d51-483b-918a-04774a8a75b2",
 			"key": "contentIdentifier",
-			"value": "6671180f-c0e0-4419-b995-af851738f87e",
+			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec",
 			"type": "string"
 		},
 		{
-			"id": "26133ad8-24cc-4201-ad8a-0dc4372a73eb",
+			"id": "57792631-2830-41d5-9c57-9df184d86a0f",
 			"key": "structureVariable",
 			"value": "myStructure94983807",
 			"type": "string"
 		},
 		{
-			"id": "020f75ff-eb98-44b6-a782-218701285e79",
+			"id": "8d7f2e0f-3eb9-4498-a423-e488054ec1b4",
 			"key": "imageContentTypeVariable",
-			"value": "MyImageType12648465",
+			"value": "MyImageType22920449",
 			"type": "string"
 		},
 		{
-			"id": "25c3fcd6-1401-4da7-9350-9118893a0c07",
+			"id": "c5fbf544-7a7f-4a79-b2ed-369a1e502b8a",
 			"key": "imageContentIdentifier",
-			"value": "0bcb8b89-cf47-4e44-98a0-a83cd7172471",
+			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31",
 			"type": "string"
 		},
 		{
-			"id": "038e4397-19d3-4d12-a432-48244288f8a3",
+			"id": "9632e5f3-b8be-4996-a210-c378375b30aa",
 			"key": "imageFieldVariable",
 			"value": "myImage",
 			"type": "string"
 		},
 		{
-			"id": "c2d95fa2-d847-4548-90c3-b787fda983a1",
+			"id": "910d6071-866b-4020-b7f7-e2cc2363493f",
 			"key": "showOnMenu",
 			"value": true,
 			"type": "boolean"
 		},
 		{
-			"id": "c5b60cef-c338-42da-833b-02226f169312",
+			"id": "125b6850-e172-4c47-b1d6-f24069077208",
 			"key": "sortOrder",
 			"value": 2,
 			"type": "number"
 		},
 		{
-			"id": "2a27ff55-8172-4f52-92a7-03a1a2ab03e5",
+			"id": "309af408-54c5-4a44-8f37-ee01bf79595b",
 			"key": "fileFieldVariable",
 			"value": "myFile",
 			"type": "string"
 		},
 		{
-			"id": "4ccbdc32-c46a-407f-9639-902ba20e2afe",
+			"id": "75a2eb75-3043-45df-b7ab-5b93c80bcd60",
 			"key": "fileContentIdentifier",
-			"value": "0d55229d-1722-4b39-9ca5-7a9532b2b8aa",
+			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb",
 			"type": "string"
 		},
 		{
-			"id": "70c8d557-5b38-4c9a-9d4f-25866acdec7b",
+			"id": "3ba324c4-7bf5-4ddd-8f39-8f0c3786c917",
 			"key": "childContentTypeVariable",
 			"value": "childType35543008",
 			"type": "string"
 		},
 		{
-			"id": "95788299-e84f-49b6-8559-2a3abb43a3c6",
+			"id": "02ecffec-192d-42f7-99e0-528d011165db",
 			"key": "parentContentTypeVariable",
 			"value": "parentType67172229",
 			"type": "string"
 		},
 		{
-			"id": "6a5cf7da-1f8c-45a9-8b9a-db58831c2538",
+			"id": "31e606ce-325d-40e1-93c0-91cf615518e9",
 			"key": "relFieldVariable",
 			"value": "rel",
 			"type": "string"
 		},
 		{
-			"id": "deb8e953-e041-4227-84ed-2e07323e68be",
+			"id": "62b89815-578d-43ff-ae93-a9b6b9154ce7",
 			"key": "childContentIdentifier",
 			"value": "fd292a50-e913-4974-9833-525345883311",
 			"type": "string"
 		},
 		{
-			"id": "4d46c788-93d7-4ac6-ac1d-20f47b606f88",
+			"id": "94f894db-b83b-464c-b303-cdec03ce7ae6",
 			"key": "parentContentIdentifier",
 			"value": "4248d7bd-9a72-413a-85fc-dd80eeb10335",
 			"type": "string"

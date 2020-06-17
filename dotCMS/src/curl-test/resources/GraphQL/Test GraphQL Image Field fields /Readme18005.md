@@ -1,1 +1,1 @@
-How to run the REST endpoints tests
+This is a test
