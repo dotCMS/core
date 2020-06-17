@@ -2,10 +2,12 @@ package com.dotmarketing.common.reindex;
 
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -68,8 +70,6 @@ import org.elasticsearch.action.bulk.BulkRequest;
  *
  */
 public class ReindexThread {
-
-    private static AtomicBoolean currentIndexReadOnly = new AtomicBoolean();
 
     private enum ThreadState {
         STOPPED, PAUSED, RUNNING;
@@ -184,16 +184,16 @@ public class ReindexThread {
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
               || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
-            if (bulkProcessor == null || rebuildBulkIndexer.get()) {
-              closeBulkProcessor(bulkProcessor);
-              bulkProcessorListener = new BulkProcessorListener();
-              bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
-            }
-            bulkProcessorListener.workingRecords.putAll(workingRecords);
-            indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-            contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
-          // otherwise, reindex normally
-          } else if (!currentIndexReadOnly.get()){
+              if (bulkProcessor == null || rebuildBulkIndexer.get()) {
+                  closeBulkProcessor(bulkProcessor);
+                  bulkProcessorListener = new BulkProcessorListener();
+                  bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
+              }
+              bulkProcessorListener.workingRecords.putAll(workingRecords);
+              indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
+              contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
+              // otherwise, reindex normally
+          } else if (!ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()){
               reindexWithBulkRequest(workingRecords);
           }
         } else {
@@ -325,8 +325,4 @@ public class ReindexThread {
                 notificationLevel, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
         systemUser.getLocale());
   }
-
-    public static void setCurrentIndexReadOnly(final boolean currentIndexReadOnly) {
-        ReindexThread.currentIndexReadOnly.set(currentIndexReadOnly);
-    }
 }

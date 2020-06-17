@@ -600,6 +600,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 .build()
                 : ImmutableList.of(parentContenlet);
 
+        if (ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()) {
+            ESReadOnlyMonitor.getInstance().sendReadOnlyMessage();
+        }
+
         if(parentContenlet.getIndexPolicy()==IndexPolicy.DEFER) {
             queueApi.addContentletsReindex(contentToIndex);
         } else if (!DbConnectionFactory.inTransaction()) {

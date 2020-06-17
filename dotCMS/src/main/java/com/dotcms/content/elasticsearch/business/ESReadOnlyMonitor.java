@@ -9,7 +9,6 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -17,8 +16,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -30,6 +27,8 @@ import java.util.stream.Collectors;
 public class ESReadOnlyMonitor {
     @VisibleForTesting
     final long timeToWaitAfterWriteModeSet;
+
+    private String readOnlyMessageKey;
 
     public static final int INTERVAL_IN_MINUTES_TO_CHECK_READ_ONLY = 1;
     private final RoleAPI roleAPI;
@@ -90,18 +89,14 @@ public class ESReadOnlyMonitor {
         final boolean clusterInReadOnlyMode = ElasticsearchUtil.isClusterInReadOnlyMode();
         final boolean eitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
 
-        if (clusterInReadOnlyMode) {
-            sendMessage("es.cluster.read.only.message");
-        } else if (eitherLiveOrWorkingIndicesReadOnly) {
-            sendMessage("es.index.read.only.message");
-        }
-
         if (started.compareAndSet(false, true)) {
             if (clusterInReadOnlyMode) {
-                ReindexThread.setCurrentIndexReadOnly(true);
+                this.readOnlyMessageKey = "es.cluster.read.only.message";
+                sendReadOnlyMessage();
                 startClusterMonitor();
             } else if (eitherLiveOrWorkingIndicesReadOnly) {
-                ReindexThread.setCurrentIndexReadOnly(true);
+                this.readOnlyMessageKey = "es.index.read.only.message";
+                sendReadOnlyMessage();
                 startIndexMonitor();
             } else {
                 started.set(false);
@@ -113,25 +108,28 @@ public class ESReadOnlyMonitor {
         }
     }
 
+    public void sendReadOnlyMessage() {
+        sendMessage(readOnlyMessageKey);
+    }
+
     private void sendMessage(final String messageKey) {
         try {
+            final String message = LanguageUtil.get(messageKey);
+
             final Role adminRole = roleAPI.loadCMSAdminRole();
             final List<String> usersId = roleAPI.findUsersForRole(adminRole)
                     .stream()
                     .map(user -> user.getUserId())
                     .collect(Collectors.toList());
 
-            final String message = LanguageUtil.get(messageKey);
-
             final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
                     .setMessage(message)
                     .setSeverity(MessageSeverity.ERROR)
                     .setType(MessageType.SIMPLE_MESSAGE)
                     .setLife(TimeUnit.SECONDS.toMillis(5));
-
-            Logger.error(ESReadOnlyMonitor.class, message);
+            Logger.error(this.getClass(), message);
             systemMessageEventUtil.pushMessage(messageBuilder.create(), usersId);
-        } catch (final LanguageException | DotDataException | DotSecurityException e) {
+        } catch (final  LanguageException | DotDataException | DotSecurityException e) {
             Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
         }
     }
@@ -157,9 +155,14 @@ public class ESReadOnlyMonitor {
     private synchronized void schedule(
             final PutRequestFunction putRequestFunction,
             final ReadOnlyCheckerFunction checkFunction,
-            final String messageKey) {
-        DotConcurrentFactory.getInstance().getSubmitter().submit(new MonitorRunnable(
-                this, putRequestFunction, checkFunction, messageKey));
+            final String writeModeMessageKey) {
+
+        DotConcurrentFactory.getInstance()
+                .getSubmitter()
+                .submit(
+                        new MonitorRunnable(
+                this, putRequestFunction, checkFunction, writeModeMessageKey)
+                );
     }
 
     private void startClusterMonitor() {
@@ -174,22 +177,26 @@ public class ESReadOnlyMonitor {
         this.started.set(false);
     }
 
+    public boolean isIndexOrClusterReadOnly() {
+        return this.started.get();
+    }
+
     private static class MonitorRunnable implements Runnable {
         private final PutRequestFunction putRequestFunction;
         private final ReadOnlyCheckerFunction readOnlyCheckerFunction;
         private final ESReadOnlyMonitor esReadOnlyMonitor;
-        private final String messageKey;
+        private final String writeModeMessageKey;
 
         MonitorRunnable(
                 final ESReadOnlyMonitor esReadOnlyMonitor,
                 final PutRequestFunction putRequestFunction,
                 final ReadOnlyCheckerFunction readOnlyCheckerFunction,
-                final String messageKey) {
+                final String writeModeMessageKey) {
 
             this.putRequestFunction = putRequestFunction;
             this.readOnlyCheckerFunction = readOnlyCheckerFunction;
             this.esReadOnlyMonitor = esReadOnlyMonitor;
-            this.messageKey = messageKey;
+            this.writeModeMessageKey = writeModeMessageKey;
         }
 
         @Override
@@ -201,8 +208,7 @@ public class ESReadOnlyMonitor {
                     Thread.sleep(esReadOnlyMonitor.timeToWaitAfterWriteModeSet);
 
                     if (!this.readOnlyCheckerFunction.isReadOnly()) {
-                        esReadOnlyMonitor.sendMessage(messageKey);
-                        ReindexThread.setCurrentIndexReadOnly(false);
+                        esReadOnlyMonitor.sendMessage(this.writeModeMessageKey);
                         this.esReadOnlyMonitor.stop();
                         break;
                     }
@@ -213,7 +219,6 @@ public class ESReadOnlyMonitor {
             }
         }
     }
-
 
     @FunctionalInterface
     public interface PutRequestFunction {
