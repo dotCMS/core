@@ -25,7 +25,7 @@ jobs:
       - name: Set Common Vars
         run: |
           echo ::set-env name=CURRENT_BRANCH::$(
-            if [[ -z "${PULL_REQUEST}" ]]; then
+            if [[ -z "${{ github.event.number }}" ]]; then
               echo $(basename ${{ github.ref }})
             else
               echo ${{ github.head_ref }}
