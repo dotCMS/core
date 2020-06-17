@@ -13,7 +13,7 @@ jobs:
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
-    if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-') ||
+    if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
