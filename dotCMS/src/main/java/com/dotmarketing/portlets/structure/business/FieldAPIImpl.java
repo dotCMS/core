@@ -23,6 +23,7 @@ import com.liferay.portal.model.User;
  *             class via {@link APILocator#getContentTypeFieldAPI()} in order to
  *             interact with Content Type fields.
  */
+@Deprecated
 public class FieldAPIImpl implements FieldAPI {
 
 	/* (non-Javadoc)

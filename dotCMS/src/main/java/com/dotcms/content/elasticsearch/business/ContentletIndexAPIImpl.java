@@ -3,10 +3,11 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
-
+import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -25,6 +26,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -57,6 +59,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.API;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
@@ -376,7 +379,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void stopFullReindexationAndSwitchover() throws  DotDataException {
         try {
             ReindexThread.pause();
-            queueApi.deleteReindexAndFailedRecords();
+            queueApi.deleteReindexRecords();
             this.reindexSwitchover(true);
         } finally {
             ReindexThread.unpause();
@@ -451,7 +454,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @CloseDBIfOpened
     public boolean isInFullReindex() throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        return info.getReindexWorking() != null && info.getReindexLive() != null;
+        return queueApi.hasReindexRecords() || (info.getReindexWorking() != null && info.getReindexLive() != null);
+
     }
 
     @CloseDBIfOpened
@@ -509,6 +513,27 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 }
             });
 
+            long failedRecords = queueApi.getFailedReindexRecords().size();
+            if(failedRecords > 0) {
+                final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+
+                final String message = LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(), "Contents-Failed-Reindex-message").replace("{0}", String.valueOf(failedRecords));
+
+                
+                
+                SystemMessage systemMessage = systemMessageBuilder.setMessage(message)
+                     .setType(MessageType.SIMPLE_MESSAGE)
+                     .setSeverity(MessageSeverity.WARNING)
+                     .setLife(3600000)
+                     .create();
+                 List<String> users = APILocator.getRoleAPI().findUserIdsForRole(APILocator.getRoleAPI().loadCMSAdminRole());
+                 SystemMessageEventUtil.getInstance().pushMessage(systemMessage, users);
+            }
+            
+            
+            
+            
+            
         } catch (Exception e) {
             throw new DotRuntimeException(e.getMessage(), e);
         }
@@ -620,7 +645,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void stopFullReindexation() throws DotDataException {
         try {
             ReindexThread.pause();
-            queueApi.deleteReindexAndFailedRecords();
+            queueApi.deleteReindexRecords();
             fullReindexAbort();
         } finally {
             ReindexThread.unpause();
@@ -1140,6 +1165,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         removeContentFromIndex(content, true);
     }
 
+    @CloseDBIfOpened
     public void removeContentFromIndexByStructureInode(final String structureInode)
             throws DotDataException, DotSecurityException {
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser()).find(structureInode);
@@ -1218,15 +1244,24 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
 
-    public void activateIndex(String indexName) throws DotDataException {
+    public void activateIndex(final String indexName) throws DotDataException {
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
-
+        if(indexName==null) {
+            throw new DotRuntimeException("Index cannot be null");
+        }
         if (IndexType.WORKING.is(indexName)) {
             builder.setWorking(esIndexApi.getNameWithClusterIDPrefix(indexName));
+            if(esIndexApi.getNameWithClusterIDPrefix(indexName).equals(info.getReindexWorking())) {
+                builder.setReindexWorking(null);
+            }
         } else if (IndexType.LIVE.is(indexName)) {
             builder.setLive(esIndexApi.getNameWithClusterIDPrefix(indexName));
+            if(esIndexApi.getNameWithClusterIDPrefix(indexName).equals(info.getReindexLive())) {
+                builder.setReindexLive(null);
+            }
         }
+        
         APILocator.getIndiciesAPI().point(builder.build());
     }
 

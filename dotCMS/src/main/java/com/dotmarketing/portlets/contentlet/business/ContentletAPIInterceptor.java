@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.beans.Host;
@@ -1599,6 +1600,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+    @Override
+    public void refresh(ContentType type) throws DotReindexStateException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.refresh(type);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        conAPI.refresh(type);
+        for(ContentletAPIPostHook post : postHooks){
+            post.refresh(type);
+        }
+    }
+	
+	
 	@Override
 	public void refresh(Contentlet contentlet) throws DotReindexStateException,
 			DotDataException {

@@ -180,14 +180,16 @@ public class TikaUtils {
         //See if we have content metadata file
         Map<String, Object> metaDataMap = Collections.emptyMap();
         final String fileName           = fieldVariableName + "-metadata.json";
-        final File contentMetaFile      = APILocator.getFileAssetAPI(). // creates something like /1/2/12421124-15652532-235325-12312/fileAsset-metadata.json
-                getContentMetadataFile(contentlet.getInode(), fileName);
+        
+        // creates something like /1/2/12421124-15652532-235325-12312/fileAsset-metadata.json
+        final File contentMetaFile =
+                        APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode(), fileName);
 
         /*
         If we want to force the parse of the file and the generation of the metadata file
         we need to delete the existing one first.
          */
-        if (force && contentMetaFile.exists()) {
+        if (force) {
             try {
                 contentMetaFile.delete();
             } catch (Exception e) {
@@ -211,16 +213,17 @@ public class TikaUtils {
                 this.writeCompressJsonMetadataFile (contentMetaFile,
                         UtilMethods.isSet(metaDataMap)?metaDataMap:Collections.emptyMap());
             }
+            
+            if (contentlet.isFileAsset() && UtilMethods.isSet(metaDataMap) && !metaDataMap.isEmpty()) {
+                this.saveMetadataOnFileAsset(contentlet, metaDataMap);
+            }
+            
         } else {
 
             metaDataMap = this.readCompressedJsonMetadataFile (contentMetaFile);
         }
 
-        if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType()) &&
-                    UtilMethods.isSet(metaDataMap)) {
 
-            this.saveMetadataOnFileAsset(contentlet, metaDataMap);
-        }
 
         return metaDataMap;
     }
