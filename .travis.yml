@@ -48,9 +48,9 @@ if: >-
 jobs:
   include:
     - stage: build base images
-#      name: build dotcms base image
-#      script: bash dotcicd/library/pipeline.sh buildBase
-      name: build tests base image
+      name: build dotcms base image
+      script: bash dotcicd/library/pipeline.sh buildBase
+    - name: build tests base image
       script: bash dotcicd/library/pipeline.sh buildTestsBase
     - stage: run tests
       name: unit tests
@@ -77,42 +77,42 @@ jobs:
       if: >-
         (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
         OR commit_message =~ /(\[travis\]|\[travis mssql\])/
-      env: DB_TYPE=mssql
-#    - name: postgres postman tests
-#      script: bash dotcicd/library/pipeline.sh runCurl
-#      if: >-
-#        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
-#      env:
-#        - DB_TYPE=postgres
-#        - PROVIDER_DB_USERNAME=postgres
-#        - PROVIDER_DB_PASSWORD=postgres
-#    - name: mysql postman tests
-#      script: bash dotcicd/library/pipeline.sh runCurl
-#      if: >-
-#        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
-#        OR commit_message =~ /(\[travis\]|\[travis mysql\])/
-#      env:
-#        - DB_TYPE=mysql
-#        - PROVIDER_DB_USERNAME=mysql
-#        - PROVIDER_DB_PASSWORD=mysql
-#    - name: oracle postman tests
-#      script: bash dotcicd/library/pipeline.sh runCurl
-#      if: >-
-#        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
-#        OR commit_message =~ /(\[travis\]|\[travis oracle\])/
-#      env:
-#        - DB_TYPE=oracle
-#        - PROVIDER_DB_USERNAME=oracle
-#        - PROVIDER_DB_PASSWORD=oracle
-#    - name: mssql postman tests
-#      script: bash dotcicd/library/pipeline.sh runCurl
-#      if: >-
-#        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
-#        OR commit_message =~ /(\[travis\]|\[travis mssql\])/
-#      env:
-#        - DB_TYPE=mssql
-#        - PROVIDER_DB_USERNAME=sa
-#        - PROVIDER_DB_PASSWORD=mssqldotCMS2019
+      env: DB_TYPE=mssqlayer
+    - name: postgres postman tests
+      script: bash dotcicd/library/pipeline.sh runCurl
+      if: >-
+        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
+      env:
+        - DB_TYPE=postgres
+        - PROVIDER_DB_USERNAME=postgres
+        - PROVIDER_DB_PASSWORD=postgres
+    - name: mysql postman tests
+      script: bash dotcicd/library/pipeline.sh runCurl
+      if: >-
+        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+        OR commit_message =~ /(\[travis\]|\[travis mysql\])/
+      env:
+        - DB_TYPE=mysql
+        - PROVIDER_DB_USERNAME=mysql
+        - PROVIDER_DB_PASSWORD=mysql
+    - name: oracle postman tests
+      script: bash dotcicd/library/pipeline.sh runCurl
+      if: >-
+        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+        OR commit_message =~ /(\[travis\]|\[travis oracle\])/
+      env:
+        - DB_TYPE=oracle
+        - PROVIDER_DB_USERNAME=oracle
+        - PROVIDER_DB_PASSWORD=oracle
+    - name: mssql postman tests
+      script: bash dotcicd/library/pipeline.sh runCurl
+      if: >-
+        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+        OR commit_message =~ /(\[travis\]|\[travis mssql\])/
+      env:
+        - DB_TYPE=mssql
+        - PROVIDER_DB_USERNAME=sa
+        - PROVIDER_DB_PASSWORD=mssqldotCMS2019
 
 install:
   - .cicd/discover.sh
