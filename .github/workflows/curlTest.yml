@@ -24,13 +24,13 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
       - name: Set Common Vars
         run: |
-          echo ::set-env name=CURRENT_BRANCH::$(
-            if [[ -z "${{ github.event.number }}" ]]; then
-              echo $(basename "${{ github.ref }}")
-            else
-              echo "${{ github.head_ref }}"
-            fi)
-          echo "OJO:>> ${CURRENT_BRANCH}"
+          if [[ -z "${{ github.event.number }}" ]]; then
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+          else
+            echo ::set-env name=CURRENT_BRANCH::${{ github.head_ref }})
+          fi
+
+          echo "OJO:>> ${{ env.CURRENT_BRANCH }}"
           echo ::set-env name=commitMsg::$(git log --format=%B -n 1 ${{ github.event.after }})
       - name: Prepare dot-cicd
         run: |
