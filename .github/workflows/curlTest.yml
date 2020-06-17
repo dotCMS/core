@@ -46,7 +46,6 @@ jobs:
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-        if: env.globalRun
       - name: Build Tests Base Image
         run: |
           source dotcicd/library/pipeline.sh buildTestsBase
