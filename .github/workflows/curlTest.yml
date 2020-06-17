@@ -26,9 +26,9 @@ jobs:
         run: |
           echo ::set-env name=CURRENT_BRANCH::$(
             if [[ -z "${{ github.event.number }}" ]]; then
-              echo $(basename ${{ github.ref }})
+              echo $(basename "${{ github.ref }}")
             else
-              echo ${{ github.head_ref }}
+              echo "${{ github.head_ref }}"
             fi)
           echo "OJO:>> ${CURRENT_BRANCH}"
           echo ::set-env name=commitMsg::$(git log --format=%B -n 1 ${{ github.event.after }})
