@@ -195,7 +195,7 @@ public class FiltersTest {
         filtersUtil.publishVanityUrl(vanityUrl4);
 
         vanityUrl5 = filtersUtil.createVanityUrl("test link5", Host.SYSTEM_HOST,
-                "forbidden", "/products/" + CMSFilter.CMS_INDEX_PAGE, 302, 1, defaultLanguageId);
+                "/forbidden", "/products/" + CMSFilter.CMS_INDEX_PAGE, 302, 1, defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl5);
 
         VanityURLFilter filter = new VanityURLFilter();
