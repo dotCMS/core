@@ -12,6 +12,7 @@ jobs:
       EXPORT_REPORTS: true
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      CURRENT_BRANCH: ${{ github.head_ref }}
       PULL_REQUEST: ${{ github.event.number }}
     steps:
       - name: Checkout core
@@ -43,7 +44,9 @@ jobs:
 #      DOT_CICD_TARGET: core
 #      PROJECT_ID: cicd-246518
 #      EXPORT_REPORTS: true
-#      TEST_RESULTS_PUSH_TOKEN: ${{ secrets.TEST_RESULTS_PUSH_TOKEN }}
+#      GITHUB_USER: dotcmsbuild
+#      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+#      PULL_REQUEST: ${{ github.event.number }}
 #    steps:
 #      - name: Checkout core
 #        uses: actions/checkout@v2
