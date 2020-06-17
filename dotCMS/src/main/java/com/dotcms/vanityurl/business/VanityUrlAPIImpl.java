@@ -192,7 +192,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     // tries SYSTEM_HOST
     if (!matched.isPresent() && !APILocator.systemHost().equals(host)) {
 
-        matched = resolveVanityUrl(url, APILocator.systemHost(), languageAPI.getDefaultLanguage());
+        matched = resolveVanityUrl(url, APILocator.systemHost(), language);
     }
     
     // if this is the /cmsHomePage vanity
