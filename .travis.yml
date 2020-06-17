@@ -21,6 +21,7 @@ env:
     - DOT_CICD_TARGET=core
 
 before_install:
+  - exit 1
   - chmod +x .cicd/discover.sh
 
 # Commit message format
