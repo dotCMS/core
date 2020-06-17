@@ -144,7 +144,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -243,7 +243,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -308,7 +308,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -532,7 +532,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							},
 							"options": {
 								"file": {}
