@@ -14,6 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
@@ -119,6 +120,22 @@ public class FolderResourceTest {
         final List<String> foldersToCreate = Arrays.asList("test"+currentTime+"/folder"+currentTime,"/test2"+currentTime+"/","test3"+currentTime);
 
         resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,"siteNameNotExists");
+
+    }
+
+    /**
+     * Method to test: createFolders in the FolderResource
+     * Given Scenario: Try to create a few folders using the admin user, but the folder name passed is restricted
+     * ExpectedResult: The endpoint should return InvalidFolderNameException that jersey will map to a 400 code and no folders created
+     *
+     */
+    @Test (expected = InvalidFolderNameException.class)
+    public void test_createFolders_restrictedFolderName_return400() throws DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final User adminUser = TestUserUtils.getAdminUser();
+        final List<String> foldersToCreate = Arrays.asList("dotcms");
+
+        resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
 
     }
 

@@ -4,7 +4,6 @@ import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParse
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -12,6 +11,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -45,12 +45,13 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
-import io.vavr.API;
+import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,7 +63,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.Assert;
 
-public class DependencyBundlerTest extends IntegrationTestBase {
+/**
+ * This class is for testing the bundle that is gonna generate the system when using PP.
+ * It calls all the bundlers that are called when doing PP, so the bundle generated
+ * is exactly the same that when doing PP from the UI.
+ *
+ * If there is an issue related to PP with the sender (bundler) you can create the test here.
+ */
+public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
     private static User systemUser;
     private static String defaultFilterKey = "Intelligent.yml";
@@ -189,9 +197,9 @@ public class DependencyBundlerTest extends IntegrationTestBase {
             bundler.setPublisher(publisher);
             final BundlerStatus bundlerStatus = new BundlerStatus(bundler.getClass().getName());
             //Generate the bundler
-            Logger.info(DependencyBundlerTest.class, "Start of Bundler: " + aClass.getSimpleName());
+            Logger.info(PushPublishBundleGeneratorTest.class, "Start of Bundler: " + aClass.getSimpleName());
             bundler.generate(bundleRoot, bundlerStatus);
-            Logger.info(DependencyBundlerTest.class, "End of Bundler: " + aClass.getSimpleName());
+            Logger.info(PushPublishBundleGeneratorTest.class, "End of Bundler: " + aClass.getSimpleName());
         }
 
         pconf.setBundlers(confBundlers);
@@ -597,5 +605,80 @@ public class DependencyBundlerTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Given Scenario: If a file asset has zero files and CONTENT_ALLOW_ZERO_LENGTH_FILES set to true,
+     *                  we should be able to generate the bundle without issues.
+     * ExpectedResult: The bundle should be generated without issues and the page added to the bundle.
+     */
+    @Test
+    public void Test_GenerateBundle_FileAssetZeroBytes_ContentAllowZeroLengthFilesSetToTrue_Success() throws Exception {
+        final boolean allowZeroLengthFilesDefault = Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", true);
+        try {
+            //Set Property to True
+            Config.setProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", true);
+            //Create Folder
+            final Folder folder = new FolderDataGen().nextPersisted();
+            // Create File with zero length
+            final File file = File.createTempFile("testing-file", ".vtl");
+            FileUtil.write(file, "");
+            // Create File Asset with that file
+            final Contentlet fileAssetShown = new FileAssetDataGen(folder, file).nextPersisted();
+            ContentletDataGen.publish(fileAssetShown);
+
+            //Create bundle
+            final Bundle bundle = createBundle("TestBundle" + System.currentTimeMillis(), false,
+                    "");
+            //Add assets to the bundle
+            PublisherAPI.getInstance()
+                    .saveBundleAssets(Arrays.asList(fileAssetShown.getIdentifier()), bundle.getId(),
+                            systemUser);
+            //Generate Bundle, will return several dependencySet with the assets that will be added to the bundle
+            final PushPublisherConfig listOfAssetsInBundle = generateBundle(bundle.getId(),
+                    Operation.PUBLISH);
+            Assert.assertNotNull(listOfAssetsInBundle);
+            Assert.assertTrue(
+                    listOfAssetsInBundle.getContentlets().contains(fileAssetShown.getIdentifier()));
+        } finally {
+            //Set Property to Default Value
+            Config.setProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", allowZeroLengthFilesDefault);
+        }
+
+    }
+
+    /**
+     * Given Scenario: If a file asset has zero bytes and CONTENT_ALLOW_ZERO_LENGTH_FILES set to false,
+     *                    when you try to generate a bundle with that file asset it fails.
+     * ExpectedResult: DotBundleException should be thrown when trying to generate the bundle with a file with zero bytes.
+     */
+    @Test (expected = DotBundleException.class)
+    public void Test_GenerateBundle_FileAssetZeroBytes_ContentAllowZeroLengthFilesSetToFalse_DotBundleException() throws Exception {
+        final boolean allowZeroLengthFilesDefault = Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", true);
+        try {
+            //Create Folder
+            final Folder folder = new FolderDataGen().nextPersisted();
+            // Create File with zero length
+            final File file = File.createTempFile("testing-file", ".vtl");
+            FileUtil.write(file, "");
+            // Create File Asset with that file
+            final Contentlet fileAssetShown = new FileAssetDataGen(folder, file).nextPersisted();
+            ContentletDataGen.publish(fileAssetShown);
+
+            //Set Property to False
+            Config.setProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false);
+            //Create bundle
+            final Bundle bundle = createBundle("TestBundle" + System.currentTimeMillis(), false,
+                    "");
+            //Add assets to the bundle
+            PublisherAPI.getInstance()
+                    .saveBundleAssets(Arrays.asList(fileAssetShown.getIdentifier()), bundle.getId(),
+                            systemUser);
+            //Generate Bundle
+            generateBundle(bundle.getId(), Operation.PUBLISH);
+        } finally {
+            //Set Property to Default Value
+            Config.setProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", allowZeroLengthFilesDefault);
+        }
+
+    }
 
 }

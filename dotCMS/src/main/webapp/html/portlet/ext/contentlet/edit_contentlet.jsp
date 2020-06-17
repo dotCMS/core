@@ -195,6 +195,7 @@
 	}
 
 	boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
+
 %>
 
 <!-- global included dependencies -->

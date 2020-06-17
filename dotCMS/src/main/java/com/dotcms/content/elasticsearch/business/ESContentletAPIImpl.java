@@ -453,8 +453,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:" + live, e);
         }
     }
-    
-    
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException {
+        try {
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
+
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
+        }
+    }
     
     
     @CloseDBIfOpened
@@ -467,6 +476,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
     }
+
 
     @CloseDBIfOpened
     @Override
@@ -1595,12 +1605,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     relatedIdentifiers.stream().forEach(child -> {
                         try {
-                            final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(child);
+                            final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(child, true);
                             if (null != mappedContentlet && UtilMethods.isSet(mappedContentlet.getIdentifier())) {
                                 result.add(mappedContentlet);
                             } else {
                                 Logger.warn(this, String.format("Child Contentlet with ID '%s' for relationship '%s' " +
-                                                "was not found. Verify that it exists in the database and it's NOT archived", child,
+                                                "was not found. Verify that it exists in the database", child,
                                         rel.getRelationTypeValue()));
                             }
                         } catch (final Exception e) {
@@ -1662,12 +1672,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final Map<String, Object> sourceMap = sh.getSourceAsMap();
                     final String identifier = (String) sourceMap.get("identifier");
                     if (identifier != null && !relatedMap.containsKey(identifier)) {
-                        final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(identifier);
+                        final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(identifier, true);
                         if (null != mappedContentlet && UtilMethods.isSet(mappedContentlet.getIdentifier())) {
                             relatedMap.put(identifier, mappedContentlet);
                         } else {
                             Logger.warn(this, String.format("Parent Contentlet with ID '%s' for relationship '%s' was" +
-                                            " not found. Verify that it exists in the database and it's NOT archived", identifier,
+                                            " not found. Verify that it exists in the database", identifier,
                                     rel.getRelationTypeValue()));
                         }
                     }
@@ -3017,7 +3027,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
     }
+    
+    @WrapInTransaction
+    @Override
+    public void refresh(ContentType type) throws DotReindexStateException {
+        try {
+            reindexQueueAPI.addStructureReindexEntries(type.id());
+            //CacheLocator.getContentletCache().clearCache();
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new DotReindexStateException("Unable to complete reindex",e);
+        }
 
+    }
     /**
      *
      * @param contentlet
