@@ -129,7 +129,10 @@ public class CachedVanityUrl implements Serializable {
         
         // if the vanity is a proxy request
         if (this.response==200 && UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
-            Try.run(()-> new CircuitBreakerUrl(rewrite + queryString!=null ? "?" + queryString : "").doOut(response)).onFailure(DotRuntimeException::new);
+            
+            final String proxyUrl  = rewrite + (queryString!=null ? "?" + queryString : "");
+            
+            Try.run(()-> new CircuitBreakerUrl(proxyUrl).doOut(response)).onFailure(DotRuntimeException::new);
             return new VanityUrlResult(rewrite, queryString, true);
         }
 

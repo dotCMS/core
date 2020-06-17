@@ -205,6 +205,64 @@ public class VanityUrlAPITest {
 
 
     /**
+     * This makes sure that if you have a pattern than matches a regular url, e.g. /saftey
+     * that it does act like a regex and catch urls below it, e.g. it should not match /saftey/health/preventing-injuries-illnesses
+     * @throws Exception
+     */
+
+    @Test
+    public void test_that_regex_does_not_catch_regular_strings() throws Exception {
+
+
+        final String title = "VanityURL" + System.currentTimeMillis();
+        final String site = defaultHost.getIdentifier();
+        final String uri = "/saftey" + System.currentTimeMillis();
+        final String forwardTo = "/products/";
+        final int action = 301;
+        final int order = 1;
+        
+        final String requestUir=uri + "/health/preventing-injuries-illnesses/get-started-with-safety-health/chemical-safety-basics";
+
+       
+        // save and publish the vanity
+        filtersUtil.publishVanityUrl(filtersUtil.createVanityUrl(title, site, uri,
+                        forwardTo, action, order, defaultLanguage.getId()));
+        
+
+        
+        Optional<CachedVanityUrl> vanityResolved = vanityUrlAPI.resolveVanityUrl(requestUir, defaultHost, defaultLanguage);
+
+        // does not match /saftey
+        assert(!vanityResolved.isPresent());
+        
+        
+        // add a regex, which should now match
+        String newUrl = uri + ".*";
+        
+        // save and publish the vanity
+        filtersUtil.publishVanityUrl(filtersUtil.createVanityUrl(title, site, newUrl,
+                        forwardTo, action, order, defaultLanguage.getId()));
+        
+        
+        
+        vanityResolved = vanityUrlAPI.resolveVanityUrl(requestUir, defaultHost, defaultLanguage);
+
+        // DOES match /saftey.*
+        assert(vanityResolved.isPresent());
+        
+
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
      * This test creates a vanity url, gets it so it's cached.
      * Then modify the uri, and checks if the old one is removed from cache.
      * @throws DotSecurityException

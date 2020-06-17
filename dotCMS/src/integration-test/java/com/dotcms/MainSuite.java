@@ -154,6 +154,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
+        com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
         com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageAPITest.class,
