@@ -5,7 +5,7 @@ import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
-import com.dotcms.enterprise.publishing.remote.DependencyBundlerTest;
+import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
@@ -277,7 +277,7 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
-        DependencyBundlerTest.class,
+        PushPublishBundleGeneratorTest.class,
         BundleFactoryTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,

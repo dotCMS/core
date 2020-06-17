@@ -74,6 +74,7 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
         map.put("name", page.getPageUrl());
         map.put("description", page.getFriendlyName());
         map.put("extension", "page");
+        map.put("isContentlet", true);
         map.put("statusIcons", UtilHTML.getStatusIcons(page));
         map.put("__icon__", IconType.HTMLPAGE.iconName());
 
