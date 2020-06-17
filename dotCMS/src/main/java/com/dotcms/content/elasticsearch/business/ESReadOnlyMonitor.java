@@ -25,8 +25,11 @@ import java.util.stream.Collectors;
  * When setting write-mode fails it will retry after one minute.
  */
 public class ESReadOnlyMonitor {
+
+    private final int TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE = -1;
+
     @VisibleForTesting
-    final long timeToWaitAfterWriteModeSet;
+    long timeToWaitAfterWriteModeSet = TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE;
 
     private String readOnlyMessageKey;
 
@@ -43,10 +46,6 @@ public class ESReadOnlyMonitor {
         this.systemMessageEventUtil = systemMessageEventUtil;
         this.roleAPI = roleAPI;
         started.set(false);
-
-        timeToWaitAfterWriteModeSet = ElasticsearchUtil.getClusterUpdateInterval() +
-                TimeUnit.MINUTES.toMillis(INTERVAL_IN_MINUTES_TO_CHECK_READ_ONLY) +
-                TimeUnit.SECONDS.toMillis(10);
     }
 
     private ESReadOnlyMonitor() {
@@ -86,6 +85,10 @@ public class ESReadOnlyMonitor {
      */
     public boolean start(){
 
+        if (timeToWaitAfterWriteModeSet == TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE) {
+            loadTimeToWaitAfterWriteModeSet();
+        }
+
         final boolean clusterInReadOnlyMode = ElasticsearchUtil.isClusterInReadOnlyMode();
         final boolean eitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
 
@@ -106,6 +109,12 @@ public class ESReadOnlyMonitor {
         } else {
             return false;
         }
+    }
+
+    private void loadTimeToWaitAfterWriteModeSet() {
+        timeToWaitAfterWriteModeSet = ElasticsearchUtil.getClusterUpdateInterval() +
+                TimeUnit.MINUTES.toMillis(INTERVAL_IN_MINUTES_TO_CHECK_READ_ONLY) +
+                TimeUnit.SECONDS.toMillis(10);
     }
 
     public void sendReadOnlyMessage() {
