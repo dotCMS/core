@@ -61,12 +61,12 @@ jobs:
         env:
           databaseType: postgres
         #if: (!startsWith(env.commitMsg, '[github mysql]') && !startsWith(env.commitMsg, '[github oracle]') && !startsWith(env.commitMsg, '[github mssql]')) || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github postgres]')
-      - name: Run Integration Tests - mysql
-        run: |
-          source dotcicd/library/pipeline.sh runIntegration
-        env:
-          databaseType: mysql
-        if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github mysql]')
+#      - name: Run Integration Tests - mysql
+#        run: |
+#          source dotcicd/library/pipeline.sh runIntegration
+#        env:
+#          databaseType: mysql
+#        if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github mysql]')
 #  run-curl-tests-job:
 #    name: Core Curl (Postman) Tests
 #    runs-on: ubuntu-latest
