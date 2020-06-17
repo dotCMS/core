@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -2107,5 +2108,12 @@ public interface ContentletAPI {
      * @return
      */
     Optional<Contentlet> findInDb(String inode);
+
+    /**
+     * refresh index by content type
+     * @param type
+     * @throws DotReindexStateException
+     */
+    void refresh(ContentType type) throws DotReindexStateException;
 
 }
