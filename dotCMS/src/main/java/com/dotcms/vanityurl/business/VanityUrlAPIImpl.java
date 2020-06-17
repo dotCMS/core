@@ -170,11 +170,17 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         return shortCircuit;
     }
 
-
-    // tries specific site first
+    // tries specific site, language and url
     Optional<CachedVanityUrl> matched = load(host, language).parallelStream()
             .filter(cachedVanityUrl ->
-                    cachedVanityUrl.url.equalsIgnoreCase(url) || cachedVanityUrl.pattern.matcher(url).find()).findFirst();
+                    cachedVanityUrl.url.equalsIgnoreCase(url)).findAny();
+
+    // tries specific site, language and pattern
+    if(!matched.isPresent()) {
+      matched = load(host, language).parallelStream()
+              .filter(cachedVanityUrl ->
+                      cachedVanityUrl.pattern.matcher(url).matches()).findAny();
+    }
 
     
     // try language fallback
@@ -186,7 +192,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     // tries SYSTEM_HOST
     if (!matched.isPresent() && !APILocator.systemHost().equals(host)) {
 
-        matched = load(APILocator.systemHost(), language).parallelStream().filter(vc -> vc.pattern.matcher(url).find()).findFirst();
+        matched = resolveVanityUrl(url, APILocator.systemHost(), languageAPI.getDefaultLanguage());
     }
     
     // if this is the /cmsHomePage vanity
