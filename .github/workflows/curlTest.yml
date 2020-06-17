@@ -28,7 +28,7 @@ jobs:
             if [[ -z "${PULL_REQUEST}" ]]; then
               echo $(basename ${{ github.ref }})
             else
-              echo ${{ github.head_ref }}}
+              echo ${{ github.head_ref }}
             fi)
           echo ::set-env name=commitMsg::$(git log --format=%B -n 1 ${{ github.event.after }})
       - name: Prepare dot-cicd
