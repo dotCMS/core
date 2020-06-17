@@ -44,7 +44,7 @@ jobs:
             echo ::set-env name=allDbs::false
           fi
 
-          if [[ "${TYPE}" == "pull_request" || "${TYPE}" == "api" || "${BRANCH}" == "master" || "${BRANCH}" =~ ^release* || "${BRANCH}" =~ ^test* ]]; then
+          if [[ "${TYPE}" == "pull_request" || "${TYPE}" == "api" || "${BRANCH}" == "master" || "${BRANCH}" =~ ^release* || "${BRANCH}" =~ ^test* || "${COMMIT_MESSG}" =~ [travis]|[travis postgres]|[travis mysql]|[travis oracle]|[travis mssql]|[travis unit]|[travis curl] ]]; then
             echo ::set-env name=globalRun::true
           else
             echo ::set-env name=globalRun::false
