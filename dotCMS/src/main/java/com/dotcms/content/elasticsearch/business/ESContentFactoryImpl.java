@@ -2,6 +2,10 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,6 +24,8 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.search.TotalHits;
@@ -678,65 +684,118 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-	@Override
-	protected int deleteOldContent(Date deleteFrom) throws DotDataException {
-	    ContentletCache cc = CacheLocator.getContentletCache();
-        Calendar calendar = Calendar.getInstance();
+    /**
+     * Deletes all the Contentlet versions that are older than the specified date.
+     *
+     * @param deleteFrom The date as of which all contents older than that will be deleted.
+     *
+     * @return The number of records deleted by this operation.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    @Override
+    protected int deleteOldContent(final Date deleteFrom) throws DotDataException {
+        final Calendar calendar = Calendar.getInstance();
         calendar.setTime(deleteFrom);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        Date date = calendar.getTime();
-        //Because of the way Oracle databases handle dates,
-        //this string is converted to Uppercase.This does
-        //not cause a problem with the other databases
+        final Date date = calendar.getTime();
         DotConnect dc = new DotConnect();
-
-        String countSQL = ("select count(*) as count from contentlet");
+        final String countSQL = "select count(*) as count from contentlet";
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
-        int before = Integer.parseInt(result.get(0).get("count"));
-
-        String deleteContentletSQL = "delete from contentlet where identifier<>'SYSTEM_HOST' and mod_date < ? " +
-        "and not exists (select * from contentlet_version_info where working_inode=contentlet.inode or live_inode=contentlet.inode)";
-        dc.setSQL(deleteContentletSQL);
+        final int before = Integer.parseInt(result.get(0).get("count"));
+        dc = new DotConnect();
+        final String query = new StringBuilder("SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS")
+                .append(" (SELECT working_inode FROM contentlet_version_info WHERE working_inode = contentlet.inode)")
+                .append(" INTERSECT")
+                .append(" SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS")
+                .append(" (SELECT live_inode FROM contentlet_version_info WHERE live_inode = contentlet.inode)")
+                .toString();
+        dc.setSQL(query);
         dc.addParam(date);
-        dc.loadResult();
-
-        String deleteOrphanInodes="delete from inode where type='contentlet' and idate < ? and inode not in (select inode from contentlet)";
-        dc.setSQL(deleteOrphanInodes);
         dc.addParam(date);
-        dc.loadResult();
-
+        result = dc.loadResults();
+        int oldInodesCount = result.size();
+        if (oldInodesCount > 0) {
+            final List<String> inodeList = result.stream().map(row -> row.get("inode")).collect(Collectors.toList());
+            deleteContentData(inodeList);
+        }
+        dc = new DotConnect();
         dc.setSQL(countSQL);
         result = dc.loadResults();
-        int after = Integer.parseInt(result.get(0).get("count"));
-
-        int deleted=before - after;
-
-        // deleting orphan binary files
-        java.io.File assets=new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
-        for(java.io.File ff1 : assets.listFiles())
-            if(ff1.isDirectory() && ff1.getName().length()==1 && ff1.getName().matches("^[a-f0-9]$"))
-                for(java.io.File ff2 : ff1.listFiles())
-                    if(ff2.isDirectory() && ff2.getName().length()==1 && ff2.getName().matches("^[a-f0-9]$"))
-                        for(java.io.File ff3 : ff2.listFiles())
-                            try {
-                                if(ff3.isDirectory()) {
-                                    Contentlet con=find(ff3.getName());
-                                    if(con==null || !UtilMethods.isSet(con.getIdentifier()))
-                                        if(!FileUtils.deleteQuietly(ff3))
-                                            Logger.warn(this, "can't delete "+ff3.getAbsolutePath());
-                                }
-                            }
-                            catch(Exception ex) {
-                                Logger.warn(this, ex.getMessage());
-                            }
-
-
+        final int after = Integer.parseInt(result.get(0).get("count"));
+        final int deleted = before - after;
+        if (deleted > 0) {
+            deleteOrphanedBinaryFiles();
+        }
         return deleted;
-	}
+    }
+
+    /**
+     * Deletes the content data associated to the specified list of Inodes. Based on such a list, the {@code contentlet}
+     * will be cleaned up as well.
+     *
+     * @param inodeList The list of Inodes that will be deleted.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    private void deleteContentData(final List<String> inodeList) throws DotDataException {
+        final int splitAt = 100;
+        // Split all records into lists of size 'truncateAt'
+        final List<List<String>> inodesToDelete = Lists.partition(inodeList, splitAt);
+        final List<String> queries = Lists.newArrayList("DELETE FROM contentlet WHERE inode IN (?)",
+                "DELETE FROM inode WHERE inode IN (?)");
+        for (final String query : queries) {
+            for (final List<String> inodes : inodesToDelete) {
+                final DotConnect dc = new DotConnect();
+                // Generate the "(?,?,?...)" string depending of the number of inodes
+                final String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
+                dc.setSQL(query.replace("?", parameterPlaceholders));
+                for (final String inode : inodes) {
+                    dc.addParam(inode);
+                }
+                dc.loadResult();
+            }
+        }
+    }
+
+    /**
+     * Deletes binary files in the {@code /assets/} folder that don't belong to a valid Inode. This cleanup routine
+     * helps dotCMS keep things in order when deleting old versions of contentlets.
+     */
+    private void deleteOrphanedBinaryFiles() {
+        // Deleting orphaned binary files
+        final java.io.File assets = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
+        for (final java.io.File firstLevelFolder : assets.listFiles()) {
+            if (firstLevelFolder.isDirectory() && firstLevelFolder.getName().length() == 1 && firstLevelFolder
+                    .getName().matches("^[a-f0-9]$")) {
+                for (final java.io.File secondLevelFolder : firstLevelFolder.listFiles()) {
+                    if (secondLevelFolder.isDirectory() && secondLevelFolder.getName().length() == 1 &&
+                            secondLevelFolder.getName().matches("^[a-f0-9]$")) {
+                        for (final java.io.File asset : secondLevelFolder.listFiles()) {
+                            try {
+                                if (asset.isDirectory()) {
+                                    final Contentlet contentlet = find(asset.getName());
+                                    if (null == contentlet || !UtilMethods.isSet(contentlet.getIdentifier())) {
+                                        if (!FileUtils.deleteQuietly(asset)) {
+                                            Logger.warn(this, "Asset '" + asset.getAbsolutePath() + "' could " +
+                                                    "not be deleted.");
+                                        }
+                                    }
+                                }
+                            } catch (final Exception ex) {
+                                Logger.warn(this, String.format("An error occurred when deleting asset '%s': %s",
+                                        asset.getAbsolutePath(), ex.getMessage()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 	@Override
 	protected void deleteVersion(Contentlet contentlet) throws DotDataException {
@@ -980,14 +1039,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
 	    
 	    // Looking content up this way can avoid any DB hits as these calls are all cached.
-	    final List<Language> langs = APILocator.getLanguageAPI().getLanguages();
-	    for(final Language language : langs) {
-	        final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-	        if(cvi != null  && UtilMethods.isSet(cvi.getIdentifier()) && !cvi.isDeleted()) {
-	            return find(cvi.getWorkingInode());
-	        }
-	    }
-	    return null;
+	    return findContentletByIdentifierAnyLanguage(identifier, false);
+
+    }
+
+    @Override
+    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
+
+        // Looking content up this way can avoid any DB hits as these calls are all cached.
+        final List<Language> langs = APILocator.getLanguageAPI().getLanguages();
+        for(final Language language : langs) {
+            final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
+            if(cvi != null  && UtilMethods.isSet(cvi.getIdentifier()) && (includeDeleted || !cvi.isDeleted())) {
+                return find(cvi.getWorkingInode());
+            }
+        }
+        return null;
 
     }
 
@@ -1893,6 +1960,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
 	    }
 
+    /**
+     * This method filters out some content types depending on the license level
+     * @param query String with the lucene query where the filter will be applied
+     * @return String Query excluding non allowed content types
+     */
+    private static String getQueryWithValidContentTypes(final String query){
+        if (!LicenseManager.getInstance().isEnterprise()) {
+            final StringBuilder queryBuilder = new StringBuilder(query);
+            queryBuilder.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
+            queryBuilder.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
+            return queryBuilder.toString();
+        }
+
+        return query;
+    }
+
 	/**
 	 * Takes a dotCMS-generated query and translates it into valid terms and
 	 * keywords for accessing the Elastic index.
@@ -1904,6 +1987,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * @return The translated query used to search content in our Elastic index.
 	 */
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
+
+            query = getQueryWithValidContentTypes(query);
 
 	        TranslatedQuery result = CacheLocator.getContentletCache()
                     .getTranslatedQuery(query + " --- " + sortBy);

@@ -1,12 +1,12 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap.Builder;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -20,7 +20,7 @@ public class HTMLPageAssetInfoSerializer extends JsonSerializer<HTMLPageAssetInf
     public void serialize(final HTMLPageAssetInfo htmlPageAssetInfo, final JsonGenerator jsonGenerator,
                           final SerializerProvider serializerProvider) throws IOException {
 
-        final ContentletToMapTransformer transformer = new ContentletToMapTransformer(htmlPageAssetInfo.getPage());
+        final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(htmlPageAssetInfo.getPage()).build();
         final Map<String, Object> pageContentletMap  = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
 
         final Builder<Object, Object> pageMapBuilder =

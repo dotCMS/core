@@ -40,7 +40,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -147,14 +146,19 @@ public class ContentletUtilTest extends IntegrationTestBase {
                 verifyCategoriesForField(contentPrintableMap, CATEGORY_NAME_CONTENT_BELTS,
                         homeCategory, flightsCategory);
             } else {
-                assertEquals( popularCategory.getCategoryName(), contentPrintableMap.get( CATEGORY_NAME_CONTENT ) );
-                final String [] resultCategories = contentPrintableMap.get(CATEGORY_NAME_CONTENT_BELTS)
-                        .toString().split(",\\s?");
-                assertEquals(2, resultCategories.length);
-                assertTrue(Arrays.stream(resultCategories)
-                        .anyMatch(c -> c.equals(homeCategory.getCategoryName())));
-                assertTrue(Arrays.stream(resultCategories)
-                        .anyMatch(c -> c.equals(flightsCategory.getCategoryName())));
+                final List<Map<String, Object>> list = (List) contentPrintableMap
+                        .get(CATEGORY_NAME_CONTENT);
+                final Map<String, Object> categoryData = list.get(0);
+                final Object categoryValue = categoryData.get(popularCategory.getKey());
+                assertEquals(popularCategory.getCategoryName(), categoryValue);
+                final List<Map<String, String>> categoryMaps = (List) contentPrintableMap
+                        .get(CATEGORY_NAME_CONTENT_BELTS);
+                assertEquals(2, categoryMaps.size());
+
+                assertTrue(categoryMaps.stream().anyMatch(map -> homeCategory.getCategoryName()
+                        .equals(map.get(homeCategory.getKey()))));
+                assertTrue(categoryMaps.stream().anyMatch(map -> flightsCategory.getCategoryName()
+                        .equals(map.get(flightsCategory.getKey()))));
             }
 
         } finally {

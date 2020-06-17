@@ -26,6 +26,8 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
+import com.dotmarketing.portlets.folders.business.AddContentToFolderPermissionException;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -59,7 +61,8 @@ public class ExceptionUtil {
             .of(
                     DotSecurityException.class,
                     InvalidLicenseException.class,
-                    WorkflowPortletAccessException.class
+                    WorkflowPortletAccessException.class,
+                    AddContentToFolderPermissionException.class
             );
 
     public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet
@@ -78,7 +81,8 @@ public class ExceptionUtil {
                     ValidationException.class,
                     BadRequestException.class,
                     JsonProcessingException.class,
-                    NumberFormatException.class
+                    NumberFormatException.class,
+                    InvalidFolderNameException.class
             );
 
 

@@ -81,7 +81,6 @@
             <option value="1">All End-points</option>
             <option value="2">Failed End-points Only</option>
         </select> &nbsp;&nbsp;
-        <input dojoType="dijit.form.CheckBox" type="checkbox"name="chkBoxForcePush"class="chkBoxAudits"value="true" id="forcePush<%= bundleId %>"/> Force
         &nbsp;&nbsp;
         <button id="retryButton" dojoType="dijit.form.Button" onClick="retryBundles('<%=bundleId%>')" iconClass="repeatIcon"><%= LanguageUtil.get(pageContext, "publisher_retry") %></button>
     </div>
@@ -129,8 +128,8 @@
 
     </tr>
     <tr>
-        <th><b><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %>: </b></th>
-        <td style="background: white"><%if ( bundle != null ) {%><%=bundle.isForcePush() %><%}%></td>
+        <th><b><%= LanguageUtil.get(pageContext, "contenttypes.content.push_publish.filters") %>: </b></th>
+        <td style="background: white"><%if ( UtilMethods.isSet(bundle) && UtilMethods.isSet(bundle.getFilterKey()) ) {%><%=bundle.getFilterKey() %><%}%></td>
 
     </tr>
     <tr>

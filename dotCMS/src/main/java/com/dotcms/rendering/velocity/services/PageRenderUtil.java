@@ -420,28 +420,13 @@ public class PageRenderUtil implements Serializable {
         String containerIdOrPath = null;
 
         if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
-            containerIdOrPath = getRelativePathFromSite((FileAssetContainer) container);
+            containerIdOrPath = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
         } else {
             containerIdOrPath = container.getIdentifier();
         }
 
         return !ParseContainer.isParserContainerUUID(uniqueId) &&
                 (templateLayout == null || !templateLayout.existsContainer(containerIdOrPath, uniqueId));
-    }
-
-    /**
-     * If the container's Host is equals to {@link PageRenderUtil#site} then return the relative path, but if the Host
-     * are different then it return the full path.
-     *
-     * @param container
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    private String getRelativePathFromSite(final FileAssetContainer container) {
-        return this.site.getIdentifier().equals(container.getHost().getIdentifier()) ?
-                container.getPath() :
-                FileAssetContainerUtil.getInstance().getFullPath(container);
     }
 
     private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet) {

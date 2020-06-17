@@ -5,6 +5,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
+import com.google.common.collect.ImmutableMap;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -92,12 +95,21 @@ public class RemotePublishAjaxActionTest {
 	private static User adminUser;
     private final PublishingEndPointFactory factory = new PublishingEndPointFactory();
     private final String protocol = "http";
+	private static FilterDescriptor filterDescriptor1;
 
 	@BeforeClass
 	public static void prepare () throws DotDataException, DotSecurityException, Exception {
 		user = APILocator.getUserAPI().getSystemUser();
 		adminUser = APILocator.getUserAPI().loadByUserByEmail( "admin@dotcms.com", user, false );
-		
+		//Create new filter to send in the URL
+		PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+
+		final Map<String,Object> filtersMap1 =
+				ImmutableMap.of("dependencies",true,"relationships",true);
+		filterDescriptor1 =
+				new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false,adminUser.getUserId());
+		APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor1);
+
 		LicenseTestUtil.getLicense();
 	}
 	
@@ -174,7 +186,7 @@ public class RemotePublishAjaxActionTest {
 				"&remotePublishExpireTime=" +
 				"&iWantTo=" + RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH +
 				"&whoToSend=" + UtilMethods.encodeURIComponent( environment.getId() ) +
-				"&forcePush=false" +
+				"&filterKey=" + filterDescriptor1.getKey() +
 				"&assetIdentifier=" + UtilMethods.encodeURIComponent( contentlets.get( 0 ).getIdentifier() );
 
 		//Execute the call
