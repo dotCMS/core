@@ -7,7 +7,6 @@ import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;

@@ -18,10 +18,8 @@ import com.dotcms.util.IntegrationTestInitService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 import static org.jgroups.util.Util.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -260,8 +258,8 @@ public class ElasticsearchUtilTest {
     }
 
     /**
-     * Method to Test: {@link ElasticsearchUtil#isClusterInReadOnlyMode()}
-     * When: The cluster is set in minutes
+     * Method to Test: {@link ElasticsearchUtil#getClusterUpdateInterval()}
+     * When: The cluster 'cluster.info.update.interval' property is set in minutes
      * Should: return the right valus in millis
      */
     @Test
@@ -277,9 +275,9 @@ public class ElasticsearchUtilTest {
 
 
     /**
-     * Method to Test: {@link ElasticsearchUtil#isClusterInReadOnlyMode()}
-     * When: The cluster is set in seconds
-     * Should: return the right valus in millis
+     * Method to Test: {@link ElasticsearchUtil#getClusterUpdateInterval()}
+     * When: The cluster 'cluster.info.update.interval' property  is set in default values
+     * Should: return the right value in millis
      */
     @Test
     public void whenIntervalUpdateIsSetInDefaultValue(){
@@ -289,8 +287,8 @@ public class ElasticsearchUtilTest {
     }
 
     /**
-     * Method to Test: {@link ElasticsearchUtil#isClusterInReadOnlyMode()}
-     * When: The cluster is set in the default value
+     * Method to Test: {@link ElasticsearchUtil#getClusterUpdateInterval()}
+     * When: The cluster 'cluster.info.update.interval' property  is set in seconds
      * Should: return 30s in millis
      */
     @Test

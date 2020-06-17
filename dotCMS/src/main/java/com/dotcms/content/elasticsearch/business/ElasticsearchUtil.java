@@ -134,9 +134,7 @@ public final class ElasticsearchUtil {
     public static long getClusterUpdateInterval(){
         final ClusterGetSettingsResponse response = getClusterSettings();
         final String intervalString = response.getSetting("cluster.info.update.interval");
-        final long intervalInMillis = getIntervalInMillis(intervalString == null ? ES_DEFAULT_VALUE : intervalString);
-
-        return intervalInMillis;
+        return getIntervalInMillis(intervalString == null ? ES_DEFAULT_VALUE : intervalString);
     }
 
     private static long getIntervalInMillis(final String intervalString) {
