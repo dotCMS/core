@@ -1,7 +1,8 @@
-package com.dotcms.util;
+package com.dotcms.vanityurl.util;
 
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
 import com.dotmarketing.util.Logger;
 
 /**
@@ -35,7 +36,6 @@ public class VanityUrlUtil {
         }
         return isValid;
     } // isValidRegex.
-
 
 
 } // E:O:F:VanityUrlUtil.
