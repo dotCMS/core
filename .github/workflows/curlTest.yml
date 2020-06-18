@@ -146,5 +146,38 @@ jobs:
           databaseType: postgres
           PROVIDER_DB_USERNAME: postgres
           PROVIDER_DB_PASSWORD: postgres
+        if: (!startsWith(env.commitMsg, '[github mysql]') && !startsWith(env.commitMsg, '[github oracle]') && !startsWith(env.commitMsg, '[github mssql]')) || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github postgres]')
+        continue-on-error: true
+      - name: Run Curl Tests - mysql
+        run: |
+          dotcicd/library/pipeline.sh runCurl
+        env:
+          PROJECT_ID: cicd-246518
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          databaseType: mysql
+          PROVIDER_DB_USERNAME: mysql
+          PROVIDER_DB_PASSWORD: mysql
+        if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github mysql]')
+        continue-on-error: true
+      - name: Run Curl Tests - oracle
+        run: |
+          dotcicd/library/pipeline.sh runCurl
+        env:
+          PROJECT_ID: cicd-246518
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          databaseType: oracle
+          PROVIDER_DB_USERNAME: oracle
+          PROVIDER_DB_PASSWORD: oracle
+        if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github oracle]')
+        continue-on-error: true
+      - name: Run Curl Tests - mssql
+        run: |
+          dotcicd/library/pipeline.sh runCurl
+        env:
+          PROJECT_ID: cicd-246518
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          databaseType: mssql
+          PROVIDER_DB_USERNAME: sa
+          PROVIDER_DB_PASSWORD: mssqldotCMS2019
         if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github mssql]')
         continue-on-error: true
