@@ -121,7 +121,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
 
-        contentAPITypes.add(CustomFieldType.SITE.getType());
+        contentAPITypes.addAll(CustomFieldType.getCustomFieldTypes());
 
         List<ContentType> allTypes = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .findAllRespectingLicense();

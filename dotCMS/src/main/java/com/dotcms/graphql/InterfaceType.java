@@ -94,14 +94,14 @@ public enum InterfaceType {
         contentFields.put(WORKING, new TypeFetcher(GraphQLBoolean));
         contentFields.put(ARCHIVED_KEY, new TypeFetcher(GraphQLBoolean));
         contentFields.put(LOCKED_KEY, new TypeFetcher(GraphQLBoolean));
-        contentFields.put("conLanguage", new TypeFetcher(CustomFieldType.LANGUAGE.getType(), new LanguageDataFetcher()));
+        contentFields.put("conLanguage", new TypeFetcher(GraphQLTypeReference.typeRef("Language"), new LanguageDataFetcher()));
         contentFields.put(IDENTIFIER, new TypeFetcher(GraphQLID));
         contentFields.put(INODE, new TypeFetcher(GraphQLID));
         contentFields.put(HOST_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("Site"), new SiteFieldDataFetcher()));
-        contentFields.put(FOLDER_KEY, new TypeFetcher(CustomFieldType.FOLDER.getType(), new FolderFieldDataFetcher()));
+        contentFields.put(FOLDER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("Folder"), new FolderFieldDataFetcher()));
         contentFields.put(URL_MAP, new TypeFetcher(GraphQLString));
-        contentFields.put(OWNER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
-        contentFields.put(MOD_USER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
+        contentFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
+        contentFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
 
         CONTENT_INTERFACE_FIELDS.addAll(contentFields.keySet());
 

@@ -100,7 +100,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     }
 
     @LogTime(loggingLevel = "INFO")
-    private GraphQLSchema generateSchema() throws DotDataException {
+    private GraphQLSchema generateSchema() {
         final Set<GraphQLType> graphQLTypes = new HashSet<>();
 
         for (GraphQLTypesProvider typesProvider : typesProviders) {
