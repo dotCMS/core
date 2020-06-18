@@ -2,29 +2,29 @@ name: Run Dockerized Tests
 on: [pull_request, push]
 
 jobs:
-#  build-tests-image:
-#    name: Build Tests Base Docker Image
-#    runs-on: ubuntu-latest
-#    env:
-#      DOT_CICD_TARGET: core
-#      PROJECT_ID: cicd-246518
-#      GITHUB_USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-#    if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
-#  steps:
-#    - name: Set Common Vars
-#      run: |
-#        if [[ -z "${{ github.event.number }}" ]]; then
-#          echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
-#        else
-#          echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
-#        fi
-#    - name: Build Tests Base Image
-#      run: |
-#        source dotcicd/library/pipeline.sh buildTestsBase
-#    - name: Publish Tests Base Image
-#      run: |
-#        source dotcicd/library/pipeline.sh publishImage
+  build-tests-image:
+    name: Build Tests Base Docker Image
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_TARGET: core
+      PROJECT_ID: cicd-246518
+      GITHUB_USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+    if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
+    steps:
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+          else
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+          fi
+      - name: Build Tests Base Image
+        run: |
+          source dotcicd/library/pipeline.sh buildTestsBase
+      - name: Publish Tests Base Image
+        run: |
+          source dotcicd/library/pipeline.sh publishImage gcr.io/${PROJECT_ID}/tests-base-image
 
   run-unit-integration-tests-job:
     name: Core Tests
