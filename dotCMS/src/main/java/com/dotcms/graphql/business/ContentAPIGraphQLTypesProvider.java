@@ -5,7 +5,6 @@ import static com.dotcms.graphql.business.GraphqlAPI.TYPES_AND_FIELDS_VALID_NAME
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -43,13 +42,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
-import graphql.schema.PropertyDataFetcher;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
