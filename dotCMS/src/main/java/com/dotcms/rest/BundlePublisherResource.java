@@ -95,13 +95,14 @@ public class BundlePublisherResource {
 			return responseResource.responseError(HttpStatus.SC_BAD_REQUEST);
 		}
 
-		final InitDataObject initDataObject = this.init(authTokenDigest, request, response);
+		if (isPPByToken) {
+			final InitDataObject initDataObject = this.init(authTokenDigest, request, response);
 
-		if (isPPByToken && null == initDataObject || !this.isAdmin(initDataObject.getUser())) {
-			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " not permission");
-			return responseResource.responseError(HttpStatus.SC_UNAUTHORIZED);
-		} else if (!isPPByToken &&
-				(sendingEndPointByAddress == null || !isValidToken(authTokenDigest, remoteIP, sendingEndPointByAddress))) {
+			if (null == initDataObject || !this.isAdmin(initDataObject.getUser())) {
+				Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " not permission");
+				return responseResource.responseError(HttpStatus.SC_UNAUTHORIZED);
+			}
+		} else if (sendingEndPointByAddress == null || !isValidToken(authTokenDigest, sendingEndPointByAddress)) {
 			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " invalid endpoint or token");
 			return responseResource.responseError(HttpStatus.SC_UNAUTHORIZED);
 		}
@@ -211,13 +212,11 @@ public class BundlePublisherResource {
      * Validates a received token
      *
      * @param token    Token to validate
-     * @param remoteIP Sender IP
      * @param publishingEndPoint   Current end point
      * @return True if valid
      * @throws IOException If fails reading the security token
      */
     public static boolean isValidToken (final String token,
-										final String remoteIP,
 										final PublishingEndPoint publishingEndPoint) throws IOException {
 
         //My key

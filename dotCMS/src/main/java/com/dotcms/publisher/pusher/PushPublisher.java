@@ -237,7 +237,7 @@ public class PushPublisher extends Publisher {
 								.queryParam("FORCE_PUSH", b.isForcePush())
 	        			;
 
-	        			Response response = webTarget.request(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+	        			Response response = webTarget.request(MediaType.APPLICATION_JSON)
 	        					.header("Content-Disposition", contentDisposition)
 	        					.post(Entity.entity(bundleStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
 

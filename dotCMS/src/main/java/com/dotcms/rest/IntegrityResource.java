@@ -183,7 +183,7 @@ public class IntegrityResource {
             PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
             final PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-            if(!BundlePublisherResource.isValidToken(auth_token_digest, remoteIP, requesterEndPoint)) {
+            if(!BundlePublisherResource.isValidToken(auth_token_digest, requesterEndPoint)) {
                 return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
             }
 
@@ -243,7 +243,7 @@ public class IntegrityResource {
             PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
             final PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-            if(!BundlePublisherResource.isValidToken(auth_token_digest, remoteIP, requesterEndPoint) || !UtilMethods.isSet(requestId)) {
+            if(!BundlePublisherResource.isValidToken(auth_token_digest, requesterEndPoint) || !UtilMethods.isSet(requestId)) {
                 return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
             }
 
@@ -695,7 +695,7 @@ public class IntegrityResource {
             PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress( remoteIP );
 
             //Verify the authentication token
-            if ( !BundlePublisherResource.isValidToken( auth_token_digest, remoteIP, requesterEndPoint ) || !UtilMethods.isSet( requestId ) ) {
+            if ( !BundlePublisherResource.isValidToken( auth_token_digest, requesterEndPoint ) || !UtilMethods.isSet( requestId ) ) {
                 return Response.status( HttpStatus.SC_UNAUTHORIZED ).build();
             }
 
@@ -1027,7 +1027,7 @@ public class IntegrityResource {
 
             requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-            if (!BundlePublisherResource.isValidToken(auth_token_digest, remoteIP, requesterEndPoint)) {
+            if (!BundlePublisherResource.isValidToken(auth_token_digest, requesterEndPoint)) {
                 return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
             }
 
