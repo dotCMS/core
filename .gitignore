@@ -11,7 +11,10 @@ bin/*.sh
 *.ipr
 *.iws
 
-
+# none enterprise stuff should make it here #
+#######################################
+dotCMS/src/main/enterprise
+dotCMS/src/main/enterprise/*
 
 #Temporary Build Migration Ignores
 dotCMS/src/main/webapp/html/ng

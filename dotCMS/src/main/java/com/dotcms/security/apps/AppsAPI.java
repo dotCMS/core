@@ -187,6 +187,16 @@ public interface AppsAPI {
             throws DotSecurityException, DotDataException;
 
 
+    /**
+     * The On secrets key reset is handled down here.
+     * @param user
+     * @throws DotDataException
+     * @throws IOException
+     */
+    void resetSecrets(User user)
+                    throws DotDataException, IOException;
+
+
     enum INSTANCE {
         INSTANCE;
         private final AppsAPI integrationAPI = loadSecretsApi();
