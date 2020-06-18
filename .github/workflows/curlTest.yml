@@ -31,15 +31,15 @@ jobs:
           source dotcicd/library/pipeline.sh buildTestsBase
       - name: Publish Tests Base Image
         run: |
-          source dotcicd/library/pipeline.sh publishImage docker.pkg.github.com/dotcms/core/tests-base-image
+          source dotcicd/library/pipeline.sh publishImage tests-base-image
 
   run-unit-integration-tests-job:
     name: Core Tests
     runs-on: ubuntu-latest
-    env:
+    needs: build-tests-image
+    env: build-tests-image
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
-      PROJECT_ID: cicd-246518
       EXPORT_REPORTS: true
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
@@ -117,10 +117,10 @@ jobs:
   run-curl-tests-job:
     name: Core Curl (Postman) Tests
     runs-on: ubuntu-latest
+    needs: [build-tests-image]
     env:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
-      PROJECT_ID: cicd-246518
       EXPORT_REPORTS: true
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
@@ -162,7 +162,6 @@ jobs:
         run: |
           dotcicd/library/pipeline.sh buildBase
         env:
-          PROJECT_ID: cicd-246518
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
       - name: Build Tests Base Image
         run: |
@@ -173,7 +172,6 @@ jobs:
         run: |
           dotcicd/library/pipeline.sh runCurl
         env:
-          PROJECT_ID: cicd-246518
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
           databaseType: postgres
           PROVIDER_DB_USERNAME: postgres
@@ -184,7 +182,6 @@ jobs:
         run: |
           dotcicd/library/pipeline.sh runCurl
         env:
-          PROJECT_ID: cicd-246518
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
           databaseType: mysql
           PROVIDER_DB_USERNAME: mysql
@@ -195,7 +192,6 @@ jobs:
         run: |
           dotcicd/library/pipeline.sh runCurl
         env:
-          PROJECT_ID: cicd-246518
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
           databaseType: oracle
           PROVIDER_DB_USERNAME: oracle
@@ -206,7 +202,6 @@ jobs:
         run: |
           dotcicd/library/pipeline.sh runCurl
         env:
-          PROJECT_ID: cicd-246518
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
           databaseType: mssql
           PROVIDER_DB_USERNAME: sa
