@@ -12,6 +12,10 @@ jobs:
       LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
     if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
     steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
       - name: Set Common Vars
         run: |
           if [[ -z "${{ github.event.number }}" ]]; then
