@@ -6,6 +6,7 @@ jobs:
     name: Build Tests Base Docker Image
     runs-on: ubuntu-latest
     env:
+      DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       PROJECT_ID: cicd-246518
       GITHUB_USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
