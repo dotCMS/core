@@ -19,6 +19,9 @@ jobs:
           else
             echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
           fi
+      - name: Prepare dot-cicd
+        run: |
+          chmod +x .cicd/discover.sh && .cicd/discover.sh
       - name: Build Tests Base Image
         run: |
           source dotcicd/library/pipeline.sh buildTestsBase
