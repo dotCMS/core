@@ -8,7 +8,6 @@ jobs:
     env:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
-      PROJECT_ID: cicd-246518
       GITHUB_USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
     if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
@@ -32,7 +31,7 @@ jobs:
           source dotcicd/library/pipeline.sh buildTestsBase
       - name: Publish Tests Base Image
         run: |
-          source dotcicd/library/pipeline.sh publishImage gcr.io/${PROJECT_ID}/tests-base-image
+          source dotcicd/library/pipeline.sh publishImage docker.pkg.github.com/dotCMS/core/tests-base-image
 
   run-unit-integration-tests-job:
     name: Core Tests
