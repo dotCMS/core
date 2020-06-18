@@ -37,7 +37,7 @@ jobs:
     name: Core Tests
     runs-on: ubuntu-latest
     needs: build-tests-image
-    env: build-tests-image
+    env:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
