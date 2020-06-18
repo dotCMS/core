@@ -60,50 +60,91 @@ jobs:
           source dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: postgres
-        continue-on-error: true
         if: (!startsWith(env.commitMsg, '[github mysql]') && !startsWith(env.commitMsg, '[github oracle]') && !startsWith(env.commitMsg, '[github mssql]')) || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github postgres]')
-#      - name: Run Integration Tests - mysql
-#        run: |
-#          source dotcicd/library/pipeline.sh runIntegration
-#        env:
-#          databaseType: mysql
-#        if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github mysql]')
-#  run-curl-tests-job:
-#    name: Core Curl (Postman) Tests
-#    runs-on: ubuntu-latest
-#    env:
-#      DOT_CICD_CLOUD_PROVIDER: github
-#      DOT_CICD_TARGET: core
-#      PROJECT_ID: cicd-246518
-#      EXPORT_REPORTS: true
-#      GITHUB_USER: dotcmsbuild
-#      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
-#      PULL_REQUEST: ${{ github.event.number }}
-#    steps:
-#      - name: Checkout core
-#        uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 1
-#      - name: Prepare dot-cicd
-#        run: |
-#          chmod +x .cicd/discover.sh && .cicd/discover.sh
-#      - name: Build DotCMS Image
-#        run: |
-#          dotcicd/library/pipeline.sh buildBase
-#        env:
-#          PROJECT_ID: cicd-246518
-#          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-#      - name: Build Tests Base Image
-#        run: |
-#          source dotcicd/library/pipeline.sh buildTestsBase
-#        env:
-#          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-#      - name: Run Curl Tests
-#        run: |
-#          dotcicd/library/pipeline.sh runCurl
-#        env:
-#          PROJECT_ID: cicd-246518
-#          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-#          databaseType: postgres
-#          PROVIDER_DB_USERNAME: postgres
-#          PROVIDER_DB_PASSWORD: postgres
+        continue-on-error: true
+      - name: Run Integration Tests - mysql
+        run: |
+          source dotcicd/library/pipeline.sh runIntegration
+        env:
+          databaseType: mysql
+        if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github mysql]')
+        continue-on-error: true
+      - name: Run Integration Tests - oracle
+        run: |
+          source dotcicd/library/pipeline.sh runIntegration
+        env:
+          databaseType: oracle
+        if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github oracle]')
+        continue-on-error: true
+      - name: Run Integration Tests - mssql
+        run: |
+          source dotcicd/library/pipeline.sh runIntegration
+        env:
+          databaseType: mssql
+        if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github mssql]')
+        continue-on-error: true
+  run-curl-tests-job:
+    name: Core Curl (Postman) Tests
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
+      PROJECT_ID: cicd-246518
+      EXPORT_REPORTS: true
+      GITHUB_USER: dotcmsbuild
+      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            BRANCH=$(basename "${{ github.ref }}")
+            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+            echo ::set-env name=commitMsg::$(git log --format=%s -n 1 ${{ github.event.after }})
+          else
+            BRANCH="${{ github.head_ref }}"
+            COMMIT_MESSG=$(git log -1 --pretty=format:%s)
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+            echo ::set-env name=commitMsg::$(git log -1 --pretty=format:%s)
+          fi
+
+          TYPE="${{ github.event_name }}"
+          if [[ "${TYPE}" != "pull_request" && ("${BRANCH}" == "master" || "${BRANCH}" =~ ^release-* || "${BRANCH}" =~ ^test-*) ]]; then
+            echo ::set-env name=allDbs::true
+          else
+            echo ::set-env name=allDbs::false
+          fi
+      - name: Prepare dot-cicd
+        run: |
+          chmod +x .cicd/discover.sh && .cicd/discover.sh
+      - name: Build DotCMS Image
+        run: |
+          dotcicd/library/pipeline.sh buildBase
+        env:
+          PROJECT_ID: cicd-246518
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+      - name: Build Tests Base Image
+        run: |
+          source dotcicd/library/pipeline.sh buildTestsBase
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+      - name: Run Curl Tests - postrgres
+        run: |
+          dotcicd/library/pipeline.sh runCurl
+        env:
+          PROJECT_ID: cicd-246518
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          databaseType: postgres
+          PROVIDER_DB_USERNAME: postgres
+          PROVIDER_DB_PASSWORD: postgres
+        if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github mssql]')
+        continue-on-error: true
