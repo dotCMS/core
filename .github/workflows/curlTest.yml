@@ -11,7 +11,7 @@ jobs:
       PROJECT_ID: cicd-246518
       EXPORT_REPORTS: true
       GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
     if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
     steps:
@@ -92,8 +92,9 @@ jobs:
       PROJECT_ID: cicd-246518
       EXPORT_REPORTS: true
       GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+    if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
     steps:
       - name: Checkout core
         uses: actions/checkout@v2

@@ -55,7 +55,7 @@ jobs:
     - stage: run tests
       name: unit tests
       script: bash dotcicd/library/pipeline.sh runUnit
-    - name: postgres integration tests
+    - name: postgres integration testscurlTe
       script: bash dotcicd/library/pipeline.sh runIntegration
       if: >-
         commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
