@@ -22,6 +22,8 @@
 
 package com.liferay.portal.model;
 
+import static com.dotmarketing.util.UtilMethods.isSet;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.google.common.hash.Hashing;
@@ -102,10 +104,10 @@ public class Company extends CompanyModel {
 	}
 
 	public String getKeyDigest() {
-		final Key key = getKeyObj();
-		if (null != key) {
+	    final String key = getKey();
+		if (isSet(key)) {
 			try {
-				return Hashing.sha256().hashBytes(key.getEncoded()).toString();
+			 return Hashing.sha256().hashBytes(key.getBytes()).toString();
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}
