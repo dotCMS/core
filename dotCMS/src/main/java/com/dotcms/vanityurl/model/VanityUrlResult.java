@@ -1,6 +1,6 @@
 package com.dotcms.vanityurl.model;
 
-import com.dotcms.vanityurl.handler.VanityUrlHandler;
+
 
 /**
  * This class implements the Vanity URL response object

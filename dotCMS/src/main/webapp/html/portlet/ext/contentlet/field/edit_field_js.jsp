@@ -330,7 +330,7 @@ var cmsfile=null;
 	function insertAssetInEditor(dotAssets) {
 		dotAssets.forEach(async (asset) => {
 			let results = await fetch(
-				`/api/v1/content/resourcelink?identifier=${asset.identifier}`
+				`/api/v1/content/resourcelinks?identifier=${asset.identifier}`
 			);
 			results = await results.json();
 

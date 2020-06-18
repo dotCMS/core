@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -1117,6 +1117,13 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void refresh(Structure structure){}
 
+    /**
+     * 
+     * @param structure
+     */
+    public default void refresh(ContentType type){}
+
+	
 	/**
 	 * 
 	 * @param contentlet
@@ -1611,6 +1618,10 @@ public interface ContentletAPIPostHook {
     }
 
     default void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship, boolean hasParent){
+
+    }
+
+    default void findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted){
 
     }
 }

@@ -86,7 +86,17 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public long recordsInQueue() throws DotDataException {
         return recordsInQueue(DbConnectionFactory.getConnection());
     }
-
+    
+    @Override
+    @CloseDBIfOpened
+    public long failedRecordCount() throws DotDataException {
+        return reindexQueueFactory.failedRecordCount();
+    }
+    @CloseDBIfOpened
+    @Override
+    public boolean hasReindexRecords() throws DotDataException {
+        return reindexQueueFactory.hasReindexRecords();
+    }
     @CloseDBIfOpened
     @Override
     public long recordsInQueue(Connection conn) throws DotDataException {
@@ -99,6 +109,13 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         reindexQueueFactory.deleteReindexAndFailedRecords();
     }
 
+    @Override
+    @WrapInTransaction
+    public void deleteReindexRecords() throws DotDataException {
+        reindexQueueFactory.deleteReindexRecords();
+    }
+    
+    
     @Override
     @WrapInTransaction
     public void deleteFailedRecords() throws DotDataException {

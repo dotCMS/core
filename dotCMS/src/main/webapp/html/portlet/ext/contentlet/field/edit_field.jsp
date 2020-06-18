@@ -611,11 +611,14 @@
     <script type="text/javascript">
 
         function serveFile(doStuff,conInode,velVarNm){
+            var link
 
-            if(doStuff != ''){
-                window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm ,'fileWin','toolbar=no,resizable=yes,width=400,height=300');
-            }else{
+            if (doStuff != ''){
+                link = '/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true";
+            } else {
+                link = '/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true";
             }
+            window.location.href = link
         }
 
         function change<%=field.getFieldContentlet()%>ThumbnailSize(newValue) {

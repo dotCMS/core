@@ -48,6 +48,7 @@ import com.dotcms.rest.config.DotRestApplication;
 import com.dotcms.rest.exception.mapper.*;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
@@ -183,7 +184,8 @@ public class ReloadableServletContainer extends HttpServlet  {
                 .register((new DotBadRequestExceptionMapper<NumberFormatException>(){}).getClass())
                 .register(DotSecurityExceptionMapper.class)
                 .register(DotDataExceptionMapper.class)
-                .register(ElasticsearchStatusExceptionMapper.class);
+                .register(ElasticsearchStatusExceptionMapper.class)
+                .register((new DotBadRequestExceptionMapper<InvalidFolderNameException>(){}).getClass());
                 //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
     }
 }

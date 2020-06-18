@@ -116,11 +116,11 @@ public class MainServlet extends ActionServlet {
 
       // Checking for execute upgrades
       try {
-        StartupTasksExecutor.getInstance().executeUpgrades(config.getServletContext().getRealPath("/"));
-      } catch (DotRuntimeException e1) {
-        throw new ServletException(e1);
-      } catch (DotDataException e1) {
-        throw new ServletException(e1);
+        StartupTasksExecutor.getInstance().executeStartUpTasks();
+        StartupTasksExecutor.getInstance().executeUpgrades();
+
+      } catch (Exception e1) {
+        throw new DotRuntimeException(e1);
       } finally {
         DbConnectionFactory.closeSilently();
       }

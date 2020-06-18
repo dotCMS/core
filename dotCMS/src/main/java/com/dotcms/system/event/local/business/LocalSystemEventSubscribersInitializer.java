@@ -1,12 +1,14 @@
 package com.dotcms.system.event.local.business;
 
+import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
+import com.dotcms.security.apps.AppsKeyResetEventListener;
+import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
+import java.util.List;
+
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
-import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
-import com.dotcms.security.apps.AppsKeyResetEventListener;
-import com.dotcms.services.VanityUrlServices;
-import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -17,7 +19,6 @@ import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentlet
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.util.List;
 
 /**
  * Initializer class that allow us to register Local System Events subscribers
@@ -29,7 +30,7 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
     @Override
     public void init() {
 
-        APILocator.getLocalSystemEventsAPI().subscribe(VanityUrlServices.getInstance());
+
 
         APILocator.getLocalSystemEventsAPI().subscribe(new ContentTypeAndFieldsModsListeners());
 

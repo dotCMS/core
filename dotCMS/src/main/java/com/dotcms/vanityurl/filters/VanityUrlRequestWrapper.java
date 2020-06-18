@@ -1,4 +1,4 @@
-package com.dotmarketing.filters;
+package com.dotcms.vanityurl.filters;
 
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableMap;
  * request
  *
  */
-class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
+public class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
     
     final Map<String, String[]> queryParamMap;
     final String newQueryString;

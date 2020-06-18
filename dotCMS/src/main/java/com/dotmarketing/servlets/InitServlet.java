@@ -29,7 +29,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.dotcms.services.VanityUrlServices;
+
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -146,8 +146,8 @@ public class InitServlet extends HttpServlet {
         
         
         try {
-            //Initialize the Cached Vanity URL cache
-            VanityUrlServices.getInstance().initializeVanityUrlCache();
+
+          APILocator.getVanityUrlAPI().populateAllVanityURLsCache();
         }
         catch(Exception e) {
             Logger.error(InitServlet.class, e.getMessage(), e);
@@ -265,6 +265,9 @@ public class InitServlet extends HttpServlet {
         }
         // Starting the re-indexation thread
         ReindexThread.startThread();
+        
+        
+
     }
 
     protected void deleteFiles(java.io.File directory) {
