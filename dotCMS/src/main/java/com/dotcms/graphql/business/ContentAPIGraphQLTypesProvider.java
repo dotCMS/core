@@ -5,6 +5,7 @@ import static com.dotcms.graphql.business.GraphqlAPI.TYPES_AND_FIELDS_VALID_NAME
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -35,17 +36,20 @@ import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.exception.FieldGenerationException;
 import com.dotcms.graphql.exception.TypeGenerationException;
+import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.PropertyDataFetcher;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -147,9 +151,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject()
                 .name(contentType.variable());
 
-        // add CONTENT interface fields
-        builder.fields(InterfaceType.CONTENTLET.getType().getFieldDefinitions());
-
         if (InterfaceType.getInterfaceForBaseType(contentType.baseType()) != null) {
             builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
         }
@@ -181,6 +182,10 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             }
 
         });
+
+        // add CONTENT interface fields
+        fieldDefinitions.addAll(TypeUtil
+                .getGraphQLFieldDefinitionsFromMap(InterfaceType.getContentFields()));
 
         return fieldDefinitions;
     }
