@@ -5,7 +5,7 @@ import { RequestMethod } from '@angular/http';
 import { pluck } from 'rxjs/operators';
 
 export interface DotPushPublishFilter {
-    default: boolean;
+    defaultFilter: boolean;
     key: string;
     title: string;
 }

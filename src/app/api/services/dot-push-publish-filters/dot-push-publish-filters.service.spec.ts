@@ -47,7 +47,7 @@ describe('DotPushPublishFiltersService', () => {
                     body: {
                         entity: [
                             {
-                                default: true,
+                                defaultFilter: true,
                                 key: 'some.yml',
                                 title: 'Hello World'
                             }
@@ -59,7 +59,7 @@ describe('DotPushPublishFiltersService', () => {
 
         expect(result).toEqual([
             {
-                default: true,
+                defaultFilter: true,
                 key: 'some.yml',
                 title: 'Hello World'
             }

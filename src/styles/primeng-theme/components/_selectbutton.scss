@@ -2,17 +2,6 @@
 @import "mixins";
 @import "primeng-theme/components/button";
 
-[border] {
-    .ui-selectbutton {
-        height: auto;
-        border: 1px solid $gray-light;
-
-        &:hover {
-            border: 1px solid $gray-light;
-        }
-    }
-}
-
 .ui-selectbutton {
     @extend #button-basic;
     @extend #button-main;

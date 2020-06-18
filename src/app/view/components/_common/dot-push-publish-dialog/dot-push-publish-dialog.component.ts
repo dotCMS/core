@@ -140,15 +140,26 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     private loadFilters(): Observable<any> {
         return this.dotPushPublishFiltersService.get().pipe(
             map((filterOptions: DotPushPublishFilter[]) => {
-                this.filterOptions = filterOptions.map((filter: DotPushPublishFilter) => {
-                    return {
-                        label: filter.title,
-                        value: filter.key
-                    };
-                });
+                this.filterOptions = filterOptions
+                    .map((filter: DotPushPublishFilter) => {
+                        return {
+                            label: filter.title,
+                            value: filter.key
+                        };
+                    })
+                    .sort((a: SelectItem, b: SelectItem) => {
+                        if (a.label > b.label) {
+                            return 1;
+                        }
+                        if (a.label < b.label) {
+                            return -1;
+                        }
+                        // a must be equal to b
+                        return 0;
+                    });
 
                 this.defaultFilterKey = filterOptions
-                    .filter((filter: DotPushPublishFilter) => filter.default)
+                    .filter(({ defaultFilter }: DotPushPublishFilter) => defaultFilter)
                     .map(({ key }: DotPushPublishFilter) => key)
                     .join();
             }),
