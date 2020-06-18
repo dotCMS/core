@@ -214,3 +214,4 @@ jobs:
           PROVIDER_DB_PASSWORD: mssqldotCMS2019
         if: env.allDbs == true || startsWith(env.commitMsg, '[github]') || startsWith(env.commitMsg, '[github mssql]')
         continue-on-error: true
+
