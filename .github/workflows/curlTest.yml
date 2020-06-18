@@ -1,4 +1,4 @@
-name: Run Dockerized Tests
+name: Core CICD Dockerized Tests
 on: [pull_request, push]
 
 jobs:
@@ -9,7 +9,7 @@ jobs:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
     if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
     steps:
@@ -40,7 +40,7 @@ jobs:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
     if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
     steps:
@@ -58,7 +58,7 @@ jobs:
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-      - name: Build Tests Base Image
+      - name: Build DotCMS Image
         run: |
           source dotcicd/library/pipeline.sh buildBase
       - name: Publish DotCMS Image
@@ -72,6 +72,7 @@ jobs:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
@@ -151,6 +152,7 @@ jobs:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
