@@ -1,10 +1,11 @@
 package com.dotmarketing.portlets.contentlet.action;
 
-import static com.dotmarketing.portlets.calendar.action.EventFormUtils.editEvent;
-import static com.dotmarketing.portlets.calendar.action.EventFormUtils.setEventDefaults;
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
-
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -88,6 +89,7 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -101,6 +103,12 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -123,11 +131,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotmarketing.portlets.calendar.action.EventFormUtils.editEvent;
+import static com.dotmarketing.portlets.calendar.action.EventFormUtils.setEventDefaults;
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
 
 /**
  * This class processes all the interactions with contentlets that are
@@ -636,7 +643,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                 final Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId);
                 final String startMsg = String.format("Exporting contents of type '%s' to CSV file. Please wait...",
                         contentType.getName());
-                notificationAPI.info(startMsg, user.getUserId());
+				final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+				final SystemMessage systemMessage = systemMessageBuilder.setMessage(startMsg).setType(MessageType
+						.SIMPLE_MESSAGE).setSeverity(MessageSeverity.INFO).setLife(10000).create();
+				SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
                 Logger.info(this, String.format("Exporting contents of type ID '%s' to CSV file. Retrieving results" +
                         " from ES index...", contentTypeId));
 				downloadToExcel(response, user,searchContentlets(req,res,config,form,user,"Excel"), contentTypeId);
@@ -2143,14 +2153,20 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			} catch (final Exception p) {
                 final String errorMsg = String.format("An error occurred when exporting contents of type '%s' [%s] to" +
                         " CSV file '%s': %s", contentType.getName(), contentTypeInode, csvFileName, p.getMessage());
-                notificationAPI.info(errorMsg, user.getUserId());
+                final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+                final SystemMessage systemMessage = systemMessageBuilder.setMessage(errorMsg).setType(MessageType
+                        .SIMPLE_MESSAGE).setSeverity(MessageSeverity.ERROR).setLife(10000).create();
+                SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
                 Logger.error(this, errorMsg, p);
 			}
             final DecimalFormat decimalFormat = new DecimalFormat("###,###");
             final String endMsg = String.format("A total of %s contents of type '%s' [%s] have been successfully " +
                             "exported to CSV file '%s'", decimalFormat.format(totalSize), contentType.getName(),
                     contentTypeInode, csvFileName);
-            notificationAPI.info(endMsg, user.getUserId());
+            final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+            final SystemMessage systemMessage = systemMessageBuilder.setMessage(endMsg).setType(MessageType
+                    .SIMPLE_MESSAGE).setSeverity(MessageSeverity.INFO).setLife(10000).create();
+            SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
             Logger.info(this, endMsg);
         } else {
 			try {writer.print("\r\n");} catch (Exception e) {	Logger.debug(this,"Error: download to excel "+e);	}
