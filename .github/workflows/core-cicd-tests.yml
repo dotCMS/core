@@ -2,9 +2,74 @@ name: Core CICD Dockerized Tests
 on: [pull_request, push]
 
 jobs:
+  build-tests-image:
+    name: Build Tests Base Docker Image
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
+      GITHUB_USER: dotcmsbuild
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+          else
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+          fi
+      - name: Prepare dot-cicd
+        run: |
+          chmod +x .cicd/discover.sh && .cicd/discover.sh
+      - name: Build Tests Base Image
+        run: |
+          source dotcicd/library/pipeline.sh buildTestsBase
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+      - name: Publish Tests Base Image
+        run: |
+          source dotcicd/library/pipeline.sh publishImage tests-base-image
+  build-base-image:
+    name: Build DotCMS Docker Image
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
+      GITHUB_USER: dotcmsbuild
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+          else
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+          fi
+      - name: Prepare dot-cicd
+        run: |
+          chmod +x .cicd/discover.sh && .cicd/discover.sh
+      - name: Build DotCMS Image
+        run: |
+          source dotcicd/library/pipeline.sh buildBase
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+      - name: Publish DotCMS Image
+        run: |
+          source dotcicd/library/pipeline.sh publishImage dotcms-image
   run-unit-integration-tests-job:
     name: Core Tests
     runs-on: ubuntu-latest
+    needs: build-tests-image
     env:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
@@ -46,11 +111,9 @@ jobs:
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-      - name: Build Tests Base Image
+      - name: Pull Tests Base Image
         run: |
-          source dotcicd/library/pipeline.sh buildTestsBase
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          source dotcicd/library/pipeline.sh pullImage tests-base-image
       - name: Run Unit Tests
         run: |
           source dotcicd/library/pipeline.sh runUnit
@@ -86,6 +149,7 @@ jobs:
   run-curl-tests-job:
     name: Core Curl (Postman) Tests
     runs-on: ubuntu-latest
+    needs: [build-tests-image]
     env:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
@@ -127,16 +191,12 @@ jobs:
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-      - name: Build DotCMS Image
+      - name: Pull DotCMS Base Image
         run: |
-          source dotcicd/library/pipeline.sh buildBase
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-      - name: Build Tests Base Image
+          source dotcicd/library/pipeline.sh pullImage dotcms-image
+      - name: Pull Tests Base Image
         run: |
-          source dotcicd/library/pipeline.sh buildTestsBase
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          source dotcicd/library/pipeline.sh pullImage tests-base-image
       - name: Run Curl Tests - postrgres
         run: |
           dotcicd/library/pipeline.sh runCurl
