@@ -1,6 +1,2 @@
-#!/bin/bash
-
-# Default values
-#export DOT_CICD_PATH="./dotcicd"
-#export DOT_CICD_REPO="https://github.com/dotCMS/dot-cicd.git"
+# Override values
 export DOT_CICD_BRANCH="issue-18504-ci-github-actions"
