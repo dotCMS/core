@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -s .cicd/seed.source ]] && source .cicd/seed.source
+[[ -s .cicd/seed.source ]] && source .cicd/seed.source
 
 #sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/master/seed/install-dot-cicd.sh)"
 #TODO: restore to previous
