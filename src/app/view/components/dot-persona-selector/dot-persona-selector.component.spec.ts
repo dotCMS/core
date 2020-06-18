@@ -4,7 +4,7 @@ import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { mockDotPersona } from '@tests/dot-persona.mock';

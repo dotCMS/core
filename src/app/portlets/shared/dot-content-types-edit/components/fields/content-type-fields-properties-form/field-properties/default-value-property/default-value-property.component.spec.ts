@@ -3,7 +3,7 @@ import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';

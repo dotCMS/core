@@ -16,7 +16,7 @@ import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms'
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { PaginatorService } from '@services/paginator';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { LOCATION_TOKEN } from 'src/app/providers';

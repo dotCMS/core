@@ -7,7 +7,7 @@ import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
 import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
 import { LoginService, DotEventsSocket, SiteService } from 'dotcms-js';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
 import { PaginatorService } from '@services/paginator';

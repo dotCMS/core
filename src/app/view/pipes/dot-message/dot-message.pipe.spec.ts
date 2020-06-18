@@ -1,6 +1,6 @@
 import { DotMessagePipe } from './dot-message.pipe';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 describe('DotMessagePipe', () => {
     let messageServiceMock: MockDotMessageService;

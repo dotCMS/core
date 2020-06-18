@@ -9,7 +9,7 @@ import { DotContainerSelectorModule } from '@components/dot-container-selector/d
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { FormControl, FormGroup } from '@angular/forms';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { TemplateContainersCacheService } from '../../../template-containers-cache.service';

@@ -1,6 +1,6 @@
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { async } from '@angular/core/testing';
 import { of } from 'rxjs';

@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
 import { DotDevice } from '@models/dot-device/dot-device.model';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { map, take, flatMap, filter, toArray } from 'rxjs/operators';
 
 @Component({

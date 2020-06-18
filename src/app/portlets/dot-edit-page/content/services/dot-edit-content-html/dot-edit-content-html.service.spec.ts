@@ -5,7 +5,7 @@ import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolb
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { LoggerService, StringUtils } from 'dotcms-js';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';

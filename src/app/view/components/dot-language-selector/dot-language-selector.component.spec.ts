@@ -9,7 +9,7 @@ import { By } from '@angular/platform-browser';
 import { mockDotLanguage } from '../../../test/dot-language.mock';
 import { Dropdown } from 'primeng/primeng';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { of } from 'rxjs';
 import { DotLanguage } from '@shared/models/dot-language/dot-language.model';

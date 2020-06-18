@@ -3,7 +3,7 @@ import { DotCreatePersonaFormComponent } from './dot-create-persona-form.compone
 import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { mockSites, SiteServiceMock } from '@tests/site-service.mock';
 import { By } from '@angular/platform-browser';
 import { FileUploadModule } from 'primeng/primeng';

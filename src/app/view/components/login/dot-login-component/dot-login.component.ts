@@ -9,7 +9,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { ActivatedRoute, Params } from '@angular/router';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 @Component({
     selector: 'dot-login-component',
@@ -40,6 +40,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
+        this.dotMessageService.init(true);
         this.loginForm = this.fb.group({
             login: ['', [Validators.required]],
             language: [''],
@@ -99,7 +100,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
      */
     onLanguageChange(lang: string): void {
         this.loginPageStateService.update(lang);
-        this.dotMessageService.init(lang);
+        this.dotMessageService.init(true, lang);
     }
 
     /**

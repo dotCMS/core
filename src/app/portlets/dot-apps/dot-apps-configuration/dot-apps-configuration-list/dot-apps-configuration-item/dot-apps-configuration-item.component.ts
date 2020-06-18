@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter, HostListener } from '@angular/c
 import { DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 @Component({
     selector: 'dot-apps-configuration-item',

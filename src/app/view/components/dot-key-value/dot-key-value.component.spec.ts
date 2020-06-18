@@ -1,7 +1,7 @@
 import { By } from '@angular/platform-browser';
 import { DebugElement, Component } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { TableModule } from 'primeng/table';

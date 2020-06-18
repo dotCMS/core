@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';

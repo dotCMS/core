@@ -3,7 +3,7 @@ import { DotTemplate } from './../../shared/models/dot-template.model';
 import { DotPageRenderState } from './../../shared/models/dot-rendered-page-state.model';
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPageRender } from '../../shared/models/dot-rendered-page.model';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';

@@ -12,7 +12,7 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotMenuService } from '@services/dot-menu.service';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';

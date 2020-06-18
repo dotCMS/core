@@ -7,7 +7,7 @@ import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/d
 import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
 

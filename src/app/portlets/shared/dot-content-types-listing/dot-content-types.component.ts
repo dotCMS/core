@@ -11,7 +11,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DataTableColumn } from '@models/data-table';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 import { ButtonModel } from '@models/action-header/button.model';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';

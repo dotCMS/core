@@ -1,6 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { DotClipboardUtil } from 'src/app/api/util/clipboard/ClipboardUtil';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 /**
  * Icon button to copy to clipboard the string you pass to it,

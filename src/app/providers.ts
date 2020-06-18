@@ -11,7 +11,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotIframeService } from './view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotMenuService } from '@services/dot-menu.service';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
 import { FormatDateService } from '@services/format-date-service';

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 /**

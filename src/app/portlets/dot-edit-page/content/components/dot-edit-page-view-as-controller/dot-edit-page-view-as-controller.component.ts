@@ -2,7 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { DotLanguage } from '@models/dot-language/dot-language.model';
 import { DotDevice } from '@models/dot-device/dot-device.model';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { Observable } from 'rxjs';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';

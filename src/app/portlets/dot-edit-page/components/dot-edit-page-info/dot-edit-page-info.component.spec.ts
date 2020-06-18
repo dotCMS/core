@@ -13,7 +13,7 @@ import { mockUser } from '@tests/login-service.mock';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { LOCATION_TOKEN } from 'src/app/providers';
 

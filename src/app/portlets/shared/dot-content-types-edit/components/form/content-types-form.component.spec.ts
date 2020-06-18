@@ -31,7 +31,7 @@ import { SiteService } from 'dotcms-js';
 import { ContentTypesFormComponent } from './content-types-form.component';
 import { DotCMSSystemActionType, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 // tslint:disable-next-line:max-line-length

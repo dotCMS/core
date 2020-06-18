@@ -12,7 +12,7 @@ import { StringFormat } from 'src/app/api/util/stringFormat';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { DebugElement } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 

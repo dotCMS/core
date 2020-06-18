@@ -5,7 +5,7 @@ import { MockDotMessageService } from '../../../../test/dot-message-service.mock
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
 import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';

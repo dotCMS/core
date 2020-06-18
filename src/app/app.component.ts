@@ -3,7 +3,7 @@ import { NotLicensedService } from '@services/not-licensed-service';
 import { DotcmsConfigService } from 'dotcms-js';
 import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { take, pluck } from 'rxjs/operators';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 @Component({
     selector: 'dot-root',
@@ -19,7 +19,7 @@ export class AppComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.dotMessageService.init();
+        this.dotMessageService.init(false);
         this.notLicensedService.init();
         this.dotCmsConfigService
             .getConfig()

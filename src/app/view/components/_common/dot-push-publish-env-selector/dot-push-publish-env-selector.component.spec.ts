@@ -8,7 +8,7 @@ import { PushPublishService } from '@services/push-publish/push-publish.service'
 import { FormGroup, FormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];

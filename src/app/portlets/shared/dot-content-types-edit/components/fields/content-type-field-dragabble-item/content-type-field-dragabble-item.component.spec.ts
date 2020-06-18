@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { DotCMSContentTypeField } from 'dotcms-models';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FieldService } from '../service';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';

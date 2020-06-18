@@ -1,6 +1,6 @@
 import {Observable, of} from 'rxjs';
 import { DotRouterService } from '../dot-router/dot-router.service';
-import { DotMessageService } from '../dot-messages-service';
+import { DotMessageService } from '../dot-message/dot-messages.service';
 import { Injectable } from '@angular/core';
 
 import { ResponseView, LoginService, HttpCode } from 'dotcms-js';

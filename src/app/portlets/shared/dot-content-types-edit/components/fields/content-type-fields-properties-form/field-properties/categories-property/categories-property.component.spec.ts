@@ -4,7 +4,7 @@ import { DebugElement, Injectable, Input, Output, EventEmitter, Component } from
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { PaginatorService } from '@services/paginator';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 
 import { NgControl, FormGroup } from '@angular/forms';

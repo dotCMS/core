@@ -11,7 +11,7 @@ import { Observable, of } from 'rxjs';
 import { DotTag } from '@models/dot-tag';
 import { By } from '@angular/platform-browser';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 
 const mockResponse = [

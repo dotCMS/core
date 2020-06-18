@@ -7,7 +7,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { DotMessageService } from '../dot-messages-service';
+import { DotMessageService } from '../dot-message/dot-messages.service';
 import { take } from 'rxjs/operators';
 
 const messageServiceMock = new MockDotMessageService({

@@ -4,7 +4,7 @@ import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/c
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { NgControl, FormGroup, FormControl } from '@angular/forms';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 

@@ -1,6 +1,5 @@
 import { pluck, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { CoreWebService } from 'dotcms-js';
 import { DotLocalstorageService } from '@services/dot-localstorage/dot-localstorage.service';
@@ -26,20 +25,18 @@ export class DotMessageService {
      * @param string language
      * @memberof DotMessageService
      */
-    init(language?: string): void {
-        const keys: { [key: string]: string } = this.dotLocalstorageService.getItem(
-            this.MESSAGES_LOCALSTORAGE_KEY
-        );
-        if (language || !keys) {
-            this.getAll(language).subscribe((messages: { [key: string]: string }) => {
-                this.messageMap = messages;
-                this.dotLocalstorageService.setItem(
-                    this.MESSAGES_LOCALSTORAGE_KEY,
-                    this.messageMap
-                );
-            });
+    init(force: boolean, language?: string): void {
+        if (force) {
+            this.getAll(language);
         } else {
-            this.messageMap = keys;
+            const keys: { [key: string]: string } = this.dotLocalstorageService.getItem(
+                this.MESSAGES_LOCALSTORAGE_KEY
+            );
+            if (!keys) {
+                this.getAll(language);
+            } else {
+                this.messageMap = keys;
+            }
         }
     }
 
@@ -80,13 +77,20 @@ export class DotMessageService {
         this.formatDateService.setLang(languageId.split('_')[0], relativeDateMessages);
     }
 
-    private getAll(lang: string): Observable<{ [key: string]: string }> {
-        return this.coreWebService
+    private getAll(lang: string): void {
+        this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
                 url: this.geti18nURL(lang)
             })
-            .pipe(take(1), pluck('entity'));
+            .pipe(take(1), pluck('entity'))
+            .subscribe((messages: { [key: string]: string }) => {
+                this.messageMap = messages;
+                this.dotLocalstorageService.setItem(
+                    this.MESSAGES_LOCALSTORAGE_KEY,
+                    this.messageMap
+                );
+            });
     }
 
     private geti18nURL(lang: string): string {

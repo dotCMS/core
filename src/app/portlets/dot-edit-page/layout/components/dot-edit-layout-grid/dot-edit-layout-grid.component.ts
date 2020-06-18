@@ -11,7 +11,7 @@ import { DotEditLayoutService } from '../../../shared/services/dot-edit-layout.s
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotLayoutBody } from '../../../shared/models/dot-layout-body.model';
 import { DotLayoutGrid } from '@portlets/dot-edit-page/shared/models/dot-layout-grid.model';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 

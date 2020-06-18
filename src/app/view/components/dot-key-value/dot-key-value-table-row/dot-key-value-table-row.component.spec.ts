@@ -14,7 +14,7 @@ import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.componen
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { PrimeTemplate, InputSwitchModule } from 'primeng/primeng';
 import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
 import { mockKeyValue } from '../dot-key-value.component.spec';

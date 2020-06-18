@@ -6,7 +6,7 @@ import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from 'dotcms-model
 import * as _ from 'lodash';
 import { FieldUtil } from '../util/field-util';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 const MAX_COLS_PER_ROW = 4;
 

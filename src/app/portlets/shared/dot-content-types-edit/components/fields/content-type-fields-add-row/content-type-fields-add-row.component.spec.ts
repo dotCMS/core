@@ -1,5 +1,5 @@
 import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TooltipModule } from 'primeng/primeng';
 import { SplitButtonModule } from 'primeng/splitbutton';

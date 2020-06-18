@@ -1,5 +1,5 @@
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
 import { FormGroup, FormControl } from '@angular/forms';

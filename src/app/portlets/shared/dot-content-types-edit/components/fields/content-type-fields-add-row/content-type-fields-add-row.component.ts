@@ -9,7 +9,7 @@ import {
     ElementRef
 } from '@angular/core';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';

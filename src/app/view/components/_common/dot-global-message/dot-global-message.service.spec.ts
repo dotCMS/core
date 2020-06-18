@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { DotGlobalMessageService } from './dot-global-message.service';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotEvent } from '@models/dot-event/dot-event';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';

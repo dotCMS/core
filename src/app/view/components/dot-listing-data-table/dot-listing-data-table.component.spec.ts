@@ -12,7 +12,7 @@ import { TableModule } from 'primeng/table';
 import { DebugElement, SimpleChange } from '@angular/core';
 import { FormatDateService } from '@services/format-date-service';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { PaginatorService } from '@services/paginator';

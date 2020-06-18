@@ -4,7 +4,7 @@ import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
 import { INotification } from '@shared/models/notifications';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotcmsEventsService, LoginService } from 'dotcms-js';
 import { NotificationsService } from '@services/notifications-service';

@@ -3,7 +3,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { InputSwitchModule } from 'primeng/primeng';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';

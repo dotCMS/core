@@ -25,7 +25,7 @@ import { NGFACES_MODULES } from '../modules';
 import { CommonModule } from '@angular/common';
 import { DotEventsService } from '../api/services/dot-events/dot-events.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotMessageService } from '../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FormatDateService } from '../api/services/format-date-service';
 import { DotAlertConfirmService } from '../api/services/dot-alert-confirm';
 import { DotRouterService } from '../api/services/dot-router/dot-router.service';

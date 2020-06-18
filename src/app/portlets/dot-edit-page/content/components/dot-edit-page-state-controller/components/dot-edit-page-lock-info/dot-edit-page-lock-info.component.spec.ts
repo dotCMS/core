@@ -7,7 +7,7 @@ import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
 import { mockUser } from '@tests/login-service.mock';
 
 import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.component';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 

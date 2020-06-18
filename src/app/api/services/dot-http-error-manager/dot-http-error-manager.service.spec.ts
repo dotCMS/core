@@ -3,7 +3,7 @@ import { LoginService, ResponseView } from 'dotcms-js';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotMessageService } from '../dot-messages-service';
+import { DotMessageService } from '../dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
 import { mockResponseView } from '../../../test/response-view.mock';

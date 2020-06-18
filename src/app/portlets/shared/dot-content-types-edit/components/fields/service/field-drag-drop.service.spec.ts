@@ -6,7 +6,7 @@ import { filter, map } from 'rxjs/operators';
 import { FieldUtil } from '../util/field-util';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 const by = (opt: string) => (source: Observable<any>) => {
     return source.pipe(

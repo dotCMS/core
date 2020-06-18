@@ -11,7 +11,7 @@ import { DotLoginAsComponent } from './dot-login-as.component';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { SEARCHABLE_NGFACES_MODULES } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { LoginService, User } from 'dotcms-js';
 import { PaginatorService } from '@services/paginator';
 import { ActivatedRoute } from '@angular/router';

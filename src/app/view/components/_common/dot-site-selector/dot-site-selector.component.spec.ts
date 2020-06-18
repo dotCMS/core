@@ -5,7 +5,7 @@ import { DotSiteSelectorComponent } from './dot-site-selector.component';
 import { By } from '@angular/platform-browser';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { SiteServiceMock, mockSites } from '../../../../test/site-service.mock';
 import { SiteService } from 'dotcms-js';

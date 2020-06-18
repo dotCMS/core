@@ -6,7 +6,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
 import { DotDevicesServiceMock } from '../../../test/dot-device-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
 import { mockDotDevices } from '../../../test/dot-device.mock';

@@ -5,7 +5,7 @@ import { DebugElement } from '@angular/core';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { NotLicensedComponent } from './not-licensed.component';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';

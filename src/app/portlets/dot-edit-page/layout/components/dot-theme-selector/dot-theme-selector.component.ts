@@ -10,7 +10,7 @@ import {
     ViewChild,
     ElementRef
 } from '@angular/core';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotTheme } from '../../../shared/models/dot-theme.model';
 import { DataGrid, LazyLoadEvent } from 'primeng/primeng';
 

@@ -6,7 +6,7 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
 import { FormControl, FormGroup } from '@angular/forms';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { TemplateContainersCacheService } from '../../../template-containers-cache.service';
 import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';

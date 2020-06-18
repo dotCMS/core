@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, HostListener, OnInit } from '@angular/core';
 
 import { DotCMSContentTypeField } from 'dotcms-models';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FieldService } from '../service';
 
 /**

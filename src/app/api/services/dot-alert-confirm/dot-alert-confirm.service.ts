@@ -1,4 +1,4 @@
-import { DotMessageService } from '../dot-messages-service';
+import { DotMessageService } from '../dot-message/dot-messages.service';
 import { Injectable } from '@angular/core';
 import { DotAlertConfirm } from '@models/dot-alert-confirm/dot-alert-confirm.model';
 import { ConfirmationService } from 'primeng/primeng';

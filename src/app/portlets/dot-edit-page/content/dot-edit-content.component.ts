@@ -12,7 +12,7 @@ import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-
 import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import {
     DotPageContainer,
     DotPageContainerPersonalized

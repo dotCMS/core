@@ -12,7 +12,7 @@ import { ContentTypesFormComponent } from './components/form';
 import { DotCrudService } from '@services/dot-crud';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/index';
 import { FieldService } from './components/fields/service';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import {

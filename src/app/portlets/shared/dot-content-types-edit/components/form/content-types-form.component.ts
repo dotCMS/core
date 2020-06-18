@@ -16,7 +16,7 @@ import { take, takeUntil, filter } from 'rxjs/operators';
 import * as _ from 'lodash';
 import { SelectItem } from 'primeng/primeng';
 
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import {

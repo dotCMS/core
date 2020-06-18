@@ -17,7 +17,7 @@ import {
 import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { Site } from 'dotcms-js';
 

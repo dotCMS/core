@@ -5,7 +5,7 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { Component, DebugElement, Input } from '@angular/core';

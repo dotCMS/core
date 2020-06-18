@@ -7,7 +7,7 @@ import { Site } from 'dotcms-js';
 
 import { DotPageSelectorService, DotPageAsset } from './service/dot-page-selector.service';
 import { DotPageSelectorResults, DotPageSeletorItem } from './models/dot-page-selector.models';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 const NO_SPECIAL_CHAR = /^[a-zA-Z0-9._/-]*$/g;
 const REPLACE_SPECIAL_CHAR = /[^a-zA-Z0-9._/-]/g;

@@ -11,7 +11,7 @@ import { TooltipModule } from 'primeng/primeng';
 import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-messages-service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 const messageServiceMock = new MockDotMessageService({
     'modes.persona.selector.title.preview': 'Previewing As',
