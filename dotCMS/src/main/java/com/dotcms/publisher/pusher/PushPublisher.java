@@ -54,17 +54,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
-import org.apache.logging.log4j.ThreadContext;
-import org.glassfish.jersey.client.ClientProperties;
-import org.quartz.JobDetail;
-import org.quartz.ObjectAlreadyExistsException;
-import org.quartz.Scheduler;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -78,6 +67,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.apache.logging.log4j.ThreadContext;
+import org.glassfish.jersey.client.ClientProperties;
+import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
 
 /**
  * This is the main content publishing class in the Push Publishing process.
@@ -346,12 +345,12 @@ public class PushPublisher extends Publisher {
 	}
 
     /**
-     * Return a end point token
+     *
      * @param token
      * @return
      * @throws IOException
      */
-	public static Optional<String> retriveEndpointKeyDigest(final PublishingEndPoint endpoint) throws IOException { // todo: create a method that allows to receives a key and use the com.dotcms.util.security.Encryptor instead PublicEncryptionFactory
+	public static Optional<String> retriveEndpointKeyDigest(final PublishingEndPoint endpoint) throws IOException {
 	  
 	  if(endpoint==null || endpoint.getAuthKey() ==null) {
 	    Logger.warn(PushPublisher.class,"Endpoint or endpoint key is null:" + endpoint);

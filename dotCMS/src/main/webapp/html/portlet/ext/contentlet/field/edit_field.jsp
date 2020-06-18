@@ -611,11 +611,14 @@
     <script type="text/javascript">
 
         function serveFile(doStuff,conInode,velVarNm){
-            if(doStuff != ''){
-                window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+            var link
+
+            if (doStuff != ''){
+                link = '/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true";
             } else {
-                window.open('/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+                link = '/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true";
             }
+            window.location.href = link
         }
 
         function change<%=field.getFieldContentlet()%>ThumbnailSize(newValue) {

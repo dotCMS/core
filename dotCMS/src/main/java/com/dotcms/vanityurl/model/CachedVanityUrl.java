@@ -1,11 +1,18 @@
 package com.dotcms.vanityurl.model;
 
-import static com.dotcms.vanityurl.business.VanityUrlAPI.CACHE_404_VANITY_URL;
-
-import com.dotcms.util.VanityUrlUtil;
-import com.liferay.util.StringPool;
+import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
 import java.io.Serializable;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.servlet.http.HttpServletResponse;
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.vanityurl.util.VanityUrlUtil;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.control.Try;
 
 /**
  * This class construct a reduced version of the {@link VanityUrl}
@@ -17,141 +24,66 @@ import java.util.regex.Pattern;
  */
 public class CachedVanityUrl implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    private final Pattern pattern;
-    private final String vanityUrlId;
-    private final String url;
-    private final String siteId;
-    private final long languageId;
-    private final String forwardTo;
-    private final int response;
-    private final int order;
+    static final long serialVersionUID = 1L;
+    final public Pattern pattern;
+    final public String vanityUrlId;
+    final public String url;
+    final public String siteId;
+    final public long languageId;
+    final public String forwardTo;
+    final public int response;
+    final public int order;
 
     /**
      * Generate a cached Vanity URL object
      *
      * @param vanityUrl The vanityurl Url to cache
      */
+
     public CachedVanityUrl(final VanityUrl vanityUrl) {
-        //if the VanityUrl URI is not a valid regex
-        this.vanityUrlId = vanityUrl.getIdentifier();
-        final String regex = normalize(vanityUrl.getURI(), CACHE_404_VANITY_URL.equals(this.vanityUrlId));
-        this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        this.url = vanityUrl.getURI();
-        this.languageId = vanityUrl.getLanguageId();
-        this.siteId = vanityUrl.getSite();
-        this.forwardTo = vanityUrl.getForwardTo();
-        this.response = vanityUrl.getAction();
-        this.order    = vanityUrl.getOrder();
+        this(vanityUrl.getIdentifier(),vanityUrl.getURI(),vanityUrl.getLanguageId(),vanityUrl.getSite(),vanityUrl.getForwardTo(),vanityUrl.getAction());
     }
 
-    /**
-     * Generates a CachedVanityUrl from another given CachedVanityUrl
-     *
-     * @param fromCachedVanityUrl VanityURL to copy
-     * @param url url to override in the created copy
-     */
-    public CachedVanityUrl(CachedVanityUrl fromCachedVanityUrl, String url) {
-
-        this.vanityUrlId = fromCachedVanityUrl.getVanityUrlId();
-        //if the VanityUrl URI is not a valid regex
-        final String regex = normalize(url, CACHE_404_VANITY_URL.equals(this.vanityUrlId));
+    public CachedVanityUrl(final String vanityUrlId, final String url, final long languageId, final String siteId, final String forwardTo, final int response) {
+        final String regex = normalize(url);
         this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        this.vanityUrlId = vanityUrlId;
         this.url = url;
-        this.languageId = fromCachedVanityUrl.getLanguageId();
-        this.siteId = fromCachedVanityUrl.getSiteId();
-        this.forwardTo = fromCachedVanityUrl.getForwardTo();
-        this.response = fromCachedVanityUrl.getResponse();
-        this.order    = fromCachedVanityUrl.getOrder();
+        this.languageId = languageId;
+        this.siteId = siteId;
+        this.forwardTo = forwardTo;
+        this.response = response;
+        this.order    = 0;
     }
-
+    
     /**
-     * Generates a CachedVanityUrl from another given CachedVanityUrl
-     *
-     * @param forwardTo replace the forward.
-     * @param fromCachedVanityUrl VanityURL to copy
-     *
+     * rewrites the vanity with the matching groups if needed, returns
+     * the rewritten url, parameters from the request
+     * @param urlIn
+     * @return
      */
-    public CachedVanityUrl(final String forwardTo,
-                           final CachedVanityUrl fromCachedVanityUrl) {
-
-
-        this.pattern     = fromCachedVanityUrl.pattern;
-        this.vanityUrlId = fromCachedVanityUrl.getVanityUrlId();
-        this.url         = fromCachedVanityUrl.url;
-        this.languageId  = fromCachedVanityUrl.getLanguageId();
-        this.siteId      = fromCachedVanityUrl.getSiteId();
-        this.forwardTo   = forwardTo;
-        this.response    = fromCachedVanityUrl.getResponse();
-        this.order       = fromCachedVanityUrl.getOrder();
+    final Tuple2<String, String> processForward(final String urlIn) {
+      String newForward = this.forwardTo;
+      String queryString = null;
+      if(pattern!=null) {
+        Matcher matcher = pattern.matcher(urlIn);
+        if (matcher.matches() && forwardTo.indexOf(GROUP_REPLACEMENT_PREFIX)>-1) {
+          for(int i=1;i<=matcher.groupCount();i++) {
+            newForward=newForward.replace("$"+i, matcher.group(i));
+          }
+        }
+      }
+      if (UtilMethods.isSet(newForward) && newForward.contains("?")) {
+          String[] arr = newForward.split("\\?", 2);
+          newForward = arr[0];
+          if (arr.length > 1) {
+              queryString = arr[1];
+          }
+      }
+      return Tuple.of(newForward, queryString);
     }
-
-    public int getOrder() {
-        return order;
-    }
-
-    /**
-     * Get the URL from the Cached Vanity URL
-     *
-     * @return the URL from the Cached Vanity URL
-     */
-    public String getUrl() {
-        return url;
-    }
-
-    /**
-     * Get the Site Id from the Cached Vanity URL
-     *
-     * @return the Site ID from the Cached Vanity URL
-     */
-    public String getSiteId() {
-        return siteId;
-    }
-
-    /**
-     * Get the Language Id from the Cached Vanity URL
-     *
-     * @return the language Id from the Cached Vanity URL
-     */
-    public long getLanguageId() {
-        return languageId;
-    }
-
-    /**
-     * Get the Forward to path from the Cached Vanity URL
-     *
-     * @return the Forward to path from the Cached Vanity URL
-     */
-    public String getForwardTo() {
-        return forwardTo;
-    }
-
-    /**
-     * Get the Response code from the Cached Vanity URL
-     *
-     * @return the Response code from the Cached Vanity URL
-     */
-    public int getResponse() {
-        return response;
-    }
-
-    /**
-     * Get the URI Pattern from the Cached Vanity URL
-     *
-     * @return the URI Pattern from the Cached Vanity URL
-     */
-    public Pattern getPattern() {
-        return pattern;
-    }
-
-    /**
-     * get the Vanitu Url Identifier
-     *
-     * @return The Vanity Url Identifier
-     */
-    public String getVanityUrlId() {
-        return vanityUrlId;
-    }
+    
+    
 
     /**
      * This comes as fix for https://github.com/dotCMS/core/issues/16433
@@ -172,13 +104,91 @@ public class CachedVanityUrl implements Serializable {
     /**
      * This takes the uir that was originally stored in the contentlet adds validates it.
      * @param uri the uri stored in the contentlet.
-     * @param cache404VanityUrl whether or not this is a 404 cache entry
      * @return normalized uri.
      */
-    private String normalize(final String uri, final boolean cache404VanityUrl){
-        final String uriRegEx = cache404VanityUrl ? uri : addOptionalForwardSlashSupport(uri);
+    private String normalize(final String uri){
+        final String uriRegEx = addOptionalForwardSlashSupport(uri);
         return VanityUrlUtil.isValidRegex(uriRegEx) ? uriRegEx : StringPool.BLANK;
     }
+    
+    
+    public VanityUrlResult handle(final String uriIn,
+                    final HttpServletResponse response) {
+        
+        final Tuple2<String,String> rewritten = processForward(uriIn);
+        final String rewrite = rewritten._1;
+        final String queryString = rewritten._2;
+
+
+        // if the vanity is a redirect
+        if (this.response==301 || this.response==302 ) {
+            response.setStatus(this.response);
+            response.setHeader("Location", rewrite);
+            return new VanityUrlResult(rewrite, queryString, true);
+        }
+        
+        // if the vanity is a proxy request
+        if (this.response==200 && UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
+            
+            final String proxyUrl  = rewrite + (queryString!=null ? "?" + queryString : "");
+            
+            Try.run(()-> new CircuitBreakerUrl(proxyUrl).doOut(response)).onFailure(DotRuntimeException::new);
+            return new VanityUrlResult(rewrite, queryString, true);
+        }
+
+        return new VanityUrlResult(rewrite, queryString, false);
+        
+        
+    }
+    
+    
+
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((forwardTo == null) ? 0 : forwardTo.hashCode());
+        result = prime * result + (int) (languageId ^ (languageId >>> 32));
+        result = prime * result + response;
+        result = prime * result + ((siteId == null) ? 0 : siteId.hashCode());
+        result = prime * result + ((url == null) ? 0 : url.hashCode());
+        return result;
+    }
+
+
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        CachedVanityUrl other = (CachedVanityUrl) obj;
+        if (forwardTo == null) {
+            if (other.forwardTo != null)
+                return false;
+        } else if (!forwardTo.equals(other.forwardTo))
+            return false;
+        if (languageId != other.languageId)
+            return false;
+        if (response != other.response)
+            return false;
+        if (siteId == null) {
+            if (other.siteId != null)
+                return false;
+        } else if (!siteId.equals(other.siteId))
+            return false;
+        if (url == null) {
+            if (other.url != null)
+                return false;
+        } else if (!url.equals(other.url))
+            return false;
+        return true;
+    }
+
 
 
     @Override
@@ -194,4 +204,6 @@ public class CachedVanityUrl implements Serializable {
                 ", order=" + order +
                 '}';
     }
+    
+    
 }

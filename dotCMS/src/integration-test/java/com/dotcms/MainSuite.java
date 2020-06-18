@@ -34,6 +34,7 @@ import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
+import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
 import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
@@ -154,6 +155,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
+        com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
         com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageAPITest.class,
@@ -285,6 +287,7 @@ import org.junit.runners.Suite.SuiteClasses;
         PushNowActionletTest.class,
         Task05305AddPushPublishFilterColumnTest.class,
         CMSMaintenanceFactoryTest.class,
+        Task05350AddDotSaltClusterColumnTest.class,
         DotParseTest.class
 })
 public class MainSuite {
