@@ -13,6 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Extends the {@link DefaultGraphQLContext} to be able to set the dotCMS user and have it
+ * available from the different {@link graphql.schema.DataFetcher}s
+ */
 public class DotGraphQLContext extends DefaultGraphQLContext implements
         GraphQLServletContext {
 

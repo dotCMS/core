@@ -484,15 +484,11 @@ public class GraphqlAPITest extends IntegrationTestBase {
     public void testGetSchema_ContentTypeOperations(final TypeTestCase testCase)
             throws DotDataException, DotSecurityException {
 
-        ContentType contentType = null;
-
         // contentType gets assigned to the return of the last operation
         for (BiFunction<String, BaseContentType, ContentType> operation : testCase
                 .getOperations()) {
-            contentType = operation.apply(testCase.getContentTypeName(), testCase.getBaseType());
+            operation.apply(testCase.getContentTypeName(), testCase.getBaseType());
         }
-
-//        final String contentTypeVar = contentType != null ? contentType.variable() : null;
 
         final GraphqlAPI api = APILocator.getGraphqlAPI();
         final GraphQLSchema schema = api.getSchema();
