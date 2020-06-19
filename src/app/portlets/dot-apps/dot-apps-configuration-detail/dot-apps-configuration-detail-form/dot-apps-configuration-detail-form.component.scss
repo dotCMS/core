@@ -11,7 +11,9 @@
         font-family: $code-text;
         font-size: $font-size-medium;
         height: 36px;
+        min-height: 36px;
         max-height: 400px;
+        min-width: 200px;
     }
 }
 
@@ -31,6 +33,10 @@
         color: $brand-primary;
         margin-left: $basic-padding;
         vertical-align: middle;
+    }
+
+    ::ng-deep p-dropdown .ui-dropdown {
+        min-width: 200px;
     }
 
     ::ng-deep p-checkbox.required label:before,
