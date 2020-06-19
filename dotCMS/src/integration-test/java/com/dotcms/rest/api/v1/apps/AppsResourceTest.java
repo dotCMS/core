@@ -24,6 +24,8 @@ import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotcms.security.apps.ParamDescriptor;
+import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.SecretsStoreKeyStoreImpl;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -42,6 +44,8 @@ import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -108,7 +112,7 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     /**
      * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
-     * The we upload the file with an app definition. Then we Create an App Then list the available apps.
+     * Then we upload the file with an app definition. Then we Create an App Then list the available apps.
      * Then we Verify the New app is listed. under the right Host.
      * Then We delete the app and verify the pagination results make sense.
      * Given scenario: Test we can create an app then delete it.
@@ -362,6 +366,95 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         }
     }
+
+    /**
+     * Test we save a secret that is described as 1 public value and 2 hidden ones
+     * Given scenario: We create a secret then we update the non-hidden (public) values and send a string of asters like the UI would
+     * Expected Result: Only the public value  was supposed to be updated. The other 2 hidden fields should remain the same since we sent a bunch of *****
+     * @throws IOException
+     */
+    @Test
+    public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Update_Secrets()
+            throws IOException {
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .stringParam("param2", true,  true)
+                .stringParam("param3", true,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getRequestURI()).thenReturn("/baseURL");
+        final String appKey = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
+
+            // Create App integration Descriptor
+            final Response appResponse = appsResource.createApp(request, response, createFormDataMultiPart(fileName, inputStream));
+            Assert.assertNotNull(appResponse);
+            Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+
+            //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+            final Map<String, Input> inputParamMap = ImmutableMap.of(
+                    "param1", newInputParam("public-value1".toCharArray(),false),
+                    "param2", newInputParam("hidden-value1".toCharArray(),false),
+                    "param3", newInputParam("hidden-value2".toCharArray(),false));
+            // Add secrets to it.
+            final SecretForm secretForm = new SecretForm(inputParamMap);
+            final Response createSecretResponse = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
+
+            final Response detailedIntegrationResponse = appsResource.getAppDetail(request, response, appKey, host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
+            final ResponseEntityView responseEntityViewSave = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+            final AppView appDetailedView = (AppView) responseEntityViewSave.getEntity();
+
+            Assert.assertNotNull(appDetailedView.getSites());
+            Assert.assertFalse(appDetailedView.getSites().isEmpty());
+            Assert.assertEquals(appDetailedView.getSites().get(0).getId(), host.getIdentifier());
+            //We can the secrets here because this happens before the a serializer will exchange the values by asters making them look like `*****`
+            final List<SecretView> secretViews = appDetailedView.getSites().get(0).getSecrets();
+            final SecretView param1 = secretViews.get(0);
+            Assert.assertEquals(new String(param1.getSecret().getValue()),"public-value1");
+            final SecretView param2 = secretViews.get(1);
+            Assert.assertEquals(new String(param2.getSecret().getValue()),"hidden-value1");
+            final SecretView param3 = secretViews.get(2);
+            Assert.assertEquals(new String(param3.getSecret().getValue()),"hidden-value2");
+
+            final Map<String, Input> inputParamMapFromUI = ImmutableMap.of(
+                    "param1", newInputParam("new-public-value".toCharArray(),false),
+                    "param2", newInputParam("*******".toCharArray(),false),
+                    "param3", newInputParam("****".toCharArray(),false));
+
+            final SecretForm secretFormUpdate = new SecretForm(inputParamMapFromUI);
+            final Response createSecretResponseAfterUpdate = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretFormUpdate);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponseAfterUpdate.getStatus());
+
+            final Response detailedIntegrationResponseAfterUpdate = appsResource.getAppDetail(request, response, appKey, host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponseAfterUpdate.getStatus());
+            final ResponseEntityView responseEntityViewUpdate = (ResponseEntityView) detailedIntegrationResponseAfterUpdate.getEntity();
+            final AppView appDetailedViewAfterUpdate = (AppView) responseEntityViewUpdate.getEntity();
+
+            Assert.assertNotNull(appDetailedViewAfterUpdate.getSites());
+            Assert.assertFalse(appDetailedViewAfterUpdate.getSites().isEmpty());
+            Assert.assertEquals(appDetailedViewAfterUpdate.getSites().get(0).getId(), host.getIdentifier());
+
+            final List<SecretView> secretViewsAfterUpdate = appDetailedViewAfterUpdate.getSites().get(0).getSecrets();
+            final SecretView param1AfterUpdate = secretViewsAfterUpdate.get(0);
+            Assert.assertEquals(new String(param1AfterUpdate.getSecret().getValue()),"new-public-value");
+            final SecretView param2AfterUpdate = secretViewsAfterUpdate.get(1);
+            Assert.assertEquals(new String(param2AfterUpdate.getSecret().getValue()),"hidden-value1");
+            final SecretView param3AfterUpdate = secretViewsAfterUpdate.get(2);
+            Assert.assertEquals(new String(param3AfterUpdate.getSecret().getValue()),"hidden-value2");
+
+        }
+    }
+
+
 
     /**
      * Test we can delete an app together with all it definition and associated secrets.
