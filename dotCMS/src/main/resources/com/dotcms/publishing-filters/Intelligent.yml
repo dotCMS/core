@@ -1,18 +1,18 @@
-title:                    Send Everything Respecting Push History
-default:                  true
-roles:                    DOTCMS_BACK_END_USER
+title: Everything and Dependencies
+default: true
+roles: "DOTCMS_BACK_END_USER"
 filters:
-       ## Lucene query that exclude content to be added to the bundle
-       excludeQuery:             ""
-       ## list of classes that should never be pushed: ContentType, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category, User, OSGI
-       excludeClasses:           []
-       ## check for any dependency that the pushed asset may need (if false will not look for any dependency or relationship)
-       dependencies:             true
-       ## Lucene query that exclude content to be added to the bundle as a dependency
-       excludeDependencyQuery:   ""
-       ##  list of classes that should never be pushed as dependencies: ContentType, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category
-       excludeDependencyClasses: []
-       ## force push as always worked, if true will push regardless the pushed asset history
-       forcePush:                false
-       ## check for relationships (if false neither the Relationship object nor the related content nor the related content type will be pushed)
-       relationships:            true
+   ## Lucene query that exclude content to be added to the bundle
+   excludeQuery: ""
+   ## list of classes that should never be pushed: ContentType, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category, User, OSGI
+   excludeClasses: []
+   ## check for any dependency that the pushed asset may need (if false will not look for any dependency or relationship)
+   dependencies: true
+   ## Lucene query that exclude content to be added to the bundle as a dependency
+   excludeDependencyQuery: ""
+   ##  list of classes that should never be pushed as dependencies: ContentType, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category
+   excludeDependencyClasses: []
+   ## force push as always worked, if true will push regardless the pushed asset history
+   forcePush: false
+   ## check for relationships (if false neither the Relationship object nor the related content nor the related content type will be pushed)
+   relationships: true

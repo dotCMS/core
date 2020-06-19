@@ -300,9 +300,10 @@ public class User extends UserModel implements Recipient {
         setModified(true);
     }
 
-  	public boolean isAnonymousUser(){
+  public boolean isAnonymousUser(){
       return UserAPI.CMS_ANON_USER_ID.equals(this.getUserId());
   }
+
 
 	/**
 	 * Returns true if the user is an admin
@@ -317,6 +318,7 @@ public class User extends UserModel implements Recipient {
 			return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadCMSAdminRole()));
 
 		}).getOrElse(false);
+
 	}
 
   public boolean isBackendUser() {

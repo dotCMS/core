@@ -146,6 +146,23 @@ var saveCompanyAuthTypeInfo = function () {
     dojo.xhrPost(xhrArgs);
 };
 
+var regenerateKey = function (callback) {
+    let xhrArgs = {
+        url: "/api/config/regenerateKey",
+        handleAs: "json",
+        load: function (data) {
+            if (data.entity) {
+               let key = data.entity;
+               callback(key);
+            }
+        },
+        error: function (error) {
+            showDotCMSSystemMessage(error.responseText, true);
+        }
+    };
+   dojo.xhrPost(xhrArgs);
+};
+
 /**
  * Saves the company logo
  * @returns {boolean}

@@ -281,10 +281,11 @@ public class TaskLocatorUtil {
 		.add(Task05220MakeFileAssetContentTypeBinaryFieldIndexedListed.class)
         .add(Task05225RemoveLoadRecordsToIndex.class)
         .add(Task05300UpdateIndexNameLength.class)
-        .add(Task05305AddPushPublishFilterColumn.class).build();
+        .add(Task05305AddPushPublishFilterColumn.class)
+		.add(Task05350AddDotSaltClusterColumn.class)
+        .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
-
 
 	}
 

@@ -11,6 +11,8 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.util.IntegrationTestInitService;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
@@ -26,6 +28,11 @@ import com.dotmarketing.util.WebKeys;
 
 public class VisitorAPITest extends UnitTestBase {
 
+
+    @BeforeClass
+    public static void prepare() throws Exception {
+        IntegrationTestInitService.getInstance().init();
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void testGetVisitor_WhenNullRequest_ThrowsException() {

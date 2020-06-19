@@ -1,5 +1,8 @@
 package com.dotcms.system.event.local.business;
 
+import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
+import com.dotcms.security.apps.AppsKeyResetEventListener;
+import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
 import java.util.List;
 
 import com.dotcms.config.DotInitializer;
@@ -34,6 +37,11 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         this.initApplicationContainerFolderListener();
 
         APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class, UnassignedWorkflowContentletCheckinListener.getInstance());
+
+        APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, PushPublishKeyResetEventListener.INSTANCE.get());
+
+        APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, AppsKeyResetEventListener.INSTANCE.get());
+
     }
 
     public void initApplicationContainerFolderListener() {
