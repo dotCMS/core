@@ -159,7 +159,7 @@ public class PageResource {
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
 
 
-            final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
+            final Host host = APILocator.getHostAPI().find(pageRendered.getPage().getHost(), user,
                     PageMode.get(request).respectAnonPerms);
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
@@ -252,7 +252,7 @@ public class PageResource {
                 response
         );
 
-        final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
+        final Host host = APILocator.getHostAPI().find(pageRendered.getPage().getHost(), user,
                 PageMode.get(request).respectAnonPerms);
         request.setAttribute(WebKeys.CURRENT_HOST, host);
         request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);

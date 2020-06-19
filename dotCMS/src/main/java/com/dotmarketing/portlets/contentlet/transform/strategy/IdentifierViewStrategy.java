@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import com.dotcms.api.APIProvider;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -15,7 +16,7 @@ class IdentifierViewStrategy extends AbstractTransformStrategy<Contentlet>{
      * Main Constructor
      * @param toolBox
      */
-    IdentifierViewStrategy(final TransformToolbox toolBox) {
+    IdentifierViewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 

@@ -38,7 +38,9 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     public GraphqlAPIImpl() {
         typesProviders.add(ContentAPIGraphQLTypesProvider.INSTANCE);
+        typesProviders.add(PageAPIGraphQLTypesProvider.INSTANCE);
         fieldsProviders.add(ContentAPIGraphQLFieldsProvider.INSTANCE);
+        fieldsProviders.add(PageAPIGraphQLFieldsProvider.INSTANCE);
     }
 
     /**
@@ -98,7 +100,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     }
 
     @LogTime(loggingLevel = "INFO")
-    private GraphQLSchema generateSchema() throws DotDataException {
+    private GraphQLSchema generateSchema() {
         final Set<GraphQLType> graphQLTypes = new HashSet<>();
 
         for (GraphQLTypesProvider typesProvider : typesProviders) {

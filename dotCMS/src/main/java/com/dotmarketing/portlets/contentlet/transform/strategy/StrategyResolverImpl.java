@@ -6,8 +6,10 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.google.common.collect.ImmutableMap.of;
 
+import com.dotcms.api.APIProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.api.APIProvider.Builder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -49,7 +51,7 @@ public class StrategyResolverImpl implements StrategyResolver {
     /**
      * Main constructor
      */
-    public StrategyResolverImpl(final TransformToolbox toolBox) {
+    public StrategyResolverImpl(final APIProvider toolBox) {
         this(
             //These are very specific implementations but most cases will be covered by the default strategy.
             of(
@@ -71,7 +73,7 @@ public class StrategyResolverImpl implements StrategyResolver {
      * Default constructor
      */
     public StrategyResolverImpl() {
-        this(new TransformToolbox());
+        this(new Builder().build());
     }
 
     /**

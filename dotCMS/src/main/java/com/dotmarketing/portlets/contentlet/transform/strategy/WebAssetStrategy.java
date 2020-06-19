@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
+import com.dotcms.api.APIProvider;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -22,7 +23,7 @@ public abstract class WebAssetStrategy <T extends Contentlet>  extends
      * ToolBox taker constructor
      * @param toolBox
      */
-    WebAssetStrategy(final TransformToolbox toolBox) {
+    WebAssetStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 
