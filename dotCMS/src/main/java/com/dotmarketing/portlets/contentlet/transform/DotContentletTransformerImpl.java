@@ -13,7 +13,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
-import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -118,7 +117,11 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
      * @return a copy contentlet
      */
     private Contentlet copy(final Contentlet contentlet) {
-       return TransformToolbox.copyContentlet(contentlet);
+        final Contentlet newContentlet = new Contentlet();
+        if (null != contentlet && null != contentlet.getMap()) {
+            newContentlet.getMap().putAll(contentlet.getMap());
+        }
+        return newContentlet;
     }
 
 }

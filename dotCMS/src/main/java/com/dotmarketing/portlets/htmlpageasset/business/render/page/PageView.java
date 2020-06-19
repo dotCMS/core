@@ -1,9 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -12,7 +9,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.Serializable;
@@ -45,7 +41,7 @@ public class PageView implements Serializable {
     private final Host site;
     private final Template template;
     private final Collection<? extends ContainerRaw> containers;
-    private final HTMLPageAssetInfo htmlPageAssetInfo;
+    private final HTMLPageAsset htmlPageAsset;
     private final TemplateLayout layout;
     private final ViewAsPageStatus viewAs;
     private final boolean canCreateTemplate;
@@ -64,7 +60,7 @@ public class PageView implements Serializable {
         this.site = builder.site;
         this.template =  builder.template;
         this.containers =  builder.containers;
-        this.htmlPageAssetInfo =  builder.page;
+        this.htmlPageAsset =  builder.page;
         this.layout =  builder.layout;
         this.viewAs =  builder.viewAs;
         this.canCreateTemplate =  builder.canCreateTemplate;
@@ -151,14 +147,14 @@ public class PageView implements Serializable {
      *
      * @return The {@link HTMLPageAsset}.
      */
-    public HTMLPageAssetInfo getPageInfo() {
-        return this.htmlPageAssetInfo;
+    public HTMLPageAsset getPage() {
+        return this.htmlPageAsset;
     }
 
     @Override
     public String toString() {
         return "PageView{" + "site=" + site + ", template=" + template + ", containers=" +
-                containers + ", page=" + htmlPageAssetInfo.getPage() + ", layout=" + layout + '}';
+                containers + ", page=" + htmlPageAsset + ", layout=" + layout + '}';
     }
     /**
      * returns ViewAs Information
@@ -196,7 +192,7 @@ public class PageView implements Serializable {
         private  Template template;
         // The map of Containers and their respective relationships with Content Types
         private  Collection<? extends ContainerRaw> containers;
-        private  HTMLPageAssetInfo page;
+        private  HTMLPageAsset page;
         // The {@link TemplateLayout} that specifies the design of the template
         private  TemplateLayout layout;
         private  ViewAsPageStatus viewAs;
@@ -222,7 +218,7 @@ public class PageView implements Serializable {
             return this;
         }
 
-        public Builder page(final HTMLPageAssetInfo page) {
+        public Builder page(final HTMLPageAsset page) {
             this.page = page;
             return this;
         }
