@@ -26,7 +26,7 @@
             </li>
         </ul>
         <p style="display: block;">
-            <a class="request-license-button" href="https://dotcms.com/licensing/request-a-license-3/index" target="_top"><%=LanguageUtil.get(pageContext, "request-trial-license")%></a>
+            <a target="_blank" class="request-license-button" href="https://dotcms.com/licensing/request-a-license-3/index"><%=LanguageUtil.get(pageContext, "request-trial-license")%></a>
         </p>
     </div>
 </div>
