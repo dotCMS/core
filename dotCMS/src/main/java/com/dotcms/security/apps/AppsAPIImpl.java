@@ -440,7 +440,7 @@ public class AppsAPIImpl implements AppsAPI {
             throws DotSecurityException, DotDataException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to delete an App descriptors performed by user with id `%s`.",
+                    "Invalid attempt to delete an App descriptor performed by user with id `%s`.",
                     user.getUserId()));
         }
         final String appKeyLC = key.toLowerCase();
@@ -763,7 +763,7 @@ public class AppsAPIImpl implements AppsAPI {
 
         if (getAppDescriptorMap().containsKey(serviceDescriptor.getKey())) {
             throw new AlreadyExistException(
-                    String.format("There's a service already registered under key `%s`.",
+                    String.format("There's an App already registered under key `%s`.",
                             serviceDescriptor.getKey()));
         }
         return true;
