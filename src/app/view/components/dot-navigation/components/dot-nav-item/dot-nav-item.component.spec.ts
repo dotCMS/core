@@ -92,8 +92,8 @@ describe('DotNavItemComponent', () => {
         it('should set position correctly', () => {
             deHost.componentInstance.collapsed = true;
 
-            subNav.nativeElement.style.position = 'absolute'
-            subNav.nativeElement.style.top = '5000px' // moving it out of the window
+            subNav.nativeElement.style.position = 'absolute';
+            subNav.nativeElement.style.top = '5000px'; // moving it out of the window
 
             fixtureHost.detectChanges();
 
@@ -103,7 +103,19 @@ describe('DotNavItemComponent', () => {
             expect(subNav.styles).toEqual({
                 top: 'auto',
                 bottom: '0'
-            })
+            });
+
+            subNav.nativeElement.style.position = '';
+            subNav.nativeElement.style.top = ''; // moving it inside of the window
+            fixtureHost.detectChanges();
+
+            navItem.triggerEventHandler('mouseenter', {});
+            fixtureHost.detectChanges();
+
+            expect(subNav.styles).toEqual({
+                top: null,
+                bottom: null
+            });
         });
 
         it('should set data correctly', () => {

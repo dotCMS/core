@@ -113,6 +113,7 @@ describe('DotNavigationComponent', () => {
 
         fixture = DOTTestBed.createComponent(DotNavigationComponent);
         de = fixture.debugElement;
+        fixture.componentRef;
 
         dotNavigationService = de.injector.get(DotNavigationService);
 
@@ -204,6 +205,10 @@ describe('DotNavigationComponent', () => {
             it('should navigate to portlet when menu is collapsed', () => {
                 expect(dotNavigationService.goTo).toHaveBeenCalledWith('url/link1');
             });
+
+            it('should not have scroll', () => {
+                expect(fixture.debugElement.styles).toEqual({ 'overflow-y': '' });
+            });
         });
 
         describe('expanded', () => {
@@ -232,6 +237,10 @@ describe('DotNavigationComponent', () => {
 
             it('should NOT navigate to porlet', () => {
                 expect(dotNavigationService.goTo).not.toHaveBeenCalled();
+            });
+
+            it('should have scroll', () => {
+                expect(fixture.debugElement.styles).toEqual({ 'overflow-y': 'scroll' });
             });
         });
     });

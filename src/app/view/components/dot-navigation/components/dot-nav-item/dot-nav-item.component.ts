@@ -22,7 +22,7 @@ export class DotNavItemComponent {
     @Input()
     collapsed: boolean;
 
-    customStyles = {};
+    customStyles = null;
 
     constructor() {}
 
@@ -46,17 +46,16 @@ export class DotNavItemComponent {
      * @memberof DotNavItemComponent
      */
     setSubMenuPosition(): void {
-
         if (this.collapsed) {
             const [rects] = this.subnav.ul.nativeElement.getClientRects();
 
-            if (rects.bottom > window.innerHeight) {
+            if (!this.customStyles && rects.bottom > window.innerHeight) {
                 this.customStyles = {
                     top: 'auto',
                     bottom: '0'
                 };
-            } else {
-                this.customStyles = {};
+            } else if (rects.bottom < window.innerHeight) {
+                this.customStyles = null;
             }
         }
     }
