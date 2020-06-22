@@ -16,6 +16,7 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 import static com.dotmarketing.util.UtilMethods.isSet;
 import static com.liferay.util.StringPool.BLANK;
 
+import com.dotcms.api.APIProvider;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -35,7 +36,7 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
      * Main Constructor
      * @param toolBox
      */
-    public FileAssetViewStrategy(final TransformToolbox toolBox) {
+    public FileAssetViewStrategy(final APIProvider toolBox) {
         super(toolBox);
         contentletCache = CacheLocator.getContentletCache();
     }

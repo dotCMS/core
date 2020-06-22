@@ -13,6 +13,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASS
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_PROGRESS;
 
+import com.dotcms.api.APIProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -49,9 +50,9 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
 
     static final String NOT_APPLICABLE = "N/A";
 
-    protected final TransformToolbox toolBox;
+    protected final APIProvider toolBox;
 
-    AbstractTransformStrategy(final TransformToolbox toolBox) {
+    AbstractTransformStrategy(final APIProvider toolBox) {
         this.toolBox = toolBox;
     }
 
