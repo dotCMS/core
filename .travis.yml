@@ -48,10 +48,7 @@ jobs:
       name: build dotcms image
       script: bash dotcicd/library/pipeline/travis/core/buildBase.sh
     - name: build integration image
-      script: bash dotcicd/library/pipeline/travis/core/buildIntegration.sh
-    - stage: build ext images
-      name: build postman image
-      script: bash dotcicd/library/pipeline/travis/core/buildCurl.sh
+      script: bash dotcicd/library/pipeline/travis/core/buildTestsBase.sh
     - stage: run tests
       name: unit tests
       script: bash dotcicd/library/pipeline/travis/core/runUnit.sh
@@ -116,8 +113,8 @@ jobs:
 
 install:
   - travis/discover_cicd.sh
-  - dotcicd/library/pipeline/travis/core/environment_vars.sh
-  - dotcicd/library/pipeline/travis/core/install_gcloud.sh
+  - dotcicd/library/pipeline/travis/core/environmentVars.sh
+  - dotcicd/library/pipeline/travis/core/installGCloud.sh
 
 # https://docs.travis-ci.com/user/notifications/#configuring-slack-notifications
 # https://docs.travis-ci.com/user/encryption-keys/#usage
