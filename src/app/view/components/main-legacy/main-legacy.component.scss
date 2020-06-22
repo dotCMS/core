@@ -29,6 +29,7 @@
     background-color: $brand-background;
     flex-shrink: 0;
     transition: width $basic-speed * 2 cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow-y: scroll;
 
     .collapsed & {
         width: 0;
