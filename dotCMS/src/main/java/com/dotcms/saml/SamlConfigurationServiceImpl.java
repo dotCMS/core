@@ -5,14 +5,16 @@ import com.dotcms.saml.service.external.SamlConfigurationService;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.external.SamlName;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -23,13 +25,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class SamlConfigurationServiceImpl implements SamlConfigurationService {
 
     private static final String UNABLE_TO_READ_FILE = "File does not exist or unable to read : ";
-
-    private AtomicBoolean init = new AtomicBoolean(false);
+    private static final String NOT_FOUND_ERROR = "Property Name not Found: ";
     /**
      * To set into the init map context, the absolute path of the default properties for SAML.
      */
     public final static String DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY = "dotSamlDefaultPropertiesContextMapKey";
 
+    private AtomicBoolean init = new AtomicBoolean(false);
+    private final Map<String, String> defaultProperties = new ConcurrentHashMap<>(this.createInitialMap());
 
     @Override
     public void initService(final Map<String, Object> contextMap) {
@@ -69,174 +72,20 @@ public class SamlConfigurationServiceImpl implements SamlConfigurationService {
 
                 }
 
-                this.updateDefaultParameters(properties);
+                properties.forEach((key, value) -> {
+
+                    final SamlName samlName = SamlName.findProperty((String)key);
+                    if (null != samlName) {
+
+                        this.defaultProperties.put(samlName.getPropertyName(), (String)value);
+                    }
+                });
+
                 this.init.set(true);
             }
         }
     }
 
-    private void updateDefaultParameters(final Properties properties) {
-
-        if (properties != null) {
-
-            properties.forEach((key, value) -> {
-
-                updateDefaultParameter(SamlName.findProperty((String) key), (String) value);
-            });
-        }
-    }
-
-    public  void updateDefaultParameter(final SamlName property, final String value) {
-
-        if (property == null) {
-
-            Logger.warn(this, "Couldn't do the 'updateDefaultParameter' because property is null");
-            return;
-        }
-
-        if (value == null) {
-            Logger.warn(this, "Couldn't do the 'updateDefaultParameter' because property value for: " + property + " is null");
-            return;
-        }
-
-        Logger.info(DotsamlDefaultPropertiesService.class, "Updating default property '"
-                + property.getPropertyName() + "' to '" + value + "'");
-
-        switch (property) {
-
-            case DOTCMS_SAML_ASSERTION_RESOLVER_HANDLER_CLASS_NAME:
-                defaultParams.setDotcmsSamlAssertionResolverHandlerClassName(value);
-                break;
-            case DOTCMS_SAML_AUTHN_COMPARISON_TYPE:
-                defaultParams.setDotcmsSamlAuthnComparisonType(value);
-                break;
-            case DOTCMS_SAML_AUTHN_CONTEXT_CLASS_REF:
-                defaultParams.setDotcmsSamlAuthnContextClassRef(value);
-                break;
-            case DOTCMS_SAML_BINDING_TYPE:
-                defaultParams.setDotcmsSamlBindingType(value);
-                break;
-            case DOTCMS_SAML_BUILD_ROLES:
-                defaultParams.setDotcmsSamlBuildRoles(value);
-                break;
-            case DOTCMS_SAML_FORCE_AUTHN:
-                defaultParams.setDotcmsSamlForceAuthn(Boolean.parseBoolean(value));
-                break;
-            case DOTCMS_SAML_IDENTITY_PROVIDER_DESTINATION_SLO_URL:
-                defaultParams.setDotcmsSamlIdentityProviderDestinationSloUrl(value);
-                break;
-            case DOTCMS_SAML_IDENTITY_PROVIDER_DESTINATION_SSO_URL:
-                defaultParams.setDotcmsSamlIdentityProviderDestinationSsoUrl(value);
-                break;
-            case DOTCMS_SAML_INCLUDE_ROLES_PATTERN:
-                defaultParams.setDotcmsSamlIncludeRolesPattern(value);
-                break;
-            case DOTCMS_SAML_IS_ASSERTION_ENCRYPTED:
-                defaultParams.setDotcmsSamlIsAssertionEncrypted(Boolean.parseBoolean(value));
-                break;
-            case DOTCMS_SAML_IS_LOGOUT_NEED:
-                defaultParams.setDotcmsSamlIsLogoutNeeded(Boolean.parseBoolean(value));
-                break;
-            case DOTCMS_SAML_NAME_ID_POLICY_FORMAT:
-                defaultParams.setDotcmsSamlNameIdPolicyFormat(value);
-                break;
-            case DOTCMS_SAML_OPTIONAL_USER_ROLE:
-                defaultParams.setDotcmsSamlOptionalUserRole(value);
-                break;
-            case DOTCMS_SAML_POLICY_ALLOW_CREATE:
-                defaultParams.setDotcmsSamlPolicyAllowCreate(Boolean.parseBoolean(value));
-                break;
-            case DOTCMS_SAML_PROTOCOL_BINDING:
-                defaultParams.setDotcmsSamlProtocolBinding(value);
-                break;
-            case DOTCMS_SAML_USE_ENCRYPTED_DESCRIPTOR:
-                defaultParams.setDotcmsSamlUseEncryptedDescriptor(Boolean.parseBoolean(value));
-                break;
-            case DOT_SAML_ACCESS_FILTER_VALUES:
-                defaultParams.setDotSamlAccessFilterValues(value);
-                break;
-            case DOT_SAML_CLOCK_SKEW:
-                try {
-                    defaultParams.setDotSamlClockSkew(Integer.parseInt(value));
-                } catch (Exception ex) {
-                    Logger.warn(DotsamlDefaultPropertiesService.class,
-                            INTEGER_PARSE_ERROR + property.getPropertyName() + ":" + value);
-                }
-                break;
-            case DOT_SAML_EMAIL_ATTRIBUTE:
-                defaultParams.setDotSamlEmailAttribute(value);
-                break;
-            case DOT_SAML_EMAIL_ATTRIBUTE_ALLOW_NULL:
-                defaultParams.setDotSamlEmailAttributeNullValue(Boolean.parseBoolean(value));
-                break;
-            case DOT_SAML_FIRSTNAME_ATTRIBUTE:
-                defaultParams.setDotSamlFirstnameAttribute(value);
-                break;
-            case DOT_SAML_FIRSTNAME_ATTRIBUTE_NULL_VALUE:
-                defaultParams.setDotSamlFirstnameAttributeNullValue(value);
-                break;
-            case DOT_SAML_IDP_METADATA_PARSER_CLASS_NAME:
-                defaultParams.setDotSamlIdpMetadataParserClassName(value);
-                break;
-            case DOT_SAML_IDP_METADATA_PROTOCOL:
-                defaultParams.setDotSamlIdpMetadataProtocol(value);
-                break;
-            case DOT_SAML_ID_PROVIDER_CUSTOM_CREDENTIAL_PROVIDER_CLASSNAME:
-                defaultParams.setDotSamlIdProviderCustomCredentialProviderClassname(value);
-                break;
-            case DOT_SAML_INCLUDE_PATH_VALUES:
-                defaultParams.setDotSamlIncludePathValues(value);
-                break;
-            case DOT_SAML_LASTNAME_ATTRIBUTE:
-                defaultParams.setDotSamlLastnameAttribute(value);
-                break;
-            case DOT_SAML_LASTNAME_ATTRIBUTE_NULL_VALUE:
-                defaultParams.setDotSamlLastnameAttributeNullValue(value);
-                break;
-            case DOT_SAML_LOGOUT_PATH_VALUES:
-                defaultParams.setDotSamlLogoutPathValues(value);
-                break;
-            case DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL:
-                defaultParams.setDotSamlLogoutServiceEndpointUrl(value);
-                break;
-            case DOT_SAML_MESSAGE_LIFE_TIME:
-                try {
-                    defaultParams.setDotSamlMessageLifeTime(Integer.parseInt(value));
-                } catch (Exception ex) {
-                    Logger.warn(DotsamlDefaultPropertiesService.class,
-                            INTEGER_PARSE_ERROR + property.getPropertyName() + ":" + value);
-                }
-                break;
-            case DOT_SAML_REMOVE_ROLES_PREFIX:
-                defaultParams.setDotSamlRemoveRolesPrefix(value);
-                break;
-            case DOT_SAML_ROLES_ATTRIBUTE:
-                defaultParams.setDotSamlRolesAttribute(value);
-                break;
-            case DOT_SAML_SERVICE_PROVIDER_CUSTOM_CREDENTIAL_PROVIDER_CLASSNAME:
-                defaultParams.setDotSamlServiceProviderCustomCredentialProviderClassname(value);
-                break;
-            case DOT_SAML_VERIFY_SIGNATURE_CREDENTIALS:
-                defaultParams.setDotSamlVerifySignatureCredentials(Boolean.parseBoolean(value));
-                break;
-            case DOT_SAML_VERIFY_SIGNATURE_PROFILE:
-                defaultParams.setDotSamlVerifySignatureProfile(Boolean.parseBoolean(value));
-                break;
-            case DOTCMS_SAML_CLEAR_LOCATION_QUERY_PARAMS:
-                defaultParams.setDotcmsSamlClearLocationQueryParams(Boolean.parseBoolean(value));
-                break;
-            case DOTCMS_SAML_LOGIN_UPDATE_EMAIL:
-                defaultParams.setDotcmsSamlLoginEmailUpdate(Boolean.parseBoolean(value));
-                break;
-            case DOT_SAML_ALLOW_USER_SYNCHRONIZATION:
-                defaultParams.setAllowUserSynchronization(Boolean.parseBoolean(value));
-                break;
-            default:
-                Logger.warn(DotsamlDefaultPropertiesService.class,
-                        NOT_FOUND_ERROR + property.getPropertyName() + ":" + value);
-                break;
-        }
-    }
 
     @Override
     public String getConfigAsString(final IdentityProviderConfiguration identityProviderConfiguration, final SamlName samlName) {
@@ -262,22 +111,110 @@ public class SamlConfigurationServiceImpl implements SamlConfigurationService {
 
     @Override
     public Boolean getConfigAsBoolean(final IdentityProviderConfiguration identityProviderConfiguration, final SamlName samlName) {
+
+        try {
+
+            final Boolean value =  identityProviderConfiguration.getOptionalProperties().containsKey(samlName.getPropertyName())?
+                Boolean.parseBoolean((String) identityProviderConfiguration.getOptionalProperties().get(samlName.getPropertyName())):
+                this.getDefaultBooleanParameter(samlName);
+
+            Logger.debug(this,
+                    ()->"Found " + samlName.getPropertyName() + " : " + ((value == null) ? "null" : value));
+
+            return value;
+        } catch (Exception e) {
+
+            Logger.warn(this, "Cast exception on " + samlName.getPropertyName()
+                    + " property. idpConfigId: " + identityProviderConfiguration.getId());
+        }
+
         return null;
     }
 
     @Override
     public String[] getConfigAsArrayString(final IdentityProviderConfiguration identityProviderConfiguration, final SamlName samlName) {
-        return new String[0];
+
+        try {
+
+            final String[] array = identityProviderConfiguration.getOptionalProperties().containsKey(samlName.getPropertyName())?
+                    StringUtils.split((String) identityProviderConfiguration.getOptionalProperties().get(samlName.getPropertyName()), DotSamlConstants.ARRAY_SEPARATOR_CHAR):
+                    this.getDefaultArrayStringParameter(samlName);
+
+            Logger.debug(this, ()-> "Found " + samlName.getPropertyName() + " : " + ((array == null) ? "null" : array));
+
+            return array;
+        } catch (Exception e) {
+
+            Logger.warn(this, "Cast exception on " + samlName.getPropertyName()
+                    + " property. idpConfigId: " + identityProviderConfiguration.getId());
+        }
+
+        return null;
     }
 
     @Override
     public Integer getConfigAsInteger(final IdentityProviderConfiguration identityProviderConfiguration, final SamlName samlName) {
+
+        try {
+
+            final Integer value = identityProviderConfiguration.getOptionalProperties().containsKey(samlName.getPropertyName())?
+                Integer.parseInt((String) identityProviderConfiguration.getOptionalProperties().get(samlName.getPropertyName())):
+                this.getDefaultIntegerParameter(samlName);
+
+            Logger.debug(this, ()-> "Found " + samlName.getPropertyName() + " : " + ((value == null) ? "null" : value));
+
+            return value;
+        } catch (Exception e) {
+
+            Logger.warn(this, "Cast exception on " + samlName.getPropertyName()
+                    + " property. idpConfigId: " + identityProviderConfiguration.getId());
+        }
+
         return null;
     }
 
-
-
     ////////
+
+    private Integer getDefaultIntegerParameter(final SamlName samlName) {
+
+        if (samlName == null) {
+
+            throw new SamlException("The 'getDefaultIntegerParameter' property is null");
+        }
+
+        if (this.defaultProperties.containsKey(samlName.getPropertyName())) {
+
+            return Integer.parseInt(this.defaultProperties.get(samlName.getPropertyName()));
+        }
+
+        throw new SamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
+    }
+
+    private String[] getDefaultArrayStringParameter(final SamlName samlName) {
+
+        final String value = this.getDefaultStringParameter(samlName);
+        if (value != null) {
+            return StringUtils.split(value, DotSamlConstants.ARRAY_SEPARATOR_CHAR);
+        }
+
+        throw new SamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
+    }
+
+    public String getDefaultStringParameter(final SamlName property) {
+
+        if (property == null) {
+
+            throw new SamlException("The 'getDefaultStringParameter' property is null");
+        }
+
+        if (this.defaultProperties.containsKey(property.getPropertyName())) {
+
+            return this.defaultProperties.get(property.getPropertyName());
+        }
+
+        throw new SamlException(NOT_FOUND_ERROR + property.getPropertyName());
+    }
+
     public  boolean getDefaultBooleanParameter(final SamlName samlName) {
 
         if (samlName == null) {
@@ -285,34 +222,11 @@ public class SamlConfigurationServiceImpl implements SamlConfigurationService {
             throw new SamlException("The 'getDefaultBooleanParameter' property is null");
         }
 
-        switch (samlName) {
+        if (this.defaultProperties.containsKey(samlName.getPropertyName())) {
 
-            case DOTCMS_SAML_FORCE_AUTHN:
-                return defaultParams.isDotcmsSamlForceAuthn();
-            case DOTCMS_SAML_IS_ASSERTION_ENCRYPTED:
-                return defaultParams.isDotcmsSamlIsAssertionEncrypted();
-            case DOTCMS_SAML_IS_LOGOUT_NEED:
-                return defaultParams.isDotcmsSamlIsLogoutNeeded();
-            case DOTCMS_SAML_POLICY_ALLOW_CREATE:
-                return defaultParams.isDotcmsSamlPolicyAllowCreate();
-            case DOTCMS_SAML_USE_ENCRYPTED_DESCRIPTOR:
-                return defaultParams.isDotcmsSamlUseEncryptedDescriptor();
-            case DOT_SAML_EMAIL_ATTRIBUTE_ALLOW_NULL:
-                return defaultParams.isDotSamlEmailAttributeNullValue();
-            case DOT_SAML_VERIFY_SIGNATURE_CREDENTIALS:
-                return defaultParams.isDotSamlVerifySignatureCredentials();
-            case DOT_SAML_VERIFY_SIGNATURE_PROFILE:
-                return defaultParams.isDotSamlVerifySignatureProfile();
-            case DOTCMS_SAML_CLEAR_LOCATION_QUERY_PARAMS:
-                return defaultParams.isDotcmsSamlClearLocationQueryParams();
-            case DOTCMS_SAML_LOGIN_UPDATE_EMAIL:
-                return defaultParams.isDotcmsSamlLoginEmailUpdate();
-            case DOT_SAML_ALLOW_USER_SYNCHRONIZATION:
-                return defaultParams.isAllowUserSynchronization();
-            default:
-                break;
+            return Boolean.parseBoolean(this.defaultProperties.get(samlName.getPropertyName()));
         }
 
-        throw new DotSamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
+        throw new SamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
     }
 }
