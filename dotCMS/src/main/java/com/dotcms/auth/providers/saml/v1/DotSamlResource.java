@@ -1,9 +1,7 @@
 package com.dotcms.auth.providers.saml.v1;
 
-import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.saml.DotSamlFactory;
+import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.saml.service.external.IdentityProviderConfiguration;
 import com.dotcms.saml.service.external.IdentityProviderConfigurationFactory;
 import com.dotcms.saml.service.external.SamlAuthenticationService;
@@ -40,8 +38,8 @@ public class DotSamlResource implements Serializable {
 	public DotSamlResource() {
 
 		this.hostWebAPI  = WebAPILocator.getHostWebAPI();
-		this.samlAuthenticationService = DotSamlFactory.getInstance().samlAuthenticationService();
-		this.identityProviderConfigurationFactory = DotSamlFactory.getInstance().IdentityProviderConfigurationFactory();
+		this.samlAuthenticationService = DotSamlProxyFactory.getInstance().samlAuthenticationService();
+		this.identityProviderConfigurationFactory = DotSamlProxyFactory.getInstance().IdentityProviderConfigurationFactory();
 	}
 
 	@GET
@@ -54,7 +52,7 @@ public class DotSamlResource implements Serializable {
 						  @Context final HttpServletRequest httpServletRequest,
 						  @Context final HttpServletResponse httpServletResponse) {
 
-		if (DotSamlFactory.getInstance().isAnyHostConfiguredAsSAML()) {
+		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
 			final IdentityProviderConfiguration identityProviderConfiguration =
 					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
@@ -90,7 +88,7 @@ public class DotSamlResource implements Serializable {
 
 		boolean noConfig = true;
 
-		if (DotSamlFactory.getInstance().isAnyHostConfiguredAsSAML()) {
+		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
 			final IdentityProviderConfiguration identityProviderConfiguration =
 					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);

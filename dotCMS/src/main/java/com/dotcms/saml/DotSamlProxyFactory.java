@@ -6,6 +6,7 @@ import com.dotcms.saml.service.external.SamlAuthenticationService;
 import com.dotcms.saml.service.external.SamlConfigurationService;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.external.SamlServiceBuilder;
+import com.dotcms.saml.service.impl.SamlServiceBuilderImpl;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotmarketing.business.APILocator;
@@ -18,55 +19,85 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DotSamlFactory {
+/**
+ * This is the proxy to provides the object to interact with the Saml Osgi Bundle
+ *
+ * @author jsanca
+ */
+public class DotSamlProxyFactory {
 
     public static final String SAML_APP_CONFIG_KEY = "dotsaml-config";
 
-    private final Map<Class, Object> instanceMap        = new ConcurrentHashMap<>();
-    private final SamlServiceBuilder samlServiceBuilder = null; // todo: get this from osgi reference
+    private final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl(); // todo: get this from osgi reference
     private final MessageObserver    messageObserver    = new DotLoggerMessageObserver();
     private final AppsAPI            appsAPI            = APILocator.getAppsAPI();
-
+    private final SamlConfigurationService samlConfigurationService =
+            new SamlConfigurationServiceImpl();
+    private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory =
+            new DotIdentityProviderConfigurationFactoryImpl(this.appsAPI);
+    private volatile SamlAuthenticationService samlAuthenticationService = null;
 
     private static class SingletonHolder {
-        private static final DotSamlFactory INSTANCE = new DotSamlFactory();
+
+        private static final DotSamlProxyFactory INSTANCE = new DotSamlProxyFactory();
     }
     /**
      * Get the instance.
      * @return DotSamlFactory
      */
-    public static DotSamlFactory getInstance() {
+    public static DotSamlProxyFactory getInstance() {
 
-        return DotSamlFactory.SingletonHolder.INSTANCE;
+        return DotSamlProxyFactory.SingletonHolder.INSTANCE;
     } // getInstance.
 
+    /**
+     * Returns the dotCMS implementation of the identity provider config.
+     * This one basically returns (if exists) the configuration for a idp for a host
+     * @return IdentityProviderConfigurationFactory
+     */
     public IdentityProviderConfigurationFactory identityProviderConfigurationFactory() {
 
-        return null;
+        return identityProviderConfigurationFactory;
     }
 
+    /**
+     * Returns the dotCMS implementation of the {@link MessageObserver} for the saml osgi bundle
+     * @return MessageObserver
+     */
     public MessageObserver messageObserver() {
 
         return this.messageObserver;
     }
 
+    /**
+     * Returns the service that helps to retrieve the actual values or default values from the {@link com.dotcms.saml.service.external.IdentityProviderConfiguration}
+     *
+     * @return SamlConfigurationService
+     */
     public SamlConfigurationService samlConfigurationService() {
 
-        return null;
+        return samlConfigurationService;
     }
 
+    /**
+     * Retrieve the authentication service, this is the proxy with the SAML Osgi bundle and must exists at least one host configurated with SAML in order to init this service.
+     * @return SamlAuthenticationService
+     */
     public SamlAuthenticationService samlAuthenticationService() {
 
         if (this.isAnyHostConfiguredAsSAML()) {
 
-            if (!this.instanceMap.containsKey(SamlAuthenticationService.class)) {
+            if (null == this.samlAuthenticationService) {
 
-                this.instanceMap.put(SamlAuthenticationService.class,
-                        samlServiceBuilder.buildAuthenticationService(this.identityProviderConfigurationFactory(),
-                                this.messageObserver(), this.samlConfigurationService()));
+                this.samlAuthenticationService =
+                        this.samlServiceBuilder.buildAuthenticationService(this.identityProviderConfigurationFactory(),
+                                this.messageObserver(), this.samlConfigurationService());
+
+                samlAuthenticationService.initService(Collections.emptyMap());
+
             }
 
-            return (SamlAuthenticationService) this.instanceMap.get(SamlAuthenticationService.class);
+            return this.samlAuthenticationService;
         }
 
         throw new SamlException("Not any host has been configured as a SAML");

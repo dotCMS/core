@@ -44,7 +44,8 @@ public class SamlWebUtils {
 
                 session.setAttribute(BY_PASS_KEY, byPass);
             } else {
-                if (this.isNotLogged(request, session)) {
+
+                if (this.isNotLogged(request)) {
 
                     byPass = (String) session.getAttribute(BY_PASS_KEY);
                 } else if (null != session.getAttribute(BY_PASS_KEY)) {
@@ -62,14 +63,12 @@ public class SamlWebUtils {
      *
      * @param request
      *            {@link HttpServletRequest}
-     * @param session
-     *            {@link HttpSession}
      * @return boolean
      */
-    protected boolean isNotLogged(final HttpServletRequest request, final HttpSession session) {
+    protected boolean isNotLogged(final HttpServletRequest request) {
 
-        boolean isNotLogged = true;
-        boolean isBackend   = this.isBackEndAdmin(request, request.getRequestURI());
+        final boolean isNotLogged;
+        final boolean isBackend = this.isBackEndAdmin(request, request.getRequestURI());
 
         try {
 
@@ -77,7 +76,7 @@ public class SamlWebUtils {
                     !this.userWebAPI.isLoggedToBackend(request):
                     null == this.userWebAPI.getLoggedInFrontendUser(request);
 
-            Logger.debug(this, "Trying to go to back-end login? " + isBackend
+            Logger.debug(this, ()-> "Trying to go to back-end login? " + isBackend
                     + ", Is user NOT logged in? " + isNotLogged);
         } catch (PortalException | SystemException e) {
 
@@ -148,11 +147,10 @@ public class SamlWebUtils {
 
     protected HttpSession renewSession(final HttpServletRequest request, final HttpSession currentSession) {
 
-        String attributeName  = null;
-        Object attributeValue = null;
-        Enumeration<String> attributesNames = null;
-        HttpSession renewSession            = currentSession;
-
+        String attributeName                        = null;
+        Object attributeValue                       = null;
+        Enumeration<String> attributesNames         = null;
+        HttpSession renewSession                    = currentSession;
         final Map<String, Object> sessionAttributes = new HashMap<>();
 
         if (null != currentSession && !currentSession.isNew()) {

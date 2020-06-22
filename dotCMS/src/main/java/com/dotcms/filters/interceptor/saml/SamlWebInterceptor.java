@@ -3,7 +3,7 @@ package com.dotcms.filters.interceptor.saml;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
-import com.dotcms.saml.DotSamlFactory;
+import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.saml.service.external.IdentityProviderConfiguration;
 import com.dotcms.saml.service.external.IdentityProviderConfigurationFactory;
 import com.dotcms.saml.service.external.SamlAuthenticationService;
@@ -17,15 +17,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
-import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 import com.liferay.portal.servlet.PortletSessionPool;
@@ -54,7 +51,6 @@ import static com.dotcms.saml.DotSamlConstants.SAML_USER_ID;
  */
 public class SamlWebInterceptor implements WebInterceptor {
 
-    public static final String APPS_SAML_CONFIG_KEY   = "app-saml-config";
     public static final String REFERRER_PARAMETER_KEY = "referrer";
     public static final String ORIGINAL_REQUEST       = "original_request";
 
@@ -66,18 +62,17 @@ public class SamlWebInterceptor implements WebInterceptor {
     protected final SamlWebUtils    samlWebUtils;
     protected final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
     protected final SamlConfigurationService             samlConfigurationService;
-    protected final SamlAuthenticationService            samlAuthenticationService;
 
     public SamlWebInterceptor() {
+
         this(EncryptorFactory.getInstance().getEncryptor(),
                 APILocator.getLoginServiceAPI(),
                 APILocator.getUserAPI(),
                 WebAPILocator.getHostWebAPI(),
                 APILocator.getAppsAPI(),
                 new SamlWebUtils(),
-                DotSamlFactory.getInstance().identityProviderConfigurationFactory(),
-                DotSamlFactory.getInstance().samlConfigurationService(),
-                DotSamlFactory.getInstance().samlAuthenticationService());
+                DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory(),
+                DotSamlProxyFactory.getInstance().samlConfigurationService());
     }
 
     public SamlWebInterceptor(final Encryptor       encryptor,
@@ -87,8 +82,7 @@ public class SamlWebInterceptor implements WebInterceptor {
             final AppsAPI         appsAPI,
             final SamlWebUtils    samlWebUtils,
             final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
-            final SamlConfigurationService             samlConfigurationService,
-            final SamlAuthenticationService            samlAuthenticationService) {
+            final SamlConfigurationService             samlConfigurationService) {
 
         this.encryptor    = encryptor;
         this.loginService = loginService;
@@ -98,7 +92,6 @@ public class SamlWebInterceptor implements WebInterceptor {
         this.samlWebUtils = samlWebUtils;
         this.identityProviderConfigurationFactory = identityProviderConfigurationFactory;
         this.samlConfigurationService             = samlConfigurationService;
-        this.samlAuthenticationService            = samlAuthenticationService;
     }
 
     @Override
@@ -129,7 +122,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                     if (!this.checkAccessFilters(request.getRequestURI(), this.getAccessFilterArray(identityProviderConfiguration))
                             && this.checkIncludePath(request.getRequestURI(), this.getIncludePathArray(identityProviderConfiguration))) {
 
-                        if (null == session || this.samlWebUtils.isNotLogged(request, session)) {
+                        if (this.samlWebUtils.isNotLogged(request)) {
 
                             final AutoLoginResult autoLoginResult = this.autoLogin(request, response, session, identityProviderConfiguration);
 
@@ -137,7 +130,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                             session = autoLoginResult.getSession();
 
                             // if the auto login couldn't logged the user, then send it to the IdP login page (if it is not already logged in).
-                            if (null == session || !autoLoginResult.isAutoLogin() || this.samlWebUtils.isNotLogged(request, session)) {
+                            if (null == session || !autoLoginResult.isAutoLogin() || this.samlWebUtils.isNotLogged(request)) {
 
                                 this.doAuthentication(request, response, session, identityProviderConfiguration);
                                 return Result.SKIP_NO_CHAIN;
@@ -152,7 +145,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                     Logger.debug(this, ()-> "- isLogoutNeed = " + isLogoutNeed);
                     Logger.debug(this, ()-> "- httpServletRequest.getRequestURI() = " + request.getRequestURI());
 
-                    if (isLogoutNeed && session != null &&
+                    if (isLogoutNeed &&
                             this.samlWebUtils.isLogoutRequest(request.getRequestURI(), this.getLogoutPathArray(identityProviderConfiguration))) {
 
                         if (this.doLogout(response, request, session, identityProviderConfiguration)) {
@@ -186,8 +179,8 @@ public class SamlWebInterceptor implements WebInterceptor {
         this.doRequestLoginSecurityLog(request, identityProviderConfiguration);
 
         final String originalRequest = request.getRequestURI() +
-                null != request.getQueryString()?
-                    "?" + request.getQueryString() : StringUtils.EMPTY;
+                (UtilMethods.isSet(request.getQueryString())?
+                    "?" + request.getQueryString() : StringUtils.EMPTY);
 
         final String redirectAfterLogin = UtilMethods.isSet(request.getParameter(REFERRER_PARAMETER_KEY))
                 ?request.getParameter(REFERRER_PARAMETER_KEY) :
@@ -206,7 +199,8 @@ public class SamlWebInterceptor implements WebInterceptor {
 
         try {
             // this will redirect the user to the IdP Login Page.
-            this.samlAuthenticationService.authentication(request, response, identityProviderConfiguration);
+            DotSamlProxyFactory.getInstance().samlAuthenticationService()
+                    .authentication(request, response, identityProviderConfiguration);
         } catch (Exception exception) {
 
             Logger.error(this,  "An error occurred when redirecting to the IdP Login page: " +
@@ -220,7 +214,7 @@ public class SamlWebInterceptor implements WebInterceptor {
     protected boolean isAnySamlConfigurated() {
 
         return
-                Try.of(()->this.appsAPI.getAppDescriptor(APPS_SAML_CONFIG_KEY,
+                Try.of(()->this.appsAPI.getAppDescriptor(DotSamlProxyFactory.SAML_APP_CONFIG_KEY,
                         APILocator.systemUser())).getOrElseGet(e->Optional.empty()).isPresent();
     }
 
@@ -304,7 +298,7 @@ public class SamlWebInterceptor implements WebInterceptor {
 
                 Logger.debug(this, ()-> "Executing SAML redirect logout");
 
-                this.samlAuthenticationService.logout(request, response, nameID, samlSessionIndex, identityProviderConfiguration);
+                DotSamlProxyFactory.getInstance().samlAuthenticationService().logout(request, response, nameID, samlSessionIndex, identityProviderConfiguration);
 
                 Logger.info(this, ()-> "User '" + nameID + "' has logged out");
 
@@ -326,8 +320,8 @@ public class SamlWebInterceptor implements WebInterceptor {
     /**
      * Do the dotCMS logout
      *
-     * @param response
-     * @param request
+     * @param response  {@link HttpServletResponse}
+     * @param request  {@link HttpServletRequest}
      */
     protected void doLogout(final HttpServletResponse response, final HttpServletRequest request) { // todo: double check this to see if there is not anything else done on dotCMS core
 
@@ -421,9 +415,6 @@ public class SamlWebInterceptor implements WebInterceptor {
      * @param request {@link HttpServletRequest}
      * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
      * @return User
-     * @throws IOException
-     * @throws JSONException
-     * @throws DotDataException
      */
     public User getUser(final HttpServletRequest request,
                         final IdentityProviderConfiguration identityProviderConfiguration) {
