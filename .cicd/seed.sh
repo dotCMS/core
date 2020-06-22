@@ -2,7 +2,7 @@
 
 : ${DOT_CICD_PATH:="./dotcicd"} && export DOT_CICD_PATH
 : ${DOT_CICD_REPO:="https://github.com/dotCMS/dot-cicd.git"} && export DOT_CICD_REPO
-: ${DOT_CICD_BRANCH:="issue-18504-ci-github-actions"} && export DOT_CICD_BRANCH
+: ${DOT_CICD_BRANCH:=} && export DOT_CICD_BRANCH
 : ${DOT_CICD_LIB:="${DOT_CICD_PATH}/library"} && export DOT_CICD_LIB
 
 echo "#############"
