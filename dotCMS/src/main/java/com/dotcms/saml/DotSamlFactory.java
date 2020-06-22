@@ -40,7 +40,7 @@ public class DotSamlFactory {
         return DotSamlFactory.SingletonHolder.INSTANCE;
     } // getInstance.
 
-    public IdentityProviderConfigurationFactory IdentityProviderConfigurationFactory() {
+    public IdentityProviderConfigurationFactory identityProviderConfigurationFactory() {
 
         return null;
     }
@@ -62,7 +62,7 @@ public class DotSamlFactory {
             if (!this.instanceMap.containsKey(SamlAuthenticationService.class)) {
 
                 this.instanceMap.put(SamlAuthenticationService.class,
-                        samlServiceBuilder.buildAuthenticationService(this.IdentityProviderConfigurationFactory(),
+                        samlServiceBuilder.buildAuthenticationService(this.identityProviderConfigurationFactory(),
                                 this.messageObserver(), this.samlConfigurationService()));
             }
 

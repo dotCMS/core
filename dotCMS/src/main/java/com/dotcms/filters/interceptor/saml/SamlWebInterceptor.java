@@ -3,6 +3,7 @@ package com.dotcms.filters.interceptor.saml;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.saml.DotSamlFactory;
 import com.dotcms.saml.service.external.IdentityProviderConfiguration;
 import com.dotcms.saml.service.external.IdentityProviderConfigurationFactory;
 import com.dotcms.saml.service.external.SamlAuthenticationService;
@@ -10,22 +11,21 @@ import com.dotcms.saml.service.external.SamlConfigurationService;
 import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.security.Encryptor;
+import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 import com.liferay.portal.servlet.PortletSessionPool;
@@ -37,10 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
@@ -49,7 +46,10 @@ import static com.dotcms.saml.DotSamlConstants.SAML_USER_ID;
 
 /**
  * This interceptor encapsulates the logic for Saml
- * Basically if there is any configuration set on apps and c
+ * Basically if there is any configuration set on dot apps portlet for "app-saml-config" and there is a configuration for the current host,
+ * the interceptor will try to autologin the user (if there is any saml user id on the session) otherwise will redirect to the IDP login.
+ * In addition if there is any saml host configuration for logout and the interceptor realized it is a logout request, will do the logout on dotCMS
+ * in addition to the logout on the idp if the configuration requires.
  * @author jsanca
  */
 public class SamlWebInterceptor implements WebInterceptor {
@@ -61,7 +61,6 @@ public class SamlWebInterceptor implements WebInterceptor {
     protected final Encryptor       encryptor;
     protected final LoginServiceAPI loginService;
     protected final UserAPI         userAPI;
-    protected final UserWebAPI      userWebAPI;
     protected final HostWebAPI      hostWebAPI;
     protected final AppsAPI         appsAPI;
     protected final SamlWebUtils    samlWebUtils;
@@ -70,11 +69,36 @@ public class SamlWebInterceptor implements WebInterceptor {
     protected final SamlAuthenticationService            samlAuthenticationService;
 
     public SamlWebInterceptor() {
-        this(APILocator.getLoginServiceAPI());
+        this(EncryptorFactory.getInstance().getEncryptor(),
+                APILocator.getLoginServiceAPI(),
+                APILocator.getUserAPI(),
+                WebAPILocator.getHostWebAPI(),
+                APILocator.getAppsAPI(),
+                new SamlWebUtils(),
+                DotSamlFactory.getInstance().identityProviderConfigurationFactory(),
+                DotSamlFactory.getInstance().samlConfigurationService(),
+                DotSamlFactory.getInstance().samlAuthenticationService());
     }
 
-    public SamlWebInterceptor(final LoginServiceAPI loginServiceAPI) {
-        this.loginServiceAPI = loginServiceAPI;
+    public SamlWebInterceptor(final Encryptor       encryptor,
+            final LoginServiceAPI loginService,
+            final UserAPI         userAPI,
+            final HostWebAPI      hostWebAPI,
+            final AppsAPI         appsAPI,
+            final SamlWebUtils    samlWebUtils,
+            final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
+            final SamlConfigurationService             samlConfigurationService,
+            final SamlAuthenticationService            samlAuthenticationService) {
+
+        this.encryptor    = encryptor;
+        this.loginService = loginService;
+        this.userAPI      = userAPI;
+        this.hostWebAPI   = hostWebAPI;
+        this.appsAPI      = appsAPI;
+        this.samlWebUtils = samlWebUtils;
+        this.identityProviderConfigurationFactory = identityProviderConfigurationFactory;
+        this.samlConfigurationService             = samlConfigurationService;
+        this.samlAuthenticationService            = samlAuthenticationService;
     }
 
     @Override
