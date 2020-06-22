@@ -21,7 +21,6 @@ env:
 before_install:
   - chmod +x travis/discover_cicd.sh
   - chmod +x travis/pipeline.sh
-  - chmod +x travis/buildTestsBase.sh
 
 # Commit message format
 # [travis] -> executes all dbs and unit tests
@@ -50,7 +49,7 @@ jobs:
       name: build dotcms image
       script: bash travis/pipeline.sh buildBase
     - name: build integration image
-      script: bash travis/buildTestsBase.sh
+      script: bash travis/pipeline.sh buildTestsBase
     - stage: run tests
       name: unit tests
       script: bash travis/pipeline.sh runUnit
