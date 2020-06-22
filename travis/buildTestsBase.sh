@@ -2,7 +2,7 @@
 
 source .cicd/seed.sh
 
-if [[ -z "${DOT_CICD_BRANCH}" ]]; then
+if [[ -z  ]]; then
   travis/pipeline.sh buildIntegration
 else
   travis/pipeline.sh buildTestsBase

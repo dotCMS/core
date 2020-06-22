@@ -50,6 +50,11 @@ providerPath=${DOT_CICD_LIB}/pipeline/${DOT_CICD_CLOUD_PROVIDER}
 . ${providerPath}/${DOT_CICD_CLOUD_PROVIDER}Common.sh
 
 pipelineScript=${providerPath}/${DOT_CICD_TARGET}/${operation}.sh
+if [[ "${operation}" == "buildTestsBase" && ! -s ${pipelineScript} ]]; then
+  operation=buildIntegration
+  pipelineScript=${providerPath}/${DOT_CICD_TARGET}/${operation}.sh
+fi
+
 if [[ ! -s ${pipelineScript} ]]; then
   echo "Pipeline script associated to operation cannot be found, aborting..."
   exit 1
