@@ -10,6 +10,7 @@ function usage {
 : ${DOT_CICD_LIB:="${DOT_CICD_PATH}/library"} && export DOT_CICD_LIB
 : ${DOT_CICD_VERSION:="1.0"} && export DOT_CICD_VERSION
 export DOT_CICD_CLOUD_PROVIDER=travis
+export DOT_CICD_TARGET=core
 
 if [[ "${DOT_CICD_CLOUD_PROVIDER}" == "travis" ]]; then
   export DOT_CICD_PERSIST="google"
