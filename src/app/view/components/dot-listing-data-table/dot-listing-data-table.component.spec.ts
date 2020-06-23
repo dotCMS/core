@@ -39,8 +39,7 @@ describe('DotListingDataTableComponent', () => {
                 ActionHeaderComponent,
                 DotActionButtonComponent,
                 DotListingDataTableComponent,
-                ActionMenuButtonComponent,
-                DotStringFormatPipe
+                ActionMenuButtonComponent
             ],
             imports: [
                 TableModule,

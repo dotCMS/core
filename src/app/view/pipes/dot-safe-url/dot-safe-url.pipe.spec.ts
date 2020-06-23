@@ -1,6 +1,6 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { SafePipe } from '@pipes/safe-url.pipe';
+import { DotSafeUrlPipe } from '@pipes/dot-safe-url/dot-safe-url.pipe';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -24,15 +24,14 @@ const URL_WITH_PARAMS =
     '?in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=123-567&filter=test&sort=asc';
 const URL_EMPTY = '';
 
-describe('SafePipe', () => {
+describe('DotSafeUrlPipe', () => {
     let activatedRoute: ActivatedRoute;
-    let safePipe: SafePipe;
+    let safePipe: DotSafeUrlPipe;
     let domSanitizer: DomSanitizer;
     let dotRouterService: DotRouterService;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [SafePipe],
             providers: [
                 { provide: ActivatedRoute, useValue: fakeActivatedRoute },
                 {
@@ -45,7 +44,7 @@ describe('SafePipe', () => {
         dotRouterService = TestBed.get(DotRouterService);
         activatedRoute = TestBed.get(ActivatedRoute);
         domSanitizer = TestBed.get(DomSanitizer);
-        safePipe = new SafePipe(domSanitizer, dotRouterService, activatedRoute);
+        safePipe = new DotSafeUrlPipe(domSanitizer, dotRouterService, activatedRoute);
     });
 
     it('should return ulr correctly including params', () => {

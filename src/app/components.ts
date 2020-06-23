@@ -6,9 +6,6 @@ import { MainComponentLegacyComponent } from '@components/main-legacy/main-legac
 
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 
-// CUSTOM PIPES
-import { CapitalizePipe, SafePipe } from '@pipes/index';
-
 export const COMPONENTS = [
     MainCoreLegacyComponent,
     MainComponentLegacyComponent,
@@ -17,5 +14,3 @@ export const COMPONENTS = [
     GlobalSearchComponent,
     DotAlertConfirmComponent
 ];
-
-export const PIPES = [CapitalizePipe, SafePipe];

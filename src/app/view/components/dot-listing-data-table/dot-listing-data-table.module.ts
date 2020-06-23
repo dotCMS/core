@@ -11,11 +11,10 @@ import { TableModule } from 'primeng/table';
 import { ActionMenuButtonModule } from '../_common/action-menu-button/action-menu-button.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 import { RouterModule } from '@angular/router';
-import { DotStringFormatPipe } from '@pipes/dot-string-format/dot-string-format.pipe';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
-    declarations: [DotListingDataTableComponent, DotStringFormatPipe],
+    declarations: [DotListingDataTableComponent],
     exports: [DotListingDataTableComponent],
     imports: [
         ActionHeaderModule,

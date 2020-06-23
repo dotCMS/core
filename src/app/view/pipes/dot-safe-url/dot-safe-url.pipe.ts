@@ -3,8 +3,8 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
 
-@Pipe({ name: 'safe' })
-export class SafePipe implements PipeTransform {
+@Pipe({ name: 'dotSafeUrl' })
+export class DotSafeUrlPipe implements PipeTransform {
     constructor(
         private sanitizer: DomSanitizer,
         private dotRouterService: DotRouterService,

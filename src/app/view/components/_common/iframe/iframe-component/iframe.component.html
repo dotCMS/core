@@ -8,7 +8,7 @@
     id="detailFrame"
     name="detailFrame"
     width="100%"
-    [src]="src | safe"
+    [src]="src | dotSafeUrl"
     (load)="onLoad($event)"
 >
 </iframe>

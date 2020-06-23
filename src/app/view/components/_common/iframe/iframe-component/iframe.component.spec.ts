@@ -4,8 +4,6 @@ import { DotLoadingIndicatorService } from './../dot-loading-indicator/dot-loadi
 import { ComponentFixture, async } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-
-import { SafePipe } from './../../../../pipes/safe-url.pipe';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { IframeComponent } from './iframe.component';
 import { LoginService, DotcmsEventsService } from 'dotcms-js';
@@ -39,7 +37,7 @@ describe('IframeComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [IframeComponent, MockDotLoadingIndicatorComponent, SafePipe],
+            declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
             imports: [RouterTestingModule, DotOverlayMaskModule],
             providers: [
                 DotLoadingIndicatorService,
