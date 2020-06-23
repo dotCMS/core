@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * It has different implementation for several kinds of values
  * @author jsanca
  */
-public class SamlConfigurationServiceImpl implements SamlConfigurationService {
+public class DotSamlConfigurationServiceImpl implements SamlConfigurationService {
 
     private static final String UNABLE_TO_READ_FILE = "File does not exist or unable to read : ";
     private static final String NOT_FOUND_ERROR = "Property Name not Found: ";
@@ -64,7 +64,6 @@ public class SamlConfigurationServiceImpl implements SamlConfigurationService {
                 try (InputStream input = Files.newInputStream(dotSamlDefaultPropertiesFile.toPath())) {
 
                     properties.load(input);
-
                 } catch (IOException ex) {
                     // Since this is optional, it is valid to not have the file.
                     // Log and go on.

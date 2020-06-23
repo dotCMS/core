@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This is the proxy to provides the object to interact with the Saml Osgi Bundle
@@ -32,7 +31,7 @@ public class DotSamlProxyFactory {
     private final MessageObserver    messageObserver    = new DotLoggerMessageObserver();
     private final AppsAPI            appsAPI            = APILocator.getAppsAPI();
     private final SamlConfigurationService samlConfigurationService =
-            new SamlConfigurationServiceImpl();
+            new DotSamlConfigurationServiceImpl();
     private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory =
             new DotIdentityProviderConfigurationFactoryImpl(this.appsAPI);
     private volatile SamlAuthenticationService samlAuthenticationService = null;
