@@ -1,141 +1,67 @@
 package com.dotcms.security.apps;
 
-import static org.apache.commons.io.FilenameUtils.*;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
-import org.apache.commons.io.FilenameUtils;
 
 /***
- * {@inheritDoc}
+ * This is a bean used to compile the info coming from the yml which is read into the bean  {@link AppSchema }
+ * This class is basically an extension that adds the key and the file-name
  */
-public class AppDescriptorImpl implements AppDescriptor {
+public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
 
     @JsonIgnore
     private transient final String fileName;
 
+    /**
+     * Application key
+     */
     private final String key;
 
-    private final String name;
-
-    private final String description;
-
-    private final String iconUrl;
-
-    private final Boolean allowExtraParameters;
-
-    private final Map<String, ParamDescriptor> params;
-
     /**
-     *
+     * Takes all the params individually to build the AppDescriptor
      * @param fileName
      * @param name
      * @param description
      * @param iconUrl
      * @param allowExtraParameters
      */
-
     public AppDescriptorImpl(final String fileName,
             final String name,
             final String description,
             final String iconUrl,
             final Boolean allowExtraParameters,
             final Map<String, ParamDescriptor> params) {
+        super(name, description, iconUrl, allowExtraParameters, params);
         this.fileName = fileName;
         this.key = removeExtension(fileName);
-        this.name = name;
-        this.description = description;
-        this.iconUrl = iconUrl;
-        this.allowExtraParameters = allowExtraParameters;
-        this.params = params;
     }
 
     /**
-     *
-     *
+     * Takes a file name and an appSchema to build AppsDescriptor
+     * @param fileName
      * @param appSchema
      */
-    public AppDescriptorImpl(final String fileName, final AppSchema appSchema) {
+    AppDescriptorImpl(final String fileName, final AppSchema appSchema) {
         this(fileName, appSchema.getName(), appSchema.getDescription(), appSchema.getIconUrl(),
                 appSchema.getAllowExtraParameters(), appSchema.getParams());
     }
 
-    public String getFileName() {
+    /**
+     * file name property is only of interest to members of this package
+     * @return
+     */
+    String getFileName() {
         return fileName;
     }
 
     /**
-     * {@inheritDoc}
+     * The key is extracted from the file name and aggregated as it is needed by the functionality
      * @return
      */
     public String getKey() {
         return key;
     }
 
-    /**
-     * {@inheritDoc}
-     * @return
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * {@inheritDoc}
-     * @return
-     */
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * {@inheritDoc}
-     * @return
-     */
-    public String getIconUrl() {
-        return iconUrl;
-    }
-
-    /**
-     * {@inheritDoc}
-     * @return
-     */
-    public boolean isAllowExtraParameters() {
-        return allowExtraParameters;
-    }
-
-    /**
-     * {@inheritDoc}
-     * @return
-     */
-    public Boolean getAllowExtraParameters() {
-        return allowExtraParameters;
-    }
-
-    /**
-     * {@inheritDoc}
-     * @return
-     */
-    public Map<String, ParamDescriptor> getParams() {
-        return new LinkedHashMap<>(params);
-    }
-
-    @Override
-    public boolean equals(final Object object) {
-        if (this == object) {
-            return true;
-        }
-        if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        final AppDescriptorImpl that = (AppDescriptorImpl) object;
-        return key.equals(that.key);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(key);
-    }
 }

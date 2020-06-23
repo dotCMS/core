@@ -1,29 +1,9 @@
 package com.dotcms.security.apps;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.annotations.VisibleForTesting;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
- * This is bean meant to read data from the input yaml file that describes the service
- * The file might look a bit like this:
- * name: "Slack"
- * description: Slack emerges as an internal tool used by the company Tiny Speck
- *
- * iconUrl: "/slackIcon.png"
- * allowExtraParameters:false
- * params:
- *  param1:
- *   value: "value-1"
- *   hidden: false
- *   type: "STRING"
- *   label: "label"
- *   hint: "hint"
- *  required: false
- *
+ * This is a compilation of the app info that needs to be exposed and used by the endpoints.
  */
 public interface AppDescriptor {
 

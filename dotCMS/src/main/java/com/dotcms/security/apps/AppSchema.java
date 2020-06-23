@@ -7,17 +7,35 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * This is bean meant to read data from the input yaml file that describes the service
+ * The file might look a bit like this:
+ * name: "Slack"
+ * description: Slack emerges as an internal tool used by the company Tiny Speck
+ *
+ * iconUrl: "/slackIcon.png"
+ * allowExtraParameters:false
+ * params:
+ *  param1:
+ *   value: "value-1"
+ *   hidden: false
+ *   type: "STRING"
+ *   label: "label"
+ *   hint: "hint"
+ *  required: false
+ *
+ */
 public class AppSchema {
 
-    private final String name;
+    protected final String name;
 
-    private final String description;
+    protected final String description;
 
-    private final String iconUrl;
+    protected final String iconUrl;
 
-    private final Boolean allowExtraParameters;
+    protected final Boolean allowExtraParameters;
 
-    private final Map<String, ParamDescriptor> params;
+    protected final Map<String, ParamDescriptor> params;
 
     /**
      * This constructor isn't used by the object mapper that reads the yml files.
@@ -97,7 +115,11 @@ public class AppSchema {
         params.put(name, ParamDescriptor.newParam(value, hidden, type, label, hint, required));
     }
 
-
+    /**
+     * Equals implementation
+     * @param o
+     * @return
+     */
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -114,6 +136,10 @@ public class AppSchema {
                 params.equals(appSchema.params);
     }
 
+    /**
+     * hash code impl
+     * @return
+     */
     @Override
     public int hashCode() {
         return Objects.hash(name, description, iconUrl, allowExtraParameters, params);
