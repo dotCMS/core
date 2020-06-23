@@ -105,9 +105,7 @@ describe('DotNavItemComponent', () => {
                 bottom: '0'
             });
 
-            subNav.nativeElement.style.position = '';
-            subNav.nativeElement.style.top = ''; // moving it inside of the window
-            fixtureHost.detectChanges();
+            spyOnProperty(window, 'innerHeight').and.returnValue(1760);
 
             navItem.triggerEventHandler('mouseenter', {});
             fixtureHost.detectChanges();

@@ -22,7 +22,9 @@ export class DotNavItemComponent {
     @Input()
     collapsed: boolean;
 
-    customStyles = null;
+    customStyles = {};
+
+    private windowHeight = window.innerHeight;
 
     constructor() {}
 
@@ -49,13 +51,16 @@ export class DotNavItemComponent {
         if (this.collapsed) {
             const [rects] = this.subnav.ul.nativeElement.getClientRects();
 
-            if (!this.customStyles && rects.bottom > window.innerHeight) {
+            if (window.innerHeight !== this.windowHeight) {
+                this.customStyles = {};
+                this.windowHeight = window.innerHeight;
+            }
+
+            if (rects.bottom > this.windowHeight) {
                 this.customStyles = {
                     top: 'auto',
                     bottom: '0'
                 };
-            } else if (rects.bottom < window.innerHeight) {
-                this.customStyles = null;
             }
         }
     }
