@@ -1,0 +1,121 @@
+package com.dotcms.security.apps;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.annotations.VisibleForTesting;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+
+public class AppSchema {
+
+    private final String name;
+
+    private final String description;
+
+    private final String iconUrl;
+
+    private final Boolean allowExtraParameters;
+
+    private final Map<String, ParamDescriptor> params;
+
+    /**
+     * This constructor isn't used by the object mapper that reads the yml files.
+     * it's only meant to be used for testing
+     * @param name
+     * @param description
+     * @param iconUrl
+     * @param allowExtraParameters
+     */
+
+    @VisibleForTesting
+    @JsonCreator
+    public AppSchema(
+            @JsonProperty("name") final String name,
+            @JsonProperty("description") final String description,
+            @JsonProperty("iconUrl") final String iconUrl,
+            @JsonProperty("allowExtraParameters") final Boolean allowExtraParameters,
+            @JsonProperty("params") final Map<String, ParamDescriptor> params) {
+        this.name = name;
+        this.description = description;
+        this.iconUrl = iconUrl;
+        this.allowExtraParameters = allowExtraParameters;
+        this.params = params;
+    }
+
+    /**
+     * Any name
+     * @return
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Any meaningful read
+     * @return
+     */
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * an avatar URL
+     * @return
+     */
+    public String getIconUrl() {
+        return iconUrl;
+    }
+
+    /**
+     * Tells the API if we allow any additional beside the ones already defined in the params map.
+     * @return
+     */
+    public boolean isAllowExtraParameters() {
+        return allowExtraParameters;
+    }
+
+    /**
+     * Tells the API if we allow any additional beside the ones already defined in the params map.
+     * @return
+     */
+    public Boolean getAllowExtraParameters() {
+        return allowExtraParameters;
+    }
+
+    /**
+     * Holds the definition of the params expected by the service.
+     * This method returns a defensive copy.
+     * @return
+     */
+    public Map<String, ParamDescriptor> getParams() {
+        return new LinkedHashMap<>(params);
+    }
+
+    public void addParam(final String name, final String value, final boolean hidden,
+            final Type type, final String label, final String hint, final boolean required) {
+        params.put(name, ParamDescriptor.newParam(value, hidden, type, label, hint, required));
+    }
+
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AppSchema appSchema = (AppSchema) o;
+        return name.equals(appSchema.name) &&
+                description.equals(appSchema.description) &&
+                iconUrl.equals(appSchema.iconUrl) &&
+                allowExtraParameters.equals(appSchema.allowExtraParameters) &&
+                params.equals(appSchema.params);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, description, iconUrl, allowExtraParameters, params);
+    }
+}

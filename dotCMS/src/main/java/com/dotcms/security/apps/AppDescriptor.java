@@ -10,7 +10,6 @@ import java.util.Objects;
 /**
  * This is bean meant to read data from the input yaml file that describes the service
  * The file might look a bit like this:
- * key: "slack-service"
  * name: "Slack"
  * description: Slack emerges as an internal tool used by the company Tiny Speck
  *
@@ -26,122 +25,49 @@ import java.util.Objects;
  *  required: false
  *
  */
-public class AppDescriptor {
-
-    private final String key;
-
-    private final String name;
-
-    private final String description;
-
-    private final String iconUrl;
-
-    private final Boolean allowExtraParameters;
-
-    private final Map<String, ParamDescriptor> params;
-
-    /**
-     * This constructor isn't used by the object mapper that reads the yml files.
-     * it's only meant to be used for testing
-     * @param key
-     * @param name
-     * @param description
-     * @param iconUrl
-     * @param allowExtraParameters
-     */
-
-    @VisibleForTesting
-    @JsonCreator
-    public AppDescriptor(@JsonProperty("key") final String key,
-            @JsonProperty("name") final String name,
-            @JsonProperty("description") final String description,
-            @JsonProperty("iconUrl") final String iconUrl,
-            @JsonProperty("allowExtraParameters") final Boolean allowExtraParameters,
-            @JsonProperty("params") final Map<String, ParamDescriptor> params) {
-        this.key = key;
-        this.name = name;
-        this.description = description;
-        this.iconUrl = iconUrl;
-        this.allowExtraParameters = allowExtraParameters;
-        this.params = params;
-    }
+public interface AppDescriptor {
 
     /**
      * Service unique identifier
      * @return
      */
-    public String getKey() {
-        return key;
-    }
+    String getKey();
 
     /**
      * Any name
      * @return
      */
-    public String getName() {
-        return name;
-    }
+    String getName();
 
     /**
      * Any meaningful read
      * @return
      */
-    public String getDescription() {
-        return description;
-    }
+    String getDescription();
 
     /**
      * an avatar URL
      * @return
      */
-    public String getIconUrl() {
-        return iconUrl;
-    }
+    String getIconUrl();
 
     /**
      * Tells the API if we allow any additional beside the ones already defined in the params map.
      * @return
      */
-    public boolean isAllowExtraParameters() {
-        return allowExtraParameters;
-    }
+    boolean isAllowExtraParameters();
 
     /**
      * Tells the API if we allow any additional beside the ones already defined in the params map.
      * @return
      */
-    public Boolean getAllowExtraParameters() {
-        return allowExtraParameters;
-    }
+    Boolean getAllowExtraParameters();
 
     /**
      * Holds the definition of the params expected by the service.
      * This method returns a defensive copy.
      * @return
      */
-    public Map<String, ParamDescriptor> getParams() {
-        return new LinkedHashMap<>(params);
-    }
+    Map<String, ParamDescriptor> getParams();
 
-    public void addParam(final String name, final String value, final boolean hidden,
-            final Type type, final String label, final String hint, final boolean required) {
-        params.put(name, ParamDescriptor.newParam(value, hidden, type, label, hint, required));
-    }
-
-    @Override
-    public boolean equals(final Object object) {
-        if (this == object) {
-            return true;
-        }
-        if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        final AppDescriptor that = (AppDescriptor) object;
-        return key.equals(that.key);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(key);
-    }
 }

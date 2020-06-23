@@ -32,6 +32,7 @@ import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -342,7 +343,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     @Override
-    public List<AppDescriptor> getAppDescriptors(User user)
+    public List<AppDescriptor> getAppDescriptors(final User user)
             throws DotDataException, DotSecurityException {
 
         if (userDoesNotHaveAccess(user)) {
@@ -351,12 +352,10 @@ public class AppsAPIImpl implements AppsAPI {
                     user.getUserId()));
         }
 
-        return getAppDescriptorsMeta().stream()
-                .map(AppDescriptorMeta::getAppDescriptor)
-                .collect(Collectors.toList());
+        return getAppDescriptorsMeta();
     }
 
-    private List<AppDescriptorMeta> getAppDescriptorsMeta() {
+    private List<AppDescriptor> getAppDescriptorsMeta() {
 
         synchronized (AppsAPIImpl.class) {
             return appsCache.getAppDescriptorsMeta(() -> {
@@ -372,7 +371,7 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
-    private Map<String, AppDescriptorMeta> getAppDescriptorMap(){
+    private Map<String, AppDescriptor> getAppDescriptorMap(){
        return appsCache.getAppDescriptorsMap(this::getAppDescriptorsMeta);
     }
 
@@ -388,50 +387,77 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         final String appKeyLC = key.toLowerCase();
-        final AppDescriptorMeta appDescriptorMeta = getAppDescriptorMap()
+        final AppDescriptor appDescriptorMeta = getAppDescriptorMap()
                 .get(appKeyLC);
         return null == appDescriptorMeta ? Optional.empty()
-                : Optional.of(appDescriptorMeta.getAppDescriptor());
+                : Optional.of(appDescriptorMeta);
     }
 
     @Override
-    public AppDescriptor createAppDescriptor(final InputStream inputStream,
-            final User user) throws IOException, DotDataException, DotSecurityException {
+    public AppDescriptor createAppDescriptor(final File file,
+            final User user) throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to create a service descriptors performed by user with id `%s`.",
+                    "Invalid attempt to create an app descriptor performed by user with id `%s`.",
                     user.getUserId()));
         }
-
         final String ymlFilesPath = getServiceDescriptorDirectory();
         final File basePath = new File(ymlFilesPath);
         if (!basePath.exists()) {
-            basePath.mkdir();
+            basePath.mkdirs();
         }
-        Logger.debug(AppsAPIImpl.class,
-                () -> " ymlFiles are set under:  " + ymlFilesPath);
+        Logger.debug(AppsAPIImpl.class, () -> " ymlFiles are set under:  " + ymlFilesPath);
 
-        // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
-        final AppDescriptor serviceDescriptor = ymlMapper
-                .readValue(inputStream, AppDescriptor.class);
+            final AppSchema appSchema = readAppFile(file);
+            // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
+            if (validateServiceDescriptor(appSchema)) {
+                final File incomingFile = new File(basePath, file.getName());
+                if (incomingFile.exists()) {
+                    throw new DotDataException(
+                            String.format(
+                                    "Invalid attempt to override an existing file named '%s'.",
+                                    incomingFile.getName()));
+                }
 
-        if (validateServiceDescriptor(serviceDescriptor)
-                && validateAppDescriptorUniqueName(serviceDescriptor)) {
+                writeAppFile(incomingFile, appSchema);
 
-            final String serviceKey = serviceDescriptor.getKey();
-            final File incomingFile = new File(basePath, String.format("%s.yml", serviceKey));
-            if (incomingFile.exists()) {
-                throw new DotDataException(
-                        String.format("Invalid attempt to override an existing file named '%s'.",
-                                incomingFile.getName()));
+                invalidateCache();
             }
+            return new AppDescriptorImpl(file.getName(), appSchema);
 
-            ymlMapper.writeValue(incomingFile, serviceDescriptor);
-
-            invalidateCache();
-        }
-        return serviceDescriptor;
     }
+
+    /**
+     * There's a version of the method readValue on the ymlMapper which takes a file and internally creates directly a FileInputStream
+     * According to https://dzone.com/articles/fileinputstream-fileoutputstream-considered-harmful
+     * that's very harmful
+     * @param file
+     * @return
+     * @throws DotDataException
+     */
+    private AppSchema readAppFile(final File file) throws DotDataException {
+        try (final InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))) {
+            return ymlMapper.readValue(inputStream, AppSchema.class);
+        }catch (Exception e){
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
+    /**
+     * There's a version of the method writeValue on the ymlMapper which takes a file and internally creates directly a FileOutputStream
+     * According to https://dzone.com/articles/fileinputstream-fileoutputstream-considered-harmful
+     * that's very harmful
+     * @param file
+     * @return
+     * @throws DotDataException
+     */
+    private void writeAppFile(final File file, final AppSchema appSchema) throws DotDataException {
+        try (final OutputStream outputStream = Files.newOutputStream(Paths.get(file.getPath()))) {
+             ymlMapper.writeValue(outputStream, appSchema);
+        }catch (Exception e){
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
 
     @Override
     public void removeApp(final String key, final User user,
@@ -443,7 +469,7 @@ public class AppsAPIImpl implements AppsAPI {
                     user.getUserId()));
         }
         final String appKeyLC = key.toLowerCase();
-        final AppDescriptorMeta appDescriptorMeta = getAppDescriptorMap().get(appKeyLC);
+        final AppDescriptor appDescriptorMeta = getAppDescriptorMap().get(appKeyLC);
         if (null == appDescriptorMeta) {
             throw new DoesNotExistException(String.format("The requested descriptor `%s` does not exist.",key));
         }else{
@@ -468,11 +494,11 @@ public class AppsAPIImpl implements AppsAPI {
 
     /**
      * Removes the yml file itself.
-     * @param serviceDescriptorMeta
+     * @param descriptor
      * @throws DotDataException
      */
-    private void removeDescriptor(final AppDescriptorMeta serviceDescriptorMeta) throws DotDataException{
-        final String fileName = serviceDescriptorMeta.getFileName();
+    private void removeDescriptor(final AppDescriptor descriptor) throws DotDataException{
+        final String fileName = ((AppDescriptorImpl)descriptor).getFileName();
         //Now we need to remove the file it self.
         final String ymlFilesPath = getServiceDescriptorDirectory();
         final Path file = Paths.get(ymlFilesPath + File.separator + fileName).normalize();
@@ -596,28 +622,19 @@ public class AppsAPIImpl implements AppsAPI {
         return fileList;
     }
 
-    private List<AppDescriptorMeta> loadAppDescriptors()
+    private List<AppDescriptor> loadAppDescriptors()
             throws IOException, DotDataException {
-        final Set<String> loadedServiceKeys = new HashSet<>();
-        final ImmutableList.Builder<AppDescriptorMeta> builder = new ImmutableList.Builder<>();
+
+        final ImmutableList.Builder<AppDescriptor> builder = new ImmutableList.Builder<>();
         final Set<String> fileNames = listAvailableYamlFiles();
         for (final String fileName : fileNames) {
             try {
                 final File file = new File(fileName);
-                final AppDescriptor serviceDescriptor = ymlMapper
-                        .readValue(file, AppDescriptor.class);
-                if (validateServiceDescriptor(serviceDescriptor)) {
-                    if (loadedServiceKeys.contains(serviceDescriptor.getKey())) {
-                        throw new DotDataException(
-                                String.format(
-                                        "There's another App already registered under key `%s`.",
-                                        serviceDescriptor.getKey())
-                                );
-                    }
-                    builder.add(new AppDescriptorMeta(serviceDescriptor, file.getName()));
-                    loadedServiceKeys.add(serviceDescriptor.getKey());
+                final AppSchema appSchema = readAppFile(file);
+                if (validateServiceDescriptor(appSchema)) {
+                    builder.add(new AppDescriptorImpl(file.getName(), appSchema));
                 }
-            } catch (IOException |  DotDataValidationException e) {
+            } catch (DotDataValidationException e) {
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error reading yml file `%s`.", fileName), e);
             }
@@ -632,18 +649,10 @@ public class AppsAPIImpl implements AppsAPI {
      * @return
      * @throws DotDataValidationException
      */
-   private boolean validateServiceDescriptor(final AppDescriptor appDescriptor)
+   private boolean validateServiceDescriptor(final AppSchema appDescriptor)
            throws DotDataValidationException {
 
        final List<String> errors = new ArrayList<>();
-
-       if(UtilMethods.isNotSet(appDescriptor.getKey())){
-          errors.add("The required field `key` isn't set on the incoming file.");
-       }
-
-       if(DESCRIPTOR_KEY_MAX_LENGTH < appDescriptor.getKey().length()){
-           errors.add(String.format("The required field `key` exceeds %d chars length.", DESCRIPTOR_KEY_MAX_LENGTH));
-       }
 
        if(UtilMethods.isNotSet(appDescriptor.getName())){
            errors.add("The required field `name` isn't set on the incoming file.");
@@ -753,19 +762,8 @@ public class AppsAPIImpl implements AppsAPI {
      * @param value
      * @return
      */
-   private boolean isBoolString(final String value){
+    private boolean isBoolString(final String value){
       return Boolean.TRUE.toString().equalsIgnoreCase(value) || Boolean.FALSE.toString().equalsIgnoreCase(value);
-   }
-
-    private boolean validateAppDescriptorUniqueName(final AppDescriptor serviceDescriptor)
-            throws DotDataException {
-
-        if (getAppDescriptorMap().containsKey(serviceDescriptor.getKey())) {
-            throw new DotDataException(
-                    String.format("There's a service already registered under key `%s`.",
-                            serviceDescriptor.getKey()));
-        }
-        return true;
     }
 
     /**

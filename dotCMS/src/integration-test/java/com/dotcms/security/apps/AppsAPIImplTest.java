@@ -38,6 +38,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -527,17 +528,17 @@ public class AppsAPIImplTest {
             throws IOException, DotDataException, DotSecurityException {
         Logger.info(AppsAPIImplTest.class, () -> "Evaluating  " + testCase.toString());
         final AppDescriptorDataGen descriptorDataGen = new AppDescriptorDataGen();
-        descriptorDataGen.withName(testCase.name).withKey(testCase.key)
+        descriptorDataGen.withName(testCase.name).withFileName(testCase.key)
                 .withExtraParameters(testCase.allowExtraParameters)
                 .withDescription(testCase.description).withIconUrl(testCase.iconUrl);
         for (final Map.Entry<String, ParamDescriptor> entry : testCase.params.entrySet()) {
             descriptorDataGen.param(entry.getKey(), entry.getValue());
         }
-        try (final InputStream inputStream = descriptorDataGen.nextPersistedDescriptor()) {
-            final AppsAPI api = APILocator.getAppsAPI();
-            final User admin = TestUserUtils.getAdminUser();
-            return api.createAppDescriptor(inputStream, admin);
-        }
+        final File inputStream = descriptorDataGen.nextPersistedDescriptor();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final User admin = TestUserUtils.getAdminUser();
+        return api.createAppDescriptor(inputStream, admin);
+
     }
 
     /**
@@ -557,7 +558,6 @@ public class AppsAPIImplTest {
         final Map<String, ParamDescriptor> emptyParams = ImmutableMap.of();
         return new Object[]{
                 //The following test that the general required fields are mandatory.
-                new AppTestCase("", "", "", "", false, emptyParams),
                 new AppTestCase("any-key", "", "", "", false, emptyParams),
                 new AppTestCase("any-key", "any-name", "", "", false, emptyParams),
                 new AppTestCase("any-key", "any-name", "desc", "", false, emptyParams),
