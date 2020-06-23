@@ -146,7 +146,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String appKey =  dataGen.getKey();
         final String fileName =  dataGen.getFileName();
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())) {
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
             final Response appIntegrationResponse = appsResource
                     .createApp(request, response,
                             createFormDataMultiPart(fileName, inputStream));
@@ -262,7 +262,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String appKey = dataGen.getKey();
         final String fileName = dataGen.getFileName();
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())) {
+        try( InputStream inputStream = Files.newInputStream(file.toPath())) {
 
             // Create App integration Descriptor
             final Response appResponse = appsResource
@@ -393,7 +393,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String appKey = dataGen.getKey();
         final String fileName = dataGen.getFileName();
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())) {
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
 
             // Create App integration Descriptor
             final Response appResponse = appsResource.createApp(request, response, createFormDataMultiPart(fileName, inputStream));
@@ -483,7 +483,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String appKey = dataGen.getKey();
         final String fileName = dataGen.getFileName();
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())) {
+        try( InputStream inputStream = Files.newInputStream(file.toPath())) {
             final Response appResponse = appsResource
                     .createApp(request, response,
                             createFormDataMultiPart(fileName, inputStream));
@@ -569,7 +569,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String appKey = dataGen.getKey();
         final String fileName = dataGen.getFileName();
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())) {
+        try( InputStream inputStream = Files.newInputStream(file.toPath())) {
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -628,7 +628,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                 for (Entry<String, SecretView> secretEntry : secrets.entrySet()) {
                     try (StringWriter writer = new StringWriter()) {
 
-                        try(final JsonGenerator jsonGenerator = createJsonGenerator(writer)){
+                        try(JsonGenerator jsonGenerator = createJsonGenerator(writer)){
                         final String key = secretEntry.getKey();
                         final SecretView view = secretEntry.getValue();
                         final SecretViewSerializer secretViewSerializer = new SecretViewSerializer();
@@ -711,7 +711,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         dataGen.withFileName(descriptorFileName);
         final String fileName = dataGen.getFileName();
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())) {
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -772,7 +772,7 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         //We're indicating that extra params are allowed to test required params are still required
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())){
+        try(InputStream inputStream = Files.newInputStream(file.toPath())){
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -819,7 +819,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String key = dataGen.getKey();
         final String fileName = dataGen.getFileName();
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())){
+        try(InputStream inputStream = Files.newInputStream(file.toPath())){
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -859,7 +859,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String key = dataGen.getKey();
         final String fileName = dataGen.getFileName();
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())){
+        try(InputStream inputStream = Files.newInputStream(file.toPath())){
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -941,7 +941,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String key = dataGen.getKey();
         final String fileName = dataGen.getFileName();
         final File file = dataGen.nextPersistedDescriptor();
-        try(final InputStream inputStream = Files.newInputStream(file.toPath())){
+        try(InputStream inputStream = Files.newInputStream(file.toPath())){
 
             // Create App integration Descriptor
             final Response appResponse = appsResource

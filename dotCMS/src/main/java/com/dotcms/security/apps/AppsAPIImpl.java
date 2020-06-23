@@ -436,7 +436,7 @@ public class AppsAPIImpl implements AppsAPI {
      * @throws DotDataException
      */
     private AppSchema readAppFile(final File file) throws DotDataException {
-        try (final InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))) {
+        try (InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))) {
             return ymlMapper.readValue(inputStream, AppSchema.class);
         }catch (Exception e){
             throw new DotDataException(e.getMessage(), e);
@@ -451,7 +451,7 @@ public class AppsAPIImpl implements AppsAPI {
      * @throws DotDataException
      */
     private void writeAppFile(final File file, final AppSchema appSchema) throws DotDataException {
-        try (final OutputStream outputStream = Files.newOutputStream(Paths.get(file.getPath()))) {
+        try (OutputStream outputStream = Files.newOutputStream(Paths.get(file.getPath()))) {
              ymlMapper.writeValue(outputStream, appSchema);
         }catch (Exception e){
             throw new DotDataException(e.getMessage(), e);

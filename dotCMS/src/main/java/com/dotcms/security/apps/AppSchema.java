@@ -117,18 +117,18 @@ public class AppSchema {
 
     /**
      * Equals implementation
-     * @param o
+     * @param object
      * @return
      */
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
+    public boolean equals(final Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        AppSchema appSchema = (AppSchema) o;
+        AppSchema appSchema = (AppSchema) object;
         return name.equals(appSchema.name) &&
                 description.equals(appSchema.description) &&
                 iconUrl.equals(appSchema.iconUrl) &&
