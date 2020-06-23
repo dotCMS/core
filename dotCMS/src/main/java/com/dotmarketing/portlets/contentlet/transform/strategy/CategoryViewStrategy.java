@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import com.dotcms.api.APIProvider;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -25,7 +26,7 @@ class CategoryViewStrategy extends AbstractTransformStrategy<Contentlet> {
      * Main constructor
      * @param toolBox
      */
-    CategoryViewStrategy(final TransformToolbox toolBox) {
+    CategoryViewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 

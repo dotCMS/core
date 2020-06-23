@@ -6,6 +6,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -50,12 +52,18 @@ public final class PageRenderVerifier {
 
         final boolean haveWritepermission = APILocator.getPermissionAPI().doesUserHavePermission(pageRenderTest.getPage(),
                 PermissionAPI.PERMISSION_WRITE, user, false);
-        assertEquals(haveWritepermission, pageView.getPageInfo().isCanEdit());
+
+        final DotContentletTransformer transformer = new DotTransformerBuilder()
+                .graphQLDataFetchOptions().content(pageView.getPage()).forUser(user).build();
+
+        final Contentlet pageViewAsContent = transformer.hydrate().get(0);
+
+        assertEquals(haveWritepermission, pageViewAsContent.get("canEdit"));
 
 
         final boolean haveReadpermission = APILocator.getPermissionAPI().doesUserHavePermission(pageRenderTest.getPage(),
                 PermissionAPI.PERMISSION_READ, user, false);
-        assertEquals(haveReadpermission, pageView.getPageInfo().isCanRead());
+        assertEquals(haveReadpermission, pageViewAsContent.get("canRead"));
     }
 
     private static void checkContent(

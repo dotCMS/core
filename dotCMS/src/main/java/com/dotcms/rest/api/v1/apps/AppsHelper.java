@@ -321,6 +321,8 @@ class AppsHelper {
      */
     private void saveSecretForm(final String key, final Host host,
             final AppDescriptor appDescriptor, final SecretForm form, final User user) throws DotSecurityException, DotDataException {
+        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
+
         final Map<String, Input> params = validateFormForSave(form, appDescriptor);
         //Create a brand new secret for the present app.
         final AppSecrets.Builder builder = new AppSecrets.Builder();
@@ -336,21 +338,42 @@ class AppsHelper {
                 secret = Secret.newSecret(inputParam.getValue(), Type.STRING, inputParam.isHidden());
             } else {
                 if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
-                    Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
-                    continue;
+                    //If we're dealing with a hidden param and there's a secret already saved...
+                    //The param must be override and replaced for that reason we must delete the existing saved secret.
+                    //In order to keep all existing secrets we grab the saved one and push it into the new.
+                    Logger.debug(AppsHelper.class, ()->"found hidden secret sent with no value.");
+                    if(appSecretsOptional.isPresent()) {
+                        final AppSecrets appSecrets = appSecretsOptional.get();
+                        final Map<String, Secret> secrets = appSecrets.getSecrets();
+                        final Secret hiddenSecret = secrets.get(name);
+                        if(null != hiddenSecret){
+                          secret = Secret.newSecret(hiddenSecret.getValue(), describedParam.getType(), describedParam.isHidden());
+                          Logger.debug(AppsHelper.class, ()->" hidden secret sent with masked value we must grab the value from the saved secret so we dont lose it.");
+                        } else {
+                           //There is an AppSecrets but the secret in particular is grabbed from the default value provided by the yml.
+                           continue;
+                        }
+                    } else {
+                       //The secret isn't there at all. Let's just continue.
+                       continue;
+                    }
+                } else {
+                   secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
                 }
-                secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
             }
             builder.withSecret(name, secret);
         }
         // We're gonna build the secret upfront and have it ready.
         // Since the next step is potentially risky (delete a secret that already exist).
         final AppSecrets secrets = builder.build();
-        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
         if (appSecretsOptional.isPresent()) {
+            Logger.debug(AppsHelper.class, ()->"Secrets already exist in storage. We must override it.");
             appsAPI.deleteSecrets(key, host, user);
         }
         appsAPI.saveSecrets(secrets, host, user);
+
+        //This operation needs to executed at the very end.
+        appSecretsOptional.ifPresent(AppSecrets::destroy);
     }
 
     /**
