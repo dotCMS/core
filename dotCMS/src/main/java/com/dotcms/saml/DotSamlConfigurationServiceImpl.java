@@ -5,7 +5,6 @@ import com.dotcms.saml.service.external.SamlConfigurationService;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.external.SamlName;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
@@ -91,8 +90,8 @@ public class DotSamlConfigurationServiceImpl implements SamlConfigurationService
 
         try {
 
-            final String value = identityProviderConfiguration.getOptionalProperties().containsKey(samlName.getPropertyName())?
-                    (String) identityProviderConfiguration.getOptionalProperties().get(samlName.getPropertyName()):
+            final String value = identityProviderConfiguration.containsOptionalProperty(samlName.getPropertyName())?
+                    (String) identityProviderConfiguration.getOptionalProperty(samlName.getPropertyName()):
                     this.getDefaultStringParameter(samlName);
 
             Logger.debug(this,
@@ -113,8 +112,8 @@ public class DotSamlConfigurationServiceImpl implements SamlConfigurationService
 
         try {
 
-            final Boolean value =  identityProviderConfiguration.getOptionalProperties().containsKey(samlName.getPropertyName())?
-                Boolean.parseBoolean((String) identityProviderConfiguration.getOptionalProperties().get(samlName.getPropertyName())):
+            final Boolean value =  identityProviderConfiguration.containsOptionalProperty(samlName.getPropertyName())?
+                Boolean.parseBoolean((String) identityProviderConfiguration.getOptionalProperty(samlName.getPropertyName())):
                 this.getDefaultBooleanParameter(samlName);
 
             Logger.debug(this,
@@ -135,8 +134,8 @@ public class DotSamlConfigurationServiceImpl implements SamlConfigurationService
 
         try {
 
-            final String[] array = identityProviderConfiguration.getOptionalProperties().containsKey(samlName.getPropertyName())?
-                    StringUtils.split((String) identityProviderConfiguration.getOptionalProperties().get(samlName.getPropertyName()), DotSamlConstants.ARRAY_SEPARATOR_CHAR):
+            final String[] array = identityProviderConfiguration.containsOptionalProperty(samlName.getPropertyName())?
+                    StringUtils.split((String) identityProviderConfiguration.getOptionalProperty(samlName.getPropertyName()), DotSamlConstants.ARRAY_SEPARATOR_CHAR):
                     this.getDefaultArrayStringParameter(samlName);
 
             Logger.debug(this, ()-> "Found " + samlName.getPropertyName() + " : " + ((array == null) ? "null" : array));
@@ -156,8 +155,8 @@ public class DotSamlConfigurationServiceImpl implements SamlConfigurationService
 
         try {
 
-            final Integer value = identityProviderConfiguration.getOptionalProperties().containsKey(samlName.getPropertyName())?
-                Integer.parseInt((String) identityProviderConfiguration.getOptionalProperties().get(samlName.getPropertyName())):
+            final Integer value = identityProviderConfiguration.containsOptionalProperty(samlName.getPropertyName())?
+                Integer.parseInt((String) identityProviderConfiguration.getOptionalProperty(samlName.getPropertyName())):
                 this.getDefaultIntegerParameter(samlName);
 
             Logger.debug(this, ()-> "Found " + samlName.getPropertyName() + " : " + ((value == null) ? "null" : value));

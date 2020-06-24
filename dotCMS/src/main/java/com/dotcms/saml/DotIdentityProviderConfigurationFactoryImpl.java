@@ -23,7 +23,6 @@ public class DotIdentityProviderConfigurationFactoryImpl implements IdentityProv
 
     private final AppsAPI appsAPI;
     private final HostAPI hostAPI;
-    // todo: this must be not in this way, must be totally stateless, can not store the secrets on the POJO, create the POJO everything and do not save it.
     private final Map<String, IdentityProviderConfiguration> identityProviderConfigurationMap = new ConcurrentHashMap<>();
 
     public DotIdentityProviderConfigurationFactoryImpl(final AppsAPI appsAPI, final HostAPI hostAPI) {
@@ -65,17 +64,10 @@ public class DotIdentityProviderConfigurationFactoryImpl implements IdentityProv
 
         if (null != host) {
 
-            final Optional<AppSecrets> appSecretOpt =
-                    Try.of(()->this.appsAPI.getSecrets(DotSamlConfigurationServiceImpl.DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY,
-                            true, host, APILocator.systemUser())).getOrElseGet(e -> Optional.empty());
+            this.identityProviderConfigurationMap.put(identityProviderIdentifier,
+                    new DotIdentityProviderConfigurationImpl(this.appsAPI, host));
 
-            if (appSecretOpt.isPresent()) {
-
-                this.identityProviderConfigurationMap.put(identityProviderIdentifier,
-                        new DotIdentityProviderConfigurationImpl(appSecretOpt.get()));
-
-                return this.identityProviderConfigurationMap.containsKey(identityProviderIdentifier);
-            }
+            return this.identityProviderConfigurationMap.containsKey(identityProviderIdentifier);
         }
 
         return false;
