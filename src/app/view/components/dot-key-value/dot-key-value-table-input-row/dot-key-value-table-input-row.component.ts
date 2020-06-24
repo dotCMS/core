@@ -29,7 +29,7 @@ export class DotKeyValueTableInputRowComponent implements OnInit {
 
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
-    saveDisabled: Boolean = false;
+    saveDisabled: Boolean = true;
     elemRef: ElementRef;
     variable: DotKeyValue = { key: '', hidden: false, value: '' };
 

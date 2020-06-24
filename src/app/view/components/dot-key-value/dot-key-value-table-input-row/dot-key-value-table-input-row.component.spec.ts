@@ -189,6 +189,7 @@ describe('DotKeyValueTableInputRowComponent', () => {
             hostComponentfixture.detectChanges();
             const switchButton = de.query(By.css('p-inputSwitch'));
             hostComponentfixture.whenStable().then(() => {
+                expect(comp.saveDisabled).toBe(true);
                 expect(switchButton).toBeTruthy();
             });
         });
