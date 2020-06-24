@@ -15,6 +15,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -639,7 +640,7 @@ class AppsHelper {
      * @throws DotDataException
      */
     List<AppView> createApp(final FormDataMultiPart multipart, final User user)
-            throws IOException, DotDataException, DotSecurityException {
+            throws IOException, DotDataException, AlreadyExistException, DotSecurityException  {
         final List<File> files = new MultiPartUtils().getBinariesFromMultipart(multipart);
         if(!UtilMethods.isSet(files)){
             throw new DotDataException("Unable to extract any files from multi-part request.");
