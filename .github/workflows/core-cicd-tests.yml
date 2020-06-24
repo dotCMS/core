@@ -38,7 +38,7 @@ jobs:
           fi
 
           TYPE="${{ github.event_name }}"
-          if [[ "${TYPE}" == "pull_request" || "${BRANCH}" =~ '^master$|^release-.*|^test-.*' || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]|\[github mysql\]|\[github oracle\]|\[github mssql\]|\[github unit]\' ]]; then
+          if [[ "${TYPE}" == "pull_request" || "${BRANCH}" =~ '^master$|^release-.*|^test-.*' || "${COMMIT_MESSG}" =~ '\[github\]|\[github unit\]' ]]; then
             echo ::set-env name=globalRun::'true'
           else
             echo ::set-env name=globalRun::'false'
@@ -175,7 +175,7 @@ jobs:
           databaseType: mssql
         if: always() && env.globalRun == 'true' && env.runMssql == 'true'
   run-curl-tests-job:
-    name: Core Curl (Postman) Tests
+    name: Curl (Postman) Tests
     runs-on: ubuntu-latest
     env:
       DOT_CICD_CLOUD_PROVIDER: github
@@ -222,7 +222,7 @@ jobs:
             NOT_PR_AND_SPECIAL_BRANCH=false
           fi
 
-          if [[ (! "${COMMIT_MESSG}" =~ '\[github mysql\]|\[github oracle\]|\[github mssql\]|\[github unit]\') || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]' ]]; then
+          if [[ (! "${COMMIT_MESSG}" =~ '\[github mysql\]|\[github oracle\]|\[github mssql\]') || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]' ]]; then
             echo ::set-env name=runPostgres::'true'
           else
             echo ::set-env name=runPostgres::'false'
