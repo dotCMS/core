@@ -361,7 +361,7 @@ public class AppsAPIImpl implements AppsAPI {
             return appsCache.getAppDescriptorsMeta(() -> {
                 try {
                     return loadAppDescriptors();
-                } catch (IOException | DotDataException e) {
+                } catch (IOException e) {
                     Logger.error(AppsAPIImpl.class,
                             "An error occurred while loading the service descriptor yml files. ",
                             e);
@@ -623,7 +623,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     private List<AppDescriptor> loadAppDescriptors()
-            throws IOException, DotDataException {
+            throws IOException {
 
         final ImmutableList.Builder<AppDescriptor> builder = new ImmutableList.Builder<>();
         final Set<String> fileNames = listAvailableYamlFiles();
@@ -634,7 +634,7 @@ public class AppsAPIImpl implements AppsAPI {
                 if (validateServiceDescriptor(appSchema)) {
                     builder.add(new AppDescriptorImpl(file.getName(), appSchema));
                 }
-            } catch (DotDataValidationException e) {
+            } catch (Exception e) {
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error reading yml file `%s`.", fileName), e);
             }
