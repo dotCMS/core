@@ -24,6 +24,7 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.portal.PortletAPI;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -525,7 +526,7 @@ public class AppsAPIImplTest {
     }
 
     private AppDescriptor evaluateAppTestCase(final AppTestCase testCase)
-            throws IOException, DotDataException, DotSecurityException {
+            throws IOException, DotDataException, AlreadyExistException, DotSecurityException {
         Logger.info(AppsAPIImplTest.class, () -> "Evaluating  " + testCase.toString());
         final AppDescriptorDataGen descriptorDataGen = new AppDescriptorDataGen();
         descriptorDataGen.withName(testCase.name).withFileName(testCase.key)
@@ -549,7 +550,7 @@ public class AppsAPIImplTest {
     @Test(expected = DotDataValidationException.class)
     @UseDataProvider("getExpectedExceptionTestCases")
     public void Test_App_Descriptor_Validation_Expect_Validation_Exceptions(final AppTestCase testCase)
-            throws IOException, DotDataException, DotSecurityException {
+            throws IOException, DotDataException, DotSecurityException, AlreadyExistException {
         assertNotNull(evaluateAppTestCase(testCase));
     }
 
@@ -618,7 +619,7 @@ public class AppsAPIImplTest {
     @Test
     @UseDataProvider("getValidExceptionFreeTestCases")
     public void Test_App_Descriptor_Validation_Exception_Free(final AppTestCase testCase)
-            throws IOException, DotDataException, DotSecurityException {
+            throws IOException, DotDataException, DotSecurityException, AlreadyExistException {
         assertNotNull(evaluateAppTestCase(testCase));
     }
 

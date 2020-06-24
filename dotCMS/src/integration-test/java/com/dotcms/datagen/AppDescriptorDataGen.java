@@ -7,6 +7,7 @@ import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Type;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,7 +69,7 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
         try{
          final File input = persistDescriptorAsFile(object);
          return api.createAppDescriptor(input, TestUserUtils.getAdminUser());
-        } catch (IOException | DotDataException | DotSecurityException e) {
+        } catch (IOException | DotDataException | AlreadyExistException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
     }

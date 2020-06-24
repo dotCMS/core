@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
@@ -128,7 +129,7 @@ public class AppsAPIImpl implements AppsAPI {
             throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to get all service keys performed by user with id `%s` and host `%s` ",
+                    "Invalid attempt to get all App keys performed by user with id `%s` and host `%s` ",
                     user.getUserId(), host.getIdentifier())
             );
         }
@@ -348,7 +349,7 @@ public class AppsAPIImpl implements AppsAPI {
 
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to get all available service descriptors performed by user with id `%s`.",
+                    "Invalid attempt to get all available App descriptors performed by user with id `%s`.",
                     user.getUserId()));
         }
 
@@ -382,7 +383,7 @@ public class AppsAPIImpl implements AppsAPI {
 
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to get all available service descriptors performed by user with id `%s`.",
+                    "Invalid attempt to get all available App descriptors performed by user with id `%s`.",
                     user.getUserId()));
         }
 
@@ -395,7 +396,7 @@ public class AppsAPIImpl implements AppsAPI {
 
     @Override
     public AppDescriptor createAppDescriptor(final File file,
-            final User user) throws DotDataException, DotSecurityException {
+            final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid attempt to create an app descriptor performed by user with id `%s`.",
@@ -413,7 +414,7 @@ public class AppsAPIImpl implements AppsAPI {
             if (validateServiceDescriptor(appSchema)) {
                 final File incomingFile = new File(basePath, file.getName());
                 if (incomingFile.exists()) {
-                    throw new DotDataException(
+                    throw new AlreadyExistException(
                             String.format(
                                     "Invalid attempt to override an existing file named '%s'.",
                                     incomingFile.getName()));
@@ -465,7 +466,7 @@ public class AppsAPIImpl implements AppsAPI {
             throws DotSecurityException, DotDataException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to delete a service descriptors performed by user with id `%s`.",
+                    "Invalid attempt to delete an App descriptor performed by user with id `%s`.",
                     user.getUserId()));
         }
         final String appKeyLC = key.toLowerCase();
@@ -764,7 +765,7 @@ public class AppsAPIImpl implements AppsAPI {
      */
     private boolean isBoolString(final String value){
       return Boolean.TRUE.toString().equalsIgnoreCase(value) || Boolean.FALSE.toString().equalsIgnoreCase(value);
-    }
+   }
 
     /**
      * Method meant to to be consumed from a delete site event.

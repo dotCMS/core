@@ -1,6 +1,7 @@
 package com.dotcms.security.apps;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -137,8 +138,9 @@ public interface AppsAPI {
      * @throws DotSecurityException
      * @return
      */
+
     AppDescriptor createAppDescriptor(final File file,
-            User user) throws DotDataException, DotSecurityException;
+            User user) throws DotDataException, AlreadyExistException, DotSecurityException;
 
     /**
      * Remove an App and all the secrets underneath.
