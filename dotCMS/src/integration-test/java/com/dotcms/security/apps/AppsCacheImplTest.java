@@ -60,24 +60,24 @@ public class AppsCacheImplTest {
     @Test
     public void Test_Get_Descriptors_From_Cache_With_Supplier() {
 
-        final Map<String, AppDescriptorMeta> meta = cache.getAppDescriptorsMap(() -> Arrays.asList(
+        final Map<String, AppDescriptor> meta = cache.getAppDescriptorsMap(() -> Arrays.asList(
                 createDescriptor("k1"),
                 createDescriptor("k2")
                 )
         );
 
-        Assert.assertEquals(meta.get("k1").getAppDescriptor().getName(),"k1");
-        Assert.assertEquals(meta.get("k2").getAppDescriptor().getName(),"k2");
+        Assert.assertEquals(meta.get("k1").getName(),"k1");
+        Assert.assertEquals(meta.get("k2").getName(),"k2");
         Assert.assertNull(meta.get("non-existing-key"));
 
-        final Map<String, AppDescriptorMeta> meta2 = cache.getAppDescriptorsMap(null);
-        Assert.assertEquals(meta2.get("k1").getAppDescriptor().getName(),"k1");
-        Assert.assertEquals(meta2.get("k2").getAppDescriptor().getName(),"k2");
+        final Map<String, AppDescriptor> meta2 = cache.getAppDescriptorsMap(null);
+        Assert.assertEquals(meta2.get("k1").getName(),"k1");
+        Assert.assertEquals(meta2.get("k2").getName(),"k2");
         Assert.assertNull(meta2.get("non-existing-key"));
 
         cache.invalidateDescriptorsCache();
 
-        final Map<String, AppDescriptorMeta> meta3 = cache.getAppDescriptorsMap(null);
+        final Map<String, AppDescriptor> meta3 = cache.getAppDescriptorsMap(null);
         Assert.assertNull(meta3);
 
     }
@@ -87,8 +87,7 @@ public class AppsCacheImplTest {
      * @param key
      * @return
      */
-    private AppDescriptorMeta createDescriptor(final String key){
-        final AppDescriptor descriptor = new AppDescriptor(key,key,key,null,false, null);
-        return new AppDescriptorMeta(descriptor,"/");
+    private AppDescriptor createDescriptor(final String key){
+        return new AppDescriptorImpl(key + ".yml", key, key,null,false, null);
     }
 }
