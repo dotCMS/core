@@ -422,7 +422,7 @@ public class AppsAPIImpl implements AppsAPI {
             final String serviceKey = serviceDescriptor.getKey();
             final File incomingFile = new File(basePath, String.format("%s.yml", serviceKey));
             if (incomingFile.exists()) {
-                throw new DotDataException(
+                throw new AlreadyExistException(
                         String.format("Invalid attempt to override an existing file named '%s'.",
                                 incomingFile.getName()));
             }
