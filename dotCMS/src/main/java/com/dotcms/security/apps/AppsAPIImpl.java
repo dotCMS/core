@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
@@ -127,7 +128,7 @@ public class AppsAPIImpl implements AppsAPI {
             throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to get all service keys performed by user with id `%s` and host `%s` ",
+                    "Invalid attempt to get all App keys performed by user with id `%s` and host `%s` ",
                     user.getUserId(), host.getIdentifier())
             );
         }
@@ -347,7 +348,7 @@ public class AppsAPIImpl implements AppsAPI {
 
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to get all available service descriptors performed by user with id `%s`.",
+                    "Invalid attempt to get all available App descriptors performed by user with id `%s`.",
                     user.getUserId()));
         }
 
@@ -383,7 +384,7 @@ public class AppsAPIImpl implements AppsAPI {
 
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to get all available service descriptors performed by user with id `%s`.",
+                    "Invalid attempt to get all available App descriptors performed by user with id `%s`.",
                     user.getUserId()));
         }
 
@@ -396,10 +397,10 @@ public class AppsAPIImpl implements AppsAPI {
 
     @Override
     public AppDescriptor createAppDescriptor(final InputStream inputStream,
-            final User user) throws IOException, DotDataException, DotSecurityException {
+            final User user) throws IOException, DotDataException, AlreadyExistException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to create a service descriptors performed by user with id `%s`.",
+                    "Invalid attempt to create an App descriptor performed by user with id `%s`.",
                     user.getUserId()));
         }
 
@@ -421,7 +422,7 @@ public class AppsAPIImpl implements AppsAPI {
             final String serviceKey = serviceDescriptor.getKey();
             final File incomingFile = new File(basePath, String.format("%s.yml", serviceKey));
             if (incomingFile.exists()) {
-                throw new DotDataException(
+                throw new AlreadyExistException(
                         String.format("Invalid attempt to override an existing file named '%s'.",
                                 incomingFile.getName()));
             }
@@ -439,7 +440,7 @@ public class AppsAPIImpl implements AppsAPI {
             throws DotSecurityException, DotDataException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
-                    "Invalid attempt to delete a service descriptors performed by user with id `%s`.",
+                    "Invalid attempt to delete an App descriptor performed by user with id `%s`.",
                     user.getUserId()));
         }
         final String appKeyLC = key.toLowerCase();
@@ -758,11 +759,11 @@ public class AppsAPIImpl implements AppsAPI {
    }
 
     private boolean validateAppDescriptorUniqueName(final AppDescriptor serviceDescriptor)
-            throws DotDataException {
+            throws AlreadyExistException {
 
         if (getAppDescriptorMap().containsKey(serviceDescriptor.getKey())) {
-            throw new DotDataException(
-                    String.format("There's a service already registered under key `%s`.",
+            throw new AlreadyExistException(
+                    String.format("There's an App already registered under key `%s`.",
                             serviceDescriptor.getKey()));
         }
         return true;

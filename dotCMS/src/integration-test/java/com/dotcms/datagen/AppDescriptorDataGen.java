@@ -5,6 +5,7 @@ import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Type;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,10 +65,20 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
         final AppsAPI api = APILocator.getAppsAPI();
         try (InputStream input = persistDescriptorAsFile(object)) {
             return api.createAppDescriptor(input, TestUserUtils.getAdminUser());
-        } catch (IOException | DotDataException | DotSecurityException e) {
+        } catch (IOException | DotDataException | AlreadyExistException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * if you need to access the file from out side get it here.
+     * @return
+     */
+    public File getFile(){
+         String basePath = System.getProperty("java.io.tmpdir");
+         basePath = Paths.get(basePath).normalize().toString();
+         return  new File(basePath, fileName);
+     }
 
     /**
      * Yml File Descriptor write method.
@@ -76,9 +87,7 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      * @throws IOException
      */
     private InputStream persistDescriptorAsFile(final AppDescriptor object) throws IOException {
-        String basePath = System.getProperty("java.io.tmpdir");
-        basePath = Paths.get(basePath).normalize().toString();
-        final File file = new File(basePath, fileName);
+        final File file = getFile();
         ymlMapper.writeValue(file, object);
         return Files.newInputStream(Paths.get(file.getPath()));
     }
