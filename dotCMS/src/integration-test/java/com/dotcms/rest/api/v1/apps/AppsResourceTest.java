@@ -39,9 +39,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.liferay.portal.model.User;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -827,6 +830,45 @@ public class AppsResourceTest extends IntegrationTestBase {
             final Response createSecretResponse = appsResource
                     .createAppSecrets(request, response, key, host.getIdentifier(), secretForm);
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, createSecretResponse.getStatus());
+        }
+    }
+
+    /**
+     * Test
+     * Scenario: We attempt to upload the exact same file twice.
+     * Expected results: Bad-Request
+     * @throws IOException
+     */
+    @Test
+    public void Test_Already_Exists_Exception_Expect_Bad_Request() throws IOException {
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .stringParam("param2", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                //We're indicating that extra params are allowed to test required params are still required.
+                .withExtraParameters(true);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+        final String fileName = dataGen.getFileName();
+        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()){
+            final FormDataMultiPart formDataMultiPart = createFormDataMultiPart(fileName, inputStream);
+            final Response appResponseOk = appsResource.createApp(request, response,formDataMultiPart);
+            Assert.assertNotNull(appResponseOk);
+            Assert.assertEquals(HttpStatus.SC_OK, appResponseOk.getStatus());
+        }
+
+        final  File file = dataGen.getFile();
+        try(InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))){
+            final FormDataMultiPart formDataMultiPart = createFormDataMultiPart(fileName, inputStream);
+            final Response appResponseBadRequest = appsResource
+                    .createApp(request, response, formDataMultiPart);
+            Assert.assertNotNull(appResponseBadRequest);
+            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, appResponseBadRequest.getStatus());
         }
     }
 

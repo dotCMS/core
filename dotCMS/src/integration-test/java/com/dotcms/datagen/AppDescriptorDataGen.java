@@ -71,15 +71,23 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
     }
 
     /**
+     * if you need to access the file from out side get it here.
+     * @return
+     */
+    public File getFile(){
+         String basePath = System.getProperty("java.io.tmpdir");
+         basePath = Paths.get(basePath).normalize().toString();
+         return  new File(basePath, fileName);
+     }
+
+    /**
      * Yml File Descriptor write method.
      * @param object
      * @return
      * @throws IOException
      */
     private InputStream persistDescriptorAsFile(final AppDescriptor object) throws IOException {
-        String basePath = System.getProperty("java.io.tmpdir");
-        basePath = Paths.get(basePath).normalize().toString();
-        final File file = new File(basePath, fileName);
+        final File file = getFile();
         ymlMapper.writeValue(file, object);
         return Files.newInputStream(Paths.get(file.getPath()));
     }
