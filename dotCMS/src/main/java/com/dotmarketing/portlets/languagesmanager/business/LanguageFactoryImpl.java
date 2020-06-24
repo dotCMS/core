@@ -148,15 +148,20 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected Language createDefaultLanguage() {
 
-		final Language language = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE","US"));
-		language.setCountry(Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY", "United States"));
-		language.setCountryCode(Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE", "US"));
-		language.setLanguage(Config.getStringProperty("DEFAULT_LANGUAGE_STR", "English"));
-		language.setLanguageCode(Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"));
+		Language language = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE","US"));
+		//If the default language does not exist, create it
+		if(!UtilMethods.isSet(language)) {
+			language = new Language();
+			language.setCountry(
+					Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY", "United States"));
+			language.setCountryCode(
+					Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE", "US"));
+			language.setLanguage(Config.getStringProperty("DEFAULT_LANGUAGE_STR", "English"));
+			language.setLanguageCode(Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"));
 
-		//saves the new language
-
-		saveLanguage(language);
+			//saves the new language
+			saveLanguage(language);
+		}
 
 
 		return language;
