@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "9101cc46-59f9-4129-a24c-1acf5744f0a9",
+		"_postman_id": "2708cd63-b1ca-472d-89b8-ab734e42c919",
 		"name": "Pages Resource Tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5f1dba43-1d08-457c-b67e-4f0534157b55",
+								"id": "03a6cfb9-18ab-4fbb-91e2-a22741af1a53",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -54,13 +54,97 @@
 					"response": []
 				},
 				{
+					"name": "CreatePageDestinationsCostaRica",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e2d2cd04-d775-4b8a-9bc0-2bade00f8adf",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"destinations-costa-rica.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/Users/danielsilva/Downloads/destinations-costa-rica.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "{{token}}",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "SuccessRequest",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "1c741cde-3a18-46ac-84c9-c28fb17f845a",
-								"type": "text/javascript",
+								"id": "5f61f221-995d-475c-8d48-94e71102ba3b",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -81,7 +165,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"containers\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -104,7 +189,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/about-us/index",
+							"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -113,8 +198,8 @@
 								"v1",
 								"page",
 								"json",
-								"about-us",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						},
 						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
@@ -127,8 +212,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "868a9218-423c-4fe9-bc04-9dcb0231ef75",
-								"type": "text/javascript",
+								"id": "5afc6da8-26dd-4cbe-b58c-aef7ba368694",
 								"exec": [
 									"pm.test(\"Status code is 403\", function () {",
 									"    pm.response.to.have.status(403);",
@@ -143,7 +227,8 @@
 									"",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -166,7 +251,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/about-us/index",
+							"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -175,8 +260,8 @@
 								"v1",
 								"page",
 								"json",
-								"about-us",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						},
 						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
@@ -189,8 +274,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "55b28507-62ac-4176-807f-a9a4f49743ec",
-								"type": "text/javascript",
+								"id": "a5b4cd22-30cf-4969-b91c-4330ecb904e8",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -200,13 +284,14 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Page '/about-us/index2' is not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Page \\'about-us/index2\\' not found\");",
 									"});",
 									"",
 									"",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -247,12 +332,97 @@
 					"response": []
 				},
 				{
+					"name": "CreatePageBlogIndex",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "23624931-affe-4a08-81c3-d6ce0420f151",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"blog-index.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/PageResource/blog-index.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "{{token}}",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Validate contents on advanced templates",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "da875510-87f2-4848-b004-710215a08d80",
+								"id": "829e61cf-dfa9-417e-9fbc-d2f91484ef08",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -314,8 +484,8 @@
 									"pm.test(\"Contentlets checks\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.containers[\"/application/containers/default/\"].contentlets[\"uuid-1\"][0].title).to.equal('Travel Blog Header');",
-									"    pm.expect(jsonData.entity.containers[\"/application/containers/default/\"].contentlets[\"uuid-1\"][0].contentType).to.equal('webPageContent');",
+									"    pm.expect(jsonData.entity.containers[\"//demo.dotcms.com/application/containers/default/\"].contentlets[\"uuid-1\"][0].title).to.equal('Travel Blog Header');",
+									"    pm.expect(jsonData.entity.containers[\"//demo.dotcms.com/application/containers/default/\"].contentlets[\"uuid-1\"][0].contentType).to.equal('webPageContent');",
 									"});",
 									"",
 									"",
@@ -378,7 +548,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7008ae74-9119-4235-8670-397376f19f79",
+								"id": "cf1f4d00-c73e-42f0-9829-af568fe7ed9e",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -425,7 +595,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fea8cb7e-1c13-432c-9acf-3f5ab66caccb",
+								"id": "d0857666-1882-42ed-9671-fcf50e2a1919",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -488,7 +658,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8baa5207-fc13-4a97-b86d-170b5b2b2074",
+								"id": "fc761437-d389-458e-91f7-487f5159b6d1",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -547,7 +717,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "84ababef-6a09-4292-a32e-e0317c2335c3",
+								"id": "7ab33df5-2ede-4a75-8389-042083ab3d1f",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 403, Need permissions to read\", function () {",
@@ -605,7 +775,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "da875510-87f2-4848-b004-710215a08d80",
+								"id": "74c762b6-d241-40ed-a5d4-fe16e02b64b3",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -741,7 +911,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a4bbfcaa-009e-4b9d-a8a6-444699c8211b",
+								"id": "ba5b95bd-3fd5-4046-86de-17b2357ce7c0",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -797,7 +967,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "63adc218-5d09-43f5-9298-29a015edbedc",
+								"id": "d1aff54e-03bf-4e11-a6a8-ccc49c06c144",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
@@ -868,7 +1038,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "68e21ce5-5979-4bb2-83b4-6c8f541343c8",
+								"id": "0467af49-f2eb-4201-9b37-78d0249d1b44",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -938,7 +1108,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "74b443a9-5159-4eb6-8882-103877ef54fa",
+								"id": "f4c755e4-9611-4cdc-ad66-1ab4ec867a30",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1007,7 +1177,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6caa4cb3-f829-47da-8a44-c8d6572ddcc6",
+								"id": "78055e83-554f-4f0c-9e7a-0851a20fdfda",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1076,7 +1246,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f763b6fa-d689-43d0-a942-9a4ea16f21df",
+								"id": "199fc6cc-2414-4a64-9ac2-5ed87f49bee3",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1151,7 +1321,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7c944694-ddc4-458d-9b82-5dac72060430",
+								"id": "20ed8097-5149-4262-8643-5a143614dc70",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1207,7 +1377,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "78a8ed85-648a-4a40-b82a-be6079b4bf96",
+								"id": "25ba39e8-552a-43ed-9e35-b5d88331182d",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
@@ -1275,7 +1445,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "005421ca-d134-473c-93d8-623f3f15d33e",
+								"id": "41cf8ab9-39fd-4166-9d4c-1038f025cbe5",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 403\", function () {",
@@ -1344,7 +1514,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7c13bece-d440-4275-9dc1-4f818253e075",
+								"id": "517cc416-1672-472f-a774-27d46d227f1b",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
@@ -1413,7 +1583,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7ac328db-c8d9-41c1-9ff2-620969e3d431",
+								"id": "da38ba3e-ba6c-4363-a808-568c8bcfc8d4",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1482,7 +1652,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0203c365-047e-4081-88d6-3bf273277574",
+								"id": "d57072e6-85dc-42e1-9c57-0608bf05a50c",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1558,7 +1728,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fac4ed61-53e7-4b71-99d9-e924639e7321",
+								"id": "04ee6932-384d-4836-aeb3-45eb0ab7fbfc",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1604,7 +1774,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "609e169d-e92d-4f55-a1b9-7193064e035e",
+								"id": "c47c4194-5d5f-4e10-ba0b-57bb47721335",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1668,7 +1838,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b320adf6-f6da-4888-a082-b081fb06edf4",
+								"id": "6ba8ea30-8489-4d5b-8c21-4c6148468ea0",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1733,7 +1903,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c409fc37-784f-47c3-a84c-d6b7a35b30c2",
+								"id": "bfeb26f5-bb43-43b7-ac85-d1e2e5f821e0",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1800,7 +1970,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "17b24941-e433-430c-b903-d784411a71cb",
+				"id": "8f9210a8-d6d4-45f9-9fc6-490822e3aa78",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -1810,7 +1980,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "495355db-92ee-4689-8a32-3e6bec0bd95c",
+				"id": "c2b68376-a591-456e-a65f-fccb7c2a4294",
 				"type": "text/javascript",
 				"exec": [
 					""
