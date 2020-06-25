@@ -50,17 +50,13 @@ public class TestWorkflowAction extends IntegrationTestBase {
     }
 
     /**
-     * Test the getActionIdByName
-     * - Creates a content type content
-     * - Create a new content based on that content type
-     * - Get the action Id by Name for Save, successfully
-     * - Get the action Id by Name for Archive, successfully even if it is not in the firs step.
-     * - Does checkin to persist the contentlet by firing saveg
-     * - Ask again for the Archive, successfully
-     * - Finally with the same contentlet, Get the action Id by Name for a non existing action, returns null as expected.
+     * Test the evaluate
+     * - Creates a response, request
+     * - Create a proxy workflow action with name but null condition
+     * - Tries to evaluate the velocity that was getting NPE
      */
     @Test
-    public void test_condition_null_evaluateActionCondition () throws SystemException, DotDataException, DotSecurityException, PortalException {
+    public void test_condition_null_evaluate () throws SystemException, DotDataException, DotSecurityException, PortalException {
 
         final HttpServletResponse response       = new MockHttpResponse();
         final HttpServletRequest  request        = new MockHeaderRequest((
