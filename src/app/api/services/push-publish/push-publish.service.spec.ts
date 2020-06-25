@@ -96,12 +96,30 @@ describe('PushPublishService', () => {
         expect(result).toEqual(mockResponse);
     }));
 
+    it('should do a post request and push publish an asset with no filter', fakeAsync(() => {
+        const { filterKey, ...formValue } = mockFormValue;
+
+        this.pushPublishService.pushPublishContent('1234567890', formValue).subscribe();
+        this.lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: mockResponse
+                })
+            )
+        );
+        tick();
+        expect(this.lastConnection.request.getBody()).toBe(
+            'assetIdentifier=1234567890&remotePublishDate=2020-10-10&remotePublishTime=12-00&remotePublishExpireDate=2020-10-10&remotePublishExpireTime=12-00&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true'
+        );
+    }));
 
     it('should do a post with the correct URL when is a bundle', fakeAsync(() => {
         let result: any;
-        this.pushPublishService.pushPublishContent('1234567890', mockFormValue, true).subscribe((res) => {
-            result = res._body;
-        });
+        this.pushPublishService
+            .pushPublishContent('1234567890', mockFormValue, true)
+            .subscribe((res) => {
+                result = res._body;
+            });
         this.lastConnection.mockRespond(
             new Response(
                 new ResponseOptions({
@@ -118,6 +136,4 @@ describe('PushPublishService', () => {
         );
         expect(result).toEqual(mockResponse);
     }));
-
-
 });

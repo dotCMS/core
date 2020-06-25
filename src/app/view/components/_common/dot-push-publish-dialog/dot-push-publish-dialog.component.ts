@@ -177,24 +177,31 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
             forcePush: false
         });
 
+        const publishDate = this.form.get('publishdate');
+        const expireDate = this.form.get('expiredate');
+        const ppFilter = this.form.get('filterKey');
+
         this.form
             .get('pushActionSelected')
             .valueChanges.pipe(takeUntil(this.destroy$))
             .subscribe((pushActionSelected: string) => {
                 switch (pushActionSelected) {
                     case 'publish': {
-                        this.form.get('publishdate').enable();
-                        this.form.get('expiredate').disable();
+                        publishDate.enable();
+                        expireDate.disable();
+                        ppFilter.enable();
                         break;
                     }
                     case 'expire': {
-                        this.form.get('publishdate').disable();
-                        this.form.get('expiredate').enable();
+                        publishDate.disable();
+                        expireDate.enable();
+                        ppFilter.disable();
                         break;
                     }
                     default: {
-                        this.form.get('publishdate').enable();
-                        this.form.get('expiredate').enable();
+                        publishDate.enable();
+                        expireDate.enable();
+                        ppFilter.enable();
                     }
                 }
             });
