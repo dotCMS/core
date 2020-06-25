@@ -42,7 +42,6 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
     @Override
     public boolean isEnabled() {
 
-
         final String enableKey           = SamlName.DOT_SAML_ENABLE.getPropertyName();
         final Optional<Secret> secretOpt = this.findSecret(enableKey);
         return secretOpt.isPresent()? secretOpt.get().getBoolean(): false;

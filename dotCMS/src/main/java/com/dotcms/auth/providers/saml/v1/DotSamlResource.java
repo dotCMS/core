@@ -9,6 +9,7 @@ import com.dotcms.saml.service.external.SamlException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import org.glassfish.jersey.server.JSONP;
@@ -106,7 +107,7 @@ public class DotSamlResource implements Serializable {
 
 			final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
 			Logger.debug(this, () -> message);
-			throw new SamlException(message);
+			throw new DoesNotExistException(message);
 		}
 	}
 
