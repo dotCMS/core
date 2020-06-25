@@ -1,5 +1,5 @@
 name: Core
-on: [pull_request]
+on: [pull_request, push]
 
 jobs:
   run-unit-tests-job:
@@ -302,3 +302,14 @@ jobs:
           PROVIDER_DB_USERNAME: sa
           PROVIDER_DB_PASSWORD: mssqldotCMS2019
         if: always() && env.globalRun == 'true' && env.runMssql == 'true'
+  slackNotification:
+    name: Slack Notification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2.0.2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: victor.alfaro
+          SLACK_USERNAME: cicd-bot
