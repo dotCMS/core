@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegration
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
+import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
@@ -288,7 +289,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05305AddPushPublishFilterColumnTest.class,
         CMSMaintenanceFactoryTest.class,
         Task05350AddDotSaltClusterColumnTest.class,
-        DotParseTest.class
+        DotParseTest.class,
+        TestWorkflowAction.class
 })
 public class MainSuite {
 
