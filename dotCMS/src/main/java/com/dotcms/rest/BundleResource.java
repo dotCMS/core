@@ -625,7 +625,7 @@ public class BundleResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response postMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+    public final Response uploadBundle(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
             FormDataMultiPart multipart,
             @Context UriInfo uriInfo, @QueryParam("sync") boolean sync) throws DotPublisherException {
 

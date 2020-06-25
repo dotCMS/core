@@ -1,60 +1,15 @@
 {
 	"info": {
 		"_postman_id": "2708cd63-b1ca-472d-89b8-ab734e42c919",
-		"name": "Pages Resource Tests",
+		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "loadJson",
+			"name": "JSON [api/v1/page/json]",
 			"item": [
 				{
-					"name": "UserAuthenticationValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "03a6cfb9-18ab-4fbb-91e2-a22741af1a53",
-								"type": "text/javascript",
-								"exec": [
-									"",
-									"pm.test(\"Status code is 401, Need credentials\", function () {",
-									"    pm.response.to.have.status(401);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Response body matches\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
-									"});",
-									""
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/about-us/index",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"json",
-								"about-us",
-								"index"
-							]
-						},
-						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
-					},
-					"response": []
-				},
-				{
-					"name": "CreatePageDestinationsCostaRica",
+					"name": "pre_CreatePagesDestinationsCostaRicaAndBlogIndex",
 					"event": [
 						{
 							"listen": "test",
@@ -67,7 +22,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"destinations-costa-rica.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-and-blog-index.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
@@ -80,12 +35,12 @@
 							"type": "basic",
 							"basic": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "username",
+									"value": "admin@dotcms.com",
 									"type": "string"
 								},
 								{
-									"key": "username",
+									"key": "password",
 									"value": "admin",
 									"type": "string"
 								}
@@ -110,9 +65,12 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/Users/danielsilva/Downloads/destinations-costa-rica.tar.gz"
+									"src": "resources/PageResource/costa-rica-and-blog-index.tar.gz"
 								}
-							]
+							],
+							"options": {
+								"formdata": {}
+							}
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -130,11 +88,93 @@
 								},
 								{
 									"key": "AUTH_TOKEN",
-									"value": "{{token}}",
+									"value": "",
 									"disabled": true
 								}
 							]
+						},
+						"description": "Creates an html page `/destinations/costa-rica` by uploading a bundle that includes it."
+					},
+					"response": []
+				},
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fb28b9ca-bb79-40b1-8125-1f1bcc6e0ae9",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UserAuthenticationValidation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "03a6cfb9-18ab-4fbb-91e2-a22741af1a53",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 401, Need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body matches\", function () {",
+									"    pm.expect(pm.response.text()).to.eq(\"Invalid User\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"json",
+								"destinations",
+								"costa-rica"
+							]
+						},
+						"description": "Given no user, should return 401 and \"Invalid User\" message"
 					},
 					"response": []
 				},
@@ -207,64 +247,35 @@
 					"response": []
 				},
 				{
-					"name": "ValidateReadPermissions",
+					"name": "invalidateSession",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "5afc6da8-26dd-4cbe-b58c-aef7ba368694",
+								"id": "00a9f97c-b167-4dae-957f-792cfd9d2f14",
 								"exec": [
-									"pm.test(\"Status code is 403\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"User: Bill Intranet : dotcms.org.2806 does not have permissions\");",
-									"});",
-									"",
-									"",
-									"",
-									""
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
 								],
 								"type": "text/javascript"
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
+							"raw": "{{serverURL}}/api/v1/logout",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"page",
-								"json",
-								"destinations",
-								"costa-rica"
+								"logout"
 							]
-						},
-						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+						}
 					},
 					"response": []
 				},
@@ -328,91 +339,6 @@
 							]
 						},
 						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
-					},
-					"response": []
-				},
-				{
-					"name": "CreatePageBlogIndex",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "23624931-affe-4a08-81c3-d6ce0420f151",
-								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
-									"    var jsonData = pm.response.json();",
-									"    console.log(jsonData);",
-									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"blog-index.gz\");",
-									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
-							},
-							{
-								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/PageResource/blog-index.tar.gz"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"bundle"
-							],
-							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
-								{
-									"key": "AUTH_TOKEN",
-									"value": "{{token}}",
-									"disabled": true
-								}
-							]
-						}
 					},
 					"response": []
 				},
@@ -537,11 +463,155 @@
 				}
 			],
 			"description": "Returns the metadata in JSON format of the objects that make up an HTML Page in the system.\n\nhttp://localhost:8080/api/v1/page/json/{page-url}",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "43015801-6fba-4a51-87b5-d18f96fe767f",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "2104618f-cbf3-4e44-a666-8cb8ccc30283",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
 			"protocolProfileBehavior": {}
 		},
 		{
-			"name": "RenderPage",
+			"name": "Render [api/v1/page/render]",
 			"item": [
+				{
+					"name": "pre_CreatePagesDestinationsCostaRicaAndBlogIndex",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4d34252f-b13c-4a52-bc13-c492c693fc56",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-and-blog-index.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/PageResource/costa-rica-and-blog-index.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Creates an html page `/destinations/costa-rica` by uploading a bundle that includes it."
+					},
+					"response": []
+				},
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b203bf9c-1a1b-4a17-a17d-ed484b79add6",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "UserAuthenticationValidation",
 					"event": [
@@ -549,7 +619,6 @@
 							"listen": "test",
 							"script": {
 								"id": "cf1f4d00-c73e-42f0-9829-af568fe7ed9e",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -562,7 +631,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -573,7 +643,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/about-us/index",
+							"raw": "{{serverURL}}/api/v1/page/render/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -582,8 +652,8 @@
 								"v1",
 								"page",
 								"render",
-								"about-us",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						}
 					},
@@ -596,7 +666,6 @@
 							"listen": "test",
 							"script": {
 								"id": "d0857666-1882-42ed-9671-fcf50e2a1919",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -613,7 +682,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"uuid\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -636,7 +706,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/about-us/index",
+							"raw": "{{serverURL}}/api/v1/page/render/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -645,8 +715,8 @@
 								"v1",
 								"page",
 								"render",
-								"about-us",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						}
 					},
@@ -659,7 +729,6 @@
 							"listen": "test",
 							"script": {
 								"id": "fc761437-d389-458e-91f7-487f5159b6d1",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -668,11 +737,12 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"is not found\");",
+									"    pm.expect(pm.response.text()).to.eq(\"{\\\"message\\\":\\\"Page \\'about-us/index2\\' not found\\\"}\");",
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -712,25 +782,24 @@
 					"response": []
 				},
 				{
-					"name": "ReadPermissionsValidation",
+					"name": "pre_CreatePageEcotourismInCostaRica",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "7ab33df5-2ede-4a75-8389-042083ab3d1f",
-								"type": "text/javascript",
+								"id": "33c611f5-391a-40a4-87b2-7b448cf04929",
 								"exec": [
-									"pm.test(\"Status code is 403, Need permissions to read\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
 									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
 									"",
-									"",
-									"pm.test(\"Response body matches\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"User: Bill Intranet : dotcms.org.2806 does not have permissions READ\");",
-									"});",
-									""
-								]
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"ecotourisim-in-costa-rica.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -739,33 +808,65 @@
 							"type": "basic",
 							"basic": [
 								{
-									"key": "password",
-									"value": "bill",
+									"key": "username",
+									"value": "admin@dotcms.com",
 									"type": "string"
 								},
 								{
-									"key": "username",
-									"value": "bill@dotcms.com",
+									"key": "password",
+									"value": "admin",
 									"type": "string"
 								}
 							]
 						},
-						"method": "GET",
-						"header": [],
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/PageResource/ecotourisim-in-costa-rica.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/about-us/index",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"v1",
-								"page",
-								"render",
-								"about-us",
-								"index"
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
 							]
-						}
+						},
+						"description": "Creates an html page `/destinations/costa-rica` by uploading a bundle that includes it."
 					},
 					"response": []
 				},
@@ -829,15 +930,15 @@
 									"    ",
 									"    var jsonData = pm.response.json();",
 									"    ",
-									"    pm.expect(jsonData.entity.template.title).to.equal('anonymous_layout_1563211383718');",
+									"    pm.expect(jsonData.entity.template.title).to.equal('anonymous_layout_1582562696562');",
 									"    pm.expect(jsonData.entity.template.type).to.equal('template');",
 									"     ",
 									"});",
 									"",
-									"pm.test(\"Url Contente Map checks\", function () {",
+									"pm.test(\"Url Content Map checks\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    ",
+									"",
 									"    pm.expect(jsonData.entity.urlContentMap.hostName).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.urlContentMap.baseType).to.equal('CONTENT');",
 									"    pm.expect(jsonData.entity.urlContentMap.contentType).to.equal('Blog');",
@@ -1990,10 +2091,9 @@
 	],
 	"variable": [
 		{
-			"id": "518c9428-019a-4f13-80f5-ab48226df65b",
+			"id": "02e8ed2f-e41f-4449-b666-f76ed9d8936f",
 			"key": "serverURL",
-			"value": "http://localhost:8080",
-			"type": "string"
+			"value": "http://localhost:8080"
 		}
 	],
 	"protocolProfileBehavior": {}
