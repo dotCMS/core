@@ -67,6 +67,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     },
 
     showDialog: function (assetId, displayDateFilter, displayRemoveOnly) {
+        debugger;
     	if(this.environmentStore==null) {
     		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
 
@@ -190,6 +191,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     },
 
     showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate){
+        debugger;
         this.assetIdentifier = null;
 
         this.workflow = workflow;
@@ -283,7 +285,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
      * It didn't get renamed to avoid backwards compatibility issues
      */
 	remotePublish : function(){
-
+        debugger;
         var dojoStyle = dojo.require("dojo.dom-style");
 
 		if((dojo.byId("whereToSend") && this.whereToSend.length === 0)) {
@@ -404,7 +406,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 hasCondition:hasCondition,
                 neverExpire:neverExpire
             };
-
+            debugger;
             let formData = {
                 assignComment:assignComment,
                 pushPublish:pushPublish
@@ -668,6 +670,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     },
 
     evaluateCondition: function (actionId, title, eventData) {
+	    debugger;
         let urlTemplate = "/api/v1/workflow/actions/{actionId}/condition";
         const url = urlTemplate.replace('{actionId}',actionId);
         let dataAsJson = {};
