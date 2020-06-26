@@ -1,9 +1,70 @@
-name: Core CICD Dockerized Tests
-on: [pull_request, push]
+name: Core
+on: [pull_request]
 
 jobs:
-  run-unit-integration-tests-job:
-    name: Core Tests
+  run-unit-tests-job:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
+      EXPORT_REPORTS: true
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USER: dotcmsbuild
+      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+    if: github.event_name == 'pull_request' || github.ref == 'master' || startsWith(github.ref, 'release-') || startsWith(github.ref, 'test-')
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            BRANCH=$(basename "${{ github.ref }}")
+            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+            echo ::set-env name=commitMsg::$(git log --format=%s -n 1 ${{ github.event.after }})
+          else
+            BRANCH="${{ github.head_ref }}"
+            COMMIT_MESSG=$(git log -1 --pretty=format:%s)
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+            echo ::set-env name=commitMsg::$(git log -1 --pretty=format:%s)
+          fi
+
+          TYPE="${{ github.event_name }}"
+          if [[ "${TYPE}" == "pull_request" || "${BRANCH}" =~ '^master$|^release-.*|^test-.*' || "${COMMIT_MESSG}" =~ '\[github\]|\[github unit\]' ]]; then
+            echo ::set-env name=globalRun::'true'
+          else
+            echo ::set-env name=globalRun::'false'
+          fi
+      - name: Prepare dot-cicd
+        run: |
+          chmod +x .cicd/discover.sh && .cicd/discover.sh
+        if: env.globalRun == 'true'
+      - name: Check Provider
+        run: |
+          dotcicd/library/checkProvider.sh github
+      - name: Fail provider
+        run: |
+          echo ::set-env name=globalRun::'false'
+        if: failure()
+      - name: Build Tests Base Image
+        run: |
+          dotcicd/library/pipeline.sh buildTestsBase
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+      - name: Run Unit Tests
+        run: |
+          dotcicd/library/pipeline.sh runUnit
+        if: env.globalRun == 'true'
+  run-integration-tests-job:
+    name: Integration Tests
     runs-on: ubuntu-latest
     env:
       DOT_CICD_CLOUD_PROVIDER: github
@@ -89,9 +150,6 @@ jobs:
           dotcicd/library/pipeline.sh buildTestsBase
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-      - name: Run Unit Tests
-        run: |
-          dotcicd/library/pipeline.sh runUnit
       - name: Run Integration Tests - postgres
         run: |
           dotcicd/library/pipeline.sh runIntegration
@@ -117,7 +175,7 @@ jobs:
           databaseType: mssql
         if: always() && env.globalRun == 'true' && env.runMssql == 'true'
   run-curl-tests-job:
-    name: Core Curl (Postman) Tests
+    name: Curl Tests
     runs-on: ubuntu-latest
     env:
       DOT_CICD_CLOUD_PROVIDER: github
@@ -164,7 +222,7 @@ jobs:
             NOT_PR_AND_SPECIAL_BRANCH=false
           fi
 
-          if [[ (! "${COMMIT_MESSG}" =~ '\[github mysql\]|\[github oracle\]|\[github mssql\]|\[github unit]\') || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]' ]]; then
+          if [[ (! "${COMMIT_MESSG}" =~ '\[github mysql\]|\[github oracle\]|\[github mssql\]') || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]' ]]; then
             echo ::set-env name=runPostgres::'true'
           else
             echo ::set-env name=runPostgres::'false'
@@ -244,4 +302,3 @@ jobs:
           PROVIDER_DB_USERNAME: sa
           PROVIDER_DB_PASSWORD: mssqldotCMS2019
         if: always() && env.globalRun == 'true' && env.runMssql == 'true'
-
