@@ -306,12 +306,18 @@ jobs:
     name: Notification to Slack
     runs-on: ubuntu-latest
     steps:
-      - name: Notify slack
+      - name: Notify slack Daniel
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: pullreminders/slack-action@master
         with:
-          args: '{\"channel\": \"CQJUJFKQV\", \"text\": \"Hola @daniel.silva\"}'
+          args: '{\"channel\": \"U028ZKGR6\", \"text\": \"Hola chamo\"}'
+      - name: Notify slack Victor
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: pullreminders/slack-action@master
+        with:
+          args: '{\"channel\": \"U0125JCDSSE\", \"text\": \"Hola vico\"}'
 #      - name: Notify slack success
 #        env:
 #          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
