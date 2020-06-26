@@ -302,14 +302,9 @@ jobs:
           PROVIDER_DB_USERNAME: sa
           PROVIDER_DB_PASSWORD: mssqldotCMS2019
         if: always() && env.globalRun == 'true' && env.runMssql == 'true'
-  slackNotification:
-    name: Slack Notification
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2.0.2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_CHANNEL: victor.alfaro
-          SLACK_USERNAME: cicd-bot
+  - name: Notify slack
+    env:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+    uses: pullreminders/slack-action@master
+    with:
+      args: '{"channel": "D011QS785U7", "text": "Hola por aquí!"}'
