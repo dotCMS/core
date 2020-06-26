@@ -302,3 +302,13 @@ jobs:
           PROVIDER_DB_USERNAME: sa
           PROVIDER_DB_PASSWORD: mssqldotCMS2019
         if: always() && env.globalRun == 'true' && env.runMssql == 'true'
+  notify-slasck:
+    name: Notification to Slack
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: pullreminders/slack-action@master
+        with:
+          args: '{"channel": "D011QS785U7", "text": "Hola por aquí!"}'
