@@ -409,7 +409,6 @@
         }else {
             isContentSaving = true;
         }
-        debugger;
         ContentletAjax.saveContent(fmData,isAutoSave,isCheckin,publish,saveContentCallback);
     }
 
@@ -529,7 +528,6 @@
 
 
     function saveContentCallback(data){
-        debugger
         isContentAutoSaving = false;
         dojo.byId("subcmd").value= "";
 
@@ -584,7 +582,6 @@
 
         dijit.byId('savingContentDialog').hide();
         resetHasChanged();
-        debugger
         // Show DotContentletValidationExceptions.
         if(data["saveContentErrors"] && data["saveContentErrors"][0] != null ){
             var errorDisplayElement = dijit.byId('saveContentErrors');
@@ -819,7 +816,6 @@
 
 
     function saveAssignCallBack(actionId, formData) {
-        debugger
         var pushPublish = formData.pushPublish;
         var assignComment = formData.assignComment;
 

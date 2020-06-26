@@ -150,7 +150,6 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
         if (this._hasWorkflow()) {
             this._getWorkFLow(this.workflow.actionId).then((action) => {
-                debugger;
                 if ( action.assignable || action.commentable){
                     dia.set(url);
                     dia.show();
