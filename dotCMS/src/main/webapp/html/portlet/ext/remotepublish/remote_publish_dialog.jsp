@@ -122,7 +122,7 @@ final String inode = request.getParameter("inode");// DOTCMS-7085
 		<%
 		final boolean hasPushPublishActionlet = ActionletUtil.hasPushPublishActionlet(action);
 		if (hasPushPublishActionlet) { %>
-<%--		   <%@ include file="/html/portlet/ext/remotepublish/remote_publish_form_ui_inc.jsp" %>--%>
+		   <%@ include file="/html/portlet/ext/remotepublish/remote_publish_form_ui_inc.jsp" %>
 		<%} %>
 
         <div class="progressRow" style="display: none;">
