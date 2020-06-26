@@ -22,7 +22,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         structInode:null
     },
 
-    show: function () {
+    show: function (isBulk) {
         var self = this;
         //Required clean up as these modals has duplicated widgets and collide without a clean up
 
@@ -150,7 +150,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
         if (this._hasWorkflow()) {
             this._getWorkFLow(this.workflow.actionId).then((action) => {
-                if ( action.assignable || action.commentable){
+                if ( action.assignable || action.commentable || isBulk){
                     dia.set(url);
                     dia.show();
                 } else {
@@ -237,9 +237,9 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
     _dispatchAngularDialogEvent: function () {
         const eventData = {
-            assetIdentifier: container.assetIdentifier || this.workflow.inode,
+            assetIdentifier: this.container.assetIdentifier || this.workflow.inode,
             dateFilter: this.dateFilter,
-            isBundle: container.isBundle,
+            isBundle: this.container.isBundle,
             removeOnly: this.removeOnly,
             restricted: this.restricted,
             cats: this.cats,
@@ -247,7 +247,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         };
 
         if (this.workflow && this.workflow.actionId) {
-            container.evaluateCondition(this.workflow.actionId, this.title, eventData);
+            this.container.evaluateCondition(this.workflow.actionId, this.title, eventData);
         } else {
             var customEvent = document.createEvent("CustomEvent");
             customEvent.initCustomEvent("ng-event", false, false,  {
