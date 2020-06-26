@@ -189,7 +189,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             })},200);
     },
 
-    showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate){
+    showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate, isBulk){
         this.assetIdentifier = null;
 
         this.workflow = workflow;
@@ -209,7 +209,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.title = this.title;
         dialog.container = this;
         dialog.workflow = this.workflow;
-        dialog.show();
+        dialog.show(isBulk);
 
         var self = this;
         setTimeout(function() {
@@ -283,7 +283,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
      * It didn't get renamed to avoid backwards compatibility issues
      */
 	remotePublish : function(){
-
         var dojoStyle = dojo.require("dojo.dom-style");
 
 		if((dojo.byId("whereToSend") && this.whereToSend.length === 0)) {
@@ -404,7 +403,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 hasCondition:hasCondition,
                 neverExpire:neverExpire
             };
-
             let formData = {
                 assignComment:assignComment,
                 pushPublish:pushPublish
@@ -667,6 +665,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         return (this.workflow !== null);
     },
 
+    /**
+     * Load custom code specified in the workflow and place it in the popup
+     */
     evaluateCondition: function (actionId, title, eventData) {
         let urlTemplate = "/api/v1/workflow/actions/{actionId}/condition";
         const url = urlTemplate.replace('{actionId}',actionId);
