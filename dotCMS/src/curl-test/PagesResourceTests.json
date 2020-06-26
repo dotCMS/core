@@ -1,20 +1,20 @@
 {
 	"info": {
-		"_postman_id": "2708cd63-b1ca-472d-89b8-ab734e42c919",
+		"_postman_id": "5ca31711-c63c-4116-a0fa-85bae897a396",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "JSON [api/v1/page/json]",
+			"name": "CreateTestContext",
 			"item": [
 				{
-					"name": "pre_CreatePagesDestinationsCostaRicaAndBlogIndex",
+					"name": "pre_ImportBundleWithContext",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "e2d2cd04-d775-4b8a-9bc0-2bade00f8adf",
+								"id": "c1be4522-30db-40f1-9703-aa4810fd7728",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -22,7 +22,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-and-blog-index.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"pages.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
@@ -65,7 +65,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/PageResource/costa-rica-and-blog-index.tar.gz"
+									"src": "resources/PageResource/pages.tar.gz"
 								}
 							],
 							"options": {
@@ -93,17 +93,23 @@
 								}
 							]
 						},
-						"description": "Creates an html page `/destinations/costa-rica` by uploading a bundle that includes it."
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica"
 					},
 					"response": []
-				},
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "JSON [api/v1/page/json]",
+			"item": [
 				{
 					"name": "invalidateSession",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "fb28b9ca-bb79-40b1-8125-1f1bcc6e0ae9",
+								"id": "b973ed43-58f3-41b1-b9ad-bd0855f023d8",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -131,12 +137,12 @@
 					"response": []
 				},
 				{
-					"name": "UserAuthenticationValidation",
+					"name": "GivenInvalidUser_ShouldReturn401",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "03a6cfb9-18ab-4fbb-91e2-a22741af1a53",
+								"id": "b126da97-3ad9-41f2-a476-490e2e1969aa",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -179,12 +185,12 @@
 					"response": []
 				},
 				{
-					"name": "SuccessRequest",
+					"name": "GivenValidPageURL_ShouldReturnPageInfo",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "5f61f221-995d-475c-8d48-94e71102ba3b",
+								"id": "ee127b48-19d8-4a1a-aecb-f9ec0e73aa6c",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -252,7 +258,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "00a9f97c-b167-4dae-957f-792cfd9d2f14",
+								"id": "cf6d7282-2169-4a64-a386-f5ac2385ef24",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -280,12 +286,12 @@
 					"response": []
 				},
 				{
-					"name": "InvalidPageURL",
+					"name": "GivenInvalidPageURL_ShouldReturn404",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "a5b4cd22-30cf-4969-b91c-4330ecb904e8",
+								"id": "b78040ce-5647-4c38-92c3-b65c327fb9de",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -337,18 +343,17 @@
 								"about-us",
 								"index2"
 							]
-						},
-						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+						}
 					},
 					"response": []
 				},
 				{
-					"name": "Validate contents on advanced templates",
+					"name": "GivenURLMappedPage_ShouldReturnPageInfo",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "829e61cf-dfa9-417e-9fbc-d2f91484ef08",
+								"id": "3ebef232-3df5-44b4-8785-bd7b9f0254a1",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -392,7 +397,6 @@
 									"    ",
 									"    var jsonData = pm.response.json();",
 									"    ",
-									"    pm.expect(jsonData.entity.site.name).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.site.hostname).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.site.type).to.equal('contentlet');",
 									"     ",
@@ -467,7 +471,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "43015801-6fba-4a51-87b5-d18f96fe767f",
+						"id": "1fc4897b-8ef0-4dbb-a52a-6ffc7de3bf71",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -477,7 +481,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "2104618f-cbf3-4e44-a666-8cb8ccc30283",
+						"id": "a673228c-dfaf-4a44-b77c-40444e15329e",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -491,101 +495,12 @@
 			"name": "Render [api/v1/page/render]",
 			"item": [
 				{
-					"name": "pre_CreatePagesDestinationsCostaRicaAndBlogIndex",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "4d34252f-b13c-4a52-bc13-c492c693fc56",
-								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
-									"    var jsonData = pm.response.json();",
-									"    console.log(jsonData);",
-									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-and-blog-index.tar.gz\");",
-									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
-							},
-							{
-								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/PageResource/costa-rica-and-blog-index.tar.gz"
-								}
-							],
-							"options": {
-								"formdata": {}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"bundle"
-							],
-							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
-								{
-									"key": "AUTH_TOKEN",
-									"value": "",
-									"disabled": true
-								}
-							]
-						},
-						"description": "Creates an html page `/destinations/costa-rica` by uploading a bundle that includes it."
-					},
-					"response": []
-				},
-				{
 					"name": "invalidateSession",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "b203bf9c-1a1b-4a17-a17d-ed484b79add6",
+								"id": "5e71f885-b1c3-4476-887b-4f08d33d0e41",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -613,12 +528,12 @@
 					"response": []
 				},
 				{
-					"name": "UserAuthenticationValidation",
+					"name": "GivenInvalidUser_ShouldReturn401",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "cf1f4d00-c73e-42f0-9829-af568fe7ed9e",
+								"id": "e6574938-ad43-40b3-b217-fa8b36ba63e4",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -660,12 +575,12 @@
 					"response": []
 				},
 				{
-					"name": "SuccessRequest",
+					"name": "GivenValidPageURL_ShouldReturnPageInfoAndRenderHTML",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "d0857666-1882-42ed-9671-fcf50e2a1919",
+								"id": "6632cbd5-7f5d-425e-bec1-800c4b969fde",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -723,12 +638,12 @@
 					"response": []
 				},
 				{
-					"name": "InvalidURL",
+					"name": "GivenInvalidPageURL_ShouldReturn404",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "fc761437-d389-458e-91f7-487f5159b6d1",
+								"id": "d5759ce1-3a25-431e-85b9-11aa88dab4c9",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -782,101 +697,12 @@
 					"response": []
 				},
 				{
-					"name": "pre_CreatePageEcotourismInCostaRica",
+					"name": "GivenURLMappedPage_ShouldReturnPageInfo",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "33c611f5-391a-40a4-87b2-7b448cf04929",
-								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
-									"    var jsonData = pm.response.json();",
-									"    console.log(jsonData);",
-									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"ecotourisim-in-costa-rica.tar.gz\");",
-									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
-							},
-							{
-								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/PageResource/ecotourisim-in-costa-rica.tar.gz"
-								}
-							],
-							"options": {
-								"formdata": {}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"bundle"
-							],
-							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
-								{
-									"key": "AUTH_TOKEN",
-									"value": "",
-									"disabled": true
-								}
-							]
-						},
-						"description": "Creates an html page `/destinations/costa-rica` by uploading a bundle that includes it."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Url Content Map",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "74c762b6-d241-40ed-a5d4-fe16e02b64b3",
+								"id": "06301ae6-fad1-420c-90f9-a806e3a87b73",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -1004,16 +830,48 @@
 			"protocolProfileBehavior": {}
 		},
 		{
-			"name": "Layout",
+			"name": "Layout [/api/v1/page/{page-id}/layout]",
 			"item": [
 				{
-					"name": "UserAuthenticationValidation",
+					"name": "invalidateSession",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "ba5b95bd-3fd5-4046-86de-17b2357ce7c0",
-								"type": "text/javascript",
+								"id": "861780bc-af3d-4b95-a22b-e1461d916cc2",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenInvalidUser_ShouldReturn401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b1bbc805-5276-4397-be65-3596f11803f2",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1026,7 +884,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1046,7 +905,7 @@
 							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/layout",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1054,7 +913,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"layout"
 							]
 						},
@@ -1063,13 +922,12 @@
 					"response": []
 				},
 				{
-					"name": "SuccessRequest",
+					"name": "GivenValidLayout_ShouldSaveLayout",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "d1aff54e-03bf-4e11-a6a8-ccc49c06c144",
-								"type": "text/javascript",
+								"id": "916aeb70-c49b-47ff-a9f3-f2bf9066ba21",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1085,7 +943,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"uuid-1\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1139,8 +998,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0467af49-f2eb-4201-9b37-78d0249d1b44",
-								"type": "text/javascript",
+								"id": "aca1e2b1-d140-460a-a751-4b7a8851e329",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 403\", function () {",
@@ -1155,7 +1013,8 @@
 									"",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1204,13 +1063,12 @@
 					"response": []
 				},
 				{
-					"name": "InvalidPageId",
+					"name": "GivenInvalidPageId_ShouldReturn404",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "f4c755e4-9611-4cdc-ad66-1ab4ec867a30",
-								"type": "text/javascript",
+								"id": "6eceebfa-248f-4531-8a44-0148daf18879",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -1224,7 +1082,8 @@
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1278,7 +1137,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "78055e83-554f-4f0c-9e7a-0851a20fdfda",
+								"id": "1508e187-d710-4767-afe5-70a61649d81b",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1347,7 +1206,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "199fc6cc-2414-4a64-9ac2-5ed87f49bee3",
+								"id": "fb3a9d53-0ecb-4ae4-a928-60570d2ba8fb",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1411,6 +1270,28 @@
 					"response": []
 				}
 			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "3dded212-c89a-4c19-864f-0b65e054c34e",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "87ac19c1-e797-48b0-b42c-a0859da6de7a",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
 			"protocolProfileBehavior": {}
 		},
 		{
@@ -1422,7 +1303,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "20ed8097-5149-4262-8643-5a143614dc70",
+								"id": "d3f0d16e-dd52-4e6f-908a-1ecdd36d1140",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1478,7 +1359,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "25ba39e8-552a-43ed-9e35-b5d88331182d",
+								"id": "53b371f7-dfc0-4f70-8a2d-3fbcd4e66ebd",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
@@ -1546,7 +1427,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "41cf8ab9-39fd-4166-9d4c-1038f025cbe5",
+								"id": "33726890-7a7d-4934-bab7-2b4fd24af34a",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 403\", function () {",
@@ -1615,7 +1496,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "517cc416-1672-472f-a774-27d46d227f1b",
+								"id": "cd5a463a-6263-446d-bd58-66d4fbdcb3b4",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
@@ -1684,7 +1565,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "da38ba3e-ba6c-4363-a808-568c8bcfc8d4",
+								"id": "8ca5b74e-e655-4f5c-aa17-fcc398270917",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1753,7 +1634,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d57072e6-85dc-42e1-9c57-0608bf05a50c",
+								"id": "5850f8ff-4735-4a75-acd1-2ef2b1451771",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1829,7 +1710,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "04ee6932-384d-4836-aeb3-45eb0ab7fbfc",
+								"id": "28e63333-7dc0-474f-bd04-9f0f43f9d0cd",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1875,7 +1756,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c47c4194-5d5f-4e10-ba0b-57bb47721335",
+								"id": "f8af4d19-91af-46e3-ad5f-9dba0780fd3f",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1939,7 +1820,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6ba8ea30-8489-4d5b-8c21-4c6148468ea0",
+								"id": "e5b59bea-f6c1-4b49-9a87-06a17b89a7ae",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -2004,7 +1885,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bfeb26f5-bb43-43b7-ac85-d1e2e5f821e0",
+								"id": "20f66241-e9b0-44c0-8d8c-6ad9bc3deb00",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -2071,7 +1952,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "8f9210a8-d6d4-45f9-9fc6-490822e3aa78",
+				"id": "3f2366fc-0e8c-45e3-95a5-6ab044b919e1",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -2081,7 +1962,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "c2b68376-a591-456e-a65f-fccb7c2a4294",
+				"id": "f7a5496c-90c7-4a9b-8ff6-06b3f33fa97e",
 				"type": "text/javascript",
 				"exec": [
 					""
