@@ -93,9 +93,32 @@
 								}
 							]
 						},
-						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica"
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
 					},
 					"response": []
+				}
+			],
+			"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "3745b616-0ecd-4a17-b58a-f2239ce1f6bd",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "a8340c4b-d183-4116-8ab7-9efa129bb4b6",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -746,7 +769,6 @@
 									"    ",
 									"    var jsonData = pm.response.json();",
 									"    ",
-									"    pm.expect(jsonData.entity.site.name).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.site.hostname).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.site.type).to.equal('contentlet');",
 									"     ",
@@ -973,10 +995,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
+							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"69b3d24d-7e80-4be6-b04a-d352d16493ee\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"69b3d24d-7e80-4be6-b04a-d352d16493ee\",\"uuid\":\"2\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/layout",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -984,77 +1006,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
-								"layout"
-							]
-						},
-						"description": "@Path(\"/{pageId}/layout\")"
-					},
-					"response": []
-				},
-				{
-					"name": "UserPermissionsValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "aca1e2b1-d140-460a-a751-4b7a8851e329",
-								"exec": [
-									"",
-									"pm.test(\"Status code is 403\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"User:dotcms.org.2806 does not have permissions\");",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"layout"
 							]
 						},
@@ -1078,7 +1030,7 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Can\\'t find content. Identifier: 2c12fe7e6-d338-49d5-973b-2d974d57015b\");",
 									"});",
 									"",
 									""
@@ -1138,7 +1090,6 @@
 							"listen": "test",
 							"script": {
 								"id": "1508e187-d710-4767-afe5-70a61649d81b",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1152,7 +1103,8 @@
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1184,7 +1136,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/layout",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1192,7 +1144,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"layout"
 							]
 						},
@@ -1207,7 +1159,6 @@
 							"listen": "test",
 							"script": {
 								"id": "fb3a9d53-0ecb-4ae4-a928-60570d2ba8fb",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1221,7 +1172,8 @@
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1253,7 +1205,7 @@
 							"raw": "{\"2title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/layout",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1261,7 +1213,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"layout"
 							]
 						},
@@ -1360,7 +1312,6 @@
 							"listen": "test",
 							"script": {
 								"id": "53b371f7-dfc0-4f70-8a2d-3fbcd4e66ebd",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1373,7 +1324,8 @@
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
