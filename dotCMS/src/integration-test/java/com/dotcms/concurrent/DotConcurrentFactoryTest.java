@@ -3,6 +3,8 @@ package com.dotcms.concurrent;
 import com.dotmarketing.util.json.JSONException;
 
 import org.junit.Test;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import static org.junit.Assert.*;
 
@@ -101,4 +103,44 @@ public class DotConcurrentFactoryTest {
         }
 
     }
+    
+    
+    
+    
+    /**
+     * This tests that the delayed queue will run jobs in the future, efficiently
+     * 
+     * @throws Exception
+     */
+    
+    @Test
+    public void test_delayed_queue() throws Exception{
+        
+        // will kill it from the cache in some time.
+        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
+        final AtomicInteger aInt=new AtomicInteger(0);
+        
+        // add 50 to the atomicInteger, 3 seconds in the future
+        int runs = 50;
+        for(int i=0;i<runs;i++) {
+            submitter.delay(()-> aInt.addAndGet(1), 3, TimeUnit.SECONDS);
+        }
+        
+        // None of the jobs have been run
+        assert(aInt.get()==0);
+        
+        // rest.  I must rest
+        Thread.sleep(6000);
+        
+        // all of the jobs have been run
+        assert(aInt.get()==50);
+        
+        
+    
+    
+    
+    }
+    
+    
+    
 }
