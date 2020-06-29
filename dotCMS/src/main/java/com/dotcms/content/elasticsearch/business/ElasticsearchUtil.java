@@ -11,6 +11,7 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsRequest;
 import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsResponse;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
+import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -19,6 +20,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 
 /**
@@ -27,6 +29,7 @@ import java.util.Arrays;
 public final class ElasticsearchUtil {
     private final static String READ_ONLY_ALLOW_DELETE_SETTING = "index.blocks.read_only_allow_delete";
     private final static String READ_ONLY_SETTING = "index.blocks.read_only";
+    public static final String ES_DEFAULT_VALUE = "30s";
 
     private ElasticsearchUtil(){}
 
@@ -118,36 +121,76 @@ public final class ElasticsearchUtil {
      * @return boolean
      */
     public static boolean isClusterInReadOnlyMode(){
-        try {
-            final ClusterGetSettingsResponse response = RestHighLevelClientProvider.getInstance()
-                    .getClient().cluster()
-                    .getSettings(new ClusterGetSettingsRequest(), RequestOptions.DEFAULT);
+        final ClusterGetSettingsResponse response = getClusterSettings();
 
-            return Boolean.valueOf(response.getSetting("cluster.blocks.read_only"));
-        } catch (IOException e) {
-            Logger.warnAndDebug(ESIndexAPI.class, "Error getting ES cluster settings", e);
+        return Boolean.parseBoolean(response.getSetting("cluster.blocks.read_only"))
+                || Boolean.parseBoolean(response.getSetting("cluster.blocks.read_only_allow_delete"));
+    }
+
+    /**
+     * Return how often Elasticsearch check on disk usage for each node in the cluster
+     * @return boolean
+     */
+    public static long getClusterUpdateInterval(){
+        final ClusterGetSettingsResponse response = getClusterSettings();
+        final String intervalString = response.getSetting("cluster.info.update.interval");
+        return getIntervalInMillis(intervalString == null ? ES_DEFAULT_VALUE : intervalString);
+    }
+
+    private static long getIntervalInMillis(final String intervalString) {
+        final long interval = Long.parseLong(intervalString.substring(0, intervalString.length() - 1).trim());
+
+        if (intervalString.endsWith("m")) {
+            return Duration.ofMinutes(interval).toMillis();
+        } else {
+            return Duration.ofSeconds(interval).toMillis();
         }
 
-        return true;
+
+    }
+
+
+    private static ClusterGetSettingsResponse getClusterSettings() {
+         try {
+            return RestHighLevelClientProvider.getInstance()
+                            .getClient().cluster()
+                            .getSettings(new ClusterGetSettingsRequest(), RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            Logger.warnAndDebug(ESIndexAPI.class, "Error getting ES cluster settings", e);
+            throw new DotRuntimeException(e);
+        }
     }
 
     /**
      * Set the Elasticsearch cluster to read only = false
      * @return
      */
-    public static AcknowledgedResponse setClusterToWriteMode() {
-        final ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest();
+    public static void setClusterToWriteMode() throws ElasticsearchResponseException {
 
-        final Settings.Builder settingBuilder = Settings.builder()
-                .put("cluster.blocks.read_only", false);
+        final String[] properties = new String[]{"cluster.blocks.read_only", "cluster.blocks.read_only_allow_delete"};
 
-        request.persistentSettings(settingBuilder);
+        for (final String property : properties) {
+            final ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest();
 
-        return Sneaky.sneak(() ->
-                RestHighLevelClientProvider.getInstance().getClient()
+            final Settings.Builder settingBuilder = Settings.builder()
+                    .put(property, false);
+
+            request.persistentSettings(settingBuilder);
+
+            try {
+                final ClusterUpdateSettingsResponse response = RestHighLevelClientProvider.getInstance()
+                        .getClient()
                         .cluster()
-                        .putSettings(request, RequestOptions.DEFAULT)
-        );
+                        .putSettings(request, RequestOptions.DEFAULT);
+
+                if (!response.isAcknowledged()) {
+                    throw new ElasticsearchResponseException(response);
+                }
+            } catch (IOException e){
+                throw new DotRuntimeException(e);
+            }
+        }
+
     }
 
     private static IndiciesInfo loadIndicesInfo() {

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl.HTMLPageUrl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.util.PageMode;
@@ -62,6 +63,20 @@ public interface HTMLPageAssetRenderedAPI {
             final HttpServletRequest request,
             final HttpServletResponse response)
                 throws DotSecurityException, DotDataException;
+
+    /**
+     * Returns a {@link HTMLPageUrl} given a {@link PageContext}
+     *
+     * @param context {@link PageContext} object with the request parameters
+     * @param request servlet request
+     * @return the resulting HTMLPageURL
+     * @throws DotSecurityException The user does not have the specified permissions to perform
+     * this action.
+     * @throws DotDataException
+     */
+
+    HTMLPageUrl getHtmlPageAsset(PageContext context,
+            HttpServletRequest request) throws DotSecurityException, DotDataException;
 
     /***
      * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in

@@ -4,12 +4,11 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.common.reindex.ReindexEntry;
-import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -17,8 +16,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -28,11 +25,19 @@ import java.util.stream.Collectors;
  * When setting write-mode fails it will retry after one minute.
  */
 public class ESReadOnlyMonitor {
+
+    private final int TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE = -1;
+
+    @VisibleForTesting
+    long timeToWaitAfterWriteModeSet = TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE;
+
+    private String readOnlyMessageKey;
+
+    public static final int INTERVAL_IN_MINUTES_TO_CHECK_READ_ONLY = 1;
     private final RoleAPI roleAPI;
     private final SystemMessageEventUtil systemMessageEventUtil;
 
     private final AtomicBoolean started = new AtomicBoolean();
-    private Timer timer;
 
     private ESReadOnlyMonitor(
             final SystemMessageEventUtil systemMessageEventUtil,
@@ -79,114 +84,158 @@ public class ESReadOnlyMonitor {
      * @return false if a ESReadOnlyMonitor was started before
      */
     public boolean start(){
+
+        if (timeToWaitAfterWriteModeSet == TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE) {
+            loadTimeToWaitAfterWriteModeSet();
+        }
+
+        final boolean clusterInReadOnlyMode = ElasticsearchUtil.isClusterInReadOnlyMode();
+        final boolean eitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
+
         if (started.compareAndSet(false, true)) {
-            if (ElasticsearchUtil.isClusterInReadOnlyMode()) {
-                ReindexThread.setCurrentIndexReadOnly(true);
-                sendMessage("es.cluster.read.only.message");
+            if (clusterInReadOnlyMode) {
+                this.readOnlyMessageKey = "es.cluster.read.only.message";
+                sendReadOnlyMessage();
                 startClusterMonitor();
-            } else if (ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly()) {
-                ReindexThread.setCurrentIndexReadOnly(true);
-                sendMessage("es.index.read.only.message");
+            } else if (eitherLiveOrWorkingIndicesReadOnly) {
+                this.readOnlyMessageKey = "es.index.read.only.message";
+                sendReadOnlyMessage();
                 startIndexMonitor();
             } else {
                 started.set(false);
             }
 
-            return true;
+            return this.started.get();
         } else {
             return false;
         }
     }
 
+    private void loadTimeToWaitAfterWriteModeSet() {
+        timeToWaitAfterWriteModeSet = ElasticsearchUtil.getClusterUpdateInterval() +
+                TimeUnit.MINUTES.toMillis(INTERVAL_IN_MINUTES_TO_CHECK_READ_ONLY) +
+                TimeUnit.SECONDS.toMillis(10);
+    }
+
+    public void sendReadOnlyMessage() {
+        sendMessage(readOnlyMessageKey);
+    }
+
     private void sendMessage(final String messageKey) {
         try {
+            final String message = LanguageUtil.get(messageKey);
+
             final Role adminRole = roleAPI.loadCMSAdminRole();
             final List<String> usersId = roleAPI.findUsersForRole(adminRole)
                     .stream()
                     .map(user -> user.getUserId())
                     .collect(Collectors.toList());
 
-            final String message = LanguageUtil.get(messageKey);
-
             final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
                     .setMessage(message)
                     .setSeverity(MessageSeverity.ERROR)
                     .setType(MessageType.SIMPLE_MESSAGE)
                     .setLife(TimeUnit.SECONDS.toMillis(5));
-
-            Logger.error(ESReadOnlyMonitor.class, message);
+            Logger.error(this.getClass(), message);
             systemMessageEventUtil.pushMessage(messageBuilder.create(), usersId);
-        } catch (final LanguageException | DotDataException | DotSecurityException e) {
+        } catch (final  LanguageException | DotDataException | DotSecurityException e) {
             Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
         }
     }
 
-    private void putCurrentIndicesToWriteMode() {
-        try {
-            Logger.debug(this.getClass(), () -> "Trying to set the current indices to Write mode");
-            ElasticsearchUtil.setLiveAndWorkingIndicesToWriteMode();
-            sendMessage("es.index.write.allow.message");
-            ReindexThread.setCurrentIndexReadOnly(false);
-
-            this.stop();
-        } catch (final ElasticsearchResponseException e) {
-            Logger.info(ESReadOnlyMonitor.class, ()  -> e.getMessage());
-        }
+    private void putCurrentIndicesToWriteMode() throws ElasticsearchResponseException {
+        Logger.debug(this.getClass(), () -> "Trying to set the current indices to Write mode");
+        ElasticsearchUtil.setLiveAndWorkingIndicesToWriteMode();
     }
 
-    private void putClusterToWriteMode() {
-        Logger.debug(this.getClass(), () -> "Trying to set the current indices to Write mode");
+    private void putClusterToWriteMode() throws ElasticsearchResponseException {
+        Logger.debug(this.getClass(), () -> "Trying to set the cluster to Write mode");
         ElasticsearchUtil.setClusterToWriteMode();
-        sendMessage("es.cluster.write.allow.message");
-        ReindexThread.setCurrentIndexReadOnly(false);
-
-        this.stop();
     }
 
     private void startIndexMonitor() {
-         schedule(new IndexMonitorTimerTask(this));
+         schedule(
+                 this::putCurrentIndicesToWriteMode,
+                 ElasticsearchUtil::isEitherLiveOrWorkingIndicesReadOnly,
+                 "es.index.write.allow.message"
+         );
     }
 
-    private synchronized void schedule(final TimerTask timerTask) {
-        timer = new Timer(true);
-        timer.schedule(timerTask, 0, TimeUnit.MINUTES.toMillis(1));
+    private synchronized void schedule(
+            final PutRequestFunction putRequestFunction,
+            final ReadOnlyCheckerFunction checkFunction,
+            final String writeModeMessageKey) {
+
+        DotConcurrentFactory.getInstance()
+                .getSubmitter()
+                .submit(
+                        new MonitorRunnable(
+                this, putRequestFunction, checkFunction, writeModeMessageKey)
+                );
     }
 
     private void startClusterMonitor() {
-        schedule(new ClusterMonitorTimerTask(this));
+        schedule(
+                this::putClusterToWriteMode,
+                ElasticsearchUtil::isClusterInReadOnlyMode,
+                "es.cluster.write.allow.message"
+        );
     }
 
     private synchronized void stop() {
-        if (this.timer != null) {
-            this.timer.cancel();
-            this.timer = null;
-            this.started.set(false);
-        }
+        this.started.set(false);
     }
 
-    private static class IndexMonitorTimerTask extends TimerTask{
-        private final ESReadOnlyMonitor esReadOnlyMonitor;
+    public boolean isIndexOrClusterReadOnly() {
+        return this.started.get();
+    }
 
-        IndexMonitorTimerTask(final ESReadOnlyMonitor esReadOnlyMonitor) {
+    private static class MonitorRunnable implements Runnable {
+        private final PutRequestFunction putRequestFunction;
+        private final ReadOnlyCheckerFunction readOnlyCheckerFunction;
+        private final ESReadOnlyMonitor esReadOnlyMonitor;
+        private final String writeModeMessageKey;
+
+        MonitorRunnable(
+                final ESReadOnlyMonitor esReadOnlyMonitor,
+                final PutRequestFunction putRequestFunction,
+                final ReadOnlyCheckerFunction readOnlyCheckerFunction,
+                final String writeModeMessageKey) {
+
+            this.putRequestFunction = putRequestFunction;
+            this.readOnlyCheckerFunction = readOnlyCheckerFunction;
             this.esReadOnlyMonitor = esReadOnlyMonitor;
+            this.writeModeMessageKey = writeModeMessageKey;
         }
 
         @Override
         public void run() {
-            this.esReadOnlyMonitor.putCurrentIndicesToWriteMode();
+            while(true) {
+                try {
+
+                    this.putRequestFunction.sendRequest();
+                    Thread.sleep(esReadOnlyMonitor.timeToWaitAfterWriteModeSet);
+
+                    if (!this.readOnlyCheckerFunction.isReadOnly()) {
+                        esReadOnlyMonitor.sendMessage(this.writeModeMessageKey);
+                        this.esReadOnlyMonitor.stop();
+                        break;
+                    }
+                } catch (final ElasticsearchResponseException | InterruptedException e) {
+                    Logger.info(ESReadOnlyMonitor.class, () -> e.getMessage());
+                    TimeUnit.MINUTES.toMillis(INTERVAL_IN_MINUTES_TO_CHECK_READ_ONLY);
+                }
+            }
         }
     }
 
-    private static class ClusterMonitorTimerTask extends TimerTask{
-        private final ESReadOnlyMonitor esReadOnlyMonitor;
+    @FunctionalInterface
+    public interface PutRequestFunction {
+        void sendRequest() throws ElasticsearchResponseException;
+    }
 
-        ClusterMonitorTimerTask(final ESReadOnlyMonitor esReadOnlyMonitor) {
-            this.esReadOnlyMonitor = esReadOnlyMonitor;
-        }
-
-        @Override
-        public void run() {
-            this.esReadOnlyMonitor.putClusterToWriteMode();
-        }
+    @FunctionalInterface
+    public interface ReadOnlyCheckerFunction {
+        boolean isReadOnly() throws ElasticsearchResponseException;
     }
 }

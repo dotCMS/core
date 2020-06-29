@@ -1,10 +1,13 @@
 package com.dotcms.datagen;
 
 import com.dotcms.security.apps.AppDescriptor;
+import com.dotcms.security.apps.AppDescriptorImpl;
+import com.dotcms.security.apps.AppSchema;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Type;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +21,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.SortedMap;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * Test utility to simplify creation of application descriptor yml files
@@ -51,7 +55,7 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      */
     @Override
     public AppDescriptor next() {
-        return new AppDescriptor(key, name, description, iconUrl, allowExtraParameters, paramMap());
+        return new AppDescriptorImpl(fileName, name, description, iconUrl, allowExtraParameters, paramMap());
     }
 
     /**
@@ -62,9 +66,10 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
     @Override
     public AppDescriptor persist(final AppDescriptor object) {
         final AppsAPI api = APILocator.getAppsAPI();
-        try (InputStream input = persistDescriptorAsFile(object)) {
-            return api.createAppDescriptor(input, TestUserUtils.getAdminUser());
-        } catch (IOException | DotDataException | DotSecurityException e) {
+        try{
+         final File input = persistDescriptorAsFile(object);
+         return api.createAppDescriptor(input, TestUserUtils.getAdminUser());
+        } catch (IOException | DotDataException | AlreadyExistException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
     }
@@ -75,12 +80,14 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      * @return
      * @throws IOException
      */
-    private InputStream persistDescriptorAsFile(final AppDescriptor object) throws IOException {
+    private File persistDescriptorAsFile(final AppDescriptor object) throws IOException {
+        final AppSchema schema = new AppSchema(object.getName(), object.getDescription(),
+                object.getIconUrl(), object.isAllowExtraParameters(), object.getParams());
         String basePath = System.getProperty("java.io.tmpdir");
         basePath = Paths.get(basePath).normalize().toString();
         final File file = new File(basePath, fileName);
-        ymlMapper.writeValue(file, object);
-        return Files.newInputStream(Paths.get(file.getPath()));
+        ymlMapper.writeValue(file, schema);
+        return file;
     }
 
     /**
@@ -88,7 +95,7 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      * @return
      * @throws IOException
      */
-    public InputStream nextPersistedDescriptor() throws IOException {
+    public File nextPersistedDescriptor() throws IOException {
         return persistDescriptorAsFile(next());
     }
 
@@ -128,16 +135,6 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
     }
 
     /**
-     * app key builder method
-     * @param key
-     * @return
-     */
-    public AppDescriptorDataGen withKey(final String key) {
-        this.key = key;
-        return this;
-    }
-
-    /**
      * app name builder method
      * @param name
      * @return
@@ -164,6 +161,7 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      */
     public AppDescriptorDataGen withFileName(final String fileName) {
         this.fileName = fileName;
+        this.key = FilenameUtils.removeExtension(fileName);
         return this;
     }
 

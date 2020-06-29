@@ -64,8 +64,8 @@ public class AppsCacheImpl extends AppsCache {
      * @param supplier Supplier delegated expected to load AppDescriptors
      * @return
      */
-    public List<AppDescriptorMeta> getAppDescriptorsMeta( final Supplier<List<AppDescriptorMeta>> supplier){
-        List<AppDescriptorMeta> appDescriptors = (List<AppDescriptorMeta>) cache.getNoThrow(DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
+    public List<AppDescriptor> getAppDescriptorsMeta( final Supplier<List<AppDescriptor>> supplier){
+        List<AppDescriptor> appDescriptors = (List<AppDescriptor>) cache.getNoThrow(DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
         if (!UtilMethods.isSet(appDescriptors) && null != supplier) {
            appDescriptors = supplier.get();
         }
@@ -77,7 +77,7 @@ public class AppsCacheImpl extends AppsCache {
      * This will simply put a list of descriptor into memory.
      * @param appDescriptors
      */
-    private void putAppDescriptor(final List<AppDescriptorMeta> appDescriptors) {
+    private void putAppDescriptor(final List<AppDescriptor> appDescriptors) {
         cache.put(DESCRIPTORS_LIST_KEY, appDescriptors, DESCRIPTORS_CACHE_GROUP);
     }
 
@@ -89,14 +89,14 @@ public class AppsCacheImpl extends AppsCache {
      * @param supplier
      * @return
      */
-    public Map<String, AppDescriptorMeta> getAppDescriptorsMap(final Supplier<List<AppDescriptorMeta>> supplier) {
-        Map<String, AppDescriptorMeta> descriptorsByKey = (Map<String, AppDescriptorMeta>) cache.getNoThrow(
+    public Map<String, AppDescriptor> getAppDescriptorsMap(final Supplier<List<AppDescriptor>> supplier) {
+        Map<String, AppDescriptor> descriptorsByKey = (Map<String, AppDescriptor>) cache.getNoThrow(
                 DESCRIPTORS_MAPPED_BY_KEY, DESCRIPTORS_CACHE_GROUP);
         if (!UtilMethods.isSet(descriptorsByKey) && null != supplier) {
             synchronized (AppsCacheImpl.class) {
                 descriptorsByKey = getAppDescriptorsMeta(supplier).stream().collect(
                         Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
-                                        .getAppDescriptor().getKey().toLowerCase(), Function.identity(),
+                                        .getKey().toLowerCase(), Function.identity(),
                                 (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
 
                 putDescriptorsByKey(descriptorsByKey);
@@ -110,7 +110,7 @@ public class AppsCacheImpl extends AppsCache {
      * A Map like structure, Where the key is the app-key and the entry is the AppDescriptor.
      * @param descriptorsByKey
      */
-    private void putDescriptorsByKey(final Map<String, AppDescriptorMeta> descriptorsByKey){
+    private void putDescriptorsByKey(final Map<String, AppDescriptor> descriptorsByKey){
         cache.put(DESCRIPTORS_MAPPED_BY_KEY, descriptorsByKey, DESCRIPTORS_CACHE_GROUP);
     }
 

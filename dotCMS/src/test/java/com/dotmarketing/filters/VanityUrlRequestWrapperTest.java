@@ -9,6 +9,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.junit.Test;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockParameterRequest;
+import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.google.common.collect.ImmutableMap;
 

@@ -24,6 +24,7 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.portal.PortletAPI;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -38,6 +39,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -474,19 +476,11 @@ public class AppsAPIImplTest {
 
         //Save it
         api.saveSecrets(secrets, site, admin);
+        final Map<String, List<String>> optionalAppWarning = api.computeSecretWarnings(descriptor, site, admin);
+        assertFalse(optionalAppWarning.isEmpty());
 
-        final Map<String, List<String>> optionalAppWarning1 = api.computeSecretWarnings(descriptor, site, admin);
-        assertFalse(optionalAppWarning1.isEmpty());
-
-        final Host systemHost = APILocator.systemHost();
-        api.saveSecrets(secrets, systemHost, admin);
-
-        final Map<String, List<String>> optionalAppWarning2 = api.computeSecretWarnings(descriptor, systemHost, admin);
-        assertFalse(optionalAppWarning2.isEmpty());
-
-        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier(), systemHost.getIdentifier()), admin);
+        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier()), admin);
         assertFalse(warningsBySite.get(site.getIdentifier()).isEmpty());
-        assertFalse(warningsBySite.get(Host.SYSTEM_HOST.toLowerCase()).isEmpty());
     }
 
     /**
@@ -513,8 +507,6 @@ public class AppsAPIImplTest {
         when(descriptor.getKey()).thenReturn(appKey);
 
         final Host site = new SiteDataGen().nextPersisted();
-        final Host systemHost = APILocator.systemHost();
-
         final User admin = TestUserUtils.getAdminUser();
 
         //Let's create a set of secrets for a service
@@ -525,33 +517,29 @@ public class AppsAPIImplTest {
                 .build();
         //Save it
         api.saveSecrets(secrets, site, admin);
-        final Map<String, List<String>> optionalAppWarning1 = api.computeSecretWarnings(descriptor, site, admin);
-        assertTrue(optionalAppWarning1.isEmpty());
 
-        api.saveSecrets(secrets, systemHost, admin);
-        final Map<String, List<String>> optionalAppWarning2 = api.computeSecretWarnings(descriptor, systemHost, admin);
-        assertTrue(optionalAppWarning2.isEmpty());
+        final Map<String, List<String>> optionalAppWarning = api.computeSecretWarnings(descriptor, site, admin);
+        assertTrue(optionalAppWarning.isEmpty());
 
-        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier(), systemHost.getIdentifier()), admin);
+        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier()), admin);
         assertTrue(warningsBySite.get(site.getIdentifier()).isEmpty());
-        assertTrue(warningsBySite.get(Host.SYSTEM_HOST.toLowerCase()).isEmpty());
     }
 
     private AppDescriptor evaluateAppTestCase(final AppTestCase testCase)
-            throws IOException, DotDataException, DotSecurityException {
+            throws IOException, DotDataException, AlreadyExistException, DotSecurityException {
         Logger.info(AppsAPIImplTest.class, () -> "Evaluating  " + testCase.toString());
         final AppDescriptorDataGen descriptorDataGen = new AppDescriptorDataGen();
-        descriptorDataGen.withName(testCase.name).withKey(testCase.key)
+        descriptorDataGen.withName(testCase.name).withFileName(testCase.key)
                 .withExtraParameters(testCase.allowExtraParameters)
                 .withDescription(testCase.description).withIconUrl(testCase.iconUrl);
         for (final Map.Entry<String, ParamDescriptor> entry : testCase.params.entrySet()) {
             descriptorDataGen.param(entry.getKey(), entry.getValue());
         }
-        try (final InputStream inputStream = descriptorDataGen.nextPersistedDescriptor()) {
-            final AppsAPI api = APILocator.getAppsAPI();
-            final User admin = TestUserUtils.getAdminUser();
-            return api.createAppDescriptor(inputStream, admin);
-        }
+        final File inputStream = descriptorDataGen.nextPersistedDescriptor();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final User admin = TestUserUtils.getAdminUser();
+        return api.createAppDescriptor(inputStream, admin);
+
     }
 
     /**
@@ -562,7 +550,7 @@ public class AppsAPIImplTest {
     @Test(expected = DotDataValidationException.class)
     @UseDataProvider("getExpectedExceptionTestCases")
     public void Test_App_Descriptor_Validation_Expect_Validation_Exceptions(final AppTestCase testCase)
-            throws IOException, DotDataException, DotSecurityException {
+            throws IOException, DotDataException, DotSecurityException, AlreadyExistException {
         assertNotNull(evaluateAppTestCase(testCase));
     }
 
@@ -571,7 +559,6 @@ public class AppsAPIImplTest {
         final Map<String, ParamDescriptor> emptyParams = ImmutableMap.of();
         return new Object[]{
                 //The following test that the general required fields are mandatory.
-                new AppTestCase("", "", "", "", false, emptyParams),
                 new AppTestCase("any-key", "", "", "", false, emptyParams),
                 new AppTestCase("any-key", "any-name", "", "", false, emptyParams),
                 new AppTestCase("any-key", "any-name", "desc", "", false, emptyParams),
@@ -632,7 +619,7 @@ public class AppsAPIImplTest {
     @Test
     @UseDataProvider("getValidExceptionFreeTestCases")
     public void Test_App_Descriptor_Validation_Exception_Free(final AppTestCase testCase)
-            throws IOException, DotDataException, DotSecurityException {
+            throws IOException, DotDataException, DotSecurityException, AlreadyExistException {
         assertNotNull(evaluateAppTestCase(testCase));
     }
 

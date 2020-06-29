@@ -44,7 +44,6 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
@@ -453,8 +452,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:" + live, e);
         }
     }
-    
-    
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException {
+        try {
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
+
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
+        }
+    }
     
     
     @CloseDBIfOpened
@@ -467,6 +475,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
     }
+
 
     @CloseDBIfOpened
     @Override
@@ -658,7 +667,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getWorkflowAPI().fireWorkflowPostCheckin(workflow);
         }
 
-        if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+        if(contentlet.isFileAsset()) {
 
             cleanFileAssetCache(contentlet, user, respectFrontendRoles);
         }
@@ -669,6 +678,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
         }
 
+        if(contentlet.isVanityUrl()) {
+
+            APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
+        }
+        
+        
         /*
         Triggers a local system event when this contentlet commit listener is executed,
         anyone who need it can subscribed to this commit listener event, on this case will be
@@ -1595,12 +1610,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     relatedIdentifiers.stream().forEach(child -> {
                         try {
-                            final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(child);
+                            final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(child, true);
                             if (null != mappedContentlet && UtilMethods.isSet(mappedContentlet.getIdentifier())) {
                                 result.add(mappedContentlet);
                             } else {
                                 Logger.warn(this, String.format("Child Contentlet with ID '%s' for relationship '%s' " +
-                                                "was not found. Verify that it exists in the database and it's NOT archived", child,
+                                                "was not found. Verify that it exists in the database", child,
                                         rel.getRelationTypeValue()));
                             }
                         } catch (final Exception e) {
@@ -1662,12 +1677,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final Map<String, Object> sourceMap = sh.getSourceAsMap();
                     final String identifier = (String) sourceMap.get("identifier");
                     if (identifier != null && !relatedMap.containsKey(identifier)) {
-                        final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(identifier);
+                        final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(identifier, true);
                         if (null != mappedContentlet && UtilMethods.isSet(mappedContentlet.getIdentifier())) {
                             relatedMap.put(identifier, mappedContentlet);
                         } else {
                             Logger.warn(this, String.format("Parent Contentlet with ID '%s' for relationship '%s' was" +
-                                            " not found. Verify that it exists in the database and it's NOT archived", identifier,
+                                            " not found. Verify that it exists in the database", identifier,
                                     rel.getRelationTypeValue()));
                         }
                     }
@@ -3017,7 +3032,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
     }
+    
+    @WrapInTransaction
+    @Override
+    public void refresh(ContentType type) throws DotReindexStateException {
+        try {
+            reindexQueueAPI.addStructureReindexEntries(type.id());
+            //CacheLocator.getContentletCache().clearCache();
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new DotReindexStateException("Unable to complete reindex",e);
+        }
 
+    }
     /**
      *
      * @param contentlet
@@ -3265,6 +3292,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
         CacheLocator.getContentletCache().remove(contentlet.getInode());
+        if(contentlet.isVanityUrl()) {
+            APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
+        }
         publishRelatedHtmlPages(contentlet);
     }
 
@@ -4131,6 +4161,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 )
                         ); // end synchronized block
             } catch (final Throwable t) {
+              Logger.warn(getClass(),t.getMessage(),t);
                  bubbleUpException(t);
             }
 
@@ -5040,7 +5071,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(contentlet != null && contentlet.isVanityUrl()){
                 //remove from cache
-                VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
+               APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
             }
 
             if(contentlet != null && contentlet.isKeyValue()){
@@ -6577,10 +6608,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } catch (final DotContentletValidationException ve) {
             throw ve;
-        } catch (final DotSecurityException | DotDataException e) {
-            Logger.error(this, "Error validating contentlet [" + contentlet.getIdentifier() + "]: " + e.getMessage(),
-                    e);
-        }
+        } 
         validateRelationships(contentlet, contentRelationships);
     }
 

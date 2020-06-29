@@ -12,7 +12,7 @@
 <!-- END Message -->
 
 <div id="assetPermissionsWrapper">
-<div style="padding-left:20px;padding-bottom:10px;white-space: nowrap;font-size:88%;" class="permissionType">
+<div style="padding-left:20px;padding-bottom:10px;font-size:88%;" class="permissionType">
 	<%if(asset instanceof Folder){%>
 		 <%= LanguageUtil.get(pageContext, "Folder") %>:  <b><%= APILocator.getIdentifierAPI().find((Folder) asset).getPath() %></b>
 	<%}else if(asset instanceof Host){%>
