@@ -1,5 +1,6 @@
 package com.dotcms.publisher.ajax;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -338,7 +339,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //We will be able to retry failed and successfully bundles
-            if ( !(status.getStatus().equals( Status.FAILED_TO_PUBLISH ) || status.getStatus().equals( Status.SUCCESS )) ) {
+            if ( !(status.getStatus().equals( Status.FAILED_TO_PUBLISH ) ||
+                    status.getStatus().equals( Status.SUCCESS )) && !status.isAnyEndPointInvalidTokenStatus()) {
                 appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
                 continue;
             }
@@ -630,6 +632,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @throws DotBundleException If fails generating the Bundle
      * @throws IOException If fails compressing the all the Bundle contents into the final Bundle file
      */
+    @CloseDBIfOpened
     @SuppressWarnings ("unchecked")
     private Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
 

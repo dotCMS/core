@@ -3,32 +3,27 @@ package com.dotcms.rest.api.v1.system;
 import static com.dotcms.util.CollectionsUtils.entry;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.mapEntries;
-import static com.dotcms.util.HttpRequestDataUtil.getHostname;
-import static com.dotmarketing.util.WebKeys.*;
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
+import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET;
+import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT;
 
-import com.dotmarketing.business.web.WebAPILocator;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.enterprise.license.LicenseManager;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
-
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.ReleaseInfo;
+import com.liferay.util.LocaleUtil;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Config;
-
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.util.ReleaseInfo;
-import com.liferay.util.LocaleUtil;
 
 /**
  * A utility class that provides the required dotCMS configuration properties to
@@ -62,6 +57,9 @@ public class ConfigurationHelper implements Serializable {
 	public static final String SECONDARY_COLOR = "secondary";
 	public static final String COLORS = "colors";
 	public static final String LANGUAGES = "languages";
+	public static final String CLUSTER = "cluster";
+	public static final String CLUSTER_ID = "clusterId";
+	public static final String KEY_DIGEST = "companyKeyDigest";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -84,10 +82,10 @@ public class ConfigurationHelper implements Serializable {
 	 */
 	public Map<String, Object> getConfigProperties(final HttpServletRequest request, final Locale locale) throws LanguageException {
 
+		final User user = PortalUtil.getUser(request);
 	    String backgroundColor = "NA";
 		String primaryColor = "NA";
 		String secondaryColor = "NA";
-
 
 	    try {
 			backgroundColor = APILocator.getCompanyAPI().getDefaultCompany().getSize();
@@ -133,8 +131,8 @@ public class ConfigurationHelper implements Serializable {
 						BACKGROUND_COLOR, backgroundColor,
 						PRIMARY_COLOR, primaryColor,
 						SECONDARY_COLOR, secondaryColor
-				)
-		);
+				),
+				CLUSTER, clusterMap(user));
 
 	    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());
 	    return map;
@@ -190,6 +188,46 @@ public class ConfigurationHelper implements Serializable {
 		return message(message, message, locale);
 	}
 
+	/**
+	 * We only need to show the Key if's an authenticated user
+	 * Since it's kind of sensitive.
+	 * @param user
+	 * @return
+	 */
+	Map<String,String> clusterMap(final User user){
+		final boolean validAuthenticatedUser = null != user && !user.isAnonymousUser() && user.isBackendUser();
+		 if(validAuthenticatedUser){
+			return map(
+					 CLUSTER_ID, getClusterId(),
+					 KEY_DIGEST, keyDigest()
+			 );
+		 } else {
+			 return map(
+					 CLUSTER_ID, getClusterId()
+			 );
+		 }
+	}
+
+	/**
+	 *
+	 * @return
+	 */
+	public static String getClusterId(){
+		return ClusterFactory.getClusterId();
+    }
+
+	/**
+	 *
+	 * @return
+	 */
+	private static String keyDigest(){
+      try {
+		  return APILocator.getCompanyAPI().getDefaultCompany().getKeyDigest();
+	  }catch (Exception e){
+	     Logger.error(ConfigurationHelper.class, "Failed to retrieve key digest." ,e);
+	  }
+	  return null;
+    }
 
 
 }

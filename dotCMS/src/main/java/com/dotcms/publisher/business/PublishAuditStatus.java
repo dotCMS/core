@@ -12,7 +12,7 @@ import java.util.Date;
  */
 public class PublishAuditStatus implements Serializable {
 	private static final long serialVersionUID = 1L;
-	
+
 	public static enum Status {
 		BUNDLE_REQUESTED(1),
 		BUNDLING(2),
@@ -30,7 +30,9 @@ public class PublishAuditStatus implements Serializable {
 		PUBLISHING_BUNDLE(12),
 		WAITING_FOR_PUBLISHING(13),
 
-		BUNDLE_SAVED_SUCCESSFULLY(14);
+		BUNDLE_SAVED_SUCCESSFULLY(14),
+
+		INVALID_TOKEN(15);
 
 		private int code;
 		private Status(int code) {
@@ -75,7 +77,22 @@ public class PublishAuditStatus implements Serializable {
 		this.createDate = origin.createDate;
 		this.statusPojo = origin.getStatusPojo(); //TODO manage status POJO
 	}
-	
+
+	/**
+	 * Return true if  any of the endpoint has the {@link Status#INVALID_TOKEN}
+	 * @return
+	 */
+	public boolean isAnyEndPointInvalidTokenStatus() {
+		if (this.getStatusPojo() == null) {
+			return false;
+		}
+
+		return  this.getStatusPojo().getEndpointsMap()
+				.values().stream()
+				.flatMap(entryMap -> entryMap.values().stream())
+				.anyMatch(endpointDetail -> endpointDetail.getStatus() == Status.INVALID_TOKEN.getCode());
+	}
+
 	public static String getStatusByCode(int code) {
 		for(Status status: Status.values()) {
 			if(status.getCode() == code)

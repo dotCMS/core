@@ -126,6 +126,8 @@ public class PublisherQueueJob implements StatefulJob {
 						+ (UtilMethods.isSet(bundle.get("status")) ? bundle.get("status") : "Starting")
 						+ ". Publish Date: " + publishDate);
 					final String tempBundleId = (String) bundle.get("bundle_id");
+					final PublishAuditStatus status = new PublishAuditStatus(tempBundleId);
+
 					ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
 
 					try {
@@ -150,7 +152,6 @@ public class PublisherQueueJob implements StatefulJob {
 						pconf.setAssets(assetsToPublish);
 
 						// Status
-						final PublishAuditStatus status = new PublishAuditStatus(tempBundleId);
 						status.setStatusPojo(historyPojo);
 						// Insert in Audit table
 						pubAuditAPI.insertPublishAuditStatus(status);
@@ -211,9 +212,10 @@ public class PublisherQueueJob implements StatefulJob {
  		for (final PublishAuditStatus bundleAudit : pendingBundleAudits) {
 			ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + bundleAudit.getBundleId());
 			try {
-				final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
+
 				// There is no need to keep checking after MAX_NUM_TRIES.
-				if ( localHistory.getNumTries() <= (MAX_NUM_TRIES + 1) ) {
+				if (bundleAudit.getStatusPojo().getNumTries() <= (MAX_NUM_TRIES + 1)) {
+
 					final Map<String, Map<String, EndpointDetail>> endpointTrackingMap =
 							collectEndpointInfoFromRemote(bundleAudit);
 					final GroupPushStats groupPushStats = getGroupStats(endpointTrackingMap);
@@ -228,6 +230,7 @@ public class PublisherQueueJob implements StatefulJob {
 			}
 		}
 	}
+
 
 	/**
 	 * Obtains the list of Endpoints inside each Push Publishing Environment and verifies the publishing status of a

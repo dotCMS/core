@@ -1021,67 +1021,6 @@ function deleteEnvPushHistory(envId) {
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
-<%--START OF END POINTS--%>
-<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
-<div class="portlet-toolbar" style="margin-top: 32px">
-    <div class="portlet-toolbar__actions-primary">
-        <h4><span class="rServerIcon"></span> <%= LanguageUtil.get(pageContext, "publisher_Endpoints_Receiving_Server_Short") %></h4>
-    </div>
-    <div class="portlet-toolbar__actions-primary">
-        <button dojoType="dijit.form.Button" onClick="goToAddEndpoint(null, 'true');" iconClass="plusIcon">
-            <%= LanguageUtil.get(pageContext, "publisher_Add_Server") %>
-        </button>
-    </div>
-</div>
-
-<table class="listingTable">
-        <tr>
-            <th style="width:40px"></th>
-            <th><%= LanguageUtil.get(pageContext, "publisher_Server_Name") %></th>
-
-        </tr>
-        <%
-            boolean hasRow = false;
-            for(PublishingEndPoint endpoint : endpoints){
-                if(!endpoint.isSending()){
-                    continue;
-                }
-                hasRow=true;%>
-        <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
-        <td class="listingTable__actions">
-                <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Server_Title") %>">
-                    <span class="deleteIcon"></span></a>&nbsp;
-                <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Server_Title") %>">
-                    <span class="editIcon"></span></a>
-            </td>
-
-            <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')">
-                <b><%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%></b>
-                <br>
-            <i></span><%=endpoint.getAddress()%></i>
-            </td>
-
-
-
-        </tr>
-        <%}%>
-
-        <%if(!hasRow){ %>
-
-        <tr>
-            <td colspan="100" align="center">
-                <%= LanguageUtil.get(pageContext, "publisher_no_servers_set_up") %><a href="javascript:goToAddEndpoint(null, 'true');"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
-            </td>
-
-        </tr>
-        <%}%>
-</table>
-<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
-<%--END OF END POINTS--%>
-<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
-
-
-<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--INTEGRITY RESULTS DIALOG--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <style type="text/css">

@@ -317,7 +317,12 @@
 					</span>
 				</dt>
 				<dd>
-					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:400px;height:105px;"><%=( currentEndpoint.getAuthKey() != null && currentEndpoint.getAuthKey().length() > 0) ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
+					<%if (currentEndpoint.isTokenInvalid()) {%>
+						<span><%=LanguageUtil.get("push_publish.end_point.invalid_token.message")%></span>
+					<%}else if (currentEndpoint.isTokenExpired()) {%>
+						<span><%=LanguageUtil.get("push_publish.end_point.expired_token.message")%></span>
+					<%}%>
+					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:400px;height:105px;"><%= currentEndpoint.hasAuthKey() ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
 				</dd>
 			</dl>
 

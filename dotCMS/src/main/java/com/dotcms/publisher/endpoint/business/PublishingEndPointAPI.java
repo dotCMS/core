@@ -45,6 +45,7 @@ public interface PublishingEndPointAPI {
 	 * If an endPoint does not match all three criteria, null is returned.
 	 *
 	 */
+	//todo: PP I think this metod is not need anymore
 	PublishingEndPoint findEnabledSendingEndPointByAddress(String address) throws DotDataException;
 
 	/**

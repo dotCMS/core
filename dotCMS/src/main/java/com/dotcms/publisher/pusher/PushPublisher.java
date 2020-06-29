@@ -1,5 +1,6 @@
 package com.dotcms.publisher.pusher;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
@@ -21,13 +22,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.EndpointDetail;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.publisher.business.PublishQueueElement;
-import com.dotcms.publisher.business.PublisherQueueJob;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -41,6 +36,7 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFailureEvent;
@@ -49,11 +45,15 @@ import com.dotcms.system.event.local.type.pushpublish.SinglePushPublishEndpointF
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import org.apache.logging.log4j.ThreadContext;
 import org.glassfish.jersey.client.ClientProperties;
 import org.quartz.JobDetail;
@@ -219,71 +219,77 @@ public class PushPublisher extends Publisher {
 
 					InputStream bundleStream = new BufferedInputStream(Files.newInputStream(bundle.toPath()));
 
-
-
 	        		try {
-	        			Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
+						Bundle b = APILocator.getBundleAPI().getBundleById(this.config.getId());
 
 						//For logging purpose
 						ThreadContext.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
 						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
 						PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
-	        			WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish")
-	        					.queryParam("AUTH_TOKEN", PushPublisher.retriveEndpointKeyDigest(endpoint).get())
-	        					.queryParam("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId())
-	        					.queryParam("BUNDLE_NAME", b.getName())
-	        					.queryParam("ENDPOINT_ID", endpoint.getId())
-	        					.queryParam("FILE_NAME", bundle.getName())
-								.queryParam("FORCE_PUSH", b.isForcePush())
-	        			;
+						WebTarget webTarget = client.target(endpoint.toURL() + "/api/bundlePublisher/publish")
+								.queryParam("FORCE_PUSH", b.isForcePush());
 
-	        			Response response = webTarget.request(MediaType.APPLICATION_JSON)
-	        					.header("Content-Disposition", contentDisposition)
-	        					.post(Entity.entity(bundleStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
+						if (endpoint.hasAuthKey()) {
+							Response response = webTarget.request(MediaType.APPLICATION_JSON)
+									.header("Content-Disposition", contentDisposition)
+									.header("Authorization",
+											JsonWebTokenAuthCredentialProcessor.BEARER +
+													PushPublisher.retriveEndpointKey(endpoint).get())
+									.post(Entity.entity(bundleStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
 
-	        			if(response.getStatus() == HttpStatus.SC_OK)
-	        			{
-							PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
-	        				detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
-	        				detail.setInfo("Everything ok");
-	        			} else {
+							if (response.getStatus() == HttpStatus.SC_OK) {
+								PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
+								detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+								detail.setInfo("Everything ok");
+							} else if (response.getStatus() == HttpStatus.SC_UNAUTHORIZED
+									|| response.getStatus() == HttpStatus.SC_FORBIDDEN) {
 
-							PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle.");
-	        				if(currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
-		        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
-		        			}
-	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-							detail.setInfo(
-								"Returned " + response.getStatus() + " status code " +
-									"for the endpoint " + endpoint.getServerName() + " with address " + endpoint
-									.getAddress() + getFormattedPort(endpoint.getPort()));
-							failedEnvironment |= true;
-	        			}
-	        		} catch(Exception e) {
-	        			// if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
-	        			if(currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
-	        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
-	        			}
-	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
+								handleInvalidTokenResponse(environment, endpoint, detail, response);
+								failedEnvironment = true;
+								errorCounter++;
+							} else {
+
+								PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle.");
+								if (currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
+									APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
+								}
+								detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
+								detail.setInfo(
+										"Returned " + response.getStatus() + " status code " +
+												"for the endpoint " + endpoint.getServerName() + " with address " + endpoint
+												.getAddress() + getFormattedPort(endpoint.getPort()));
+								failedEnvironment = true;
+							}
+						} else {
+							markAsInValidToken(environment, endpoint, detail, JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
+							failedEnvironment = true;
+							errorCounter++;
+						}
+					} catch(Exception e){
+						// if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
+						if (currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
+							APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
+						}
+						detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 						String
-							error =
-							"An error occurred for the endpoint " + endpoint.getServerName() + " with address "
-								+ endpoint.getAddress() + getFormattedPort(
-								endpoint.getPort()) + ". Error: " + e.getMessage();
+								error =
+								"An error occurred for the endpoint " + endpoint.getServerName() + " with address "
+										+ endpoint.getAddress() + getFormattedPort(
+										endpoint.getPort()) + ". Error: " + e.getMessage();
 						detail.setInfo(error);
-	        			failedEnvironment |= true;
-	        			errorCounter++;
-	        			Logger.error(this.getClass(), error, e);
+						failedEnvironment |= true;
+						errorCounter++;
+						Logger.error(this.getClass(), error, e);
 
 						PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle. Exception: " + e.getMessage());
-	        		} finally {
-	        			CloseUtils.closeQuietly(bundleStream);
+					} finally{
+						CloseUtils.closeQuietly(bundleStream);
 						ThreadContext.remove(ENDPOINT_NAME);
 						ThreadContext.remove(BUNDLE_ID);
-	        		}
-	        		if (isHistoryEmpty || failedEnvironment) {
-	        			currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
-	        		}
+					}
+					if (isHistoryEmpty || failedEnvironment) {
+						currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
+					}
 				}
 			}
 
@@ -333,6 +339,44 @@ public class PushPublisher extends Publisher {
 		}
 	}
 
+	private void handleInvalidTokenResponse(
+			final Environment environment,
+			final PublishingEndPoint endpoint,
+			final EndpointDetail detail,
+			final Response response) throws DotDataException, LanguageException {
+
+		final Map<String, String> wwwAuthenticateHeader = ResourceResponse.getWWWAuthenticateHeader(response);
+		final String errorKey = wwwAuthenticateHeader.get("error_key");
+
+		markAsInValidToken(environment, endpoint, detail, errorKey);
+	}
+
+	private void markAsInValidToken(
+			final Environment environment,
+			final PublishingEndPoint endpoint,
+			final EndpointDetail detail,
+			final String errorKey) throws DotDataException, LanguageException {
+
+		APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
+
+		detail.setStatus(PublishAuditStatus.Status.INVALID_TOKEN.getCode());
+
+		final String message = LanguageUtil.get(String.format("push_publish.end_point.%s_message", errorKey));
+		detail.setInfo(message);
+		PushPublishLogger.log(this.getClass(), message);
+
+		endpoint.setAuthKey(errorKey);
+		APILocator.getPublisherEndPointAPI().updateEndPoint(endpoint);
+
+		try {
+			PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(this.config.getId());
+		} catch (DotPublisherException e) {
+			Logger.error(this.getClass(), e);
+			throw new DotRuntimeException(e);
+		}
+	}
+
+
 	/**
 	 * @param port
 	 * @return
@@ -347,18 +391,25 @@ public class PushPublisher extends Publisher {
 
     /**
      * Return a end point token
-     * @param token
      * @return
      * @throws IOException
      */
-	public static Optional<String> retriveEndpointKeyDigest(final PublishingEndPoint endpoint) throws IOException { // todo: create a method that allows to receives a key and use the com.dotcms.util.security.Encryptor instead PublicEncryptionFactory
-	  
-	  if(endpoint==null || endpoint.getAuthKey() ==null) {
-	    Logger.warn(PushPublisher.class,"Endpoint or endpoint key is null:" + endpoint);
-	    return Optional.empty();
-	  }
-	  
-	  String token = PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString());
+    //todo: I think this method can be remove
+	public static Optional<String> retriveEndpointKeyDigest(final PublishingEndPoint endpoint) throws IOException {
+
+		final Optional<String> key = retriveEndpointKey(endpoint);
+
+		return key.isPresent() ? Optional.empty() : Optional.of(PublicEncryptionFactory.digestString(key.get()));
+	}
+
+	public static Optional<String> retriveEndpointKey(final PublishingEndPoint endpoint) throws IOException { // todo: create a method that allows to receives a key and use the com.dotcms.util.security.Encryptor instead PublicEncryptionFactory
+
+		if(endpoint==null || endpoint.getAuthKey() ==null) {
+			Logger.warn(PushPublisher.class,"Endpoint or endpoint key is null:" + endpoint);
+			return Optional.empty();
+		}
+
+		String token = PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString());
 		String key = null;
 		if(token.contains(File.separator)) {
 			File tokenFile = new File(token);
@@ -367,7 +418,7 @@ public class PushPublisher extends Publisher {
 		} else {
 			key = token;
 		}
-		return key==null ? Optional.empty() : Optional.of(PublicEncryptionFactory.digestString(key));
+		return key==null ? Optional.empty() : Optional.of(key);
 	}
 
     @Override

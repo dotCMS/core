@@ -4,11 +4,16 @@ import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
+import com.liferay.portal.language.LanguageUtil;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * @author Jonathan Gamba
@@ -16,6 +21,7 @@ import java.util.Optional;
  */
 public class ResourceResponse {
 
+    public static final String AUTHENTICATE_RESPONSE_ERROR_HEADER_NAME = "WWW-Authenticate";
     private String type;
     private Map<String, String> paramsMap;
 
@@ -147,14 +153,58 @@ public class ResourceResponse {
         return responseError( null, statusCode );
     }
 
-    public Response responseError ( String response, int statusCode ) {
 
+    public Response responseAuthenticateError ( final String errorCode, final String errorKey ) {
+        return responseWithWWWAuthenticate(HttpStatus.SC_UNAUTHORIZED, errorCode, errorKey);
+    }
+
+    public Response responseWithWWWAuthenticate ( final int status, final String errorCode, final String errorKey ) {
+        return responseError(
+                null,
+                status,
+                map("WWW-Authenticate",
+                        String.format("error=%s,error_key=%s", errorCode, errorKey)
+                )
+        );
+    }
+
+    public Response responseError ( String response, int statusCode ) {
+        return this.responseError(response, statusCode, null);
+    }
+
+    public Response responseError (
+            final String response, int statusCode,
+            final Map<String, Object> headers) {
         Response.ResponseBuilder responseBuilder = Response.status( statusCode );
+
         if ( UtilMethods.isSet( response ) ) {
             responseBuilder.entity( response );
         }
 
+        if ( UtilMethods.isSet( headers ) ) {
+            for (Map.Entry<String, Object> entry : headers.entrySet()) {
+                responseBuilder.header(entry.getKey(), entry.getValue());
+            }
+        }
+
         return responseBuilder.build();
+    }
+
+    public Response responseUnauthorizedError(final String errorKey) {
+        return responseWithWWWAuthenticate(HttpStatus.SC_FORBIDDEN, "insufficient_scope", errorKey);
+    }
+
+    public static Map<String, String> getWWWAuthenticateHeader(final Response response) {
+        final String[] headerFields = response.getHeaderString(AUTHENTICATE_RESPONSE_ERROR_HEADER_NAME).split(",");
+
+        final Map<String, String> headerValues = new HashMap<>();
+
+        for (final String headerField : headerFields) {
+            final String[] fieldSplit = headerField.split("=");
+            headerValues.put(fieldSplit[0], fieldSplit[1]);
+        }
+
+        return headerValues;
     }
 
 }

@@ -53,7 +53,7 @@
 	</filter>
 	<filter>
 		<filter-name>VanityURLFilter</filter-name>
-		<filter-class>com.dotmarketing.filters.VanityURLFilter</filter-class>
+		<filter-class>com.dotcms.vanityurl.filters.VanityURLFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>

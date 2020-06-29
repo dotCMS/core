@@ -144,7 +144,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/Users/freddyrodriguez/Downloads/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -243,7 +243,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/Users/freddyrodriguez/Downloads/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -308,7 +308,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/Users/freddyrodriguez/Downloads/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -532,7 +532,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/Users/freddyrodriguez/Downloads/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							},
 							"options": {
 								"file": {}
@@ -586,21 +586,21 @@
 	],
 	"variable": [
 		{
-			"id": "d55fcdaf-f172-4420-aca2-7c34e7d788c9",
+			"id": "d41f6313-1f60-4cfd-a1db-bcea954ee340",
 			"key": "serverURL",
 			"value": "http://localhost:8080",
 			"type": "string"
 		},
 		{
-			"id": "7a9f7921-bd5e-46be-8c94-a56a01ad6b22",
+			"id": "bdcecdfa-3d65-4d2b-82cb-a0ca005e842e",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk1YjA3NzhlOC01NmViLTQ3OTYtYjIzZC00NzYzOWNmY2I1ZWYiLCJ4bW9kIjoxNTkyMjI5OTI5MDAwLCJuYmYiOjE1OTIyMjk5MjksImlzcyI6IjZkYzAyYzVhODAiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2ODY4MDEyOTQsImlhdCI6MTU5MjIyOTkyOSwianRpIjoiYTYxOGZmZWUtZGZlMC00NWZlLThmZjUtNGU0MGZiMTE2ZTEyIn0.PsY0oDxvhRB3SE2p5ATXSsLRLZaA0LnC-V6GD0ucQfM",
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkzNmY2NGIzYi1mZjJkLTRlYjgtYmQ2Ni0zODcwNGY1ZTBhMDEiLCJ4bW9kIjoxNTkyODU2Nzk3MDAwLCJuYmYiOjE1OTI4NTY3OTcsImlzcyI6IjI5NDAxNTM3NDIiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2ODc0MjgxNjIsImlhdCI6MTU5Mjg1Njc5NywianRpIjoiNDEwNTk0OTctMTIwYS00ZWNmLThhYmUtYmIxYmQ1MWI4ZWQ1In0.L9Eifc77_MUCPVXEL5umKLfYlWnXVGM1PrSejhuyyIo",
 			"type": "string"
 		},
 		{
-			"id": "4b7395c3-ab62-4178-9126-282cd6e501e6",
+			"id": "0d734c09-c27d-49aa-88ed-2c2703260223",
 			"key": "bundle_id",
-			"value": "bundle_1592003186754",
+			"value": "bundle_1592856910535",
 			"type": "string"
 		}
 	],
