@@ -13,20 +13,17 @@ import { dotMenuMock } from '../../services/dot-navigation.service.spec';
 import { DotMenu } from '@models/navigation';
 import { TooltipModule } from 'primeng/primeng';
 import { DOTTestBed } from '@tests/dot-test-bed';
-import { BehaviorSubject } from 'rxjs';
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `
-        <dot-nav-item [data]="menu" [collapsed]="collapsed$ | async"></dot-nav-item>
-    `
+    template: ` <dot-nav-item [data]="menu" [collapsed]="collapsed"></dot-nav-item> `
 })
 class TestHostComponent {
     menu: DotMenu = {
         ...dotMenuMock(),
         active: true
     };
-    collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(false);
+    collapsed = false;
 }
 
 describe('DotNavItemComponent', () => {
@@ -38,20 +35,18 @@ describe('DotNavItemComponent', () => {
     let navItem: DebugElement;
     let subNav: DebugElement;
 
-    beforeEach(
-        async(() => {
-            TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
-                imports: [
-                    DotNavIconModule,
-                    DotIconModule,
-                    RouterTestingModule,
-                    BrowserAnimationsModule,
-                    TooltipModule
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(async(() => {
+        TestBed.configureTestingModule({
+            declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
+            imports: [
+                DotNavIconModule,
+                DotIconModule,
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                TooltipModule
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(TestHostComponent);
@@ -94,6 +89,33 @@ describe('DotNavItemComponent', () => {
     });
 
     describe('dot-sub-nav', () => {
+        it('should set position correctly', () => {
+            deHost.componentInstance.collapsed = true;
+
+            subNav.nativeElement.style.position = 'absolute';
+            subNav.nativeElement.style.top = '5000px'; // moving it out of the window
+
+            fixtureHost.detectChanges();
+
+            navItem.triggerEventHandler('mouseenter', {});
+            fixtureHost.detectChanges();
+
+            expect(subNav.styles).toEqual({
+                top: 'auto',
+                bottom: '0'
+            });
+
+            spyOnProperty(window, 'innerHeight').and.returnValue(1760);
+
+            navItem.triggerEventHandler('mouseenter', {});
+            fixtureHost.detectChanges();
+
+            expect(subNav.styles).toEqual({
+                top: null,
+                bottom: null
+            });
+        });
+
         it('should set data correctly', () => {
             expect(subNav.componentInstance.data).toEqual(componentHost.menu);
             expect(subNav.componentInstance.collapsed).toBe(false);
@@ -108,13 +130,12 @@ describe('DotNavItemComponent', () => {
 
     describe('Collapsed', () => {
         beforeEach(() => {
-            componentHost.collapsed$.next(true);
+            componentHost.collapsed = true;
             fixtureHost.detectChanges();
         });
 
         it('should set data correctly on sub-nav', () => {
             expect(subNav.componentInstance.collapsed).toBe(true);
         });
-
     });
 });

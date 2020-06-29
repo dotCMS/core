@@ -1,6 +1,7 @@
 <div class="dot-nav__title">
     <div
         (click)="clickHandler($event, data)"
+        (mouseenter)="setSubMenuPosition()"
         [class.dot-nav__item--active]="data.active"
         appendTo="target"
         class="dot-nav__item"
@@ -15,5 +16,11 @@
         </dot-icon>
     </div>
 </div>
-<dot-sub-nav [data]="data" [collapsed]="collapsed" (itemClick)="handleItemClick($event)">
+<dot-sub-nav
+    #subnav
+    [ngStyle]="customStyles"
+    [data]="data"
+    [collapsed]="collapsed"
+    (itemClick)="handleItemClick($event)"
+>
 </dot-sub-nav>

@@ -6,7 +6,7 @@ import { SelectItem } from 'primeng/primeng';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { LoggerService, DotPushPublishDialogService } from 'dotcms-js';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { takeUntil, map, take, catchError } from 'rxjs/operators';
+import { takeUntil, map, take, catchError, filter } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
 import { Subject } from 'rxjs';
 import { DotPushPublishDialogData } from 'dotcms-models';
@@ -39,6 +39,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private defaultFilterKey: string;
+    private _filterOptions: SelectItem[] = null;
 
     constructor(
         private pushPublishService: PushPublishService,
@@ -140,7 +141,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     private loadFilters(): Observable<any> {
         return this.dotPushPublishFiltersService.get().pipe(
             map((filterOptions: DotPushPublishFilter[]) => {
-                this.filterOptions = filterOptions
+                this._filterOptions = filterOptions
                     .map((filter: DotPushPublishFilter) => {
                         return {
                             label: filter.title,
@@ -157,6 +158,8 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
                         // a must be equal to b
                         return 0;
                     });
+
+                this.filterOptions = this._filterOptions;
 
                 this.defaultFilterKey = filterOptions
                     .filter(({ defaultFilter }: DotPushPublishFilter) => defaultFilter)
@@ -177,24 +180,47 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
             forcePush: false
         });
 
+        const publishDate = this.form.get('publishdate');
+        const expireDate = this.form.get('expiredate');
+        const ppFilter = this.form.get('filterKey');
+
+        const enableFilters = () => {
+            ppFilter.enable();
+            this.filterOptions = this._filterOptions;
+            ppFilter.setValue(this.defaultFilterKey);
+        };
+
+        this.form
+            .get('filterKey')
+            .valueChanges.pipe(takeUntil(this.destroy$))
+            .pipe(filter((value: string) => !!value))
+            .subscribe((filter: string) => {
+                this.defaultFilterKey = filter;
+            });
+
         this.form
             .get('pushActionSelected')
             .valueChanges.pipe(takeUntil(this.destroy$))
             .subscribe((pushActionSelected: string) => {
                 switch (pushActionSelected) {
                     case 'publish': {
-                        this.form.get('publishdate').enable();
-                        this.form.get('expiredate').disable();
+                        publishDate.enable();
+                        expireDate.disable();
+                        enableFilters();
                         break;
                     }
                     case 'expire': {
-                        this.form.get('publishdate').disable();
-                        this.form.get('expiredate').enable();
+                        publishDate.disable();
+                        expireDate.enable();
+                        ppFilter.disable();
+                        ppFilter.setValue('');
+                        this.filterOptions = [];
                         break;
                     }
                     default: {
-                        this.form.get('publishdate').enable();
-                        this.form.get('expiredate').enable();
+                        publishDate.enable();
+                        expireDate.enable();
+                        enableFilters();
                     }
                 }
             });
