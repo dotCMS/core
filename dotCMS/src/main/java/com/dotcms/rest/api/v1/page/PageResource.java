@@ -406,11 +406,11 @@ public class PageResource {
         Logger.debug(this, ()->String.format("Saving page's content: %s",
                 pageContainerForm != null ? pageContainerForm.getRequestJson() : null));
 
+        final InitDataObject initData = webResource.init(request, response,true);
+
         if (pageContainerForm == null) {
             throw new BadRequestException("Layout is required");
         }
-
-        final InitDataObject initData = webResource.init(request, response,true);
 
         try {
             final User user = initData.getUser();

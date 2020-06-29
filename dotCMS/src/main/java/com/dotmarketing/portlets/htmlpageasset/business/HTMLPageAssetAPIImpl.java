@@ -27,6 +27,7 @@ import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
@@ -34,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -906,13 +908,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     languageAPI.getDefaultLanguage().getId(), user, respectFrontEndPermissions);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             } catch(DotStateException e) {
-                throw new ResourceNotFoundException(
-                        "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: "
+                throw new HTMLPageAssetNotFoundException(
+                        "Unable to find Page. Identifier: " + identifier + ", Live: " + live + ", Lang: "
                                 + languageAPI.getDefaultLanguage().getId(), e);
             }
         } else {
-            throw new ResourceNotFoundException(
-                    "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: " + providedLang, dse);
+            throw new DoesNotExistException(
+                    "Unable to find Page. Identifier: " + identifier + ", Live: " + live + ", Lang: " + providedLang, dse);
         }
         return htmlPage;
     }
