@@ -160,7 +160,7 @@ dependencies {
         transitive = false
     }
 
-    //felix fileTree("/Users/jsanca/gitsources/dotsmal-osgi/build/libs").include('com.dotcms.samlbundle-5.3.3.jar')
+    felix group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '5.3.3'
 
 
     felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'

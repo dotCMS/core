@@ -513,6 +513,6 @@ dependencies {
     providedCompile fileTree("../libs/buildlibs").include('mail.jar')
 
     // todo: remove this when deploy saml bundle on artifactory
-    compile fileTree("/Users/jsanca/gitsources/dotsmal-osgi/build/libs").include('com.dotcms.samlbundle-5.3.3.jar')
+    //compile fileTree("/Users/jsanca/gitsources/dotsmal-osgi/build/libs").include('com.dotcms.samlbundle-5.3.3.jar')
 
 }
