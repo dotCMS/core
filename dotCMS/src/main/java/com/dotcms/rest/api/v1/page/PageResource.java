@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotmarketing.exception.DoesNotExistException;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -293,7 +294,7 @@ public class PageResource {
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
 
-        Response res = null;
+        Response res;
 
         try {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
@@ -311,11 +312,11 @@ public class PageResource {
 
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
-        } catch(HTMLPageAssetNotFoundException e) {
-            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.saveLayout, parameters:  %s, %s %s: ",
+        } catch(DoesNotExistException e) {
+            final String errorMsg = String.format("DoesNotExistException on PageResource.saveLayout, parameters:  %s, %s %s: ",
                     request, pageId, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+            res = ExceptionMapperUtil.createResponse("", "Unable to find page with Identifier: " + pageId, Response.Status.NOT_FOUND);
         } catch (BadRequestException | DotDataException e) {
             final String errorMsg = String.format("%s on PageResource.saveLayout, parameters:  %s, %s %s: ",
                     e.getClass().getCanonicalName(), request, pageId, form);

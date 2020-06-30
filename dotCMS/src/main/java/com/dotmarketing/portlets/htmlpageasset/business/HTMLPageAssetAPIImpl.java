@@ -908,7 +908,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     languageAPI.getDefaultLanguage().getId(), user, respectFrontEndPermissions);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             } catch(DotStateException e) {
-                throw new HTMLPageAssetNotFoundException(
+                throw new DoesNotExistException(
                         "Unable to find Page. Identifier: " + identifier + ", Live: " + live + ", Lang: "
                                 + languageAPI.getDefaultLanguage().getId(), e);
             }

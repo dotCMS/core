@@ -638,8 +638,8 @@ public class BundleResource {
 
         for (final BodyPart part : multipart.getBodyParts()) {
 
-            InputStream inputStream = (part.getEntity() instanceof InputStream) ? InputStream.class
-                    .cast(part.getEntity())
+            InputStream inputStream = (part.getEntity() instanceof InputStream) ? (InputStream) part
+                    .getEntity()
                     : Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull();
 
             if (inputStream == null) {
@@ -650,7 +650,7 @@ public class BundleResource {
                 continue;
             }
             final String fileName = meta.getFileName();
-            if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
+            if (UtilMethods.isNotSet(fileName) || fileName.startsWith(".") || fileName.contains("/.")) {
                 continue;
             }
 

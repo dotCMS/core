@@ -146,7 +146,7 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
 
         final Map<String, Object> map = new HashMap<>();
 
-        map.put("folderId", folder.getIdentifier());
+        map.put("folderId", folder.getInode());
         map.put("folderFileMask", folder.getFilesMasks());
         map.put("folderSortOrder", folder.getSortOrder());
         map.put("folderName", folder.getName());
