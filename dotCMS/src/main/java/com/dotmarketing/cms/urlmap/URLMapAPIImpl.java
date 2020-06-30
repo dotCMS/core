@@ -40,7 +40,7 @@ import com.liferay.util.StringPool;
  */
 public class URLMapAPIImpl implements URLMapAPI {
 
-    private volatile Collection<ContentTypeURLPattern> patternsCache;
+    private final Collection<ContentTypeURLPattern> patternsCache= new ArrayList<>();
     private final UserWebAPI wuserAPI = WebAPILocator.getUserWebAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
@@ -59,7 +59,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         }
 
         final ContentType contentType = contentlet.getContentType();
-        final Optional<Identifier> optDetailIdentifier = this.getDetailtPageUri(contentType, context.getHost());
+        final Optional<Identifier> optDetailIdentifier = this.getDetailPageUri(contentType, context.getHost());
 
         if(!optDetailIdentifier.isPresent()) {
             return Optional.empty();
@@ -105,7 +105,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         return matchingContentlet;
     }
 
-    private Optional<Identifier> getDetailtPageUri(final ContentType contentType, Host currentHost) {
+    private Optional<Identifier> getDetailPageUri(final ContentType contentType, Host currentHost) {
         if (contentType == null || UtilMethods.isEmpty(contentType.detailPage())) {
             return Optional.empty();
         }
@@ -303,7 +303,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             Logger.error(URLMapAPIImpl.class, e2.getMessage(), e2);
         }
 
-        return mastRegEx == null || patternsCache == null || patternsCache.isEmpty();
+        return mastRegEx == null || patternsCache.isEmpty();
     }
 
     /**
@@ -317,7 +317,12 @@ public class URLMapAPIImpl implements URLMapAPI {
      * @throws DotDataException An error occurred when retrieving information from the database.
      */
     private synchronized void loadPatterns() throws DotDataException {
-        patternsCache = new ArrayList<>();
+        
+        if(!shouldLoadPatterns()) {
+            return;
+        }
+        
+        patternsCache.clear();
 
         final List<SimpleStructureURLMap> urlMaps = typeAPI.findStructureURLMapPatterns();
 
@@ -335,7 +340,7 @@ public class URLMapAPIImpl implements URLMapAPI {
 
                 patternsCache.add(new ContentTypeURLPattern(
                         regEx, urlMap.getInode(),
-                        urlMap.getURLMapPattern(), getFieldMathed(urlMap)
+                        urlMap.getURLMapPattern(), getFieldMatches(urlMap)
                 ));
 
                 if (masterRegEx.length() > startLength) {
@@ -352,10 +357,10 @@ public class URLMapAPIImpl implements URLMapAPI {
     }
 
     @NotNull
-    private List<String> getFieldMathed(final SimpleStructureURLMap urlMap) {
-        final List<RegExMatch> fieldMathed = RegEX.find(urlMap.getURLMapPattern(), "{([^{}]+)}");
+    private List<String> getFieldMatches(final SimpleStructureURLMap urlMap) {
+        final List<RegExMatch> fieldMatches = RegEX.find(urlMap.getURLMapPattern(), "{([^{}]+)}");
         final List<String> fields = new ArrayList<String>();
-        for (final RegExMatch regExMatch : fieldMathed) {
+        for (final RegExMatch regExMatch : fieldMatches) {
             fields.add(regExMatch.getGroups().get(0).getMatch());
         }
         return fields;
