@@ -22,14 +22,14 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         structInode:null
     },
 
-    show: function () {
+    show: function (isBulk) {
         var self = this;
         //Required clean up as these modals has duplicated widgets and collide without a clean up
 
         const url = this._buildUrl();
 
         var workflowPPDialog = dijit.byId("contentletWfDialog");
-        if(workflowPPDialog){
+        if (workflowPPDialog) {
             workflowPPDialog.destroyRecursive();
         }
 
@@ -55,10 +55,11 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
             dojo.disconnect(connection);
             var hasCondition = (dojo.byId("hasCondition") ? dojo.byId("hasCondition").value : "");
-            if(hasCondition === 'true'){
-               var actionId = self.workflow.actionId;
-               container.evaluateCondition(actionId, this.title);
-               return;
+            if (hasCondition === 'true') {
+                var actionId = self.workflow.actionId;
+                container.evaluateCondition(actionId, this.title);
+                self.hide();
+                return;
             }
 
             var filterDiv = dojo.byId("filterTimeDiv");
@@ -71,9 +72,9 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
                 }
             }
 
-            if(cats || restricted) {
-            	dijit.byId("iwtExpire").set("disabled", true) ;
-            	dijit.byId("iwtPublishExpire").set("disabled", true) ;
+            if (cats || restricted) {
+                dijit.byId("iwtExpire").set("disabled", true);
+                dijit.byId("iwtPublishExpire").set("disabled", true);
             }
             // For archived Content, allow users to "Push" and "Push Remove" ONLY
             if (removeOnly) {
@@ -82,27 +83,27 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
                 dijit.byId("iwtExpire").set("disabled", false);
             }
 
-            dojo.connect(dijit.byId("iwtExpire"), "onChange", function(){
+            dojo.connect(dijit.byId("iwtExpire"), "onChange", function () {
                 container.togglePublishExpireDivs();
             });
 
-            dojo.connect(dijit.byId("iwtPublish"), "onChange", function(){
+            dojo.connect(dijit.byId("iwtPublish"), "onChange", function () {
                 container.togglePublishExpireDivs();
             });
 
-            dojo.connect(dijit.byId("iwtPublishExpire"), "onChange", function(){
+            dojo.connect(dijit.byId("iwtPublishExpire"), "onChange", function () {
                 container.togglePublishExpireDivs();
             });
 
-            dojo.connect(dijit.byId("environmentSelect"), "onChange", function(){
+            dojo.connect(dijit.byId("environmentSelect"), "onChange", function () {
                 container.addSelectedToWhereToSend();
             });
 
-            dojo.connect(dijit.byId("remotePublishSaveButton"), "onClick", function(){
+            dojo.connect(dijit.byId("remotePublishSaveButton"), "onClick", function () {
                 container.remotePublish();
             });
 
-            dojo.connect(dijit.byId("remotePublishCancelButton"), "onClick", function(){
+            dojo.connect(dijit.byId("remotePublishCancelButton"), "onClick", function () {
                 var lastSelectedEnvironments = JSON.parse(sessionStorage.getItem("lastSelectedEnvironments"));
                 lastSelectedEnvironments = container.inialStateEnvs;
                 sessionStorage.setItem("lastSelectedEnvironments", JSON.stringify(lastSelectedEnvironments));
@@ -111,17 +112,17 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             });
 
             var environmentSelect = dijit.byId("environmentSelect");
-            if(environmentSelect){
-               environmentSelect.set('store',container.environmentStore);
-               environmentSelect.searchAttr = 'name';
-               environmentSelect.displayedValue = '0';
-               environmentSelect.startup();
+            if (environmentSelect) {
+                environmentSelect.set('store', container.environmentStore);
+                environmentSelect.searchAttr = 'name';
+                environmentSelect.displayedValue = '0';
+                environmentSelect.startup();
             }
 
             var assignSelect = dijit.byId("taskAssignmentAux");
-            if(assignSelect){
-               assignSelect.set('store',container.roleReadStore);
-               assignSelect.startup();
+            if (assignSelect) {
+                assignSelect.set('store', container.roleReadStore);
+                assignSelect.startup();
             }
 
         });
@@ -130,8 +131,11 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             var lastSelectedEnvironments = JSON.parse(sessionStorage.getItem("lastSelectedEnvironments"));
             if (lastSelectedEnvironments) {
                 for (var count = 0; count < lastSelectedEnvironments.length; count++) {
-                	container.addToWhereToSend(lastSelectedEnvironments[count].id, lastSelectedEnvironments[count].name);
-                	container.inialStateEnvs[count] = {name: lastSelectedEnvironments[count].name, id: lastSelectedEnvironments[count].id};
+                    container.addToWhereToSend(lastSelectedEnvironments[count].id, lastSelectedEnvironments[count].name);
+                    container.inialStateEnvs[count] = {
+                        name: lastSelectedEnvironments[count].name,
+                        id: lastSelectedEnvironments[count].id
+                    };
                 }
                 container.refreshWhereToSend();
             }
@@ -144,28 +148,18 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             container.clear();
         });
 
-        dia.set(url);
-        const eventData = {
-            assetIdentifier: container.assetIdentifier || this.workflow.inode,
-            dateFilter: this.dateFilter,
-            isBundle: container.isBundle,
-            removeOnly: this.removeOnly,
-            restricted: this.restricted,
-            cats: this.cats,
-            title: this.title
-        };
-
-        if (this.workflow && this.workflow.actionId) {
-            container.evaluateCondition(this.workflow.actionId, this.title, eventData);
-        } else {
-            var customEvent = document.createEvent("CustomEvent");
-            customEvent.initCustomEvent("ng-event", false, false,  {
-                name: "push-publish",
-                data: eventData
+        if (this._hasWorkflow()) {
+            this._getWorkFLow(this.workflow.actionId).then((action) => {
+                if ( action.assignable || action.commentable || isBulk){
+                    dia.set(url);
+                    dia.show();
+                } else {
+                    this._dispatchAngularDialogEvent();
+                }
             });
-            document.dispatchEvent(customEvent);
+        } else {
+            this._dispatchAngularDialogEvent();
         }
-         //dia.show();
     },
 
     hide: function () {
@@ -228,6 +222,40 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             }
         }
         return baseUrl + (urlParams !== undefined ? urlParams : '');
+    },
+
+    _hasWorkflow: function () {
+        return this.workflow.inode  || this.workflow.actionId || this.workflow.structInode
+    },
+
+    _getWorkFLow: function (action) {
+        return fetch(`/api/v1/workflow/actions/${action}`)
+            .then(response => response.json())
+            .then(data => data.entity)
+            .catch(() => []);
+    },
+
+    _dispatchAngularDialogEvent: function () {
+        const eventData = {
+            assetIdentifier: this.container.assetIdentifier || this.workflow.inode,
+            dateFilter: this.dateFilter,
+            isBundle: this.container.isBundle,
+            removeOnly: this.removeOnly,
+            restricted: this.restricted,
+            cats: this.cats,
+            title: this.title
+        };
+
+        if (this.workflow && this.workflow.actionId) {
+            this.container.evaluateCondition(this.workflow.actionId, this.title, eventData);
+        } else {
+            var customEvent = document.createEvent("CustomEvent");
+            customEvent.initCustomEvent("ng-event", false, false,  {
+                name: "push-publish",
+                data: eventData
+            });
+            document.dispatchEvent(customEvent);
+        }
     }
 
 

@@ -248,7 +248,7 @@ public class TikaUtils {
         try (InputStream inputStream = FileUtil.createInputStream(contentMetaFile.toPath(), compressor)) {
 
             objectMap   = objectMapper.readValue(inputStream, Map.class);
-            Logger.info(this, "Metadata read from: " + contentMetaFile);
+            Logger.debug(this, "Metadata read from: " + contentMetaFile);
         } catch (IOException e) {
 
             Logger.error(this, e.getMessage(), e);
