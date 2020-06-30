@@ -225,11 +225,13 @@ public class PushPublisher extends Publisher {
 						//For logging purpose
 						ThreadContext.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
 						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
-						PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
-						WebTarget webTarget = client.target(endpoint.toURL() + "/api/bundlePublisher/publish")
-								.queryParam("FORCE_PUSH", b.isForcePush());
 
 						if (endpoint.hasAuthKey()) {
+							PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
+
+							WebTarget webTarget = client.target(endpoint.toURL() + "/api/bundlePublisher/publish")
+									.queryParam("FORCE_PUSH", b.isForcePush());
+
 							Response response = webTarget.request(MediaType.APPLICATION_JSON)
 									.header("Content-Disposition", contentDisposition)
 									.header("Authorization",

@@ -13,11 +13,11 @@ import com.dotmarketing.util.Logger;
 
 public class IntegrityDataGeneratorThread extends Thread {
 
-    private PublishingEndPoint requesterEndPoint;
+    private String transactionId;
     public ServletContext servletContext;
 
-    public IntegrityDataGeneratorThread(PublishingEndPoint mySelf, ServletContext servletContext) {
-        this.requesterEndPoint = mySelf;
+    public IntegrityDataGeneratorThread(final String transactionId, final ServletContext servletContext) {
+        this.transactionId = transactionId;
         this.servletContext = servletContext;
     }
 
@@ -26,13 +26,13 @@ public class IntegrityDataGeneratorThread extends Thread {
 
         try {
 
-            if(requesterEndPoint==null)
+            if(transactionId==null)
                 throw new Exception("Not valid endpoint provided");
 
             servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.PROCESSING);
 
             IntegrityUtil integrityUtil = new IntegrityUtil();
-            integrityUtil.generateDataToCheckZip(requesterEndPoint.getId());
+            integrityUtil.generateDataToCheckZip(transactionId);
 
         } catch (Exception e) {
 
