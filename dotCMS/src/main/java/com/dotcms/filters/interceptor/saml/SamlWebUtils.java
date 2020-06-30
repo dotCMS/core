@@ -67,7 +67,7 @@ public class SamlWebUtils {
      */
     protected boolean isNotLogged(final HttpServletRequest request) {
 
-        final boolean isNotLogged;
+        boolean isNotLogged     = true;
         final boolean isBackend = this.isBackEndAdmin(request, request.getRequestURI());
 
         try {
@@ -76,7 +76,7 @@ public class SamlWebUtils {
                     !this.userWebAPI.isLoggedToBackend(request):
                     null == this.userWebAPI.getLoggedInFrontendUser(request);
 
-            Logger.debug(this, ()-> "Trying to go to back-end login? " + isBackend
+            Logger.debug(this, "Trying to go to back-end login? " + isBackend
                     + ", Is user NOT logged in? " + isNotLogged);
         } catch (PortalException | SystemException e) {
 

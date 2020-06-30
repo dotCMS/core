@@ -4,11 +4,11 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.saml.DotSamlProxyFactory;
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.IdentityProviderConfigurationFactory;
-import com.dotcms.saml.service.external.SamlAuthenticationService;
-import com.dotcms.saml.service.external.SamlConfigurationService;
-import com.dotcms.saml.service.external.SamlName;
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.IdentityProviderConfigurationFactory;
+import com.dotcms.saml.SamlAuthenticationService;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlName;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
@@ -61,7 +61,7 @@ public class SamlWebInterceptor implements WebInterceptor {
     protected final AppsAPI         appsAPI;
     protected final SamlWebUtils    samlWebUtils;
     protected final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
-    protected final SamlConfigurationService             samlConfigurationService;
+    protected final SamlConfigurationService samlConfigurationService;
 
     public SamlWebInterceptor() {
 

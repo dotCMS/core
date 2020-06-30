@@ -2,10 +2,10 @@ package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.saml.DotSamlProxyFactory;
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.IdentityProviderConfigurationFactory;
-import com.dotcms.saml.service.external.SamlAuthenticationService;
-import com.dotcms.saml.service.external.SamlException;
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.IdentityProviderConfigurationFactory;
+import com.dotcms.saml.SamlAuthenticationService;
+import com.dotcms.saml.SamlException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -40,7 +40,7 @@ public class DotSamlResource implements Serializable {
 
 		this.hostWebAPI  = WebAPILocator.getHostWebAPI();
 		this.samlAuthenticationService = DotSamlProxyFactory.getInstance().samlAuthenticationService();
-		this.identityProviderConfigurationFactory = DotSamlProxyFactory.getInstance().IdentityProviderConfigurationFactory();
+		this.identityProviderConfigurationFactory = DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory();
 	}
 
 	@GET

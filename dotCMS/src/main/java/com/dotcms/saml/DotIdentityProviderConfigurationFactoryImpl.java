@@ -1,18 +1,13 @@
 package com.dotcms.saml;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.IdentityProviderConfigurationFactory;
-import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

@@ -1,7 +1,5 @@
 package com.dotcms.saml;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.Secret;
@@ -32,7 +30,7 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
     private final Optional<Secret> findSecret (final String key) {
 
         final Optional<AppSecrets> appSecretOpt =
-                Try.of(()->this.appsAPI.getSecrets(DotSamlConfigurationServiceImpl.DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY,
+                Try.of(()->this.appsAPI.getSecrets(DotAbstractSamlConfigurationServiceImpl.DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY,
                         true, host, APILocator.systemUser())).getOrElseGet(e -> Optional.empty());
 
         return appSecretOpt.isPresent() && appSecretOpt.get().getSecrets().containsKey(key)?

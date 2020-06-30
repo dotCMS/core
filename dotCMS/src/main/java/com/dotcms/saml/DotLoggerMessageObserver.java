@@ -1,6 +1,5 @@
 package com.dotcms.saml;
 
-import com.dotcms.saml.service.external.MessageObserver;
 import com.dotmarketing.util.Logger;
 
 import java.text.MessageFormat;

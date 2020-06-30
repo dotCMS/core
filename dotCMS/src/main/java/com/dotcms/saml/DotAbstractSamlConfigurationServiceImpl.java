@@ -1,9 +1,5 @@
 package com.dotcms.saml;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.SamlConfigurationService;
-import com.dotcms.saml.service.external.SamlException;
-import com.dotcms.saml.service.external.SamlName;
 import com.dotmarketing.util.Logger;
 import org.apache.commons.lang.StringUtils;
 
@@ -21,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * It has different implementation for several kinds of values
  * @author jsanca
  */
-public class DotSamlConfigurationServiceImpl implements SamlConfigurationService {
+public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlConfigurationService {
 
     private static final String UNABLE_TO_READ_FILE = "File does not exist or unable to read : ";
     private static final String NOT_FOUND_ERROR = "Property Name not Found: ";
