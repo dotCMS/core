@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class Task05225RemoveLoadRecordsToIndex extends AbstractJDBCStartupTask {
 
-    private final String POSTGRES_SCRIPT = "DROP FUNCTION IF EXISTS load_records_to_index;";
+    private final String POSTGRES_SCRIPT = "DROP FUNCTION IF EXISTS load_records_to_index(server_id character varying, records_to_fetch int, priority_level int);";
 
     private final String MYSQL_SCRIPT = "DROP PROCEDURE IF EXISTS load_records_to_index;";
 

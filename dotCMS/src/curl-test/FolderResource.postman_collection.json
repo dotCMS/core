@@ -7,7 +7,7 @@
 	},
 	"item": [
 		{
-			"name": "create folders success",
+			"name": "createFolders Success",
 			"event": [
 				{
 					"listen": "test",
@@ -23,6 +23,21 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -51,7 +66,66 @@
 			"response": []
 		},
 		{
-			"name": "Create Folders Invalid SiteName",
+			"name": "createFolders BadRequest with Restricted Name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6ca0531b-91fe-462f-8aed-cf3f45089238",
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\"/dotcms\",\"/folder2/subfolder1\"]\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/createfolders/demo.dotcms.com",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"createfolders",
+						"demo.dotcms.com"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createFolders BadRequest with Invalid SiteName",
 			"event": [
 				{
 					"listen": "test",
@@ -129,7 +203,7 @@
 			"response": []
 		},
 		{
-			"name": "Create Folders User without Permissions",
+			"name": "createFolders Forbidden User without Permissions",
 			"event": [
 				{
 					"listen": "test",

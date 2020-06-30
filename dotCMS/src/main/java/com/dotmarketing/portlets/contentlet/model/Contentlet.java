@@ -1695,8 +1695,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public boolean isVanityUrl() throws DotDataException, DotSecurityException {
-		return getContentType().baseType() == BaseContentType.VANITY_URL;
+	public boolean isVanityUrl()  {
+		return getContentType()!=null && getContentType().baseType() == BaseContentType.VANITY_URL;
 	}
 
     /**

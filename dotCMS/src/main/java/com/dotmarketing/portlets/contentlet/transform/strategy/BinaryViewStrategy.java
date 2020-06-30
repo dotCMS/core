@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
+import com.dotcms.api.APIProvider;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.util.DotPreconditions;
@@ -33,7 +34,7 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
      * Regular constructor takes a toolbox
      * @param toolBox
      */
-    BinaryViewStrategy(final TransformToolbox toolBox) {
+    BinaryViewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 

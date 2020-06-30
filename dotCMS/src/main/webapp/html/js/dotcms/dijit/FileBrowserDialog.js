@@ -342,11 +342,24 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 			className = className == 'alternate_1'?'alternate_2':'alternate_1';
 			tableHTML += rowHTML;
 
-		};
-		var selected =  function(scope,asset) {
+        };
+
+        const debounce = (func, delay) => {
+            let debounceTimer
+            return function() {
+                const context = this
+                const args = arguments
+                    clearTimeout(debounceTimer)
+                        debounceTimer
+                    = setTimeout(() => func.apply(context, args), delay)
+            }
+        }
+
+		var selected =  debounce(function(scope,asset) {
 			scope._assetSelected(asset);
 
-		};
+        }, 400);
+
 		if(tableHTML != '')
 			dojo.place(tableHTML, tableBody, 'last');
 		for (var i = 0; i < assets.length; i++) {
