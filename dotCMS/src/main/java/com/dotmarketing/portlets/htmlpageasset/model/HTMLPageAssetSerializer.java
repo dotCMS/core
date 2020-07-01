@@ -19,7 +19,7 @@ import java.util.Map;
 public class HTMLPageAssetSerializer extends JsonSerializer<HTMLPageAsset> {
     @Override
     public void serialize(final HTMLPageAsset pageAsset, final JsonGenerator jsonGenerator,
-                          final SerializerProvider serializerProvider) throws IOException {
+            final SerializerProvider serializerProvider) throws IOException {
 
         final User user = APILocator.getLoginServiceAPI().getLoggedInUser();
         final DotContentletTransformer transformer = new DotTransformerBuilder().forUser(user)
