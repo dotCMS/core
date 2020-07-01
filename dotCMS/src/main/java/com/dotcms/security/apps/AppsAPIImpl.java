@@ -3,7 +3,10 @@ package com.dotcms.security.apps;
 import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.google.common.collect.ImmutableList.of;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -15,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
@@ -75,6 +79,8 @@ public class AppsAPIImpl implements AppsAPI {
     private final SecretsStore secretsStore;
     private final AppsCache appsCache;
 
+    private final LicenseValiditySupplier licenseValiditySupplier;
+
     private final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
             .enable(Feature.STRICT_DUPLICATE_DETECTION)
             //.enable(SerializationFeature.INDENT_OUTPUT)
@@ -82,16 +88,17 @@ public class AppsAPIImpl implements AppsAPI {
 
     @VisibleForTesting
     public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI,
-            final SecretsStore secretsRepository, final AppsCache appsCache) {
+            final SecretsStore secretsRepository, final AppsCache appsCache, final LicenseValiditySupplier licenseValiditySupplier) {
         this.userAPI = userAPI;
         this.layoutAPI = layoutAPI;
         this.hostAPI = hostAPI;
         this.secretsStore = secretsRepository;
         this.appsCache = appsCache;
+        this.licenseValiditySupplier = licenseValiditySupplier;
     }
 
     public AppsAPIImpl() {
-        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache());
+        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(), new LicenseValiditySupplier(){});
     }
 
     /**
@@ -347,6 +354,10 @@ public class AppsAPIImpl implements AppsAPI {
     public List<AppDescriptor> getAppDescriptors(final User user)
             throws DotDataException, DotSecurityException {
 
+        if(!licenseValiditySupplier.hasValidLicense()){
+            throw new InvalidLicenseException("Apps requires of an enterprise level license.");
+        }
+
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid attempt to get all available App descriptors performed by user with id `%s`.",
@@ -380,6 +391,10 @@ public class AppsAPIImpl implements AppsAPI {
     public Optional<AppDescriptor> getAppDescriptor(final String key,
             final User user)
             throws DotDataException, DotSecurityException {
+
+        if(!licenseValiditySupplier.hasValidLicense()){
+           throw new InvalidLicenseException("Apps requires of an enterprise level license.");
+        }
 
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
