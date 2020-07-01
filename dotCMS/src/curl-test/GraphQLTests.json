@@ -1021,6 +1021,125 @@
 			"name": "Page API",
 			"item": [
 				{
+					"name": "CreateTestContext",
+					"item": [
+						{
+							"name": "pre_ImportBundleWithContext",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "d7ce458d-7749-4ce1-9655-c3d9c0ae5cf0",
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"pages.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/PageResource/pages.tar.gz"
+										}
+									],
+									"options": {
+										"formdata": {}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+							},
+							"response": []
+						}
+					],
+					"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "00245b12-472d-4c7e-ae97-0512e8cc633e",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "4de0d0e2-a6a3-4ead-926a-fd0fd875d9e5",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
 					"name": "GivenRequestByURI_ShouldReturnExpectedPage",
 					"event": [
 						{
@@ -1057,14 +1176,13 @@
 									"    ////",
 									"    pm.expect(page[\"httpsRequired\"], 'FAILED:[httpsRequired]').equal(false);",
 									"    pm.expect(page[\"identifier\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0\");",
-									"    pm.expect(page[\"inode\"]).equal(\"0773736e-3197-4671-9eea-459cbd20d070\");",
 									"    pm.expect(page[\"isContentlet\"], 'FAILED:[isContentlet]').equal(true);",
 									"    pm.expect(page[\"conLanguage\"].id).equal(1);",
 									"    pm.expect(page[\"live\"], 'FAILED:[live]').equal(true);",
-									"    pm.expect(page[\"liveInode\"]).equal(\"0773736e-3197-4671-9eea-459cbd20d070\");",
+									"    pm.expect(page[\"liveInode\"]).not.equal(null)",
 									"    pm.expect(page[\"locked\"], 'FAILED:[locked]').equal(false);",
 									"    pm.expect(page[\"mimeType\"]).equal(\"application/dotpage\");",
-									"    pm.expect(page[\"modDate\"]).equal(\"2020-06-30 11:06:45.415\");",
+									"    pm.expect(page[\"modDate\"]).not.equal(null)",
 									"    ///",
 									"    pm.expect(page[\"modUser\"].userId).equal(\"system\");",
 									"    pm.expect(page[\"modUser\"].firstName).equal(\"system user\");",
@@ -1074,13 +1192,13 @@
 									"    pm.expect(page[\"pageURI\"]).equal(\"/destinations/costa-rica\");",
 									"    pm.expect(page[\"pageUrl\"]).equal(\"costa-rica\");",
 									"    pm.expect(page[\"path\"]).equal(\"/destinations/costa-rica\");",
-									"    pm.expect(page[\"publishDate\"]).equal(\"2020-06-30 11:06:45.415\");",
+									"    pm.expect(page[\"publishDate\"]).not.equal(null)",
 									"    pm.expect(page[\"seoTitle\"]).equal(\"Costa Rica Travel Destinations\");",
 									"    pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
 									"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
-									"    pm.expect(page[\"shortyLive\"]).equal(\"0773736e31\");",
+									"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
 									"    //",
-									"    pm.expect(page[\"shortyWorking\"]).equal(\"0773736e31\");",
+									"    pm.expect(page[\"shortyWorking\"]).not.equal(null)",
 									"    // pm.expect(page[\"sortOrder\"]).equal(0);",
 									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
 									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
@@ -1088,11 +1206,11 @@
 									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
 									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
 									"    pm.expect(page[\"titleImage\"].name).equal(\"costa-rica-tree-frog.jpg\");",
-									"    pm.expect(page[\"titleImage\"].versionPath).equal(\"/dA/0773736e31/image/costa-rica-tree-frog.jpg\");",
+									"    pm.expect(page[\"titleImage\"].versionPath).not.equal(null)",
 									"    pm.expect(page[\"type\"]).equal(\"htmlpage\");",
 									"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
 									"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
-									"    pm.expect(page[\"workingInode\"]).equal(\"0773736e-3197-4671-9eea-459cbd20d070\");",
+									"    pm.expect(page[\"workingInode\"]).not.equal(null)",
 									"",
 									"});"
 								],
@@ -1145,87 +1263,87 @@
 	],
 	"variable": [
 		{
-			"id": "de80ecaa-d55e-4add-8a34-e54835a883eb",
+			"id": "a4790167-8fe5-4992-8d25-bfb779975787",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "02b58888-4822-4394-a59d-aa1f248789b9",
+			"id": "e77e98d9-65bb-4b5e-a3f5-5caf8cbec100",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "757db942-ea51-46ca-94d7-bee2999a9e84",
+			"id": "6462e7ad-cbd8-4965-861d-424fe57d92ec",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType62924696"
 		},
 		{
-			"id": "61b221d4-dfae-4b7e-9fcf-e249556a7826",
+			"id": "48483daf-1169-4cad-a39f-21ae163917cd",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "6baec7df-aa9a-44a6-9d8a-6ca769e4cd08",
+			"id": "efe4123f-4978-470a-91bc-1d88d6192af8",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "7c7ac6be-74e2-4d4c-9874-cc44bb34ca33",
+			"id": "0235b183-9c42-40bc-b0d1-a80d3deb7a9e",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "290b20b1-42e2-4c1e-9700-e4890c9fd045",
+			"id": "1d4b7e2a-accf-4594-9235-64af8298107a",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "5b24610b-edda-444d-bab8-398215d72a87",
+			"id": "6d955fc9-47f0-40c6-88e0-ea410fc02534",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "ce6b7e7e-a548-4ca9-ac83-da9d4f59fbf9",
+			"id": "36ae2765-e29b-4a1d-b646-eb83ebd751b6",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "c8e16628-11ae-4014-80c4-69088fb6aa9a",
+			"id": "e6d06db3-2390-4801-a69e-1b58acaeb1c8",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "bbd73062-aee9-4d31-903d-b590fd08398b",
+			"id": "a7d3df74-4189-411e-b106-e3b3f96948c0",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "0057031d-a5bb-404d-b6fe-a334884e6c71",
+			"id": "409b67a5-9c02-46ef-ac7a-0f001346f7f9",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "e49043dc-5a4a-4a6d-b25a-a2b926399c30",
+			"id": "65a05516-d5c8-42b2-84b9-a02e2a1d5db6",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "ac05c750-94a4-4c33-ba08-968b9c47d3b3",
+			"id": "982c132f-a4de-4ad4-b471-218054694f19",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "aaaddc43-3ef1-48bb-97d1-2943e735f82c",
+			"id": "061fcf08-7a15-4856-875b-965077d03d05",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "db6336c9-f831-4843-99b0-3cdbc8be1730",
+			"id": "12a5e4dc-36d4-4bee-935a-b16df34f9ad8",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "bffac04d-0e46-421c-8c72-9d87db16d09b",
+			"id": "5346c820-1a66-4f8d-a3ec-ca8dbb70d1f7",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
