@@ -64,6 +64,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -638,49 +639,56 @@ public class BundleResource {
 
         for (final BodyPart part : multipart.getBodyParts()) {
 
-            InputStream inputStream = (part.getEntity() instanceof InputStream) ? (InputStream) part
+            try(InputStream inputStream = part.getEntity() instanceof InputStream ? (InputStream) part
                     .getEntity()
-                    : Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull();
+                    : Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull()) {
 
-            if (inputStream == null) {
-                continue;
-            }
-            final ContentDisposition meta = part.getContentDisposition();
-            if (meta == null) {
-                continue;
-            }
-            final String fileName = meta.getFileName();
-            if (UtilMethods.isNotSet(fileName) || fileName.startsWith(".") || fileName.contains("/.")) {
-                continue;
-            }
-
-            String bundleName = BundlerUtil.sanitizeBundleName(fileName);
-            String bundlePath = ConfigUtils.getBundlePath() + File.separator;
-
-            FileUtil.writeToFile( inputStream, bundlePath + bundleName );
-
-            String bundleFolder = bundleName.substring( 0, bundleName.indexOf( ".tar.gz" ) );
-            String endpointId = initData.getUser().getUserId();
-            response.setContentType( "text/html; charset=utf-8" );
-            PublishAuditStatus previousStatus = PublishAuditAPI
-                    .getInstance().updateAuditTable( endpointId, endpointId, bundleFolder );
-
-            PublisherConfig config = null;
-
-            if ( !previousStatus.getStatus().equals( Status.PUBLISHING_BUNDLE ) ) {
-                if(sync) {
-                    config = new PublishThread(bundleName, null, endpointId, previousStatus)
-                            .processBundle();
-                } else {
-                    new Thread(new PublishThread(bundleName, null, endpointId,
-                            previousStatus)).start();
+                if (inputStream == null) {
+                    continue;
                 }
+                final ContentDisposition meta = part.getContentDisposition();
+                if (meta == null) {
+                    continue;
+                }
+                final String fileName = meta.getFileName();
+                if (UtilMethods.isNotSet(fileName) || fileName.startsWith(".") || fileName
+                        .contains("/.")) {
+                    continue;
+                }
+
+                String bundleName = BundlerUtil.sanitizeBundleName(fileName);
+                String bundlePath = ConfigUtils.getBundlePath() + File.separator;
+
+                FileUtil.writeToFile(inputStream, bundlePath + bundleName);
+
+                String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+                String endpointId = initData.getUser().getUserId();
+                response.setContentType("text/html; charset=utf-8");
+                PublishAuditStatus previousStatus = PublishAuditAPI
+                        .getInstance().updateAuditTable(endpointId, endpointId, bundleFolder);
+
+                PublisherConfig config = null;
+
+                if (!previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
+                    if (sync) {
+                        config = new PublishThread(bundleName, null, endpointId, previousStatus)
+                                .processBundle();
+                    } else {
+                        new Thread(new PublishThread(bundleName, null, endpointId,
+                                previousStatus)).start();
+                    }
+                }
+
+                String finalStatus =
+                        config != null ? config.getPublishAuditStatus().getStatus().name()
+                                : Status.RECEIVED_BUNDLE.name();
+
+                return Response.ok(ImmutableMap.of("bundleName", bundleName, "status", finalStatus))
+                        .build();
+            } catch (IOException e) {
+                Logger.error(this, "Unable to import Bundle", e);
+                throw new ServerErrorException("Unable to import Bundle", Response.Status.INTERNAL_SERVER_ERROR, e);
             }
-
-            String finalStatus = config!=null ? config.getPublishAuditStatus().getStatus().name()
-                    : Status.RECEIVED_BUNDLE.name();
-
-            return Response.ok(ImmutableMap.of("bundleName", bundleName, "status", finalStatus)).build();
 
         }
 
