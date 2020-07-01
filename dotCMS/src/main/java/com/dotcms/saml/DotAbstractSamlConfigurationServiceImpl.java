@@ -19,20 +19,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlConfigurationService {
 
+    private static final String NULL = "NULL";
     private static final String UNABLE_TO_READ_FILE = "File does not exist or unable to read : ";
     private static final String NOT_FOUND_ERROR = "Property Name not Found: ";
-    /**
-     * To set into the init map context, the absolute path of the default properties for SAML.
-     */
-    public final static String DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY = "dotSamlDefaultPropertiesContextMapKey";
 
     private AtomicBoolean init = new AtomicBoolean(false);
-    private final Map<String, String> defaultProperties = new ConcurrentHashMap<>(this.createInitialMap());
+    private final Map<String, String> defaultProperties = new ConcurrentHashMap<>();
 
     @Override
     public void initService(final Map<String, Object> contextMap) {
 
         if (!this.init.get()) {
+
+            final Map<String, String> samlInitialMap = this.createInitialMap();
+            for (final Map.Entry<String, String> entry : samlInitialMap.entrySet()) {
+
+                this.defaultProperties.put(entry.getKey(), null == entry.getValue()?NULL:entry.getValue());
+            }
 
             this.internalInit(contextMap);
         }
@@ -203,7 +206,8 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
 
         if (this.defaultProperties.containsKey(property.getPropertyName())) {
 
-            return this.defaultProperties.get(property.getPropertyName());
+            final String string = this.defaultProperties.get(property.getPropertyName());
+            return NULL == string? null : string;
         }
 
         throw new SamlException(NOT_FOUND_ERROR + property.getPropertyName());

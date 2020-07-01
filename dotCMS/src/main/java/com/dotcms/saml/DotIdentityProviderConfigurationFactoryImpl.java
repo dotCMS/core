@@ -42,7 +42,7 @@ public class DotIdentityProviderConfigurationFactoryImpl implements IdentityProv
 
             if (existsIdpConfig) {
 
-                identityProviderConfiguration = this.identityProviderConfigurationMap.get(identityProviderConfiguration);
+                identityProviderConfiguration = this.identityProviderConfigurationMap.get(identityProviderIdentifier);
             }
         } else {
 

@@ -3,13 +3,16 @@ package com.dotcms.saml;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
 import org.apache.felix.framework.OSGIUtil;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -23,7 +26,11 @@ import java.util.Set;
 public class DotSamlProxyFactory {
 
     public static final String SAML_APP_CONFIG_KEY = "dotsaml-config";
+    public static final String PROPERTIES_PATH = File.separator + "saml" + File.separator + "dotcms-saml-default.properties";
 
+    private static final String ASSETS_PATH = Config.getStringProperty("ASSET_REAL_PATH",
+            FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH", "/assets")));
+    private static final String IDP_FILE_PATH = ASSETS_PATH + PROPERTIES_PATH;
 
     private final MessageObserver    messageObserver    = new DotLoggerMessageObserver();
     private final AppsAPI            appsAPI            = APILocator.getAppsAPI();
@@ -127,6 +134,8 @@ public class DotSamlProxyFactory {
                     if (null == this.samlConfigurationService) {
 
                         this.samlConfigurationService = samlServiceBuilder.buildSamlConfigurationService();
+                        this.samlConfigurationService.initService(
+                                CollectionsUtils.map(SamlConfigurationService.DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY, IDP_FILE_PATH));
                     }
                 }
             } else {
@@ -160,6 +169,7 @@ public class DotSamlProxyFactory {
                                     this.samlServiceBuilder.buildAuthenticationService(this.identityProviderConfigurationFactory(),
                                             this.messageObserver(), this.samlConfigurationService());
 
+                            Logger.info(this, "Initing SAML Authentication");
                             samlAuthenticationService.initService(Collections.emptyMap());
                         }
                     }

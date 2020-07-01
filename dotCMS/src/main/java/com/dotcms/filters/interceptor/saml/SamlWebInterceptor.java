@@ -61,7 +61,7 @@ public class SamlWebInterceptor implements WebInterceptor {
     protected final AppsAPI         appsAPI;
     protected final SamlWebUtils    samlWebUtils;
     protected final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
-    protected final SamlConfigurationService samlConfigurationService;
+    protected volatile SamlConfigurationService samlConfigurationService = null;
 
     public SamlWebInterceptor() {
 
@@ -71,8 +71,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                 WebAPILocator.getHostWebAPI(),
                 APILocator.getAppsAPI(),
                 new SamlWebUtils(),
-                DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory(),
-                DotSamlProxyFactory.getInstance().samlConfigurationService());
+                DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory());
     }
 
     public SamlWebInterceptor(final Encryptor       encryptor,
@@ -81,8 +80,7 @@ public class SamlWebInterceptor implements WebInterceptor {
             final HostWebAPI      hostWebAPI,
             final AppsAPI         appsAPI,
             final SamlWebUtils    samlWebUtils,
-            final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
-            final SamlConfigurationService             samlConfigurationService) {
+            final IdentityProviderConfigurationFactory identityProviderConfigurationFactory) {
 
         this.encryptor    = encryptor;
         this.loginService = loginService;
@@ -91,7 +89,16 @@ public class SamlWebInterceptor implements WebInterceptor {
         this.appsAPI      = appsAPI;
         this.samlWebUtils = samlWebUtils;
         this.identityProviderConfigurationFactory = identityProviderConfigurationFactory;
-        this.samlConfigurationService             = samlConfigurationService;
+    }
+
+    private SamlConfigurationService samlConfig() {
+
+        if (null == samlConfigurationService) {
+
+            this.samlConfigurationService = Try.of(()->DotSamlProxyFactory.getInstance().samlConfigurationService()).getOrNull();
+        }
+
+        return this.samlConfigurationService;
     }
 
     @Override
@@ -108,7 +115,7 @@ public class SamlWebInterceptor implements WebInterceptor {
 
         try {
 
-            if (null != session && this.isAnySamlConfigurated()) {
+            if (null != this.samlConfig() && null != session && this.isAnySamlConfigurated()) {
 
                 final Host host = hostWebAPI.getCurrentHostNoThrow(request);
                 final IdentityProviderConfiguration identityProviderConfiguration = // gets the SAML Configuration for this site.
@@ -161,8 +168,8 @@ public class SamlWebInterceptor implements WebInterceptor {
             }
         } catch (final Exception exception) { // todo: better error handling?
 
-            Logger.debug(this, ()-> "Error [" + exception.getMessage() + "] Unable to get idpConfig for Site '" +
-                    request.getServerName() + "'. Incoming URL: " + request.getRequestURL());
+            Logger.error(this,  "Error [" + exception.getMessage() + "] Unable to get idpConfig for Site '" +
+                    request.getServerName() + "'. Incoming URL: " + request.getRequestURL(), exception);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return Result.SKIP_NO_CHAIN;
         }

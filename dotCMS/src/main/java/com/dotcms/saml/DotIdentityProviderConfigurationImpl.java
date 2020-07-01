@@ -30,7 +30,7 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
     private final Optional<Secret> findSecret (final String key) {
 
         final Optional<AppSecrets> appSecretOpt =
-                Try.of(()->this.appsAPI.getSecrets(DotAbstractSamlConfigurationServiceImpl.DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY,
+                Try.of(()->this.appsAPI.getSecrets(DotSamlProxyFactory.SAML_APP_CONFIG_KEY, // todo: not sure if change this.
                         true, host, APILocator.systemUser())).getOrElseGet(e -> Optional.empty());
 
         return appSecretOpt.isPresent() && appSecretOpt.get().getSecrets().containsKey(key)?
@@ -89,7 +89,7 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
         /*final String idPMetadataFileKey = SamlName.DOT_SAML_IDENTITY_PROVIDER_METADATA_FILE.getPropertyName();
         final Optional<Secret> secretOpt        = this.findSecret(idPMetadataFileKey);
         return secretOpt.isPresent()? secretOpt.get().getString(): null;*/
-        return null; // todo: this is not being yet supported
+        return new File("/Users/jsanca/Documents/idp-metadata-example.xml").toPath();
     }
 
     @Override
@@ -98,7 +98,8 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
         /*final String privateKey = SamlName.DOT_SAML_PUBLIC_CERT_FILE.getPropertyName();
         final Optional<Secret> secretOpt        = this.findSecret(privateKey);
         return secretOpt.isPresent()? secretOpt.get().getString(): null;*/
-        return null; // todo: this is not being yet supported
+        //return new File("/Users/jsanca/Documents/saml.csr");
+        return new File("/Users/jsanca/.ssh/id_rsa.pub");
     }
 
     @Override
@@ -106,7 +107,8 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
         /*final String publicCertKey = SamlName.DOT_SAML_PRIVATE_KEY_FILE.getPropertyName();
         final Optional<Secret> secretOpt        = this.findSecret(publicCertKey);
         return secretOpt.isPresent()? secretOpt.get().getString(): null;*/
-        return null; // todo: this is not being yet supported
+        //return new File("/Users/jsanca/Documents/saml.key");
+        return new File("/Users/jsanca/.ssh/id_rsa");
     }
 
     @Override

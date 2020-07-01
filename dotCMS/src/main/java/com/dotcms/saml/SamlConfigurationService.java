@@ -10,6 +10,12 @@ import java.util.Map;
 public interface SamlConfigurationService {
 
     /**
+     * To set into the init map context, the absolute path of the default properties for SAML.
+     */
+
+    String DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY = "dotSamlDefaultPropertiesContextMapKey";
+
+    /**
      * Init the service
      * @param context {@link Map}
      */
