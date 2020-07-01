@@ -1,14 +1,15 @@
 package com.dotcms.security.apps;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -130,15 +131,16 @@ public interface AppsAPI {
 
     /**
      * Create an App-Descriptor given an InputStream from a yml file read
-     * @param inputStream
+     * @param file
      * @param user
      * @throws IOException
      * @throws DotDataException
      * @throws DotSecurityException
      * @return
      */
-    AppDescriptor createAppDescriptor(final InputStream inputStream,
-            User user) throws IOException, DotDataException, DotSecurityException;
+
+    AppDescriptor createAppDescriptor(final File file,
+            User user) throws DotDataException, AlreadyExistException, DotSecurityException;
 
     /**
      * Remove an App and all the secrets underneath.

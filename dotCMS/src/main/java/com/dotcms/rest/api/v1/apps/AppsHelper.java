@@ -15,6 +15,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -29,9 +30,6 @@ import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -642,21 +640,15 @@ class AppsHelper {
      * @throws DotDataException
      */
     List<AppView> createApp(final FormDataMultiPart multipart, final User user)
-            throws IOException, DotDataException {
+            throws IOException, DotDataException, AlreadyExistException, DotSecurityException  {
         final List<File> files = new MultiPartUtils().getBinariesFromMultipart(multipart);
         if(!UtilMethods.isSet(files)){
             throw new DotDataException("Unable to extract any files from multi-part request.");
         }
-        List<AppView> appViews = new ArrayList<>(files.size());
+        final List<AppView> appViews = new ArrayList<>(files.size());
         for (final File file : files) {
-            try(final InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))){
-                final AppDescriptor appDescriptor = appsAPI
-                        .createAppDescriptor(inputStream, user);
-                appViews.add(new AppView(appDescriptor,0, 0));
-            }catch (Exception e){
-               Logger.error(AppsHelper.class, e);
-               throw new DotDataException(e.getMessage(), e);
-            }
+            final AppDescriptor appDescriptor = appsAPI.createAppDescriptor(file, user);
+            appViews.add(new AppView(appDescriptor, 0, 0));
         }
         return appViews;
     }

@@ -507,7 +507,7 @@
             <% if(UtilMethods.isSet(resourceLink) && !resourceLink.isDownloadRestricted()){ %>
 
                 <div id="<%=field.getVelocityVarName()%>ThumbnailSliderWrapper">
-                    <a class="bg" href="javascript: serveFile('','<%=binInode%>','<%=field.getVelocityVarName()%>');"
+                    <a class="bg" href="/contentAsset/raw-data/<%=binInode%>/<%=field.getVelocityVarName()%>?byInode=true&force_download=true" download
                        id="<%=field.getVelocityVarName()%>BinaryFile"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download"))%></a>
                     <br/>
                 </div>
