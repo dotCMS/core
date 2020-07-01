@@ -638,7 +638,6 @@ public class BundleResource {
                 .init();
 
         for (final BodyPart part : multipart.getBodyParts()) {
-
             try(InputStream inputStream = part.getEntity() instanceof InputStream ? (InputStream) part
                     .getEntity()
                     : Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull()) {
