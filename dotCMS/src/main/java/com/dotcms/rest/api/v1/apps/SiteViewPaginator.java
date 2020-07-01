@@ -5,12 +5,14 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.PaginatorOrdered;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -32,8 +35,8 @@ import java.util.stream.Collectors;
  */
 public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
-    private static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true ";
-    private static final String CONTENT_TYPE_HOST_WITH_TITLE_QUERY = "+contentType:Host +working:true +title:*%s*";
+    private static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true -deleted:true ";
+    private static final String CONTENT_TYPE_HOST_WITH_TITLE_QUERY = "+contentType:Host +working:true -deleted:true +title:*%s*";
 
     private final Supplier<Set<String>> configuredSitesSupplier;
     private final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier;
