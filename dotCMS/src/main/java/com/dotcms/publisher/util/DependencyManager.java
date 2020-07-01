@@ -47,6 +47,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
@@ -91,9 +92,10 @@ public class DependencyManager {
 	private final DependencySet templates;
 	private final DependencySet contentTypes;
 	private final DependencySet containers;
-	private final DependencySet contents;
+    private final DependencySet contents;
 	private final DependencySet links;
-	private final DependencySet relationships;
+
+    private final DependencySet relationships;
 	private final DependencySet workflows;
 	private final DependencySet languages;
 	private final DependencySet rules;
@@ -1426,5 +1428,15 @@ public class DependencyManager {
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
+
+	@VisibleForTesting
+	Set getContents() {
+        return contents;
+    }
+
+    @VisibleForTesting
+    DependencySet getRelationships() {
+        return relationships;
+    }
 
 }

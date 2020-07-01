@@ -7,12 +7,14 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -23,16 +25,23 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,7 +55,9 @@ public class RelationshipAPITest extends IntegrationTestBase {
     private static Structure structure = null;
     private static User user = null;
     private static RelationshipAPI relationshipAPI = null;
+    private static ContentletAPI contentletAPI;
     private static ContentTypeAPI contentTypeAPI = null;
+    private static FieldAPI contentTypeFieldAPI = null;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -56,7 +67,9 @@ public class RelationshipAPITest extends IntegrationTestBase {
 
         user = APILocator.systemUser();
         relationshipAPI = APILocator.getRelationshipAPI();
+        contentletAPI  = APILocator.getContentletAPI();
         contentTypeAPI = APILocator.getContentTypeAPI(user);
+        contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
 
         structure = new Structure();
         structure.setFixed(false);
@@ -145,13 +158,13 @@ public class RelationshipAPITest extends IntegrationTestBase {
                     .name(titleFieldString)
                     .contentTypeId(parentContentType.id())
                     .build();
-            APILocator.getContentTypeFieldAPI().save(field, user);
+            contentTypeFieldAPI.save(field, user);
 
             field = FieldBuilder.builder(TextField.class)
                     .name(titleFieldString)
                     .contentTypeId(childContentType.id())
                     .build();
-            APILocator.getContentTypeFieldAPI().save(field, user);
+            contentTypeFieldAPI.save(field, user);
 
             //Create an old Relationship
             final Structure parentStructure = new StructureTransformer(parentContentType)
@@ -202,7 +215,7 @@ public class RelationshipAPITest extends IntegrationTestBase {
                     .name(titleFieldString)
                     .contentTypeId(parentContentType.id())
                     .build();
-            APILocator.getContentTypeFieldAPI().save(field, user);
+            contentTypeFieldAPI.save(field, user);
 
             //Create an old Relationship
             final Structure parentStructure = new StructureTransformer(parentContentType)
@@ -229,6 +242,132 @@ public class RelationshipAPITest extends IntegrationTestBase {
                 }
             }catch (Exception e) {e.printStackTrace();}
         }
+    }
+
+    /**
+     * <b>Method to test:</b> {@link RelationshipAPI#dbRelatedContent(Relationship, Contentlet)} <p>
+     * <b>Given Scenario:</b> A content is related to another (different content types) <p>
+     * <b>ExpectedResult:</b> {@link RelationshipAPI#dbRelatedContent(Relationship, Contentlet)} should always return related content
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testDbRelatedContentWhenNonSelfJoinRelationship()
+            throws DotDataException, DotSecurityException {
+        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType();
+        final ContentType commentContentType = TestDataUtils.getCommentsLikeContentType();
+
+        final Field field = FieldBuilder.builder(RelationshipField.class)
+                .name(commentContentType.variable())
+                .contentTypeId(blogContentType.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(commentContentType.variable()).required(false).build();
+
+        contentTypeFieldAPI.save(field, user);
+
+        //Creates parent content
+        Contentlet blogContentParent = new ContentletDataGen(blogContentType.id())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setProperty("title", "blogContentParent")
+                .setProperty("urlTitle", "blogContentParent")
+                .setProperty("author", "systemUser")
+                .setProperty("sysPublishDate", new Date())
+                .setProperty("body", "blogBody").next();
+
+        //Creates child content
+        final Contentlet commentContentChild = new ContentletDataGen(commentContentType.id())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setProperty("title", "commentContentChild")
+                .setProperty("urlTitle", "commentContentChild")
+                .setProperty("author", "systemUser")
+                .setProperty("sysPublishDate", new Date())
+                .setProperty("body", "blogBody").nextPersisted();
+
+        //Adds a new relationship between both contentlets
+        final Relationship relationship = APILocator.getRelationshipAPI()
+                .byContentType(blogContentType).get(0);
+
+        ContentletRelationships contentletRelationships = new ContentletRelationships(
+                blogContentParent);
+        ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                relationship, true);
+        records.setRecords(Lists.newArrayList(commentContentChild));
+        contentletRelationships.getRelationshipsRecords().add(records);
+        blogContentParent = contentletAPI.checkin(blogContentParent, contentletRelationships, null, null, user, false);
+
+        //Validate results from parent side
+        List<Contentlet> results = relationshipAPI.dbRelatedContent(relationship, blogContentParent);
+        validateDbRelatedContentResults(commentContentChild, results);
+
+        //Validate results from child side
+        results = relationshipAPI.dbRelatedContent(relationship, commentContentChild);
+        validateDbRelatedContentResults(blogContentParent, results);
+    }
+
+    /**
+     * <b>Method to test:</b> {@link RelationshipAPI#dbRelatedContent(Relationship, Contentlet)} <p>
+     * <b>Given Scenario:</b> A content is related to another (same content type/self-join relationship) <p>
+     * <b>ExpectedResult:</b> {@link RelationshipAPI#dbRelatedContent(Relationship, Contentlet)} should always return related content
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testDbRelatedContentWhenSelfJoinRelationship()
+            throws DotDataException, DotSecurityException {
+        final ContentType contentType = TestDataUtils.getBlogLikeContentType();
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(contentType.variable())
+                .contentTypeId(contentType.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(contentType.variable()).required(false).build();
+
+        contentTypeFieldAPI.save(field, user);
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType.id());
+
+        //Creates parent content
+        Contentlet blogContentParent = dataGen.languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setProperty("title", "blogContentParent")
+                .setProperty("urlTitle", "blogContentParent")
+                .setProperty("author", "systemUser")
+                .setProperty("sysPublishDate", new Date())
+                .setProperty("body", "blogBody").next();
+
+        //Creates child content
+        final Contentlet blogContentChild = dataGen.languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setProperty("title", "blogContentChild")
+                .setProperty("urlTitle", "blogContentChild")
+                .setProperty("author", "systemUser")
+                .setProperty("sysPublishDate", new Date())
+                .setProperty("body", "blogBody").nextPersisted();
+
+        //Adds a new relationship between both contentlets
+        final Relationship relationship = APILocator.getRelationshipAPI().byContentType(contentType).get(0);
+
+        ContentletRelationships contentletRelationships = new ContentletRelationships(
+                blogContentParent);
+        ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                relationship, true);
+        records.setRecords(Lists.newArrayList(blogContentChild));
+        contentletRelationships.getRelationshipsRecords().add(records);
+        blogContentParent = contentletAPI.checkin(blogContentParent, contentletRelationships, null, null, user, false);
+
+        //Validate results from parent side
+        List<Contentlet> results = relationshipAPI.dbRelatedContent(relationship, blogContentParent);
+        validateDbRelatedContentResults(blogContentChild, results);
+
+        //Validate results from child side
+        results = relationshipAPI.dbRelatedContent(relationship, blogContentChild);
+        validateDbRelatedContentResults(blogContentParent, results);
+    }
+
+    /**
+     * Verifies the result list contains the content provided
+     * @param contentlet
+     * @param results
+     */
+    private void validateDbRelatedContentResults(final Contentlet contentlet, final List<Contentlet> results) {
+        assertTrue(UtilMethods.isSet(results));
+        assertEquals(1, results.size());
+        assertEquals(contentlet.getIdentifier(), results.get(0).getIdentifier());
     }
 
     private void migrateRelationshipAndValidate(final Relationship relationship,
