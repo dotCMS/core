@@ -193,7 +193,7 @@ class AppsHelper {
         if (appDescriptorOptional.isPresent()) {
             final AppDescriptor appDescriptor = appDescriptorOptional.get();
             final Host host = hostAPI.find(siteId, user, false);
-            if (null == host) {
+            if (null == host || host.isArchived()) {
                 throw new DoesNotExistException(
                       String.format(" Couldn't find any host with identifier `%s` ", siteId)
                 );
