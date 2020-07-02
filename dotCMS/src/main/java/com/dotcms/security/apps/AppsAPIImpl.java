@@ -3,15 +3,14 @@ package com.dotcms.security.apps;
 import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.google.common.collect.ImmutableList.of;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -19,8 +18,8 @@ import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -76,6 +75,7 @@ public class AppsAPIImpl implements AppsAPI {
     private final UserAPI userAPI;
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
+    private final ContentletAPI contentletAPI;
     private final SecretsStore secretsStore;
     private final AppsCache appsCache;
 
@@ -87,18 +87,19 @@ public class AppsAPIImpl implements AppsAPI {
             .findAndRegisterModules();
 
     @VisibleForTesting
-    public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI,
+    public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI,
             final SecretsStore secretsRepository, final AppsCache appsCache, final LicenseValiditySupplier licenseValiditySupplier) {
         this.userAPI = userAPI;
         this.layoutAPI = layoutAPI;
         this.hostAPI = hostAPI;
+        this.contentletAPI = contentletAPI;
         this.secretsStore = secretsRepository;
         this.appsCache = appsCache;
         this.licenseValiditySupplier = licenseValiditySupplier;
     }
 
     public AppsAPIImpl() {
-        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(), new LicenseValiditySupplier(){});
+        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), APILocator.getContentletAPI() ,SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(), new LicenseValiditySupplier(){});
     }
 
     /**
@@ -158,6 +159,19 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
+     * Valid sites are those which are in working state and not marked as deleted (meaning archived)
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Set<String> getValidSites() throws DotSecurityException, DotDataException {
+        return contentletAPI
+                .searchIndex("+contentType:Host +working:true -deleted:true ", 0, 0, null,
+                        APILocator.systemUser(), false).stream()
+                .map(ContentletSearch::getIdentifier).collect(Collectors.toSet());
+    }
+
+    /**
      * This private version basically adds the possibility to filter sites that exist in our db
      * This becomes handy when people has secrets associated to a site and then for some reason decides to remove the site.
      * @param filterNonExisting
@@ -172,8 +186,7 @@ public class AppsAPIImpl implements AppsAPI {
                 .map(s -> s.split(HOST_SECRET_KEY_SEPARATOR))
                 .filter(strings -> strings.length == 2);
         if (filterNonExisting) {
-            final Set<String> validSites = hostAPI.findAll(APILocator.systemUser(), false).stream()
-                    .map(Contentlet::getIdentifier).map(String::toLowerCase).collect(Collectors.toSet());
+            final Set<String> validSites = getValidSites();
             stream = stream.filter(strings -> validSites.contains(strings[0]));
         }
         return stream.collect(Collectors.groupingBy(strings -> strings[0],

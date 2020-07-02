@@ -7,6 +7,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -27,6 +28,7 @@ import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -160,7 +162,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
             final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
                     .getEntity();
-            Assert.assertFalse(integrationViewList.isEmpty());
+            assertFalse(integrationViewList.isEmpty());
             Assert.assertTrue(
                     integrationViewList.stream().anyMatch(
                             appView -> dataGen.getName()
@@ -199,7 +201,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             final AppView appDetailedView = (AppView) responseEntityView3
                     .getEntity();
             Assert.assertNotNull(appDetailedView.getSites());
-            Assert.assertFalse(appDetailedView.getSites().isEmpty());
+            assertFalse(appDetailedView.getSites().isEmpty());
             Assert.assertEquals(appDetailedView.getSites().get(0).getId(),
                     host.getIdentifier());
 
@@ -277,7 +279,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
             final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
                     .getEntity();
-            Assert.assertFalse(integrationViewList.isEmpty());
+            assertFalse(integrationViewList.isEmpty());
             Assert.assertTrue(
                     integrationViewList.stream().anyMatch(
                             appView -> dataGen.getName()
@@ -325,7 +327,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
 
             Assert.assertNotNull(appDetailedView.getSites());
-            Assert.assertFalse(appDetailedView.getSites().isEmpty());
+            assertFalse(appDetailedView.getSites().isEmpty());
             Assert.assertEquals(appDetailedView.getSites().get(0).getId(),
                     host.getIdentifier());
             Assert.assertEquals(appDetailedView.getSites().get(0).getId(),
@@ -355,7 +357,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
 
             Assert.assertNotNull(appViewAfterDelete.getSites());
-            Assert.assertFalse(appViewAfterDelete.getSites().isEmpty());
+            assertFalse(appViewAfterDelete.getSites().isEmpty());
             final Map<String, SecretView> secretsAfterDelete = appViewAfterDelete
                     .getSites()
                     .get(0).getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
@@ -416,7 +418,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             final AppView appDetailedView = (AppView) responseEntityViewSave.getEntity();
 
             Assert.assertNotNull(appDetailedView.getSites());
-            Assert.assertFalse(appDetailedView.getSites().isEmpty());
+            assertFalse(appDetailedView.getSites().isEmpty());
             Assert.assertEquals(appDetailedView.getSites().get(0).getId(), host.getIdentifier());
             //We can the secrets here because this happens before the a serializer will exchange the values by asters making them look like `*****`
             final List<SecretView> secretViews = appDetailedView.getSites().get(0).getSecrets();
@@ -442,7 +444,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             final AppView appDetailedViewAfterUpdate = (AppView) responseEntityViewUpdate.getEntity();
 
             Assert.assertNotNull(appDetailedViewAfterUpdate.getSites());
-            Assert.assertFalse(appDetailedViewAfterUpdate.getSites().isEmpty());
+            assertFalse(appDetailedViewAfterUpdate.getSites().isEmpty());
             Assert.assertEquals(appDetailedViewAfterUpdate.getSites().get(0).getId(), host.getIdentifier());
 
             final List<SecretView> secretViewsAfterUpdate = appDetailedViewAfterUpdate.getSites().get(0).getSecrets();
@@ -456,6 +458,77 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * This test ensures that secrets from archived sites are not shown.
+     * Given scenario: We create a configuration for a site then later we archive the site
+     * Expected Result: The site or any secrets it might have must not be included
+     * @throws IOException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Archive_Site_Expect_Secrets_No_Longer_Available()
+            throws IOException, DotSecurityException, DotDataException {
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getRequestURI()).thenReturn("/baseURL");
+        final String appKey = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
+
+            // Create App integration Descriptor
+            final Response appResponse = appsResource.createApp(request, response, createFormDataMultiPart(fileName, inputStream));
+            Assert.assertNotNull(appResponse);
+            Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+
+            //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+            final Map<String, Input> inputParamMap = ImmutableMap.of("param1", newInputParam("public-value1".toCharArray(),false));
+            // Add secrets to it.
+            final SecretForm secretForm = new SecretForm(inputParamMap);
+            final Response createSecretResponse = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
+
+            final Response detailedIntegrationResponse = appsResource.getAppDetail(request, response, appKey, host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
+            final ResponseEntityView responseEntityViewSave = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+            final AppView appDetailedView = (AppView) responseEntityViewSave.getEntity();
+
+            Assert.assertNotNull(appDetailedView.getSites());
+            assertFalse(appDetailedView.getSites().isEmpty());
+            Assert.assertEquals(appDetailedView.getSites().get(0).getId(), host.getIdentifier());
+            final List<String> collected = appDetailedView.getSites().stream().map(SiteView::getId)
+                    .collect(Collectors.toList());
+            Assert.assertTrue(collected.contains(host.getIdentifier()));
+        }
+        //Now lets archive the site and test secrets are gone from the results.
+        APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+
+        final Response detailResponse = appsResource.getAppDetail(request, response, appKey, host.getIdentifier());
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, detailResponse.getStatus());
+
+        final Response appByKeyResponse = appsResource
+                .getAppByKey(request, response, appKey, paginationContext());
+
+        Assert.assertEquals(HttpStatus.SC_OK, appByKeyResponse.getStatus());
+        final ResponseEntityView responseEntityView = (ResponseEntityView) appByKeyResponse
+                .getEntity();
+        final AppView appIntegrationView = (AppView) responseEntityView
+                .getEntity();
+
+        Assert.assertNotNull(appIntegrationView.getSites());
+        assertFalse(appIntegrationView.getSites().isEmpty());
+        final Set<String> siteIds = appIntegrationView.getSites().stream().map(SiteView::getId).collect(Collectors.toSet());
+        assertFalse(siteIds.contains(host.getIdentifier()));
+    }
 
 
     /**
@@ -619,7 +692,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                 final AppView appDetailedView = (AppView) responseEntityView3
                         .getEntity();
                 Assert.assertNotNull(appDetailedView.getSites());
-                Assert.assertFalse(appDetailedView.getSites().isEmpty());
+                assertFalse(appDetailedView.getSites().isEmpty());
                 final Map<String, SecretView> secrets = appDetailedView.getSites().get(0)
                         .getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
                                 Function.identity(),(v1, v2) -> v1, LinkedHashMap::new));
@@ -940,7 +1013,7 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             final SecretView param1 = secrets.get("param1");
             Assert.assertNotNull(param1);
-            Assert.assertFalse(param1.isDynamic());
+            assertFalse(param1.isDynamic());
 
             final SecretView dynamicParam1 = secrets.get("dynamicParam1");
             Assert.assertNotNull(dynamicParam1);
@@ -995,7 +1068,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
             final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
                     .getEntity();
-            Assert.assertFalse(integrationViewList.isEmpty());
+            assertFalse(integrationViewList.isEmpty());
             Assert.assertTrue(
                     integrationViewList.stream().anyMatch(
                             appView -> dataGen.getName()

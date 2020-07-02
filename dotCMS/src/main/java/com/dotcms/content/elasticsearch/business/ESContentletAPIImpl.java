@@ -2826,6 +2826,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final IndexPolicy  indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
         final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(),
                 false, contentlet.getLanguageId(), user, respectFrontendRoles);
+
+        if(workingContentlet==null) {
+            return;
+        }
+
         Contentlet liveContentlet = null;
 
         try {

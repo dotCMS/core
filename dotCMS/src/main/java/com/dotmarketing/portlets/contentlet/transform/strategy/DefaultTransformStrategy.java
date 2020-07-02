@@ -14,6 +14,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_NOT_FOUND;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.LanguageViewStrategy.mapLanguage;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
@@ -125,6 +126,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
 
         final String urlMap = toolBox.contentletAPI
                 .getUrlMapForContentlet(contentlet, toolBox.userAPI.getSystemUser(), true);
+        map.put(URL_MAP_FOR_CONTENT_KEY, urlMap);
         map.put(ESMappingConstants.URL_MAP, urlMap);
 
         //We only calculate the fields if it is not already set
