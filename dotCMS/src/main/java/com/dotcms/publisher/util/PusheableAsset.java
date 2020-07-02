@@ -14,7 +14,7 @@ package com.dotcms.publisher.util;
  */
 public enum PusheableAsset {
 
-	HTMLPAGE("htmlpage"), CONTENT_TYPE("contenttype"), TEMPLATE("template"), CONTAINER("containers"), FOLDER("folder"), SITE(
+	CONTENT_TYPE("contenttype"), TEMPLATE("template"), CONTAINER("containers"), FOLDER("folder"), SITE(
 			"host"), CATEGORY("category"), LINK("links"), WORKFLOW("workflow"), LANGUAGE("language"), RULE("rule"), USER(
 			"user"), OSGI("osgi"), CONTENTLET("contentlet");
 
