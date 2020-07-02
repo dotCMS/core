@@ -46,12 +46,12 @@ public abstract class SelectableValuesField extends Field{
 						final String x = "1".equals(tempVals[i]) ? "true" : "0".equals(tempVals[i]) ? "false" : tempVals[i];
 						final Boolean y = BooleanUtils.toBooleanObject(x);
 						if(null==y){
-                            throw new DotStateException(String.format("Value of field '%s' [%s], CT ID [%] of type " +
+                            throw new DotStateException(String.format("Value of field '%s' [%s], CT ID [%s] of type " +
                                     "'%s' is not a valid boolean: %s", name(), id(), contentTypeId(), dataType(), x));
                         }
 					}
 				} catch (final Exception e) {
-                    throw new DotStateException(String.format("Value of field '%s' [%s], CT ID [%] of type '%s' is " +
+                    throw new DotStateException(String.format("Value of field '%s' [%s], CT ID [%s] of type '%s' is " +
                             "not valid: %s", name(), id(), contentTypeId(), dataType(), values()), e);
                 }
 			}
