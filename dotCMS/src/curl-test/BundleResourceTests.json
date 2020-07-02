@@ -203,7 +203,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{serverURL}}/api/content/id/d84e5b70-ae46-42a8-80ff-62ba9d7095d5 ",
+							"raw": "{{serverURL}}/api/content/id/d84e5b70-ae46-42a8-80ff-62ba9d7095d5",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -211,7 +211,7 @@
 								"api",
 								"content",
 								"id",
-								"d84e5b70-ae46-42a8-80ff-62ba9d7095d5 "
+								"d84e5b70-ae46-42a8-80ff-62ba9d7095d5"
 							],
 							"query": [
 								{
