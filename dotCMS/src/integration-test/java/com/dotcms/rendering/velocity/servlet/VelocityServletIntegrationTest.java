@@ -233,7 +233,7 @@ public class VelocityServletIntegrationTest {
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
-    private static Contentlet createURLMapperContentType(final String newsPatternPrefix, final Host host) {
+    private  Contentlet createURLMapperContentType(final String newsPatternPrefix, final Host host) {
         final String urlMapPattern = newsPatternPrefix + "{urlTitle}";
         final HTMLPageAsset page = createPage();
 
@@ -249,9 +249,9 @@ public class VelocityServletIntegrationTest {
     }
 
 
-    private static HTMLPageAsset createPage(){
+    private  HTMLPageAsset createPage(){
 
-        final Folder folder = new FolderDataGen()
+        final Folder folder = new FolderDataGen().site(host)
                 .nextPersisted();
 
         final Template template = new TemplateDataGen().nextPersisted();
