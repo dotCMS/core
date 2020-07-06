@@ -14,8 +14,8 @@ public class SiteDataGen extends AbstractDataGen<Host> {
     private final long currentTime = System.currentTimeMillis();
 
     private String name = "test" + currentTime + ".dotcms.com";
-    private String aliases = null;
-    private boolean isDefault = false;
+    private String aliases;
+    private boolean isDefault;
 
     public SiteDataGen name(final String name) {
         this.name = name;
