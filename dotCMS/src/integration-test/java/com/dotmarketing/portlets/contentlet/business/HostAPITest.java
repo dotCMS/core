@@ -639,4 +639,25 @@ public class HostAPITest extends IntegrationTestBase  {
         APILocator.getPermissionAPI().save(CollectionsUtils.list(permission), host, systemUser, false);
     }
 
+    /**
+     * Method to test: {@link HostAPI#findByAlias(String, User, boolean)}
+     * When create two host: first one with alias equals to demo.dotcms.com and second  one with alias equals to not-demo.dotcms.com
+     *      and find by  demo.dotcms.com
+     * Should return the first one
+     */
+    @Test
+    public void shouldReturnHostByAlias() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().aliases("demo.dotcms.com").nextPersisted();
+        final Host host_2 = new SiteDataGen().aliases("not-demo.dotcms.com").setDefault(true).nextPersisted();
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+
+        this.addPermission(role, host);
+
+        final Host hostReturned = APILocator.getHostAPI().findByAlias("demo.dotcms.com", user, false);
+        assertEquals(host, hostReturned);
+        assertNotEquals(host_2, hostReturned);
+    }
+
 }
