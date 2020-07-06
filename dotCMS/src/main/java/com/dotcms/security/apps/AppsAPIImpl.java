@@ -203,6 +203,10 @@ public class AppsAPIImpl implements AppsAPI {
     public Optional<AppSecrets> getSecrets(final String key,
             final boolean fallbackOnSystemHost,
             final Host host, final User user) throws DotDataException, DotSecurityException {
+
+        if(!licenseValiditySupplier.hasValidLicense()){
+            throw new InvalidLicenseException("Apps requires of an enterprise level license.");
+        }
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid secret access attempt on `%s` performed by user with id `%s` and host `%s` ",
