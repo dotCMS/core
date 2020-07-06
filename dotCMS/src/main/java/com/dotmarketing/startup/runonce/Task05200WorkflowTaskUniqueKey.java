@@ -1,10 +1,12 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
@@ -12,6 +14,7 @@ import io.vavr.control.Try;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Task05200WorkflowTaskUniqueKey implements StartupTask {
@@ -46,7 +49,11 @@ public class Task05200WorkflowTaskUniqueKey implements StartupTask {
         
         for(final Map<String,Object> map : results) {
             final String webAsset = (String) map.get("webasset");
-            final Number lang = Try.of(()->(Number) map.get("language_id")).getOrElse(0);
+            final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+            final Number lang = Try.of(() ->
+                    Optional.ofNullable((Number) map.get("language_id"))
+                            .orElse(languageAPI.getDefaultLanguage().getId()))
+                    .getOrElse(0);
             //Number is the super class of Long, Integer and BidDecimal making it cross-driver.
             final List<String> deleteMes = dotConnect
             .setSQL("select id from workflow_task where webasset=? and language_id=? order by mod_date desc")
