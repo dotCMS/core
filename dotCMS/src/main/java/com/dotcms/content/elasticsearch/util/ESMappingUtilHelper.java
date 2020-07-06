@@ -27,6 +27,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.StringPool;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -173,7 +174,8 @@ public class ESMappingUtilHelper {
                     esMappingAPI.putMapping(indexName, properties.toString());
 
                     //Adds to the set the mapped already set for this field
-                    mappedFields.add(field.variable().toLowerCase());
+                    mappedFields.add((type.variable() + StringPool.PERIOD + field.variable())
+                            .toLowerCase());
 
                 } catch (Exception e) {
                     handleInvalidCustomMappingError(indexName,
@@ -217,7 +219,8 @@ public class ESMappingUtilHelper {
 
     private static void addMappingForFieldIfNeeded(final String indexName,
             final ContentType contentType, final Field field, final Set<String> mappedFields) {
-        final String fieldVariableName = field.variable().toLowerCase();
+        final String fieldVariableName = (contentType.variable() + StringPool.PERIOD + field.variable())
+                        .toLowerCase();
         if (!mappedFields.contains(fieldVariableName)) {
             String mappingForField = null;
             if (field instanceof DateField || field instanceof DateTimeField
@@ -232,8 +235,6 @@ public class ESMappingUtilHelper {
                     mappingForField = "\"type\":\"float\"\n";
                 } else if (field.dataType() == DataTypes.INTEGER) {
                     mappingForField = "\"type\":\"integer\"\n";
-                } else {
-                    mappingForField = "\"type\":\"text\"\n";
                 }
             }
             if (mappingForField != null) {
@@ -245,7 +246,7 @@ public class ESMappingUtilHelper {
                     jsonObject.put(contentType.variable().toLowerCase(),
                             new JSONObject()
                                     .put("properties", new JSONObject()
-                                            .put(fieldVariableName,
+                                            .put(field.variable().toLowerCase(),
                                                     new JSONObject("{\n"
                                                             + mappingForField
                                                             + "}"))));

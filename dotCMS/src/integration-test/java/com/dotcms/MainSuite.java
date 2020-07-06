@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
@@ -290,7 +291,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSMaintenanceFactoryTest.class,
         Task05350AddDotSaltClusterColumnTest.class,
         DotParseTest.class,
-        TestWorkflowAction.class
+        TestWorkflowAction.class,
+        ESMappingUtilHelperTest.class
 })
 public class MainSuite {
 
