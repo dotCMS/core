@@ -15,8 +15,6 @@ import static org.mockito.Mockito.when;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
