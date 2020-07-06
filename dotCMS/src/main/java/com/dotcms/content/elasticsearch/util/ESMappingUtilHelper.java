@@ -33,6 +33,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * Helper class responsible of setting Elasticsearch mapping for content type fields
+ * @author nollymar
+ */
 public class ESMappingUtilHelper {
 
     private static ContentTypeAPI contentTypeAPI;
