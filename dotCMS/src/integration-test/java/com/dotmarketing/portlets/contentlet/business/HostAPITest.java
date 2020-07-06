@@ -654,7 +654,8 @@ public class HostAPITest extends IntegrationTestBase  {
         final User user = new UserDataGen().roles(role).nextPersisted();
 
         this.addPermission(role, host);
-
+        this.addPermission(role, host_2);
+        
         final Host hostReturned = APILocator.getHostAPI().findByAlias("demo.dotcms.com", user, false);
         assertEquals(host, hostReturned);
         assertNotEquals(host_2, hostReturned);
@@ -692,6 +693,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final User user = new UserDataGen().roles(role).nextPersisted();
 
         this.addPermission(role, host);
+        this.addPermission(role, host_2);
 
         final Host hostReturned = APILocator.getHostAPI().findByAlias("prod-client.dotcms.com", user, false);
         assertEquals(host, hostReturned);
