@@ -6,11 +6,12 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -27,6 +28,7 @@ import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -39,9 +41,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.liferay.portal.model.User;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -108,7 +113,7 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     /**
      * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
-     * The we upload the file with an app definition. Then we Create an App Then list the available apps.
+     * Then we upload the file with an app definition. Then we Create an App Then list the available apps.
      * Then we Verify the New app is listed. under the right Host.
      * Then We delete the app and verify the pagination results make sense.
      * Given scenario: Test we can create an app then delete it.
@@ -142,7 +147,8 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         final String appKey =  dataGen.getKey();
         final String fileName =  dataGen.getFileName();
-        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
             final Response appIntegrationResponse = appsResource
                     .createApp(request, response,
                             createFormDataMultiPart(fileName, inputStream));
@@ -156,7 +162,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
             final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
                     .getEntity();
-            Assert.assertFalse(integrationViewList.isEmpty());
+            assertFalse(integrationViewList.isEmpty());
             Assert.assertTrue(
                     integrationViewList.stream().anyMatch(
                             appView -> dataGen.getName()
@@ -195,7 +201,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             final AppView appDetailedView = (AppView) responseEntityView3
                     .getEntity();
             Assert.assertNotNull(appDetailedView.getSites());
-            Assert.assertFalse(appDetailedView.getSites().isEmpty());
+            assertFalse(appDetailedView.getSites().isEmpty());
             Assert.assertEquals(appDetailedView.getSites().get(0).getId(),
                     host.getIdentifier());
 
@@ -257,7 +263,8 @@ public class AppsResourceTest extends IntegrationTestBase {
         when(request.getRequestURI()).thenReturn("/baseURL");
         final String appKey = dataGen.getKey();
         final String fileName = dataGen.getFileName();
-        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
+        final File file = dataGen.nextPersistedDescriptor();
+        try( InputStream inputStream = Files.newInputStream(file.toPath())) {
 
             // Create App integration Descriptor
             final Response appResponse = appsResource
@@ -272,7 +279,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
             final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
                     .getEntity();
-            Assert.assertFalse(integrationViewList.isEmpty());
+            assertFalse(integrationViewList.isEmpty());
             Assert.assertTrue(
                     integrationViewList.stream().anyMatch(
                             appView -> dataGen.getName()
@@ -320,7 +327,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
 
             Assert.assertNotNull(appDetailedView.getSites());
-            Assert.assertFalse(appDetailedView.getSites().isEmpty());
+            assertFalse(appDetailedView.getSites().isEmpty());
             Assert.assertEquals(appDetailedView.getSites().get(0).getId(),
                     host.getIdentifier());
             Assert.assertEquals(appDetailedView.getSites().get(0).getId(),
@@ -350,7 +357,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
 
             Assert.assertNotNull(appViewAfterDelete.getSites());
-            Assert.assertFalse(appViewAfterDelete.getSites().isEmpty());
+            assertFalse(appViewAfterDelete.getSites().isEmpty());
             final Map<String, SecretView> secretsAfterDelete = appViewAfterDelete
                     .getSites()
                     .get(0).getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
@@ -362,6 +369,167 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         }
     }
+
+    /**
+     * Test we save a secret that is described as 1 public value and 2 hidden ones
+     * Given scenario: We create a secret then we update the non-hidden (public) values and send a string of asters like the UI would
+     * Expected Result: Only the public value  was supposed to be updated. The other 2 hidden fields should remain the same since we sent a bunch of *****
+     * @throws IOException
+     */
+    @Test
+    public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Update_Secrets()
+            throws IOException {
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .stringParam("param2", true,  true)
+                .stringParam("param3", true,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getRequestURI()).thenReturn("/baseURL");
+        final String appKey = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
+
+            // Create App integration Descriptor
+            final Response appResponse = appsResource.createApp(request, response, createFormDataMultiPart(fileName, inputStream));
+            Assert.assertNotNull(appResponse);
+            Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+
+            //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+            final Map<String, Input> inputParamMap = ImmutableMap.of(
+                    "param1", newInputParam("public-value1".toCharArray(),false),
+                    "param2", newInputParam("hidden-value1".toCharArray(),false),
+                    "param3", newInputParam("hidden-value2".toCharArray(),false));
+            // Add secrets to it.
+            final SecretForm secretForm = new SecretForm(inputParamMap);
+            final Response createSecretResponse = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
+
+            final Response detailedIntegrationResponse = appsResource.getAppDetail(request, response, appKey, host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
+            final ResponseEntityView responseEntityViewSave = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+            final AppView appDetailedView = (AppView) responseEntityViewSave.getEntity();
+
+            Assert.assertNotNull(appDetailedView.getSites());
+            assertFalse(appDetailedView.getSites().isEmpty());
+            Assert.assertEquals(appDetailedView.getSites().get(0).getId(), host.getIdentifier());
+            //We can the secrets here because this happens before the a serializer will exchange the values by asters making them look like `*****`
+            final List<SecretView> secretViews = appDetailedView.getSites().get(0).getSecrets();
+            final SecretView param1 = secretViews.get(0);
+            Assert.assertEquals(new String(param1.getSecret().getValue()),"public-value1");
+            final SecretView param2 = secretViews.get(1);
+            Assert.assertEquals(new String(param2.getSecret().getValue()),"hidden-value1");
+            final SecretView param3 = secretViews.get(2);
+            Assert.assertEquals(new String(param3.getSecret().getValue()),"hidden-value2");
+
+            final Map<String, Input> inputParamMapFromUI = ImmutableMap.of(
+                    "param1", newInputParam("new-public-value".toCharArray(),false),
+                    "param2", newInputParam("*******".toCharArray(),false),
+                    "param3", newInputParam("****".toCharArray(),false));
+
+            final SecretForm secretFormUpdate = new SecretForm(inputParamMapFromUI);
+            final Response createSecretResponseAfterUpdate = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretFormUpdate);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponseAfterUpdate.getStatus());
+
+            final Response detailedIntegrationResponseAfterUpdate = appsResource.getAppDetail(request, response, appKey, host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponseAfterUpdate.getStatus());
+            final ResponseEntityView responseEntityViewUpdate = (ResponseEntityView) detailedIntegrationResponseAfterUpdate.getEntity();
+            final AppView appDetailedViewAfterUpdate = (AppView) responseEntityViewUpdate.getEntity();
+
+            Assert.assertNotNull(appDetailedViewAfterUpdate.getSites());
+            assertFalse(appDetailedViewAfterUpdate.getSites().isEmpty());
+            Assert.assertEquals(appDetailedViewAfterUpdate.getSites().get(0).getId(), host.getIdentifier());
+
+            final List<SecretView> secretViewsAfterUpdate = appDetailedViewAfterUpdate.getSites().get(0).getSecrets();
+            final SecretView param1AfterUpdate = secretViewsAfterUpdate.get(0);
+            Assert.assertEquals(new String(param1AfterUpdate.getSecret().getValue()),"new-public-value");
+            final SecretView param2AfterUpdate = secretViewsAfterUpdate.get(1);
+            Assert.assertEquals(new String(param2AfterUpdate.getSecret().getValue()),"hidden-value1");
+            final SecretView param3AfterUpdate = secretViewsAfterUpdate.get(2);
+            Assert.assertEquals(new String(param3AfterUpdate.getSecret().getValue()),"hidden-value2");
+
+        }
+    }
+
+    /**
+     * This test ensures that secrets from archived sites are not shown.
+     * Given scenario: We create a configuration for a site then later we archive the site
+     * Expected Result: The site or any secrets it might have must not be included
+     * @throws IOException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Archive_Site_Expect_Secrets_No_Longer_Available()
+            throws IOException, DotSecurityException, DotDataException {
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getRequestURI()).thenReturn("/baseURL");
+        final String appKey = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
+
+            // Create App integration Descriptor
+            final Response appResponse = appsResource.createApp(request, response, createFormDataMultiPart(fileName, inputStream));
+            Assert.assertNotNull(appResponse);
+            Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+
+            //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+            final Map<String, Input> inputParamMap = ImmutableMap.of("param1", newInputParam("public-value1".toCharArray(),false));
+            // Add secrets to it.
+            final SecretForm secretForm = new SecretForm(inputParamMap);
+            final Response createSecretResponse = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
+
+            final Response detailedIntegrationResponse = appsResource.getAppDetail(request, response, appKey, host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
+            final ResponseEntityView responseEntityViewSave = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+            final AppView appDetailedView = (AppView) responseEntityViewSave.getEntity();
+
+            Assert.assertNotNull(appDetailedView.getSites());
+            assertFalse(appDetailedView.getSites().isEmpty());
+            Assert.assertEquals(appDetailedView.getSites().get(0).getId(), host.getIdentifier());
+            final List<String> collected = appDetailedView.getSites().stream().map(SiteView::getId)
+                    .collect(Collectors.toList());
+            Assert.assertTrue(collected.contains(host.getIdentifier()));
+        }
+        //Now lets archive the site and test secrets are gone from the results.
+        APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+
+        final Response detailResponse = appsResource.getAppDetail(request, response, appKey, host.getIdentifier());
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, detailResponse.getStatus());
+
+        final Response appByKeyResponse = appsResource
+                .getAppByKey(request, response, appKey, paginationContext());
+
+        Assert.assertEquals(HttpStatus.SC_OK, appByKeyResponse.getStatus());
+        final ResponseEntityView responseEntityView = (ResponseEntityView) appByKeyResponse
+                .getEntity();
+        final AppView appIntegrationView = (AppView) responseEntityView
+                .getEntity();
+
+        Assert.assertNotNull(appIntegrationView.getSites());
+        assertFalse(appIntegrationView.getSites().isEmpty());
+        final Set<String> siteIds = appIntegrationView.getSites().stream().map(SiteView::getId).collect(Collectors.toSet());
+        assertFalse(siteIds.contains(host.getIdentifier()));
+    }
+
 
     /**
      * Test we can delete an app together with all it definition and associated secrets.
@@ -387,7 +555,8 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         final String appKey = dataGen.getKey();
         final String fileName = dataGen.getFileName();
-        try (final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
+        final File file = dataGen.nextPersistedDescriptor();
+        try( InputStream inputStream = Files.newInputStream(file.toPath())) {
             final Response appResponse = appsResource
                     .createApp(request, response,
                             createFormDataMultiPart(fileName, inputStream));
@@ -472,7 +641,8 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         final String appKey = dataGen.getKey();
         final String fileName = dataGen.getFileName();
-        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
+        final File file = dataGen.nextPersistedDescriptor();
+        try( InputStream inputStream = Files.newInputStream(file.toPath())) {
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -522,7 +692,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                 final AppView appDetailedView = (AppView) responseEntityView3
                         .getEntity();
                 Assert.assertNotNull(appDetailedView.getSites());
-                Assert.assertFalse(appDetailedView.getSites().isEmpty());
+                assertFalse(appDetailedView.getSites().isEmpty());
                 final Map<String, SecretView> secrets = appDetailedView.getSites().get(0)
                         .getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
                                 Function.identity(),(v1, v2) -> v1, LinkedHashMap::new));
@@ -531,7 +701,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                 for (Entry<String, SecretView> secretEntry : secrets.entrySet()) {
                     try (StringWriter writer = new StringWriter()) {
 
-                        try(final JsonGenerator jsonGenerator = createJsonGenerator(writer)){
+                        try(JsonGenerator jsonGenerator = createJsonGenerator(writer)){
                         final String key = secretEntry.getKey();
                         final SecretView view = secretEntry.getValue();
                         final SecretViewSerializer secretViewSerializer = new SecretViewSerializer();
@@ -609,10 +779,12 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         long time = System.currentTimeMillis();
 
-        final String appKey1 = String.format("all_lower_case_not_too_short_prefix_%d", time);
-        dataGen.withKey(appKey1);
+        final String descriptorFileName = String.format("all_lower_case_not_too_short_prefix_%d.yml", time);
+        final String appKey = removeExtension(descriptorFileName);
+        dataGen.withFileName(descriptorFileName);
         final String fileName = dataGen.getFileName();
-        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -620,7 +792,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertNotNull(appResponse);
             Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
 
-            final String appKeyCasingVariant1 = upperCaseRandom(appKey1, 30);
+            final String appKeyCasingVariant1 = upperCaseRandom(appKey, 30);
 
             final Response appByKey = appsResource
                     .getAppByKey(request, response, appKeyCasingVariant1, paginationContext());
@@ -636,14 +808,14 @@ public class AppsResourceTest extends IntegrationTestBase {
                 );
 
                 sites.add(
-                   createAppSecret(inputParamMap, appKey1, request, response).getIdentifier()
+                   createAppSecret(inputParamMap, appKey, request, response).getIdentifier()
                 );
             }
 
             for (final String siteId : sites) {
                 final Response detailedIntegrationResponse = appsResource
                         .getAppDetail(request, response,
-                                upperCaseRandom(appKey1, 30), siteId);
+                                upperCaseRandom(appKey, 30), siteId);
                 Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
             }
         }
@@ -672,7 +844,8 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String fileName = dataGen.getFileName();
 
         //We're indicating that extra params are allowed to test required params are still required
-        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()){
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())){
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -718,7 +891,8 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         final String key = dataGen.getKey();
         final String fileName = dataGen.getFileName();
-        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()){
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())){
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -742,6 +916,45 @@ public class AppsResourceTest extends IntegrationTestBase {
     }
 
     /**
+     * Test
+     * Scenario: We attempt to upload the exact same file twice.
+     * Expected results: Bad-Request
+     * @throws IOException
+     */
+    @Test
+    public void Test_Already_Exists_Exception_Expect_Bad_Request() throws IOException {
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .stringParam("param2", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                //We're indicating that extra params are allowed to test required params are still required.
+                .withExtraParameters(true);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+        final String fileName = dataGen.getFileName();
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())){
+            final FormDataMultiPart formDataMultiPart = createFormDataMultiPart(fileName, inputStream);
+            final Response appResponseOk = appsResource.createApp(request, response,formDataMultiPart);
+            Assert.assertNotNull(appResponseOk);
+            Assert.assertEquals(HttpStatus.SC_OK, appResponseOk.getStatus());
+        }
+
+        try(InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))){
+            final FormDataMultiPart formDataMultiPart = createFormDataMultiPart(fileName, inputStream);
+            final Response appResponseBadRequest = appsResource
+                    .createApp(request, response, formDataMultiPart);
+            Assert.assertNotNull(appResponseBadRequest);
+            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, appResponseBadRequest.getStatus());
+        }
+    }
+
+    /**
      * Test Extra params support
      * Given scenario: Test we create an app descriptor that states extra params are allowed.
      * Expected Result: We should be able to add extra params. And they are shown at the end on the site view detail.
@@ -757,8 +970,8 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         final String key = dataGen.getKey();
         final String fileName = dataGen.getFileName();
-
-        try (final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())){
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -800,7 +1013,7 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             final SecretView param1 = secrets.get("param1");
             Assert.assertNotNull(param1);
-            Assert.assertFalse(param1.isDynamic());
+            assertFalse(param1.isDynamic());
 
             final SecretView dynamicParam1 = secrets.get("dynamicParam1");
             Assert.assertNotNull(dynamicParam1);
@@ -839,8 +1052,8 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         final String key = dataGen.getKey();
         final String fileName = dataGen.getFileName();
-
-        try (final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())){
 
             // Create App integration Descriptor
             final Response appResponse = appsResource
@@ -855,7 +1068,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
             final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
                     .getEntity();
-            Assert.assertFalse(integrationViewList.isEmpty());
+            assertFalse(integrationViewList.isEmpty());
             Assert.assertTrue(
                     integrationViewList.stream().anyMatch(
                             appView -> dataGen.getName()

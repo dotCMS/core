@@ -140,7 +140,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
                     </tr>\
                     <tr>\
                     <td colspan="2" align="center">\
-                    <button dojoType="dijit.form.Button" onClick="doReplaceFileAssetName(\"{newAssetName}\");" type="button">Yes</button>\
+                    <button dojoType="dijit.form.Button" onClick="doReplaceFileAssetName(\'{newAssetName}\');" type="button">Yes</button>\
                      &nbsp; &nbsp;\
                     <button dojoType="dijit.form.Button" onClick="doNotReplaceFileAssetName();" type="button">No</button>\
                     </td>\

@@ -2,6 +2,7 @@ package com.dotmarketing.filters;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;

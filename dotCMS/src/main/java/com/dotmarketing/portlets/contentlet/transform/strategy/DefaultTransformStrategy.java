@@ -14,6 +14,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_NOT_FOUND;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.LanguageViewStrategy.mapLanguage;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
@@ -27,6 +28,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
+import com.dotcms.api.APIProvider;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -62,7 +64,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * Main constructor
      * @param toolBox
      */
-    public DefaultTransformStrategy(final TransformToolbox toolBox) {
+    public DefaultTransformStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 
@@ -124,6 +126,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
 
         final String urlMap = toolBox.contentletAPI
                 .getUrlMapForContentlet(contentlet, toolBox.userAPI.getSystemUser(), true);
+        map.put(URL_MAP_FOR_CONTENT_KEY, urlMap);
         map.put(ESMappingConstants.URL_MAP, urlMap);
 
         //We only calculate the fields if it is not already set

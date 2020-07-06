@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e4c02256-efdf-4443-b440-e9b6969ae17d",
+		"_postman_id": "8ebdc33c-110c-4f94-adf0-6d4844cc5ee1",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"id": "b0d7f45a-38fa-4230-9b5b-e370cad0a87a",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -77,7 +77,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "599e89fa-c26c-4a5c-b6cf-9283cf40ce40",
+								"id": "11cff9ca-b5d7-44d0-a36d-f4a1d9613a4c",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
@@ -135,7 +135,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"id": "d93b684a-c5a6-4794-8c5d-9d3faa57ea2d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -194,7 +194,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "eb12ad0e-11d3-4593-8356-6972c0959cd6",
+								"id": "f0ccfb65-eed7-4957-b0cf-509296b1cfbb",
 								"exec": [
 									"pm.test(\"Content in new Language should be retrieved\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -244,10 +244,10 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "599e89fa-c26c-4a5c-b6cf-9283cf40ce40",
+								"id": "88c92ddb-bd41-4abb-bd39-314c0c2d95dd",
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
+									"pm.collectionVariables.set(\"imageContentTypeVariable\", jsonData.entity[0].variable);"
 								],
 								"type": "text/javascript"
 							}
@@ -280,7 +280,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myImageType\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
+							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myImageType{{$randomBankAccount}}\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -302,7 +302,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "599e89fa-c26c-4a5c-b6cf-9283cf40ce40",
+								"id": "f2d75aa1-040b-4f5e-8e76-2858ce83563d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -343,7 +343,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": false,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 2,\n              \"unique\": false\n       },\n\t   {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\"\n\t   }\n\t]\n}"
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": false,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 2,\n              \"unique\": false\n       },\n\t   {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\"\n\t   }\n\t]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -365,7 +365,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"id": "59ef896e-c8d5-494d-aff9-973197df63ca",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
@@ -376,7 +376,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "44a75151-9352-470d-a945-be432bcc14e3",
+								"id": "141f88b9-e401-4a7c-a477-96b173f13642",
 								"exec": [
 									""
 								],
@@ -399,13 +399,13 @@
 							"formdata": [
 								{
 									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
 									"type": "text"
 								},
 								{
 									"key": "file",
 									"type": "file",
-									"src": "GraphQL/Test GraphQL Image Field fields /tommylee18005.jpeg"
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
 								}
 							],
 							"options": {
@@ -439,7 +439,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"id": "974446be-0beb-4bed-af7a-db9195f0bc86",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
@@ -463,13 +463,13 @@
 							"formdata": [
 								{
 									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
 									"type": "text"
 								},
 								{
 									"key": "file",
 									"type": "file",
-									"src": "GraphQL/Test GraphQL Image Field fields /Readme18005.md"
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/Readme18005.md"
 								}
 							],
 							"options": {
@@ -503,7 +503,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"id": "8c9e38ef-0ed8-4b2b-a354-dfd2e823c32f",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -524,7 +524,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -556,7 +556,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ad7d33a0-ba48-4d15-9b92-6866ec93c006",
+								"id": "2e6ec58b-9957-48c6-a96c-a7eb2efb7a04",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
@@ -581,56 +581,54 @@
 									"    pm.expect(imageFieldJson.fileAsset.mime).to.eql(\"image/jpeg\");",
 									"    ",
 									"    // metaData",
-									"    pm.expect(imageFieldJson.metaData[0].key).to.eql(\"fileSize\");",
-									"    pm.expect(imageFieldJson.metaData[0].value).to.eql(\"5494\");",
+									"    pm.expect(imageFieldJson.metaData.length).to.eql(6);",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"fileSize\", \"5494\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"length\", \"5494\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"contentType\", \"image/jpeg\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"content\", \"\")).to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"height\", \"186\")).to.be.true;",
+									"",
 									"    ",
-									"    pm.expect(imageFieldJson.metaData[1].key).to.eql(\"length\");",
-									"    pm.expect(imageFieldJson.metaData[1].value).to.eql(\"5494\");",
-									"    ",
-									"    pm.expect(imageFieldJson.metaData[2].key).to.eql(\"width\");",
-									"    pm.expect(imageFieldJson.metaData[2].value).to.eql(\"139\");",
-									"    ",
-									"    pm.expect(imageFieldJson.metaData[3].key).to.eql(\"contentType\");",
-									"    pm.expect(imageFieldJson.metaData[3].value).to.eql(\"image/jpeg\");",
-									"    ",
-									"    pm.expect(imageFieldJson.metaData[4].key).to.eql(\"content\");",
-									"    pm.expect(imageFieldJson.metaData[4].value).to.eql(\"\");",
-									"    ",
-									"    pm.expect(imageFieldJson.metaData[5].key).to.eql(\"height\");",
-									"    pm.expect(imageFieldJson.metaData[5].value).to.eql(\"186\");",
 									"    ",
 									"});",
 									"",
 									"pm.test(\"File Field attributes should be present\", function () {",
-									"     // image field",
-									"    var imageFieldJson = jsonData.data[collectionName][0][fileFieldVariable];",
+									"     // File field",
+									"    var fileFieldJson = jsonData.data[collectionName][0][fileFieldVariable];",
 									"    ",
 									"    // general attributes",
-									"    pm.expect(imageFieldJson.fileName).to.eql(\"Readme18005.md\");",
-									"    pm.expect(imageFieldJson.description).to.eql(\"Readme18005\");",
-									"    pm.expect(imageFieldJson.sortOrder).to.eql(2);",
-									"    pm.expect(imageFieldJson.showOnMenu[0]).to.eql(\"true\");",
+									"    pm.expect(fileFieldJson.fileName).to.eql(\"Readme18005.md\");",
+									"    pm.expect(fileFieldJson.description).to.eql(\"Readme18005\");",
+									"    pm.expect(fileFieldJson.sortOrder).to.eql(2);",
+									"    pm.expect(fileFieldJson.showOnMenu[0]).to.eql(\"true\");",
 									"    ",
 									"    // fileAsset",
-									"    pm.expect(imageFieldJson.fileAsset.name).to.eql(\"Readme18005.md\");",
-									"    pm.expect(imageFieldJson.fileAsset.size).to.eql(2260);",
-									"    pm.expect(imageFieldJson.fileAsset.mime).to.be.null;",
+									"    pm.expect(fileFieldJson.fileAsset.name).to.eql(\"Readme18005.md\");",
+									"    pm.expect(fileFieldJson.fileAsset.size).to.eql(14);",
+									"    pm.expect(fileFieldJson.fileAsset.mime).to.be.null;",
 									"    ",
-									"    // metaData",
-									"    pm.expect(imageFieldJson.metaData[0].key).to.eql(\"fileSize\");",
-									"    pm.expect(imageFieldJson.metaData[0].value).to.eql(\"2260\");",
+									"    pm.expect(fileFieldJson.metaData.length).to.eql(4);",
+									"",
+									"    // console.log(fileFieldJson.metaData)",
 									"    ",
-									"    pm.expect(imageFieldJson.metaData[1].key).to.eql(\"length\");",
-									"    pm.expect(imageFieldJson.metaData[1].value).to.eql(\"2260\");",
-									"    ",
-									"    pm.expect(imageFieldJson.metaData[3].key).to.eql(\"contentType\");",
-									"    pm.expect(imageFieldJson.metaData[3].value).to.eql(\"text/plain; charset=ISO-8859-1\");",
-									"    ",
-									"    pm.expect(imageFieldJson.metaData[4].key).to.eql(\"content\");",
-									"    pm.expect(imageFieldJson.metaData[4].value).not.eql(null);",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"content\", \"This is a test\")).to.be.true;",
 									"    ",
 									"});",
 									"",
+									"function hasProperty(metaData, name, value) {",
+									"        var hasProperty = false;",
+									"        metaData.forEach(function (item) {",
+									"            if(item.key==name && item.value.trim()==value) {",
+									"                hasProperty = true;",
+									"            }",
+									"        });",
+									"",
+									"        return hasProperty;",
+									"    }",
 									""
 								],
 								"type": "text/javascript"
@@ -674,7 +672,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8a5f7d79-1a4f-4c26-91d5-02af64120c41",
+								"id": "46e91aba-8d25-44d1-86c3-dbc8287ce600",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -737,7 +735,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "613a34d7-d03d-435d-8151-d7df48524be2",
+								"id": "33d07a12-5450-4f75-9b79-74cfdce51d40",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentTypeVariable\", jsonData.entity[0].variable);"
@@ -795,7 +793,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ce3e7469-4883-4c1f-8d5b-c96cb39f8f8c",
+								"id": "efb2bbf5-73e3-4a3d-8a6f-a89df40bd3bd",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
@@ -854,7 +852,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bfbc43af-3428-4503-bf17-de462b161d8c",
+								"id": "55b8d053-9d63-4c0c-813c-4f26ec31f2a1",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentIdentifier\", jsonData.entity.identifier);"
@@ -913,7 +911,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "dff742a8-5027-4c0f-9480-516e38dfc047",
+								"id": "ab0baa96-788c-46ca-9974-a89af8227466",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentIdentifier\", jsonData.entity.identifier);"
@@ -972,7 +970,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4d5d3d9f-9766-4c84-a2f3-2b601d3c48c5",
+								"id": "9141c398-72ef-4683-b385-0159820a21a5",
 								"exec": [
 									"pm.test(\"Content parent and child content returned in requested language\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -1018,110 +1016,336 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Page API",
+			"item": [
+				{
+					"name": "CreateTestContext",
+					"item": [
+						{
+							"name": "pre_ImportBundleWithContext",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "d7ce458d-7749-4ce1-9655-c3d9c0ae5cf0",
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"pages.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/PageResource/pages.tar.gz"
+										}
+									],
+									"options": {
+										"formdata": {}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+							},
+							"response": []
+						}
+					],
+					"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "00245b12-472d-4c7e-ae97-0512e8cc633e",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "4de0d0e2-a6a3-4ead-926a-fd0fd875d9e5",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "GivenRequestByURI_ShouldReturnExpectedPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "74c6a123-8fe9-4477-ae63-877b1183abb7",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'page' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.page;",
+									"",
+									"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
+									"    pm.expect(page[\"archived\"], 'FAILED:[archived]').equal(false);",
+									"    pm.expect(page[\"baseType\"]).equal(\"HTMLPAGE\");",
+									"    pm.expect(page[\"cachettl\"]).equal(\"0\");",
+									"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
+									"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
+									"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+									"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
+									"    pm.expect(page[\"description\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"extension\"]).equal(\"page\");",
+									"    pm.expect(page[\"folder\"].folderId).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
+									"    pm.expect(page[\"folder\"].folderName).equal(\"destinations\");",
+									"    pm.expect(page[\"friendlyName\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"hasLiveVersion\"], 'FAILED:[hasLiveVersion]').equal(true);",
+									"    pm.expect(page[\"hasTitleImage\"], 'FAILED:[hasTitleImage]').equal(true);",
+									"    pm.expect(page[\"host\"].identifier).equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(page[\"host\"].hostName).equal(\"demo.dotcms.com\");",
+									"    ////",
+									"    pm.expect(page[\"httpsRequired\"], 'FAILED:[httpsRequired]').equal(false);",
+									"    pm.expect(page[\"identifier\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0\");",
+									"    pm.expect(page[\"isContentlet\"], 'FAILED:[isContentlet]').equal(true);",
+									"    pm.expect(page[\"conLanguage\"].id).equal(1);",
+									"    pm.expect(page[\"live\"], 'FAILED:[live]').equal(true);",
+									"    pm.expect(page[\"liveInode\"]).not.equal(null)",
+									"    pm.expect(page[\"locked\"], 'FAILED:[locked]').equal(false);",
+									"    pm.expect(page[\"mimeType\"]).equal(\"application/dotpage\");",
+									"    pm.expect(page[\"modDate\"]).not.equal(null)",
+									"    ///",
+									"    pm.expect(page[\"modUser\"].userId).equal(\"system\");",
+									"    pm.expect(page[\"modUser\"].firstName).equal(\"system user\");",
+									"    pm.expect(page[\"modUser\"].lastName).equal(\"system user\");",
+									"    pm.expect(page[\"name\"]).equal(\"costa-rica\");",
+									"    pm.expect(page[\"owner\"].userId).equal(\"dotcms.org.1\");",
+									"    pm.expect(page[\"pageURI\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"pageUrl\"]).equal(\"costa-rica\");",
+									"    pm.expect(page[\"path\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"publishDate\"]).not.equal(null)",
+									"    pm.expect(page[\"seoTitle\"]).equal(\"Costa Rica Travel Destinations\");",
+									"    pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
+									"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
+									"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
+									"    //",
+									"    pm.expect(page[\"shortyWorking\"]).not.equal(null)",
+									"    // pm.expect(page[\"sortOrder\"]).equal(0);",
+									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
+									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
+									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
+									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"titleImage\"].name).equal(\"costa-rica-tree-frog.jpg\");",
+									"    pm.expect(page[\"titleImage\"].versionPath).not.equal(null)",
+									"    pm.expect(page[\"type\"]).equal(\"htmlpage\");",
+									"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
+									"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    __icon__\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    template\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
 		{
-			"id": "5eeb1f2c-c5a5-42ce-b885-cffe87f29491",
+			"id": "a4790167-8fe5-4992-8d25-bfb779975787",
 			"key": "languageId",
-			"value": 1590535300839,
-			"type": "number"
+			"value": 1592433023079
 		},
 		{
-			"id": "5ec5c09c-5d86-4c00-82bf-8a8e0bb7ab92",
+			"id": "e77e98d9-65bb-4b5e-a3f5-5caf8cbec100",
 			"key": "contentId",
-			"value": null,
-			"type": "any"
+			"value": null
 		},
 		{
-			"id": "471ef95e-2ff7-4749-871f-f95764075537",
+			"id": "6462e7ad-cbd8-4965-861d-424fe57d92ec",
 			"key": "contentTypeVariable",
-			"value": "parentType07066717",
-			"type": "string"
+			"value": "MyCustomType62924696"
 		},
 		{
-			"id": "80a1b6c6-2bca-45ce-9b36-723bb558d48d",
+			"id": "48483daf-1169-4cad-a39f-21ae163917cd",
 			"key": "contentIdentifier",
-			"value": "343386b1-5b24-43f9-aae6-567b82596e30",
-			"type": "string"
+			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "e287a380-d21e-4605-a916-05492cc1ed0c",
+			"id": "efe4123f-4978-470a-91bc-1d88d6192af8",
 			"key": "structureVariable",
-			"value": "myStructure94983807",
-			"type": "string"
+			"value": "myStructure94983807"
 		},
 		{
-			"id": "65196a81-c338-4b96-b315-6bb1adb7fa75",
+			"id": "0235b183-9c42-40bc-b0d1-a80d3deb7a9e",
 			"key": "imageContentTypeVariable",
-			"value": "MyImageType7",
-			"type": "string"
+			"value": "MyImageType22920449"
 		},
 		{
-			"id": "2f04ae95-bcce-4ff8-95cc-889d50bea575",
+			"id": "1d4b7e2a-accf-4594-9235-64af8298107a",
 			"key": "imageContentIdentifier",
-			"value": "a0ec5a32-c136-40e5-ac72-384929756a2f",
-			"type": "string"
+			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "1c9b79b4-7ada-4903-8818-dadee31c8c1d",
+			"id": "6d955fc9-47f0-40c6-88e0-ea410fc02534",
 			"key": "imageFieldVariable",
-			"value": "myImage",
-			"type": "string"
+			"value": "myImage"
 		},
 		{
-			"id": "2ef59ed6-ac7f-4f2f-9b9c-0c393fb4dcdf",
+			"id": "36ae2765-e29b-4a1d-b646-eb83ebd751b6",
 			"key": "showOnMenu",
-			"value": true,
-			"type": "boolean"
+			"value": true
 		},
 		{
-			"id": "ac4d58b7-c0a9-4768-9a3e-4920b0f8c1f6",
+			"id": "e6d06db3-2390-4801-a69e-1b58acaeb1c8",
 			"key": "sortOrder",
-			"value": 2,
-			"type": "number"
+			"value": 2
 		},
 		{
-			"id": "e9492af7-b2b5-4593-aaf9-293ab14cd82f",
+			"id": "a7d3df74-4189-411e-b106-e3b3f96948c0",
 			"key": "fileFieldVariable",
-			"value": "myFile",
-			"type": "string"
+			"value": "myFile"
 		},
 		{
-			"id": "52765603-b89d-49ad-9d90-4e21fdff2f85",
+			"id": "409b67a5-9c02-46ef-ac7a-0f001346f7f9",
 			"key": "fileContentIdentifier",
-			"value": "9471b1e9-2536-4802-8662-7ac94b37533a",
-			"type": "string"
+			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "a07c0f97-e069-4667-b57b-6a33d56b1647",
+			"id": "65a05516-d5c8-42b2-84b9-a02e2a1d5db6",
 			"key": "childContentTypeVariable",
-			"value": "childType63933555",
-			"type": "string"
+			"value": "childType23553509"
 		},
 		{
-			"id": "fbe52dc2-76a9-4409-9ebf-15a5f9c3b837",
+			"id": "982c132f-a4de-4ad4-b471-218054694f19",
 			"key": "parentContentTypeVariable",
-			"value": "parentType66739234",
-			"type": "string"
+			"value": "parentType65070125"
 		},
 		{
-			"id": "57c6f4ac-8029-438f-9223-8e3f9ab138af",
+			"id": "061fcf08-7a15-4856-875b-965077d03d05",
 			"key": "relFieldVariable",
-			"value": "rel",
-			"type": "string"
+			"value": "rel"
 		},
 		{
-			"id": "10f526fd-9d93-41df-a34e-e5ac5a9b85d9",
+			"id": "12a5e4dc-36d4-4bee-935a-b16df34f9ad8",
 			"key": "childContentIdentifier",
-			"value": "96192a71-ca0a-4383-bf6e-c0db9905491f",
-			"type": "string"
+			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "bcc90648-8e6b-4f13-878f-7182f7a9ba13",
+			"id": "5346c820-1a66-4f8d-a3ec-ca8dbb70d1f7",
 			"key": "parentContentIdentifier",
-			"value": "bc60f6f7-5a31-4583-818f-3af003233e2f",
-			"type": "string"
+			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
 	],
 	"protocolProfileBehavior": {}

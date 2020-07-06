@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotmarketing.exception.DoesNotExistException;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -159,7 +160,7 @@ public class PageResource {
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
 
 
-            final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
+            final Host host = APILocator.getHostAPI().find(pageRendered.getPage().getHost(), user,
                     PageMode.get(request).respectAnonPerms);
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
@@ -252,7 +253,7 @@ public class PageResource {
                 response
         );
 
-        final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
+        final Host host = APILocator.getHostAPI().find(pageRendered.getPage().getHost(), user,
                 PageMode.get(request).respectAnonPerms);
         request.setAttribute(WebKeys.CURRENT_HOST, host);
         request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
@@ -293,7 +294,7 @@ public class PageResource {
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
 
-        Response res = null;
+        Response res;
 
         try {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
@@ -311,11 +312,11 @@ public class PageResource {
 
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
-        } catch(HTMLPageAssetNotFoundException e) {
-            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.saveLayout, parameters:  %s, %s %s: ",
+        } catch(DoesNotExistException e) {
+            final String errorMsg = String.format("DoesNotExistException on PageResource.saveLayout, parameters:  %s, %s %s: ",
                     request, pageId, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+            res = ExceptionMapperUtil.createResponse("", "Unable to find page with Identifier: " + pageId, Response.Status.NOT_FOUND);
         } catch (BadRequestException | DotDataException e) {
             final String errorMsg = String.format("%s on PageResource.saveLayout, parameters:  %s, %s %s: ",
                     e.getClass().getCanonicalName(), request, pageId, form);
@@ -406,11 +407,11 @@ public class PageResource {
         Logger.debug(this, ()->String.format("Saving page's content: %s",
                 pageContainerForm != null ? pageContainerForm.getRequestJson() : null));
 
+        final InitDataObject initData = webResource.init(request, response,true);
+
         if (pageContainerForm == null) {
             throw new BadRequestException("Layout is required");
         }
-
-        final InitDataObject initData = webResource.init(request, response,true);
 
         try {
             final User user = initData.getUser();

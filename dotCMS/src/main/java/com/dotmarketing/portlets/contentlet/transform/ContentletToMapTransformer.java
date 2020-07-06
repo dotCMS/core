@@ -17,7 +17,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
+import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -178,7 +178,7 @@ public class ContentletToMapTransformer {
      */
     private void setAdditionalProperties(final Contentlet contentlet){
         try {
-            final User modUser = userAPI.loadUserById(contentlet.getModUser());
+            final User modUser = Try.of(()->userAPI.loadUserById(contentlet.getModUser())).getOrElse(APILocator.systemUser());
             contentlet.getMap().put("modUserName", null != modUser ? modUser.getFullName() : NA );
             contentlet.getMap().put(Contentlet.WORKING_KEY, contentlet.isWorking());
             contentlet.getMap().put(Contentlet.LIVE_KEY, contentlet.isLive());

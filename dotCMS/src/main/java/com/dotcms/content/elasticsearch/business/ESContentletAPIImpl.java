@@ -44,7 +44,6 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
@@ -668,7 +667,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getWorkflowAPI().fireWorkflowPostCheckin(workflow);
         }
 
-        if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+        if(contentlet.isFileAsset()) {
 
             cleanFileAssetCache(contentlet, user, respectFrontendRoles);
         }
@@ -679,6 +678,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
         }
 
+        if(contentlet.isVanityUrl()) {
+
+            APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
+        }
+        
+        
         /*
         Triggers a local system event when this contentlet commit listener is executed,
         anyone who need it can subscribed to this commit listener event, on this case will be
@@ -2821,6 +2826,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final IndexPolicy  indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
         final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(),
                 false, contentlet.getLanguageId(), user, respectFrontendRoles);
+
+        if(workingContentlet==null) {
+            return;
+        }
+
         Contentlet liveContentlet = null;
 
         try {
@@ -3027,7 +3037,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
     }
+    
+    @WrapInTransaction
+    @Override
+    public void refresh(ContentType type) throws DotReindexStateException {
+        try {
+            reindexQueueAPI.addStructureReindexEntries(type.id());
+            //CacheLocator.getContentletCache().clearCache();
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new DotReindexStateException("Unable to complete reindex",e);
+        }
 
+    }
     /**
      *
      * @param contentlet
@@ -3275,6 +3297,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
         CacheLocator.getContentletCache().remove(contentlet.getInode());
+        if(contentlet.isVanityUrl()) {
+            APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
+        }
         publishRelatedHtmlPages(contentlet);
     }
 
@@ -4141,6 +4166,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 )
                         ); // end synchronized block
             } catch (final Throwable t) {
+              Logger.warn(getClass(),t.getMessage(),t);
                  bubbleUpException(t);
             }
 
@@ -5050,7 +5076,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(contentlet != null && contentlet.isVanityUrl()){
                 //remove from cache
-                VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
+               APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
             }
 
             if(contentlet != null && contentlet.isKeyValue()){
@@ -6587,10 +6613,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } catch (final DotContentletValidationException ve) {
             throw ve;
-        } catch (final DotSecurityException | DotDataException e) {
-            Logger.error(this, "Error validating contentlet [" + contentlet.getIdentifier() + "]: " + e.getMessage(),
-                    e);
-        }
+        } 
         validateRelationships(contentlet, contentRelationships);
     }
 

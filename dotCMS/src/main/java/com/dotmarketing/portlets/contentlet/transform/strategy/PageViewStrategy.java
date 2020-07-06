@@ -4,11 +4,16 @@ import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYP
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
+import com.dotcms.api.APIProvider;
 import com.dotmarketing.beans.IconType;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
@@ -29,7 +34,7 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
      * Main constructor
      * @param toolBox
      */
-    PageViewStrategy(final TransformToolbox toolBox) {
+    PageViewStrategy(final APIProvider toolBox) {
         super(toolBox);
         htmlPageCache = CacheLocator.getHTMLPageCache();
     }
@@ -74,9 +79,44 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
         map.put("name", page.getPageUrl());
         map.put("description", page.getFriendlyName());
         map.put("extension", "page");
+        map.put("isContentlet", true);
         map.put("statusIcons", UtilHTML.getStatusIcons(page));
         map.put("__icon__", IconType.HTMLPAGE.iconName());
 
+        final ContentletVersionInfo info = APILocator.getVersionableAPI().
+                getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
+
+        map.put("workingInode",  info.getWorkingInode());
+        map.put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()));
+        map.put("canEdit", toolBox.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user, false));
+        map.put("canRead", toolBox.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(), user, false));
+        map.put("liveInode", info.getLiveInode());
+        map.put("shortyLive", APILocator.getShortyAPI().shortify(info.getLiveInode()));
+        map.put("canLock", canLock(page, user));
+
+        if(info.getLockedBy()!=null) {
+            map.put("lockedOn", info.getLockedOn());
+            map.put("lockedBy", info.getLockedBy());
+            map.put("lockedByName", getLockedByUserName(info));
+        }
+
         return map;
+    }
+
+    private boolean canLock(final HTMLPageAsset page, User user)  {
+        try {
+            toolBox.contentletAPI.canLock(page, user);
+            return true;
+        } catch (DotLockException e) {
+            return false;
+        }
+    }
+
+    private String getLockedByUserName(final ContentletVersionInfo info) throws DotDataException {
+        try {
+            return toolBox.userAPI.loadUserById(info.getLockedBy()).getFullName();
+        } catch (DotSecurityException e) {
+            return null;
+        }
     }
 }
