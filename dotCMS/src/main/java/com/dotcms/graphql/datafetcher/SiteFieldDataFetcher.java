@@ -24,17 +24,20 @@ public class SiteFieldDataFetcher implements DataFetcher<Contentlet> {
 
             final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
 
-            final Map<String, Object> innerMap = host.getMap();
 
+
+            final DotContentletTransformer transformer = new DotTransformerBuilder()
+                    .graphQLDataFetchOptions().content(host).build();
+
+            final Contentlet hydratedHost = transformer.hydrate().get(0);
+
+            final Map<String, Object> innerMap = hydratedHost.getMap();
             innerMap.put("hostId", host.getIdentifier());
             innerMap.put("hostName", host.getHostname());
             innerMap.put("hostAliases", host.getAliases());
             innerMap.put("hostTagStorage", host.getTagStorage());
 
-            final DotContentletTransformer transformer = new DotTransformerBuilder()
-                    .graphQLDataFetchOptions().content(host).build();
-
-            return transformer.hydrate().get(0);
+            return hydratedHost;
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;

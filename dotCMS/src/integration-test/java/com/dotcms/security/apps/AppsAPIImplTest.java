@@ -18,8 +18,10 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
@@ -28,6 +30,7 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
@@ -41,7 +44,6 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -717,6 +719,70 @@ public class AppsAPIImplTest {
         final Optional<AppSecrets> secretsAfterSiteDelete = api.getSecrets(appKey, newSite, admin);
         assertFalse(secretsAfterSiteDelete.isPresent());
 
+    }
+
+    private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(APILocator.getUserAPI(), APILocator.getLayoutAPI(),
+            APILocator.getHostAPI(), APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
+            CacheLocator.getAppsCache(), new LicenseValiditySupplier() {
+        public boolean hasValidLicense() {
+            return false;
+        }
+    });
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#getAppDescriptors
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Get_Descriptor_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        nonValidLicenseAppsAPI.getAppDescriptors(admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#getAppDescriptor
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Get_Apps_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        nonValidLicenseAppsAPI.getAppDescriptor("anyKey",admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#getSecrets
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Get_Secret_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException {
+        final User admin = TestUserUtils.getAdminUser();
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        nonValidLicenseAppsAPI.getSecrets("anyKey",systemHost, admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#getSecrets
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Get_Secret_fallbackOnSystemHost_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException {
+        final User admin = TestUserUtils.getAdminUser();
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        nonValidLicenseAppsAPI.getSecrets("anyKey", true, systemHost, admin);
     }
 
 }

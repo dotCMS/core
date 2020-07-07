@@ -510,6 +510,7 @@ public class PageResourceTest {
         contentletDataGen
                 .setProperty("text", "text")
                 .languageId(1)
+                .host(host)
                 .nextPersisted();
 
         Thread.sleep(500);
