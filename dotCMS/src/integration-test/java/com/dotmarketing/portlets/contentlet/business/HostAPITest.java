@@ -649,7 +649,7 @@ public class HostAPITest extends IntegrationTestBase  {
     @Test
     public void shouldReturnHostByAlias() throws DotSecurityException, DotDataException {
         final Host host = new SiteDataGen().aliases("demo.dotcms.com").nextPersisted();
-        final Host host_2 = new SiteDataGen().aliases("not-demo.dotcms.com").setDefault(true).nextPersisted();
+        final Host host_2 = new SiteDataGen().aliases("not-demo.dotcms.com").nextPersisted();
 
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
