@@ -60,6 +60,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -92,13 +93,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	private static final String LOCK_PREFIX = "PermissionID:";
 
-	private AssetPermissionReferencesSQLProvider assetPermissionReferencesSQLProvider =
+	private Lazy<AssetPermissionReferencesSQLProvider> assetPermissionReferencesSQLProvider = Lazy.of(()->
 		  DbConnectionFactory.isH2() ? new H2AssetPermissionReferencesSQLProvider()
 		: DbConnectionFactory.isMsSql() ? new MsSqlAssetPermissionReferencesSQLProvider()
 		: DbConnectionFactory.isMySql() ? new MySqlAssetPermissionReferencesSQLProvider()
 		: DbConnectionFactory.isOracle() ? new OracleAssetPermissionReferencesSQLProvider()
 		: DbConnectionFactory.isPostgres() ? new PostgresAssetPermissionReferencesSQLProvider()
-		: null
+		: null);
 	;
 
 	//SQL Queries used to maintain permissions
@@ -214,7 +215,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * 1. The host id you want the new reference to point to
      * 2. The host id the templates belong to
      */
-    private final String insertTemplateReferencesToAHostSQL = assetPermissionReferencesSQLProvider.getInsertTemplateReferencesToAHostSQL();
+    private final String insertTemplateReferencesToAHostSQL = assetPermissionReferencesSQLProvider.get().getInsertTemplateReferencesToAHostSQL();
 
 	/*
 	 * To load container identifiers that are children of a host
@@ -260,7 +261,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * 1. The host id you want the new reference to point to
      * 2. The host id the templates belong to
      */
-    private final String insertContainerReferencesToAHostSQL = assetPermissionReferencesSQLProvider.getInsertContainerReferencesToAHostSQL();
+    private final String insertContainerReferencesToAHostSQL = assetPermissionReferencesSQLProvider.get().getInsertContainerReferencesToAHostSQL();
 
 	/**
 	 * Function name to get the folder path. MSSql need owner prefix dbo
@@ -469,7 +470,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * 3. path like to the folder hierarchy the pages live under E.G /about/% (pages under /about/)
      * 4. same as 3
      */
-    private final String insertHTMLPageReferencesSQL = assetPermissionReferencesSQLProvider.getInsertHTMLPageReferencesSQL();
+    private final String insertHTMLPageReferencesSQL = assetPermissionReferencesSQLProvider.get().getInsertHTMLPageReferencesSQL();
 
 	/*
 	 * To load link identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -545,7 +546,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * 3. path like to the folder hierarchy the files live under E.G /about/% (files under /about/)
      * 4. same as 3
      */
-    private final String insertLinkReferencesSQL = assetPermissionReferencesSQLProvider.getInsertLinkReferencesSQL();
+    private final String insertLinkReferencesSQL = assetPermissionReferencesSQLProvider.get().getInsertLinkReferencesSQL();
 
 	/*
 	 * To load content identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -660,7 +661,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * 3. path like to the folder hierarchy the files live under E.G /about/% (files under /about/)
      * 4. same as 3
      */
-    private final String insertContentReferencesByPathSQL = assetPermissionReferencesSQLProvider.getInsertContentReferencesByPathSQL();
+    private final String insertContentReferencesByPathSQL = assetPermissionReferencesSQLProvider.get().getInsertContentReferencesByPathSQL();
 
 	/*
 	 * To insert permission references for content under a parent folder hierarchy, it only inserts the references if the content
