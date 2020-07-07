@@ -1,0 +1,336 @@
+name: Core
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+jobs:
+  run-unit-tests-job:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
+      EXPORT_REPORTS: true
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USER: dotcmsbuild
+      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+    if: github.event_name == 'pull_request' || github.head_ref == 'master' || startsWith(github.head_ref, 'release-') || startsWith(github.head_ref, 'test-')
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            BRANCH=$(basename "${{ github.ref }}")
+            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+            echo ::set-env name=commitMsg::$(git log --format=%s -n 1 ${{ github.event.after }})
+          else
+            BRANCH="${{ github.head_ref }}"
+            COMMIT_MESSG=$(git log -1 --pretty=format:%s)
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+            echo ::set-env name=commitMsg::$(git log -1 --pretty=format:%s)
+          fi
+
+          TYPE="${{ github.event_name }}"
+          if [[ "${TYPE}" == "pull_request" || "${BRANCH}" =~ '^master$|^release-.*|^test-.*' || "${COMMIT_MESSG}" =~ '\[github\]|\[github unit\]' ]]; then
+            echo ::set-env name=globalRun::'true'
+          else
+            echo ::set-env name=globalRun::'false'
+          fi
+      - name: Prepare dot-cicd
+        run: |
+          chmod +x .cicd/discover.sh && .cicd/discover.sh
+        if: env.globalRun == 'true'
+      - name: Check Provider
+        run: |
+          dotcicd/library/checkProvider.sh github
+      - name: Fail provider
+        run: |
+          echo ::set-env name=globalRun::'false'
+        if: failure()
+      - name: Build Tests Base Image
+        run: |
+          dotcicd/library/pipeline.sh buildTestsBase
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+      - name: Run Unit Tests
+        run: |
+          dotcicd/library/pipeline.sh runUnit
+        if: env.globalRun == 'true'
+  run-integration-tests-job:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
+      EXPORT_REPORTS: true
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USER: dotcmsbuild
+      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+    if: github.event_name == 'pull_request' || github.head_ref == 'master' || startsWith(github.head_ref, 'release-') || startsWith(github.head_ref, 'test-')
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            BRANCH=$(basename "${{ github.ref }}")
+            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+            echo ::set-env name=commitMsg::$(git log --format=%s -n 1 ${{ github.event.after }})
+          else
+            BRANCH="${{ github.head_ref }}"
+            COMMIT_MESSG=$(git log -1 --pretty=format:%s)
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+            echo ::set-env name=commitMsg::$(git log -1 --pretty=format:%s)
+          fi
+
+          TYPE="${{ github.event_name }}"
+          if [[ "${TYPE}" == "pull_request" || "${BRANCH}" =~ '^master$|^release-.*|^test-.*' || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]|\[github mysql\]|\[github oracle\]|\[github mssql\]|\[github unit]\' ]]; then
+            echo ::set-env name=globalRun::'true'
+          else
+            echo ::set-env name=globalRun::'false'
+          fi
+
+          if [[ "${TYPE}" != "pull_request" && "${BRANCH}" =~ '^master$|^release-.*|^test-.*' ]]; then
+            NOT_PR_AND_SPECIAL_BRANCH=true
+          else
+            NOT_PR_AND_SPECIAL_BRANCH=false
+          fi
+
+          if [[ (! "${COMMIT_MESSG}" =~ '\[github mysql\]|\[github oracle\]|\[github mssql\]|\[github unit]\') || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]' ]]; then
+            echo ::set-env name=runPostgres::'true'
+          else
+            echo ::set-env name=runPostgres::'false'
+          fi
+
+          if [[ ${NOT_PR_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github mysql\]' ]]; then
+            echo ::set-env name=runMysql::'true'
+          else
+            echo ::set-env name=runMysql::'false'
+          fi
+
+          if [[ ${NOT_PR_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github oracle\]' ]]; then
+            echo ::set-env name=runOracle::'true'
+          else
+            echo ::set-env name=runOracle::'false'
+          fi
+
+          if [[ ${NOT_PR_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github mssql\]' ]]; then
+            echo ::set-env name=runMssql::'true'
+          else
+            echo ::set-env name=runMssql::'false'
+          fi
+      - name: Prepare dot-cicd
+        run: |
+          chmod +x .cicd/discover.sh && .cicd/discover.sh
+        if: env.globalRun == 'true'
+      - name: Check Provider
+        run: |
+          dotcicd/library/checkProvider.sh github
+      - name: Fail provider
+        run: |
+          echo ::set-env name=globalRun::'false'
+        if: failure()
+      - name: Build Tests Base Image
+        run: |
+          dotcicd/library/pipeline.sh buildTestsBase
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+      - name: Run Integration Tests - postgres
+        run: |
+          dotcicd/library/pipeline.sh runIntegration
+        env:
+          databaseType: postgres
+        if: always() && env.globalRun == 'true' && env.runPostgres == 'true'
+      - name: Run Integration Tests - mysql
+        run: |
+          dotcicd/library/pipeline.sh runIntegration
+        env:
+          databaseType: mysql
+        if: always() && env.globalRun == 'true' && env.runMysql == 'true'
+      - name: Run Integration Tests - oracle
+        run: |
+          dotcicd/library/pipeline.sh runIntegration
+        env:
+          databaseType: oracle
+        if: always() && env.globalRun == 'true' && env.runOracle == 'true'
+      - name: Run Integration Tests - mssql
+        run: |
+          dotcicd/library/pipeline.sh runIntegration
+        env:
+          databaseType: mssql
+        if: always() && env.globalRun == 'true' && env.runMssql == 'true'
+  run-curl-tests-job:
+    name: Curl Tests
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
+      EXPORT_REPORTS: true
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USER: dotcmsbuild
+      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+    if: github.event_name == 'pull_request' || github.head_ref == 'master' || startsWith(github.head_ref, 'release-') || startsWith(github.head_ref, 'test-')
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            BRANCH=$(basename "${{ github.ref }}")
+            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+            echo ::set-env name=commitMsg::$(git log --format=%s -n 1 ${{ github.event.after }})
+          else
+            BRANCH="${{ github.head_ref }}"
+            COMMIT_MESSG=$(git log -1 --pretty=format:%s)
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+            echo ::set-env name=commitMsg::$(git log -1 --pretty=format:%s)
+          fi
+
+          TYPE="${{ github.event_name }}"
+          if [[ "${TYPE}" == "pull_request" || "${BRANCH}" =~ '^master$|^release-.*|^test-.*' || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]|\[github mysql\]|\[github oracle\]|\[github mssql\]|\[github unit]\' ]]; then
+            echo ::set-env name=globalRun::'true'
+          else
+            echo ::set-env name=globalRun::'false'
+          fi
+
+          if [[ "${TYPE}" != "pull_request" && "${BRANCH}" =~ '^master$|^release-.*|^test-.*' ]]; then
+            NOT_PR_AND_SPECIAL_BRANCH=true
+          else
+            NOT_PR_AND_SPECIAL_BRANCH=false
+          fi
+
+          if [[ (! "${COMMIT_MESSG}" =~ '\[github mysql\]|\[github oracle\]|\[github mssql\]') || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]' ]]; then
+            echo ::set-env name=runPostgres::'true'
+          else
+            echo ::set-env name=runPostgres::'false'
+          fi
+
+          if [[ ${NOT_PR_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github mysql\]' ]]; then
+            echo ::set-env name=runMysql::'true'
+          else
+            echo ::set-env name=runMysql::'false'
+          fi
+
+          if [[ ${NOT_PR_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github oracle\]' ]]; then
+            echo ::set-env name=runOracle::'true'
+          else
+            echo ::set-env name=runOracle::'false'
+          fi
+
+          if [[ ${NOT_PR_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github mssql\]' ]]; then
+            echo ::set-env name=runMssql::'true'
+          else
+            echo ::set-env name=runMssql::'false'
+          fi
+      - name: Prepare dot-cicd
+        run: |
+          chmod +x .cicd/discover.sh && .cicd/discover.sh
+        if: env.globalRun == 'true'
+      - name: Check Provider
+        run: |
+          dotcicd/library/checkProvider.sh github
+      - name: Fail provider
+        run: |
+          echo ::set-env name=globalRun::'false'
+        if: failure()
+      - name: Build DotCMS Image
+        run: |
+          dotcicd/library/pipeline.sh buildBase
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+      - name: Build Tests Base Image
+        run: |
+          dotcicd/library/pipeline.sh buildTestsBase
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+      - name: Run Curl Tests - postgres
+        run: |
+          dotcicd/library/pipeline.sh runCurl
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          databaseType: postgres
+          PROVIDER_DB_USERNAME: postgres
+          PROVIDER_DB_PASSWORD: postgres
+        if: always() && env.globalRun == 'true' && env.runPostgres == 'true'
+      - name: Run Curl Tests - mysql
+        run: |
+          dotcicd/library/pipeline.sh runCurl
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          databaseType: mysql
+          PROVIDER_DB_USERNAME: mysql
+          PROVIDER_DB_PASSWORD: mysql
+        if: always() && env.globalRun == 'true' && env.runMysql == true
+      - name: Run Curl Tests - oracle
+        run: |
+          dotcicd/library/pipeline.sh runCurl
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          databaseType: oracle
+          PROVIDER_DB_USERNAME: oracle
+          PROVIDER_DB_PASSWORD: oracle
+        if: always() && env.globalRun == 'true' && env.runOracle == 'true'
+      - name: Run Curl Tests - mssql
+        run: |
+          dotcicd/library/pipeline.sh runCurl
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          databaseType: mssql
+          PROVIDER_DB_USERNAME: sa
+          PROVIDER_DB_PASSWORD: mssqldotCMS2019
+        if: always() && env.globalRun == 'true' && env.runMssql == 'true'
+  slack-notification:
+    name: Notification
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_TARGET: core
+      GITHUB_USER: dotcmsbuild
+      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+    if: success() || failure()
+    needs: [run-unit-tests-job, run-integration-tests-job, run-curl-tests-job]
+    steps:
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+          else
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+          fi
+      - name: Notify through CI/CD slack action
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: dotcms/cicd-slack-action@master
+        with:
+          github-user: ${{ github.actor }}
+          branch: ${{ env.CURRENT_BRANCH }}

@@ -1,7 +1,6 @@
 ---
-key: "postman-test-service-descriptor"
-name: "lola"
-description: "A bunch of string params to demo the mechanism."
+name: "app-descriptor"
+description: "App descriptor."
 iconUrl: "/test.png"
 allowExtraParameters: false
 params:

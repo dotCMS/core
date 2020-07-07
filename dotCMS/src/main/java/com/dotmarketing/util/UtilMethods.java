@@ -1870,7 +1870,7 @@ public class UtilMethods {
      */
     public static String getCharsetConfiguration() {
     	// CHARSET key in properties file specifies both content tableName and charset
-    	String charsetWithContentType = Config.getStringProperty("CHARSET");
+    	String charsetWithContentType = Config.getStringProperty("CHARSET", "UTF-8");
 
     	if (isSet(charsetWithContentType)) {
     		// We are only interested in charset

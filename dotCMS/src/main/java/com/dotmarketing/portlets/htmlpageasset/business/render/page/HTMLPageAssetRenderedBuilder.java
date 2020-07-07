@@ -49,7 +49,7 @@ import java.util.Optional;
  * Builder of {@link HTMLPageAssetRendered}
  */
 public class HTMLPageAssetRenderedBuilder {
-    private IHTMLPage htmlPageAsset;
+    private HTMLPageAsset htmlPageAsset;
     private User user;
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -79,7 +79,7 @@ public class HTMLPageAssetRenderedBuilder {
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setHtmlPageAsset(final IHTMLPage htmlPageAsset) {
+    public HTMLPageAssetRenderedBuilder setHtmlPageAsset(final HTMLPageAsset htmlPageAsset) {
         this.htmlPageAsset = htmlPageAsset;
         return this;
     }
@@ -111,10 +111,6 @@ public class HTMLPageAssetRenderedBuilder {
 
     @CloseDBIfOpened
     public PageView build(final boolean rendered, final PageMode mode) throws DotDataException, DotSecurityException {
-        final ContentletVersionInfo info = APILocator.getVersionableAPI().
-                getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
-
-        final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
         final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset);
         final Template template = getTemplate(mode);
         if(!UtilMethods.isSet(template) && mode.equals(PageMode.ADMIN_MODE)){
@@ -136,7 +132,7 @@ public class HTMLPageAssetRenderedBuilder {
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
 
         final PageRenderUtil pageRenderUtil = new PageRenderUtil(
-                htmlPageAssetInfo.getPage(), systemUser, mode, language.getId(), this.site);
+                this.htmlPageAsset, systemUser, mode, language.getId(), this.site);
 
         final Optional<Contentlet> urlContentletOpt = this.findUrlContentlet (request);
 
@@ -144,7 +140,7 @@ public class HTMLPageAssetRenderedBuilder {
 
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             final PageView.Builder pageViewBuilder = new PageView.Builder().site(site).template(template).containers(containers)
-                    .page(htmlPageAssetInfo).layout(layout).canCreateTemplate(canCreateTemplates)
+                    .page(this.htmlPageAsset).layout(layout).canCreateTemplate(canCreateTemplates)
                     .canEditTemplate(canEditTemplate).viewAs(this.getViewAsStatus(mode, pagePersonalizationSet))
                     .pageUrlMapper(pageUrlMapper).live(live);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
@@ -160,7 +156,7 @@ public class HTMLPageAssetRenderedBuilder {
 
             final HTMLPageAssetRendered.RenderedBuilder pageViewBuilder = new HTMLPageAssetRendered.RenderedBuilder().html(pageHTML);
             pageViewBuilder.site(site).template(template).containers(containers)
-                    .page(htmlPageAssetInfo).layout(layout).canCreateTemplate(canCreateTemplates)
+                    .page(this.htmlPageAsset).layout(layout).canCreateTemplate(canCreateTemplates)
                     .canEditTemplate(canEditTemplate).viewAs(this.getViewAsStatus(mode, pagePersonalizationSet))
                     .pageUrlMapper(pageUrlMapper).live(live);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
@@ -215,45 +211,6 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
-    private HTMLPageAssetInfo getHTMLPageAssetInfo(final ContentletVersionInfo info) throws DotDataException {
-        HTMLPageAssetInfo htmlPageAssetInfo = new HTMLPageAssetInfo()
-            .setPage((HTMLPageAsset) this.htmlPageAsset)
-            .setWorkingInode(info.getWorkingInode())
-            .setShortyWorking(APILocator.getShortyAPI().shortify(info.getWorkingInode()))
-            .setCanEdit(this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.EDIT.getType(), user, false))
-            .setCanRead(this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false))
-            .setLiveInode(info.getLiveInode())
-            .setShortyLive(APILocator.getShortyAPI().shortify(info.getLiveInode()))
-            .setCanLock(this.canLock());
-
-        final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
-
-        if(lockedBy!=null) {
-            htmlPageAssetInfo.setLockedOn(info.getLockedOn())
-                .setLockedBy(lockedBy)
-                .setLockedByName(getLockedByUserName(info));
-        }
-
-        return htmlPageAssetInfo;
-    }
-
-    private String getLockedByUserName(final ContentletVersionInfo info) throws DotDataException {
-        try {
-            return userAPI.loadUserById(info.getLockedBy()).getFullName();
-        } catch (DotSecurityException e) {
-            return null;
-        }
-    }
-
-    private boolean canLock()  {
-        try {
-            APILocator.getContentletAPI().canLock((HTMLPageAsset) htmlPageAsset, user);
-            return true;
-        } catch (DotLockException e) {
-            return false;
-        }
-    }
-
     private ViewAsPageStatus getViewAsStatus(final PageMode pageMode, final Set<String> pagePersonalizationSet)
             throws DotDataException {
 
@@ -270,15 +227,14 @@ public class HTMLPageAssetRenderedBuilder {
 
     private boolean isPersonalized (final IPersona persona, final Set<String> pagePersonalizationSet) {
 
-        return null != persona?
-                pagePersonalizationSet.contains
-                    (Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag()): false;
+        return null != persona && pagePersonalizationSet.contains
+                (Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag());
     }
 
     
     private Visitor getVisitor() {
       final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
-      return visitor.isPresent() ? visitor.get() : null;
+      return visitor.orElse(null);
     }
     
     

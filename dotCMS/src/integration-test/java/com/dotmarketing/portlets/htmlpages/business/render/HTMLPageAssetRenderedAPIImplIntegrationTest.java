@@ -131,7 +131,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(htmlPageAsset, pageRendered.getPage());
         assertEquals(host, pageRendered.getSite());
         assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
@@ -160,7 +160,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(htmlPageAsset, pageRendered.getPage());
         assertEquals(this.host, pageRendered.getSite());
         assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
@@ -191,7 +191,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(htmlPageAsset, pageRendered.getPage());
         assertEquals(this.host, pageRendered.getSite());
         assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
@@ -222,7 +222,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(htmlPageAsset, pageRendered.getPage());
         assertEquals(this.host, pageRendered.getSite());
         assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
@@ -251,7 +251,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(htmlPageAsset, pageRendered.getPage());
         assertEquals(this.host, pageRendered.getSite());
         assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
@@ -280,7 +280,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(htmlPageAsset, pageRendered.getPage());
         assertEquals(defaultHost, pageRendered.getSite());
         assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
@@ -311,7 +311,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(htmlPageAsset, pageRendered.getPage());
         assertEquals(this.host, pageRendered.getSite());
         assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }

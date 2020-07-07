@@ -1,11 +1,12 @@
 package com.dotcms.publishing;
 
+import java.io.Writer;
+import com.dotmarketing.util.XMLUtils;
 import com.thoughtworks.xstream.core.util.QuickWriter;
 import com.thoughtworks.xstream.io.xml.PrettyPrintWriter;
-import java.io.Writer;
 
 /**
- * There a set of characters that are valid in UTF-8 but not valid in XML
+ * There a set of characters that are valid in UTF-8 but not valid in XML 1.0
  * This class should be use to validate and delete those invalid characters
  * See BundlerUtil.objectToXML() as example
  * 
@@ -23,17 +24,10 @@ public class DotPrettyPrintWriter extends PrettyPrintWriter {
      */
     protected void writeText(QuickWriter writer, String text) {
         
-    	//Pattern to validate invalid XML characters. 
-    	String xml10pattern = "[^"
-                + "\u0009\r\n"
-                + "\u0020-\uD7FF"
-                + "\uE000-\uFFFD"
-                + "\ud800\udc00-\udbff\udfff"
-                + "]";
-    	
+
     	//Removes all the invalid XML characters. 
-        String legalText = text.replaceAll(xml10pattern, "");
-        super.writeText(writer, legalText);
+        super.writeText(writer, XMLUtils.toXML10(text));
     }
+
     
 }

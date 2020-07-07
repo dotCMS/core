@@ -2218,7 +2218,7 @@ CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
 -- Cluster Tables
 
-CREATE TABLE dot_cluster(cluster_id varchar(36), PRIMARY KEY (cluster_id) );
+CREATE TABLE dot_cluster(cluster_id varchar(36), cluster_salt VARCHAR(256), PRIMARY KEY (cluster_id) );
 CREATE TABLE cluster_server(server_id varchar(36) primary key, cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(255), cache_port int, es_transport_tcp_port int, es_network_port int, es_http_port int, key_ varchar(100));
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id varchar(36) primary key, server_id varchar(36) references cluster_server(server_id), startup TIMESTAMP, heartbeat TIMESTAMP);
