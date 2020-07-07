@@ -567,7 +567,7 @@ public class DbConnectionFactory {
     }
 
     public static boolean isMsSql() {
-        return MSSQL.equals(getDBType());
+        return Try.of(()->MSSQL.equals(getDBType())).getOrElse(false);
     }
 
     public static boolean isPostgres() {
