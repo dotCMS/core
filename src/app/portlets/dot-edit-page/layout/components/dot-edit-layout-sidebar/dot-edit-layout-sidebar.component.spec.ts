@@ -110,7 +110,7 @@ describe('DotEditLayoutSidebarComponent', () => {
                     uuid: undefined
                 },
                 {
-                    identifier: mockDotContainers[1].container.identifier,
+                    identifier: mockDotContainers[1].container.path,
                     uuid: undefined
                 }
             ],

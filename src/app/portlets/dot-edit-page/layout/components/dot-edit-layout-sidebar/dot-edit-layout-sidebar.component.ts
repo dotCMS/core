@@ -3,6 +3,7 @@ import { DotLayoutSideBar } from '../../../shared/models/dot-layout-sidebar.mode
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotContainerColumnBox } from '../../../shared/models/dot-container-column-box.model';
 import { DotEditLayoutService } from '../../../shared/services/dot-edit-layout.service';
+import { TemplateContainersCacheService } from '@portlets/dot-edit-page/template-containers-cache.service';
 
 /**
  * Component in charge of update the model that will be used in the sidebar display containers
@@ -25,7 +26,9 @@ export class DotEditLayoutSidebarComponent implements ControlValueAccessor {
     containers: DotContainerColumnBox[];
     value: DotLayoutSideBar;
 
-    constructor(private dotEditLayoutService: DotEditLayoutService) {}
+    constructor(
+        private dotEditLayoutService: DotEditLayoutService, 
+        private templateContainersCacheService: TemplateContainersCacheService) {}
 
     /**
      * Returns DotContainerColumnBox model.
@@ -38,7 +41,7 @@ export class DotEditLayoutSidebarComponent implements ControlValueAccessor {
         if (containers) {
             this.value.containers = containers.map(item => {
                 return {
-                    identifier: item.container.identifier,
+                    identifier: this.templateContainersCacheService.getContainerReference(item.container),
                     uuid: item.uuid
                 };
             });
