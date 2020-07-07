@@ -27,20 +27,26 @@ import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -48,6 +54,8 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
@@ -57,6 +65,7 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.io.StringWriter;
 import java.util.Collections;
@@ -140,6 +149,115 @@ public class ESMappingAPITest {
         assertEquals(4, contentletMap.get("metadata.filesize"));
         assertTrue( contentletMap.get("metadata.content").toString().contains("lol!"));
 
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has a invalid host
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotDataException.class)
+    public void whenContentletHasInvalidHostId(){
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        contentlet.setHost("not_exist_host");
+        ContentletDataGen.checkin(contentlet);
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has a invalid folder
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotDataException.class)
+    public void whenContentletHasInvalidFolderId(){
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        contentlet.setFolder("not_exist_folder");
+        ContentletDataGen.checkin(contentlet);
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has a invalid content type
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotDataException.class)
+    public void whenContentletHasInvalidContentTypeId(){
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        contentlet.setContentTypeId("not_exist_content_type");
+        ContentletDataGen.checkin(contentlet);
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has not {@link com.dotmarketing.beans.Identifier}
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotDataException.class)
+    public void whenContentletHasNotIdentifier() throws DotHibernateException, SQLException {
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        HibernateUtil.startTransaction();
+        DotConnect dc = new DotConnect();
+        dc.executeStatement(String.format("DELETE from identifier where id = %s", contentType.id()));
+        HibernateUtil.commitTransaction();
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has not {@link ContentletVersionInfo}
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotDataException.class)
+    public void whenContentletHasNotContentletVersionInfo() throws DotDataException, SQLException {
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
+        HibernateUtil.delete(versionInfo);
+
+        esMappingAPI.toMap(contentlet);
     }
 
     @Test
