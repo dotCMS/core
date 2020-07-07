@@ -173,12 +173,15 @@
     }
 
     /**
-     * Downloads a selected bundle id. This selected bundle is an Unpushed Bundle
+     * Downloads a selected bundle id, for the operation selected.
+     * If the operation selected is PUBLISH will apply the filters of the filterKey selected.
+     * This selected bundle is an Unpushed Bundle
      * @param bundleId
      * @param operation publish/unpublish
+     * @param filterKey
      */
-    var downloadUnpushedBundle = function (bundleId, operation) {
-        window.location = '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadUnpushedBundle/bundleId/' + bundleId + '/operation/' + operation;
+    var downloadUnpushedBundle = function (bundleId, operation, filterKey) {
+        window.location = '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadUnpushedBundle/bundleId/' + bundleId + '/operation/' + operation + '/filterKey/' + filterKey;
     };
 
     dojo.require("dotcms.dojo.push.PushHandler");

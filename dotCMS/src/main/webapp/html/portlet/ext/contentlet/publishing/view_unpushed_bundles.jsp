@@ -97,13 +97,16 @@
 									<div data-dojo-type="dijit/MenuItem" onClick="deleteSavedBundle('<%=bundle.getId()%>')">
 										<%= LanguageUtil.get(pageContext, "Delete") %>
 									</div>
-									
-									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish')">
-										<%=LanguageUtil.get(pageContext, "download-for-Publish") %>
+
+									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish','ContentOnly.yml')">
+										<%=LanguageUtil.get(pageContext, "download") %>
 									</div>
-									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','unpublish')">
-										<%=LanguageUtil.get(pageContext, "download-for-UnPublish") %>
-									</div>
+<%--									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish')">--%>
+<%--										<%=LanguageUtil.get(pageContext, "download-for-Publish") %>--%>
+<%--									</div>--%>
+<%--									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','unpublish')">--%>
+<%--										<%=LanguageUtil.get(pageContext, "download-for-UnPublish") %>--%>
+<%--									</div>--%>
 		
 									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="remotePublish('<%=bundle.getId()%>'); ">
 										<%= LanguageUtil.get(pageContext, "Remote-Publish") %>

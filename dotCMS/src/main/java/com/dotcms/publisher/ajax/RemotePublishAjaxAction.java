@@ -48,7 +48,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
@@ -76,11 +75,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.Arrays;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -557,6 +554,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         final Map<String, String> map = getURIParams();
         final String bundleId = map.get( "bundleId" );
         final String paramOperation = map.get( "operation" );
+        final String bundleFilter = UtilMethods.isSet(map.get("filterKey")) ? map.get("filterKey") : "";
         if ( bundleId == null || bundleId.isEmpty() ) {
             Logger.error( this.getClass(), "No Bundle Found with id: " + bundleId );
             response.sendError( 500, "No Bundle Found with id: " + bundleId );
@@ -575,8 +573,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
         
         File bundle;
         try {
+            //set Filter to the bundle
+            dbBundle.setFilterKey(bundleFilter);
+            //set ForcePush value of the filter to the bundle
+            dbBundle.setForcePush(
+                    (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(bundleFilter).getFilters().getOrDefault("forcePush",false));
+            //Update Bundle
+            APILocator.getBundleAPI().updateBundle(dbBundle);
+
             //Generate the bundle file for this given operation
-            Map<String, Object> bundleData = generateBundle( bundleId, operation );
+            final Map<String, Object> bundleData = generateBundle( bundleId, operation );
             bundle = (File) bundleData.get( "file" );
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
@@ -589,7 +595,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         BufferedInputStream in = null;
         try {
             in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
-            byte[] buf = new byte[4096];
+            final byte[] buf = new byte[4096];
             int len;
 
             while ( (len = in.read( buf, 0, buf.length )) != -1 ) {
@@ -606,8 +612,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //Clean the just created bundle because on each download we will generate a new bundle file with a new id in order to avoid conflicts with ids
-            File bundleRoot = BundlerUtil.getBundleRoot( bundleId );
-            File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz" );
+            final File bundleRoot = BundlerUtil.getBundleRoot( bundleId );
+            final File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz" );
             if ( compressedBundle.exists() ) {
                 compressedBundle.delete();
                 if ( bundleRoot.exists() ) {
