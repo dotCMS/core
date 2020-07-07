@@ -39,6 +39,8 @@ import com.liferay.portal.model.User;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
+import io.vavr.API;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -647,18 +649,24 @@ public class HostAPITest extends IntegrationTestBase  {
      */
     @Test
     public void shouldReturnHostByAlias() throws DotSecurityException, DotDataException {
-        final Host host = new SiteDataGen().aliases("demo.dotcms.com").nextPersisted();
-        final Host host_2 = new SiteDataGen().aliases("not-demo.dotcms.com").setDefault(true).nextPersisted();
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
 
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
+        try {
+            final Host host = new SiteDataGen().aliases("demo.dotcms.com").nextPersisted();
+            final Host host_2 = new SiteDataGen().aliases("not-demo.dotcms.com").setDefault(true).nextPersisted();
 
-        this.addPermission(role, host);
-        this.addPermission(role, host_2);
-        
-        final Host hostReturned = APILocator.getHostAPI().findByAlias("demo.dotcms.com", user, false);
-        assertEquals(host, hostReturned);
-        assertNotEquals(host_2, hostReturned);
+            final Role role = new RoleDataGen().nextPersisted();
+            final User user = new UserDataGen().roles(role).nextPersisted();
+
+            this.addPermission(role, host);
+            this.addPermission(role, host_2);
+
+            final Host hostReturned = APILocator.getHostAPI().findByAlias("demo.dotcms.com", user, false);
+            assertEquals(host, hostReturned);
+            assertNotEquals(host_2, hostReturned);
+        } finally {
+            APILocator.getHostAPI().makeDefault(defaultHost, APILocator.systemUser(), false);
+        }
     }
 
     /**
@@ -686,21 +694,29 @@ public class HostAPITest extends IntegrationTestBase  {
      */
     @Test
     public void whenBothAliasStartByProd() throws DotSecurityException, DotDataException {
-        final Host host = new SiteDataGen().aliases("prod-client.dotcms.com").nextPersisted();
-        final Host host_2 = new SiteDataGen().aliases("prod-anotherclient.dotcms.com").setDefault(true).nextPersisted();
 
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
 
-        this.addPermission(role, host);
-        this.addPermission(role, host_2);
+        try {
+            final Host host = new SiteDataGen().aliases("prod-client.dotcms.com").nextPersisted();
+            final Host host_2 = new SiteDataGen().aliases("prod-anotherclient.dotcms.com").setDefault(true).nextPersisted();
 
-        final Host hostReturned = APILocator.getHostAPI().findByAlias("prod-client.dotcms.com", user, false);
-        assertEquals(host, hostReturned);
-        assertNotEquals(host_2, hostReturned);
+            final Role role = new RoleDataGen().nextPersisted();
+            final User user = new UserDataGen().roles(role).nextPersisted();
 
-        final Host hostReturned2 = APILocator.getHostAPI().findByAlias("prod-anotherclient.dotcms.com", user, false);
-        assertNotEquals(host, hostReturned2);
-        assertEquals(host_2, hostReturned2);
+            this.addPermission(role, host);
+            this.addPermission(role, host_2);
+
+            final Host hostReturned = APILocator.getHostAPI().findByAlias("prod-client.dotcms.com", user, false);
+            assertEquals(host, hostReturned);
+            assertNotEquals(host_2, hostReturned);
+
+            final Host hostReturned2 = APILocator.getHostAPI().findByAlias("prod-anotherclient.dotcms.com", user, false);
+            assertNotEquals(host, hostReturned2);
+            assertEquals(host_2, hostReturned2);
+
+        } finally {
+            APILocator.getHostAPI().makeDefault(defaultHost, APILocator.systemUser(), false);
+        }
     }
 }
