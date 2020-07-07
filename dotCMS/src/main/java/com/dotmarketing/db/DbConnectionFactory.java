@@ -563,7 +563,7 @@ public class DbConnectionFactory {
     }
 
     public static boolean isOracle() {
-        return ORACLE.equals(getDBType());
+        return Try.of(()->ORACLE.equals(getDBType())).getOrElse(false);
     }
 
     public static boolean isMsSql() {
@@ -571,15 +571,16 @@ public class DbConnectionFactory {
     }
 
     public static boolean isPostgres() {
-        return POSTGRESQL.equals(getDBType());
+        return Try.of(()->POSTGRESQL.equals(getDBType())).getOrElse(false);
+
     }
 
     public static boolean isMySql() {
-        return MYSQL.equals(getDBType());
+        return Try.of(()->MYSQL.equals(getDBType())).getOrElse(false);
     }
 
     public static boolean isH2() {
-        return H2.equals(getDBType());
+        return false;
     }
 
     public static int getDbVersion() {
