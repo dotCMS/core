@@ -1,6 +1,9 @@
 name: Core
-on: [pull_request]
-
+on:
+  pull_request:
+  push:
+    branches:
+      - master
 jobs:
   run-unit-tests-job:
     name: Unit Tests
@@ -302,3 +305,32 @@ jobs:
           PROVIDER_DB_USERNAME: sa
           PROVIDER_DB_PASSWORD: mssqldotCMS2019
         if: always() && env.globalRun == 'true' && env.runMssql == 'true'
+  slack-notification:
+    name: Notification
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_TARGET: core
+      GITHUB_USER: dotcmsbuild
+      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+    if: success() || failure()
+    needs: [run-unit-tests-job, run-integration-tests-job, run-curl-tests-job]
+    steps:
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Set Common Vars
+        run: |
+          if [[ -z "${{ github.event.number }}" ]]; then
+            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+          else
+            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+          fi
+      - name: Notify through CI/CD slack action
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: dotcms/cicd-slack-action@master
+        with:
+          github-user: ${{ github.actor }}
+          branch: ${{ env.CURRENT_BRANCH }}

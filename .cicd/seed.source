@@ -1,2 +1,2 @@
 # Override values
-export DOT_CICD_BRANCH="issue-18504-ci-github-actions"
+#export DOT_CICD_BRANCH="18796-create-github-slack-action"

@@ -312,8 +312,10 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
                     .equalsIgnoreCase(stInode);
 
             return dbRelatedContent(relationship, contentlet, hasParent);
-        } else{//if the relationship is self joined, get the related content where the contentlet is parent
-            return  dbRelatedContent(relationship, contentlet, true);
+        } else{//if the relationship is self joined, get the related content where the contentlet is parent or child
+            List<Contentlet> contentletList = dbRelatedContent(relationship, contentlet, true);
+            contentletList.addAll(dbRelatedContent(relationship, contentlet, false));
+            return contentletList;
         }
     }
 
