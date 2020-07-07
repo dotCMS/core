@@ -7,8 +7,8 @@ import java.io.Serializable;
  *
  * @author jsanca
  */
-public class Attributes implements Serializable
-{
+public class Attributes implements Serializable {
+
 	private static final long serialVersionUID = 1836313856887837731L;
 
 	// user email from opensaml
@@ -29,14 +29,18 @@ public class Attributes implements Serializable
 	// Saml object with the NameID.
 	private final Object nameID;
 
+	// SAML Session Index
+	private final String sessionIndex;
+
 	private Attributes(final Builder builder) {
 
-		this.email     = builder.email;
-		this.lastName  = builder.lastName;
-		this.firstName = builder.firstName;
-		this.addRoles  = builder.addRoles;
-		this.roles     = builder.roles;
-		this.nameID    = builder.nameID;
+		this.email        = builder.email;
+		this.lastName     = builder.lastName;
+		this.firstName    = builder.firstName;
+		this.addRoles     = builder.addRoles;
+		this.roles        = builder.roles;
+		this.nameID       = builder.nameID;
+		this.sessionIndex = builder.sessionIndex;
 	}
 
 	public String getEmail()
@@ -69,6 +73,10 @@ public class Attributes implements Serializable
 		return nameID;
 	}
 
+	public String getSessionIndex() {
+		return sessionIndex;
+	}
+
 	@Override
 	public String toString() {
 		return "AttributesBean{" + "nameID='" + nameID + '\'' + ", email='" + email + '\'' + ", lastName='" + lastName + '\''
@@ -82,6 +90,7 @@ public class Attributes implements Serializable
 		boolean addRoles = false;
 		Object roles     = null;
 		Object nameID    = null;
+		String sessionIndex;
 
 		public Builder email(final String email )
 		{
@@ -118,6 +127,13 @@ public class Attributes implements Serializable
 			this.nameID = nameID;
 			return this;
 		}
+
+		public Builder sessionIndex(final String sessionIndex)
+		{
+			this.sessionIndex = sessionIndex;
+			return this;
+		}
+
 
 		public String getEmail()
 		{

@@ -7,7 +7,9 @@ package com.dotcms.saml;
  */
 // Migrated
 public class DotSamlConstants {
-	public static final char ARRAY_SEPARATOR_CHAR = ',';
+
+	public static final String NULL = "null";
+	public static final char   ARRAY_SEPARATOR_CHAR = ',';
 	public static final String HTTP_SCHEMA = "http://";
 	public static final String HTTPS_SCHEMA = "https://";
 	public static final String HTTPS_SCHEMA_PREFIX = "https";
@@ -22,6 +24,9 @@ public class DotSamlConstants {
 	public static final String SAML_NAME_ID_SESSION_ATTR = "SAML_NAME_ID";
 
 	public static final String SAML_ART_PARAM_KEY = "SAMLart";
+
+	public static final String SAML_SESSION_INDEX = "SAMLSessionIndex";
+	public static final String SAML_NAME_ID = "SAMLNameID";
 
 	/**
 	 * By default we use the OpenSamlAuthenticationServiceImpl, however

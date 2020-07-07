@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 /**
  * This service will retrieve information form the idp config, but also if the value is not set will provide the default value for the saml name.
@@ -104,6 +105,29 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
         }
 
         return null;
+    }
+
+    @Override
+    public String getConfigAsString(final IdentityProviderConfiguration identityProviderConfiguration,
+                                    final SamlName samlName, final Supplier<String> defaultValueSupplier) {
+
+        try {
+
+            final String value = identityProviderConfiguration.containsOptionalProperty(samlName.getPropertyName())?
+                    (String) identityProviderConfiguration.getOptionalProperty(samlName.getPropertyName()):
+                    defaultValueSupplier.get();
+
+            Logger.debug(this,
+                    ()-> "Found " + samlName.getPropertyName() + " : " + ((value == null) ? "null" : value));
+
+            return value;
+        } catch (Exception e) {
+
+            Logger.warn(this, ()-> "Cast exception on " + samlName.getPropertyName()
+                    + " property. idpConfigId: " + identityProviderConfiguration.getId());
+        }
+
+        return defaultValueSupplier.get();
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.dotcms.saml;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Writer;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -75,4 +76,19 @@ public interface SamlAuthenticationService {
      */
     void renderMetadataXML(final Writer writer,
                            final IdentityProviderConfiguration identityProviderConfiguration);
+
+    /**
+     * Gets the value of a saml object
+     * @param samlObject {@link Object}
+     * @return String
+     */
+    String getValue (final Object samlObject);
+
+
+    /**
+     * Gets the values of a saml object
+     * @param samlObject {@link Object}
+     * @return List
+     */
+    List<String> getValues (final Object samlObject);
 }

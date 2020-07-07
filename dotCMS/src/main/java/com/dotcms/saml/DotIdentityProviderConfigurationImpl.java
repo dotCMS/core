@@ -84,31 +84,30 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
     }
 
     @Override
-    public Path getIdPMetadataFile() {
+    public char[] getIdPMetadataFile() {
 
-        /*final String idPMetadataFileKey = SamlName.DOT_SAML_IDENTITY_PROVIDER_METADATA_FILE.getPropertyName();
+        final String idPMetadataFileKey = SamlName.DOT_SAML_IDENTITY_PROVIDER_METADATA_FILE.getPropertyName();
         final Optional<Secret> secretOpt        = this.findSecret(idPMetadataFileKey);
-        return secretOpt.isPresent()? secretOpt.get().getString(): null;*/
-        return new File("/Users/jsanca/Documents/idp-metadata-example.xml").toPath();
+        return secretOpt.isPresent()? secretOpt.get().getValue(): null;
+        //return new File("/Users/jsanca/Documents/idp-metadata-example.xml").toPath();
     }
 
     @Override
-    public File getPublicCert() {
+    public char[] getPublicCert() {
 
-        /*final String privateKey = SamlName.DOT_SAML_PUBLIC_CERT_FILE.getPropertyName();
+        final String privateKey = SamlName.DOT_SAML_PUBLIC_CERT_FILE.getPropertyName();
         final Optional<Secret> secretOpt        = this.findSecret(privateKey);
-        return secretOpt.isPresent()? secretOpt.get().getString(): null;*/
-        //return new File("/Users/jsanca/Documents/saml.csr");
-        return new File("/Users/jsanca/.ssh/id_rsa.pub");
+        return secretOpt.isPresent()? secretOpt.get().getValue(): null;
+
+        //return new File("/Users/jsanca/Documents/mysaml.crt");
     }
 
     @Override
-    public File getPrivateKey() {
-        /*final String publicCertKey = SamlName.DOT_SAML_PRIVATE_KEY_FILE.getPropertyName();
+    public char[] getPrivateKey() {
+        final String publicCertKey = SamlName.DOT_SAML_PRIVATE_KEY_FILE.getPropertyName();
         final Optional<Secret> secretOpt        = this.findSecret(publicCertKey);
-        return secretOpt.isPresent()? secretOpt.get().getString(): null;*/
-        //return new File("/Users/jsanca/Documents/saml.key");
-        return new File("/Users/jsanca/.ssh/id_rsa");
+        return secretOpt.isPresent()? secretOpt.get().getValue(): null;
+        //return new File("/Users/jsanca/Documents/mysaml.key");
     }
 
     @Override

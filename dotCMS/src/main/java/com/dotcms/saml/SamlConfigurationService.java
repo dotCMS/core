@@ -1,6 +1,7 @@
 package com.dotcms.saml;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * This service allows the interaction between some idp configuration and the properties itself.
@@ -31,12 +32,23 @@ public interface SamlConfigurationService {
     String getConfigAsString(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName);
 
     /**
+     * Returns the configuration value for the {@link SamlName} as String
+     * The configuration will look for in the identityProviderConfiguration the dotSamlName, if not found, will retrieve the default value.
+     * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
+     * @param samlName {@link SamlName}
+     * @param defaultValueSupplier {@link Supplier}
+     * @return String
+     */
+    String getConfigAsString(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName, Supplier<String> defaultValueSupplier);
+
+    /**
      * Returns the configuration value for the {@link SamlName} as Boolean
      *  @param identityProviderConfiguration {@link IdentityProviderConfiguration}
      *  @param samlName {@link SamlName}
      * @return Boolean
      */
     Boolean getConfigAsBoolean(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName);
+
 
     /**
      * Returns the configuration value for the {@link SamlName} as Array String
@@ -58,8 +70,4 @@ public interface SamlConfigurationService {
      * Provides the initial values for a configuration map
      * @return Map
      */
-    Map<String, String>  createInitialMap(); /*{
-
-
-    }*/
-}
+    Map<String, String>  createInitialMap(); }

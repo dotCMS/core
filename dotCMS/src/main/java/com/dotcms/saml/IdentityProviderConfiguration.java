@@ -49,19 +49,19 @@ public interface IdentityProviderConfiguration {
      * Retrieves the metadata Path
      * @return Path
      */
-    Path getIdPMetadataFile();
+    char[] getIdPMetadataFile();
 
     /**
      * Returns the public certificate File
-     * @return File
+     * @return char array
      */
-    File getPublicCert();
+    char[] getPublicCert();
 
     /**
      * Returns the private certificate File
      * @return File
      */
-    File getPrivateKey();
+    char[] getPrivateKey();
 
     /**
      * Get the optional property for the SAML configuration

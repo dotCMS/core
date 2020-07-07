@@ -37,8 +37,8 @@ public class DotSamlProxyFactory {
     private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory =
             new DotIdentityProviderConfigurationFactoryImpl(this.appsAPI, APILocator.getHostAPI());
 
-    private SamlServiceBuilder samlServiceBuilder                = null;
-    private SamlConfigurationService samlConfigurationService    = null;
+    private SamlServiceBuilder        samlServiceBuilder         = null;
+    private SamlConfigurationService  samlConfigurationService   = null;
     private SamlAuthenticationService samlAuthenticationService  = null;
 
     private static class SingletonHolder {

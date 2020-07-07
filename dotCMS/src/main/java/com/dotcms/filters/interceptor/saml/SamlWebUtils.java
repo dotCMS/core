@@ -1,5 +1,7 @@
 package com.dotcms.filters.interceptor.saml;
 
+import com.dotcms.saml.Attributes;
+import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
@@ -7,6 +9,7 @@ import com.dotmarketing.util.PageMode;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -183,5 +186,6 @@ public class SamlWebUtils {
 
         return renewSession;
     }
+
 
 } // E:O:F:SamlWebUtils.
