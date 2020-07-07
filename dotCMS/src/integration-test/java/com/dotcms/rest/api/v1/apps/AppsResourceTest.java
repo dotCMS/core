@@ -24,11 +24,16 @@ import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
+import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.AppsAPIImpl;
 import com.dotcms.security.apps.ParamDescriptor;
+import com.dotcms.security.apps.SecretsStore;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -75,6 +80,8 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     private static AppsResource appsResource;
 
+    private static AppsResource appsResourceNonLicense;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -97,6 +104,22 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         appsResource = new AppsResource(webResource,
                 appsHelper);
+
+        final AppsAPI appsAPI = new AppsAPIImpl(APILocator.getUserAPI(), APILocator.getLayoutAPI(),
+                APILocator.getHostAPI(), APILocator.getContentletAPI(),
+                SecretsStore.INSTANCE.get(), CacheLocator
+                .getAppsCache(), new LicenseValiditySupplier() {
+                    @Override
+                    public boolean hasValidLicense() {
+                        return false;
+                    }
+                }
+        );
+
+        final AppsHelper appsHelperNonLicense = new AppsHelper(appsAPI, APILocator.getHostAPI(), APILocator.getContentletAPI());
+        appsResourceNonLicense = new AppsResource(webResource,
+                appsHelperNonLicense);
+
     }
 
     private FormDataMultiPart createFormDataMultiPart(final String fileName,
@@ -1133,6 +1156,45 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         }
 
+    }
+
+    /**
+     * This basically tests that we can not use the  list endpoint that list available apps
+     * Given scenario: We have a non-valid-license type of situation then we call the list available apps endpoint
+     * Expected Result: We should be getting a 403
+     */
+    @Test
+    public void Test_List_Available_Apps_Invalid_License() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final Response listAvailableAppsResponse = appsResourceNonLicense.listAvailableApps(request, response, null);
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, listAvailableAppsResponse.getStatus());
+    }
+
+    /**
+     * This basically tests that we can not use the app by key endpoint
+     * Given scenario: We have a non-valid-license type of situation then we call the get app by key endpoint
+     * Expected Result: We should be getting a 403
+     */
+    @Test
+    public void Test_Get_App_By_Key_Invalid_License() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final Response appByKeyResponse = appsResourceNonLicense.getAppByKey(request, response, "anyKey", paginationContext());
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, appByKeyResponse.getStatus());
+    }
+
+    /**
+     * This basically tests that we can not use the get app detail endpoint.
+     * Given scenario: We have a non-valid-license type of situation then we call the  get app detail endpoint.
+     * Expected Result: We should be getting a 403
+     */
+    @Test
+    public void Test_Get_App_Detail_Invalid_License() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final Response appDetailResponse = appsResourceNonLicense.getAppDetail(request, response, "anyKey", "any-site-id");
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, appDetailResponse.getStatus());
     }
 
     private void createSecret(final HttpServletRequest request, final HttpServletResponse response,
