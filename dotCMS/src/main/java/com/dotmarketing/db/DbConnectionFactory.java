@@ -446,23 +446,11 @@ public class DbConnectionFactory {
             return _dbType;
         }
 
-        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
-        Connection conn = null;
-
-        try {
-            conn = getConnection();
+        try (Connection conn = getDataSource().getConnection()){
             _dbType = conn.getMetaData().getDatabaseProductName();
         } catch (Exception e) {
             Logger.warn(DbConnectionFactory.class, "unable to determine dbType:" + e.getMessage());
-        } finally {
-            try {
-                if (isNewConnection && conn !=null) {
-                    conn.close();
-                }
-            } catch (Exception e) {
-
-            }
-        }
+        } 
 
         return _dbType;
     }
