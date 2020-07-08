@@ -447,15 +447,16 @@ public class DbConnectionFactory {
         }
 
         final boolean isNewConnection = !DbConnectionFactory.connectionExists();
-        Connection conn = getConnection();
+        Connection conn = null;
 
         try {
+            conn = getConnection();
             _dbType = conn.getMetaData().getDatabaseProductName();
         } catch (Exception e) {
-
+            Logger.warn(DbConnectionFactory.class, "unable to determine dbType:" + e.getMessage());
         } finally {
             try {
-                if (isNewConnection) {
+                if (isNewConnection && conn !=null) {
                     conn.close();
                 }
             } catch (Exception e) {
@@ -563,24 +564,23 @@ public class DbConnectionFactory {
     }
 
     public static boolean isOracle() {
-        return Try.of(()->ORACLE.equals(getDBType())).getOrElse(false);
+        return ORACLE.equals(getDBType());
     }
 
     public static boolean isMsSql() {
-        return Try.of(()->MSSQL.equals(getDBType())).getOrElse(false);
+        return MSSQL.equals(getDBType());
     }
 
     public static boolean isPostgres() {
-        return Try.of(()->POSTGRESQL.equals(getDBType())).getOrElse(false);
-
+        return POSTGRESQL.equals(getDBType());
     }
 
     public static boolean isMySql() {
-        return Try.of(()->MYSQL.equals(getDBType())).getOrElse(false);
+        return MYSQL.equals(getDBType());
     }
 
     public static boolean isH2() {
-        return false;
+        return H2.equals(getDBType());
     }
 
     public static int getDbVersion() {
