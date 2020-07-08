@@ -16,10 +16,8 @@ const mockResponse = {
 
 const mockFormValue: DotPushPublishData = {
     pushActionSelected: 'publish',
-    publishdate: '10/10/20',
-    publishdatetime: '10:00',
-    expiredate: '10/10/20',
-    expiredatetime: '10:00',
+    publishdate: 'Wed Jul 08 2020 10:10:50 GMT-0600',
+    expiredate: 'Wed Jul 15 2020 22:10:50 GMT-0600',
     environment: ['env1'],
     forcePush: true,
     filterKey: 'hol'
@@ -91,7 +89,7 @@ describe('PushPublishService', () => {
             'DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish'
         );
         expect(this.lastConnection.request.getBody()).toBe(
-            'assetIdentifier=1234567890&remotePublishDate=2020-10-10&remotePublishTime=12-00&remotePublishExpireDate=2020-10-10&remotePublishExpireTime=12-00&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true&filterKey=hol'
+            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true&filterKey=hol'
         );
         expect(result).toEqual(mockResponse);
     }));
@@ -109,7 +107,7 @@ describe('PushPublishService', () => {
         );
         tick();
         expect(this.lastConnection.request.getBody()).toBe(
-            'assetIdentifier=1234567890&remotePublishDate=2020-10-10&remotePublishTime=12-00&remotePublishExpireDate=2020-10-10&remotePublishExpireTime=12-00&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true'
+            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true'
         );
     }));
 
@@ -132,7 +130,7 @@ describe('PushPublishService', () => {
             'DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle'
         );
         expect(this.lastConnection.request.getBody()).toBe(
-            'assetIdentifier=1234567890&remotePublishDate=2020-10-10&remotePublishTime=12-00&remotePublishExpireDate=2020-10-10&remotePublishExpireTime=12-00&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true&filterKey=hol'
+            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true&filterKey=hol'
         );
         expect(result).toEqual(mockResponse);
     }));
