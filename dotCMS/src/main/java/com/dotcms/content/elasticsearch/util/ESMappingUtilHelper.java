@@ -50,7 +50,6 @@ public class ESMappingUtilHelper {
 
     private static ContentTypeAPI contentTypeAPI;
     private static ESMappingAPIImpl esMappingAPI;
-    private static ESIndexAPI esIndexAPI;
     private static RelationshipAPI relationshipAPI;
 
     private static class SingletonHolder {
@@ -64,7 +63,6 @@ public class ESMappingUtilHelper {
 
     private ESMappingUtilHelper() {
         contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-        esIndexAPI   = APILocator.getESIndexAPI();
         esMappingAPI = new ESMappingAPIImpl();
         relationshipAPI = APILocator.getRelationshipAPI();
     }
