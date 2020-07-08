@@ -39,6 +39,7 @@ import com.liferay.portal.model.User;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -639,4 +640,68 @@ public class HostAPITest extends IntegrationTestBase  {
         APILocator.getPermissionAPI().save(CollectionsUtils.list(permission), host, systemUser, false);
     }
 
+    /**
+     * Method to test: {@link HostAPI#findByAlias(String, User, boolean)}
+     * When create two host: first one with alias equals to demo.dotcms.com and second  one with alias equals to not-demo.dotcms.com
+     *      and find by  demo.dotcms.com
+     * Should return the first one
+     */
+    @Test
+    public void shouldReturnHostByAlias() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().aliases("demo.dotcms.com").nextPersisted();
+        final Host host_2 = new SiteDataGen().aliases("not-demo.dotcms.com").nextPersisted();
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+
+        this.addPermission(role, host);
+        this.addPermission(role, host_2);
+
+        final Host hostReturned = APILocator.getHostAPI().findByAlias("demo.dotcms.com", user, false);
+        assertEquals(host, hostReturned);
+        assertNotEquals(host_2, hostReturned);
+    }
+
+    /**
+     * Method to test: {@link HostAPI#findByAlias(String, User, boolean)}
+     * When create one host with multiple alias
+     * Should return thehost by alias
+     */
+    @Test
+    public void whenHostHasMultipleAliasshouldReturnHostByAlias() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().aliases("demo.dotcms.com\r\ntest.dotcms.com").nextPersisted();
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+
+        this.addPermission(role, host);
+
+        final Host hostReturned = APILocator.getHostAPI().findByAlias("test.dotcms.com", user, false);
+        assertEquals(host, hostReturned);
+    }
+
+    /**
+     * Method to test: {@link HostAPI#findByAlias(String, User, boolean)}
+     * When create two host with alias that both start by prod-
+     * Should return the right host by alias
+     */
+    @Test
+    public void whenBothAliasStartByProd() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().aliases("prod-client.dotcms.com").nextPersisted();
+        final Host host_2 = new SiteDataGen().aliases("prod-anotherclient.dotcms.com").nextPersisted();
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+
+        this.addPermission(role, host);
+        this.addPermission(role, host_2);
+
+        final Host hostReturned = APILocator.getHostAPI().findByAlias("prod-client.dotcms.com", user, false);
+        assertEquals(host, hostReturned);
+        assertNotEquals(host_2, hostReturned);
+
+        final Host hostReturned2 = APILocator.getHostAPI().findByAlias("prod-anotherclient.dotcms.com", user, false);
+        assertNotEquals(host, hostReturned2);
+        assertEquals(host_2, hostReturned2);
+    }
 }
