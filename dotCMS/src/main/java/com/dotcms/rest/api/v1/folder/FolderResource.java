@@ -91,6 +91,10 @@ public class FolderResource implements Serializable {
         final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         final User user = initData.getUser();
         try{
+            String uriParam = uri;
+            if(uriParam.charAt(0) != '/') {
+                uriParam = "/".concat(uriParam);
+            }
             Folder folder = folderHelper.loadFolderByURI(siteName,user,uri);
             response = Response.ok( new ResponseEntityView(folder) ).build();
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
