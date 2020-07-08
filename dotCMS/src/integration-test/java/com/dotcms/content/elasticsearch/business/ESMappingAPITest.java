@@ -10,6 +10,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -36,13 +37,8 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -65,7 +61,6 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import java.io.File;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.io.StringWriter;
 import java.util.Collections;
@@ -158,7 +153,7 @@ public class ESMappingAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotDataException.class)
+    @Test(expected = DotMappingException.class)
     public void whenContentletHasInvalidHostId(){
         final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
 
@@ -166,7 +161,6 @@ public class ESMappingAPITest {
         final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
 
         contentlet.setHost("not_exist_host");
-        ContentletDataGen.checkin(contentlet);
 
         esMappingAPI.toMap(contentlet);
     }
@@ -179,7 +173,7 @@ public class ESMappingAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotDataException.class)
+    @Test(expected = DotMappingException.class)
     public void whenContentletHasInvalidFolderId(){
         final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
 
@@ -187,7 +181,6 @@ public class ESMappingAPITest {
         final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
 
         contentlet.setFolder("not_exist_folder");
-        ContentletDataGen.checkin(contentlet);
 
         esMappingAPI.toMap(contentlet);
     }
@@ -200,7 +193,7 @@ public class ESMappingAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotDataException.class)
+    @Test(expected = DotMappingException.class)
     public void whenContentletHasInvalidContentTypeId(){
         final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
 
@@ -208,7 +201,6 @@ public class ESMappingAPITest {
         final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
 
         contentlet.setContentTypeId("not_exist_content_type");
-        ContentletDataGen.checkin(contentlet);
 
         esMappingAPI.toMap(contentlet);
     }
@@ -221,17 +213,12 @@ public class ESMappingAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotDataException.class)
-    public void whenContentletHasNotIdentifier() throws DotHibernateException, SQLException {
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasNotIdentifier() {
         final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
 
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
-
-        HibernateUtil.startTransaction();
-        DotConnect dc = new DotConnect();
-        dc.executeStatement(String.format("DELETE from identifier where id = %s", contentType.id()));
-        HibernateUtil.commitTransaction();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
 
         esMappingAPI.toMap(contentlet);
     }
@@ -244,8 +231,8 @@ public class ESMappingAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotDataException.class)
-    public void whenContentletHasNotContentletVersionInfo() throws DotDataException, SQLException {
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasNotContentletVersionInfo() throws DotDataException {
         final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
 
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
@@ -254,8 +241,7 @@ public class ESMappingAPITest {
         final ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
 
-        HibernateUtil.delete(versionInfo);
-
+        APILocator.getVersionableAPI().deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
         esMappingAPI.toMap(contentlet);
     }
 
