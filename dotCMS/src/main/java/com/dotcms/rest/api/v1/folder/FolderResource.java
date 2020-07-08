@@ -95,7 +95,7 @@ public class FolderResource implements Serializable {
             if(uriParam.charAt(0) != '/') {
                 uriParam = "/".concat(uriParam);
             }
-            Folder folder = folderHelper.loadFolderByURI(siteName,user,uri);
+            Folder folder = folderHelper.loadFolderByURI(siteName,user,uriParam);
             response = Response.ok( new ResponseEntityView(folder) ).build();
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this, "Error getting folder for URI", e);
