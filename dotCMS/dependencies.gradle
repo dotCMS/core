@@ -489,6 +489,8 @@ dependencies {
         exclude(group: 'com.fasterxml.jackson.core')
     }
 
+    compile 'com.jayway.jsonpath:json-path:2.4.0'
+
     //https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
     providedCompile (group: 'com.oracle.jdbc', name: 'ojdbc8', version: '19.3') {
         transitive = false
