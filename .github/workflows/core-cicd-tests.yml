@@ -119,19 +119,19 @@ jobs:
             echo ::set-env name=runPostgres::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github mysql\]' ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github mysql\]' ]]; then
             echo ::set-env name=runMysql::'true'
           else
             echo ::set-env name=runMysql::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github oracle\]' ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github oracle\]' ]]; then
             echo ::set-env name=runOracle::'true'
           else
             echo ::set-env name=runOracle::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github mssql\]' ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github mssql\]' ]]; then
             echo ::set-env name=runMssql::'true'
           else
             echo ::set-env name=runMssql::'false'
@@ -185,7 +185,7 @@ jobs:
           databaseType: oracle
           PROVIDER_DB_USERNAME: oracle
           PROVIDER_DB_PASSWORD: oracle
-        if: (success() || failure()) && env.jobRun == 'true' && env.runOracle == 'true'
+        if: false #(success() || failure()) && env.jobRun == 'true' && env.runOracle == 'true'
       - name: Run Curl Tests - mssql
         run: |
           dotcicd/library/pipeline.sh runCurl
@@ -248,19 +248,19 @@ jobs:
             echo ::set-env name=runPostgres::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github mysql\]' ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github mysql\]' ]]; then
             echo ::set-env name=runMysql::'true'
           else
             echo ::set-env name=runMysql::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github oracle\]' ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github oracle\]' ]]; then
             echo ::set-env name=runOracle::'true'
           else
             echo ::set-env name=runOracle::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true && "${COMMIT_MESSG}" =~ '\[github\]|\[github mssql\]' ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github mssql\]' ]]; then
             echo ::set-env name=runMssql::'true'
           else
             echo ::set-env name=runMssql::'false'
