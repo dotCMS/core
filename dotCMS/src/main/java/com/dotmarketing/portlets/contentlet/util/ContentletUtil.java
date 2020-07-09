@@ -1,5 +1,11 @@
 package com.dotmarketing.portlets.contentlet.util;
 
+import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -33,9 +39,17 @@ public class ContentletUtil {
 			FieldType.BUTTON.toString()
 	);
 
-
 	public static boolean isFieldTypeAllowedOnImportExport(final Field field){
 		return !fieldTypesToExcludeFromImportExport.contains(field.getFieldType());
+	}
+
+	public static boolean isNewFieldTypeAllowedOnImportExport(final com.dotcms.contenttype.model.field.Field field){
+		return field instanceof LineDividerField ||
+				field instanceof FileField ||
+				field instanceof ImageField ||
+				field instanceof TabDividerField ||
+				field instanceof ColumnField ||
+				field instanceof RowField;
 	}
 
 	public static boolean isHost(final Contentlet contentlet){

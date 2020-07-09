@@ -8,6 +8,12 @@ import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -135,6 +141,7 @@ import java.util.stream.Collectors;
 import static com.dotmarketing.portlets.calendar.action.EventFormUtils.editEvent;
 import static com.dotmarketing.portlets.calendar.action.EventFormUtils.setEventDefaults;
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNewFieldTypeAllowedOnImportExport;
 
 /**
  * This class processes all the interactions with contentlets that are
@@ -2040,14 +2047,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				response.setHeader("Content-Disposition", "attachment; filename=\"" + csvFileName +"\"");
 				writer = response.getWriter();
 
-				List<Field> contentTypeFields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
+				List<com.dotcms.contenttype.model.field.Field> contentTypeFields =
+						APILocator.getContentTypeFieldAPI().byContentTypeId((contentType.getInode()));
+
 				writer.print("Identifier");
 				writer.print(",languageCode");
 				writer.print(",countryCode");
-				for (Field field : contentTypeFields) {
+				for (com.dotcms.contenttype.model.field.Field field : contentTypeFields) {
 					//we cannot export fields of these types
-					if(isFieldTypeAllowedOnImportExport(field)){
-						writer.print("," + field.getVelocityVarName());
+					if(isNewFieldTypeAllowedOnImportExport(field)){
+						writer.print("," + field.variable());
 					}
 				}
 
@@ -2066,10 +2075,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					writer.print("," +lang.getLanguageCode());
 					writer.print(","+lang.getCountryCode());
 
-					for (Field field : contentTypeFields) {
+					for (com.dotcms.contenttype.model.field.Field field: contentTypeFields) {
 						try {
 							//we cannot export fields of these types
-							if(!isFieldTypeAllowedOnImportExport(field)){
+							if(!isNewFieldTypeAllowedOnImportExport(field)){
                                continue;
 							}
 
@@ -2078,9 +2087,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								value = conAPI.getFieldValue(content,field);
 							}
 							String text = "";
-							if(field.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
+							if (field instanceof CategoryField) {
 
-								Category category = catAPI.find(field.getValues(), user, false);
+								Category category = catAPI.find(field.values(), user, false);
 								List<Category> children = catList;
 								List<Category> allChildren= catAPI.getAllChildren(category, user, false);
 								if (children.size() >= 1 && catAPI.canUseCategory(category, user, false)) {
@@ -2097,9 +2106,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								if(UtilMethods.isSet(text)){
 									text=text.substring(1);
 								}
-							} else if(field.getFieldType().equals(Field.FieldType.TAG.toString())){
+							} else if (field instanceof TagField) {
 							    //Get Content Tags per field's Velocity Var Name
-							    List<Tag> tags = tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), field.getVelocityVarName());
+							    List<Tag> tags = tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), field.variable());
 							    if(tags!= null){
 							        for(Tag t:tags){
 							            if(text.equals(StringPool.BLANK)) {
@@ -2109,17 +2118,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							            }
 							        }
 							    }
-							} else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+							} else if (field instanceof RelationshipField) {
 								text = loadRelationships(((ContentletRelationships)value).getRelationshipsRecords());
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
-									if(field.getFieldType().equals(Field.FieldType.DATE.toString())) {
+									if (field instanceof DateField) {
 										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATE);
 										text = formatter.format(value);
-									} else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+									} else if (field instanceof DateTimeField) {
 										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATETIME);
 										text = formatter.format(value);
-									} else if(field.getFieldType().equals(Field.FieldType.TIME.toString())) {
+									} else if (field instanceof TimeField) {
 										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_TIME);
 										text = formatter.format(value);
 									}
@@ -2142,7 +2151,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						} catch (final Exception e) {
 							writer.print(",");
                             Logger.error(this, String.format("An error occurred when exporting field '%s' [%s] to CSV" +
-                                    " file '%s': %s", field.getFieldName(), field.getInode(), csvFileName, e.getMessage()), e);
+                                    " file '%s': %s", field.name(), field.inode(), csvFileName, e.getMessage()), e);
 						}
 					}
 					writer.print("\r\n");
