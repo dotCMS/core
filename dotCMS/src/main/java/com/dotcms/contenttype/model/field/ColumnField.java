@@ -11,7 +11,7 @@ import java.util.List;
 @JsonSerialize(as = ImmutableColumnField.class)
 @JsonDeserialize(as = ImmutableColumnField.class)
 @Value.Immutable
-public abstract class ColumnField extends Field {
+public abstract class ColumnField extends Field implements Unexportable {
 
 	/**
 	 * 

@@ -15,7 +15,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 @JsonSerialize(as = ImmutableLineDividerField.class)
 @JsonDeserialize(as = ImmutableLineDividerField.class)
 @Value.Immutable
-public abstract class LineDividerField extends Field {
+public abstract class LineDividerField extends Field implements Unexportable {
 
 	/**
 	 * 

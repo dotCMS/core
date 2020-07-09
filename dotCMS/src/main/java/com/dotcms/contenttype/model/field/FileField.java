@@ -15,7 +15,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 @JsonSerialize(as = ImmutableFileField.class)
 @JsonDeserialize(as = ImmutableFileField.class)
 @Value.Immutable
-public abstract class FileField extends Field {
+public abstract class FileField extends Field implements Unexportable {
 
 	@Override
 	public Class type() {

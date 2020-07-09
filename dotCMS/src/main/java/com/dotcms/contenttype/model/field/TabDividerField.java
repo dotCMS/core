@@ -15,7 +15,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 @JsonSerialize(as = ImmutableTabDividerField.class)
 @JsonDeserialize(as = ImmutableTabDividerField.class)
 @Value.Immutable
-public abstract class TabDividerField extends Field implements FieldDivider {
+public abstract class TabDividerField extends Field implements FieldDivider, Unexportable {
 
 	/**
 	 * 

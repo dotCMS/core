@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TabDividerField;
+import com.dotcms.contenttype.model.field.Unexportable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -44,12 +45,7 @@ public class ContentletUtil {
 	}
 
 	public static boolean isNewFieldTypeAllowedOnImportExport(final com.dotcms.contenttype.model.field.Field field){
-		return field instanceof LineDividerField ||
-				field instanceof FileField ||
-				field instanceof ImageField ||
-				field instanceof TabDividerField ||
-				field instanceof ColumnField ||
-				field instanceof RowField;
+		return !(field instanceof Unexportable);
 	}
 
 	public static boolean isHost(final Contentlet contentlet){

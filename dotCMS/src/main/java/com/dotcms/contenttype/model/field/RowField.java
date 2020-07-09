@@ -11,7 +11,7 @@ import java.util.List;
 @JsonSerialize(as = ImmutableRowField.class)
 @JsonDeserialize(as = ImmutableRowField.class)
 @Value.Immutable
-public abstract class RowField extends Field implements FieldDivider {
+public abstract class RowField extends Field implements FieldDivider, Unexportable {
 
 	/**
 	 * 
