@@ -1,13 +1,12 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
+
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.util.PageMode;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -26,10 +25,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
@@ -104,38 +101,6 @@ public class ContainerWebAPI implements ViewTool {
 		return "";
 
 	}
-	
-    public List<String> getPersonalizedContentList(String pageId, String containerId, String uuid) {
-
-        try {
-            return getPersonalizedContentListInternal(pageId, containerId, uuid);
-        }
-        catch(Exception e) {
-            Logger.warn(this.getClass(), "Error in getPersonalizedContentList list");
-            Logger.warn(this.getClass(), "pageId      : "+ pageId);
-            Logger.warn(this.getClass(), "containerId : "+ containerId);
-            Logger.warn(this.getClass(), "uuid        : "+ uuid);
-            Logger.warn(this.getClass(), "backuser    : "+ backuser);
-            Logger.warn(this.getClass(), "request    : "+ request);
-            final PageMode pageMode = PageMode.get(request);
-            Logger.warn(this.getClass(), "pageMode    : "+ pageMode);
-            Logger.error(this.getClass(), "getPersonalizedContentList error:" + e.getMessage(), e);
-            
-            // velocity seems to eat the errors so this insures they get spit out
-            System.err.println("Error in getPersonalizedContentList");
-            System.err.println("pageId      : "+ pageId);
-            System.err.println("request     : "+ request);
-            System.err.println( "containerId: "+ containerId);
-            System.err.println( "uuid       : "+ uuid);
-            System.err.println("backuser    : "+ backuser);
-            System.err.println( "pageMode   : "+ pageMode);
-            e.printStackTrace();
-            throw e;
-        }
-        
-    }
-	
-	
 	/**
 	 * This method returns the personalized list of content ids that match
 	 * the persona of the visitor
@@ -144,7 +109,7 @@ public class ContainerWebAPI implements ViewTool {
 	 * @param uuid
 	 * @return
 	 */
-    public List<String> getPersonalizedContentListInternal(String pageId, String containerId, String uuid) {
+    public List<String> getPersonalizedContentList(String pageId, String containerId, String uuid) {
         Set<String> availablePersonalizations = UtilMethods.isSet(pageId)
                         ? Try.of(() -> APILocator.getMultiTreeAPI().getPersonalizationsForPage(pageId))
                                         .getOrElse(ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT))
