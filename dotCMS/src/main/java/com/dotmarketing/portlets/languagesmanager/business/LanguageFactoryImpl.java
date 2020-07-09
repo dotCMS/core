@@ -590,7 +590,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected Language getFallbackLanguage(final String languageCode) {
 
-		Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode, null);
+		Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode, "");
 		if (null != lang ) {
 			return (LANG_404.equals(lang)) ? null : lang;
 		}
@@ -603,7 +603,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					.loadObjectResults().stream().findFirst().orElse(null));
 
 			if(lang == null){
-				CacheLocator.getLanguageCache().add404Language(languageCode, null);
+				CacheLocator.getLanguageCache().add404Language(languageCode, "");
 			}
 
 			return lang;
