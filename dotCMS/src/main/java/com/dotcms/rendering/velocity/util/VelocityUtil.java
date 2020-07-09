@@ -334,7 +334,7 @@ public class VelocityUtil {
         if ( request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) != null && request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
             return (ChainedContext) request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT  );
         } else {
-            VelocityRequestWrapper rw = new VelocityRequestWrapper( request );
+            VelocityRequestWrapper rw = VelocityRequestWrapper.wrapVelocityRequest(request );
             if ( request.getAttribute( "User-Agent" ) != null && request.getAttribute( "User-Agent" ).equals( Constants.USER_AGENT_DOTCMS_BROWSER ) ) {
                 rw.setCustomUserAgentHeader( Constants.USER_AGENT_DOTCMS_BROWSER );
             }
