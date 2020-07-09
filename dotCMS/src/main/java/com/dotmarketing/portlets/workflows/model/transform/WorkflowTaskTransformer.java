@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.workflows.model.transform;
 
 import com.dotcms.util.transform.DBTransformer;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import java.util.ArrayList;
 import java.util.Date;

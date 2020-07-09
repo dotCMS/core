@@ -963,9 +963,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(UtilMethods.isSet(sortBy) && sortBy.trim().equalsIgnoreCase("random")){
             sortBy="random";
         }
-//        if(limit>MAX_LIMIT || limit <=0){
-//            limit = MAX_LIMIT;
-//        }
 
         if(limit<=MAX_LIMIT) {
             SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);

@@ -962,11 +962,9 @@ public class ContentletAjax {
 
 		//Executing the query
 		long before = System.currentTimeMillis();
-//		PaginatedArrayList <Contentlet> hits = new PaginatedArrayList <Contentlet>();
 		PaginatedArrayList <ContentletSearch> hits = new PaginatedArrayList <>();
 		long totalHits=0;
 		try{
-//			hits = (PaginatedArrayList<Contentlet>) conAPI.search(luceneQuery.toString(), perPage, offset, finalSort, currentUser, false);
 			hits =(PaginatedArrayList)conAPI.searchIndex(luceneQuery.toString(), perPage, offset, finalSort, currentUser, false);
 
 			totalHits = hits.getTotalResults();
