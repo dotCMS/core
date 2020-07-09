@@ -82,7 +82,8 @@ public class SAMLHelper {
         } catch (Exception e) {
 
             Logger.error(this, "An error occurred when loading user with ID '" +
-                    this.samlAuthenticationService.getValue(attributes.getNameID()) + "'", e);
+                    (null != attributes && null != attributes.getNameID()?
+                    this.samlAuthenticationService.getValue(attributes.getNameID()): "null") + "'", e);
             user = null;
         }
 

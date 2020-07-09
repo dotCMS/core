@@ -17,6 +17,7 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -27,6 +28,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 @Path("/v1/dotsaml")
 public class DotSamlResource implements Serializable {
@@ -36,6 +39,14 @@ public class DotSamlResource implements Serializable {
 	private final SAMLHelper           				   samlHelper;
 	private final SamlAuthenticationService            samlAuthenticationService;
 	private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
+
+	public static final List<String> dotsamlPathSegments = new ArrayList<String>() {
+		{
+			add("login");
+			add("logout");
+			add("metadata");
+		}
+	};
 
 
 	public DotSamlResource() {
@@ -81,6 +92,7 @@ public class DotSamlResource implements Serializable {
 
 	@POST
 	@Path("/login/{idpConfigId}")
+	@Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_FORM_URLENCODED})
 	@NoCache
 	public void processLogin(@PathParam("idpConfigId") final String idpConfigId,
 					  @Context final HttpServletRequest httpServletRequest,
@@ -106,6 +118,10 @@ public class DotSamlResource implements Serializable {
 				final Attributes attributes = this.samlAuthenticationService.resolveAttributes(httpServletRequest,
 						httpServletResponse, identityProviderConfiguration);
 
+				if (null == attributes) {
+
+					throw new SamlException("User cannot be extracted from Assertion!");
+				}
 				// Creates the user object and adds a user if it doesn't already exist
 				final User user = this.samlHelper.resolveUser(attributes, identityProviderConfiguration);
 				if (null == user) {

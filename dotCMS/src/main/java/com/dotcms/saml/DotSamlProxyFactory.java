@@ -1,16 +1,19 @@
 package com.dotcms.saml;
 
+import com.dotcms.auth.providers.saml.v1.DotSamlResource;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
 import org.apache.felix.framework.OSGIUtil;
+import org.tuckey.web.filters.urlrewrite.NormalRule;
 
 import java.io.File;
 import java.util.Collections;
@@ -51,6 +54,7 @@ public class DotSamlProxyFactory {
      */
     public static DotSamlProxyFactory getInstance() {
 
+        addRedirects();
         return DotSamlProxyFactory.SingletonHolder.INSTANCE;
     } // getInstance.
 
@@ -62,6 +66,26 @@ public class DotSamlProxyFactory {
     public IdentityProviderConfigurationFactory identityProviderConfigurationFactory() {
 
         return identityProviderConfigurationFactory;
+    }
+
+    private static void addRedirects() {
+
+        final NormalRule rule = new NormalRule();
+        rule.setFrom("^\\/dotsaml\\/("+String.join("|", DotSamlResource.dotsamlPathSegments)+")\\/(.+)$");
+        rule.setToType("forward");
+        rule.setTo("/api/v1/dotsaml/$1/$2");
+        rule.setName("Dotsaml REST Service Redirect");
+        DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
+        try {
+            if(urlRewriteFilter != null) {
+                urlRewriteFilter.addRule(rule);
+            }else {
+                throw new Exception();
+            }
+        } catch (Exception e) {
+            Logger.error(DotSamlProxyFactory.class, "Could not add the Dotsaml REST Service Redirect Rule. Requests to " +
+                    "/dotsaml/login/{UUID} will fail!");
+        }
     }
 
     private SamlServiceBuilder samlServiceBuilder() {
