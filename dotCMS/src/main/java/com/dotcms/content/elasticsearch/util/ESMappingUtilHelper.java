@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -48,9 +49,9 @@ import java.util.stream.Collectors;
  */
 public class ESMappingUtilHelper {
 
-    private static ContentTypeAPI contentTypeAPI;
-    private static ESMappingAPIImpl esMappingAPI;
-    private static RelationshipAPI relationshipAPI;
+    private ContentTypeAPI contentTypeAPI;
+    private ESMappingAPIImpl esMappingAPI;
+    private RelationshipAPI relationshipAPI;
 
     private static class SingletonHolder {
 
@@ -81,7 +82,8 @@ public class ESMappingUtilHelper {
      *
      * @param indexName - Index where mapping will be updated
      */
-    public static void addCustomMapping(final String indexName) {
+    @CloseDBIfOpened
+    public void addCustomMapping(final String indexName) {
 
         final Set<String> mappedFields = addCustomMappingFromFieldVariables(indexName);
 
@@ -99,7 +101,7 @@ public class ESMappingUtilHelper {
      * </br> When a put mapping request is sent to Elasticsearch for each relationship (if needed),
      * a new entry is added to the <b>mappedFields</b> collection
      */
-    private static void addCustomMappingForRelationships(final String indexName,
+    private void addCustomMappingForRelationships(final String indexName,
             final Set<String> mappedFields) {
         final List<Relationship> relationships = relationshipAPI.dbAll();
 
@@ -135,7 +137,7 @@ public class ESMappingUtilHelper {
      * @param indexName - Index where the mapping is trying to be applied
      * @param fieldName - Field whose mapping is trying to be applied to
      */
-    private static void handleInvalidCustomMappingError(final String indexName,
+    private void handleInvalidCustomMappingError(final String indexName,
             final String fieldName) {
 
         final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
@@ -161,7 +163,7 @@ public class ESMappingUtilHelper {
      * @param indexName - Index where mapping will be updated
      * @return Collection of fields names whose mapping was set
      */
-    private static Set<String> addCustomMappingFromFieldVariables(final String indexName) {
+    private Set<String> addCustomMappingFromFieldVariables(final String indexName) {
         final FieldFactory fieldFactory = FactoryLocator.getFieldFactory();
         final Set<String> mappedFields = new HashSet<>();
 
@@ -222,7 +224,7 @@ public class ESMappingUtilHelper {
      * @param indexName Index where the mapping will be applied
      * @param mappedFields Collection of fields already mapped in the index. This collection is used to avoid duplicate mappings for fields, which could cause an explosion
      */
-    private static void addMappingForRemainingFields(final String indexName,
+    private void addMappingForRemainingFields(final String indexName,
             final Set<String> mappedFields) {
         try {
             final List<ContentType> contentTypes = contentTypeAPI.findAll();
@@ -243,7 +245,7 @@ public class ESMappingUtilHelper {
      * @param field Field to be mapped
      * @param mappedFields Collection of fields already mapped in the index. This collection is used to avoid duplicate mappings for fields, which could cause an explosion
      */
-    private static void addMappingForFieldIfNeeded(final String indexName,
+    private void addMappingForFieldIfNeeded(final String indexName,
             final ContentType contentType, final Field field, final Set<String> mappedFields) {
         final String fieldVariableName = (contentType.variable() + StringPool.PERIOD + field.variable())
                         .toLowerCase();
@@ -302,7 +304,7 @@ public class ESMappingUtilHelper {
      * @param fieldVarName field variable name that will be evaluated
      * @return
      */
-    private static boolean matchesExclusions(final String fieldVarName) {
+    private boolean matchesExclusions(final String fieldVarName) {
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         final URL url = classLoader.getResource("es-content-mapping.json");
         final String defaultSettings;
