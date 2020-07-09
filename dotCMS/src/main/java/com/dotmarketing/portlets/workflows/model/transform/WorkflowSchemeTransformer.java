@@ -1,13 +1,11 @@
 package com.dotmarketing.portlets.workflows.model.transform;
 
 import com.dotcms.util.transform.DBTransformer;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**

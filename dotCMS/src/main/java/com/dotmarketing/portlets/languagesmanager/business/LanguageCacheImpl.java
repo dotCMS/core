@@ -14,10 +14,11 @@ import com.dotmarketing.util.Logger;
  */
 public class LanguageCacheImpl extends LanguageCache {
 
+	private static final String LANG_404_STR = "LANG__404";
 	static final String ALL_LANGUAGES_KEY="ALL_LANGUAGES_KEY";
 	public static Language LANG_404 = new Language(-1,
-			"LANG__404", "LANG__404", "LANG__404",
-			"LANG__404");
+			LANG_404_STR, LANG_404_STR, LANG_404_STR,
+			LANG_404_STR);
 
 	@Override
     public List<Language> getLanguages()  {
