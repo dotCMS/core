@@ -120,7 +120,7 @@ public class Task05200WorkflowTaskUniqueKeyTest {
 
         //verify the first task and its dependencies have been deleted
         final WorkflowTask result = workflowAPI.findTaskById(workflowTask.getId());
-        assertNull(workflowAPI.findTaskById(workflowTask.getId()).getId());
+        assertNull(result.getId());
 
         assertFalse(UtilMethods.isSet(workflowAPI.findWorkFlowComments(workflowTask)));
         assertFalse(UtilMethods.isSet(workflowAPI.findWorkflowHistory(workflowTask)));
@@ -128,6 +128,85 @@ public class Task05200WorkflowTaskUniqueKeyTest {
 
         //verify the newest workflow task exists
         assertEquals(dupeWorkflowTask.getId(), workflowAPI.findTaskById(dupeWorkflowTask.getId()).getId());
+    }
+
+    @Test
+    public void Test_Upgrade_Task_When_Duped_With_Null_Languages_WorkflowTasks_Exists() throws DotDataException {
+
+        removeConstraintIfAny();
+
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+        final Contentlet contentlet = TestDataUtils.getPageContent(true, language.getId());
+
+        //save workflow task
+        final WorkflowStep workflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+        workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, systemUser);
+        final WorkflowTask workflowTask = workflowAPI.createWorkflowTask(
+                contentlet,
+                systemUser,
+                workflowStep,
+                "test",
+                "test");
+        workflowAPI.saveWorkflowTask(workflowTask);
+
+        new DotConnect()
+                .setSQL("UPDATE workflow_task SET language_id=null WHERE id=?")
+                .addParam(workflowTask.getId())
+                .loadResult();
+
+        //save workflow comment
+        final WorkflowComment comment = new WorkflowComment();
+        comment.setComment(workflowTask.getDescription());
+        comment.setCreationDate(new Date());
+        comment.setPostedBy(systemUser.getUserId());
+        comment.setWorkflowtaskId(workflowTask.getId());
+        workflowAPI.saveComment(comment);
+
+        //save workflow history
+        final WorkflowHistory hist = new WorkflowHistory ();
+        hist.setChangeDescription("workflow history description");
+        hist.setCreationDate(new Date());
+        hist.setMadeBy(systemUser.getUserId());
+        hist.setWorkflowtaskId(workflowTask.getId());
+        workflowAPI.saveWorkflowHistory(hist);
+
+        //save workflow task file
+        final Contentlet fileAsset = TestDataUtils.getFileAssetContent(true, language.getId());
+        workflowAPI.attachFileToTask(workflowTask, fileAsset.getInode());
+
+        //duplicate the workflow task
+        final WorkflowTask dupeWorkflowTask = workflowAPI.createWorkflowTask(
+                contentlet,
+                systemUser,
+                workflowStep,
+                "test",
+                "test");
+
+        workflowAPI.saveWorkflowTask(dupeWorkflowTask);
+
+        new DotConnect()
+                .setSQL("UPDATE workflow_task SET language_id=null WHERE id=?")
+                .addParam(dupeWorkflowTask.getId())
+                .loadResult();
+
+        assertTrue(dupeWorkflowTask != null && dupeWorkflowTask.getId() != null);
+        assertEquals(workflowTask.getWebasset(), dupeWorkflowTask.getWebasset());
+        assertEquals(workflowTask.getLanguageId(), dupeWorkflowTask.getLanguageId());
+
+        final Task05200WorkflowTaskUniqueKey task = new Task05200WorkflowTaskUniqueKey();
+        assertTrue(task.forceRun());
+        task.executeUpgrade();
+
+        //verify the first task and its dependencies have been deleted
+        final WorkflowTask result = workflowAPI.findTaskById(dupeWorkflowTask.getId());
+        assertNull(result.getId());
+
+        assertFalse(UtilMethods.isSet(workflowAPI.findWorkFlowComments(dupeWorkflowTask)));
+        assertFalse(UtilMethods.isSet(workflowAPI.findWorkflowHistory(dupeWorkflowTask)));
+        assertFalse(UtilMethods.isSet(workflowAPI.findWorkflowTaskFilesAsContent(dupeWorkflowTask, systemUser)));
     }
 
 }
