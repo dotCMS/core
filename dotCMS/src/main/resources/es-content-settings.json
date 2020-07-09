@@ -26,10 +26,7 @@
 
 	},
 
-    "index.max_result_window" : "100000",
-
     "index.mapping.total_fields.limit" : "10000",
 
     "index.mapping.nested_fields.limit" : "10000"
-
 }
