@@ -1589,9 +1589,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
     SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
         
         final Optional<SearchHits> optionalHits = shouldQueryCache() ? queryCache.get(searchRequest) : Optional.empty();
-//        if(optionalHits.isPresent()) {
-//            return optionalHits.get();
-//        }
+        if(optionalHits.isPresent()) {
+            return optionalHits.get();
+        }
         try {
             SearchResponse response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
             SearchHits hits  = response.getHits();

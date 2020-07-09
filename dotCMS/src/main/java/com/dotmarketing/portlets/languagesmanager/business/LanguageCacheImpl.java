@@ -14,7 +14,11 @@ import com.dotmarketing.util.Logger;
  */
 public class LanguageCacheImpl extends LanguageCache {
 
-	private static final String ALL_LANGUAGES_KEY="ALL_LANGUAGES_KEY";
+	static final String ALL_LANGUAGES_KEY="ALL_LANGUAGES_KEY";
+	public static Language LANG_404 = new Language(-1,
+			"LANG__404", "LANG__404", "LANG__404",
+			"LANG__404");
+
 	@Override
     public List<Language> getLanguages()  {
 	
@@ -50,6 +54,13 @@ public class LanguageCacheImpl extends LanguageCache {
         cache.put(getPrimaryGroup() + languageKey, l, getPrimaryGroup());
 		cache.remove(ALL_LANGUAGES_KEY, getPrimaryGroup());
 
+	}
+
+	@Override
+	public void add404Language(final String languageCode, String countryCode) {
+		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		String languageKey = languageCode + "-" + countryCode;
+		cache.put(getPrimaryGroup() + languageKey, LANG_404, getPrimaryGroup());
 	}
     
     public Language getLanguageById(long id){

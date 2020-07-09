@@ -1252,7 +1252,10 @@ public class ContentletAjax {
 				Boolean locked = con.isLocked();
 				searchResult.put("locked", locked.toString());
 				searchResult.put("structureInode", con.getStructureInode());
-				setCurrentStep(currentUser, searchResult, contentlet);
+
+				if(!exporting) {
+					setCurrentStep(currentUser, searchResult, contentlet);
+				}
 
 				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
 

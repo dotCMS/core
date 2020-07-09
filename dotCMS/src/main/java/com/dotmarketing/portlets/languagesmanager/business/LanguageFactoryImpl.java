@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl.LANG_404;
+
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.CacheLocator;
@@ -588,13 +590,23 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected Language getFallbackLanguage(final String languageCode) {
 
+		Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode, null);
+		if (null != lang ) {
+			return (LANG_404.equals(lang)) ? null : lang;
+		}
+
 		try {
 
-			return fromDbMap(new DotConnect()
+			lang = fromDbMap(new DotConnect()
 					.setSQL(SELECT_LANGUAGE_BY_LANG_CODE_ONLY)
 					.addParam(languageCode.toLowerCase())
 					.loadObjectResults().stream().findFirst().orElse(null));
 
+			if(lang == null){
+				CacheLocator.getLanguageCache().add404Language(languageCode, null);
+			}
+
+			return lang;
 
 		} catch (DotDataException e) {
 

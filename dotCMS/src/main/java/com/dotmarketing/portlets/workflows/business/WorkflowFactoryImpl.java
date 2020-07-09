@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.transform.WorkflowSchemeTransformer;
+import com.dotmarketing.portlets.workflows.model.transform.WorkflowTaskTransformer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -209,7 +210,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		} else if (obj instanceof WorkflowHistory) {
 			return this.convertHistory(map);
 		} else if (obj instanceof WorkflowTask) {
-			return this.convertTask(map);
+			return WorkflowTaskTransformer.transform(map);
 		} else {
 			return this.convert(obj, map);
 		}
