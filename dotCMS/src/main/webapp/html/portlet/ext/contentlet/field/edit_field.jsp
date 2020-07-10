@@ -982,11 +982,14 @@
     </script>
     <%
 
-        java.util.Map<String, Object> keyValueMap = null;
+        java.util.Map<String, Object> keyValueMap = new HashMap<>();
         String JSONValue = UtilMethods.isSet(value)? (String)value:"";
         //Convert JSON to Table Display {key, value, order}
         if(UtilMethods.isSet(JSONValue)){
             keyValueMap =  com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap(JSONValue);
+            if(field.getVelocityVarName().equals("metaData")){
+                keyValueMap.put("content", "...");
+            }
         }
     %>
     <div class="key-value-form" style="display:<%=field.isReadOnly()?"none":"flex"%>">

@@ -35,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class ContainerWebAPI implements ViewTool {
 
-	private static HttpServletRequest request;
+	private HttpServletRequest request;
     private Context ctx;
     private ViewContext viewContext;
 	private User backuser;

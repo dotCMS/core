@@ -7,6 +7,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.*;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -55,13 +56,18 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       if(shortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX) && APILocator.getTempFileAPI().isTempResource(shortStr)) {
           return Optional.of(new ShortyId(shortStr, shortStr, ShortType.TEMP_FILE, ShortType.TEMP_FILE));
       }
-      
-      validShorty(shortStr);
+      boolean isExactMatch = Boolean.FALSE;
+      if (NumberUtils.isParsable(shortStr)) {
+        isExactMatch = Boolean.TRUE;
+      }
+      if (!isExactMatch) {
+        validShorty(shortStr);
+      }
       ShortyId shortyId = null;
       final Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
       if (opt.isPresent()) {
         shortyId = opt.get();
-      } else if (shortStr.length() == 36) {
+      } else if (shortStr.length() == 36 || isExactMatch) {
         shortyId = viaDbEquals(shortStr, shortyType);
         new ShortyIdCache().add(shortyId);
       } else {
@@ -94,7 +100,9 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     try {
 
       if (UtilMethods.isSet(shortStr)) {
-
+        if (NumberUtils.isParsable(shortStr)) {
+          return shortStr;
+        }
         final String trimmedShortStr = shortStr.trim().replaceAll("-", "");
         final int    min             = Math.min(trimmedShortStr.length(), MINIMUM_SHORTY_ID_LENGTH);
 
@@ -108,32 +116,6 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
                 + MINIMUM_SHORTY_ID_LENGTH + " alphanumeric chars in length", se);
     }
   }
-
-  /*
-   * ShortyId viaIndex(final String shorty) {
-   * 
-   * 
-   * ContentletAPI capi = APILocator.getContentletAPI(); ContentletSearch con = null; ShortyId
-   * shortyId = new ShortyId(shorty, "CACHE_MISS", ShortType.CACHE_MISS);
-   * 
-   * // if we have a shorty, use the index
-   * 
-   * StringBuilder query = new StringBuilder("+(identifier:").append(shorty).append("* inode:")
-   * .append(shorty).append("*) ");
-   * 
-   * 
-   * query.append("+working:true ");
-   * 
-   * List<ContentletSearch> cons; try { cons = capi.searchIndex(query.toString(), 1, 0, "score",
-   * APILocator.getUserAPI().getSystemUser(), false); if (cons.size() > 0) { con = cons.get(0);
-   * ShortType type = (con.getIdentifier().startsWith(shorty)) ? ShortType.IDENTIFIER :
-   * ShortType.CONTENTLET; String id = (con.getIdentifier().startsWith(shorty)) ?
-   * con.getIdentifier() : con.getInode(); shortyId = new ShortyId(shorty, id, type); } } catch
-   * (Exception e) { // we should not add to the cache if something went wrong throw new
-   * ShortyException("somthing went wrong in the index", e); }
-   * 
-   * return shortyId; }
-   */
 
   String unUidIfy(String shorty) {
     return UUIDUtil.unUidIfy(shorty);

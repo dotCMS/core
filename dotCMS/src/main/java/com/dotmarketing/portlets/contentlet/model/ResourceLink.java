@@ -19,6 +19,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
@@ -125,7 +127,7 @@ public class ResourceLink {
                     resourceLink.append(StringPool.COLON).append(request.getServerPort());
                 }
                 resourceLinkUri.append(identifier.getParentPath()).append(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-                resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri.toString()));
+                resourceLink.append(escapeUri(resourceLinkUri.toString()));
                 resourceLinkUri.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
                 resourceLink.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
 
@@ -137,6 +139,22 @@ public class ResourceLink {
             }
 
             return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, false, true);
+        }
+
+        private String escapeUri (final String uri) {
+
+            if (uri.indexOf('+') != -1) {
+
+                final String [] uriArray = uri.split("\\+");
+                for (int i = 0; i < uriArray.length; ++i) {
+
+                    uriArray[i] = UtilMethods.encodeURIComponent(uriArray[i]).replaceAll("\\+", "%20");
+                }
+
+                return StringUtils.joinWith("+", uriArray);
+            }
+
+            return UtilMethods.encodeURIComponent(uri).replaceAll("\\+", "%20");
         }
 
         private static boolean isEditableAsText(final String mimeType, final String fileAssetName ){

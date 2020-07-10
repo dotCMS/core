@@ -1,5 +1,32 @@
 package com.dotmarketing.util;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipFile;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.felix.framework.OSGIUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
@@ -41,34 +68,6 @@ import com.liferay.util.Encryptor;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
-import java.nio.file.Files;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipFile;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.felix.framework.OSGIUtils;
 
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills
@@ -131,7 +130,7 @@ public class ImportExportUtil {
     
     private static final String CHARSET = UtilMethods.getCharsetConfiguration();
     private static final String SYSTEM_FOLDER_PATH = FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
-    private static final String OLD_KEY_MD5="7665cb45cc988f86931bd15c34e0fa93";
+
     /**
 	 * Default class constructor. Sets the appropriate data structures that will
 	 * be needed to import the Demo data.
@@ -868,7 +867,7 @@ public class ImportExportUtil {
         }
 
         //Initializing felix
-        OSGIUtils.initializeOsgi(Config.CONTEXT);
+        OSGIUtil.getInstance().initializeFramework();
 
         //Reindexing the recently added content
         conAPI.refreshAllContent();
@@ -1286,10 +1285,11 @@ public class ImportExportUtil {
                 for (int j = 0; j < l.size(); j++) {
                     Company c = (Company)l.get(j);
                     // github #16470 with support for custom starter.zips that have updated keys
-
-                    if(c.getKey()!=null && OLD_KEY_MD5.equals(new DigestUtils().md5Hex(c.getKey()))) {
-                        c.setKey(Base64.objectToString(Encryptor.generateKey()));
+                    if("liferay.com".equals(c.getCompanyId())){
+                        continue;
                     }
+                        c.setKey(Base64.objectToString(Encryptor.generateKey()));
+
                     try {
                         c.setModified(true);
                         CompanyManagerUtil.updateCompany(c);
