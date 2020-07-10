@@ -12,6 +12,7 @@ import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
@@ -26,6 +27,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -52,6 +54,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import com.tngtech.junit.dataprovider.format.DataProviderTestNameFormatter;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -467,7 +470,25 @@ public class ESMappingUtilHelperTest {
         ContentType eventContentType;
         Contentlet event = null;
         try {
-            eventContentType = contentTypeAPI.find("calendarEvent");
+            try {
+                eventContentType = contentTypeAPI.find("calendarEvent");
+            } catch(NotFoundInDbException e){
+                final List<Field> eventFields = new ArrayList<>();
+                eventFields
+                        .add(new FieldDataGen().name("Title").velocityVarName("title").indexed(true)
+                                .next());
+                eventFields.add(new FieldDataGen().name("StartDate").velocityVarName("startDate")
+                        .indexed(true).next());
+                eventFields.add(new FieldDataGen().name("EndDate").velocityVarName("endDate")
+                        .indexed(true).next());
+                eventFields.add(new FieldDataGen().name("OriginalStartDate")
+                        .velocityVarName("originalStartDate").indexed(true).next());
+                eventFields.add(new FieldDataGen().name("RecurrenceStart")
+                        .velocityVarName("recurrenceStart").indexed(true).next());
+                eventFields.add(new FieldDataGen().name("RecurrenceEnd")
+                        .velocityVarName("recurrenceEnd").indexed(true).next());
+                eventContentType = new ContentTypeDataGen().fields(eventFields).nextPersisted();
+            }
             event = new ContentletDataGen(eventContentType.id())
                     .setProperty("title", "MyEvent" + System.currentTimeMillis())
                     .setProperty("startDate", new Date())
