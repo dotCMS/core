@@ -1,12 +1,6 @@
 package com.dotcms.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.enterprise.rules.RulesAPIImpl;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

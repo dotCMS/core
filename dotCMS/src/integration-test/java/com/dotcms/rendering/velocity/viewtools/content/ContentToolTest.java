@@ -17,7 +17,6 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -510,7 +509,7 @@ public class ContentToolTest extends IntegrationTestBase {
     @Test
     public void whenTheTimeMachineDateIsAfterTomorrowAndExpireDateIsTomorrowShouldNotReturnContent() {
         final Calendar expireDate = Calendar.getInstance();
-        expireDate.add(Calendar.DATE, 2);
+        expireDate.add(Calendar.DATE, 1);
 
         final ContentType contentType = TestDataUtils.getNewsLikeContentType();
         new ContentletDataGen(contentType.id())
@@ -519,7 +518,7 @@ public class ContentToolTest extends IntegrationTestBase {
                 .nextPersisted();
 
         final Calendar afterTomorrow = Calendar.getInstance();
-        afterTomorrow.add(Calendar.DATE, 3);
+        afterTomorrow.add(Calendar.DATE, 2);
 
         final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
 
