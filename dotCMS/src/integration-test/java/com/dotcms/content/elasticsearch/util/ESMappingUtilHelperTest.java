@@ -25,11 +25,20 @@ import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -46,6 +55,7 @@ import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -56,18 +66,68 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class ESMappingUtilHelperTest {
 
-    private static User user = APILocator.systemUser();
-    private static ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
-    private static ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-    private static ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
-    private static FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
-    private static RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+    private static User user;
+    private static CategoryAPI categoryAPI;
+    private static ContentletAPI contentletAPI;
+    private static ContentletIndexAPI contentletIndexAPI;
+    private static ContentTypeAPI contentTypeAPI;
+    private static ESMappingAPIImpl esMappingAPI;
+    private static FieldAPI fieldAPI;
+    private static RelationshipAPI relationshipAPI;
+    private static Language language;
+
+    @BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+
+        user = APILocator.systemUser();
+        categoryAPI = APILocator.getCategoryAPI();
+        contentletAPI = APILocator.getContentletAPI();
+        contentletIndexAPI = APILocator.getContentletIndexAPI();
+        contentTypeAPI = APILocator.getContentTypeAPI(user);
+        esMappingAPI = new ESMappingAPIImpl();
+        fieldAPI = APILocator.getContentTypeFieldAPI();
+        relationshipAPI = APILocator.getRelationshipAPI();
+        language = APILocator.getLanguageAPI().getDefaultLanguage();
+    }
 
     public static class PlusTestNameFormatter implements DataProviderTestNameFormatter {
         @Override
         public String format(Method testMethod, int invocationIndex, List<Object> arguments) {
             return String.format("Test Name: %s. Mapping Name: %s", testMethod.getName(), arguments.get(0));
         }
+    }
+
+    @DataProvider(formatter = PlusTestNameFormatter.class)
+    public static Object[][] dataProviderValidateEventMapping(){
+        return new Object[][] {
+                {"template_1", new String[]{"host.hostname_dotraw"}, "keyword"},
+                {"textmapping", new String[]{"host.hostname"}, "keyword"},
+                {"strings_as_dates", new String[]{"calendarevent.originalstartdate",
+                        "calendarevent.recurrencestart", "calendarevent.recurrenceend"}, "date"},
+                {"permissions", new String[]{"permissions"}, "text"},
+                {"hostname", new String[]{"host.hostname_text"}, "text"}
+        };
+    }
+
+    @DataProvider(formatter = PlusTestNameFormatter.class)
+    public static Object[][] dataProviderValidateFileAssetMapping(){
+        return new Object[][] {
+                {"longmapping", new String[]{ "metadata.height", "metadata.width"}, "long"},
+                {"keywordmapping", new String[]{"metadata.contenttype"}, "keyword"}
+        };
+    }
+
+    @DataProvider(formatter = PlusTestNameFormatter.class)
+    public static Object[][] dataProviderValidateNewsLikeMapping() {
+        return new Object[][]{
+                {"geomapping", new String[]{"mylatlon"}, "geo_point"},
+                {"geomapping_2", new String[]{"latlong"}, "geo_point"},
+                {"keywordmapping", new String[]{"categories", "tags", "conhost", "conhostname",
+                        "wfstep", "structurename", "contenttype", "parentpath", "path", "urlmap",
+                        "moduser", "owner"}, "keyword"}
+        };
     }
 
     /*Data provider used to verify that the ES mapping is applied correctly and considers exclusions in the `es-content-mapping` file
@@ -314,6 +374,145 @@ public class ESMappingUtilHelperTest {
             }
         }
     }
+
+    /**
+     * <b>Test Case:</b> Validates dynamic mappings defined in the `es-content-mapping` file are applied correctly<p></p>
+     * <b>Expected Results:</b> Each test case should match the `expectedResult` value, which is a string with the correct datatype in ES
+     * @param testCase
+     * @param fields
+     * @param expectedResult
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    @UseDataProvider
+    @Test
+    public void testValidateNewsLikeMapping(final String testCase, final String[] fields, final String expectedResult)
+            throws DotDataException, IOException, DotSecurityException {
+        final ContentType newsContentType = TestDataUtils.getNewsLikeContentType();
+        fieldAPI.save( FieldBuilder.builder(TextField.class).contentTypeId(newsContentType.id()).name("mylatlon").variable("mylatlon").indexed(true).build(), user);
+        Contentlet newsContent = null;
+        try {
+            final String categoryName = "myCategory" + System.currentTimeMillis();
+            Category category = new Category();
+            category.setCategoryName(categoryName);
+            category.setKey(categoryName);
+            category.setCategoryVelocityVarName(categoryName);
+            category.setSortOrder(2);
+            category.setKeywords(null);
+            categoryAPI.save(null, category, user, false);
+            newsContent = new ContentletDataGen(newsContentType.id()).languageId(language.getId())
+                    .host(APILocator.getHostAPI()
+                            .findDefaultHost(APILocator.systemUser(), false))
+                    .setProperty("title", "newsContent Title" + System.currentTimeMillis())
+                    .setProperty("urlTitle", "myUrlTitle")
+                    .setProperty("urlMap", "myUrlMap")
+                    .setProperty("byline", "byline")
+                    .setProperty("sysPublishDate", new Date())
+                    .setProperty("story", "newsStory")
+                    .setProperty("latlong", "[90, -90]")
+                    .setProperty("mylatlon", "[90, -90]")
+                    .setProperty("tags", "test").next();
+
+            newsContent = contentletAPI.checkin(newsContent, CollectionsUtils.list(category), null, user, false);
+            validateMappingForFields(testCase, newsContentType.variable().toLowerCase(), fields, expectedResult);
+        }finally{
+            if (newsContent != null) {
+                ContentletDataGen.destroy(newsContent);
+            }
+        }
+
+    }
+
+    /**
+     * <b>Test Case:</b> Validates dynamic mappings defined in the `es-content-mapping` file are applied correctly<p></p>
+     * <b>Expected Results:</b> Each test case should match the `expectedResult` value, which is a string with the correct datatype in ES
+     * @param testCase
+     * @param fields
+     * @param expectedResult
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @UseDataProvider
+    @Test
+    public void testValidateFileAssetMapping(final String testCase, final String[] fields, final String expectedResult)
+            throws DotDataException, IOException {
+        Contentlet fileAsset = null;
+
+        try{
+            fileAsset = TestDataUtils.getFileAssetContent(true, language.getId());
+            validateMappingForFields(testCase, null, fields, expectedResult);
+        } finally {
+            if (fileAsset != null) {
+                ContentletDataGen.destroy(fileAsset);
+            }
+        }
+    }
+
+    /**
+     * <b>Test Case:</b> Validates dynamic mappings defined in the `es-content-mapping` file are applied correctly<p></p>
+     * <b>Expected Results:</b> Each test case should match the `expectedResult` value, which is a string with the correct datatype in ES
+     * @param testCase
+     * @param fields
+     * @param expectedResult
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @UseDataProvider
+    @Test
+    public void testValidateEventMapping(final String testCase, final String[] fields, final String expectedResult)
+            throws DotDataException, DotSecurityException, IOException {
+
+        ContentType eventContentType;
+        Contentlet event = null;
+        try {
+            eventContentType = contentTypeAPI.find("calendarEvent");
+            event = new ContentletDataGen(eventContentType.id())
+                    .setProperty("title", "MyEvent" + System.currentTimeMillis())
+                    .setProperty("startDate", new Date())
+                    .setProperty("endDate", new Date())
+                    .setProperty("originalStartDate", new Date())
+                    .setProperty("recurrenceStart", new Date())
+                    .setProperty("recurrenceEnd", new Date()).nextPersisted();
+
+            validateMappingForFields(testCase, null, fields, expectedResult);
+
+        }finally {
+            if (event != null){
+                ContentletDataGen.destroy(event);
+            }
+        }
+    }
+
+    /**
+     * Validates asserts for tests: testValidateNewsLikeMapping, testValidateFileAssetMapping and testValidateEventMapping
+     * @param testCase
+     * @param contentTypeVarName
+     * @param fields
+     * @param expectedResult
+     * @throws IOException
+     * @throws DotDataException
+     */
+    private void validateMappingForFields(final String testCase, final String contentTypeVarName,  final String[] fields, final String expectedResult)
+            throws IOException, DotDataException {
+        Map<String, String> mapping;
+
+        for (final String field : fields) {
+            Logger.info(this,
+                    "Validating mapping for case: " + testCase + ". Field Name: " + field);
+            mapping = (Map<String, String>) esMappingAPI
+                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                            expectedResult.equals("geo_point") ? contentTypeVarName
+                                    + StringPool.PERIOD + field : field).entrySet().iterator()
+                    .next().getValue();
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals(expectedResult, mapping.get("type"));
+            Logger.info(this,
+                    "Case: " + testCase + ". Field Name: " + field + " validated successfully");
+        }
+    }
+
 
     /**
      * Creates a new Legacy Relationship object
