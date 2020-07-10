@@ -176,7 +176,7 @@ jobs:
           databaseType: mysql
           PROVIDER_DB_USERNAME: mysql
           PROVIDER_DB_PASSWORD: mysql
-        if: (success() || failure()) && env.jobRun == 'true' && env.runMysql == true
+        if: (success() || failure()) && env.jobRun == 'true' && env.runMysql == 'true'
       - name: Run Curl Tests - oracle
         run: |
           dotcicd/library/pipeline.sh runCurl
