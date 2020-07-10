@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "c2d96fa8-d46f-4a71-87d3-827cdf08e5e8",
+		"_postman_id": "fbab627d-68d0-4652-a23d-3d05f935f714",
 		"name": "Bundle Resource [/api/bundle]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2305dc20-7cfd-4df6-860d-e9631b0327b8",
+								"id": "670ea320-8f1f-4329-aa08-a03db04e2076",
 								"exec": [
 									"pm.test(\"Response code is 401\", pm.response.to.have.status(401));"
 								],
@@ -82,7 +82,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "20ad8dfc-6837-4047-8664-9f6d968cd9ff",
+								"id": "5aac6bc0-b5ad-40f8-a5c8-cdd12ce2695f",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -132,6 +132,7 @@
 							"formdata": [
 								{
 									"key": "file",
+									"contentType": "application/tar+gzip ",
 									"type": "file",
 									"src": "resources/BundleResource/testBundle.tar.gz"
 								}
@@ -141,19 +142,16 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -171,7 +169,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6519457b-3419-48a3-bea5-1821ad32032c",
+								"id": "a9bc0abe-b349-44ad-a19d-66efbb0c1777",
 								"exec": [
 									"pm.test(\"Content imported in bundle exists\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -212,6 +210,92 @@
 								"content",
 								"id",
 								"d84e5b70-ae46-42a8-80ff-62ba9d7095d5"
+							],
+							"query": [
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenValidBundle_ShouldUploadAsync",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0a33c79f-4b6f-46db-aa27-a8552f274020",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"testBundle.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"contentType": "application/tar+gzip ",
+									"type": "file",
+									"src": "resources/BundleResource/testBundle.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
 							],
 							"query": [
 								{
