@@ -1689,8 +1689,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
-//    @Override
-    protected PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
+    PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
 
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
@@ -1816,6 +1815,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
             catch(Exception e){
                 Logger.error(this,e.getMessage(),e);
+                throw e;
             }
 
         }
