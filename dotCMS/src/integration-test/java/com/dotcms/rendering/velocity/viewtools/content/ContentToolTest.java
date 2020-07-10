@@ -17,6 +17,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -28,22 +29,27 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -51,6 +57,9 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class ContentToolTest extends IntegrationTestBase {
+    public static final String QUERY_BY_STRUCTURE_NAME = "+structureName:%s";
+    public static final String SYS_PUBLISH_DATE = "sysPublishDate";
+    public static final String SYS_EXPIRE_DATE = "sysExpireDate";
 
     private static ContentletAPI contentletAPI;
     private static ContentTypeAPI contentTypeAPI;
@@ -414,4 +423,176 @@ public class ContentToolTest extends IntegrationTestBase {
         contentTool.init(viewContext);
         return contentTool;
     }
+
+    /*
+
+
+    /**
+     * Method to test: {@link ContentTool#pullPerPage(String, int, int, String)}
+     * When: there is a content with a publish date in the future and the time machine parameter in null
+     * Should: Not return the content
+     */
+    @Test
+    public void whenTheTimeMachineDateIsNullAndPublishDateInFutureShouldNotReturnAnything() {
+        final Calendar contentPublishDate = Calendar.getInstance();
+        contentPublishDate.add(Calendar.DATE, 1);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty(SYS_PUBLISH_DATE, contentPublishDate.getTime())
+                .nextPersisted();
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final ContentTool contentTool = getContentTool(null);
+
+        final PaginatedContentList<ContentMap> contents = contentTool.pullPerPage(query, 1, 2, null);
+        assertEquals(0, contents.size());
+    }
+
+    /**
+     * Method to test: {@link ContentTool#pullPerPage(String, int, int, String)}
+     * When: there is a content with a publish date set to tomorrow and the time machine date is the date after tomorrow
+     * Should: return one content
+     */
+    @Test
+    public void whenTheTimeMachineDateAndPublishDateAreTomorrowShouldReturnOneContent() {
+        final Calendar publishDate = Calendar.getInstance();
+        publishDate.add(Calendar.DATE, 1);
+
+        final Calendar timeMachine = Calendar.getInstance();
+        timeMachine.add(Calendar.DATE, 2);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
+                .languageId(1)
+                .nextPersisted();
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final ContentTool contentTool = getContentTool(timeMachine);
+
+        final PaginatedContentList<ContentMap> contents = contentTool.pullPerPage(query, 1, 2, null);
+
+        assertEquals(1  , contents.size());
+        assertEquals(1  , contents.getTotalResults());
+        assertEquals(contentlet.getIdentifier(), contents.get(0).getContentObject().getIdentifier());
+    }
+
+    @NotNull
+    private ContentTool getContentTool(Calendar timeMachine) {
+        final ContentTool contentTool  = new ContentTool();
+
+        final String time = timeMachine != null ? Long.toString(timeMachine.getTime().getTime()) : null;
+
+        final HttpSession session = mock(HttpSession.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getSession(false)).thenReturn(session);
+        when(request.getSession()).thenReturn(session);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+
+        when(session.getAttribute("tm_date")).thenReturn(time);
+
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+
+        contentTool.init(viewContext);
+        return contentTool;
+    }
+
+    /**
+     * Method to test: {@link ContentTool#pullPerPage(String, int, int, String)}
+     * When: there is a content with a expire  date set to tomorrow and the time machine date is the date after tomorrow
+     * Should: return one content
+     */
+    @Test
+    public void whenTheTimeMachineDateIsAfterTomorrowAndExpireDateIsTomorrowShouldNotReturnContent() {
+        final Calendar expireDate = Calendar.getInstance();
+        expireDate.add(Calendar.DATE, 2);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
+                .nextPersisted();
+
+        final Calendar afterTomorrow = Calendar.getInstance();
+        afterTomorrow.add(Calendar.DATE, 3);
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final ContentTool contentTool = getContentTool(afterTomorrow);
+
+        final PaginatedContentList<ContentMap> contents = contentTool.pullPerPage(query, 1, 2, null);
+
+        assertTrue(contents.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ContentTool#pullPerPage(String, int, int, String)}
+     * When: there is a content with a publish date set to tomorrow and expire date set in the future
+     * and the time machine date is set to after tomorrow
+     * Should: return one content
+     */
+    @Test
+    public void whenTheTimeMachineDateIsAfterTomorrowAndExpireDateIsInFutureShouldReturnContent() {
+        final Calendar publishDate = Calendar.getInstance();
+        publishDate.add(Calendar.DATE, 1);
+
+        final Calendar expireDate = Calendar.getInstance();
+        expireDate.add(Calendar.DATE, 3);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
+                .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
+                .nextPersisted();
+
+        final Calendar timeMachine = Calendar.getInstance();
+        timeMachine.add(Calendar.DATE, 2);
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final ContentTool contentTool = getContentTool(timeMachine);
+        final PaginatedContentList<ContentMap> contents = contentTool.pullPerPage(query, 1, 2, null);
+
+        assertEquals(1, contents.size());
+        assertEquals(contentlet.getIdentifier(), contents.get(0).getContentObject().getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ContentTool#pullPerPage(String, int, int, String)}
+     * When: there is a content with a publish date set to tomorrow and expire date set to after tomorrow
+     * and the time machine date set after that
+     * Should: return no one content
+     */
+    @Test
+    public void whenPublishAndExpireDatesAreInTheFutureAndTimeMachineIsAfterBoth() {
+        final Calendar publishDate = Calendar.getInstance();
+        publishDate.add(Calendar.DATE, 1);
+
+        final Calendar expireDate = Calendar.getInstance();
+        expireDate.add(Calendar.DATE, 2);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
+                .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
+                .nextPersisted();
+
+        final Calendar timeMachine = Calendar.getInstance();
+        timeMachine.add(Calendar.DATE, 3);
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final ContentTool contentTool = getContentTool(timeMachine);
+        final PaginatedContentList<ContentMap> contents = contentTool.pullPerPage(query, 1, 2, null);
+
+        assertEquals(0, contents.size());
+    }
+
 }
