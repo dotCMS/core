@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "fa50fbd3-161d-4b97-b568-50362171aa01",
+		"_postman_id": "80df4e6f-e0fe-4c6e-9cdc-75eaf59b51a7",
 		"name": "FolderResource",
 		"description": "Test for FolderResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -12,7 +12,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "95bfbcdc-8f0c-49a5-b12e-f20e54e2d1c5",
+						"id": "54a5adfa-0e79-43b0-95cf-7a68f52ebdf9",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -71,7 +71,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "6ca0531b-91fe-462f-8aed-cf3f45089238",
+						"id": "568bde89-4681-4368-9232-6afa54bb14da",
 						"exec": [
 							"pm.test(\"Status code should be 400\", function () {",
 							"    pm.response.to.have.status(400);",
@@ -130,7 +130,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f3b9e75f-d251-4be9-8e16-dbf34c2646e7",
+						"id": "6875270e-74e0-4a68-8ced-7bc2864c7369",
 						"exec": [
 							"pm.test(\"Status code should be 400\", function () {",
 							"    pm.response.to.have.status(400);",
@@ -208,7 +208,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f3b9e75f-d251-4be9-8e16-dbf34c2646e7",
+						"id": "ec5e61f7-93ed-4eda-a264-0e6749f33531",
 						"exec": [
 							"pm.test(\"Status code should be 403\", function () {",
 							"    pm.response.to.have.status(403);",

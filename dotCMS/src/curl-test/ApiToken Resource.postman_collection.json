@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "72bfa87a-27fd-4b8f-8811-f7c007f82114",
+		"_postman_id": "7f399f87-ca1f-463d-a316-6dda98779efe",
 		"name": "ApiToken Resource",
 		"description": "Tests for the api token",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -12,7 +12,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "c2bf4bbe-1e0d-4605-9129-7329ef64f57b",
+						"id": "1d1a015a-790f-4af2-8212-a4d5cbd638a9",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -31,6 +31,21 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
 				"method": "POST",
 				"header": [
 					{
@@ -69,7 +84,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "0434eb2c-4aa7-4533-946b-092833c7eed3",
+						"id": "ca37ddc7-58e7-4fd0-b8f6-30908b95d626",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -126,7 +141,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f697558f-94ed-4f74-9992-349bf63fb7de",
+						"id": "a0c30a4d-0f02-4464-8838-6ef007fc76c7",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -176,7 +191,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f697558f-94ed-4f74-9992-349bf63fb7de",
+						"id": "900a23b8-98cb-45c0-973e-cb8e557a85c2",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -226,7 +241,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f697558f-94ed-4f74-9992-349bf63fb7de",
+						"id": "6620f3d2-6306-4eb4-bd93-62d7d327437e",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -275,7 +290,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "b338181a-6425-4eab-9277-46182a2fd06e",
+						"id": "513b9195-e050-4a3a-809f-8fae435a7dcc",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -311,7 +326,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "b338181a-6425-4eab-9277-46182a2fd06e",
+						"id": "3c9c8e15-c11d-423d-9ae1-561ed8613813",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -343,10 +358,9 @@
 	],
 	"variable": [
 		{
-			"id": "523ae86b-2f57-474e-bb5b-e1ac657aea62",
+			"id": "d6169bbd-b097-49f5-b581-99e2bb5440a7",
 			"key": "tokenid",
-			"value": "api9c8d5eb4-631a-4419-b0cb-af8efc3fafbb",
-			"type": "string"
+			"value": "apic48ac755-bedf-4aa0-b17a-ee8d5d909bfe"
 		}
 	],
 	"protocolProfileBehavior": {}
