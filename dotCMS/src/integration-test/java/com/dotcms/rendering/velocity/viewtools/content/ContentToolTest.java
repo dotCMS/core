@@ -504,7 +504,7 @@ public class ContentToolTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ContentTool#pullPerPage(String, int, int, String)}
      * When: there is a content with a expire  date set to tomorrow and the time machine date is the date after tomorrow
-     * Should: return one content
+     * Should: return a empty list
      */
     @Test
     public void whenTheTimeMachineDateIsAfterTomorrowAndExpireDateIsTomorrowShouldNotReturnContent() {
