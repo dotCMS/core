@@ -93,7 +93,8 @@ describe('DotLicenseService', () => {
             '/c/time-machine',
             '/c/workflow-schemes',
             '/c/es-search',
-            '/forms'
+            '/forms',
+            '/apps'
         ];
         urls.forEach((url) => {
             return this.dotLicenseService

@@ -45,6 +45,11 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
         icon: 'business',
         titleKey: 'Forms-and-Form-Builder',
         url: '/forms'
+    },
+    {
+        icon: 'apps',
+        titleKey: 'com.dotcms.repackage.javax.portlet.title.apps',
+        url: '/apps'
     }
 ];
 
