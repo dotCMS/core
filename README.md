@@ -25,10 +25,10 @@ For a complete list of requirements, see [this page](http://dotcms.com/docs/late
 
 | Source        | Location                                               |
 | ------------- |--------------------------------------------------------|
-| Installation | [Installation](https://docs.dotcms.com/docs/latest/quick-start-guide)                  |
-| Documentation | [Documentation](http://docs.dotcms.com/docs/)                  |
+| Installation | [Installation](https://dotcms.com/download)                  |
+| Documentation | [Documentation](http://dotcms.com/docs/)                  |
 | Videos | [Helpful Videos](http://dotcms.com/videos/)                  |
-| Code Examples | [Codeshare](http://docs.dotcms.com/codeshare)                  |
+| Code Examples | [Codeshare](http://dotcms.com/codeshare)                  |
 | Forums/Listserv        | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter       | @dotCMS                         |
 | Main Site | [dotCMS.com](http://dotcms.com/)                  |
