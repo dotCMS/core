@@ -31,7 +31,8 @@ public class DotLoggerMessageObserver implements MessageObserver {
     @Override
     public void updateDebug(final Class aClass, final String message) {
 
-        Logger.debug(aClass, ()->message);
+        //Logger.debug(aClass, ()->message);
+        Logger.info(aClass, ()->message);
     }
 
     @Override
@@ -43,6 +44,7 @@ public class DotLoggerMessageObserver implements MessageObserver {
     @Override
     public void updateWarning(final Class aClass, final String message) {
 
-        Logger.warn(aClass, ()->message);
+        //Logger.warn(aClass, ()->message);
+        Logger.info(aClass, ()->message);
     }
 }

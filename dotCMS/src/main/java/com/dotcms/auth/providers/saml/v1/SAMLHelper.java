@@ -400,7 +400,7 @@ public class SAMLHelper {
             final String errorMsg = "Error creating user with NameID '" + this.samlAuthenticationService.getValue(attributesBean.getNameID()) + "': " +
                     "" + e.getMessage();
             Logger.error(this, errorMsg, e);
-            throw new SamlException(errorMsg);
+            throw new SamlException(errorMsg, e);
         }
 
         return user;

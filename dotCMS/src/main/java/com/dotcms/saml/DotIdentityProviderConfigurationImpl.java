@@ -7,8 +7,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import io.vavr.control.Try;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -27,7 +25,7 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
 
     }
 
-    private final Optional<Secret> findSecret (final String key) {
+    private Optional<Secret> findSecret (final String key) {
 
         final Optional<AppSecrets> appSecretOpt =
                 Try.of(()->this.appsAPI.getSecrets(DotSamlProxyFactory.SAML_APP_CONFIG_KEY, // todo: not sure if change this.

@@ -1,8 +1,5 @@
 package com.dotcms.saml;
 
-import java.io.File;
-import java.nio.file.Path;
-
 /**
  * This interface provides to the SAML bundle the configuration needed per IDP per host.
  * @see IdentityProviderConfigurationFactory

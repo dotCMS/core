@@ -5,13 +5,12 @@ package com.dotcms.saml;
  * 
  * @author jsanca
  */
-public class SamlException extends RuntimeException
-{
+public class SamlException extends RuntimeException {
+	
 	private static final long serialVersionUID = -3569526825729783600L;
 
-	public SamlException()
-	{
-		
+	public SamlException() {
+		super();
 	}
 
 	public SamlException(String message )

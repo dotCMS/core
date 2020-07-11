@@ -61,7 +61,7 @@ public class SamlWebInterceptor implements WebInterceptor {
     protected final AppsAPI         appsAPI;
     protected final SamlWebUtils    samlWebUtils;
     protected final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
-    protected volatile SamlConfigurationService samlConfigurationService = null;
+    protected volatile SamlConfigurationService samlConfigurationService;
 
     public SamlWebInterceptor() {
 
@@ -157,7 +157,6 @@ public class SamlWebInterceptor implements WebInterceptor {
 
                         if (this.doLogout(response, request, session, identityProviderConfiguration)) {
 
-                            return Result.SKIP_NO_CHAIN;
                         }
                     }
                 } else {
@@ -248,7 +247,7 @@ public class SamlWebInterceptor implements WebInterceptor {
             }
 
             final boolean doCookieLogin = this.loginService
-                    .doCookieLogin(this.encryptor.encryptString((user.getUserId())), request, response);
+                    .doCookieLogin(this.encryptor.encryptString(user.getUserId()), request, response);
 
             Logger.debug(this, ()->"Cookie Login by LoginService = " + doCookieLogin);
 
@@ -527,7 +526,7 @@ public class SamlWebInterceptor implements WebInterceptor {
      *            {@link String} array
      * @return boolean
      */
-    protected boolean checkAccessFilters(final String uri, final String[] filterPaths) {
+    protected boolean checkAccessFilters(final String uri, final String... filterPaths) {
         boolean filter = false;
 
         if (null != filterPaths) {
