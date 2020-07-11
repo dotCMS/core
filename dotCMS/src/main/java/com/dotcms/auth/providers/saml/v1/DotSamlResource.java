@@ -139,7 +139,7 @@ public class DotSamlResource implements Serializable {
 					final String sessionIndexKey = identityProviderConfiguration.getId() + DotSamlConstants.SAML_SESSION_INDEX;
 					final String samlNameIdKey   = identityProviderConfiguration.getId() + DotSamlConstants.SAML_NAME_ID;
 					session.setAttribute(sessionIndexKey, samlSessionIndex);
-					session.setAttribute(samlNameIdKey,   DotSamlProxyFactory.getInstance().samlAuthenticationService().getValue(attributes.getNameID()));
+					session.setAttribute(samlNameIdKey,  attributes.getNameID());
 					Logger.debug(this, ()->"Session index with key: " + sessionIndexKey + " and value: " + session.getAttribute(sessionIndexKey) + " is already set.");
 					Logger.debug(this, ()->"NameID with key: " + samlNameIdKey + " and value: " + session.getAttribute(samlNameIdKey) + " is already set.");
 				}
