@@ -6,7 +6,8 @@ import java.text.NumberFormat;
 import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.UtilMethods;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
+
 
 /**
  * Created by jasontesser on 3/14/17.

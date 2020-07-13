@@ -14,13 +14,14 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import com.liferay.portal.struts.MultiMessageResources;
 import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,7 +38,7 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
     private final AtomicLong sentBytes = new AtomicLong(0);
 
     private final String topicName = "dotCMSClusterCacheInvalidation";
-    private String topicId;
+    private UUID topicId;
 
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
@@ -53,7 +54,7 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
 
         HazelcastInstance hazel = getHazelcastInstance(true);
 
-        MessageListener<Object> messageListener = new MessageListener<Object>() {
+        final MessageListener<Object> messageListener = new MessageListener<Object>() {
             @Override
             public void onMessage( Message<Object> message ) {
                 if ( message == null ) {

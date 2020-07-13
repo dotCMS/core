@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -16,31 +16,37 @@
   -->
 
 <!--
-    The default Hazelcast configuration. This is used when no hazelcast.xml is present.
-    Please see the schema for how to configure Hazelcast at https://hazelcast.com/schema/config/hazelcast-config-3.8.xsd
-    or the documentation at https://hazelcast.org/documentation/
+  The default Hazelcast configuration.
+  This XML file is used when no hazelcast.xml is present.
+  To learn how to configure Hazelcast, please see the schema at
+  https://hazelcast.com/schema/config/hazelcast-config-4.1.xsd
+  or the Reference Manual at https://hazelcast.org/documentation/
 -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.8.xsd"
-           xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <group>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </group>
-    <management-center enabled="false">http://localhost:8081/mancenter</management-center>
+<!--suppress XmlDefaultAttributeValue -->
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.1.xsd">
+
+    <cluster-name>dev</cluster-name>
+
     <network>
         <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>
-            <!--
-            Allowed port range when connecting to other nodes.
-            0 or * means use system provided port.
-            -->
             <ports>0</ports>
         </outbound-ports>
         <join>
-            <multicast enabled="false" />
-            <tcp-ip enabled="false" />
+            <multicast enabled="false">
+                <multicast-group>224.2.2.3</multicast-group>
+                <multicast-port>54327</multicast-port>
+            </multicast>
+            <tcp-ip enabled="true">
+                <interface>10.*.*.*</interface>
+                <member-list>
+                    <member>127.0.0.1</member>
+                </member-list>
+            </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
                 <secret-key>my-secret-key</secret-key>
@@ -53,6 +59,21 @@
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
             </aws>
+            <gcp enabled="false">
+                <zones>us-east1-b,us-east1-c</zones>
+            </gcp>
+            <azure enabled="false">
+            </azure>
+            <kubernetes enabled="false">
+                <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+                <service-name>MY-SERVICE-NAME</service-name>
+                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
+                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
+            </kubernetes>
+            <eureka enabled="false">
+                <self-registration>true</self-registration>
+                <namespace>hazelcast</namespace>
+            </eureka>
             <discovery-strategies>
             </discovery-strategies>
         </join>
@@ -78,544 +99,18 @@
             <!-- iteration count to use when generating the secret key -->
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
+        <failure-detector>
+            <icmp enabled="false"/>
+        </failure-detector>
     </network>
     <partition-group enabled="false"/>
     <executor-service name="default">
-        <pool-size>100</pool-size>
+        <pool-size>16</pool-size>
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
     </executor-service>
-
-    <topic name="dotCMSClusterCacheInvalidation">
-        <global-ordering-enabled>false</global-ordering-enabled>
-        <statistics-enabled>false</statistics-enabled>
-    </topic>
-
-    <queue name="default">
-        <!--
-            Maximum size of the queue. When a JVM's local queue size reaches the maximum,
-            all put/offer operations will get blocked until the queue size
-            of the JVM goes down below the maximum.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            Integer.MAX_VALUE. Default is 0.
-        -->
-        <max-size>0</max-size>
-        <!--
-            Number of backups. If 1 is set as the backup-count for example,
-            then all entries of the map will be copied to another JVM for
-            fail-safety. 0 means no backup.
-        -->
-        <backup-count>1</backup-count>
-
-        <!--
-            Number of async backups. 0 means no backup.
-        -->
-        <async-backup-count>0</async-backup-count>
-
-        <empty-queue-ttl>-1</empty-queue-ttl>
-    </queue>
-       
-    <map name="default">
-        <!--
-           Data type that will be used for storing recordMap.
-           Possible values:
-           BINARY (default): keys and values will be stored as binary data
-           OBJECT : values will be stored in their object forms
-           NATIVE : values will be stored in non-heap region of JVM
-        -->
-        <in-memory-format>BINARY</in-memory-format>
-
-        <!--
-            Number of backups. If 1 is set as the backup-count for example,
-            then all entries of the map will be copied to another JVM for
-            fail-safety. 0 means no backup.
-        -->
-        <backup-count>1</backup-count>
-        <!--
-            Number of async backups. 0 means no backup.
-        -->
-        <async-backup-count>0</async-backup-count>
-        <!--
-			Maximum number of seconds for each entry to stay in the map. Entries that are
-			older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
-			will get automatically evicted from the map.
-			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-		-->
-        <time-to-live-seconds>0</time-to-live-seconds>
-        <!--
-			Maximum number of seconds for each entry to stay idle in the map. Entries that are
-			idle(not touched) for more than <max-idle-seconds> will get
-			automatically evicted from the map. Entry is touched if get, put or containsKey is called.
-			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-		-->
-        <max-idle-seconds>0</max-idle-seconds>
-        <!--
-            Valid values are:
-            NONE (no eviction),
-            LRU (Least Recently Used),
-            LFU (Least Frequently Used).
-            NONE is the default.
-        -->
-        <eviction-policy>LFU</eviction-policy>
-        <!--
-            Maximum size of the map. When max size is reached,
-            map is evicted based on the policy defined.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            Integer.MAX_VALUE. Default is 0.
-        -->
-        <max-size policy="PER_NODE">1000</max-size>
-
-        <!--
-            While recovering from split-brain (network partitioning),
-            map entries in the small cluster will merge into the bigger cluster
-            based on the policy set here. When an entry merge into the
-            cluster, there might an existing entry with the same key already.
-            Values of these entries might be different for that same key.
-            Which value should be set for the key? Conflict is resolved by
-            the policy set here. Default policy is PutIfAbsentMapMergePolicy
-
-            There are built-in merge policies such as
-            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
-            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
-            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
-            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
-        -->
-        <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
-
-        <!--
-           Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
-           Possible Values:
-                        NEVER: Never cache deserialized object
-                        INDEX-ONLY: Caches values only when they are inserted into an index.
-                        ALWAYS: Always cache deserialized values.
-        -->
-        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
-
-    </map>
-    
-    <map name="contentletcache">
-        <max-size>5000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="companypool">
-        <max-size>271</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="csscache">
-        <max-size>2500</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="fileassetmetadatacache">
-        <max-size>271</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="identifiercache">
-        <max-size>50000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="indiciescache">
-        <max-size>271</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="logmappercache">
-        <max-size>10</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-       
-    <map name="parentpermissionablecache">
-        <max-size>10000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="permissioncache">
-        <max-size>50000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="portletpool">
-        <max-size>271</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="publishingendpointcache">
-        <max-size>271</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="pushedassetscache">
-        <max-size>5000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="structurecache">
-        <max-size>500</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="templatecache">
-        <max-size>500</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="translatedquerycache">
-        <max-size>5000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="velocityuservtlcache">
-        <max-size>500</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="versioncache">
-        <max-size>50000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="versioninfocache">
-        <max-size>50000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="workflowactioncache">
-        <max-size>10000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="workflowtaskcache">
-        <max-size>10000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="shorty">
-        <max-size>25000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="identifier404cache">
-        <max-size>5000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-
-    <map name="vanityurlcache">
-        <max-size>25000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-
-    <map name="cachedvanityurlgroup">
-        <max-size>25000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-
-<!--    Available cache regions    -->
-<!--
-
-	<map name="navcache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    <map name="actionscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="blockdirectivecache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="blockdirectivehtmlpagecache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="categorybykeycache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="categorycache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="categorychildrencache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="categoryparentscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="conditionscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="conditionsgroupconditionscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="conditionsgroupscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="containercache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="containerstructurecache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="dotcmslayoutcache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="dotcmsrolecache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="dotcmsrolekeycache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="dotcmsrootrolescache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="dotcmsuserrolecache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="fieldscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="fieldsvarcache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="filecache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="foldercache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="hostaliascache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="hostcache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="hostrulescache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="hostvariablescache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="htmlpagecache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="identifier404cache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="languagecacheimpl">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="newnotificationcache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="plugincache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="propertycache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="ratingcache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="relationshipcachebyinode">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="relationshipcachebyname">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="ruleactionscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="ruleconditiongroupscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="ruleconditionletsitevisitscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="rulescache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="structuresbytypecache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="tagsbyinodecache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="userdotcmscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="useremaildotcmscache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="userproxycache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="velocitycache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="velocitymacrocache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="vanityurlcache">
-        <max-size>25000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-
-    <map name="cachedvanityurlgroup">
-        <max-size>25000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="workflowcache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="workflowstepcache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-
--->
-
-    <multimap name="default">
-        <backup-count>1</backup-count>
-        <value-collection-type>SET</value-collection-type>
-    </multimap>
-
-    <list name="default">
-        <backup-count>1</backup-count>
-    </list>
-
-    <set name="default">
-        <backup-count>1</backup-count>
-    </set>
-
-    <jobtracker name="default">
-        <max-thread-size>0</max-thread-size>
-        <!-- Queue size 0 means number of partitions * 2 -->
-        <queue-size>0</queue-size>
-        <retry-count>0</retry-count>
-        <chunk-size>1000</chunk-size>
-        <communicate-stats>true</communicate-stats>
-        <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
-    </jobtracker>
-
-    <semaphore name="default">
-        <initial-permits>0</initial-permits>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-    </semaphore>
-
-    <reliable-topic name="default">
-        <read-batch-size>10</read-batch-size>
-        <topic-overload-policy>BLOCK</topic-overload-policy>
-        <statistics-enabled>true</statistics-enabled>
-    </reliable-topic>
-
-    <ringbuffer name="default">
-        <capacity>10000</capacity>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-        <time-to-live-seconds>0</time-to-live-seconds>
-        <in-memory-format>BINARY</in-memory-format>
-    </ringbuffer>
-<!--
-    <serialization>
-        <portable-version>0</portable-version>
-    </serialization>
--->
-    <services enable-defaults="true"/>
-
-    <lite-member enabled="false"/>
+    <security>
+        <client-block-unmapped-actions>true</client-block-unmapped-actions>
+    </security>
 
 </hazelcast>
