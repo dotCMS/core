@@ -1264,6 +1264,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             if(esIndexApi.getNameWithClusterIDPrefix(indexName).equals(info.getReindexLive())) {
                 builder.setReindexLive(null);
             }
+        } else if(IndexType.SITE_SEARCH.is(indexName)){
+              builder.setSiteSearch(indexName);
         }
         
         APILocator.getIndiciesAPI().point(builder.build());
@@ -1281,6 +1283,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             builder.setReindexWorking(null);
         } else if (IndexType.REINDEX_LIVE.is(indexName)) {
             builder.setReindexLive(null);
+        } else if(IndexType.SITE_SEARCH.is(indexName)){
+            builder.setSiteSearch(null);
         }
         APILocator.getIndiciesAPI().point(builder.build());
     }
