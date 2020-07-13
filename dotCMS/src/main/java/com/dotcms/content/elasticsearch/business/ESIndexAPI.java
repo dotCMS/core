@@ -612,10 +612,12 @@ public class ESIndexAPI {
 
 		map.put("number_of_shards", shards);
 		map.put("index.auto_expand_replicas", "0-all");
-		map.put("index.mapping.total_fields.limit",
-			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
-        map.put("index.mapping.nested_fields.limit",
-                Config.getIntProperty("ES_INDEX_MAPPING_NESTED_FIELDS_LIMITS", 5000));
+		if (!map.containsKey("index.mapping.total_fields.limit")) {
+			map.put("index.mapping.total_fields.limit", 10000);
+		}
+		if (!map.containsKey("index.mapping.nested_fields.limit")) {
+			map.put("index.mapping.nested_fields.limit", 10000);
+		}
 
 		map.put("index.query.default_field",
 				Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
