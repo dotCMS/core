@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.business.Unexportable;
 import java.util.Collection;
 import java.util.List;
 
@@ -15,7 +16,8 @@ import static com.dotcms.util.CollectionsUtils.list;
 @JsonSerialize(as = ImmutableFileField.class)
 @JsonDeserialize(as = ImmutableFileField.class)
 @Value.Immutable
-public abstract class FileField extends Field implements Unexportable {
+@Unexportable
+public abstract class FileField extends Field {
 
 	@Override
 	public Class type() {

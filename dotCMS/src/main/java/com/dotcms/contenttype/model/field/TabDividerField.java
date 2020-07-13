@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.business.Unexportable;
 import java.util.Collection;
 import java.util.List;
 
@@ -15,7 +16,8 @@ import static com.dotcms.util.CollectionsUtils.list;
 @JsonSerialize(as = ImmutableTabDividerField.class)
 @JsonDeserialize(as = ImmutableTabDividerField.class)
 @Value.Immutable
-public abstract class TabDividerField extends Field implements FieldDivider, Unexportable {
+@Unexportable
+public abstract class TabDividerField extends Field implements FieldDivider {
 
 	/**
 	 * 

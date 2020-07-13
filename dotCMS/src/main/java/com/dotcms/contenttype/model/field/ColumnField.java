@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.business.Unexportable;
 import com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -11,7 +12,8 @@ import java.util.List;
 @JsonSerialize(as = ImmutableColumnField.class)
 @JsonDeserialize(as = ImmutableColumnField.class)
 @Value.Immutable
-public abstract class ColumnField extends Field implements Unexportable {
+@Unexportable
+public abstract class ColumnField extends Field {
 
 	/**
 	 * 
