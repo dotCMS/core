@@ -1,14 +1,46 @@
 {
 	"info": {
-		"_postman_id": "e59a9ad8-5257-4bde-97d7-73e04f2d1e3d",
+		"_postman_id": "96b9ed82-52a9-40e0-9f0f-6844e19ecce8",
 		"name": "NavResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
 			"name": "loadJson",
-			"description": "Returns navigation metadata in JSON format for objects that have been marked show on menu\n\nFormat:\n  http://localhost:8080/api/v1/nav/{start-url}?depth={}\n  \nExample - will send the navigation under the /about-us folder, 2 levels deep\n  http://localhost:8080/api/v1/nav/about-us?depth=2",
 			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "96cc9c8f-3563-4580-a504-8ebdbdc8053b",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "UserAuthentification",
 					"event": [
@@ -16,7 +48,6 @@
 							"listen": "test",
 							"script": {
 								"id": "d255897a-111f-46c0-b3c6-64dde8de16a2",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -29,7 +60,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -39,9 +71,8 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/nav/about-us?depth=2",
+							"raw": "{{serverURL}}/api/v1/nav/contact-us?Host=demo.dotcms.com",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -49,15 +80,104 @@
 								"api",
 								"v1",
 								"nav",
-								"about-us"
+								"contact-us"
 							],
 							"query": [
 								{
-									"key": "depth",
-									"value": "2"
+									"key": "Host",
+									"value": "demo.dotcms.com"
 								}
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithContext",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "64a4b8e4-1ba9-4cdd-af94-2515b0df944b",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contact-us-folder.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/NavResource/contact-us-folder.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
 					},
 					"response": []
 				},
@@ -68,7 +188,6 @@
 							"listen": "test",
 							"script": {
 								"id": "d3d04599-d4ad-466c-8ed5-6e6d3b54e2f5",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -77,19 +196,17 @@
 									"",
 									"",
 									"",
-									"pm.test(\"Include template\", function () {",
+									"pm.test(\"Include child page\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"index\");",
 									"});",
 									"",
-									"pm.test(\"Inlude layout\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"locations\");",
+									"pm.test(\"Inlude child page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"thank-you\");",
 									"});",
 									"",
-									"pm.test(\"Include Containers\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"our-team\");",
-									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -125,9 +242,8 @@
 								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
 							}
 						],
-						"body": {},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/nav/about-us?depth=2",
+							"raw": "{{serverURL}}/api/v1/nav/contact-us?depth=2",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -135,7 +251,7 @@
 								"api",
 								"v1",
 								"nav",
-								"about-us"
+								"contact-us"
 							],
 							"query": [
 								{
@@ -154,7 +270,6 @@
 							"listen": "test",
 							"script": {
 								"id": "f3bed03d-0a7b-46f9-8c4a-2bbec1ca967f",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -164,10 +279,11 @@
 									"",
 									"",
 									"pm.test(\"URL not found\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"this url doesn't exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"This URL does not exist\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -203,7 +319,6 @@
 								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
 							}
 						],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/nav/about-usa?depth=2",
 							"host": [
@@ -232,7 +347,6 @@
 							"listen": "test",
 							"script": {
 								"id": "057dce50-c11e-4c12-8ac7-bef2b2777ae5",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -242,10 +356,11 @@
 									"",
 									"",
 									"pm.test(\"URL not found\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The provided depth is not a number\");",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid value for Depth. Depth must be a number\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -281,7 +396,6 @@
 								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
 							}
 						],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/nav/about-us?depth=a",
 							"host": [
@@ -310,7 +424,6 @@
 							"listen": "test",
 							"script": {
 								"id": "01d74515-39ac-42c2-9afc-5947afb39574",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -320,11 +433,12 @@
 									"",
 									"",
 									"pm.test(\"Valid message\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"languageId does not exists\");",
+									"    pm.expect(pm.response.text()).to.include(\"The provided languageId does not exist\");",
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -360,7 +474,6 @@
 								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
 							}
 						],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/nav/about-us?depth=2&languageId=123",
 							"host": [
@@ -393,7 +506,6 @@
 							"listen": "test",
 							"script": {
 								"id": "d3d04599-d4ad-466c-8ed5-6e6d3b54e2f5",
-								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -402,19 +514,17 @@
 									"",
 									"",
 									"",
-									"pm.test(\"Include template\", function () {",
+									"pm.test(\"Include child page\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"index\");",
 									"});",
 									"",
-									"pm.test(\"Inlude layout\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"locations\");",
+									"pm.test(\"Inlude child page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"thank-you\");",
 									"});",
 									"",
-									"pm.test(\"Include Containers\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"our-team\");",
-									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -450,9 +560,8 @@
 								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
 							}
 						],
-						"body": {},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/nav/about-us?depth=2&languageId=2",
+							"raw": "{{serverURL}}/api/v1/nav/contact-us?depth=2&languageId=1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -460,7 +569,7 @@
 								"api",
 								"v1",
 								"nav",
-								"about-us"
+								"contact-us"
 							],
 							"query": [
 								{
@@ -469,14 +578,16 @@
 								},
 								{
 									"key": "languageId",
-									"value": "2"
+									"value": "1"
 								}
 							]
 						}
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Returns navigation metadata in JSON format for objects that have been marked show on menu\n\nFormat:\n  http://localhost:8080/api/v1/nav/{start-url}?depth={}\n  \nExample - will send the navigation under the /about-us folder, 2 levels deep\n  http://localhost:8080/api/v1/nav/about-us?depth=2",
+			"protocolProfileBehavior": {}
 		}
 	],
 	"event": [
@@ -506,8 +617,8 @@
 			"id": "159b295d-ed03-4702-881d-bda2d0e9b9b0",
 			"key": "serverURL",
 			"value": "http://localhost:8080",
-			"type": "string",
-			"description": ""
+			"type": "string"
 		}
-	]
+	],
+	"protocolProfileBehavior": {}
 }
