@@ -964,6 +964,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             sortBy="random";
         }
 
+        if(limit <=0){
+            limit = MAX_LIMIT;
+        }
+
         if(limit<=MAX_LIMIT) {
             SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
             PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
