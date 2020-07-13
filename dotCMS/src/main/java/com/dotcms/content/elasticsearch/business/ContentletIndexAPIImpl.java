@@ -1249,6 +1249,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
     public void activateIndex(final String indexName) throws DotDataException {
+
+        if(IndexType.SITE_SEARCH.is(indexName)){
+            //This covers cases on which this API is used to work on site search indices.
+            APILocator.getSiteSearchAPI().activateIndex(indexName);
+            return;
+        }
+
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
         if(indexName==null) {
@@ -1272,6 +1279,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public void deactivateIndex(String indexName) throws DotDataException, IOException {
+
+        if(IndexType.SITE_SEARCH.is(indexName)){
+            //This covers cases on which this API is used to work on site search indices.
+            APILocator.getSiteSearchAPI().deactivateIndex(indexName);
+            return;
+        }
+
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
 
@@ -1283,8 +1297,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             builder.setReindexWorking(null);
         } else if (IndexType.REINDEX_LIVE.is(indexName)) {
             builder.setReindexLive(null);
-        } else if(IndexType.SITE_SEARCH.is(indexName)){
-            builder.setSiteSearch(null);
         }
         APILocator.getIndiciesAPI().point(builder.build());
     }
