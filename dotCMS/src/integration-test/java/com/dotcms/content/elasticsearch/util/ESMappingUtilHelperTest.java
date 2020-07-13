@@ -472,22 +472,24 @@ public class ESMappingUtilHelperTest {
         try {
             try {
                 eventContentType = contentTypeAPI.find("calendarEvent");
+
             } catch(NotFoundInDbException e){
                 final List<Field> eventFields = new ArrayList<>();
                 eventFields
                         .add(new FieldDataGen().name("Title").velocityVarName("title").indexed(true)
                                 .next());
-                eventFields.add(new FieldDataGen().name("StartDate").velocityVarName("startDate")
+                eventFields.add(new FieldDataGen().type(DateField.class).name("StartDate").defaultValue(null)
+                        .velocityVarName("startDate").indexed(true).next());
+                eventFields.add(new FieldDataGen().type(DateField.class).name("EndDate").defaultValue(null)
+                        .velocityVarName("endDate").indexed(true).next());
+                eventFields.add(new FieldDataGen().type(DateField.class).name("OriginalStartDate")
+                        .defaultValue(null).defaultValue(null).velocityVarName("originalStartDate")
                         .indexed(true).next());
-                eventFields.add(new FieldDataGen().name("EndDate").velocityVarName("endDate")
-                        .indexed(true).next());
-                eventFields.add(new FieldDataGen().name("OriginalStartDate")
-                        .velocityVarName("originalStartDate").indexed(true).next());
-                eventFields.add(new FieldDataGen().name("RecurrenceStart")
-                        .velocityVarName("recurrenceStart").indexed(true).next());
-                eventFields.add(new FieldDataGen().name("RecurrenceEnd")
-                        .velocityVarName("recurrenceEnd").indexed(true).next());
-                eventContentType = new ContentTypeDataGen().fields(eventFields).nextPersisted();
+                eventFields.add(new FieldDataGen().type(DateField.class).name("RecurrenceStart")
+                        .defaultValue(null).velocityVarName("recurrenceStart").indexed(true).next());
+                eventFields.add(new FieldDataGen().type(DateField.class).name("RecurrenceEnd")
+                        .defaultValue(null).velocityVarName("recurrenceEnd").indexed(true).next());
+                eventContentType = new ContentTypeDataGen().velocityVarName("calendarEvent").fields(eventFields).nextPersisted();
             }
             event = new ContentletDataGen(eventContentType.id())
                     .setProperty("title", "MyEvent" + System.currentTimeMillis())
@@ -498,7 +500,6 @@ public class ESMappingUtilHelperTest {
                     .setProperty("recurrenceEnd", new Date()).nextPersisted();
 
             validateMappingForFields(testCase, null, fields, expectedResult);
-
         }finally {
             if (event != null){
                 ContentletDataGen.destroy(event);
