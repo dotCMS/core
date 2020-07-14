@@ -5,8 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.RelationshipFactory;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -15,6 +14,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -29,10 +29,11 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
+import io.vavr.control.Try;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.beanutils.BeanUtils;
 import java.util.Map;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
@@ -440,8 +441,9 @@ public class RelationshipAPIImpl implements RelationshipAPI {
                 oldRelationship.getParentStructure()).from();
         final ContentType childContentType = new StructureTransformer(
                 oldRelationship.getChildStructure()).from();
+        
         //Create Relationship Fields
-
+        
         final String parentFieldName = suggestNewFieldName(parentContentType, oldRelationship,
                 false);
         final String childFieldName = suggestNewFieldName(childContentType, oldRelationship, true);
@@ -451,14 +453,22 @@ public class RelationshipAPIImpl implements RelationshipAPI {
                 oldRelationship.getCardinality(), oldRelationship.isChildRequired(),
                 childContentType.variable());
 
-        createRelationshipField(parentFieldName, childContentType.id(),
+        final com.dotcms.contenttype.model.field.Field childRelationshipField =createRelationshipField(parentFieldName, childContentType.id(),
                 oldRelationship.getCardinality(), oldRelationship.isParentRequired(),
                 parentContentType.variable() + "." + parentRelationshipField.variable());
 
-        //Get the new Relationship
-        final Relationship newRelationship = byTypeValue(
-                parentContentType.variable() + "." + parentRelationshipField.variable());
 
+        Relationship newRelationship = (Relationship) Try.of(()->  BeanUtils.cloneBean(oldRelationship)).getOrElseThrow(e-> new DotRuntimeException(e));
+        
+        
+        newRelationship.setRelationTypeValue(parentContentType.variable() + "." + parentRelationshipField.variable());
+        newRelationship.setParentRelationName(childRelationshipField.variable());
+        newRelationship.setChildRelationName(parentRelationshipField.variable());
+        
+        save(newRelationship);
+        
+        
+        
         migrateOldRelationshipReferences(oldRelationship, newRelationship);
 
     }
@@ -495,17 +505,25 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         dc.addParam(oldRelationship.getRelationTypeValue());
         dc.loadResult();
 
-        //Delete the old relationship
-        APILocator.getRelationshipAPI().delete(oldRelationship);
-
         //Reindex both Content Types, so the content show the relationships
         contentletAPI.refresh(oldRelationship.getParentStructure());
         contentletAPI.refresh(oldRelationship.getChildStructure());
     }
 
+    /**
+     * This creates a relationship field but DOES NOT create try to create the underlying relationship
+     * @param fieldName
+     * @param parentContentTypeID
+     * @param cardinality
+     * @param isRequired
+     * @param childContentTypeVariable
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName, final String parentContentTypeID, final int cardinality, final boolean isRequired, final String childContentTypeVariable)
             throws DotDataException, DotSecurityException {
-        final com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class)
+        final com.dotcms.contenttype.model.field.RelationshipField field = ImmutableRelationshipField.builder()
                 .name(fieldName)
                 .contentTypeId(parentContentTypeID)
                 .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.values()[cardinality].ordinal()))
@@ -513,6 +531,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
                 .listed(false)
                 .required(isRequired)
                 .relationType(childContentTypeVariable)
+                .skipRelationshipCreation(true)
                 .build();
 
         return APILocator.getContentTypeFieldAPI().save(field,APILocator.systemUser());

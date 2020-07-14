@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.util.Calendar;
 import java.util.Date;
@@ -90,6 +91,133 @@ public class URLMapAPIImplTest {
         urlMapAPI = new URLMapAPIImpl();
     }
 
+    /**
+     * UrlMapped Content that lives on the system host should be available on every host where the map
+     * detail page exists (by path). If content does not live on the system host, it should only be
+     * available on the host it is currently one
+     * 
+     * @throws Exception
+     */
+
+
+    @Test
+    public void systemHost_UrlMaps_Should_Work_Across_Hosts() throws Exception {
+
+        final Host host1 = new SiteDataGen().nextPersisted();
+        final Host host2 = new SiteDataGen().nextPersisted();
+        final Host host3 = new SiteDataGen().nextPersisted();
+        
+        final Folder folder1 = new FolderDataGen().name("folder").title("folder").site(host1).nextPersisted();
+        final Folder folder2 = new FolderDataGen().name("folder").title("folder").site(host2).nextPersisted();
+
+
+
+        final Template template1 = new TemplateDataGen().site(host1).nextPersisted();
+        final Template template2 = new TemplateDataGen().site(host2).nextPersisted();
+
+        final HTMLPageAsset pageOnHost1 = new HTMLPageDataGen(folder1, template1).pageURL("my-detail")
+                        .title("my-detail").nextPersisted();
+
+        final HTMLPageAsset pageOnHost2 = new HTMLPageDataGen(folder2, template2).pageURL("my-detail")
+                        .title("my-detail").nextPersisted();
+
+        final String urlPattern = "/" + UUIDGenerator.shorty() + "/{urlTitle}";
+        
+        // set the detail page to page on host1
+        final ContentType contentType1 = getNewsLikeContentType("News" + System.currentTimeMillis(),
+                        APILocator.systemHost(), pageOnHost1.getIdentifier(), urlPattern);
+
+
+        final Contentlet newsOnSystemHost = TestDataUtils.getNewsContent(true,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), contentType1.id(),
+                        APILocator.systemHost(), null, UUIDGenerator.generateUuid());
+
+
+        final Contentlet newsOnHost1 = TestDataUtils.getNewsContent(true,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), contentType1.id(), host1,
+                        null, UUIDGenerator.generateUuid());
+
+        final Contentlet newsOnHost2 = TestDataUtils.getNewsContent(true,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), contentType1.id(), host2,
+                        null, UUIDGenerator.generateUuid());
+
+
+        
+        // WORKS : trying where contentlet on the system host and request is on host1 
+        UrlMapContext context = getUrlMapContext(systemUser, host1,
+                        urlPattern.replace("{urlTitle}", newsOnSystemHost.getStringProperty("urlTitle")));
+
+        Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+
+        assertEquals(newsOnSystemHost.getStringProperty("title"), urlMapInfo.getContentlet().getName());
+        assertEquals(pageOnHost1.getURI(), urlMapInfo.getIdentifier().getURI());
+        
+
+        // WORKS :  trying where contentlet on the system host and request is on host2, which also has a detail page in the right place
+        context = getUrlMapContext(systemUser, host2,
+                        urlPattern.replace("{urlTitle}", newsOnSystemHost.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        urlMapInfo = urlMapInfoOptional.get();
+
+        assertEquals(newsOnSystemHost.getStringProperty("title"), urlMapInfo.getContentlet().getName());
+        assertEquals(pageOnHost2.getURI(), urlMapInfo.getIdentifier().getURI());
+        
+        
+        
+        // FAIL : trying where contentlet on the system host and request is on host3, which does not have a detail page
+        context = getUrlMapContext(systemUser, host3,
+                        urlPattern.replace("{urlTitle}", newsOnSystemHost.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        assert(!urlMapInfoOptional.isPresent());
+
+        
+        
+        // WORKS :  trying where contentlet on host1 and request is on host1 
+        context = getUrlMapContext(systemUser, host1,
+                        urlPattern.replace("{urlTitle}", newsOnHost1.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        urlMapInfo = urlMapInfoOptional.get();
+
+        assertEquals(newsOnHost1.getStringProperty("title"), urlMapInfo.getContentlet().getName());
+        assertEquals(pageOnHost1.getURI(), urlMapInfo.getIdentifier().getURI());
+        
+        
+        
+        // FAIL : trying where contentlet on the host1 and request ison host2 
+        context = getUrlMapContext(systemUser, host2,
+                        urlPattern.replace("{urlTitle}", newsOnHost1.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        assert(!urlMapInfoOptional.isPresent());
+        
+        
+        
+        // WORKS : where contentlet on the host2 and request is on host2 
+        context = getUrlMapContext(systemUser, host2,
+                        urlPattern.replace("{urlTitle}", newsOnHost2.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsOnHost2.getStringProperty("title"), urlMapInfo.getContentlet().getName());
+        assertEquals(pageOnHost2.getURI(), urlMapInfo.getIdentifier().getURI());
+        
+        
+        
+
+
+    }
+    
+    
+    
+    
+    
+    
+    
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
      * Given Scenario: Process a URL Map url when both the Content Type and Content exists

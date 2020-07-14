@@ -44,6 +44,7 @@ import com.dotcms.graphql.datafetcher.UserDataFetcher;
 import com.dotcms.graphql.resolver.ContentResolver;
 import com.dotmarketing.util.Logger;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLTypeReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -93,14 +94,14 @@ public enum InterfaceType {
         contentFields.put(WORKING, new TypeFetcher(GraphQLBoolean));
         contentFields.put(ARCHIVED_KEY, new TypeFetcher(GraphQLBoolean));
         contentFields.put(LOCKED_KEY, new TypeFetcher(GraphQLBoolean));
-        contentFields.put("conLanguage", new TypeFetcher(CustomFieldType.LANGUAGE.getType(), new LanguageDataFetcher()));
+        contentFields.put("conLanguage", new TypeFetcher(GraphQLTypeReference.typeRef("Language"), new LanguageDataFetcher()));
         contentFields.put(IDENTIFIER, new TypeFetcher(GraphQLID));
         contentFields.put(INODE, new TypeFetcher(GraphQLID));
-        contentFields.put(HOST_KEY, new TypeFetcher(CustomFieldType.SITE.getType(), new SiteFieldDataFetcher()));
-        contentFields.put(FOLDER_KEY, new TypeFetcher(CustomFieldType.FOLDER.getType(), new FolderFieldDataFetcher()));
+        contentFields.put(HOST_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("Site"), new SiteFieldDataFetcher()));
+        contentFields.put(FOLDER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("Folder"), new FolderFieldDataFetcher()));
         contentFields.put(URL_MAP, new TypeFetcher(GraphQLString));
-        contentFields.put(OWNER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
-        contentFields.put(MOD_USER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
+        contentFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
+        contentFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
 
         CONTENT_INTERFACE_FIELDS.addAll(contentFields.keySet());
 
@@ -133,6 +134,10 @@ public enum InterfaceType {
         interfaceTypes.put("DOTASSET", createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()));
     }
 
+    public static Map<String, TypeFetcher> getContentFields() {
+        return contentFields;
+    }
+
     public GraphQLInterfaceType getType() {
         return interfaceTypes.get(this.name());
     }
@@ -163,7 +168,4 @@ public enum InterfaceType {
         return type;
     }
 
-    public static Map<String, TypeFetcher> getContentletInheritedFields() {
-        return contentFields;
-    }
 }

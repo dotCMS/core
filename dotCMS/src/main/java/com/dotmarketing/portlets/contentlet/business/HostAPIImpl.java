@@ -746,8 +746,11 @@ public class HostAPIImpl implements HostAPI {
                 Contentlet c = contentAPI.find(host.getInode(), user, respectFrontendRoles);
                 contentAPI.delete(c, user, respectFrontendRoles);
 
-                APILocator.getAppsAPI().removeSecretsForSite(host, APILocator.systemUser());
-
+                try {
+                    APILocator.getAppsAPI().removeSecretsForSite(host, APILocator.systemUser());
+                }catch (Exception e){
+                    Logger.error(HostAPIImpl.class, "Error removing secrets for site",  e);
+                }
                 hostCache.remove(host);
                 hostCache.clearAliasCache();
             }

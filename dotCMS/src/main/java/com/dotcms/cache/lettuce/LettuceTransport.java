@@ -52,7 +52,7 @@ enum MessageType {
 
 
 /**
- * A cache transport layer built ontop of redis streams. Each server in a cluster registers itself
+ * A cache transport layer built on top of redis streams. Each server in a cluster registers itself
  * with redis as a consumer on a streams "group" and then polls the stream for new messages coming
  * in. Redis tracks the latest messages for each consumer and only returns those that have not been
  * consumed already

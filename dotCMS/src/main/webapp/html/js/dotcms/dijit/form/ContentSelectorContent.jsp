@@ -37,7 +37,7 @@
                             type="text"
                             dojoType="dijit.form.TextBox"
                             data-dojo-props="intermediateChanges:true"
-                            dojoAttachEvent="onKeyUp:_doDebounceSearch"
+                            dojoAttachEvent="onKeyUp:_doSearchPage1"
                             dojoAttachPoint="generalSearch" />
                         </dd>
                     </dl>

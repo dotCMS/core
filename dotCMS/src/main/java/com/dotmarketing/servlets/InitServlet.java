@@ -1,10 +1,35 @@
 package com.dotmarketing.servlets;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.net.UnknownHostException;
+import java.util.Date;
+import java.util.List;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.felix.framework.OSGIUtil;
+import org.apache.lucene.search.BooleanQuery;
+import org.quartz.SchedulerException;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.dotcms.services.VanityUrlServices;
+
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -25,27 +50,13 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.job.ShutdownHookThread;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.util.ReleaseInfo;
-import org.apache.commons.lang.SystemUtils;
-import org.apache.felix.framework.OSGIUtil;
-import org.apache.felix.framework.OSGIUtils;
-import org.apache.lucene.search.BooleanQuery;
-import org.quartz.SchedulerException;
-
-import javax.management.*;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.net.*;
-import java.net.URLEncoder;
-import java.util.Date;
-import java.util.List;
 
 /**
  * Initialization servlet for specific dotCMS components and features.
@@ -135,8 +146,8 @@ public class InitServlet extends HttpServlet {
         
         
         try {
-            //Initialize the Cached Vanity URL cache
-            VanityUrlServices.getInstance().initializeVanityUrlCache();
+
+          APILocator.getVanityUrlAPI().populateAllVanityURLsCache();
         }
         catch(Exception e) {
             Logger.error(InitServlet.class, e.getMessage(), e);
@@ -240,7 +251,7 @@ public class InitServlet extends HttpServlet {
         System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
         //Initializing felix
-        OSGIUtils.initializeOsgi(config.getServletContext());
+        OSGIUtil.getInstance().initializeFramework();
 
         // Record how long it took to start us up.
         try{
@@ -254,6 +265,9 @@ public class InitServlet extends HttpServlet {
         }
         // Starting the re-indexation thread
         ReindexThread.startThread();
+        
+        
+
     }
 
     protected void deleteFiles(java.io.File directory) {

@@ -1,58 +1,36 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
-import org.jetbrains.annotations.NotNull;
-
-import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.portlets.contentlet.transform.strategy.BinaryViewStrategy;
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * DBTransformer that converts DB objects into Contentlet instances
+ * FieldsToMapTransformer that converts contentlets with any binary fields into a Map
  */
 public class BinaryToMapTransformer implements FieldsToMapTransformer {
+
     final Map<String, Object> mapOfMaps;
 
+    public BinaryToMapTransformer(final Contentlet contentlet) {
 
-
-    public BinaryToMapTransformer(final Contentlet con) {
-
-        if (con.getInode() == null) {
+        if (contentlet.getInode() == null) {
             throw new DotStateException("Contentlet needs an inode to get fields");
         }
-        final Map<String, Object> newMap = new HashMap<>();
-        if (con.getContentType().fields() != null) {
-            for (final Field field : con.getContentType().fields()) {
-                if (field instanceof BinaryField) {
-                    try {
-                        final File conBinary = con.getBinary(field.variable());
 
-                        if(conBinary != null) {
-                            newMap.put(field.variable(), conBinary.getName());
-                        }
-                    } catch (IOException e) {
-                        Logger.warn(this, "Unable to get Binary from field with var " + field.variable());
-                    }
-                    newMap.put(field.variable()+"Map", transform(field, con));
-                }
-            }
+        final List<Map<String, Object>> maps =
+                new DotTransformerBuilder().binaryToMapTransformer().content(contentlet).build().toMaps();
+
+        if (maps.isEmpty()) {
+            this.mapOfMaps = Collections.emptyMap();
+        } else {
+            this.mapOfMaps = maps.get(0);
         }
-
-
-        this.mapOfMaps = newMap;
     }
 
     @Override
@@ -61,35 +39,14 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
     }
 
 
-
     @NotNull
-    public Map<String, Object> transform(final Field field, final Contentlet con) {
-        File file;
-        try {
-            file = con.getBinary(field.variable());
-        } catch (IOException e) {
-            throw new DotStateException(e);
-        }
-
-        if(file==null) return Collections.emptyMap();
-
-        return transform(file, con, field);
+    public static Map<String, Object> transform(final Field field, final Contentlet con) {
+        return BinaryViewStrategy.transform(field, con);
     }
 
-    public Map<String, Object> transform(final File file, final Contentlet con, final Field field) {
-        DotPreconditions.checkNotNull(file, IllegalArgumentException.class, "File can't be null");
-        final Map<String, Object> map = new HashMap<>();
-
-        map.put("versionPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getInode()) + "/" + field.variable() + "/" + file.getName());
-        final int contentLanguageSize = Try.of(()->APILocator.getLanguageAPI().getLanguages()).getOrElse(Collections.emptyList()).size();
-        map.put("idPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getIdentifier()) + "/" + field.variable() + "/" + file.getName()
-                + (contentLanguageSize > 1?"?language_id=" + con.getLanguageId(): StringPool.BLANK));
-        map.put("name", file.getName());
-        map.put("size", file.length());
-        map.put("mime", Config.CONTEXT.getMimeType(file.getName()));
-        map.put("isImage", UtilMethods.isImage(file.getName()));
-
-        return map;
+    public static Map<String, Object> transform(final File file, final Contentlet con,
+            final Field field) {
+        return BinaryViewStrategy.transform(file, con, field);
     }
 }
 

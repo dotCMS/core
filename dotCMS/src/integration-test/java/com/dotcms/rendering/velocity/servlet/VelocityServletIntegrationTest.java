@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.anyString;
@@ -18,16 +19,19 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.vanityurl.filters.VanityURLFilter;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.filters.TimeMachineFilter;
-import com.dotmarketing.filters.VanityURLFilter;
+
 import com.dotmarketing.portlets.containers.model.Container;
+
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -202,7 +206,10 @@ public class VelocityServletIntegrationTest {
         final Contentlet contentlet = createURLMapperContentType(newsPatternPrefix, host);
         ContentletDataGen.publish(contentlet);
 
-        when(request.getRequestURI()).thenReturn("/vanityURL/" + contentlet.getStringProperty("urlTitle"));
+        final String uri = "/vanityURL/" + contentlet.getStringProperty("urlTitle");
+        
+        
+        when(request.getRequestURI()).thenReturn(uri);
 
         final String VANITY_URI = "/vanityURL/([a-zA-Z0-9-_]+)";
         final String FORWARD_URL = newsPatternPrefix + "$1";
@@ -215,13 +222,18 @@ public class VelocityServletIntegrationTest {
         final VanityURLFilter vanityURLFilter = new VanityURLFilter();
         vanityURLFilter.doFilter(request, response, chain);
 
+        
+        assert(request.getAttribute(com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE)!=null);
+        final String vanity = (String) request.getAttribute(com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE);
+        
+        assertEquals("vanity rewritten", vanity,FORWARD_URL.replace("$1", contentlet.getStringProperty("urlTitle")));
         velocityServlet.service(request, response);
 
         verify(servletOutputStream).write("".getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
-    private static Contentlet createURLMapperContentType(final String newsPatternPrefix, final Host host) {
+    private  Contentlet createURLMapperContentType(final String newsPatternPrefix, final Host host) {
         final String urlMapPattern = newsPatternPrefix + "{urlTitle}";
         final HTMLPageAsset page = createPage();
 
@@ -237,9 +249,9 @@ public class VelocityServletIntegrationTest {
     }
 
 
-    private static HTMLPageAsset createPage(){
+    private  HTMLPageAsset createPage(){
 
-        final Folder folder = new FolderDataGen()
+        final Folder folder = new FolderDataGen().site(host)
                 .nextPersisted();
 
         final Template template = new TemplateDataGen().nextPersisted();

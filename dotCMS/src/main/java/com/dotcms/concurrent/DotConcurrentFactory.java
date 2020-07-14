@@ -362,26 +362,27 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         @Override
         public void run() {
-
+            final List<DelayedDelegate> delayedDelegateList = new ArrayList<>();
             if (!this.stop.get()) {
 
                 try {
 
                     final Collection<BlockingQueue<DelayedDelegate>> delayedQueues =
                             DotConcurrentFactory.this.delayQueueMap.values();
-
+                    
                     for (final BlockingQueue<DelayedDelegate> queue: delayedQueues) {
-
-                        final long timeout = Config.getLongProperty("dotcms.concurrent.delayqueue.timeoutpollmillis", 3000);
-                        final DelayedDelegate delayedDelegate = queue.poll(timeout, TimeUnit.MILLISECONDS); // keep in mind if a loop or pull could be better
-                        if (null != delayedDelegate) {
-
-                            delayedDelegate.executeDelegate();
+                        Logger.debug(this.getClass(), ()->"DelayedDelegate queue size:"  + queue.size());
+                        delayedDelegateList.clear();
+                        // take up to 100 DelayedDelegates to run at a time
+                        queue.drainTo(delayedDelegateList, 50); 
+                        for (DelayedDelegate d: delayedDelegateList) {
+                            d.executeDelegate();
+                            Thread.sleep(5);
                         }
+                        Thread.sleep(5);
                     }
-                } catch (InterruptedException e) {
-                    Logger.error(DotConcurrentFactory.class, e.getMessage(), e);
-                    Thread.currentThread().interrupt();
+                    
+        
                 } catch (Exception e) {
                     Logger.error(DotConcurrentFactory.class, e.getMessage(), e);
                 }

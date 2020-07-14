@@ -4,8 +4,9 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
 import com.dotcms.cache.KeyValueCacheImpl;
-import com.dotcms.cache.VanityUrlCache;
-import com.dotcms.cache.VanityUrlCacheImpl;
+
+import com.dotcms.vanityurl.cache.VanityUrlCache;
+import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
@@ -24,9 +25,11 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
-import com.dotcms.repackage.com.google.common.base.Optional;
+
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
+
+
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.jgroups.NullTransport;
 import com.dotmarketing.business.portal.PortletCache;
