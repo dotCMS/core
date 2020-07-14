@@ -31,6 +31,10 @@
             color: $warn;
         }
 
+        &.success {
+            color: $success;
+        }
+
         /deep/ i {
             font-size: 2.5rem;
         }

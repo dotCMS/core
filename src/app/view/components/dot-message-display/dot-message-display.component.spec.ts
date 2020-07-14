@@ -12,6 +12,7 @@ import { DotMessageSeverity } from './model';
 import { DotMessageType } from './model';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 
 @Injectable()
@@ -32,7 +33,7 @@ describe('DotMessageDisplayComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            imports: [ToastModule, DotIconModule, DotIconButtonModule],
+            imports: [ToastModule, DotIconModule, DotIconButtonModule, BrowserAnimationsModule],
             declarations: [DotMessageDisplayComponent],
             providers: [
                 { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceMock },
@@ -48,6 +49,43 @@ describe('DotMessageDisplayComponent', () => {
 
     it('should have p-toast', () => {
         expect(fixture.debugElement.query(By.css('p-toast'))).not.toBeNull();
+    });
+
+    it('should have dot-icon', () => {
+        dotMessageDisplayServiceMock.messages$.next({
+            life: 300,
+            message: 'message',
+            portletIdList: [],
+            severity: DotMessageSeverity.ERROR,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+        fixture.detectChanges()
+        expect(fixture.debugElement.query(By.css('dot-icon'))).not.toBeNull();
+    });
+
+    it('should have set check class on sucess', () => {
+        dotMessageDisplayServiceMock.messages$.next({
+            life: 300,
+            message: 'message',
+            portletIdList: [],
+            severity: DotMessageSeverity.SUCCESS,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+        fixture.detectChanges()
+        const icon = fixture.debugElement.query(By.css('dot-icon'));
+        expect(icon.nativeElement.classList.contains('success')).toBe(true);
+    });
+
+    it('should have span', () => {
+        dotMessageDisplayServiceMock.messages$.next({
+            life: 300,
+            message: 'message',
+            portletIdList: [],
+            severity: DotMessageSeverity.ERROR,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+        fixture.detectChanges()
+        expect(fixture.debugElement.query(By.css('span'))).not.toBeNull();
     });
 
     it('should add a new message', () => {
