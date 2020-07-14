@@ -1,6 +1,6 @@
 #DOTCMS_CORE
 
-Version: 19
+Version: 22
 
 
 This release includes the following code fixes:
@@ -44,3 +44,9 @@ This release includes the following code fixes:
     NOTE: As per Will's request, the fix included in this plugin is intended to be a patch, and will not make it to the official distribution.
 
 19. https://github.com/dotCMS/core/issues/18855 : NPE in ContainerWebAPI.getPersonalizedContentList
+
+20. https://github.com/dotCMS/core/issues/18292 : When try to submit a form get permission error
+
+21. https://github.com/dotCMS/core/issues/18744 : Global URLMaps
+
+22. https://github.com/dotCMS/core/issues/18187 : Aliases not working correctly

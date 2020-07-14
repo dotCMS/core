@@ -49,6 +49,7 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -4418,35 +4419,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotContentletStateException("Contentlet must exist already");
             if (contentlet != null && contentlet.isArchived() && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null)
                 throw new DotContentletStateException("Unable to checkin an archived piece of content, please un-archive first");
-            if (!permissionAPI.doesUserHavePermission(InodeUtils.isSet(contentlet.getIdentifier()) ? contentlet : contentlet.getStructure(),
-                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-                List<Role> rolesPublish = permissionAPI.getRoles(contentlet.getStructure().getPermissionId(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-                List<Role> rolesWrite = permissionAPI.getRoles(contentlet.getStructure().getPermissionId(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1);
-                Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
-                boolean isCMSOwner = false;
-                if (rolesPublish.size() > 0 || rolesWrite.size() > 0) {
-                    for (Role role : rolesPublish) {
-                        if (role.getId().equals(cmsOwner.getId())) {
-                            isCMSOwner = true;
-                            break;
-                        }
-                    }
-                    if (!isCMSOwner) {
-                        for (Role role : rolesWrite) {
-                            if (role.getId().equals(cmsOwner.getId())) {
-                                isCMSOwner = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!isCMSOwner) {
-                        this.throwSecurityException(contentlet, user);
-                    }
-                } else {
 
-                    this.throwSecurityException(contentlet, user);
-                }
-            }
+            checkPermission(contentlet, respectFrontendRoles, user);
 
             if (createNewVersion && cats == null) {
                 throw new IllegalArgumentException(
@@ -5092,6 +5066,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    private void checkPermission(
+            final Contentlet contentlet,
+            final boolean respectFrontendRoles,
+            final User user) throws DotDataException, DotSecurityException {
+
+        DotPreconditions.checkNotNull(contentlet);
+
+        if (InodeUtils.isSet(contentlet.getIdentifier())){
+            if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+                this.throwSecurityException(contentlet, user);
+            }
+        } else if (!permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+            this.throwSecurityException(contentlet, user);
+        }
     }
 
     /**
@@ -7889,7 +7880,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
 
         if (!InodeUtils.isSet(contentlet.getInode())) {
-            return checkin(contentlet, contentletRelationships, cats, permissions, user, false);
+            return checkin(contentlet, contentletRelationships, cats, permissions, user, respectFrontendRoles);
         } else {
             canLock(contentlet, user);
             //get the latest and greatest from db
@@ -7908,7 +7899,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (working.getInode().equals(contentlet.getInode())) {
 
                     return checkin(contentlet, contentletRelationships, cats ,
-                            user, false, false, false);
+                            user, respectFrontendRoles, false, false);
 
                 } else {
                     final String workingInode = working.getInode();
@@ -7916,14 +7907,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     working.setInode(workingInode);
                     working.setModUser(user.getUserId());
                     return checkin(contentlet, contentletRelationships, cats ,
-                            user, false, false, false);
+                            user, respectFrontendRoles, false, false);
                 }
             }
 
             contentlet.setInode(null);
             return checkin(contentlet, contentletRelationships,
                     cats,
-                    permissions, user, false);
+                    permissions, user, respectFrontendRoles);
         }
     }
 

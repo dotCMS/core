@@ -6,6 +6,7 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -26,11 +27,16 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+import static java.util.stream.Collectors.toSet;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 
@@ -49,6 +55,11 @@ public class CMSUrlUtil {
 
 	private static final String [] VANITY_FILTERED_LIST_ARRAY =
 			new String[] {"/html","/api","/dotAdmin","/dwr","/webdav","/dA","/contentAsset","/c/","/DOTSASS","/DOTLESS"};
+
+	public static final Set<String> BACKEND_FILTERED_COLLECTION =
+			Stream.of("/api", "/webdav", "/dA", "/c/", "/contentAsset", "/DOTSASS", "/DOTLESS",
+					"/html", "/dotAdmin", "/custom-elements","/dotcms-webcomponents","/dwr")
+					.collect(Collectors.collectingAndThen(toSet(), Collections::unmodifiableSet));
 
 	/**
 	 * Get the CmsUrlUtil singleton instance
@@ -194,7 +205,7 @@ public class CMSUrlUtil {
 					APILocator.getUserAPI().getSystemUser());
 
 			return APILocator.getURLMapAPI().isUrlPattern(urlMapContext);
-		} catch (final DotDataException e){
+        } catch (final DotDataException | DotSecurityException e){
 			Logger.error(this.getClass(), e.getMessage());
 			return false;
 		}

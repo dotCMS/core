@@ -65,6 +65,15 @@
                 }
             },
             {
+                "hostaliases" : {
+                    "path_match": "host.aliases",
+                    "mapping": {
+                        "analyzer": "whitespace",
+                        "type": "text"
+                    }
+                }
+            },
+            {
                 "longmapping" : {
                     "match_pattern": "regex",
                     "match": "metadata.length|metadata.height|metadata.width",

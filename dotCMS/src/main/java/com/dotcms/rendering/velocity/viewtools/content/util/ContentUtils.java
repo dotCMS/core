@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
 import com.dotmarketing.beans.Identifier;
@@ -18,11 +19,14 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -166,6 +170,18 @@ public class ContentUtils {
 		
 		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate){
 			return pull(query, offset, limit, sort, user, tmDate, PageMode.get().respectAnonPerms);
+		}
+
+		public static PaginatedArrayList<Contentlet> pull(final String query, final int offset, final int limit,
+														  final String sort, final User user, final boolean respectFrontendRoles) {
+			final String tmDate = getTimeMachine().orElse(null);
+			return pull(query, offset, limit, sort, user, tmDate, respectFrontendRoles);
+		}
+
+		private static Optional<String> getTimeMachine() {
+			final HttpSession session = HttpServletRequestThreadLocal.INSTANCE.getRequest().getSession();
+			final Object timeMachineObject = session != null ? session.getAttribute("tm_date") : null;
+			return Optional.ofNullable(timeMachineObject != null ? timeMachineObject.toString() : null);
 		}
 
 		public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit, final String sort, final User user, final String tmDate, final boolean respectFrontendRoles){
