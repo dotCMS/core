@@ -9,6 +9,8 @@ import java.io.Serializable;
  *
  */
 final class Message implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     final String serverId;
     final MessageType type;
     final String message;
