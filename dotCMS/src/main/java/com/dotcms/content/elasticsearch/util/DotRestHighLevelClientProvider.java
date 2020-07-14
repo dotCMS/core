@@ -122,6 +122,19 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         
         final HttpHost[] esEndpoints = getEndpoints();
         
+        
+        
+        
+        
+        Logger.info(this.getClass(),
+                        "Initializing Elastic RestHighLevelClient using endpoints [");
+        for(HttpHost host : esEndpoints) {
+            Logger.info(this.getClass(), "  - " + host);
+        }
+        Logger.info(this.getClass(),
+                        "]");
+        
+        
         final boolean securedConnection = esEndpoints[0].getSchemeName().equalsIgnoreCase("https");
         if (securedConnection){
             Logger.info(this.getClass(),
@@ -195,11 +208,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
     
     
 
-    
-    
-    
-    
-    
+
     
     private String getESAuthType() {
         return Config.getStringProperty("ES_AUTH_TYPE", BASIC_AUTH_TYPE);
