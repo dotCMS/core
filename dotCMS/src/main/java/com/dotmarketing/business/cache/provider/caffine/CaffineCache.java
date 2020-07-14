@@ -39,12 +39,12 @@ public class CaffineCache extends CacheProvider {
 
     @Override
     public String getName() {
-        return "Caffine Memory Cache";
+        return "Caffeine Memory Cache";
     }
 
     @Override
     public String getKey() {
-        return "LocalCaffineMem";
+        return "LocalCaffeineMem";
     }
 
     @Override
