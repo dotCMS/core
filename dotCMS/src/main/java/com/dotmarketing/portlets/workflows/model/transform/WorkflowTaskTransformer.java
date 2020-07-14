@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.model.transform;
 
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public class WorkflowTaskTransformer implements DBTransformer<WorkflowTask> {
         task.setModDate((Date) map.get("mod_date"));
         task.setDescription((String) map.get("description"));
         task.setCreationDate((Date) map.get("creation_date"));
-        task.setLanguageId((Long) map.get("language_id"));
+        task.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
         task.setTitle((String) map.get("title"));
         task.setCreatedBy((String) map.get("created_by"));
         task.setWebasset((String) map.get("webasset"));
