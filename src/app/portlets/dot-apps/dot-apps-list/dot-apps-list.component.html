@@ -1,17 +1,20 @@
-<div class="dot-apps__container">
-    <div class="dot-apps__header">
-        <input
-            pInputText
-            #searchInput
-            type="text"
-            [placeholder]="('apps.search.placeholder' | dm) || ''"
-        />
+<dot-not-licensed-component *ngIf="!canAccessPortlet; else licensed"></dot-not-licensed-component>
+<ng-template #licensed
+    ><div class="dot-apps__container">
+        <div class="dot-apps__header">
+            <input
+                pInputText
+                #searchInput
+                type="text"
+                [placeholder]="('apps.search.placeholder' | dm) || ''"
+            />
+        </div>
+        <div class="dot-apps__body">
+            <dot-apps-card
+                *ngFor="let app of appsCopy"
+                [app]="app"
+                (actionFired)="goToApp($event)"
+            ></dot-apps-card>
+        </div>
     </div>
-    <div class="dot-apps__body">
-        <dot-apps-card
-            *ngFor="let app of appsCopy"
-            [app]="app"
-            (actionFired)="goToApp($event)"
-        ></dot-apps-card>
-    </div>
-</div>
+</ng-template>

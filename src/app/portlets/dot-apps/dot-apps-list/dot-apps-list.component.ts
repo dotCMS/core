@@ -17,6 +17,7 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
     searchInput: ElementRef;
     apps: DotApps[];
     appsCopy: DotApps[];
+    canAccessPortlet: boolean;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -28,19 +29,13 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.route.data
-            .pipe(pluck('appsServices'), takeUntil(this.destroy$))
-            .subscribe((apps: DotApps[]) => {
-                this.apps = apps;
-                this.appsCopy = _.cloneDeep(apps);
+            .pipe(pluck('canAccessPortlet'), takeUntil(this.destroy$))
+            .subscribe((canAccessPortlet: boolean) => {
+                if (canAccessPortlet) {
+                    this.getApps();
+                }
+                this.canAccessPortlet = canAccessPortlet;
             });
-
-        observableFromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(debounceTime(500), takeUntil(this.destroy$))
-            .subscribe((keyboardEvent: Event) => {
-                this.filterApps(keyboardEvent.target['value']);
-            });
-
-        this.searchInput.nativeElement.focus();
     }
 
     ngOnDestroy(): void {
@@ -56,6 +51,29 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
      */
     goToApp(key: string): void {
         this.dotRouterService.goToAppsConfiguration(key);
+    }
+
+    private getApps(): void {
+        this.dotAppsService
+            .get()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((apps: DotApps[]) => {
+                this.apps = apps;
+                this.appsCopy = _.cloneDeep(apps);
+                setTimeout(() => {
+                    this.attachFilterEvents();
+                }, 0);
+            });
+    }
+
+    private attachFilterEvents(): void {
+        observableFromEvent(this.searchInput.nativeElement, 'keyup')
+            .pipe(debounceTime(500), takeUntil(this.destroy$))
+            .subscribe((keyboardEvent: Event) => {
+                this.filterApps(keyboardEvent.target['value']);
+            });
+
+        this.searchInput.nativeElement.focus();
     }
 
     private filterApps(searchCriteria?: string): void {

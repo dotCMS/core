@@ -9,6 +9,7 @@
     height: calc(100vh - 48px - #{$toolbar-height});
     justify-content: center;
     padding: $basic-padding * 4;
+    width: 100%;
 }
 
 h4 {

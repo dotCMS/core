@@ -7,9 +7,10 @@ import { DotAppsCardModule } from './dot-apps-card/dot-apps-card.module';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
 
 @NgModule({
-    imports: [InputTextModule, CommonModule, DotAppsCardModule, DotPipesModule],
+    imports: [InputTextModule, CommonModule, DotAppsCardModule, DotPipesModule, NotLicensedModule],
     declarations: [DotAppsListComponent],
     exports: [DotAppsListComponent],
     providers: [DotAppsService, DotAppsListResolver]

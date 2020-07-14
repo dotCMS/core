@@ -33,7 +33,7 @@ const routes: Routes = [
         path: '',
         component: DotAppsListComponent,
         resolve: {
-            appsServices: DotAppsListResolver
+            canAccessPortlet: DotAppsListResolver
         }
     }
 ];
