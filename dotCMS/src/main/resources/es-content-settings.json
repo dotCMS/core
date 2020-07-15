@@ -24,6 +24,9 @@
 			}
 		}
 
-	}
-}
+	},
 
+    "index.mapping.total_fields.limit" : "10000",
+
+    "index.mapping.nested_fields.limit" : "10000"
+}
