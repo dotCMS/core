@@ -53,7 +53,7 @@
                     <textarea
                         #inputTextarea
                         pInputTextarea
-                        oninput='this.style.height = "";this.style.height = this.scrollHeight + "px"'
+                        autoResize="autoResize"
                         [id]="field.name"
                         [formControlName]="field.name"
                     ></textarea>

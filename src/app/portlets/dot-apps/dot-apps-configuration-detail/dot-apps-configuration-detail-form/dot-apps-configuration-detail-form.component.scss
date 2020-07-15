@@ -11,10 +11,8 @@
         font-family: $code-text;
         font-size: $font-size-medium;
         height: 36px;
-        min-height: 36px;
-        max-height: 400px;
-        min-width: 200px;
-        max-width: 900px;
+        max-height: 300px;
+        overflow: auto!important;
     }
 }
 

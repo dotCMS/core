@@ -139,6 +139,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(row.query(By.css('textarea')).nativeElement.attributes.id.value).toBe(
                 secrets[0].name
             );
+            expect(row.query(By.css('textarea')).nativeElement.attributes.autoResize.value).toBe(
+                'autoResize'
+            );
             expect(row.query(By.css('textarea')).nativeElement.value).toBe(secrets[0].value);
             expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
                 secrets[0].hint
