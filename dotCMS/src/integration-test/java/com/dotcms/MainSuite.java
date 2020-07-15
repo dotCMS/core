@@ -26,6 +26,7 @@ import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
+import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
@@ -292,6 +293,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05350AddDotSaltClusterColumnTest.class,
         DotParseTest.class,
         TestWorkflowAction.class,
+        HostAPITest.class,
         ESMappingUtilHelperTest.class
 })
 public class MainSuite {
