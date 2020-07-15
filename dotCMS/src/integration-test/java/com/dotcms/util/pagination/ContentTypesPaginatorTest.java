@@ -149,13 +149,18 @@ public class ContentTypesPaginatorTest {
 
             final ContentTypesPaginator paginator = new ContentTypesPaginator();
 
-            paginator.getItems(user, "", -1, 0);
-        }finally {
-            if (live != null) {
-                APILocator.getContentletIndexAPI().activateIndex(live);
+            final PaginatedArrayList<Map<String, Object>> items = paginator.getItems(user, "", -1, 0);
+
+            for (final Map<String, Object> item : items) {
+                assertEquals("N/A", item.get("nEntries"));
             }
 
-            APILocator.getContentletIndexAPI().activateIndex(working);
+        }finally {
+            if (live != null) {
+                APILocator.getContentletIndexAPI().activateIndex(live.substring(live.indexOf(".") + 1));
+            }
+
+            APILocator.getContentletIndexAPI().activateIndex(working.substring(working.indexOf(".") + 1));
         }
     }
 
