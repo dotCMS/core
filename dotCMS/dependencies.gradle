@@ -47,6 +47,7 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-1.2-api', version: '2.8.2'
     compile group: 'org.apache.logging.log4j', name: 'log4j-jcl', version: '2.8.2'
     compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.8.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.8.2'
 
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version:'ukv_3'
     compile group: 'fop', name: 'fop', version:'0.20.3'
