@@ -2,10 +2,11 @@ package com.dotcms.system.event.local;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.model.EventCompletionHandler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.DateUtil;
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
@@ -224,7 +225,6 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         final AtomicBoolean isOnCompleteCalled = new AtomicBoolean(false);
         final String message = "Async notify Event.";
         localSystemEventsAPI.asyncNotify(new TestEventType1(message), event -> {
-            System.out.println("event:" +  event );
             Assert.assertTrue(event instanceof TestEventType1);
             final TestEventType1 eventType1 = (TestEventType1)event;
             Assert.assertEquals(eventType1.getMsg(), message);
@@ -251,7 +251,6 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         final AtomicInteger callsCount = new AtomicInteger(0);
 
         localSystemEventsAPI.asyncNotify(new TestEventType2(message), event -> {
-            System.out.println("event:" +  event );
             Assert.assertTrue(event instanceof TestEventType2);
             final TestEventType2 eventType2 = (TestEventType2)event;
             Assert.assertEquals(eventType2.getMsg(), message);
@@ -261,5 +260,58 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         Assert.assertEquals(callsCount.get(), 1);
     }
 
+    /**
+     * Given scenario: We're testing that an event that implements KeyFilterable and is broadcast only reaches certain audience.
+     * We creating a few subscribers each one of the provides a key. The Event must reach only those which have the same id.
+     * Expected results: Only the subscribers with a matching id will be able to consume the event;
+     */
+    @Test
+    public void Test_Send_Event_For_Limited_Audience() {
 
-} // E:O:F:LocalSystemEventsAPITest.
+        final Map<String, AtomicInteger> callsCounts = ImmutableMap
+                .of("subscriber1", new AtomicInteger(0), "subscriber2", new AtomicInteger(0),
+                        "subscriber3", new AtomicInteger(0));
+
+        final KeyFilterableTestSubscriberTest subscriber1 = new KeyFilterableTestSubscriberTest("subscriber1"){
+            @Override
+            public void notify(final KeyFilterableEvent event) {
+                Assert.assertEquals(event.getKey(),"subscriber1");
+                callsCounts.get(event.getKey().toString()).incrementAndGet();
+            }
+        };
+        final KeyFilterableTestSubscriberTest subscriber2 = new KeyFilterableTestSubscriberTest("subscriber2"){
+            @Override
+            public void notify(final KeyFilterableEvent event) {
+                Assert.assertEquals(event.getKey(),"subscriber2");
+                callsCounts.get(event.getKey().toString()).incrementAndGet();
+            }
+        };
+        final KeyFilterableTestSubscriberTest subscriber3 = new KeyFilterableTestSubscriberTest("subscriber3"){
+            @Override
+            public void notify(final KeyFilterableEvent event) {
+                Assert.assertEquals(event.getKey(),"subscriber3");
+                callsCounts.get(event.getKey().toString()).incrementAndGet();
+            }
+        };
+
+        final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+
+        localSystemEventsAPI.subscribe(KeyFilterableEvent.class, subscriber1);
+        localSystemEventsAPI.subscribe(KeyFilterableEvent.class, subscriber2);
+        localSystemEventsAPI.subscribe(KeyFilterableEvent.class, subscriber3);
+
+        localSystemEventsAPI.notify(new KeyFilterableEvent("subscriber1"));
+        localSystemEventsAPI.notify(new KeyFilterableEvent("subscriber3"));
+
+        Assert.assertEquals(callsCounts.get("subscriber1").get(),1);
+        Assert.assertEquals(callsCounts.get("subscriber2").get(),0);
+        Assert.assertEquals(callsCounts.get("subscriber3").get(),1);
+
+        localSystemEventsAPI.asyncNotify(new KeyFilterableEvent("subscriber3"));
+
+        DateUtil.sleep(2000);
+        Assert.assertEquals(callsCounts.get("subscriber3").get(),2);
+    }
+
+
+    } // E:O:F:LocalSystemEventsAPITest.
