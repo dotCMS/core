@@ -1,15 +1,19 @@
 package com.dotcms.util.pagination;
 
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -17,6 +21,7 @@ import com.liferay.portal.model.User;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Map;
 
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -121,6 +126,38 @@ public class ContentTypesPaginatorTest {
         }
     }
 
+    /**
+     * Method to Test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * When: When the current indices are desactive or deleted
+     * Should: Should return NA in the entries property
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void whenTheIndicesAreDeactivateShouldReturnNAInEntries() throws DotDataException, IOException {
+        final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+
+        final String live = indiciesInfo.getLive();
+        final String working = indiciesInfo.getWorking();
+        try {
+            if (live != null) {
+                APILocator.getContentletIndexAPI().deactivateIndex(live.substring(live.indexOf(".") + 1));
+            }
+
+            APILocator.getContentletIndexAPI().deactivateIndex(working.substring(working.indexOf(".") + 1));
+
+            final ContentTypesPaginator paginator = new ContentTypesPaginator();
+
+            paginator.getItems(user, "", -1, 0);
+        }finally {
+            if (live != null) {
+                APILocator.getContentletIndexAPI().activateIndex(live);
+            }
+
+            APILocator.getContentletIndexAPI().activateIndex(working);
+        }
+    }
 
     private ContentType createContentType() throws DotSecurityException, DotDataException {
         final long i = System.currentTimeMillis();
