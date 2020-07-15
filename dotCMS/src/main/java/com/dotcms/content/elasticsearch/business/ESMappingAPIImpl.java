@@ -69,6 +69,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +83,8 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsResponse;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.client.indices.PutMappingRequest;
@@ -154,6 +157,17 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		return getMappingResponse.mappings().get(index).source().string();
 	}
+
+	public Map<String, Object> getFieldMappingAsMap(final String index, final String fieldName) throws IOException {
+	    final GetFieldMappingsRequest request = new GetFieldMappingsRequest();
+	    request.indices(index).fields(fieldName);
+        final GetFieldMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
+                .indices().getFieldMapping(request, RequestOptions.DEFAULT);
+
+        return getMappingResponse.mappings().get(index).get(fieldName) != null ? getMappingResponse
+                .mappings().get(index).get(fieldName).sourceAsMap() : Collections
+                .emptyMap();
+    }
 
 	@SuppressWarnings("unchecked")
 	public String toJson(final Contentlet contentlet) throws DotMappingException {
