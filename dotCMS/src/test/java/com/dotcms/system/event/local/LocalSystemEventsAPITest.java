@@ -214,7 +214,10 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         Assert.assertTrue(isCalled.get());
     } // orphanSubscriberTest.
 
-
+    /**
+     * Given scenario: We're testing that even when no subscribers are added the asyncNotify callback gets called
+     * Expected results: We expect that the callback gets called.
+     */
     @Test
     public void Test_Non_Blocking_Notification_On_Event_Consumed_With_No_Subscribers() {
         final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
@@ -230,6 +233,11 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         DateUtil.sleep(2000);
         Assert.assertTrue(isOnCompleteCalled.get());
     }
+
+    /**
+     * Given scenario: We're testing that even when subscribers are added  the asyncNotify callback gets called just once.
+     * Expected results: We expect that the callback gets called exactly once.
+     */
     @Test
     public void Test_Non_Blocking_Notification_On_Event_Consumed_With_Subscribers() {
         final String message = "Async notify Event 2.";

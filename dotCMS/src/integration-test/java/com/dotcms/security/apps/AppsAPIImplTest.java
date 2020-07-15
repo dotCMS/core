@@ -791,6 +791,12 @@ public class AppsAPIImplTest {
         nonValidLicenseAppsAPI.getSecrets("anyKey", true, systemHost, admin);
     }
 
+    /**
+     * Given scenario: We subscribe an event listener and save an event
+     * Expected Results: We expect that an event is fired and that after firing the event the AppsSecret that was initially passed to the save method is now destroyed
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Save_Secret_Expect_Event_Notification() throws DotDataException, DotSecurityException{
         final AtomicInteger callsCount = new AtomicInteger(0);
@@ -836,6 +842,11 @@ public class AppsAPIImplTest {
         }
     }
 
+    /**
+     * for internal use validate a secret has been destroyed
+     * @param chars
+     * @return
+     */
     private boolean isSecretDestroyed(final char [] chars){
         final char nullChar = (char) 0;
         for(final char chr: chars){
