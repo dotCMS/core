@@ -313,7 +313,7 @@ public class PublisherQueueJob implements StatefulJob {
 		final boolean isBundleNameGenerated = bundle.getName().startsWith("bundle-");
 		String notificationMessage = "";
 		String notificationMessageArgument = "";
-		long notificationLife = 7000;
+		long notificationLife = 5000;
 		MessageSeverity notificationSeverity = MessageSeverity.SUCCESS;
 
 		if ( localHistory.getNumTries() >= MAX_NUM_TRIES && (groupPushStats.getCountGroupFailed() > 0
