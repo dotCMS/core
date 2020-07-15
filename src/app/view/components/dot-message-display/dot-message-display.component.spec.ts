@@ -13,7 +13,7 @@ import { DotMessageType } from './model';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-
+import { DotIconComponent } from '@components/_common/dot-icon/dot-icon.component';
 
 @Injectable()
 export class DotMessageDisplayServiceMock {
@@ -31,15 +31,17 @@ describe('DotMessageDisplayComponent', () => {
     const dotMessageDisplayServiceMock: DotMessageDisplayServiceMock = new DotMessageDisplayServiceMock();
     let fixture: ComponentFixture<DotMessageDisplayComponent>;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            imports: [ToastModule, DotIconModule, DotIconButtonModule, BrowserAnimationsModule],
-            declarations: [DotMessageDisplayComponent],
-            providers: [
-                { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceMock },
-            ]
-        }).compileComponents();
-    }));
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                imports: [ToastModule, DotIconModule, DotIconButtonModule, BrowserAnimationsModule],
+                declarations: [DotMessageDisplayComponent],
+                providers: [
+                    { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceMock }
+                ]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotMessageDisplayComponent);
@@ -59,11 +61,11 @@ describe('DotMessageDisplayComponent', () => {
             severity: DotMessageSeverity.ERROR,
             type: DotMessageType.SIMPLE_MESSAGE
         });
-        fixture.detectChanges()
+        fixture.detectChanges();
         expect(fixture.debugElement.query(By.css('dot-icon'))).not.toBeNull();
     });
 
-    it('should have set check class on sucess', () => {
+    it('should have set check name on sucess', () => {
         dotMessageDisplayServiceMock.messages$.next({
             life: 300,
             message: 'message',
@@ -71,9 +73,10 @@ describe('DotMessageDisplayComponent', () => {
             severity: DotMessageSeverity.SUCCESS,
             type: DotMessageType.SIMPLE_MESSAGE
         });
-        fixture.detectChanges()
-        const icon = fixture.debugElement.query(By.css('dot-icon'));
-        expect(icon.nativeElement.classList.contains('success')).toBe(true);
+        fixture.detectChanges();
+        const icon: DotIconComponent = fixture.debugElement.query(By.css('dot-icon'))
+            .componentInstance;
+        expect(icon.name).toEqual('check');
     });
 
     it('should have span', () => {
@@ -84,7 +87,7 @@ describe('DotMessageDisplayComponent', () => {
             severity: DotMessageSeverity.ERROR,
             type: DotMessageType.SIMPLE_MESSAGE
         });
-        fixture.detectChanges()
+        fixture.detectChanges();
         expect(fixture.debugElement.query(By.css('span'))).not.toBeNull();
     });
 
