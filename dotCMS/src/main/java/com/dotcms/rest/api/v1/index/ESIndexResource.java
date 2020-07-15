@@ -118,11 +118,20 @@ public class ESIndexResource {
                                   final HttpServletRequest request,
                                   final HttpServletResponse response) {
 
+        return auth(request, response, null);
+    }
+
+    protected InitDataObject auth(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String params) {
+
         return new WebResource
-                        .InitBuilder(request, response)
-                        .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-                        .requiredPortlet("maintenance")
-                        .init();
+                .InitBuilder(request, response)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requiredPortlet("maintenance")
+                .params(params)
+                .init();
     }
     
     
@@ -462,7 +471,7 @@ public class ESIndexResource {
     @Produces("text/plain")
     public Response getActive(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(httpServletRequest,httpServletResponse);
+            InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
 
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
