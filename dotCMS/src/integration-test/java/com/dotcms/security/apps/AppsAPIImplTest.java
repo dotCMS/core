@@ -803,7 +803,6 @@ public class AppsAPIImplTest {
         final AppsAPI api = APILocator.getAppsAPI();
         final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
         localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, event -> {
-            System.out.println(event);
             Assert.assertTrue(event instanceof AppSecretSavedEvent);
             callsCount.incrementAndGet();
         });
