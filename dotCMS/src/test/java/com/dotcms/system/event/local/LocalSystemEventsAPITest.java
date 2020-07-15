@@ -2,13 +2,15 @@ package com.dotcms.system.event.local;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.EventCompletionHandler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.DateUtil;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * LocalSystemEventsAPITest
@@ -212,6 +214,44 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         Assert.assertTrue(isCalled.get());
     } // orphanSubscriberTest.
 
+
+    @Test
+    public void Test_Non_Blocking_Notification_On_Event_Consumed_With_No_Subscribers() {
+        final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+        final AtomicBoolean isOnCompleteCalled = new AtomicBoolean(false);
+        final String message = "Async notify Event.";
+        localSystemEventsAPI.asyncNotify(new TestEventType1(message), event -> {
+            System.out.println("event:" +  event );
+            Assert.assertTrue(event instanceof TestEventType1);
+            final TestEventType1 eventType1 = (TestEventType1)event;
+            Assert.assertEquals(eventType1.getMsg(), message);
+            isOnCompleteCalled.set(true);
+        });
+        DateUtil.sleep(2000);
+        Assert.assertTrue(isOnCompleteCalled.get());
+    }
+    @Test
+    public void Test_Non_Blocking_Notification_On_Event_Consumed_With_Subscribers() {
+        final String message = "Async notify Event 2.";
+        final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+        localSystemEventsAPI.subscribe(new TestDelegateSubscriber(){
+            @Override
+            public void notify(final TestEventType2 event) {
+                Assert.assertEquals(event.getMsg(), message);
+            }
+        });
+        final AtomicInteger callsCount = new AtomicInteger(0);
+
+        localSystemEventsAPI.asyncNotify(new TestEventType2(message), event -> {
+            System.out.println("event:" +  event );
+            Assert.assertTrue(event instanceof TestEventType2);
+            final TestEventType2 eventType2 = (TestEventType2)event;
+            Assert.assertEquals(eventType2.getMsg(), message);
+            callsCount.incrementAndGet();
+        });
+        DateUtil.sleep(2000);
+        Assert.assertEquals(callsCount.get(), 1);
+    }
 
 
 } // E:O:F:LocalSystemEventsAPITest.

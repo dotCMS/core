@@ -1,6 +1,7 @@
 package com.dotcms.system.event.local.business;
 
 import com.dotcms.system.event.local.model.DefaultOrphanEventSubscriber;
+import com.dotcms.system.event.local.model.EventCompletionHandler;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.type.OrphanEvent;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -8,11 +9,13 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 
+import io.vavr.control.Try;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  * Default implementation.
@@ -185,33 +188,56 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
 
 
     @Override
-    public void asyncNotify(final Object event) {
+    public void asyncNotify(final Object event, final EventCompletionHandler completionHandler) {
 
         final DotSubmitter dotSubmitter = this.dotConcurrentFactory.getSubmitter(LOCAL_SYSTEM_EVENTS_THREAD_POOL_SUBMITTER_NAME);
-        dotSubmitter.submit(()-> this.notify(event));
+        if(null != completionHandler){
+            dotSubmitter.submit(()-> this.notify(event, completionHandler));
+        } else {
+           dotSubmitter.submit(()-> this.notify(event));
+        }
     } // asyncNotify.
 
+    @Override
+    public void asyncNotify(final Object event) {
+        asyncNotify(event, null);
+    }
+
+    /**
+     * Private implementation that allows firing an event completion handler
+     */
+    private void notify(final Object event, final EventCompletionHandler completionHandler) {
+        try {
+            final CopyOnWriteArrayList<EventSubscriber> eventSubscribers =
+                    this.getEventSubscribersByEventType(event.getClass());
+
+            if (null != eventSubscribers) {
+
+                for (EventSubscriber eventSubscriber : eventSubscribers) {
+
+                    if (null != eventSubscriber) {
+
+                        eventSubscriber.notify(event);
+                    }
+                }
+            } else {
+                this.orphanEventSubscriber.notify(new OrphanEvent(event));
+            }
+        } finally {
+            if (null != completionHandler) {
+                Try.of(() -> {
+                    completionHandler.onComplete(event);
+                    return true;
+                }).get();
+            }
+        }
+
+    } // asyncNotify.
 
     @Override
     public void notify(final Object event) {
-
-        final CopyOnWriteArrayList<EventSubscriber> eventSubscribers =
-                this.getEventSubscribersByEventType(event.getClass());
-
-        if (null != eventSubscribers) {
-
-            for (EventSubscriber eventSubscriber : eventSubscribers) {
-
-                if (null != eventSubscriber) {
-
-                    eventSubscriber.notify(event);
-                }
-            }
-        } else {
-
-            this.orphanEventSubscriber.notify(new OrphanEvent(event));
-        }
-    } // asyncNotify.
+       notify(event, null);
+    }
 
     protected CopyOnWriteArrayList<EventSubscriber> getEventSubscribersByEventType (final Class<?> eventType) {
 
