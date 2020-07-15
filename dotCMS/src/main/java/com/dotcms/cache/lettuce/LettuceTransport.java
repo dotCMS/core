@@ -13,7 +13,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -112,34 +111,29 @@ public class LettuceTransport implements CacheTransport {
 
     }
     
-    
+
+
     @Override
-    public void init(Server localServer) throws CacheTransportException {
-        if (!LicenseManager.getInstance().isEnterprise()) {
-            //return;
-        }
-        init();
-    }
-
-
-    void init() throws CacheTransportException {
+    public void init() throws CacheTransportException {
         Logger.info(this, "LettuceTransport " + serverId + " joining cache " + streamsKey());
 
-        registerStream();
+        if(!LicenseManager.getInstance().isEnterprise() || isInitialized() || !registerStream()) {
+            return;
+        }
+        
         isInitialized.set(true);
         listenThread();
-
     }
 
     /**
      * makes sure the group is set up and registers this server as a consumer of that group
      */
-    void registerStream() {
+    boolean registerStream() {
         try (LettuceConnectionWrapper conn = lettuce.get()) {
             
             if(!conn.connected()) {
                 Logger.info(this, "LettuceTransport unable connect to redis");
-                return;
+                return false;
             }
             
             
@@ -151,7 +145,7 @@ public class LettuceTransport implements CacheTransport {
         }
 
         send(MessageType.INFO, "Server Online:" + serverId + " time:" + new Date());
-
+        return true;
     }
 
 
@@ -373,10 +367,13 @@ public class LettuceTransport implements CacheTransport {
      */
     @Override
     public void testCluster() throws CacheTransportException {
-
-        Logger.info(this, "Sending Ping from " + serverId + " to Cluster" + new Date());
-        this.send(MessageType.PING, serverId);
-
+        if(isInitialized()) {
+            Logger.info(this, "Sending Ping from " + serverId + " to Cluster" + ClusterFactory.getClusterId());
+            this.send(MessageType.PING, serverId);
+        }else {
+            Logger.info(this, "Unable to send Ping, Transport not initialized:" + serverId + " Cluster:" + ClusterFactory.getClusterId());
+        }
+        
     }
 
     /**
@@ -385,7 +382,12 @@ public class LettuceTransport implements CacheTransport {
     @Override
     public Map<String, Boolean> validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds)
                     throws CacheTransportException {
-
+        final Map<String, Boolean> mapToReturn = new HashMap<String, Boolean>();
+        mapToReturn.put(this.serverId, true);
+        if(numberServers==0) {
+            return mapToReturn;
+            
+        }
         try (LettuceConnectionWrapper conn = lettuce.get()) {
             conn.sync().spop(CACHE_ATTACHED_TO_CACHE, 1000000L);
             conn.sync().sadd(CACHE_ATTACHED_TO_CACHE, serverId);
@@ -421,7 +423,7 @@ public class LettuceTransport implements CacheTransport {
         }
 
 
-        Map<String, Boolean> mapToReturn = new HashMap<String, Boolean>();
+
         cacheMembers.forEach(s -> mapToReturn.put(s, true));
 
         try (LettuceConnectionWrapper conn = lettuce.get()) {

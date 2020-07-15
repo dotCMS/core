@@ -1,5 +1,17 @@
 package com.dotmarketing.business.jgroups;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.collections.map.LRUMap;
+import org.jgroups.Address;
+import org.jgroups.Event;
+import org.jgroups.JChannel;
+import org.jgroups.Message;
+import org.jgroups.PhysicalAddress;
+import org.jgroups.ReceiverAdapter;
+import org.jgroups.View;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -14,18 +26,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.collections.map.LRUMap;
-import org.jgroups.Address;
-import org.jgroups.Event;
-import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.jgroups.PhysicalAddress;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
 
 /**
  * @author Jonathan Gamba
@@ -39,7 +39,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
     private JChannel channel;
 
     @Override
-    public void init ( Server localServer ) throws CacheTransportException {
+    public void init () throws CacheTransportException {
 
         Logger.info(this, "***\t Setting up JChannel");
 
@@ -75,7 +75,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
 
             
             //Update the cluster_server table with the current server info
-            localServer = Server.builder(localServer).withCachePort(Integer.parseInt(usedPort)).build();
+            Server localServer = Server.builder(serverAPI.getCurrentServer()).withCachePort(Integer.parseInt(usedPort)).build();
             serverAPI.updateServer(localServer);
 
             Logger.info(this, "***\t " + channel.toString(true));

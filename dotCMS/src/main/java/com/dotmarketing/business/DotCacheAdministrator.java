@@ -5,7 +5,9 @@ package com.dotmarketing.business;
 
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
-
+import com.dotmarketing.business.cache.transport.CacheTransportException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.Set;
 
@@ -18,11 +20,6 @@ import java.util.Set;
 public interface DotCacheAdministrator  {
 
 	public static final String ROOT_GOUP = "root";
-
-	/**
-	 * Initializes the CacheProviders
-	 */
-	void initProviders ();
 
 	/**
 	 * Returns all groups in the cache
@@ -122,4 +119,32 @@ public interface DotCacheAdministrator  {
 	}
 
 
+    default void testCluster() {
+        try {
+            getTransport().testCluster();
+        } catch (Exception e) {
+            Logger.warn(DotCacheAdministrator.class, "Unable to test cluster");
+            Logger.error(DotCacheAdministrator.class, e.getMessage(), e);
+        }
+    }
+
+    default void initProviders() {
+        try {
+            // Initializing all the Cache providers
+            APILocator.getCacheProviderAPI().init();
+        } catch (Exception e) {
+            throw new DotRuntimeException("Error initializing Cache providers:" + e.getMessage(), e);
+        }
+    }
+
+
+    default void initTransports() {
+
+        if (getTransport() != null && (getTransport().shouldReinit() || !getTransport().isInitialized())) {
+            getTransport().init();
+        } else {
+            throw new CacheTransportException("No Cache transport implementation is defined");
+        }
+
+    }
 }

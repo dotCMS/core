@@ -1,6 +1,11 @@
 package com.dotcms.cache.transport;
 
-import com.dotcms.cluster.bean.Server;
+import java.net.InetSocketAddress;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -17,12 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.liferay.portal.struts.MultiMessageResources;
-import java.net.InetSocketAddress;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by jasontesser on 3/28/17.
@@ -44,7 +43,7 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
     
     @Override
-    public void init(Server localServer) throws CacheTransportException {
+    public void init() throws CacheTransportException {
     	if(!LicenseManager.getInstance().isEnterprise()){
     		return;
     	}

@@ -38,26 +38,6 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 
 
-    public void initProviders() {
-        try {
-            // Initializing all the Cache providers
-            cacheProviderAPI = APILocator.getCacheProviderAPI();
-            cacheProviderAPI.init();
-        } catch (Exception e) {
-            throw new DotRuntimeException("Error initializing Cache providers:" + e.getMessage(), e);
-        }
-    }
-
-
-    public void initTransports(Server localServer) {
-
-        if (getTransport() != null && (getTransport().shouldReinit() || !getTransport().isInitialized())) {
-            getTransport().init(localServer);
-        } else {
-            throw new CacheTransportException("No Cache transport implementation is defined");
-        }
-
-    }
 
     /*
      * (non-Javadoc)
@@ -242,13 +222,6 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
     }
 
-    public void testCluster() {
-        try {
-            getTransport().testCluster();
-        } catch (Exception e) {
-            Logger.error(ChainableCacheAdministratorImpl.class, e.getMessage(), e);
-        }
-    }
 
     public void invalidateCacheMesageFromCluster(String message) {
         if (message == null) {

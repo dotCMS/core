@@ -1,9 +1,6 @@
 package com.dotmarketing.business.cache.transport;
 
-import com.dotcms.cluster.bean.Server;
-
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Jonathan Gamba
@@ -11,7 +8,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public interface CacheTransport {
 
-    void init ( Server localServer ) throws CacheTransportException;
 
     /**
      * Sends a message to the transport channel
@@ -68,4 +64,10 @@ public interface CacheTransport {
     	long getSentBytes();
     	long getSentMessages();
     }
+
+    /**
+     * Inits the cache transport
+     * @throws CacheTransportException
+     */
+    void init() throws CacheTransportException;
 }
