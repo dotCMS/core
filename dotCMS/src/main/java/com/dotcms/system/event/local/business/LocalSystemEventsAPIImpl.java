@@ -1,15 +1,14 @@
 package com.dotcms.system.event.local.business;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.system.event.local.model.DefaultOrphanEventSubscriber;
 import com.dotcms.system.event.local.model.EventCompletionHandler;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.model.KeyFilterable;
 import com.dotcms.system.event.local.type.OrphanEvent;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.DotSubmitter;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
-
 import io.vavr.control.Try;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
