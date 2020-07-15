@@ -89,9 +89,9 @@ export class PushPublishService {
         let result = '';
         result += `assetIdentifier=${assetIdentifier}`;
         result += `&remotePublishDate=${moment(publishdate).format('YYYY-MM-DD')}`;
-        result += `&remotePublishTime=${moment(publishdate).format('h-mm')}`;
+        result += `&remotePublishTime=${moment(publishdate).format('HH-mm')}`;
         result += `&remotePublishExpireDate=${moment(expiredate).format('YYYY-MM-DD')}`;
-        result += `&remotePublishExpireTime=${moment(expiredate).format('h-mm')}`;
+        result += `&remotePublishExpireTime=${moment(expiredate).format('HH-mm')}`;
         result += `&iWantTo=${pushActionSelected}`;
         result += `&whoToSend=${environment}`;
         result += '&bundleName=';

@@ -8,7 +8,7 @@
 
 <dot-secondary-toolbar>
     <div class="main-toolbar-left">
-        <dot-edit-page-info [pageState]="pageState"></dot-edit-page-info>
+        <dot-edit-page-info *ngIf="newPageState" [pageState]="newPageState"></dot-edit-page-info>
     </div>
 
     <div class="main-toolbar-right">
