@@ -258,9 +258,9 @@ defaultTasks 'help', 'tasks'
 //respectively
 ['Enterprise', 'License', 'Dotcms', 'Starter', 'AntTooling'].each { taskName ->
     task "upload$taskName"() {
-        doLast {
-            updateSubmoduleReference()
-        }
+        //doLast {
+          //  updateSubmoduleReference()
+        //}
     }
 }
 
