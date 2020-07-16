@@ -29,9 +29,9 @@ import java.util.Set;
 public class DotSamlProxyFactory {
 
     public static final String SAML_APP_CONFIG_KEY = "dotsaml-config";
-    public static final String PROPERTIES_PATH = File.separator + "saml" + File.separator + "dotcms-saml-default.properties";
+    public static final String PROPERTIES_PATH     = File.separator + "saml" + File.separator + "dotcms-saml-default.properties";
 
-    private static final String ASSETS_PATH = Config.getStringProperty("ASSET_REAL_PATH",
+    private static final String ASSETS_PATH   = Config.getStringProperty("ASSET_REAL_PATH",
             FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH", "/assets")));
     private static final String IDP_FILE_PATH = ASSETS_PATH + PROPERTIES_PATH;
 
