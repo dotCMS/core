@@ -14,10 +14,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -43,7 +40,6 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -57,7 +53,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
@@ -65,12 +60,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
-import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -88,7 +80,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -1166,119 +1157,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * This test creates an index with two custom mapped fields: a text field and a relationship field.
-     * Additionally, it creates a legacy relationship without a custom mapping in order to verify that
-     * relationships in general are mapped as keywords by default, unless a custom mapping is defined for a specific case
-     * @throws Exception
-     */
-    @Test
-    public void testCreateContentIndexWithCustomMappings() throws Exception {
-
-        String workingIndex = null;
-        ContentType parentContentType = null;
-        ContentType childContentType = null;
-        try {
-            parentContentType = new ContentTypeDataGen().nextPersisted();
-            childContentType = new ContentTypeDataGen().nextPersisted();
-
-            //Adding fields
-            Field ageField = FieldBuilder.builder(TextField.class)
-                    .name("age").contentTypeId(parentContentType.id()).indexed(false).build();
-            ageField = fieldAPI.save(ageField, user);
-
-            Field relationshipField = FieldBuilder.builder(RelationshipField.class)
-                    .name("relationshipField")
-                    .contentTypeId(parentContentType.id())
-                    .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
-                    .relationType(parentContentType.variable()).build();
-
-            relationshipField = fieldAPI.save(relationshipField, user);
-
-            //Create legacy relationship
-            final Relationship legacyRelationship = createLegacyRelationship(parentContentType,
-                    childContentType);
-
-            //Adding field variables
-            final FieldVariable ageVariable = ImmutableFieldVariable.builder()
-                    .fieldId(ageField.inode())
-                    .name("ageMapping").key(FieldVariable.ES_CUSTOM_MAPPING_KEY).value("{\n"
-                            + "                \"type\": \"long\"\n"
-                            + "              }").userId(user.getUserId())
-                    .build();
-
-            fieldAPI.save(ageVariable, user);
-
-            FieldVariable relVariable = ImmutableFieldVariable.builder()
-                    .fieldId(relationshipField.inode())
-                    .name("relMapping").key(FieldVariable.ES_CUSTOM_MAPPING_KEY).value("{\n"
-                            + "                \"type\": \"text\"\n"
-                            + "              }").userId(user.getUserId())
-                    .build();
-
-            relVariable = fieldAPI.save(relVariable, user);
-
-            final Field updatedField = fieldAPI.find(relVariable.fieldId());
-
-            //Verify ageField is updated as System Indexed
-            assertTrue(updatedField.indexed());
-
-            //Build the index name
-            String timestamp = String.valueOf(new Date().getTime());
-            workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
-
-            //Create a working index
-            boolean result = indexAPI.createContentIndex(workingIndex);
-            //Validate
-            assertTrue(result);
-
-            //verify mapping
-            final String mapping = esMappingAPI.getMapping(workingIndex);
-
-            //parse json mapping and validate
-            assertNotNull(mapping);
-
-            final JSONObject propertiesJSON = (JSONObject) (new JSONObject(mapping)).get("properties");
-            final JSONObject contentTypeJSON = (JSONObject) ((JSONObject) propertiesJSON
-                    .get(parentContentType.variable().toLowerCase())).get("properties");
-
-            //validate age mapping results
-            final Map ageMapping = ((JSONObject) contentTypeJSON
-                    .get(ageField.variable().toLowerCase())).getAsMap();
-            assertNotNull(ageMapping);
-            assertEquals(1, ageMapping.size());
-            assertEquals("long", ageMapping.get("type"));
-
-            //validate relationship field mapping results
-            final Map relationshipMapping = ((JSONObject) contentTypeJSON
-                    .get(relationshipField.variable().toLowerCase())).getAsMap();
-            assertNotNull(relationshipMapping);
-            assertEquals(1, relationshipMapping.size());
-            assertEquals("text", relationshipMapping.get("type"));
-
-            //validate legacy relationship
-            final Map legacyRelationshipMapping = ((JSONObject) propertiesJSON
-                    .get(legacyRelationship.getRelationTypeValue().toLowerCase())).getAsMap();
-            assertNotNull(ageMapping);
-            assertEquals(2, legacyRelationshipMapping.size());
-            assertEquals("keyword", legacyRelationshipMapping.get("type"));
-            assertEquals(8191, legacyRelationshipMapping.get("ignore_above"));
-
-        } finally {
-            if (workingIndex != null) {
-                indexAPI.delete(workingIndex);
-            }
-
-            if (parentContentType != null && parentContentType.inode() != null) {
-                ContentTypeDataGen.remove(parentContentType);
-            }
-
-            if (childContentType != null && childContentType.inode() != null) {
-                ContentTypeDataGen.remove(childContentType);
-            }
-        }
-    }
-
-    /**
      * Method to test: {@link ContentletIndexAPI#getIndexDocumentCount(String)}
      * Test Case: Tries to get the document count of an active index
      * Expected Results: Value should be more than 0
@@ -1296,30 +1174,5 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     @Test(expected= ElasticsearchStatusException.class)
     public void testGetIndexDocumentCountWithInvalidIndexNameFails(){
         indexAPI.getIndexDocumentCount("invalidIndexName");
-    }
-
-    public static Relationship createLegacyRelationship(final ContentType parentContentType,
-            final ContentType childContentType) {
-        final String relationTypeValue = parentContentType.name() + "-" + childContentType.name();
-
-        Relationship relationship;
-        relationship = relationshipAPI.byTypeValue(relationTypeValue);
-        if (null != relationship) {
-            return relationship;
-        } else {
-            relationship = new Relationship();
-            relationship.setParentRelationName(parentContentType.name());
-            relationship.setChildRelationName(childContentType.name());
-            relationship.setCardinality(0);
-            relationship.setRelationTypeValue(relationTypeValue);
-            relationship.setParentStructureInode(parentContentType.inode());
-            relationship.setChildStructureInode(childContentType.id());
-            try {
-                relationshipAPI.create(relationship);
-            } catch (Exception e) {
-                throw new DotRuntimeException(e);
-            }
-        }
-        return relationship;
     }
 }

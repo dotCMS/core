@@ -1985,6 +1985,6 @@ public class WorkflowHelper {
     public Map<String, Object> contentletToMap(final Contentlet contentlet) {
 
         final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(contentlet).build();
-        return transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
+        return transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap());
     }
 } // E:O:F:WorkflowHelper.
