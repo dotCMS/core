@@ -18,6 +18,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
@@ -802,11 +803,14 @@ public class AppsAPIImplTest {
         final AtomicInteger callsCount = new AtomicInteger(0);
         final AppsAPI api = APILocator.getAppsAPI();
         final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-        localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, event -> {
-            Assert.assertTrue(event instanceof AppSecretSavedEvent);
-            callsCount.incrementAndGet();
+        localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, new AppsSecretEventSubscriber(){
+            @Override
+            public void notify(AppSecretSavedEvent event) {
+                callsCount.incrementAndGet();
+            }
         });
-        final String appKey = "any-app-key";
+
+        final String appKey = AppsSecretEventSubscriber.appKey;
 
         final AppDescriptor descriptor = mock(AppDescriptor.class);
         when(descriptor.isAllowExtraParameters()).thenReturn(false);
