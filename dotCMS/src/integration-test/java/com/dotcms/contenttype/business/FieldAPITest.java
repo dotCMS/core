@@ -37,8 +37,10 @@ import com.dotcms.contenttype.model.field.ImmutableDateField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
+import com.dotcms.contenttype.model.field.ImmutableTagField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -1198,6 +1200,11 @@ public class FieldAPITest extends IntegrationTestBase {
         caseConLanguageIncompatible.fieldType = ImmutableCategoryField.class;
         caseConLanguageIncompatible.testCaseName = "caseConLanguageIncompatible";
 
+        final GraphQLFieldNameCompatibilityTestCase caseConLanguageParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseConLanguageParentIncompatible.fieldName = "conLanguage";
+        caseConLanguageParentIncompatible.fieldType = ImmutableTagField.class;
+        caseConLanguageParentIncompatible.testCaseName = "caseConLanguageParentIncompatible";
+
         final GraphQLFieldNameCompatibilityTestCase caseIdentifierIncompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseIdentifierIncompatible.fieldName = IDENTIFIER;
         caseIdentifierIncompatible.fieldType = ImmutableCategoryField.class;
@@ -1213,10 +1220,20 @@ public class FieldAPITest extends IntegrationTestBase {
         caseHostIncompatible.fieldType = ImmutableCategoryField.class;
         caseHostIncompatible.testCaseName = "caseHostIncompatible";
 
+        final GraphQLFieldNameCompatibilityTestCase caseHostParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseHostParentIncompatible.fieldName = HOST_KEY;
+        caseHostParentIncompatible.fieldType = ImmutableTagField.class;
+        caseHostParentIncompatible.testCaseName = "caseHostParentIncompatible";
+
         final GraphQLFieldNameCompatibilityTestCase caseFolderIncompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseFolderIncompatible.fieldName = FOLDER_KEY;
         caseFolderIncompatible.fieldType = ImmutableCategoryField.class;
         caseFolderIncompatible.testCaseName = "caseFolderIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseFolder_ParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseFolder_ParentIncompatible.fieldName = "conLanguage";
+        caseFolder_ParentIncompatible.fieldType = ImmutableTagField.class;
+        caseFolder_ParentIncompatible.testCaseName = "caseFolder_ParentIncompatible";
 
         final GraphQLFieldNameCompatibilityTestCase caseUrlMapIncompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseUrlMapIncompatible.fieldName = URL_MAP;
@@ -1228,25 +1245,41 @@ public class FieldAPITest extends IntegrationTestBase {
         caseOwnerIncompatible.fieldType = ImmutableCategoryField.class;
         caseOwnerIncompatible.testCaseName = "caseOwnerIncompatible";
 
+        final GraphQLFieldNameCompatibilityTestCase caseOwner_ParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseOwner_ParentIncompatible.fieldName = OWNER_KEY;
+        caseOwner_ParentIncompatible.fieldType = ImmutableTagField.class;
+        caseOwner_ParentIncompatible.testCaseName = "caseOwner_ParentIncompatible";
+
         final GraphQLFieldNameCompatibilityTestCase caseModUserIncompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseModUserIncompatible.fieldName = MOD_USER_KEY;
         caseModUserIncompatible.fieldType = ImmutableCategoryField.class;
         caseModUserIncompatible.testCaseName = "caseModUserIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseModUser_ParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseModUser_ParentIncompatible.fieldName = MOD_USER_KEY;
+        caseModUser_ParentIncompatible.fieldType = ImmutableTagField.class;
+        caseModUser_ParentIncompatible.testCaseName = "caseModUser_ParentIncompatible";
 
         return new GraphQLFieldNameCompatibilityTestCase[] {
                 caseModDateIncompatible,
                 caseTitleIncompatible,
                 caseTitleImageIncompatible,
                 caseContentTypeIncompatible,
+                caseConLanguageIncompatible,
+                caseConLanguageParentIncompatible,
                 caseBaseTypeIncompatible,
                 caseLiveIncompatible,
                 caseIdentifierIncompatible,
                 caseInodeIncompatible,
                 caseHostIncompatible,
+                caseHostParentIncompatible,
                 caseFolderIncompatible,
+                caseFolder_ParentIncompatible,
                 caseUrlMapIncompatible,
                 caseOwnerIncompatible,
-                caseModUserIncompatible
+                caseOwner_ParentIncompatible,
+                caseModUserIncompatible,
+                caseModUser_ParentIncompatible
         };
     }
 
@@ -1332,7 +1365,7 @@ public class FieldAPITest extends IntegrationTestBase {
     /**
      * Method to test: {@link FieldAPIImpl#save(Field, User)}
      * <p>
-     * Given scenario: A {@link ContentType} with an incompatible `variable` with the current GraphQL Schema.
+     * Given scenario: A {@link ContentType} with a compatible `variable` with the current GraphQL Schema.
      * <p>
      * Expected result: Field saved with given variable
      */
