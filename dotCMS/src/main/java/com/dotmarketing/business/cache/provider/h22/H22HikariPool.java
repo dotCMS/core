@@ -18,7 +18,9 @@ public class H22HikariPool {
 	final int dbNumber;
 	final String dbRoot;
 	final String database;
+	final int minPoolSize = Config.getIntProperty("cache.h22.db.poolsize.min", 20);
 	final int maxPoolSize = Config.getIntProperty("cache.h22.db.poolsize.max", 500);
+	final int idleTimeoutMs = Config.getIntProperty("cache.h22.db.poolsize.idle.timeout", 600000);
 	final int connectionTimeout = Config.getIntProperty("cache.h22.db.connection.timeout", 1000);
 	final int setLeakDetectionThreshold = Config.getIntProperty("cache.h22.db.leak.detection.timeout", 0);
 	final HikariDataSource datasource;
@@ -56,12 +58,13 @@ public class H22HikariPool {
 
 		HikariConfig config = new HikariConfig();
 		config.setDataSourceClassName("org.h2.jdbcx.JdbcDataSource");
-		config.setConnectionTestQuery("VALUES 1");
 		config.addDataSourceProperty("URL", getDbUrl());
 		config.addDataSourceProperty("user", "sa");
 		config.addDataSourceProperty("password", "sa");
 		config.setMaximumPoolSize(maxPoolSize);
 		config.setConnectionTimeout(connectionTimeout);
+		config.setIdleTimeout(idleTimeoutMs); 
+		config.setMinimumIdle(minPoolSize);
 		Logger.info(this.getClass(), "H22 on disk cache:" + getDbUrl());
 		if(setLeakDetectionThreshold>0){
 			config.setLeakDetectionThreshold(setLeakDetectionThreshold);
