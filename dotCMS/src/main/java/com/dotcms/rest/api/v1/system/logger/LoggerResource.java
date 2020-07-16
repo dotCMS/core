@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.system.logger;
 
-import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.ReflectionUtils;

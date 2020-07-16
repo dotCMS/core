@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.system.logger;
 
+/**
+ * Logger view to show just what is needed from a logger
+ * @author jsanca
+ */
 public class LoggerView {
 
     private final String name;
