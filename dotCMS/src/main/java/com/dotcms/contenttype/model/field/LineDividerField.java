@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.business.Unexportable;
 import java.util.Collection;
 import java.util.List;
 
@@ -15,6 +16,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 @JsonSerialize(as = ImmutableLineDividerField.class)
 @JsonDeserialize(as = ImmutableLineDividerField.class)
 @Value.Immutable
+@Unexportable
 public abstract class LineDividerField extends Field {
 
 	/**

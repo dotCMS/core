@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.rest.WebResource;
@@ -160,13 +161,20 @@ public class IndexAjaxAction extends AjaxAction {
 	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
-
+		if(IndexType.SITE_SEARCH.is(indexName)){
+			APILocator.getSiteSearchAPI().activateIndex(indexName);
+			return;
+		}
 		APILocator.getContentletIndexAPI().activateIndex(indexName);
 
 	}
 	public void deactivateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
+		if(IndexType.SITE_SEARCH.is(indexName)){
+			APILocator.getSiteSearchAPI().deactivateIndex(indexName);
+			return;
+		}
 		APILocator.getContentletIndexAPI().deactivateIndex(indexName);
 	}
 

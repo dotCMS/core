@@ -107,8 +107,9 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         final AppsAPI appsAPI = new AppsAPIImpl(APILocator.getUserAPI(), APILocator.getLayoutAPI(),
                 APILocator.getHostAPI(), APILocator.getContentletAPI(),
-                SecretsStore.INSTANCE.get(), CacheLocator
-                .getAppsCache(), new LicenseValiditySupplier() {
+                SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(),
+                APILocator.getLocalSystemEventsAPI(),
+                new LicenseValiditySupplier() {
                     @Override
                     public boolean hasValidLicense() {
                         return false;

@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
@@ -26,6 +27,7 @@ import com.dotcms.saml.TestSamlConfigurationService;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
+import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
@@ -293,6 +295,8 @@ import org.junit.runners.Suite.SuiteClasses;
         DotParseTest.class,
         TestWorkflowAction.class,
         TestSamlConfigurationService.class
+        HostAPITest.class,
+        ESMappingUtilHelperTest.class
 })
 public class MainSuite {
 
