@@ -6,6 +6,7 @@ import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotPushPublishDialogService } from 'dotcms-js';
+import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 /**
  * Handle Custom events
  *
@@ -22,7 +23,8 @@ export class DotCustomEventHandlerService {
         private dotContentletEditorService: DotContentletEditorService,
         private dotUiColorsService: DotUiColorsService,
         private dotIframeService: DotIframeService,
-        private dotPushPublishDialogService: DotPushPublishDialogService
+        private dotPushPublishDialogService: DotPushPublishDialogService,
+        private dotDownloadBundleDialogService: DotDownloadBundleDialogService
     ) {
         if (!this.handlers) {
             this.handlers = {
@@ -31,7 +33,8 @@ export class DotCustomEventHandlerService {
                 'edit-task': this.editTask.bind(this),
                 'create-contentlet': this.createContentlet.bind(this),
                 'company-info-updated': this.setDotcmsUiColors.bind(this),
-                'push-publish': this.pushPublishDialog.bind(this)
+                'push-publish': this.pushPublishDialog.bind(this),
+                'download-bundle': this.downloadBundleDialog.bind(this)
             };
         }
     }
@@ -43,7 +46,7 @@ export class DotCustomEventHandlerService {
      * @memberof DotCustomEventHandlerService
      */
     handle(event: CustomEvent): void {
-        if ( event && this.handlers[event.detail.name]) {
+        if (event && this.handlers[event.detail.name]) {
             this.handlers[event.detail.name](event);
         }
     }
@@ -79,5 +82,9 @@ export class DotCustomEventHandlerService {
 
     private pushPublishDialog($event: CustomEvent): void {
         this.dotPushPublishDialogService.open($event.detail.data);
+    }
+
+    private downloadBundleDialog($event: CustomEvent): void {
+        this.dotDownloadBundleDialogService.open($event.detail.data);
     }
 }

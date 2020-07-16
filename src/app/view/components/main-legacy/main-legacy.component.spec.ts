@@ -11,6 +11,7 @@ import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentl
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import {DotDownloadBundleDialogModule} from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -62,7 +63,7 @@ describe('MainComponentLegacyComponent', () => {
     beforeEach(
         async(() => {
             DOTTestBed.configureTestingModule({
-                imports: [RouterTestingModule, DotContentletEditorModule],
+                imports: [RouterTestingModule, DotContentletEditorModule, DotDownloadBundleDialogModule],
                 providers: [
                     {
                         provide: LoginService,
@@ -100,6 +101,7 @@ describe('MainComponentLegacyComponent', () => {
         expect(de.query(By.css('dot-main-nav')) !== null).toBe(true);
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
         expect(de.query(By.css('dot-push-publish-dialog')) !== null).toBe(true);
+        expect(de.query(By.css('dot-dot-download-bundle-dialog')) !== null).toBe(true);
     });
 
     it('should have messages components', () => {

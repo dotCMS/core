@@ -1,0 +1,32 @@
+<dot-dialog
+    [(visible)]="showDialog"
+    [header]="'download.bundle.header' | dm"
+    [actions]="dialogActions"
+    (hide)="close()"
+>
+    <form
+        [formGroup]="form"
+        *ngIf="showDialog"
+        (ngSubmit)="downloadFile()"
+        (keyup.enter)="downloadFile()">
+        <div class="form__group">
+            <label class="form__label"
+            >{{ 'download.bundle.i.want' | dm }}:
+            </label>
+            <p-selectButton [options]="downloadOptions"
+                            formControlName="downloadOptionSelected">
+            </p-selectButton>
+        </div>
+        <div class="form__group">
+            <label class="form__label"
+            >{{ 'download.bundle.filter' | dm }}:
+            </label>
+            <p-dropdown
+                [style]="{ width: '100%' }"
+                [options]="filterOptions"
+                formControlName="filterKey"
+                appendTo="body"
+            ></p-dropdown>
+        </div>
+    </form>
+</dot-dialog>

@@ -1,4 +1,3 @@
-
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -8,6 +7,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotPushPublishDialogService } from 'dotcms-js';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;
@@ -16,6 +16,7 @@ describe('DotCustomEventHandlerService', () => {
     let dotUiColorsService: DotUiColorsService;
     let dotContentletEditorService: DotContentletEditorService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
+    let dotDownloadBundleDialogService: DotDownloadBundleDialogService;
     let injector;
 
     beforeEach(() => {
@@ -35,6 +36,7 @@ describe('DotCustomEventHandlerService', () => {
         dotUiColorsService = injector.get(DotUiColorsService);
         dotContentletEditorService = injector.get(DotContentletEditorService);
         dotPushPublishDialogService = injector.get(DotPushPublishDialogService);
+        dotDownloadBundleDialogService = injector.get(DotDownloadBundleDialogService);
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
@@ -154,5 +156,18 @@ describe('DotCustomEventHandlerService', () => {
         );
 
         expect(dotPushPublishDialogService.open).toHaveBeenCalledWith(dataMock);
+    });
+
+    it('should notify to open download bundle dialog', () => {
+        spyOn(dotDownloadBundleDialogService, 'open');
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'download-bundle',
+                    data: 'testID'
+                }
+            })
+        );
+        expect(dotDownloadBundleDialogService.open).toHaveBeenCalledWith('testID');
     });
 });

@@ -1,0 +1,14 @@
+@import "variables";
+form {
+    width: 400px;
+}
+
+p-selectbutton {
+    display: block;
+    border-bottom: solid 1px $gray-light;
+}
+
+.download-bundle__building {
+    display: flex;
+    justify-content: flex-end;
+}

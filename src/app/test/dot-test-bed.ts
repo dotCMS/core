@@ -35,6 +35,7 @@ import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 class MockDotUiColorsService {
     setColors() {}
@@ -79,7 +80,8 @@ export class DOTTestBed {
             UserModel,
             DotLicenseService,
             DotCustomEventHandlerService,
-            DotPushPublishDialogService
+            DotPushPublishDialogService,
+            DotDownloadBundleDialogService
         ]
     };
 
