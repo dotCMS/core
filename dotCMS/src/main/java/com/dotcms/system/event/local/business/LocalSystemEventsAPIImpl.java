@@ -217,7 +217,7 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
                 if (event instanceof KeyFilterable) {
                     synchronized (this) {
                         //if we're broadcasting an event that is an instance of KeyFilterable
-                        //it means it is intended to a limited audience.
+                        //it means it is intended for a limited audience.
                         //Both the even and the receiver must be an instance of KeyFilterable
                         final KeyFilterable keyFilterableEvent = (KeyFilterable) event;
                         Logger.info(LocalSystemEventsAPIImpl.class, ()->" Broadcasting a Filterable Event.");
@@ -256,11 +256,11 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
 
     /**
      * This method basically delivers the event to all the subscribers
-     * @param subscibers
+     * @param subscribers
      * @param event
      */
-    private void broadcast(final List<EventSubscriber> subscibers, final Object event){
-         subscibers.forEach(eventSubscriber -> {
+    private void broadcast(final List<EventSubscriber> subscribers, final Object event){
+         subscribers.forEach(eventSubscriber -> {
             if(null != eventSubscriber){
                 eventSubscriber.notify(event);
              }

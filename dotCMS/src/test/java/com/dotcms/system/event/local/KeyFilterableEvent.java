@@ -2,6 +2,9 @@ package com.dotcms.system.event.local;
 
 import com.dotcms.system.event.local.model.KeyFilterable;
 
+/**
+ * This implementation of KeyFilterable is intended for testing purposes
+ */
 public class KeyFilterableEvent implements KeyFilterable {
 
     private final String key;
