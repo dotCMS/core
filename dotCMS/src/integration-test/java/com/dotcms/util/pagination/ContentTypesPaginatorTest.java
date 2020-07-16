@@ -5,15 +5,12 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -138,14 +135,14 @@ public class ContentTypesPaginatorTest {
     public void whenTheIndicesAreDeactivateShouldReturnNAInEntries() throws DotDataException, IOException {
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
-        final String live = indiciesInfo.getLive();
-        final String working = indiciesInfo.getWorking();
+        final String live = APILocator.getESIndexAPI().removeClusterIdFromName(indiciesInfo.getLive());
+        final String working = APILocator.getESIndexAPI().removeClusterIdFromName(indiciesInfo.getWorking());
         try {
             if (live != null) {
-                APILocator.getContentletIndexAPI().deactivateIndex(live.substring(live.indexOf(".") + 1));
+                APILocator.getContentletIndexAPI().deactivateIndex(live);
             }
 
-            APILocator.getContentletIndexAPI().deactivateIndex(working.substring(working.indexOf(".") + 1));
+            APILocator.getContentletIndexAPI().deactivateIndex(working);
 
             final ContentTypesPaginator paginator = new ContentTypesPaginator();
 
@@ -157,10 +154,10 @@ public class ContentTypesPaginatorTest {
 
         }finally {
             if (live != null) {
-                APILocator.getContentletIndexAPI().activateIndex(live.substring(live.indexOf(".") + 1));
+                APILocator.getContentletIndexAPI().activateIndex(live);
             }
 
-            APILocator.getContentletIndexAPI().activateIndex(working.substring(working.indexOf(".") + 1));
+            APILocator.getContentletIndexAPI().activateIndex(working);
         }
     }
 
