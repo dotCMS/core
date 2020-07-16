@@ -427,7 +427,7 @@ public class ContentToolTest extends IntegrationTestBase {
 
 
     /**
-     * Method to test: {@link ContentTool#pullPerPage(String, int, int, String)}
+     * Method to test: {@link ContentTool#pullPerPage(String, int, int, String)} 
      * When: there is a content with a publish date in the future and the time machine parameter in null
      * Should: Not return the content
      */
