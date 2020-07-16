@@ -1,12 +1,5 @@
 package com.dotcms.rest;
 
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_BUNDLE;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_PUBLISH;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SENT;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS;
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
@@ -45,16 +38,12 @@ import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLDecoder;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -73,12 +62,23 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.ContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.server.JSONP;
-import org.jetbrains.annotations.Nullable;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLDecoder;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_BUNDLE;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_PUBLISH;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SENT;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS;
 
 @Path("/bundle")
 public class BundleResource {
@@ -727,7 +727,7 @@ public class BundleResource {
                 if (!previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 
                     final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
-                            .getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+                            .getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
                     dotSubmitter.execute(() -> {
 
                         final PublisherConfig config = new PublishThread(bundleName, null, endpointId, previousStatus)
