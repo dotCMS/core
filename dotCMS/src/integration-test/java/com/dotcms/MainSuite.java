@@ -294,7 +294,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05350AddDotSaltClusterColumnTest.class,
         DotParseTest.class,
         TestWorkflowAction.class,
-        TestSamlConfigurationService.class
+        TestSamlConfigurationService.class,
         HostAPITest.class,
         ESMappingUtilHelperTest.class
 })
