@@ -1,7 +1,6 @@
 package com.dotcms.saml;
 
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.Assert;
