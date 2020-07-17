@@ -323,7 +323,11 @@ public class ESMappingUtilHelper {
             } else if (field.dataType() == DataTypes.INTEGER) {
                 mappingForField = "{\n\"type\":\"integer\"\n}";
             } else if (!matchesExclusions(fieldVariableName)){
-                mappingForField = "{\n\"type\":\"text\"\n}";
+                mappingForField = "{\n\""
+                        + "type\":\"text\","
+                        + "analyzer\":\"my_analyzer\","
+                        + "store\":\"false\""
+                        + "\n}";
             }
         }
         return mappingForField;
