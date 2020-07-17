@@ -17,7 +17,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
-import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -120,12 +119,12 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	private Dimension fileDimension = null;
 
 	public int getHeight() {
-		final Dimension fileDimension = Try.of(lazyComputeDimensions::get).getOrNull();
+		final Dimension fileDimension = lazyComputeDimensions.get();
 		return fileDimension == null ? 0 : fileDimension.height;
 	}
 
 	public int getWidth() {
-		final Dimension fileDimension = Try.of(lazyComputeDimensions::get).getOrNull();
+		final Dimension fileDimension = lazyComputeDimensions.get();
 		return fileDimension == null ? 0 : fileDimension.width;
 	}
 
@@ -142,7 +141,7 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	}
 
     //Lazy Suppliers are memoized. Meaning that this truly guarantees the computation takes place once.
-    private final Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
+    private transient Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
 
   /**
    * This access the physical file on disk
@@ -383,6 +382,20 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 				}
 			}
 		}
+	}
+
+	/**
+	 * field lazyComputeDimensions was made transient to avoid serialization problems
+	 * caused by NoClassDefFoundErrors produced by the libraries imported by ImageUtil
+	 *
+	 * So when these objects are coming back from cache they need to get initialized explicitly.
+	 * @param inputStream
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	private void readObject(final java.io.ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
+		inputStream.defaultReadObject();
+		lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
 	}
 
 }
