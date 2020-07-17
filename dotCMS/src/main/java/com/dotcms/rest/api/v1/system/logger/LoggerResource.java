@@ -114,6 +114,12 @@ public class LoggerResource {
 
         final String loggerName = changeLoggerForm.getName();
         final String level      = changeLoggerForm.getLevel();
+
+        if (!Logger.isValidLevel(level)) {
+
+            throw new DoesNotExistException("The Level: " + level + " does not exists");
+        }
+
         final Object logger     = Logger.setLevel(loggerName, level);
 
         if (null != logger) {
