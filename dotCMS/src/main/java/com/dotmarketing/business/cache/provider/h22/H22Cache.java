@@ -17,16 +17,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
-import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.comparator.LastModifiedFileComparator;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
@@ -42,15 +42,21 @@ import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 public class H22Cache extends CacheProvider {
 
 
+    private static final long serialVersionUID = 1L;
 
+    final boolean shouldAsync=Config.getBooleanProperty("cache_h22_async", true);
+
+    final private DotSubmitter executorService = DotConcurrentFactory.getInstance().getSubmitter("H22-ASYNC-COMMIT");
+
+    
 	private Boolean isInitialized = false;
 
 	final static String TABLE_PREFIX = "cach_table_";
 
 
 	private final static Cache<String, String> DONT_CACHE_ME = Caffeine.newBuilder()
-                    .maximumSize(1000)
-                    .recordStats()
+                    .maximumSize(10000)
+                    .expireAfterWrite(20, TimeUnit.SECONDS)
                     .build();
 
 	// number of different dbs to shard against
@@ -115,32 +121,51 @@ public class H22Cache extends CacheProvider {
 	}
 
 	@Override
-	public void put(String group, String key, Object content) {
-
+	public void put(final String group, final String key, final Object content) {
 		// Building the key
-		Fqn fqn = new Fqn(group, key);
-
+		final Fqn fqn = new Fqn(group, key);
+        if(exclude(fqn)) {
+            return;
+        }
+		DONT_CACHE_ME.put(fqn.id, fqn.toString());
+		if(shouldAsync) {
+		    putAsync(fqn, content);
+		    return;
+		}
+		
+		
 		try {
 			// Add the given content to the group and for a given key
-
-			doUpsert(fqn, (Serializable) content);
-
-		} catch (ClassCastException e) {
-			DONT_CACHE_ME.put(fqn.id, fqn.toString());
-			handleError(e, fqn);
-
+		    doUpsert(fqn, (Serializable) content);
 		} catch (Exception e) {
 			handleError(e, fqn);
 		}
+
 	}
 
+
+    void putAsync(final Fqn fqn, final Object content) {
+
+        executorService.submit(()-> {
+            try {
+                // Add the given content to the group and for a given key
+                doUpsert(fqn, (Serializable) content);
+            } catch (Exception e) {
+                handleError(e, fqn);
+            }
+         });
+    }
+	
+	
+	
+	
 	@Override
 	public Object get(String group, String key) {
 
 
 		Object foundObject = null;
 		long start = System.nanoTime();
-		Fqn fqn = new Fqn(group, key);
+		final Fqn fqn = new Fqn(group, key);
 		
 		try {
 			// Get the content from the group and for a given key;
@@ -158,9 +183,9 @@ public class H22Cache extends CacheProvider {
 	}
 
 	@Override
-	public void remove(String groupName) {
+	public void remove(final String groupName) {
 
-		Fqn fqn = new Fqn(groupName);
+		final Fqn fqn = new Fqn(groupName);
 
 		Logger.info(this.getClass(), "Flushing H22 cache group:" + fqn + " Note: this can be an expensive operation");
 
@@ -183,13 +208,9 @@ public class H22Cache extends CacheProvider {
 					    stmt.setString(1, fqn.group);
 					    stmt.executeUpdate();
 					} finally {
-					    
 						CloseUtils.closeQuietly(stmt, connection);
 					} 
-			}
-
-				
-
+				}
 			}
 		} catch (SQLException e) {
 
@@ -198,21 +219,46 @@ public class H22Cache extends CacheProvider {
 	}
 
 	@Override
-	public void remove(String group, String key) {
-		Fqn fqn = new Fqn(group, key);
-		try {
-
-			if (!UtilMethods.isSet(key)) {
-				Logger.warn(this, "Empty key passed in, clearing group " + group + " by mistake");
-			}
-
-			// Invalidates from Cache a key from a given group
-			doDelete(fqn);
-		} catch (Exception e) {
-			handleError(e, fqn);
-		}
+	public void remove(final String group, final String key) {
+        if (!UtilMethods.isSet(key)) {
+            Logger.warn(this, "Empty key passed in, clearing group " + group + " by mistake");
+        }
+        
+		final Fqn fqn = new Fqn(group, key);
+        DONT_CACHE_ME.put(fqn.id, fqn.toString());
+        if(shouldAsync) {
+            removeAsync(fqn);
+            return;
+        }
+        
+        
+        try {
+            // Invalidates from Cache a key from a given group
+            doDelete(fqn);
+        } catch (Exception e) {
+            handleError(e, fqn);
+        }
+        
+		
 	}
 
+
+    void removeAsync(final Fqn fqn) {
+
+
+
+        executorService.submit(()-> {
+            try {
+                // Invalidates from Cache a key from a given group
+                doDelete(fqn);
+            } catch (Exception e) {
+                handleError(e, fqn);
+            }
+        });
+    }
+	
+	
+	
 	public void doTruncateTables() throws SQLException {
 
 			for (int db = 0; db < numberOfDbs; db++) {
@@ -311,8 +357,7 @@ public class H22Cache extends CacheProvider {
         CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
         Set<String> currentGroups = new HashSet<>();
         currentGroups.addAll(getGroups());
-        NumberFormat nf = DecimalFormat.getInstance();
-        DecimalFormat pf = new DecimalFormat("##.##%");
+
         
         for (String group : currentGroups) {
             H22GroupStats groupStats = stats.group(group);
@@ -459,7 +504,7 @@ public class H22Cache extends CacheProvider {
 		long start = System.nanoTime();
 		long bytes = 0;
 		boolean worked = false;
-		if (fqn == null || exclude(fqn)) {
+		if (fqn == null) {
 			return worked;
 		}
 
@@ -494,6 +539,7 @@ public class H22Cache extends CacheProvider {
 			stats.group(fqn.group).writes++;
 			stats.group(fqn.group).writeSize(bytes * 8);
 			stats.group(fqn.group).writeTime(System.nanoTime() - start);
+			DONT_CACHE_ME.invalidate(fqn.id);
 		}
 		finally{
 			if(upsertStmt!=null)upsertStmt.close();
@@ -655,6 +701,7 @@ public class H22Cache extends CacheProvider {
 	}
 
 	private void handleError(final Exception ex, final Fqn fqn) {
+	    DONT_CACHE_ME.put(fqn.id, fqn.toString());
 		// debug all errors
 		Logger.debug(this.getClass(), ex.getMessage() + " on " + fqn, ex);
 		int db = db(fqn);
