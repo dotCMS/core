@@ -473,6 +473,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Relationship> dbAll() {
         return relationshipFactory.dbAll();

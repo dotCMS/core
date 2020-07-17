@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.viewtools.content;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
@@ -554,7 +555,7 @@ public class ContentTool implements ViewTool {
 		}
 
 	  	if(!(query.contains("live:") || query.contains("working:") )){
-			if(EDIT_OR_PREVIEW_MODE){
+			if(EDIT_OR_PREVIEW_MODE && !TimeMachineUtil.isRunning()){
 				q +=" +working:true ";
 			}else{
 				q +=" +live:true ";

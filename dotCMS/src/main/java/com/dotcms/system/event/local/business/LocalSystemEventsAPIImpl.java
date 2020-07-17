@@ -1,18 +1,23 @@
 package com.dotcms.system.event.local.business;
 
-import com.dotcms.system.event.local.model.DefaultOrphanEventSubscriber;
-import com.dotcms.system.event.local.model.EventSubscriber;
-import com.dotcms.system.event.local.type.OrphanEvent;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.system.event.local.model.DefaultOrphanEventSubscriber;
+import com.dotcms.system.event.local.model.EventCompletionHandler;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.model.KeyFilterable;
+import com.dotcms.system.event.local.type.OrphanEvent;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
-
+import io.vavr.control.Try;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Default implementation.
@@ -185,33 +190,87 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
 
 
     @Override
-    public void asyncNotify(final Object event) {
+    public void asyncNotify(final Object event, final EventCompletionHandler completionHandler) {
 
         final DotSubmitter dotSubmitter = this.dotConcurrentFactory.getSubmitter(LOCAL_SYSTEM_EVENTS_THREAD_POOL_SUBMITTER_NAME);
-        dotSubmitter.submit(()-> this.notify(event));
+        if(null != completionHandler){
+            dotSubmitter.submit(()-> this.notify(event, completionHandler));
+        } else {
+           dotSubmitter.submit(()-> this.notify(event));
+        }
     } // asyncNotify.
 
+    @Override
+    public void asyncNotify(final Object event) {
+        asyncNotify(event, null);
+    }
+
+    /**
+     * Private implementation that allows firing an event completion handler
+     */
+    private void notify(final Object event, final EventCompletionHandler completionHandler) {
+        try {
+            final List<EventSubscriber> eventSubscribers =
+                    this.getEventSubscribersByEventType(event.getClass());
+
+            if (null != eventSubscribers) {
+                if (event instanceof KeyFilterable) {
+                    synchronized (this) {
+                        //if we're broadcasting an event that is an instance of KeyFilterable
+                        //it means it is intended for a limited audience.
+                        //Both the even and the receiver must be an instance of KeyFilterable
+                        final KeyFilterable keyFilterableEvent = (KeyFilterable) event;
+                        Logger.info(LocalSystemEventsAPIImpl.class, ()->" Broadcasting a Filterable Event.");
+                        final Stream<KeyFilterable> keyAwareSubscribers = eventSubscribers.stream()
+                                .filter(eventSubscriber -> eventSubscriber instanceof KeyFilterable)
+                                .map(KeyFilterable.class::cast)
+                                .filter(keyFilterable -> keyFilterable.getKey() != null);
+
+                        final List<EventSubscriber> eventAudience = keyAwareSubscribers
+                                .filter(keyFilterable ->
+                                        keyFilterable.getKey()
+                                                .compareTo(keyFilterableEvent.getKey()) == 0)
+                                .map(EventSubscriber.class::cast)
+                                .collect(Collectors.toList());
+                        broadcast(eventAudience, event);
+                        Logger.info(LocalSystemEventsAPIImpl.class, () -> String
+                                .format(" Filtered Audience for event with key `%s`  is `%d` long. ",
+                                        keyFilterableEvent.getKey(), eventAudience.size()));
+                    }
+                } else {
+                    broadcast(eventSubscribers, event);
+                }
+            } else {
+                this.orphanEventSubscriber.notify(new OrphanEvent(event));
+            }
+        } finally {
+            if (null != completionHandler) {
+                Try.of(() -> {
+                    completionHandler.onComplete(event);
+                    return true;
+                }).get();
+            }
+        }
+
+    } // asyncNotify.
+
+    /**
+     * This method basically delivers the event to all the subscribers
+     * @param subscribers
+     * @param event
+     */
+    private void broadcast(final List<EventSubscriber> subscribers, final Object event){
+         subscribers.forEach(eventSubscriber -> {
+            if(null != eventSubscriber){
+                eventSubscriber.notify(event);
+             }
+         });
+    }
 
     @Override
     public void notify(final Object event) {
-
-        final CopyOnWriteArrayList<EventSubscriber> eventSubscribers =
-                this.getEventSubscribersByEventType(event.getClass());
-
-        if (null != eventSubscribers) {
-
-            for (EventSubscriber eventSubscriber : eventSubscribers) {
-
-                if (null != eventSubscriber) {
-
-                    eventSubscriber.notify(event);
-                }
-            }
-        } else {
-
-            this.orphanEventSubscriber.notify(new OrphanEvent(event));
-        }
-    } // asyncNotify.
+       notify(event, null);
+    }
 
     protected CopyOnWriteArrayList<EventSubscriber> getEventSubscribersByEventType (final Class<?> eventType) {
 

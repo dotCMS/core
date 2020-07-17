@@ -65,7 +65,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/PageResource/pages.tar.gz"
+									"src": "/build/src/core/dotCMS/src/curl-test/resources/PageResource/pages.tar.gz"
 								}
 							],
 							"options": {
