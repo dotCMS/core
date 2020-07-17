@@ -394,8 +394,6 @@ public class PublisherQueueJob implements StatefulJob {
 					.setLife(notificationLife);
 
 			SystemMessageEventUtil.getInstance().pushMessage(message.create(), ImmutableList.of(bundle.getOwner()));
-
-			Logger.info(PublisherQueueJob.class,message.create().getMessage().toString());
 		}
 	}
 
