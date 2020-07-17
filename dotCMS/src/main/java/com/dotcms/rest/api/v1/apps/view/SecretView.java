@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @JsonSerialize(using = SecretView.SecretViewSerializer.class)
 public class SecretView {
@@ -124,8 +125,21 @@ public class SecretView {
             if (type.equals(Type.BOOL)) {
                 map.put("value", property.getBoolean());
             } else {
-                final String value = property.getString();
-                map.put("value", property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK : value);
+              if(type.equals(Type.SELECT)){
+                 final List <Map> list = property.getList();
+                 map.put("options",list);
+                  final Optional<Map> selectedOptional = list.stream().filter(m -> m.containsKey("selected")).findFirst();
+                  if(selectedOptional.isPresent()){
+                      final Map selected = selectedOptional.get();
+                      selected.remove("selected");
+                      map.put("value", selected.get("value"));
+                  } else {
+                      map.put("value","");
+                  }
+              } else {
+                 final String value = property.getString();
+                 map.put("value", property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK : value);
+               }
             }
         }
 

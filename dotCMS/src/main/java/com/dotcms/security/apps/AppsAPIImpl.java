@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -443,7 +444,7 @@ public class AppsAPIImpl implements AppsAPI {
 
             final AppSchema appSchema = readAppFile(file);
             // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
-            if (validateServiceDescriptor(appSchema)) {
+            if (validateAppDescriptor(appSchema)) {
                 final File incomingFile = new File(basePath, file.getName());
                 if (incomingFile.exists()) {
                     throw new AlreadyExistException(
@@ -597,7 +598,7 @@ public class AppsAPIImpl implements AppsAPI {
                     final String paramName = entry.getKey();
                     final ParamDescriptor descriptor = entry.getValue();
                     final Secret secret = appSecrets.getSecrets().get(paramName);
-                    if (descriptor.isRequired() && UtilMethods.isNotSet(descriptor.getValue()) && (
+                    if (descriptor.isRequired() && UtilMethods.isSet(descriptor.getValue()) && UtilMethods.isNotSet(descriptor.getValue().toString()) && (
                             null == secret || UtilMethods.isNotSet(secret.getValue()))) {
                         warnings.put(paramName, of(String
                                 .format("`%s` is required. It is missing a value and no default is provided.",
@@ -640,17 +641,28 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
+    private static DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
+
+        private static final String ignorePrefix = "_ignore_me_";
+        private static final String yml = "yml";
+        private static final String yaml = "yaml";
+
+        @Override
+        public boolean accept(final Path path) {
+            if (Files.isDirectory(path)) {
+              return false;
+            }
+            final String fileName = path.getFileName().toString();
+            return !fileName.startsWith(ignorePrefix) && (fileName.endsWith(yaml) || fileName.endsWith(yml)) ;
+        }
+    };
+
     private Set<String> listFiles(final String dir) throws IOException {
         final Set<String> fileList = new HashSet<>();
-        try (final DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir))) {
-            for (final Path path : stream) {
-                if (!Files.isDirectory(path)) {
-                    final String fileName = path.getFileName().toString();
-                    if (fileName.endsWith("yaml") || fileName.endsWith("yml")) {
-                        fileList.add(path.toString());
-                    }
-                }
-            }
+        try (final DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir), filter)) {
+            stream.forEach(path -> {
+                fileList.add(path.toString());
+            });
         }
         return fileList;
     }
@@ -664,7 +676,7 @@ public class AppsAPIImpl implements AppsAPI {
             try {
                 final File file = new File(fileName);
                 final AppSchema appSchema = readAppFile(file);
-                if (validateServiceDescriptor(appSchema)) {
+                if (validateAppDescriptor(appSchema)) {
                     builder.add(new AppDescriptorImpl(file.getName(), appSchema));
                 }
             } catch (Exception e) {
@@ -682,7 +694,7 @@ public class AppsAPIImpl implements AppsAPI {
      * @return
      * @throws DotDataValidationException
      */
-   private boolean validateServiceDescriptor(final AppSchema appDescriptor)
+   private boolean validateAppDescriptor(final AppSchema appDescriptor)
            throws DotDataValidationException {
 
        final List<String> errors = new ArrayList<>();
@@ -727,9 +739,9 @@ public class AppsAPIImpl implements AppsAPI {
      * @throws DotDataValidationException
      */
     private List<String> validateParamDescriptor(final String name,
-            final ParamDescriptor descriptor)  {
+            final ParamDescriptor descriptor) {
 
-        final List<String> errors = new ArrayList<>();
+        final List<String> errors = new LinkedList<>();
 
         if (UtilMethods.isNotSet(name)) {
             errors.add("Param descriptor is missing required  field `name` .");
@@ -741,7 +753,9 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         if (null == descriptor.getValue()) {
-            errors.add(String.format("`%s`: is missing required field `value`. It is mandatory that the param exist. ", name));
+            errors.add(String.format(
+                    "`%s`: is missing required field `value` or a value hasn't been set. Value is mandatory. ",
+                    name));
         }
 
         if (UtilMethods.isNotSet(descriptor.getHint())) {
@@ -753,38 +767,82 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         if (null == descriptor.getType()) {
-            errors.add(String.format("Param `%s`: is missing required field `type` (STRING|BOOL|FILE) .",
+            errors.add(String.format(
+                    "Param `%s`: is missing required field `type` (STRING|BOOL|SELECT) .",
                     name));
         }
 
         if (!UtilMethods.isSet(descriptor.getRequired())) {
-            errors.add(String.format("Param `%s`: is missing required field `required` (true|false) .",
-                    name));
+            errors.add(
+                    String.format("Param `%s`: is missing required field `required` (true|false) .",
+                            name));
         }
 
         if (!UtilMethods.isSet(descriptor.getHidden())) {
             errors.add(
-                    String.format("Param `%s`: is missing required field `hidden` (true|false) .", name));
+                    String.format("Param `%s`: is missing required field `hidden` (true|false) .",
+                            name));
         }
 
-        if (Type.BOOL.equals(descriptor.getType()) && UtilMethods.isSet(descriptor.getHidden()) && descriptor.isHidden()) {
-            errors.add(String.format(
-                    "Param `%s`: Bool params can not be marked hidden. The combination (Bool + Hidden) isn't allowed.",
-                    name));
-        }
-
-        if (Type.BOOL.equals(descriptor.getType()) && UtilMethods.isSet(descriptor.getValue())
-                && !isBoolString(descriptor.getValue())) {
-            errors.add(String.format(
-                    "Boolean Param `%s` has a default value `%s` that can not be parsed to bool (true|false).",
-                    name, descriptor.getValue()));
-        }
-
-        if (StringPool.NULL.equalsIgnoreCase(descriptor.getValue()) && descriptor.isRequired()) {
+        if (UtilMethods.isSet(descriptor.getValue()) && StringPool.NULL
+                .equalsIgnoreCase(descriptor.getValue().toString()) && descriptor.isRequired()) {
             errors.add(String.format(
                     "Null isn't allowed as the default value on required params see `%s`. ",
                     name)
             );
+        }
+
+        if (Type.BOOL.equals(descriptor.getType())) {
+            if (UtilMethods.isSet(descriptor.getHidden())
+                    && descriptor.isHidden()) {
+                errors.add(String.format(
+                        "Param `%s`: Bool params can not be marked hidden. The combination (Bool + Hidden) isn't allowed.",
+                        name));
+            }
+
+            if (UtilMethods.isSet(descriptor.getValue())
+                    && !isBoolString(descriptor.getValue().toString())) {
+                errors.add(String.format(
+                        "Boolean Param `%s` has a default value `%s` that can not be parsed to bool (true|false).",
+                        name, descriptor.getValue()));
+            }
+        }
+
+        if(Type.STRING.equals(descriptor.getType())){
+            if(!(descriptor.getValue() instanceof String)){
+                errors.add(String.format(
+                        "Value Param `%s` has a default value `%s` that isn't a string .",
+                        name, descriptor.getValue()));
+            }
+        }
+
+        if (Type.SELECT.equals(descriptor.getType())) {
+
+            if (UtilMethods.isSet(descriptor.getHidden()) && descriptor.isHidden()) {
+                errors.add(String.format(
+                        "Param `%s`: List params can not be marked hidden. The combination (List + Hidden) isn't allowed.",
+                        name));
+            }
+
+            if (!(descriptor.getValue() instanceof List)) {
+                errors.add(String.format(
+                        " As param `%s`:  is marked as `List` the field value is expected to hold a list of objects. ",
+                        name));
+            } else {
+                final List list = (List) descriptor.getValue();
+                for (final Object object : list) {
+                    if (!(object instanceof Map)) {
+                        errors.add(String.format(
+                                "Malformed list. Param: `%s` is marked as `List` therefore field `value` is expected to have a list of objects. ",
+                                name));
+                    } else {
+                        final Map map = (Map) object;
+                        if (!map.containsKey("label") || !map.containsKey("value") ) {
+                            errors.add(String.format("Malformed list. Param: `%s`. Every entry of the `List` has to have the following fields (`label`,`value`). ", name));
+                        }
+                    }
+                }
+            }
         }
 
         return errors;
