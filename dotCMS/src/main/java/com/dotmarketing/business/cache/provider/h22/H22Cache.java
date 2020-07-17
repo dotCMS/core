@@ -46,8 +46,8 @@ public class H22Cache extends CacheProvider {
     final int numberOfAsyncThreads=Config.getIntProperty("cache_h22_async_threads", 5);
     final boolean shouldAsync=Config.getBooleanProperty("cache_h22_async", true);
 
-    final private DotSubmitter executorService = DotConcurrentFactory.getInstance().getSubmitter("H22Cache_ASYNC_PUTS");
-    
+    final private DotSubmitter executorService = DotConcurrentFactory.getInstance().getSubmitter("H22-ASYNC-COMMIT");
+
     
 	private Boolean isInitialized = false;
 
