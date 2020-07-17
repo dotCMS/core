@@ -55,6 +55,10 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.google', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.guava', version:'11.0.1_2'
     compile group: 'com.hazelcast', name: 'hazelcast-all', version: '3.9.2'
+    compile (group: 'com.hazelcast', name: 'hazelcast-kubernetes', version: '1.2.2'){
+        exclude(group: 'com.hazelcast')
+    }
+
     compile group: 'com.dotcms.lib', name: 'dot.hibernate', version:'2.1.7_3'
     compile group: 'com.dotcms.lib', name: 'dot.httpbridge', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpclient', version:'4.2.2_2'
