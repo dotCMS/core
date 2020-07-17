@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master
-      - release-*
-      - test-*
 jobs:
   run-unit-tests-job:
     name: Unit Tests
@@ -18,6 +16,7 @@ jobs:
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/test-')
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
@@ -41,7 +40,7 @@ jobs:
             echo ::set-env name=commitMsg::$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
-          if [[ "${{ github.event_name }}" == "pull_request" || ${BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ github-all|github-unit ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" || "${BRANCH}" == "master" || "${BRANCH}" =~ '^release-.*|^test-.*' || "${COMMIT_MESSG}" =~ '\[github\]|\[github unit\]' ]]; then
             echo ::set-env name=jobRun::'true'
           else
             echo ::set-env name=jobRun::'false'
@@ -53,11 +52,10 @@ jobs:
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
       - name: Fail provider
         run: |
           echo ::set-env name=jobRun::'false'
-        if: env.jobRun == 'true' && failure()
+        if: failure()
       - name: Build Tests Base Image
         run: |
           dotcicd/library/pipeline.sh buildTestsBase
@@ -79,6 +77,7 @@ jobs:
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/test-')
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
@@ -91,12 +90,6 @@ jobs:
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            IS_PR=true
-          else
-            IS_PR=false
-          fi
-
-          if [[ ${IS_PR} == true ]]; then
             BRANCH="${{ github.head_ref }}"
             COMMIT_MESSG=$(git log -1 --pretty=format:%s)
             echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
@@ -108,43 +101,37 @@ jobs:
             echo ::set-env name=commitMsg::$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
-          if [[ ${BRANCH} =~ master|^release-.*|^test-.* ]]; then
-            SPECIAL_BRANCH=true
-          else
-            SPECIAL_BRANCH=false
-          fi
-
-          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-postgres|github-mysql|github-oracle|github-mssql|github-unit ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" || "${BRANCH}" == "master" || "${BRANCH}" =~ '^release-.*|^test-.*' || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]|\[github mysql\]|\[github oracle\]|\[github mssql\]|\[github unit]\' ]]; then
             echo ::set-env name=jobRun::'true'
           else
             echo ::set-env name=jobRun::'false'
           fi
 
-          if [[ ${IS_PR} == false && ${SPECIAL_BRANCH} == true ]]; then
+          if [[ "${{ github.event_name }}" != "pull_request" && ("${BRANCH}" == "master" || "${BRANCH}" =~ '^release-.*|^test-.*') ]]; then
             PUSH_AND_SPECIAL_BRANCH=true
           else
             PUSH_AND_SPECIAL_BRANCH=false
           fi
 
-          if [[ (! ${COMMIT_MESSG} =~ github-mysql|github-oracle|github-mssql ) || ${COMMIT_MESSG} =~ github-all|github-postgres ]]; then
+          if [[ (! "${COMMIT_MESSG}" =~ '\[github mysql\]|\[github oracle\]|\[github mssql\]') || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]' ]]; then
             echo ::set-env name=runPostgres::'true'
           else
             echo ::set-env name=runPostgres::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-mysql ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github mysql\]' ]]; then
             echo ::set-env name=runMysql::'true'
           else
             echo ::set-env name=runMysql::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-oracle ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github oracle\]' ]]; then
             echo ::set-env name=runOracle::'true'
           else
             echo ::set-env name=runOracle::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-mssql ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github mssql\]' ]]; then
             echo ::set-env name=runMssql::'true'
           else
             echo ::set-env name=runMssql::'false'
@@ -156,11 +143,10 @@ jobs:
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
       - name: Fail provider
         run: |
           echo ::set-env name=jobRun::'false'
-        if: env.jobRun == 'true' && failure()
+        if: failure()
       - name: Build DotCMS Image
         run: |
           dotcicd/library/pipeline.sh buildBase
@@ -220,6 +206,7 @@ jobs:
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/test-')
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
@@ -232,12 +219,6 @@ jobs:
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            IS_PR=true
-          else
-            IS_PR=false
-          fi
-
-          if [[ ${IS_PR} == true ]]; then
             BRANCH="${{ github.head_ref }}"
             COMMIT_MESSG=$(git log -1 --pretty=format:%s)
             echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
@@ -249,43 +230,37 @@ jobs:
             echo ::set-env name=commitMsg::$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
-          if [[ ${BRANCH} =~ master|^release-.*|^test-.* ]]; then
-            SPECIAL_BRANCH=true
-          else
-            SPECIAL_BRANCH=false
-          fi
-
-          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-postgres|github-mysql|github-oracle|github-mssql|github-unit ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" || "${BRANCH}" == "master" || "${BRANCH}" =~ '^release-.*|^test-.*' || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]|\[github mysql\]|\[github oracle\]|\[github mssql\]|\[github unit]\' ]]; then
             echo ::set-env name=jobRun::'true'
           else
             echo ::set-env name=jobRun::'false'
           fi
 
-          if [[ ${IS_PR} == false && ${SPECIAL_BRANCH} == true ]]; then
+          if [[ "${{ github.event_name }}" != "pull_request" && ("${BRANCH}" == "master" || "${BRANCH}" =~ '^release-.*|^test-.*') ]]; then
             PUSH_AND_SPECIAL_BRANCH=true
           else
             PUSH_AND_SPECIAL_BRANCH=false
           fi
 
-          if [[ (! ${COMMIT_MESSG} =~ github-mysql|github-oracle|github-mssql ) || ${COMMIT_MESSG} =~ github-all|github-postgres ]]; then
+          if [[ (! "${COMMIT_MESSG}" =~ '\[github mysql\]|\[github oracle\]|\[github mssql\]|\[github unit]\') || "${COMMIT_MESSG}" =~ '\[github\]|\[github postgres\]' ]]; then
             echo ::set-env name=runPostgres::'true'
           else
             echo ::set-env name=runPostgres::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-mysql ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github mysql\]' ]]; then
             echo ::set-env name=runMysql::'true'
           else
             echo ::set-env name=runMysql::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-oracle ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github oracle\]' ]]; then
             echo ::set-env name=runOracle::'true'
           else
             echo ::set-env name=runOracle::'false'
           fi
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-mssql ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || "${COMMIT_MESSG}" =~ '\[github\]|\[github mssql\]' ]]; then
             echo ::set-env name=runMssql::'true'
           else
             echo ::set-env name=runMssql::'false'
@@ -297,11 +272,10 @@ jobs:
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
       - name: Fail provider
         run: |
           echo ::set-env name=jobRun::'false'
-        if: env.jobRun == 'true' && failure()
+        if: failure()
       - name: Build Tests Base Image
         run: |
           dotcicd/library/pipeline.sh buildTestsBase
