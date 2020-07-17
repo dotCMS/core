@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
@@ -97,10 +98,16 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
     private void setEntriesAttribute(final User user, final List<Map<String, Object>> contentTypesTransform,
                                      final Map<String, List<WorkflowScheme>> workflowSchemes,
-                                     final Map<String, List<SystemActionWorkflowActionMapping>> systemActionMappings) throws DotDataException {
+                                     final Map<String, List<SystemActionWorkflowActionMapping>> systemActionMappings)  {
 
-        final Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI
-                (user, true).getEntriesByContentTypes();
+        Map<String, Long> entriesByContentTypes = null;
+
+        try {
+            entriesByContentTypes = APILocator.getContentTypeAPI
+                    (user, true).getEntriesByContentTypes();
+        } catch (DotStateException | DotDataException e) {
+            Logger.error(ContentTypesPaginator.class, e);
+        }
 
         for (final Map<String, Object> contentTypeEntry : contentTypesTransform) {
 
@@ -111,6 +118,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                 final Long contentTypeEntriesNumber = entriesByContentTypes.get(key) == null ? 0l :
                         entriesByContentTypes.get(key);
                 contentTypeEntry.put(N_ENTRIES_FIELD_NAME, contentTypeEntriesNumber);
+            } else {
+                contentTypeEntry.put(N_ENTRIES_FIELD_NAME, "N/A");
             }
 
             if (workflowSchemes.containsKey(variable)) {
