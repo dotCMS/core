@@ -17,6 +17,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -119,12 +120,12 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	private Dimension fileDimension = null;
 
 	public int getHeight() {
-		final Dimension fileDimension = lazyComputeDimensions.get();
+		final Dimension fileDimension = Try.of(lazyComputeDimensions::get).getOrNull();
 		return fileDimension == null ? 0 : fileDimension.height;
 	}
 
 	public int getWidth() {
-		final Dimension fileDimension = lazyComputeDimensions.get();
+		final Dimension fileDimension = Try.of(lazyComputeDimensions::get).getOrNull();
 		return fileDimension == null ? 0 : fileDimension.width;
 	}
 
@@ -141,7 +142,7 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	}
 
     //Lazy Suppliers are memoized. Meaning that this truly guarantees the computation takes place once.
-    private transient final Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
+    private final Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
 
   /**
    * This access the physical file on disk
