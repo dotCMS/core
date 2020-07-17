@@ -117,7 +117,7 @@ public class LoggerResource {
 
         if (!Logger.isValidLevel(level)) {
 
-            throw new DoesNotExistException("The Level: " + level + " does not exists");
+            throw new IllegalArgumentException("The Level: " + level + " does not exists");
         }
 
         final Object logger     = Logger.setLevel(loggerName, level);
