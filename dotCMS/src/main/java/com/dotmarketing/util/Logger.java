@@ -87,6 +87,12 @@ public class Logger{
 		}
 	}
 
+	public static void debug(final Object ob, final Throwable throwable, final Supplier<String> message) {
+		if (isDebugEnabled(ob.getClass())) {
+			debug(ob.getClass(), message.get(), throwable);
+		}
+	}
+
     public static void debug(Object ob, String message) {
     	debug(ob.getClass(), message);
     }
