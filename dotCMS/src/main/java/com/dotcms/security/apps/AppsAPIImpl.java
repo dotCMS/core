@@ -5,6 +5,8 @@ import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.google.common.collect.ImmutableList.of;
 import static java.util.Collections.emptyMap;
 
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -17,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
@@ -77,6 +80,9 @@ public class AppsAPIImpl implements AppsAPI {
     private final ContentletAPI contentletAPI;
     private final SecretsStore secretsStore;
     private final AppsCache appsCache;
+    private final LocalSystemEventsAPI localSystemEventsAPI;
+
+    private final LicenseValiditySupplier licenseValiditySupplier;
 
     private final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
             .enable(Feature.STRICT_DUPLICATE_DETECTION)
@@ -85,17 +91,23 @@ public class AppsAPIImpl implements AppsAPI {
 
     @VisibleForTesting
     public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI,
-            final SecretsStore secretsRepository, final AppsCache appsCache) {
+            final SecretsStore secretsRepository, final AppsCache appsCache, final LocalSystemEventsAPI localSystemEventsAPI, final LicenseValiditySupplier licenseValiditySupplier) {
         this.userAPI = userAPI;
         this.layoutAPI = layoutAPI;
         this.hostAPI = hostAPI;
         this.contentletAPI = contentletAPI;
         this.secretsStore = secretsRepository;
         this.appsCache = appsCache;
+        this.localSystemEventsAPI = localSystemEventsAPI;
+        this.licenseValiditySupplier = licenseValiditySupplier;
     }
 
     public AppsAPIImpl() {
-        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache());
+        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(),
+                APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
+                CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
+                new LicenseValiditySupplier() {
+                });
     }
 
     /**
@@ -199,6 +211,10 @@ public class AppsAPIImpl implements AppsAPI {
     public Optional<AppSecrets> getSecrets(final String key,
             final boolean fallbackOnSystemHost,
             final Host host, final User user) throws DotDataException, DotSecurityException {
+
+        if(!licenseValiditySupplier.hasValidLicense()){
+            throw new InvalidLicenseException("Apps requires of an enterprise level license.");
+        }
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid secret access attempt on `%s` performed by user with id `%s` and host `%s` ",
@@ -331,14 +347,31 @@ public class AppsAPIImpl implements AppsAPI {
                 try {
                     chars = toJsonAsChars(secrets);
                     secretsStore.saveValue(internalKey, chars);
+                    notifySaveEventAndDestroySecret(secrets, host);
                 } finally {
-                    secrets.destroy();
                     if (null != chars) {
                         Arrays.fill(chars, (char) 0);
                     }
                 }
             }
         }
+    }
+
+    /***
+     * This will broadcast an async AppSecretSavedEvent
+     * and will also perform a clean-up (destroy) over the secret once all the event subscribers are done consuming the event.
+     * @param secrets
+     * @param host
+     */
+    private void notifySaveEventAndDestroySecret(final AppSecrets secrets, final Host host) {
+        localSystemEventsAPI.asyncNotify(new AppSecretSavedEvent(secrets, host),
+            event -> {
+                final AppSecretSavedEvent appSecretSavedEvent = (AppSecretSavedEvent) event;
+                final AppSecrets appSecrets = appSecretSavedEvent.getAppSecrets();
+                if (null != appSecrets) {
+                    appSecrets.destroy();
+                }
+            });
     }
 
     @Override
@@ -362,6 +395,10 @@ public class AppsAPIImpl implements AppsAPI {
     @Override
     public List<AppDescriptor> getAppDescriptors(final User user)
             throws DotDataException, DotSecurityException {
+
+        if(!licenseValiditySupplier.hasValidLicense()){
+            throw new InvalidLicenseException("Apps requires of an enterprise level license.");
+        }
 
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
@@ -396,6 +433,10 @@ public class AppsAPIImpl implements AppsAPI {
     public Optional<AppDescriptor> getAppDescriptor(final String key,
             final User user)
             throws DotDataException, DotSecurityException {
+
+        if(!licenseValiditySupplier.hasValidLicense()){
+           throw new InvalidLicenseException("Apps requires of an enterprise level license.");
+        }
 
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(

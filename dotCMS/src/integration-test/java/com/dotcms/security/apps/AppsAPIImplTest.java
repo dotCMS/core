@@ -17,9 +17,13 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
@@ -28,7 +32,9 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -41,14 +47,15 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -717,6 +724,140 @@ public class AppsAPIImplTest {
         final Optional<AppSecrets> secretsAfterSiteDelete = api.getSecrets(appKey, newSite, admin);
         assertFalse(secretsAfterSiteDelete.isPresent());
 
+    }
+
+    private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(APILocator.getUserAPI(),
+            APILocator.getLayoutAPI(),
+            APILocator.getHostAPI(), APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
+            CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
+            new LicenseValiditySupplier() {
+                public boolean hasValidLicense() {
+                    return false;
+                }
+            });
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#getAppDescriptors
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Get_Descriptor_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        nonValidLicenseAppsAPI.getAppDescriptors(admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#getAppDescriptor
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Get_Apps_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        nonValidLicenseAppsAPI.getAppDescriptor("anyKey",admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#getSecrets
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Get_Secret_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException {
+        final User admin = TestUserUtils.getAdminUser();
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        nonValidLicenseAppsAPI.getSecrets("anyKey",systemHost, admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#getSecrets
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Get_Secret_fallbackOnSystemHost_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException {
+        final User admin = TestUserUtils.getAdminUser();
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        nonValidLicenseAppsAPI.getSecrets("anyKey", true, systemHost, admin);
+    }
+
+    /**
+     * Given scenario: We subscribe an event listener and save an event
+     * Expected Results: We expect that an event is fired and that after firing the event the AppsSecret that was initially passed to the save method is now destroyed
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Save_Secret_Expect_Event_Notification() throws DotDataException, DotSecurityException{
+        final AtomicInteger callsCount = new AtomicInteger(0);
+        final AppsAPI api = APILocator.getAppsAPI();
+        final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+        localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, new AppsSecretEventSubscriber(){
+            @Override
+            public void notify(AppSecretSavedEvent event) {
+                callsCount.incrementAndGet();
+            }
+        });
+
+        final String appKey = AppsSecretEventSubscriber.appKey;
+
+        final AppDescriptor descriptor = mock(AppDescriptor.class);
+        when(descriptor.isAllowExtraParameters()).thenReturn(false);
+        final Map<String, ParamDescriptor> params = of(
+                "requiredNoDefault",newParam(null, false, Type.STRING, "any", "hint", true),
+                "requiredDefault", newParam("default", false, Type.STRING, "any", "hint", true),
+                "nonRequiredNoDefault", newParam(null, false, Type.STRING, "any", "hint", false)
+        );
+        when(descriptor.getParams()).thenReturn(params);
+        when(descriptor.getName()).thenReturn("any-name");
+        when(descriptor.getKey()).thenReturn(appKey);
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final User admin = TestUserUtils.getAdminUser();
+
+        //Let's create a set of secrets for a service
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppSecrets secrets = builder1.withKey(appKey)
+                .withHiddenSecret("requiredNoDefault", "value") //We're providing the expected value
+                .withHiddenSecret("requiredDefault", "secret-2")
+                .build();
+        //Save it
+        api.saveSecrets(secrets, site, admin);
+        DateUtil.sleep(2000);
+        Assert.assertEquals(callsCount.get(), 1);
+
+        // Now Test Secret has been destroyed.
+        final Map<String, Secret> secretsPostSave = secrets.getSecrets();
+        for(final String key: secretsPostSave.keySet()){
+            final char[] value = secretsPostSave.get(key).getValue();
+            assertTrue(isSecretDestroyed(value));
+        }
+    }
+
+    /**
+     * for internal use validate a secret has been destroyed
+     * @param chars
+     * @return
+     */
+    private boolean isSecretDestroyed(final char [] chars){
+        final char nullChar = (char) 0;
+        for(final char chr: chars){
+            if(chr != nullChar){
+                return false;
+            }
+        }
+        return true;
     }
 
 }

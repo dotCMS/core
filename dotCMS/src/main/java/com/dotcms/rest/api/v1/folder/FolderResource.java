@@ -29,6 +29,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.liferay.util.StringPool;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -91,7 +93,8 @@ public class FolderResource implements Serializable {
         final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         final User user = initData.getUser();
         try{
-            Folder folder = folderHelper.loadFolderByURI(siteName,user,uri);
+            final String uriParam = !uri.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(uri) : uri;
+            final Folder folder = folderHelper.loadFolderByURI(siteName,user,uriParam);
             response = Response.ok( new ResponseEntityView(folder) ).build();
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this, "Error getting folder for URI", e);
