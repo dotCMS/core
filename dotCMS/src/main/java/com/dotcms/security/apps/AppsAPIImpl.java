@@ -4,6 +4,8 @@ import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.google.common.collect.ImmutableList.of;
 import static java.util.Collections.emptyMap;
+
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -78,6 +80,7 @@ public class AppsAPIImpl implements AppsAPI {
     private final ContentletAPI contentletAPI;
     private final SecretsStore secretsStore;
     private final AppsCache appsCache;
+    private final LocalSystemEventsAPI localSystemEventsAPI;
 
     private final LicenseValiditySupplier licenseValiditySupplier;
 
@@ -88,18 +91,23 @@ public class AppsAPIImpl implements AppsAPI {
 
     @VisibleForTesting
     public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI,
-            final SecretsStore secretsRepository, final AppsCache appsCache, final LicenseValiditySupplier licenseValiditySupplier) {
+            final SecretsStore secretsRepository, final AppsCache appsCache, final LocalSystemEventsAPI localSystemEventsAPI, final LicenseValiditySupplier licenseValiditySupplier) {
         this.userAPI = userAPI;
         this.layoutAPI = layoutAPI;
         this.hostAPI = hostAPI;
         this.contentletAPI = contentletAPI;
         this.secretsStore = secretsRepository;
         this.appsCache = appsCache;
+        this.localSystemEventsAPI = localSystemEventsAPI;
         this.licenseValiditySupplier = licenseValiditySupplier;
     }
 
     public AppsAPIImpl() {
-        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), APILocator.getContentletAPI() ,SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(), new LicenseValiditySupplier(){});
+        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(),
+                APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
+                CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
+                new LicenseValiditySupplier() {
+                });
     }
 
     /**
@@ -339,14 +347,31 @@ public class AppsAPIImpl implements AppsAPI {
                 try {
                     chars = toJsonAsChars(secrets);
                     secretsStore.saveValue(internalKey, chars);
+                    notifySaveEventAndDestroySecret(secrets, host);
                 } finally {
-                    secrets.destroy();
                     if (null != chars) {
                         Arrays.fill(chars, (char) 0);
                     }
                 }
             }
         }
+    }
+
+    /***
+     * This will broadcast an async AppSecretSavedEvent
+     * and will also perform a clean-up (destroy) over the secret once all the event subscribers are done consuming the event.
+     * @param secrets
+     * @param host
+     */
+    private void notifySaveEventAndDestroySecret(final AppSecrets secrets, final Host host) {
+        localSystemEventsAPI.asyncNotify(new AppSecretSavedEvent(secrets, host),
+            event -> {
+                final AppSecretSavedEvent appSecretSavedEvent = (AppSecretSavedEvent) event;
+                final AppSecrets appSecrets = appSecretSavedEvent.getAppSecrets();
+                if (null != appSecrets) {
+                    appSecrets.destroy();
+                }
+            });
     }
 
     @Override

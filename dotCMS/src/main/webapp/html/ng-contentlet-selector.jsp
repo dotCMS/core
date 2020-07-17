@@ -155,7 +155,7 @@
 
         function loadAddContentTypePrimaryMenu() {
             var addContentDropdown = '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"fa-plus", class:"dijitDropDownActionButton"\'><span></span>';
-            addContentDropdown+= '<ul data-dojo-type="dijit/Menu" >';
+            addContentDropdown+= '<ul class="content-search-dialog__content-type-menu" data-dojo-type="dijit/Menu" >';
             var addContentTypePrimaryMenu =  document.getElementById('addContentTypeDropdown');
             for ( var i = 1; contentSelector.containerStructures.length > i; i++) {
                 addContentDropdown+= '<li data-dojo-type="dijit/MenuItem" onClick="addNewContentlet(\'' + contentSelector.containerStructures[i].inode + '\')">' + contentSelector.containerStructures[i].name + '</li>';
