@@ -21,13 +21,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
@@ -38,7 +37,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 
 public class H22Cache extends CacheProvider {
@@ -47,9 +45,8 @@ public class H22Cache extends CacheProvider {
     private static final long serialVersionUID = 1L;
     final int numberOfAsyncThreads=Config.getIntProperty("cache_h22_async_threads", 5);
     final boolean shouldAsync=Config.getBooleanProperty("cache_h22_async", true);
-    final ThreadFactory namedThreadFactory = 
-                    new ThreadFactoryBuilder().setNameFormat("H22-ASYNC-COMMIT-%d").build();
-    final private ExecutorService executorService = Executors.newFixedThreadPool(numberOfAsyncThreads, namedThreadFactory);
+
+    final private DotSubmitter executorService = DotConcurrentFactory.getInstance().getSubmitter("H22Cache_ASYNC_PUTS");
     
     
 	private Boolean isInitialized = false;
