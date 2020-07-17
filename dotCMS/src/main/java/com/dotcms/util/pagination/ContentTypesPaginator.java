@@ -106,7 +106,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             entriesByContentTypes = APILocator.getContentTypeAPI
                     (user, true).getEntriesByContentTypes();
         } catch (DotStateException | DotDataException e) {
-            Logger.error(ContentTypesPaginator.class, e);
+            Logger.debug(ContentTypesPaginator.class, () ->
+                    String.format("Error trying to calculate Content Type entries attribute: %s", e.getMessage()));
         }
 
         for (final Map<String, Object> contentTypeEntry : contentTypesTransform) {
