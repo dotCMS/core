@@ -332,7 +332,7 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: dotcms/cicd-slack-action@master
-        with
+        with:
           github-user: ${{ github.actor }}
           branch: ${{ env.CURRENT_BRANCH }}
 
