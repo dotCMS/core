@@ -336,4 +336,3 @@ jobs:
           github-user: ${{ github.actor }}
           branch: ${{ env.CURRENT_BRANCH }}
 
-g
