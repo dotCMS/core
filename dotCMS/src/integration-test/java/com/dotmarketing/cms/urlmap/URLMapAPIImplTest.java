@@ -83,6 +83,8 @@ public class URLMapAPIImplTest {
         session = mock(HttpSession.class);
 
         when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
+
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     }
 
@@ -534,7 +536,6 @@ public class URLMapAPIImplTest {
     @Test
     public void shouldReturnURLInfoWhenContentExistsInFutureButTimeMachineIsSet()
             throws DotDataException, DotSecurityException {
-
 
         final String newsPatternPrefix =
                 TEST_PATTERN + System.currentTimeMillis() + "/";

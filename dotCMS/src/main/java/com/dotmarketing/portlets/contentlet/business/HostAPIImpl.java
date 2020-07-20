@@ -254,6 +254,7 @@ public class HostAPIImpl implements HostAPI {
         Host host = null;
 
         try {
+
             StringBuilder queryBuffer = new StringBuilder();
             queryBuffer.append(String.format("%s:%s", CONTENT_TYPE_CONDITION, Host.HOST_VELOCITY_VAR_NAME ));
             queryBuffer.append(String.format(" +working:true +%s.aliases:%s", Host.HOST_VELOCITY_VAR_NAME, alias));

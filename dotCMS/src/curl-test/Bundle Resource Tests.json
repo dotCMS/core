@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8829f9af-9738-4883-86d4-10c5becbd2c9",
+		"_postman_id": "de41ebb0-722b-40b4-9523-6f359b0f1993",
 		"name": "Bundle Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ba4ad863-ea8a-40af-8e98-3e0a05a1bba4",
+								"id": "0b6bc7b4-43f2-4d4b-8d1c-562ba121de88",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -70,7 +70,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a9e0c6e4-02f8-4dac-bc6f-a997df6e4543",
+								"id": "0b464cd3-0aac-4528-a8f6-47f67341073c",
 								"exec": [
 									"pm.test(\"Status code should be 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -139,7 +139,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "9474c0c7-34dd-49f7-899a-48d581891d6b",
+						"id": "c2d2db81-170f-49b3-951a-5cc4c81185e9",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -149,7 +149,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "12afbce4-4abd-412d-9383-a2c4d77d225d",
+						"id": "c5ee8628-26df-4d3a-85e6-7f053c127d10",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -163,12 +163,45 @@
 			"name": "deleteBundlesOlderThan",
 			"item": [
 				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8d5380bd-5b00-4942-aa78-443db8d3d4c4",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Delete Bundle by Future Date",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "ad1ef682-0db5-414f-af88-45085df3204d",
+								"id": "b552398a-dd70-4dce-b36e-14f4ebf7c86b",
 								"exec": [
 									"pm.test(\"Status code should be 400\", function () {",
 									"    pm.response.to.have.status(400);",
@@ -221,7 +254,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ca113b7a-01d2-4ac7-832d-6a18f43bdea9",
+								"id": "75ed7005-dba8-4ea2-b2ee-cf9303096a35",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -265,7 +298,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cf51c455-fdb4-4a88-9548-03afdd37ab84",
+								"id": "ad51c623-db85-4571-8501-094c225fbe62",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -316,7 +349,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "8b645bb9-43d2-4a20-8ef2-35b3208f1aa8",
+						"id": "fe38d058-1f70-4cd0-b5f6-e0b537508d2e",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -326,7 +359,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "478ef701-1cc1-4424-94d7-7b716661a4f2",
+						"id": "4ab8bf15-8b10-4f22-b08b-4e2bf1c55165",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -340,12 +373,45 @@
 			"name": "deleteAllFail",
 			"item": [
 				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e66bf76c-0b17-44f6-8fbf-1408691ba49a",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Delete Bundle by Fail Non User",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "954f1323-a05d-4d4c-b56e-54383e5a75f3",
+								"id": "72f33617-c5cd-4a5c-9eff-c55817b2c0ad",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -386,7 +452,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7c91af00-4545-4001-8449-4379ff95b57f",
+								"id": "6bdd7855-312f-4dcf-9801-4566cf8aca64",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -438,7 +504,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "8e705824-9119-4da0-aa6d-ff791a8cdcbd",
+						"id": "ca9d4871-fc52-4b44-bb49-6ee9ebb0a9a1",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -448,7 +514,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "d5da23ca-ee34-4bfc-8ccc-4fffe73f6af0",
+						"id": "5488d223-6070-4e33-94ea-d1b174379c15",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -462,12 +528,45 @@
 			"name": "deleteAllSuccess",
 			"item": [
 				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a8eeee00-d742-4b36-b540-e052aa5e4b40",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Delete Bundle by Success Non User",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "0f679117-6529-42fc-a940-49c6bada54b8",
+								"id": "31664cb8-c000-4ec5-9ba4-23a1238b9447",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -508,7 +607,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0f06df29-76c8-4e2a-94ea-5a8deda6429d",
+								"id": "52da9aab-dca5-4b58-8349-4e863891cf95",
 								"exec": [
 									"pm.test(\"Status code is 200, You need credentials\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -563,12 +662,45 @@
 			"name": "deleteAll",
 			"item": [
 				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "987313e5-bf59-4214-871f-82de4bc7d4e3",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Delete Bundle by All Non User ",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "611fb985-2a06-4f8c-a4b1-3c1ead67a160",
+								"id": "d47fbd9c-ac42-4969-a34e-531752e35ee8",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -608,7 +740,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f1c26ae5-00cd-48ac-ba52-1b9e54cffc6c",
+								"id": "92d8b290-769e-4ed9-9c24-dcce3a0b2115",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",

@@ -975,7 +975,7 @@
 
                 var categoriesValues = new Array ();
                 var form = document.getElementById("search_form");
-                var categories = form.categories;
+                var categories = document.getElementsByName("categories");
                 if (categories != null) {
                         if (categories.options != null) {
                                 var opts = categories.options;

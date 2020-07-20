@@ -405,7 +405,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
+									"src": "/build/src/core/dotCMS/src/curl-test/resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
 								}
 							],
 							"options": {
@@ -469,7 +469,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/Readme18005.md"
+									"src": "/build/src/core/dotCMS/src/curl-test/resources/GraphQL/Test_GraphQL_Image_Field_fields/Readme18005.md"
 								}
 							],
 							"options": {
@@ -1080,7 +1080,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "resources/PageResource/pages.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/PageResource/pages.tar.gz"
 										}
 									],
 									"options": {
