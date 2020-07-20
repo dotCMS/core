@@ -3,6 +3,7 @@ import { DotCMSLanguageItem } from './';
 export interface DotCMSConfigurationParams {
     token: string;
     host?: string;
+    hostId?: string;
 }
 
 export interface DotCMSConfigurationItem {
