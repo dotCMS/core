@@ -6,7 +6,6 @@ import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
-import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
@@ -295,8 +294,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DotParseTest.class,
         TestWorkflowAction.class,
         HostAPITest.class,
-        ESMappingUtilHelperTest.class,
-        ClusterFactoryTest.class
+        ESMappingUtilHelperTest.class
 })
 public class MainSuite {
 
