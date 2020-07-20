@@ -25,6 +25,7 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeReference;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -151,8 +152,19 @@ public enum CustomFieldType {
     }
 
     public static boolean isCustomFieldType(final GraphQLType type) {
-        return  type instanceof GraphQLList ? getCustomFieldTypes()
-                .contains(((GraphQLList) type).getWrappedType())
-                : getCustomFieldTypes().contains(type);
+        boolean isCustomField = false;
+
+        if(type instanceof GraphQLList) {
+            isCustomField = getCustomFieldTypes()
+                    .contains(((GraphQLList) type).getWrappedType());
+        }
+        else if(type instanceof GraphQLTypeReference) {
+            isCustomField = getCustomFieldTypes().stream().anyMatch(customType->
+                    customType.getName().equals(type.getName()));
+        } else {
+            isCustomField = getCustomFieldTypes().contains(type);
+        }
+
+        return isCustomField;
     }
 }
