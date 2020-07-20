@@ -160,6 +160,7 @@ public class ContainerStructureFinderStrategyResolver {
         }
     } // IdentifierContainerStructureFinderStrategyImpl
 
+    @VisibleForTesting
     class PathContainerStructureFinderStrategyImpl implements ContainerStructureFinderStrategy {
 
         private final String FILE_EXTENSION = ".vtl";
