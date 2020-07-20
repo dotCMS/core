@@ -513,6 +513,16 @@ public class Logger{
 	}
 
 	/**
+	 * Determinate if the level is a valid one
+	 * @param level {@link String}
+	 * @return boolean
+	 */
+	public static boolean isValidLevel(final String level) {
+
+		return null != Level.getLevel(level);
+	}
+
+	/**
 	 * Get the list of current collection on cache app
 	 * @return List
 	 */

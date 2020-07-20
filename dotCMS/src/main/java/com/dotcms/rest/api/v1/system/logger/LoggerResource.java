@@ -57,7 +57,7 @@ public class LoggerResource {
             return Response.ok(new ResponseEntityView(this.toView(Logger.getLogger(loggerClass)))).build();
         }
 
-        throw new DoesNotExistException("Logger does not exists");
+        throw new DoesNotExistException("Logger: " + loggerName + " does not exists");
     }
 
     /**
@@ -88,7 +88,7 @@ public class LoggerResource {
     }
 
     /**
-     * Change the log level, 404 if does not exists
+     * Change the log level, 404 if Logger does not exists, 400 if Level is not valid
      * User must be Admin
      * @param request           {@link HttpServletRequest}
      * @param response          {@link HttpServletResponse}
@@ -114,6 +114,12 @@ public class LoggerResource {
 
         final String loggerName = changeLoggerForm.getName();
         final String level      = changeLoggerForm.getLevel();
+
+        if (!Logger.isValidLevel(level)) {
+
+            throw new IllegalArgumentException("Level: " + level + " is not valid");
+        }
+
         final Object logger     = Logger.setLevel(loggerName, level);
 
         if (null != logger) {
@@ -121,7 +127,7 @@ public class LoggerResource {
             return Response.ok(new ResponseEntityView(this.toView(logger))).build();
         }
 
-        throw new DoesNotExistException("Logger does not exists");
+        throw new DoesNotExistException("Logger: " + loggerName + " does not exists");
     }
 
     private LoggerView toView (final Object loggerObject) {
