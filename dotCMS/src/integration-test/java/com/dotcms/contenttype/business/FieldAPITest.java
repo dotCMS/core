@@ -1345,9 +1345,8 @@ public class FieldAPITest extends IntegrationTestBase {
      * Expected result: {@link DotDataException} thrown
      */
 
-    @Test(expected = DotDataException.class)
     @UseDataProvider("dataProviderGraphQLIncompatibleFields")
-    public void test_SaveField_GivenGraphQLIncompatibleVariable_ShouldThrowException(
+    public void test_SaveField_GivenGraphQLIncompatibleVariable_ShouldSave(
             final GraphQLFieldNameCompatibilityTestCase testCase)
             throws DotSecurityException, DotDataException {
 
@@ -1357,6 +1356,7 @@ public class FieldAPITest extends IntegrationTestBase {
             // passing the invalid graphql variable as both name and variable of the field
             final Field field = createField(contentType, testCase.fieldName,
                     testCase.fieldName, testCase.fieldType);
+            Assert.assertEquals(testCase.fieldName, field.variable());
         } finally {
             contentTypeAPI.delete(type);
         }
