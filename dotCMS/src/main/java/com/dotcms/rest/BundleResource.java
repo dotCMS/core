@@ -633,14 +633,14 @@ public class BundleResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response uploadBundleSync(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       FormDataMultiPart multipart,
-                                       @Context UriInfo uriInfo) throws DotPublisherException {
+                                       FormDataMultiPart multipart) throws DotPublisherException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
+                .requireLicense(true)
                 .init();
 
         for (final BodyPart part : multipart.getBodyParts()) {
@@ -692,14 +692,14 @@ public class BundleResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final void uploadBundleAsync(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                        @Suspended final AsyncResponse asyncResponse,
-                                        FormDataMultiPart multipart,
-                                        @Context UriInfo uriInfo, @QueryParam("sync") boolean sync) throws DotPublisherException {
+                                        FormDataMultiPart multipart) throws DotPublisherException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
+                .requireLicense(true)
                 .init();
 
         for (final BodyPart part : multipart.getBodyParts()) {
