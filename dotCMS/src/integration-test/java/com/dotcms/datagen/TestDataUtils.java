@@ -53,6 +53,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.io.FileUtils;
 
 /**
  * @author Jonathan Gamba 2019-04-16
@@ -948,22 +949,41 @@ public class TestDataUtils {
 
             //Test file
             final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
-            final File originalTestImage = new File(
-                    ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-            final File testImage = new File(Files.createTempDir(),
-                    "test_image1" + System.currentTimeMillis() + ".jpg");
-            FileUtil.copyFile(originalTestImage, testImage);
-
-            ContentletDataGen fileAssetDataGen = new FileAssetDataGen(folder, testImage)
-                    .languageId(languageId);
-
-            if (persist) {
-                return ContentletDataGen.publish(fileAssetDataGen.nextPersisted());
-            } else {
-                return fileAssetDataGen.next();
-            }
+            return createFileAsset(testImagePath, folder, languageId, persist);
         } catch (Exception e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    public static Contentlet getFileAssetSVGContent(Boolean persist, long languageId) {
+
+        try {
+            final Folder folder = new FolderDataGen().nextPersisted();
+
+            //Test file
+            final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image.svg";
+            return createFileAsset(testImagePath, folder, languageId, persist);
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private static Contentlet createFileAsset(final String testImagePath, final Folder folder, final long languageId, final boolean persist) throws Exception{
+        //Test file
+        final String extension = UtilMethods.getFileExtension(testImagePath);
+        final File originalTestImage = new File(
+                ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
+        final File testImage = new File(Files.createTempDir(),
+                "test_image1" + System.currentTimeMillis() + "." + extension);
+        FileUtil.copyFile(originalTestImage, testImage);
+
+        ContentletDataGen fileAssetDataGen = new FileAssetDataGen(folder, testImage)
+                .languageId(languageId);
+
+        if (persist) {
+            return ContentletDataGen.publish(fileAssetDataGen.nextPersisted());
+        } else {
+            return fileAssetDataGen.next();
         }
     }
 

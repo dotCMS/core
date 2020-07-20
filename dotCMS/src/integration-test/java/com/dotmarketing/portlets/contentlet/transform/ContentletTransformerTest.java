@@ -27,6 +27,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.util.IntegrationTestInitService;
@@ -50,6 +51,8 @@ import com.dotcms.api.APIProvider.Builder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.workflows.actionlet.copy.AssertionStrategy;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -59,6 +62,11 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -69,12 +77,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
+
+    static String serializePath;
+    static long langId;
+    static File directory;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -85,13 +98,18 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
         final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
 
-
         // Creating the contentlets for they will be pulled-out from the index
         for (int i = 0; i <= 10; i++) {
             TestDataUtils.getEmployeeContent(true, 1, employeeLikeContentType.id());
             TestDataUtils.getBannerLikeContent(true, 1, bannerLikeContentType.id(), null);
             TestDataUtils.getNewsContent(true, 1, newsLikeContentType.id());
         }
+
+        serializePath = Files.createTempDir().getCanonicalPath();
+        langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+        directory = new File(serializePath);
+        directory.mkdirs();
 
     }
 
@@ -296,32 +314,32 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final int limit = 300;
         final boolean respectFrontEndUsers = false;
         return new Object[]{
-                new TestCase(BaseContentType.getBaseContentType(0),
+                new CompatibilityTestCase(BaseContentType.getBaseContentType(0),
                         contentletAPI.search("+basetype:0", limit, 0, null, user, respectFrontEndUsers)),
-                new TestCase(BaseContentType.getBaseContentType(1),
+                new CompatibilityTestCase(BaseContentType.getBaseContentType(1),
                         contentletAPI.search("+basetype:1", limit, 0, null, user, respectFrontEndUsers)),
-                new TestCase(BaseContentType.getBaseContentType(2),
+                new CompatibilityTestCase(BaseContentType.getBaseContentType(2),
                         contentletAPI.search("+basetype:2", limit, 0, null, user, respectFrontEndUsers)),
-                new TestCase(BaseContentType.getBaseContentType(3),
+                new CompatibilityTestCase(BaseContentType.getBaseContentType(3),
                         contentletAPI.search("+basetype:3", limit, 0, null, user, respectFrontEndUsers)),
-                new TestCase(BaseContentType.getBaseContentType(4),
+                new CompatibilityTestCase(BaseContentType.getBaseContentType(4),
                         contentletAPI.search("+basetype:4", limit, 0, null, user, respectFrontEndUsers)),
-                new TestCase(BaseContentType.getBaseContentType(5),
+                new CompatibilityTestCase(BaseContentType.getBaseContentType(5),
                         contentletAPI.search("+basetype:5", limit, 0, null, user, respectFrontEndUsers)),
-                new TestCase(BaseContentType.getBaseContentType(6),
+                new CompatibilityTestCase(BaseContentType.getBaseContentType(6),
                         contentletAPI.search("+basetype:6", limit, 0, null, user, respectFrontEndUsers)),
-                new TestCase(BaseContentType.getBaseContentType(7),
+                new CompatibilityTestCase(BaseContentType.getBaseContentType(7),
                         contentletAPI.search("+basetype:7", limit, 0, null, user, respectFrontEndUsers)),
-                new TestCase(BaseContentType.getBaseContentType(8),
+                new CompatibilityTestCase(BaseContentType.getBaseContentType(8),
                         contentletAPI.search("+basetype:8", limit, 0, null, user, respectFrontEndUsers))
         };
     }
 
-    private static class TestCase {
+    private static class CompatibilityTestCase {
         final BaseContentType baseContentType;
         final List<Contentlet> contentlets;
 
-        TestCase(final BaseContentType baseContentType,
+        CompatibilityTestCase(final BaseContentType baseContentType,
                 final List<Contentlet> contentlets) {
             this.baseContentType = baseContentType;
             this.contentlets = contentlets;
@@ -335,7 +353,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     @UseDataProvider("listTestCases")
-    public void Transformer_Backwards_Compatibility_Test(final TestCase testCase) {
+    public void Transformer_Backwards_Compatibility_Test(final CompatibilityTestCase testCase) {
 
         final List <Contentlet> list = testCase.contentlets;
 
@@ -604,5 +622,112 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     }
 
+    @Test
+    public void Test_Serialize_Contentlet_Then_Recover_Then_Transform(final SerializationTestCase serializationTestCase)
+            throws IOException, ClassNotFoundException {
+
+        final File file = new File(directory,String.format("%s.serialized",System.currentTimeMillis()));
+        file.createNewFile();
+
+        final Contentlet original = serializationTestCase.contentlet;
+        serializeContentlet(serializationTestCase.contentlet, file);
+        final Contentlet copy = readSerializedContentlet(file);
+        validateMaps(original, copy);
+        final AssertionStrategy assertionStrategy = serializationTestCase.assertionStrategy;
+        if(null != assertionStrategy) {
+            assertionStrategy.apply(original, copy);
+        }
+    }
+
+    private static class SerializationTestCase {
+
+        final Contentlet contentlet;
+        final AssertionStrategy assertionStrategy;
+
+        SerializationTestCase(final Contentlet contentlet,
+                final AssertionStrategy assertionStrategy) {
+            this.contentlet = contentlet;
+            this.assertionStrategy = assertionStrategy;
+        }
+    }
+
+    @DataProvider
+    public static Object[] listSerializeTestCases() throws Exception {
+        final FileAssetAPI assetAPI = APILocator.getFileAssetAPI();
+        HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+        return new Object[]{
+                new SerializationTestCase(((Supplier<Contentlet>) () -> {
+                    final Contentlet contentlet = TestDataUtils.getFileAssetSVGContent(true, langId);
+                    return assetAPI.fromContentlet(contentlet);
+                }).get(), fileAssetValidation),
+                new SerializationTestCase(((Supplier<Contentlet>) () -> {
+                    final Contentlet contentlet = TestDataUtils.getPageContent(true, langId);
+                    return pageAssetAPI.fromContentlet(contentlet);
+                }).get(),
+                        (original, copy) -> {
+
+                        })
+
+        };
+    }
+
+    private void validateMaps(final Contentlet original, final Contentlet copy){
+        final Map<String, Object> preSerializationMap = new DotTransformerBuilder().defaultOptions().content(original).build().toMaps().get(0);
+        final Map<String, Object> postSerializationMap = new DotTransformerBuilder().defaultOptions().content(copy).build().toMaps().get(0);
+        Assert.assertEquals(preSerializationMap, postSerializationMap);
+    }
+
+    private static final AssertionStrategy fileAssetValidation = (original, copy) -> {
+        final FileAsset fileAsset1 = (FileAsset) original;
+        final int width = fileAsset1.getWidth();
+        final int height = fileAsset1.getHeight();
+
+        final FileAsset fileAsset2 = (FileAsset) copy;
+
+        final int width2 = fileAsset2.getWidth();
+        final int height2 = fileAsset2.getHeight();
+        Assert.assertEquals(width, width2);
+        Assert.assertEquals(height, height2);
+    };
+
+    private static final AssertionStrategy pageValidation = (original, copy) -> {
+        final HTMLPageAsset htmlPageAsset1 = (HTMLPageAsset) original;
+
+
+        final HTMLPageAsset htmlPageAsset2 = (HTMLPageAsset) copy;
+
+
+    };
+
+    /**
+     *
+     * @param contentlet
+     * @param file
+     * @throws IOException
+     */
+    private void serializeContentlet(final Contentlet contentlet, final File file)
+            throws IOException {
+
+        try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
+                objectOutputStream.writeObject(contentlet);
+            }
+        }
+    }
+
+    /**
+     *
+     * @param file
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    private Contentlet readSerializedContentlet(final File file) throws IOException, ClassNotFoundException{
+        try(FileInputStream fileInputStream = new FileInputStream(file)){
+            try(ObjectInputStream inputStream = new ObjectInputStream(fileInputStream)){
+                return (Contentlet) inputStream.readObject();
+            }
+        }
+    }
 
 }
