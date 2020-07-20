@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Optional;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.dotmarketing.util.Config;
@@ -25,7 +25,7 @@ public class H22HikariPool {
 	final int setLeakDetectionThreshold = Config.getIntProperty("cache.h22.db.leak.detection.timeout", 0);
 	final HikariDataSource datasource;
 	final String folderName;
-	boolean running = false;
+	AtomicBoolean running = new AtomicBoolean(false);
 	final String extraParms = Config.getStringProperty("cache.h22.db.extra.params", ";MVCC=TRUE;DB_CLOSE_ON_EXIT=FALSE"); //;LOCK_MODE=0;DB_CLOSE_ON_EXIT=FALSE;FILE_LOCK=NO
 	
 	public H22HikariPool(String dbRoot, int dbNumber) {
@@ -39,7 +39,7 @@ public class H22HikariPool {
 		folderName = dbRoot  + File.separator  + dbNumber +File.separator 
 				+ database;
 		datasource = getDatasource();
-		running = true;
+		running.set(true);
 	}
 	
 
@@ -74,11 +74,19 @@ public class H22HikariPool {
 	}
 
 	public boolean running() {
-		return running;
+		return running.get();
 	}
-
+	
+    public void stop() {
+        running.set(false);
+    }
+    
+    public void start() {
+        running.set(true);
+    }
+    
 	public Optional<Connection> connection() throws SQLException {
-		if (!running) {
+		if (!running.get()) {
 			return Optional.empty();
 		}
 
@@ -86,7 +94,7 @@ public class H22HikariPool {
 	}
 
 	public void close() {
-		running = false;
+	    running.set(false);
 		datasource.close();
 	}
 	

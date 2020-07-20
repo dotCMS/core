@@ -199,22 +199,17 @@ public class H22Cache extends CacheProvider {
 			for (int db = 0; db < numberOfDbs; db++) {
 				
 				for (int table = 0; table < numberOfTablesPerDb; table++) {
-					 Connection connection = null;
-					 PreparedStatement stmt = null;
+
 					 final Optional<Connection> opt = createConnection(true, db); 
 					 
 					if (!opt.isPresent()) {
-					    throw new SQLException("Unable to get connection when trying to remove in H22Cache");
+					    throw new SQLException("Unable to get connection when trying to remove groups " + groupName + " in H22Cache");
 					}
 
-					try {
-					    connection = opt.get();
-					    Logger.warn(this, "connection.getAutoCommit():" + connection.getAutoCommit());
-					    stmt = connection.prepareStatement("DELETE from " + TABLE_PREFIX + table + " WHERE cache_group = ?");
+					try (Connection connection = opt.get();PreparedStatement stmt = connection.prepareStatement("DELETE from " + TABLE_PREFIX + table + " WHERE cache_group = ?")){
+					    Logger.debug(this, "connection.getAutoCommit():" + connection.getAutoCommit());
 					    stmt.setString(1, fqn.group);
 					    stmt.executeUpdate();
-					} finally {
-						CloseUtils.closeQuietly(stmt, connection);
 					} 
 				}
 			}
@@ -273,19 +268,16 @@ public class H22Cache extends CacheProvider {
 				H22HikariPool pool = poolOpt.get();
 				Optional<Connection> connOpt = pool.connection();
 				if(!connOpt.isPresent())continue;
-				Connection c = connOpt.get();
-				try{
-					pool.running=false;
+				
+				try(Connection c = connOpt.get()){
+					pool.stop();
 					for (int table = 0; table < numberOfTablesPerDb; table++) {
 						Statement stmt = c.createStatement();
 						stmt.execute("truncate table " + TABLE_PREFIX + table);
 						stmt.close();
 					}
 				}
-				finally{
-					pool.running=true;
-					c.close();
-				}
+				
 			}
 
 	}
@@ -314,8 +306,7 @@ public class H22Cache extends CacheProvider {
 			}
 		}
 		
-		if(failedFlushAlls==failedThreshold)
-		
+
 		stats.clear();
 		DONT_CACHE_ME.invalidateAll();
 		long end = System.nanoTime();
@@ -333,22 +324,22 @@ public class H22Cache extends CacheProvider {
 				if (!opt.isPresent()) {
 					continue;
 				}
-				Connection c = opt.get();
-				for (int table = 0; table < numberOfTablesPerDb; table++) {
-					Statement stmt = c.createStatement();
-					ResultSet rs = stmt.executeQuery("select DISTINCT(cache_group) from " + TABLE_PREFIX + table);
-					if (rs != null) {
-						while (rs.next()) {
-							String groupname = rs.getString(1);
-							if (UtilMethods.isSet(groupname)) {
-								groups.add(groupname);
-							}
-						}
-						rs.close();
-						stmt.close();
-					}
+				try(Connection c = opt.get()){
+    				for (int table = 0; table < numberOfTablesPerDb; table++) {
+    					Statement stmt = c.createStatement();
+    					ResultSet rs = stmt.executeQuery("select DISTINCT(cache_group) from " + TABLE_PREFIX + table);
+    					if (rs != null) {
+    						while (rs.next()) {
+    							String groupname = rs.getString(1);
+    							if (UtilMethods.isSet(groupname)) {
+    								groups.add(groupname);
+    							}
+    						}
+    						rs.close();
+    						stmt.close();
+    					}
+    				}
 				}
-				c.close();
 			}
 		} catch (SQLException e) {
 			Logger.warn(this.getClass(), "cannot get groups : " + e.getMessage());
@@ -398,12 +389,12 @@ public class H22Cache extends CacheProvider {
 
 	protected void dispose(int db, boolean trashMe) {
 		try {
-			H22HikariPool pool = pools[db];
-			pools[db] = null;
-			if (pool != null) {
-				pool.close();
+			final H22HikariPool oldPool = pools[db];
+			pools[db] = createPool(db);
+			if (oldPool != null) {
+			    oldPool.close();
 				if(trashMe){
-					new H22CacheCleanupThread(dbRoot, db, pool.database, 20*1000).start();
+					new H22CacheCleanupThread(dbRoot, db, oldPool.database, 20*1000).start();
 				}
 			}
 		} catch (Exception e) {
@@ -518,39 +509,31 @@ public class H22Cache extends CacheProvider {
 		if (!opt.isPresent()) {
 			return worked;
 		}
-		Connection c = opt.get();
+		
+		try(Connection c = opt.get();
+		                ByteArrayOutputStream os = new ByteArrayOutputStream();
+		                ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(os, 8192)); ){
 
+		    String upsertSQL = "MERGE INTO `" + TABLE_PREFIX + table(fqn) + "` key(cache_id) VALUES (?,?, ?)";
 
-
-		String upsertSQL = "MERGE INTO `" + TABLE_PREFIX + table(fqn) + "` key(cache_id) VALUES (?,?, ?)";
-
-		PreparedStatement upsertStmt = null;
-		try{
-			upsertStmt = c.prepareStatement(upsertSQL);
-			upsertStmt.setString(1, fqn.id);
-			upsertStmt.setString(2, fqn.group);
-			ObjectOutputStream output = null;
-			OutputStream bout;
-			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			bout = new BufferedOutputStream(os, 8192);
-
-			output = new ObjectOutputStream(bout);
-			output.writeObject(obj);
-			output.flush();
-			byte[] data = os.toByteArray();
-			bytes = data.length;
-			upsertStmt.setBytes(3, data);
-
-			worked = upsertStmt.execute();
+		    try(PreparedStatement upsertStmt = c.prepareStatement(upsertSQL)){
+    			upsertStmt.setString(1, fqn.id);
+    			upsertStmt.setString(2, fqn.group);
+    
+    			output.writeObject(obj);
+    			output.flush();
+    			byte[] data = os.toByteArray();
+    			bytes = data.length;
+    			upsertStmt.setBytes(3, data);
+    
+    			worked = upsertStmt.execute();
+		    }
 			stats.group(fqn.group).writes++;
 			stats.group(fqn.group).writeSize(bytes * 8);
 			stats.group(fqn.group).writeTime(System.nanoTime() - start);
 			DONT_CACHE_ME.invalidate(fqn.id);
 		}
-		finally{
-			if(upsertStmt!=null)upsertStmt.close();
-			c.close();
-		}
+		
 			
 		
 		return worked;
@@ -561,56 +544,27 @@ public class H22Cache extends CacheProvider {
 			return null;
 		}
 
-		ObjectInputStream input=null;
-		InputStream bin=null;
-		InputStream is=null;
+
 		Optional<Connection> opt = createConnection(true, db(fqn));
 		if (!opt.isPresent()) {
 			return null;
 		}
-		Connection c = opt.get();
-
-		PreparedStatement stmt = null;
-		try {
-
-			stmt = c.prepareStatement("select CACHE_DATA from `" + TABLE_PREFIX + table(fqn) + "` WHERE cache_id = ?");
+        try(Connection c = opt.get();
+            PreparedStatement stmt = c.prepareStatement("select CACHE_DATA from `" + TABLE_PREFIX + table(fqn) + "` WHERE cache_id = ?");){
 			stmt.setString(1, fqn.id);
-			ResultSet rs = stmt.executeQuery();
-			if (!rs.next()) {
-				return null;
+			try(ResultSet rs = stmt.executeQuery()){
+    			if (!rs.next()) {
+    				return null;
+    			}
+    			
+    			try  (final InputStream bin=new BufferedInputStream(new ByteArrayInputStream(rs.getBytes(1)), 8192);
+                       final ObjectInputStream input=new ObjectInputStream(bin);){
+    
+    			    return input.readObject();
+    			}
 			}
-			is = new ByteArrayInputStream(rs.getBytes(1));
-			bin = new BufferedInputStream(is, 8192);
 
-			input = new ObjectInputStream(bin);
-			return input.readObject();
 
-		} finally {
-
-			if (stmt != null) stmt.close();
-			c.close();
-			if (input != null){
-				try {
-					input.close();
-				} catch (IOException e) {
-					Logger.warn(getClass(), "should not be here:" + e.getMessage(),e);
-				}
-			}
-			if (bin != null){
-				try {
-					bin.close();
-				} catch (IOException e) {
-					Logger.warn(getClass(), "should not be here:" + e.getMessage(),e);
-				}
-			}
-			
-			if (is != null){
-				try {
-					is.close();
-				} catch (IOException e) {
-					Logger.warn(getClass(), "should not be here:" + e.getMessage(),e);
-				}
-			}
 		}
 	}
 
@@ -618,32 +572,23 @@ public class H22Cache extends CacheProvider {
 		if (fqn == null) {
 			return;
 		}
-
+		String sql = "DELETE from " + TABLE_PREFIX + table(fqn) + " WHERE cache_id = ?";
 		Optional<Connection> opt = createConnection(true, db(fqn));
 		if (!opt.isPresent()) {
 			return;
 		}
-		Connection c = opt.get();
-		PreparedStatement pstmt = null;
-		try{
-			String sql = "DELETE from " + TABLE_PREFIX + table(fqn) + " WHERE cache_id = ?";
-			pstmt = c.prepareStatement(sql);
+		try(Connection c = opt.get(); PreparedStatement pstmt = c.prepareStatement(sql)){
 			pstmt.setString(1, fqn.id);
 			pstmt.execute();
-			pstmt.close();
-			c.close();
 			DONT_CACHE_ME.invalidate(fqn.id);
 		}
-		finally{
-			pstmt.close();
-			c.close();
-		}
+		
 	}
 
 	private void createTables(H22HikariPool source) throws SQLException {
-		Connection c = null;
+
 		int i = 0;
-		while (!source.running) {
+		while (!source.running()) {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -655,19 +600,20 @@ public class H22Cache extends CacheProvider {
 			}
 		}
 		Optional<Connection> opt = source.connection();
-		c = opt.get();
+		try(Connection c = opt.get()){
 
-		for (int table = 0; table < numberOfTablesPerDb; table++) {
-
-			Statement s = c.createStatement();
-			s.execute("CREATE CACHED TABLE IF NOT EXISTS `" + TABLE_PREFIX + table
-					+ "` (cache_id bigint PRIMARY KEY,cache_group VARCHAR(255), CACHE_DATA BLOB)");
-			s.close();
-			s = c.createStatement();
-			s.execute("CREATE INDEX IF NOT EXISTS `idx_" + TABLE_PREFIX + table + "_index_` on "
-					+ TABLE_PREFIX + table + "(cache_group)");
+    		for (int table = 0; table < numberOfTablesPerDb; table++) {
+    
+    			Statement s = c.createStatement();
+    			s.execute("CREATE CACHED TABLE IF NOT EXISTS `" + TABLE_PREFIX + table
+    					+ "` (cache_id bigint PRIMARY KEY,cache_group VARCHAR(255), CACHE_DATA BLOB)");
+    			s.close();
+    			s = c.createStatement();
+    			s.execute("CREATE INDEX IF NOT EXISTS `idx_" + TABLE_PREFIX + table + "_index_` on "
+    					+ TABLE_PREFIX + table + "(cache_group)");
+    			s.close();
+    		}
 		}
-		c.close();
 	}
 
 	@Override
