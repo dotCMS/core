@@ -261,11 +261,7 @@ public class ContainerStructureFinderStrategyResolver {
 
 
     private String getName(final FileAsset fileAsset){
-            try {
-                return APILocator.getContentletAPI().getName(fileAsset, APILocator.systemUser(), false);
-            } catch (DotSecurityException | DotDataException e) {
-                Logger.error(this, "Error determining contentlet name: ", e);
-            }
+
             return fileAsset.getFileName();
     }
 
