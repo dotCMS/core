@@ -8,7 +8,8 @@ p-selectbutton {
     border-bottom: solid 1px $gray-light;
 }
 
-.download-bundle__building {
+.download-bundle__error {
     display: flex;
     justify-content: flex-end;
+    color: $error;
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { SelectItem } from 'primeng/api';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import {
@@ -6,11 +6,13 @@ import {
     DotPushPublishFiltersService
 } from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
 import { Observable, of, Subject } from 'rxjs';
-import { catchError, map, take, takeUntil } from 'rxjs/operators';
+import { catchError, map, pluck, take, takeUntil } from 'rxjs/operators';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotcmsEventsService } from 'dotcms-js';
+import { DOCUMENT } from '@angular/common';
 
 enum DownloadType {
     UNPUBLISH = 'unpublish',
@@ -31,6 +33,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     dialogActions: DotDialogActions;
     form: FormGroup;
     showDialog = false;
+    errorMessage = '';
 
     private currentFilterKey: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -40,7 +43,9 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         public fb: FormBuilder,
         private dotMessageService: DotMessageService,
         private dotPushPublishFiltersService: DotPushPublishFiltersService,
-        private dotDownloadBundleDialogService: DotDownloadBundleDialogService
+        private dotDownloadBundleDialogService: DotDownloadBundleDialogService,
+        private dotcmsEventsService: DotcmsEventsService,
+        @Inject(DOCUMENT) private document: Document
     ) {}
 
     ngOnInit() {
@@ -59,6 +64,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
                         });
                 }
             });
+        this.subscribeToWSEvents();
     }
 
     ngOnDestroy(): void {
@@ -80,6 +86,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
      */
     downloadFile(): void {
         if (this.form.valid) {
+            this.errorMessage = '';
             const value = this.form.value;
             let location = `${DOWNLOAD_URL}${value.bundleId}/operation/${value.downloadOptionSelected}`;
             if (value.downloadOptionSelected === DownloadType.PUBLISH) {
@@ -90,13 +97,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
                 'download.bundle.downloading'
             );
             this.dialogActions.cancel.disabled = true;
-            fetch(location)
-                .then(res => res.blob())
-                .then(blob => {
-                    const file = window.URL.createObjectURL(blob);
-                    window.location.assign(file);
-                    this.close();
-                });
+            this.document.location.href = location;
         }
     }
 
@@ -115,6 +116,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
 
     private initDialog(bundleId: string): void {
         this.setDialogActions();
+        this.errorMessage = '';
         this.filterOptions = this.filters;
         this.form = this.fb.group({
             downloadOptionSelected: [this.downloadOptions[0].value, [Validators.required]],
@@ -161,13 +163,15 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
                 action: () => {
                     this.downloadFile();
                 },
-                label: this.dotMessageService.get('download.bundle.download')
+                label: this.dotMessageService.get('download.bundle.download'),
+                disabled: false
             },
             cancel: {
                 action: () => {
                     this.close();
                 },
-                label: this.dotMessageService.get('dot.common.cancel')
+                label: this.dotMessageService.get('dot.common.cancel'),
+                disabled: false
             }
         };
     }
@@ -192,5 +196,20 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
             filterKey.enable();
             filterKey.setValue(this.currentFilterKey);
         }
+    }
+
+    private subscribeToWSEvents(): void {
+        this.dotcmsEventsService
+            .subscribeTo('GENERATED_BUNDLE')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => this.close());
+
+        this.dotcmsEventsService
+            .subscribeTo('ERROR_GENERATING_BUNDLE')
+            .pipe(takeUntil(this.destroy$), pluck('data'))
+            .subscribe((message: string) => {
+                this.setDialogActions();
+                this.errorMessage = message;
+            });
     }
 }
