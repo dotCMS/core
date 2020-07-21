@@ -1,6 +1,7 @@
 package com.dotcms.system.event.local.business;
 
 import com.dotcms.system.event.local.model.DefaultOrphanEventSubscriber;
+import com.dotcms.system.event.local.model.EventCompletionHandler;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.type.OrphanEvent;
 
@@ -44,6 +45,14 @@ public interface LocalSystemEventsAPI {
      * @param subscriberId {@link String}
      */
     boolean unsubscribe (final Class<?> eventType, String subscriberId);
+
+    /**
+     * This method brings the possibility for event broadcasters to be non-blocking notified
+     * when all subscribers are done consuming their events.
+     * @param event {@link Object}
+     * @param completionHandler {@link EventCompletionHandler}
+     */
+    void asyncNotify(final Object event, final EventCompletionHandler completionHandler);
 
     /**
      * Creates an async notification to all registered handlers

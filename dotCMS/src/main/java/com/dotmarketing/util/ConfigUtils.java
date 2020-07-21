@@ -35,10 +35,11 @@ public class ConfigUtils {
 	}
 
 	public static String getDynamicContentPath() {
-		String realPath = Config.getStringProperty("DYNAMIC_CONTENT_PATH");
-		if (!UtilMethods.isSet(realPath)) {
-			realPath = com.liferay.util.FileUtil.getRealPath("/dotsecure");
-		}
+		String realPath = Try.of(()->
+				Config.getStringProperty("DYNAMIC_CONTENT_PATH",
+						com.liferay.util.FileUtil.getRealPath("/dotsecure")))
+				.getOrElse("." + File.separator + "dotsecure");
+		
 		return (realPath.endsWith(File.separator)) ?
 		                realPath.substring(0, realPath.length()-1)
 		                :realPath;
