@@ -280,7 +280,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         
         // update our Content Type constants to have values
         final List<Field> allFields = new ArrayList<>(widgetLikeContenType.fields());
-        allFields.removeIf(f->constants.contains(f));
+        allFields.removeIf(constants::contains);
         for(final Field field : constants) {
             final String value = UUIDGenerator.generateUuid();
             Field newField = FieldBuilder.builder(field).values(value).build();
@@ -623,8 +623,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     }
 
     @Test
+    @UseDataProvider("listSerializeTestCases")
     public void Test_Serialize_Contentlet_Then_Recover_Then_Transform(final SerializationTestCase serializationTestCase)
-            throws IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException, DotDataException {
 
         final File file = new File(directory,String.format("%s.serialized",System.currentTimeMillis()));
         file.createNewFile();
@@ -632,7 +633,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final Contentlet original = serializationTestCase.contentlet;
         serializeContentlet(serializationTestCase.contentlet, file);
         final Contentlet copy = readSerializedContentlet(file);
-        validateMaps(original, copy);
+        validateTransformation(original, copy);
         final AssertionStrategy assertionStrategy = serializationTestCase.assertionStrategy;
         if(null != assertionStrategy) {
             assertionStrategy.apply(original, copy);
@@ -653,37 +654,44 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     @DataProvider
     public static Object[] listSerializeTestCases() throws Exception {
+
         final FileAssetAPI assetAPI = APILocator.getFileAssetAPI();
-        HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+        final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+
         return new Object[]{
                 new SerializationTestCase(((Supplier<Contentlet>) () -> {
                     final Contentlet contentlet = TestDataUtils.getFileAssetSVGContent(true, langId);
                     return assetAPI.fromContentlet(contentlet);
                 }).get(), fileAssetValidation),
                 new SerializationTestCase(((Supplier<Contentlet>) () -> {
+                    final Contentlet contentlet = TestDataUtils.getFileAssetContent(true, langId);
+                    return assetAPI.fromContentlet(contentlet);
+                }).get(), fileAssetValidation),
+                new SerializationTestCase(((Supplier<Contentlet>) () -> {
                     final Contentlet contentlet = TestDataUtils.getPageContent(true, langId);
                     return pageAssetAPI.fromContentlet(contentlet);
-                }).get(),
-                        (original, copy) -> {
-
-                        })
-
+                }).get(), pageValidation),
+                new SerializationTestCase(TestDataUtils.getDotAssetLikeContentlet(), null),
+                new SerializationTestCase(TestDataUtils.getBlogContent(true, langId), null)
         };
     }
 
-    private void validateMaps(final Contentlet original, final Contentlet copy){
-        final Map<String, Object> preSerializationMap = new DotTransformerBuilder().defaultOptions().content(original).build().toMaps().get(0);
-        final Map<String, Object> postSerializationMap = new DotTransformerBuilder().defaultOptions().content(copy).build().toMaps().get(0);
+    private void validateTransformation(final Contentlet original, final Contentlet copy){
+        final DotContentletTransformer transformer1 = new DotTransformerBuilder().defaultOptions().content(original).build();
+        final Map<String, Object> preSerializationMap = transformer1.toMaps().get(0);
+
+        final DotContentletTransformer transformer2 = new DotTransformerBuilder().defaultOptions().content(copy).build();
+        final Map<String, Object> postSerializationMap = transformer2.toMaps().get(0);
         Assert.assertEquals(preSerializationMap, postSerializationMap);
+
+        Assert.assertEquals(transformer1.hydrate().get(0), transformer2.hydrate().get(0));
     }
 
     private static final AssertionStrategy fileAssetValidation = (original, copy) -> {
         final FileAsset fileAsset1 = (FileAsset) original;
         final int width = fileAsset1.getWidth();
         final int height = fileAsset1.getHeight();
-
         final FileAsset fileAsset2 = (FileAsset) copy;
-
         final int width2 = fileAsset2.getWidth();
         final int height2 = fileAsset2.getHeight();
         Assert.assertEquals(width, width2);
@@ -692,12 +700,12 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     private static final AssertionStrategy pageValidation = (original, copy) -> {
         final HTMLPageAsset htmlPageAsset1 = (HTMLPageAsset) original;
-
-
         final HTMLPageAsset htmlPageAsset2 = (HTMLPageAsset) copy;
-
-
+        Assert.assertEquals(htmlPageAsset1.getPageUrl(),htmlPageAsset2.getPageUrl());
+        Assert.assertEquals(htmlPageAsset1.getRedirect(),htmlPageAsset2.getRedirect());
+        Assert.assertEquals(htmlPageAsset1.getURI(),htmlPageAsset2.getURI());
     };
+
 
     /**
      *
