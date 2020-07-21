@@ -622,6 +622,14 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     }
 
+    /**
+     * Given Scenario: This takes samples of content transforms the original then serialize it the recovers the serialized content and transforms the result then compares the two contentlet
+     * Expected Result: Both results must match
+     * @param serializationTestCase
+     * @throws IOException
+     * @throws ClassNotFoundException
+     * @throws DotDataException
+     */
     @Test
     @UseDataProvider("listSerializeTestCases")
     public void Test_Serialize_Contentlet_Then_Recover_Then_Transform(final SerializationTestCase serializationTestCase)
@@ -708,7 +716,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
 
     /**
-     *
+     * This will serialize a contentlet to disk
      * @param contentlet
      * @param file
      * @throws IOException
@@ -724,7 +732,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     }
 
     /**
-     *
+     * This will deserialize a contentlet from disk
      * @param file
      * @return
      * @throws IOException
