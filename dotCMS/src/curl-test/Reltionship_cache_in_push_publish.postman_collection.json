@@ -57,7 +57,7 @@
 							"key": "file",
 							"contentType": "application/tar+gzip ",
 							"type": "file",
-							"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/relationship_push_publish/create_relationship_content-01EDS47ZT8AHF92NQ29K3RJ88W.tar.gz"
+							"src": "/build/src/core/dotCMS/src/curl-test/resources/relationship_push_publish/create_relationship_content-01EDS47ZT8AHF92NQ29K3RJ88W.tar.gz"
 						}
 					],
 					"options": {
@@ -138,7 +138,7 @@
 							"key": "file",
 							"contentType": "application/tar+gzip ",
 							"type": "file",
-							"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/relationship_push_publish/remove_relationship_in_content-01EDRZ2H83P59JNB6G69SG3H80.tar.gz"
+							"src": "/build/src/core/dotCMS/src/curl-test/resources/relationship_push_publish/remove_relationship_in_content-01EDRZ2H83P59JNB6G69SG3H80.tar.gz"
 						}
 					],
 					"options": {
