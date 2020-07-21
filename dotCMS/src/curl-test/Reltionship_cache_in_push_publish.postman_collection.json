@@ -193,7 +193,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://{{serverURL}}/api/content/id/8c66b23e-daa0-40e4-9991-d1a60e72d2f4/depth/1",
+					"raw": "{{serverURL}}/api/content/id/8c66b23e-daa0-40e4-9991-d1a60e72d2f4/depth/1",
 					"protocol": "http",
 					"host": [
 						"localhost"
