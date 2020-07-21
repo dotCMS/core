@@ -15,7 +15,7 @@ export interface DotCMSPageAsset {
     viewAs: DotCMSViewAs;
 }
 
-interface DotCMSViewAs {
+export interface DotCMSViewAs {
     language: {
         id: number;
         languageCode: string;
@@ -26,7 +26,7 @@ interface DotCMSViewAs {
     mode: string;
 }
 
-interface DotCMSPageAssetContainer {
+export interface DotCMSPageAssetContainer {
     [key: string]: {
         container: DotCMSContainer;
         containerStructures: DotCMSContainerStructure[];
@@ -36,7 +36,7 @@ interface DotCMSPageAssetContainer {
     };
 }
 
-interface DotCMSContainerStructure {
+export interface DotCMSContainerStructure {
     id: string;
     structureId: string;
     containerInode: string;
@@ -45,7 +45,7 @@ interface DotCMSContainerStructure {
     contentTypeVar: string;
 }
 
-interface DotCMSLayout {
+export interface DotCMSLayout {
     pageWidth: string;
     width: string;
     layout: string;
@@ -56,7 +56,7 @@ interface DotCMSLayout {
     sidebar: DotPageAssetLayoutSidebar;
 }
 
-interface DotPageAssetLayoutSidebar {
+export interface DotPageAssetLayoutSidebar {
     preview: boolean;
     containers: DotCMSContainer[];
     location: string;
@@ -64,18 +64,18 @@ interface DotPageAssetLayoutSidebar {
     width: string;
 }
 
-interface DotPageAssetLayoutBody {
+export interface DotPageAssetLayoutBody {
     rows: DotPageAssetLayoutRow[];
 }
 
-interface DotPageAssetLayoutRow {
+export interface DotPageAssetLayoutRow {
     identifier: number;
     value?: string;
     id?: string;
     columns: DotPageAssetLayoutColumn[];
 }
 
-interface DotPageAssetLayoutColumn {
+export interface DotPageAssetLayoutColumn {
     preview: boolean;
     containers: DotCMSContainer[];
     widthPercent: number;
@@ -84,7 +84,7 @@ interface DotPageAssetLayoutColumn {
     left: number;
 }
 
-interface DotCMSPage {
+export interface DotCMSPage {
     template: string;
     modDate: number;
     metadata: string;
@@ -130,7 +130,7 @@ interface DotCMSPage {
     shortyLive: string;
 }
 
-interface DotCMSContainer {
+export interface DotCMSContainer {
     identifier: string;
     uuid: string;
     iDate: number;
@@ -221,7 +221,7 @@ export interface DotCMSContentlet {
     tags?: string;
 }
 
-interface DotCMSTemplate {
+export interface DotCMSTemplate {
     iDate: number;
     type: string;
     owner: string;
