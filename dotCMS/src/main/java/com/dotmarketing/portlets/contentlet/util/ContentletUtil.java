@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.util;
 
+import com.dotcms.business.Unexportable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -33,9 +34,12 @@ public class ContentletUtil {
 			FieldType.BUTTON.toString()
 	);
 
-
 	public static boolean isFieldTypeAllowedOnImportExport(final Field field){
 		return !fieldTypesToExcludeFromImportExport.contains(field.getFieldType());
+	}
+
+	public static boolean isNewFieldTypeAllowedOnImportExport(final com.dotcms.contenttype.model.field.Field field){
+		return !(field.getClass().isAnnotationPresent(Unexportable.class));
 	}
 
 	public static boolean isHost(final Contentlet contentlet){

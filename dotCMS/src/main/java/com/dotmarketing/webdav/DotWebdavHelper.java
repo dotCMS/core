@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -80,6 +81,17 @@ import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
+/**
+ * This Helper Class provides all the utility methods needed for the interaction between dotCMS and WebDAV.
+ * Web-based Distributed Authoring and Versioning, or WebDAV, is an extension of the HTTP protocol that allows you to
+ * create a connection between your local computer and a server to easily transfer files between machines.
+ * <p>
+ * This helper has direct communication with the Workflow API used for saving, moving, and deleting pieces of content
+ * in the system. </p>
+ *
+ * @author root
+ * @since Mar 22, 2012
+ */
 public class DotWebdavHelper {
 
 	private static String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
@@ -853,10 +865,29 @@ public class DotWebdavHelper {
 		}
 	}
 
+
+	/**
+	 * Saves a File Asset that is being uploaded into dotCMS. Based on the Contentlet's data, it will be determined
+	 * whether it will be processed by a Workflow or not.
+	 *
+	 * @param resourceUri     The location where the Resource -- i.e., File Asset -- is being saved.
+	 * @param user            The user performing this action.
+	 * @param isAutoPub       If {@code true}, the Resource will be published automatically. Otherwise, set to {@code
+	 *                        false}.
+	 * @param disableWorkflow If {@code true}, no Workflow will be executed on the specified Resource. Otherwise, set to
+	 *                        {@code false}.
+	 * @param fileAsset       The Resource as File Asset that is being saved.
+	 *
+	 * @return The {@link Contentlet} that has just been saved.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the data source.
+	 * @throws DotSecurityException The specified user doesn't have the required permissions to permiform this action.
+	 */
 	private Contentlet runWorkflowIfPossible(final String resourceUri, final User user, final boolean isAutoPub,
 											 final boolean disableWorkflow, final Contentlet fileAsset)
 			throws DotDataException, DotSecurityException {
 
+		fileAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
 		fileAsset.getMap().put(Contentlet.VALIDATE_EMPTY_FILE, false);
 
 		return disableWorkflow?

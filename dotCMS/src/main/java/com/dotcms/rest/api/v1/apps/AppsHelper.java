@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.apps;
 
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
@@ -499,8 +501,7 @@ class AppsHelper {
                 .entrySet()) {
             final String describedParamName = appDescriptorParam.getKey();
             final Input input = params.get(describedParamName);
-            if (appDescriptorParam.getValue().isRequired() && (input == null || UtilMethods
-                    .isNotSet(input.getValue()))) {
+            if (appDescriptorParam.getValue().isRequired() && (input == null || isNotSet(input.getValue()))) {
                 throw new IllegalArgumentException(
                         String.format(
                                 "Param `%s` is marked required in the descriptor but does not come with a value.",
@@ -574,7 +575,7 @@ class AppsHelper {
                         paramName));
             } else {
                 if (null != paramDescriptor && paramDescriptor.isRequired() && null != entry
-                        .getValue() && UtilMethods.isNotSet(entry.getValue().getValue())) {
+                        .getValue() && isNotSet(entry.getValue().getValue())) {
                     throw new IllegalArgumentException(
                             String.format(
                                     "Param `%s` is marked required in the descriptor but does not come with a value.",
@@ -671,6 +672,9 @@ class AppsHelper {
      * @return
      */
     private boolean isAllFilledWithAsters(final char [] chars){
+         if(isNotSet(chars)){
+           return false;
+         }
          for(final char chr: chars){
             if(chr != '*'){
                return false;

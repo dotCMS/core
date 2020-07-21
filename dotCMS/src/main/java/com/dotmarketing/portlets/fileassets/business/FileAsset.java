@@ -141,7 +141,7 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	}
 
     //Lazy Suppliers are memoized. Meaning that this truly guarantees the computation takes place once.
-    private final Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
+    private transient final Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
 
   /**
    * This access the physical file on disk
