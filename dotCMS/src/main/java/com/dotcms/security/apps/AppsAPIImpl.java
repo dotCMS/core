@@ -347,7 +347,7 @@ public class AppsAPIImpl implements AppsAPI {
                 try {
                     chars = toJsonAsChars(secrets);
                     secretsStore.saveValue(internalKey, chars);
-                    notifySaveEventAndDestroySecret(secrets, host);
+                    notifySaveEventAndDestroySecret(secrets, host, user);
                 } finally {
                     if (null != chars) {
                         Arrays.fill(chars, (char) 0);
@@ -362,9 +362,10 @@ public class AppsAPIImpl implements AppsAPI {
      * and will also perform a clean-up (destroy) over the secret once all the event subscribers are done consuming the event.
      * @param secrets
      * @param host
+     * @param user
      */
-    private void notifySaveEventAndDestroySecret(final AppSecrets secrets, final Host host) {
-        localSystemEventsAPI.asyncNotify(new AppSecretSavedEvent(secrets, host),
+    private void notifySaveEventAndDestroySecret(final AppSecrets secrets, final Host host, final User user) {
+        localSystemEventsAPI.asyncNotify(new AppSecretSavedEvent(secrets, host, user.getUserId()),
             event -> {
                 final AppSecretSavedEvent appSecretSavedEvent = (AppSecretSavedEvent) event;
                 final AppSecrets appSecrets = appSecretSavedEvent.getAppSecrets();
@@ -373,6 +374,7 @@ public class AppsAPIImpl implements AppsAPI {
                 }
             });
     }
+
 
     @Override
     public void deleteSecrets(final String key, final Host host, final User user)

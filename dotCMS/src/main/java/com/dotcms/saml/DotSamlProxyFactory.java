@@ -3,7 +3,11 @@ package com.dotcms.saml;
 import com.dotcms.auth.providers.saml.v1.DotSamlResource;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.security.apps.AppDescriptor;
+import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.Secret;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.model.KeyFilterable;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
@@ -26,7 +30,7 @@ import java.util.Set;
  *
  * @author jsanca
  */
-public class DotSamlProxyFactory {
+public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>, KeyFilterable {
 
     public static final String SAML_APP_CONFIG_KEY = "dotsaml-config";
     public static final String PROPERTIES_PATH     = File.separator + "saml" + File.separator + "dotcms-saml-default.properties";
@@ -57,6 +61,30 @@ public class DotSamlProxyFactory {
         addRedirects();
         return DotSamlProxyFactory.SingletonHolder.INSTANCE;
     } // getInstance.
+
+    /**
+     * Key for the discard non-SAML AppSecretSavedEvent
+     * @return Comparable
+     */
+    @Override
+    public Comparable getKey() {
+        return SAML_APP_CONFIG_KEY;
+    }
+
+    /**
+     * When
+     * @param event
+     */
+    @Override
+    public void notify(final AppSecretSavedEvent event) {
+
+        final  Map<String, Secret> secretMap = event.getAppSecrets().getSecrets();
+        if (null != secretMap) {
+
+            SamlValidator.validateURL("sPEndpointHostname", secretMap.get("sPEndpointHostname").getString(), event.getUserId());
+            SamlValidator.validateXML("idPMetadataFile",    secretMap.get("idPMetadataFile").getString(),    event.getUserId());
+        }
+    }
 
     /**
      * Returns the dotCMS implementation of the identity provider config.

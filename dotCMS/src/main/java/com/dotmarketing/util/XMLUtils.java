@@ -7,10 +7,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import com.dotmarketing.exception.DotRuntimeException;
+import org.xml.sax.SAXException;
+
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 
 public class XMLUtils {
 
@@ -60,18 +69,33 @@ public class XMLUtils {
 	
     public static String toXML10(final String input) {
         return xml10pattern.matcher(input).replaceAll("");
-        
-        
     }
     
     public static String toXML11(final String input) {
         return xml11pattern.matcher(input).replaceAll("");
-        
-        
     }
-    
-	
-	
+
+    /**
+     * Returns true if the XML is schemeless valid
+     * @param xml {@link String}
+     * @return boolean
+     */
+	public static boolean isValidXML (final String xml) {
+
+        final SchemaFactory schemaFactory = SchemaFactory
+                .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        try {
+
+            schemaFactory.newSchema().newValidator()
+                    .validate(new StreamSource(new StringReader(xml)));
+        } catch (SAXException| IOException e) {
+
+            return false;
+        }
+
+        return true;
+    }
+
 	private static String readFirstLine(File file) {
 	    try(BufferedReader fileReader = new BufferedReader(Files.newBufferedReader(file.toPath()))){
 	        return fileReader.readLine().trim();
