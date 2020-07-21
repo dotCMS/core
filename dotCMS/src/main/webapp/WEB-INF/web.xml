@@ -248,6 +248,10 @@
 	      <param-name>debug</param-name>
     	  <param-value>false</param-value>
 	  </init-param>
+		<init-param>
+			<param-name>accessLogLevel</param-name>
+			<param-value>EXCEPTION</param-value>
+		</init-param>
 	  <init-param>
 	      <param-name>compressor</param-name>
     	  <param-value>none</param-value>
