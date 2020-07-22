@@ -773,6 +773,92 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test we save a secret that is described as a Select List
+     * Given scenario: We create a secret then we update the select value sending one of the values
+     * Expected Result: Only the public value  was supposed to be updated. The other 2 hidden fields should remain the same since we sent a bunch of *****
+     * @throws IOException
+     */
+    @Test
+    public void Test_Select_List_Param()
+            throws IOException {
+       //Select list definition
+       final List<Map<String,String>> list = ImmutableList.of(
+           ImmutableMap.of("label","-","value",""),
+           ImmutableMap.of("label","uno","value","1"),
+           ImmutableMap.of("label","dos","value","2","selected","true"),
+           ImmutableMap.of("label","tres","value","3")
+       );
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .selectParam("selectParam", true, list)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getRequestURI()).thenReturn("/baseURL");
+        final String appKey = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
+
+            // Create App integration Descriptor
+            final Response appResponse = appsResource.createApp(request, response, createFormDataMultiPart(fileName, inputStream));
+            Assert.assertNotNull(appResponse);
+            Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+
+            //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+            final Map<String, Input> inputParamMap = ImmutableMap.of(
+                    "param1", newInputParam("public-value1".toCharArray(),false),
+                    "selectParam", newInputParam("1".toCharArray(),false));
+            // Add secrets to it.
+            final SecretForm secretForm = new SecretForm(inputParamMap);
+            final Response createSecretResponse = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
+
+            final Response detailedIntegrationResponse = appsResource.getAppDetail(request, response, appKey, host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
+            final ResponseEntityView responseEntityViewSave = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+            final AppView appDetailedView = (AppView) responseEntityViewSave.getEntity();
+
+            Assert.assertNotNull(appDetailedView.getSites());
+            assertFalse(appDetailedView.getSites().isEmpty());
+            Assert.assertEquals(appDetailedView.getSites().get(0).getId(), host.getIdentifier());
+            //We can the secrets here because this happens before the a serializer will exchange the values by asters making them look like `*****`
+            final List<SecretView> secretViews = appDetailedView.getSites().get(0).getSecrets();
+            final SecretView param1 = secretViews.get(0);
+            Assert.assertEquals(new String(param1.getSecret().getValue()),"public-value1");
+            final SecretView param2 = secretViews.get(1);
+            Assert.assertEquals(new String(param2.getSecret().getValue()),"1");
+
+            //Now testing setting a value that isn't in the list.
+
+            //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+            final Map<String, Input> inputParamMap2 = ImmutableMap.of(
+                    "param1", newInputParam("public-value1".toCharArray(),false),
+                    "selectParam", newInputParam("5".toCharArray(),false));
+            // Add secrets to it.
+            final SecretForm secretForm2 = new SecretForm(inputParamMap2);
+            final Response createSecretResponse2 = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm2);
+            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, createSecretResponse2.getStatus());
+
+            //Now testing setting an empty value. Even though there's an empty value in the list the param is marked as required.
+            final Map<String, Input> inputParamMap3 = ImmutableMap.of(
+                    "param1", newInputParam("public-value1".toCharArray(),false),
+                    "selectParam", newInputParam("".toCharArray(),false));
+            // Add secrets to it.
+            final SecretForm secretForm3 = new SecretForm(inputParamMap3);
+            final Response createSecretResponse3 = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm3);
+            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, createSecretResponse3.getStatus());
+
+        }
+    }
+
+
     private JsonGenerator createJsonGenerator(final StringWriter writer) throws IOException{
         final JsonFactory factory = new JsonFactory();
         final JsonGenerator generator = factory.createGenerator(writer);

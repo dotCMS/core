@@ -829,6 +829,7 @@ public class AppsAPIImpl implements AppsAPI {
                         " As param `%s`:  is marked as `List` the field value is expected to hold a list of objects. ",
                         name));
             } else {
+                int selectedCount = 0;
                 final List list = (List) descriptor.getValue();
                 for (final Object object : list) {
                     if (!(object instanceof Map)) {
@@ -840,7 +841,13 @@ public class AppsAPIImpl implements AppsAPI {
                         if (!map.containsKey("label") || !map.containsKey("value") ) {
                             errors.add(String.format("Malformed list. Param: `%s`. Every entry of the `List` has to have the following fields (`label`,`value`). ", name));
                         }
+                         if(map.containsKey("selected")){
+                             selectedCount++;
+                         }
                     }
+                }
+                if(selectedCount > 1 ){
+                    errors.add(String.format("Malformed list. Param: `%s`. There must be only 1 item marked as selected ", name));
                 }
             }
         }

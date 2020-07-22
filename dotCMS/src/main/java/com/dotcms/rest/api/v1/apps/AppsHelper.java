@@ -529,6 +529,23 @@ class AppsHelper {
                     );
                 }
             }
+
+            if (Type.SELECT.equals(appDescriptorParam.getValue().getType()) && UtilMethods
+                    .isSet(input.getValue())) {
+                final List<Map> list = appDescriptorParam.getValue().getList();
+                final Set<String> values = list.stream().filter(map -> null != map.get("value"))
+                        .map(map -> map.get("value").toString()).collect(Collectors.toSet());
+                 final String asString = new String(input.getValue());
+                 if(!values.contains(asString)){
+                     throw new IllegalArgumentException(
+                             String.format(
+                                     "Can not find value `%s` in the list of permitted values `%s`.",
+                                     asString, describedParamName
+                             )
+                     );
+                 }
+
+            }
         }
 
         if (!appDescriptor.isAllowExtraParameters()) {

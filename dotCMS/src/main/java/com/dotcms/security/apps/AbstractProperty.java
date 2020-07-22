@@ -6,6 +6,7 @@ import static com.liferay.util.StringPool.COMMA;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,7 +60,8 @@ public abstract class AbstractProperty<T> {
 
     @JsonIgnore
     public List<Map> getList() {
-       return (List)value;
+       final List list = (List)value;
+       return new ArrayList<>(list);
     }
 
     @Override

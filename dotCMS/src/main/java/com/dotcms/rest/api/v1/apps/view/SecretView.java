@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.apps.view;
 
+import static com.liferay.util.StringPool.*;
+
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.security.apps.AbstractProperty;
 import com.dotcms.security.apps.ParamDescriptor;
@@ -12,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -125,21 +128,28 @@ public class SecretView {
             if (type.equals(Type.BOOL)) {
                 map.put("value", property.getBoolean());
             } else {
-              if(type.equals(Type.SELECT)){
-                 final List <Map> list = property.getList();
-                 map.put("options",list);
-                  final Optional<Map> selectedOptional = list.stream().filter(m -> m.containsKey("selected")).findFirst();
-                  if(selectedOptional.isPresent()){
-                      final Map selected = selectedOptional.get();
-                      selected.remove("selected");
-                      map.put("value", selected.get("value"));
-                  } else {
-                      map.put("value","");
-                  }
-              } else {
-                 final String value = property.getString();
-                 map.put("value", property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK : value);
-               }
+                if (type.equals(Type.SELECT)) {
+                    if (property instanceof Secret) {
+                        map.put("value", property.getValue());
+                    } else {
+                        final List<Map> list = property.getList();
+                        map.put("options", list);
+                        final Optional<Map> selectedOptional = list.stream()
+                                .filter(m -> m.containsKey("selected")).findFirst();
+                        if (selectedOptional.isPresent()) {
+                            final Map selected = selectedOptional.get();
+                            selected.remove("selected");
+                            map.put("value", selected.get("value"));
+                        } else {
+                            map.put("value", BLANK);
+                        }
+                    }
+                } else {
+                    final String value = property.getString();
+                    map.put("value",
+                            property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK
+                                    : value);
+                }
             }
         }
 
