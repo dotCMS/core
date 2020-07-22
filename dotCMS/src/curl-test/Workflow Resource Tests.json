@@ -1033,7 +1033,6 @@
 							"listen": "test",
 							"script": {
 								"id": "976fb7b9-fe0b-4e3f-b70a-ead771ae251c",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404, Not found\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -1044,7 +1043,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1076,7 +1076,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{inode}}/actions",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1085,74 +1085,7 @@
 								"v1",
 								"workflow",
 								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a",
-								"actions"
-							]
-						},
-						"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
-					},
-					"response": []
-				},
-				{
-					"name": "ShortlyIdValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "fc9cdcd6-9fba-47a2-9511-229285d30fea",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 404, Not found\", function () {",
-									"    pm.response.to.have.status(404);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a",
+								"{{inode}}",
 								"actions"
 							]
 						},
@@ -12572,17 +12505,17 @@
 	],
 	"variable": [
 		{
-			"id": "0d81e1d1-e290-417f-9aef-c24a83ca1906",
+			"id": "f31f72dd-ac25-42b5-ae22-d54883dead24",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "50fb46fa-323f-413e-9164-2babc48c1f6d",
+			"id": "ea199134-b671-4b85-897c-198167484d33",
 			"key": "temporalFileId",
 			"value": "temp_322fde7815"
 		},
 		{
-			"id": "0352d5e2-082c-41a2-9ff0-003d51c7cddb",
+			"id": "dbcd025d-82d5-4400-91e1-67920de9a1b0",
 			"key": "inode",
 			"value": "64f049aa-6bac-494c-a1da-db5de59209f5"
 		}
