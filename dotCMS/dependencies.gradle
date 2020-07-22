@@ -60,7 +60,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.httpbridge', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpclient', version:'4.2.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpcore', version:'4.2.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.icu4j', version:'4.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.iText', version:'2.1.0_2'
 
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.11.1'

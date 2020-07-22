@@ -806,6 +806,11 @@ public class AppsAPIImplTest {
         localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, new AppsSecretEventSubscriber(){
             @Override
             public void notify(AppSecretSavedEvent event) {
+                final AppSecrets appSecrets = event.getAppSecrets();
+                final Map<String, Secret> secrets = appSecrets.getSecrets();
+                secrets.forEach((s, secret) -> {
+                    Assert.assertFalse(isSecretDestroyed(secret.getValue()));
+                });
                 callsCount.incrementAndGet();
             }
         });
