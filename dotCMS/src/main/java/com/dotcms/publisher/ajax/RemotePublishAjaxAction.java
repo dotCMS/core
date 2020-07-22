@@ -1,8 +1,5 @@
 package com.dotcms.publisher.ajax;
 
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
@@ -591,25 +588,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
             response.sendError( 500, "Error trying to generate bundle with id: " + bundleId );
-            //Event When Error Generating Bundle
-            APILocator.getSystemEventsAPI().push(SystemEventType.ERROR_GENERATING_BUNDLE,
-                    new Payload(
-                            e.getMessage(),
-                            Visibility.USER,
-                            getUser().getUserId()
-                    )
-            );
             return;
         }
-
-        //Event to Close Dialog
-        APILocator.getSystemEventsAPI().push(SystemEventType.GENERATED_BUNDLE,
-                new Payload(
-                        "Bundle Generated Successfully",
-                        Visibility.USER,
-                        getUser().getUserId()
-                )
-        );
 
         response.setContentType( "application/x-tgz" );
         response.setHeader( "Content-Disposition", "attachment; filename=" + bundleName + "-" + bundle.getName() );
