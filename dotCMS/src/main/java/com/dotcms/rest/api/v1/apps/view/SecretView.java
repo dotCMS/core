@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.apps.view;
 
-import static com.liferay.util.StringPool.*;
+import static com.liferay.util.StringPool.BLANK;
 
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.security.apps.AbstractProperty;
@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;

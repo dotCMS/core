@@ -3,14 +3,13 @@ package com.dotcms.security.apps;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 
 /**
  * This is an implementation of a Parameter
  * Class used to collect properties or secrets set from the front-end
  * This is mostly used to pass values from the front-end into the Resource.
  */
-public class ParamDescriptor extends AbstractProperty<Object>{
+public final class ParamDescriptor extends AbstractProperty<Object>{
 
     private final String label;
 

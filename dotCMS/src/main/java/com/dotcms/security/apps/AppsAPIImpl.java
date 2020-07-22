@@ -659,7 +659,7 @@ public class AppsAPIImpl implements AppsAPI {
 
     private Set<String> listFiles(final String dir) throws IOException {
         final Set<String> fileList = new HashSet<>();
-        try (final DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir), filter)) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir), filter)) {
             stream.forEach(path -> {
                 fileList.add(path.toString());
             });
@@ -808,12 +808,10 @@ public class AppsAPIImpl implements AppsAPI {
             }
         }
 
-        if(Type.STRING.equals(descriptor.getType())){
-            if(!(descriptor.getValue() instanceof String)){
+        if(Type.STRING.equals(descriptor.getType()) && !(descriptor.getValue() instanceof String)){
                 errors.add(String.format(
                         "Value Param `%s` has a default value `%s` that isn't a string .",
                         name, descriptor.getValue()));
-            }
         }
 
         if (Type.SELECT.equals(descriptor.getType())) {
@@ -829,6 +827,7 @@ public class AppsAPIImpl implements AppsAPI {
                         " As param `%s`:  is marked as `List` the field value is expected to hold a list of objects. ",
                         name));
             } else {
+                final int minSelectedElements = 1;
                 int selectedCount = 0;
                 final List list = (List) descriptor.getValue();
                 for (final Object object : list) {
@@ -846,7 +845,7 @@ public class AppsAPIImpl implements AppsAPI {
                          }
                     }
                 }
-                if(selectedCount > 1 ){
+                if(selectedCount > minSelectedElements ){
                     errors.add(String.format("Malformed list. Param: `%s`. There must be only 1 item marked as selected ", name));
                 }
             }

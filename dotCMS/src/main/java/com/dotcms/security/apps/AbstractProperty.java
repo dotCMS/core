@@ -1,17 +1,11 @@
 package com.dotcms.security.apps;
 
-import static com.liferay.util.StringPool.COLON;
-import static com.liferay.util.StringPool.COMMA;
-
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * its a super class that serves as the base form both Params and Secrets.
