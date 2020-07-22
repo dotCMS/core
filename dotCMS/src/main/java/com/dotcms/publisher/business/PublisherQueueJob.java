@@ -313,8 +313,11 @@ public class PublisherQueueJob implements StatefulJob {
 		final boolean isBundleNameGenerated = bundle.getName().startsWith("bundle-");
 		String notificationMessage = "";
 		String notificationMessageArgument = "";
-		long notificationLife = 5000;
-		MessageSeverity notificationSeverity = MessageSeverity.SUCCESS;
+		final SystemMessageBuilder message = new SystemMessageBuilder()
+				.setMessage(notificationMessage)
+				.setSeverity(MessageSeverity.SUCCESS)
+				.setType(MessageType.SIMPLE_MESSAGE)
+				.setLife(5000);
 
 		if ( localHistory.getNumTries() >= MAX_NUM_TRIES && (groupPushStats.getCountGroupFailed() > 0
                 || groupPushStats.getCountGroupPublishing() > 0) ) {
@@ -328,10 +331,14 @@ public class PublisherQueueJob implements StatefulJob {
             bundleStatus = Status.FAILED_TO_PUBLISH;
             pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
             pubAPI.deleteElementsFromPublishQueueTable(auditedBundleId);
+            //Update Notification Info
             notificationMessage = isBundleNameGenerated ? "bundle.title.fail.notification" : "bundle.named.fail.notification";
-            notificationLife = 86400000;
-            notificationSeverity = MessageSeverity.ERROR;
 			notificationMessageArgument = isBundleNameGenerated ? generateBundleTitle(localHistory.getAssets()) : bundle.getName();
+			message.setMessage(LanguageUtil.get(
+					notificationMessage,
+					notificationMessageArgument));
+            message.setLife(86400000);
+            message.setSeverity(MessageSeverity.ERROR);
         } else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == endpointTrackingMap.size()) {
             // If bundle cannot be installed in all groups
             bundleStatus = Status.FAILED_TO_SEND_TO_ALL_GROUPS;
@@ -347,8 +354,12 @@ public class PublisherQueueJob implements StatefulJob {
             bundleStatus = Status.SUCCESS;
             pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
             pubAPI.deleteElementsFromPublishQueueTable(auditedBundleId);
+			//Update Notification Info
 			notificationMessage = isBundleNameGenerated ? "bundle.title.success.notification" : "bundle.named.success.notification";
 			notificationMessageArgument = isBundleNameGenerated ? generateBundleTitle(localHistory.getAssets()) : bundle.getName();
+			message.setMessage(LanguageUtil.get(
+					notificationMessage,
+					notificationMessageArgument));
         } else if ( groupPushStats.getCountGroupPublishing() == endpointTrackingMap.size() ) {
             // If bundle is still publishing in all groups
             bundleStatus = Status.PUBLISHING_BUNDLE;
@@ -382,17 +393,8 @@ public class PublisherQueueJob implements StatefulJob {
 		}
 		Logger.info(this, "===========================================================");
 
-		//Growl Notifications
-		if(UtilMethods.isSet(notificationMessage)){
-			final SystemMessageBuilder message = new SystemMessageBuilder()
-					.setMessage(LanguageUtil.format(
-							APILocator.getUserAPI().loadUserById(bundle.getOwner()).getLocale(),
-							notificationMessage,
-							notificationMessageArgument))
-					.setSeverity(notificationSeverity)
-					.setType(MessageType.SIMPLE_MESSAGE)
-					.setLife(notificationLife);
-
+		//Growl Notification
+		if(UtilMethods.isSet(notificationMessage)) {
 			SystemMessageEventUtil.getInstance().pushMessage(message.create(), ImmutableList.of(bundle.getOwner()));
 		}
 	}
