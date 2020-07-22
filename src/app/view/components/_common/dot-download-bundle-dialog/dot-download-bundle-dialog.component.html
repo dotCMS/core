@@ -7,8 +7,8 @@
     <form
         [formGroup]="form"
         *ngIf="showDialog"
-        (ngSubmit)="downloadFile()"
-        (keyup.enter)="downloadFile()">
+        (ngSubmit)="handleSubmit()"
+        (keyup.enter)="handleSubmit()">
         <div class="form__group">
             <label class="form__label"
             >{{ 'download.bundle.i.want' | dm }}:
@@ -31,3 +31,4 @@
     </form>
     <span *ngIf="errorMessage" class="download-bundle__error">{{errorMessage}}</span>
 </dot-dialog>
+

@@ -1,4 +1,4 @@
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -11,11 +11,10 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { By } from '@angular/platform-browser';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { Dropdown, DropdownModule, SelectButton, SelectButtonModule } from 'primeng/primeng';
 import { DebugElement } from '@angular/core';
-import { DotcmsEventsService } from 'dotcms-js';
-import { DotcmsEventsServiceMock } from '@tests/dotcms-events-service.mock';
+import * as dotUtils from '@shared/dot-utils';
 
 const mockFilters: DotPushPublishFilter[] = [
     {
@@ -72,7 +71,6 @@ describe('DotDownloadBundleDialogComponent', () => {
     let dotDialogComponent: DotDialogComponent;
     let dotPushPublishFiltersService: DotPushPublishFiltersService;
     let dotDownloadBundleDialogService: DotDownloadBundleDialogService;
-    let dotEventsService: DotcmsEventsServiceMock;
 
     const messageServiceMock = new MockDotMessageService({
         'download.bundle.header': 'Download Bundle',
@@ -82,10 +80,9 @@ describe('DotDownloadBundleDialogComponent', () => {
         'download.bundle.unPublish': 'Unpublish',
         'download.bundle.download': 'Download',
         'download.bundle.downloading': 'Downloading...',
-        'dot.common.cancel': 'Cancel'
+        'dot.common.cancel': 'Cancel',
+        'download.bundle.error': 'Error Building Bundle'
     });
-
-    dotEventsService = new DotcmsEventsServiceMock();
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
@@ -94,8 +91,7 @@ describe('DotDownloadBundleDialogComponent', () => {
             providers: [
                 DotDownloadBundleDialogService,
                 DotPushPublishFiltersService,
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotcmsEventsService, useValue: dotEventsService }
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 
@@ -108,7 +104,6 @@ describe('DotDownloadBundleDialogComponent', () => {
         dotDownloadBundleDialogService = fixture.debugElement.injector.get(
             DotDownloadBundleDialogService
         );
-        spyOn(dotEventsService, 'subscribeTo').and.callThrough();
         fixture.detectChanges();
     });
 
@@ -123,11 +118,6 @@ describe('DotDownloadBundleDialogComponent', () => {
     it('should hide error message by default', () => {
         const errorElement = fixture.debugElement.query(By.css('.download-bundle__error'));
         expect(errorElement).toBeNull();
-    });
-
-    it('should subscribe to WS events ', () => {
-        expect(dotEventsService.subscribeTo).toHaveBeenCalledWith('GENERATED_BUNDLE');
-        expect(dotEventsService.subscribeTo).toHaveBeenCalledWith('ERROR_GENERATING_BUNDLE');
     });
 
     describe('on showDialog', () => {
@@ -205,34 +195,27 @@ describe('DotDownloadBundleDialogComponent', () => {
                 expect(component.showDialog).toEqual(false);
             });
 
-            describe('on WS events', () => {
-                it('should close dialog on GENERATED_BUNDLE', () => {
-                    dotEventsService.triggerSubscribeTo('GENERATED_BUNDLE', {
-                        name: 'GENERATED_BUNDLE'
-                    });
-                    fixture.detectChanges();
-                    expect(dotDialogComponent.visible).toEqual(false);
-                });
+            describe('on submit', () => {
+                const blobMock = new Blob(['']);
+                const fileName = 'asd-01EDSTVT6KGQ8CQ80PPA8717AN.tar.gz';
+                const mockResponse = {
+                    headers: {
+                        get: (_header: string) => {
+                            return `attachment; filename=${fileName}`;
+                        }
+                    },
+                    blob: () => {
+                        return blobMock;
+                    }
+                };
+                let anchor: HTMLAnchorElement;
 
-                it('should enable buttons and show error message on ERROR_GENERATING_BUNDLE', () => {
-                    const error = 'Error Building bundle';
-                    dotEventsService.triggerSubscribeTo('ERROR_GENERATING_BUNDLE', {
-                        data: error
-                    });
-                    fixture.detectChanges();
-                    const errorElement = fixture.debugElement.query(
-                        By.css('.download-bundle__error')
-                    );
-                    expect(downloadButton.disabled).toEqual(false);
-                    expect(cancelButton.disabled).toEqual(false);
-                    expect(errorElement.nativeElement.innerHTML).toEqual(error);
-                });
-            });
-
-            // We need to find a way to mock the document.location.href in order to run these tests.
-            xdescribe('on submit', () => {
                 beforeEach(() => {
-                    spyOnProperty(document.location, 'href');
+                    spyOn(window, 'fetch').and.returnValue(Promise.resolve(mockResponse));
+                    anchor = document.createElement('a');
+                    spyOn(anchor, 'click');
+                    spyOn(dotUtils, 'getDownloadLink').and.returnValue(anchor);
+
                 });
                 it('should disable buttons and change to label to downloading...', () => {
                     downloadButton.click();
@@ -241,20 +224,54 @@ describe('DotDownloadBundleDialogComponent', () => {
                     expect(cancelButton.disabled).toEqual(true);
                 });
 
-                it('should set location to the correct url when publish', () => {
-                    downloadButton.click();
-                    expect(document.location.href).toEqual(
-                        `${DOWNLOAD_URL}${BUNDLE_ID}/operation/publish/filterKey/2`
-                    );
-                });
+                it(
+                    'should fetch to the correct url when publish',
+                    fakeAsync(() => {
+                        downloadButton.click();
+                        tick(1);
+                        fixture.detectChanges();
+                        expect(window.fetch).toHaveBeenCalledWith(
+                            `${DOWNLOAD_URL}${BUNDLE_ID}/operation/publish/filterKey/2`
+                        );
+                        expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(
+                            blobMock,
+                            fileName
+                        );
+                        expect(anchor.click).toHaveBeenCalledTimes(1);
+                        expect(dotDialogComponent.visible).toEqual(false);
+                    })
+                );
                 it('should set location to the correct url when unplublish', () => {
                     unPublishButton.click();
                     fixture.detectChanges();
                     downloadButton.click();
-                    expect(window.location.href).toEqual(
+                    expect(window.fetch).toHaveBeenCalledWith(
                         `${DOWNLOAD_URL}${BUNDLE_ID}/operation/unpublish`
                     );
                 });
+            });
+
+            describe('on error', () => {
+                beforeEach(() => {
+                    spyOn(window, 'fetch').and.returnValue(Promise.resolve(throwError('error')));
+                });
+
+                it(
+                    'should enable buttons and display error message',
+                    fakeAsync(() => {
+                        downloadButton.click();
+                        tick(1);
+                        fixture.detectChanges();
+                        expect(downloadButton.disabled).toEqual(false);
+                        expect(cancelButton.disabled).toEqual(false);
+                        const errorElement = fixture.debugElement.query(
+                            By.css('.download-bundle__error')
+                        );
+                        expect(errorElement.nativeElement.innerText).toEqual(
+                            'Error Building Bundle'
+                        );
+                    })
+                );
             });
         });
     });
