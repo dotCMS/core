@@ -18,6 +18,8 @@ public class DotIdentityProviderConfigurationFactoryImpl implements IdentityProv
 
     private final AppsAPI appsAPI;
     private final HostAPI hostAPI;
+    // todo: make this statefull and do not store the instance on the map,
+    // create a new instance everything time and destroy the appsecrets at the end
     private final Map<String, IdentityProviderConfiguration> identityProviderConfigurationMap = new ConcurrentHashMap<>();
 
     public DotIdentityProviderConfigurationFactoryImpl(final AppsAPI appsAPI, final HostAPI hostAPI) {
@@ -57,7 +59,7 @@ public class DotIdentityProviderConfigurationFactoryImpl implements IdentityProv
         final Host host = Try.of(()->
                 hostAPI.find(identityProviderIdentifier, APILocator.systemUser(), false)).getOrNull();
 
-        if (null != host) {
+        if (null != host) { // todo: I have to figured out if there is a config for this host, if not, return null
 
             this.identityProviderConfigurationMap.put(identityProviderIdentifier,
                     new DotIdentityProviderConfigurationImpl(this.appsAPI, host));

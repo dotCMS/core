@@ -27,12 +27,17 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
 
     private Optional<Secret> findSecret (final String key) {
 
-        final Optional<AppSecrets> appSecretOpt =
-                Try.of(()->this.appsAPI.getSecrets(DotSamlProxyFactory.SAML_APP_CONFIG_KEY, // todo: not sure if change this.
-                        true, host, APILocator.systemUser())).getOrElseGet(e -> Optional.empty());
+        try {
+            final Optional<AppSecrets> appSecretOpt =
+                    Try.of(() -> this.appsAPI.getSecrets(DotSamlProxyFactory.SAML_APP_CONFIG_KEY, // todo: not sure if change this.
+                            true, host, APILocator.systemUser())).getOrElseGet(e -> Optional.empty());
 
-        return appSecretOpt.isPresent() && appSecretOpt.get().getSecrets().containsKey(key)?
-                Optional.of(appSecretOpt.get().getSecrets().get(key)): Optional.empty();
+
+            return appSecretOpt.isPresent() && appSecretOpt.get().getSecrets().containsKey(key) ?
+                    Optional.of(appSecretOpt.get().getSecrets().get(key)) : Optional.empty();
+        } finally {
+            // destroy here
+        }
     }
 
     @Override

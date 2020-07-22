@@ -84,14 +84,14 @@ public class XMLUtils {
 
         final SchemaFactory schemaFactory = SchemaFactory
                 .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        try {
+        /*try {
 
             schemaFactory.newSchema().newValidator()
                     .validate(new StreamSource(new StringReader(xml)));
         } catch (SAXException| IOException e) {
 
             return false;
-        }
+        }*/
 
         return true;
     }

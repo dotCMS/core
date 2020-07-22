@@ -28,7 +28,7 @@ public class SamlValidator {
         if (!validateURL) {
 
             final String message = Try.of(()->LanguageUtil.get("invalid.url", value, fieldName)).
-                    getOrElse("URL "+ value + " is invalid for the field " + fieldName);
+                    getOrElse("URL "+ value + " is invalid for the field " + fieldName); // todo: add the host name
             final SystemMessage systemMessage = new SystemMessageBuilder().setMessage(message)
                     .setSeverity(MessageSeverity.WARNING).setLife(DateUtil.SEVEN_SECOND_MILLIS).create();
             SystemMessageEventUtil.getInstance().pushMessage(systemMessage, Arrays.asList(userId));
