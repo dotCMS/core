@@ -2,6 +2,9 @@ package com.dotcms.security.apps;
 
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -47,6 +50,12 @@ public abstract class AbstractProperty<T> {
     @JsonIgnore
     public boolean getBoolean() {
         return Boolean.parseBoolean(getString());
+    }
+
+    @JsonIgnore
+    public List<Map> getList() {
+       final List list = (List)value;
+       return new ArrayList<>(list);
     }
 
     @Override

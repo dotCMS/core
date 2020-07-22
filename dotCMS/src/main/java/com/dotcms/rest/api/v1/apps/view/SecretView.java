@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.apps.view;
 
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.security.apps.AbstractProperty;
 import com.dotcms.security.apps.ParamDescriptor;
@@ -17,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @JsonSerialize(using = SecretView.SecretViewSerializer.class)
 public class SecretView {
@@ -124,8 +127,28 @@ public class SecretView {
             if (type.equals(Type.BOOL)) {
                 map.put("value", property.getBoolean());
             } else {
-                final String value = property.getString();
-                map.put("value", property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK : value);
+                if (type.equals(Type.SELECT)) {
+                    if (property instanceof Secret) {
+                        map.put("value", property.getValue());
+                    } else {
+                        final List<Map> list = property.getList();
+                        map.put("options", list);
+                        final Optional<Map> selectedOptional = list.stream()
+                                .filter(m -> m.containsKey("selected")).findFirst();
+                        if (selectedOptional.isPresent()) {
+                            final Map selected = selectedOptional.get();
+                            selected.remove("selected");
+                            map.put("value", selected.get("value"));
+                        } else {
+                            map.put("value", BLANK);
+                        }
+                    }
+                } else {
+                    final String value = property.getString();
+                    map.put("value",
+                            property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK
+                                    : value);
+                }
             }
         }
 
