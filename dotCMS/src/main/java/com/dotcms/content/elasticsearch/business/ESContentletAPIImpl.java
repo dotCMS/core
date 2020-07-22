@@ -234,7 +234,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
     private final TempFileAPI           tempApi ;
-    private static final int MAX_LIMIT = 10000;
+    public static final int MAX_LIMIT = 10000;
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
@@ -963,31 +963,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(UtilMethods.isSet(sortBy) && sortBy.trim().equalsIgnoreCase("random")){
             sortBy="random";
         }
-        if(limit>MAX_LIMIT || limit <=0){
+
+        if(limit <=0){
             limit = MAX_LIMIT;
         }
-        SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
-        PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
-        list.setTotalResults(lc.getTotalHits().value);
 
-        for (SearchHit sh : lc.getHits()) {
-            try{
-                Map<String, Object> sourceMap = sh.getSourceAsMap();
-                ContentletSearch conwrapper= new ContentletSearch();
-                conwrapper.setId(sh.getId());
-                conwrapper.setIndex(sh.getIndex());
-                conwrapper.setIdentifier(sourceMap.get("identifier").toString());
-                conwrapper.setInode(sourceMap.get("inode").toString());
-                conwrapper.setScore(sh.getScore());
+        if(limit<=MAX_LIMIT) {
+            SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
+            PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
+            list.setTotalResults(lc.getTotalHits().value);
 
-                list.add(conwrapper);
+            for (SearchHit sh : lc.getHits()) {
+                try{
+                    Map<String, Object> sourceMap = sh.getSourceAsMap();
+                    ContentletSearch conwrapper= new ContentletSearch();
+                    conwrapper.setId(sh.getId());
+                    conwrapper.setIndex(sh.getIndex());
+                    conwrapper.setIdentifier(sourceMap.get("identifier").toString());
+                    conwrapper.setInode(sourceMap.get("inode").toString());
+                    conwrapper.setScore(sh.getScore());
+
+                    list.add(conwrapper);
+                }
+                catch(Exception e){
+                    Logger.error(this,e.getMessage(),e);
+                }
+
             }
-            catch(Exception e){
-                Logger.error(this,e.getMessage(),e);
-            }
-
+            return list;
+        } else {
+            return contentFactory.indexSearchScroll(buffy.toString(), sortBy);
         }
-        return list;
+
     }
 
     @CloseDBIfOpened
@@ -2826,6 +2833,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final IndexPolicy  indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
         final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(),
                 false, contentlet.getLanguageId(), user, respectFrontendRoles);
+
+        if(workingContentlet==null) {
+            return;
+        }
+
         Contentlet liveContentlet = null;
 
         try {

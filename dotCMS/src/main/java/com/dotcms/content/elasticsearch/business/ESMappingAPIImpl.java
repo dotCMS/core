@@ -69,6 +69,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +83,8 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsResponse;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.client.indices.PutMappingRequest;
@@ -155,6 +158,17 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return getMappingResponse.mappings().get(index).source().string();
 	}
 
+	public Map<String, Object> getFieldMappingAsMap(final String index, final String fieldName) throws IOException {
+	    final GetFieldMappingsRequest request = new GetFieldMappingsRequest();
+	    request.indices(index).fields(fieldName);
+        final GetFieldMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
+                .indices().getFieldMapping(request, RequestOptions.DEFAULT);
+
+        return getMappingResponse.mappings().get(index).get(fieldName) != null ? getMappingResponse
+                .mappings().get(index).get(fieldName).sourceAsMap() : Collections
+                .emptyMap();
+    }
+
 	@SuppressWarnings("unchecked")
 	public String toJson(final Contentlet contentlet) throws DotMappingException {
 
@@ -189,10 +203,36 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             loadRelationshipFields(contentlet, contentletMap, sw);
 
 			final Identifier contentIdentifier = APILocator.getIdentifierAPI().find(contentlet);
+            if (null == contentIdentifier || !UtilMethods.isSet(contentIdentifier.getId())) {
+                final String errorMsg = String.format("Identifier '%s' was not found via API.", contentlet
+                        .getIdentifier());
+                throw new DotDataException(errorMsg);
+            }
 			final ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
+            if (null == versionInfo || !UtilMethods.isSet(versionInfo.getIdentifier())) {
+                final String errorMsg = String.format("Version Info for Identifier '%s' and Language '%s' was not" +
+                        " found via API.", contentIdentifier.getId(), contentlet.getLanguageId());
+                throw new DotDataException(errorMsg);
+            }
 			final ContentType contentType = CacheLocator.getContentTypeCache2().byVarOrInode(contentlet.getContentTypeId());
+            if (null == contentType || !UtilMethods.isSet(contentType.id())) {
+                final String errorMsg = String.format("Content Type with ID '%s' was not found via API.",
+                        contentlet.getContentTypeId());
+                throw new DotDataException(errorMsg);
+            }
 			final Folder contentFolder = APILocator.getFolderAPI().findFolderByPath(contentIdentifier.getParentPath(), contentIdentifier.getHostId(), systemUser, false);
+            if (null == contentFolder || !UtilMethods.isSet(contentFolder.getIdentifier())) {
+                final String errorMsg = String.format("Parent folder '%s' in Site '%s' was not found via API. Please " +
+                        "check that the specified value points to a valid folder.", contentIdentifier.getParentPath()
+                        , contentIdentifier.getHostId());
+                throw new DotDataException(errorMsg);
+            }
 			final Host contentSite = APILocator.getHostAPI().find(contentIdentifier.getHostId(), systemUser, false);
+            if (null == contentSite || !UtilMethods.isSet(contentSite.getIdentifier())) {
+                final String errorMsg = String.format("Site with ID '%s' was not found via API. Please check that the" +
+                        " specified value points to a valid Site.", contentIdentifier.getHostId());
+                throw new DotDataException(errorMsg);
+            }
 
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, contentType.variable()); // marked for DEPRECATION
@@ -251,7 +291,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
 			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.getVersionTs()));
 
-			String urlMap = null;
+			String urlMap;
 			try{
 				urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
 				if(urlMap != null){
@@ -320,9 +360,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			return mlowered;
 		} catch (final Exception e) {
-			Logger.error(this, "An error occurred when mapping properties of Contentlet '" + contentlet.getIdentifier
-					() + "' : " + e.getMessage(), e);
-			throw new DotMappingException(e.getMessage(), e);
+            final String errorMsg = String.format("An error occurred when mapping properties of Contentlet with ID " +
+                    "'%s': %s", contentlet.getIdentifier(), e.getMessage());
+            Logger.error(this, errorMsg, e);
+            throw new DotMappingException(errorMsg, e);
 		}
 	}
 

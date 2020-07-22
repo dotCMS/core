@@ -23,7 +23,8 @@
           },
           {
               "strings_as_dates": {
-                  "match": "originalstartdate||recurrencestart||recurrenceend",
+                  "match_pattern": "regex",
+                  "path_match": "calendarevent.originalstartdate|calendarevent.recurrencestart|calendarevent.recurrenceend",
                   "mapping": {
                       "type": "date"
                   }
@@ -59,7 +60,7 @@
           {
               "keywordmapping" : {
                   "match_pattern": "regex",
-                  "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner|metadata.contenttype|metadata.keywords",
+                  "path_match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|parentpath|path|urlmap|moduser|owner|metadata.contenttype|metadata.keywords",
                   "mapping": {
                       "type": "keyword"
                   }
@@ -77,7 +78,7 @@
           {
               "longmapping" : {
                   "match_pattern": "regex",
-                  "match": "metadata.length|metadata.height|metadata.width",
+                  "path_match": "metadata.length|metadata.height|metadata.width",
                   "mapping": {
                       "type": "long"
                   }
@@ -97,7 +98,6 @@
                   "match_mapping_type": "string",
                   "mapping": {
                       "analyzer": "my_analyzer",
-                      "store": "false",
                       "type": "text"
                   }
               }
