@@ -2,6 +2,8 @@ package com.dotcms.security.apps;
 
 import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.util.UtilMethods.isSet;
 import static com.google.common.collect.ImmutableList.of;
 import static java.util.Collections.emptyMap;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -22,7 +24,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -122,7 +123,7 @@ public class AppsAPIImpl implements AppsAPI {
         // if Empty ServiceKey is passed everything will be set under systemHostIdentifier:dotCMSGlobalService
         //Otherwise the internal Key will look like:
         // `5e096068-edce-4a7d-afb1-95f30a4fa80e:serviceKeyNameXYZ` where the first portion is the hostId
-        final String key = UtilMethods.isSet(serviceKey) ? serviceKey : DOT_GLOBAL_SERVICE;
+        final String key = isSet(serviceKey) ? serviceKey : DOT_GLOBAL_SERVICE;
         final String identifier =
                 (null == hostIdentifier) ? APILocator.systemHost().getIdentifier() : hostIdentifier;
         return (identifier + HOST_SECRET_KEY_SEPARATOR + key).toLowerCase();
@@ -598,8 +599,7 @@ public class AppsAPIImpl implements AppsAPI {
                     final String paramName = entry.getKey();
                     final ParamDescriptor descriptor = entry.getValue();
                     final Secret secret = appSecrets.getSecrets().get(paramName);
-                    if (descriptor.isRequired() && UtilMethods.isSet(descriptor.getValue()) && UtilMethods.isNotSet(descriptor.getValue().toString()) && (
-                            null == secret || UtilMethods.isNotSet(secret.getValue()))) {
+                    if (isRequiredWithNoDefaultValue(descriptor, secret)) {
                         warnings.put(paramName, of(String
                                 .format("`%s` is required. It is missing a value and no default is provided.",
                                         paramName)));
@@ -609,6 +609,45 @@ public class AppsAPIImpl implements AppsAPI {
             }
         }
         return emptyMap();
+    }
+
+    /**
+     * Condition check This verifies the descriptor demands the param to be required but.. No default value is provided and the secret neither has a stored value
+     * @param descriptor ParamDescriptor
+     * @param secret stored secret
+     * @return
+     */
+    private boolean isRequiredWithNoDefaultValue(final ParamDescriptor descriptor, final Secret secret ){
+        //Verify we have a param marked required and no default Value
+        final boolean isRequiredWithNoDefaultParam = (descriptor.isRequired() && isEmpty(descriptor.getValue()));
+        //Verify the secret is empty
+        final boolean isSecretWithEmptyValue = (null == secret || isNotSet(secret.getValue()));
+        return isRequiredWithNoDefaultParam && isSecretWithEmptyValue;
+    }
+
+    /**
+     * Verify an object is an empty value
+     * @param value
+     * @return
+     */
+    private boolean isEmpty(final Object value){
+        if(value == null){
+           return true;
+        }
+
+        if(value instanceof String){
+           return isNotSet((String)value);
+        }
+
+        if(value instanceof char[]){
+            return isNotSet((char[]) value);
+        }
+
+        if(value instanceof List){
+           return  ((List)value).isEmpty();
+        }
+
+        return false;
     }
 
     private void invalidateCache() {
@@ -634,7 +673,7 @@ public class AppsAPIImpl implements AppsAPI {
         Logger.debug(AppsAPIImpl.class,
                 () -> " ymlFiles are set under:  " + ymlFilesPath);
         final Set<String> files = listFiles(ymlFilesPath);
-        if (!UtilMethods.isSet(files)) {
+        if (!isSet(files)) {
             return Collections.emptySet();
         } else {
             return files;
@@ -699,23 +738,23 @@ public class AppsAPIImpl implements AppsAPI {
 
        final List<String> errors = new ArrayList<>();
 
-       if(UtilMethods.isNotSet(appDescriptor.getName())){
+       if(isNotSet(appDescriptor.getName())){
            errors.add("The required field `name` isn't set on the incoming file.");
        }
 
-       if(UtilMethods.isNotSet(appDescriptor.getDescription())){
+       if(isNotSet(appDescriptor.getDescription())){
            errors.add("The required field `description` isn't set on the incoming file.");
        }
 
-       if(UtilMethods.isNotSet(appDescriptor.getIconUrl())){
+       if(isNotSet(appDescriptor.getIconUrl())){
            errors.add("The required field `iconUrl` isn't set on the incoming file.");
        }
 
-       if(!UtilMethods.isSet(appDescriptor.getAllowExtraParameters())){
+       if(!isSet(appDescriptor.getAllowExtraParameters())){
            errors.add("The required boolean field `allowExtraParameters` isn't set on the incoming file.");
        }
 
-       if(!UtilMethods.isSet(appDescriptor.getParams())){
+       if(!isSet(appDescriptor.getParams())){
            errors.add("The required field `params` isn't set on the incoming file.");
        }
 
@@ -743,7 +782,7 @@ public class AppsAPIImpl implements AppsAPI {
 
         final List<String> errors = new LinkedList<>();
 
-        if (UtilMethods.isNotSet(name)) {
+        if (isNotSet(name)) {
             errors.add("Param descriptor is missing required  field `name` .");
         }
 
@@ -758,11 +797,11 @@ public class AppsAPIImpl implements AppsAPI {
                     name));
         }
 
-        if (UtilMethods.isNotSet(descriptor.getHint())) {
+        if (isNotSet(descriptor.getHint())) {
             errors.add(String.format("Param `%s`: is missing required field `hint` .", name));
         }
 
-        if (UtilMethods.isNotSet(descriptor.getLabel())) {
+        if (isNotSet(descriptor.getLabel())) {
             errors.add(String.format("Param `%s`: is missing required field `hint` .", name));
         }
 
@@ -772,19 +811,19 @@ public class AppsAPIImpl implements AppsAPI {
                     name));
         }
 
-        if (!UtilMethods.isSet(descriptor.getRequired())) {
+        if (!isSet(descriptor.getRequired())) {
             errors.add(
                     String.format("Param `%s`: is missing required field `required` (true|false) .",
                             name));
         }
 
-        if (!UtilMethods.isSet(descriptor.getHidden())) {
+        if (!isSet(descriptor.getHidden())) {
             errors.add(
                     String.format("Param `%s`: is missing required field `hidden` (true|false) .",
                             name));
         }
 
-        if (UtilMethods.isSet(descriptor.getValue()) && StringPool.NULL
+        if (isSet(descriptor.getValue()) && StringPool.NULL
                 .equalsIgnoreCase(descriptor.getValue().toString()) && descriptor.isRequired()) {
             errors.add(String.format(
                     "Null isn't allowed as the default value on required params see `%s`. ",
@@ -793,14 +832,14 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         if (Type.BOOL.equals(descriptor.getType())) {
-            if (UtilMethods.isSet(descriptor.getHidden())
+            if (isSet(descriptor.getHidden())
                     && descriptor.isHidden()) {
                 errors.add(String.format(
                         "Param `%s`: Bool params can not be marked hidden. The combination (Bool + Hidden) isn't allowed.",
                         name));
             }
 
-            if (UtilMethods.isSet(descriptor.getValue())
+            if (isSet(descriptor.getValue())
                     && !isBoolString(descriptor.getValue().toString())) {
                 errors.add(String.format(
                         "Boolean Param `%s` has a default value `%s` that can not be parsed to bool (true|false).",
@@ -816,7 +855,7 @@ public class AppsAPIImpl implements AppsAPI {
 
         if (Type.SELECT.equals(descriptor.getType())) {
 
-            if (UtilMethods.isSet(descriptor.getHidden()) && descriptor.isHidden()) {
+            if (isSet(descriptor.getHidden()) && descriptor.isHidden()) {
                 errors.add(String.format(
                         "Param `%s`: List params can not be marked hidden. The combination (List + Hidden) isn't allowed.",
                         name));
