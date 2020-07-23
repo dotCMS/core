@@ -5794,7 +5794,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }else if(isFieldTypeLong(field)){
                         contentlet.setLongProperty(conVariable,value != null ? ((Number)value).longValue(): null);
                     }else if(isFieldTypeBinary(field)){
-                        contentlet.setBinary(conVariable,(java.io.File)value);
+                        final File myFile = (value instanceof String) ? new File(String.valueOf(value)) : (File) value; 
+                        contentlet.setBinary(conVariable,myFile);
                     } else {
                         contentlet.setProperty(conVariable, value);
                     }
