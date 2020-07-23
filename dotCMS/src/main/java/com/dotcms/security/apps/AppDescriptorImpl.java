@@ -12,7 +12,10 @@ import java.util.Map;
 public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
 
     @JsonIgnore
-    private transient final String fileName;
+    private final String fileName;
+
+    @JsonIgnore
+    private final boolean systemApp;
 
     /**
      * Application key
@@ -28,6 +31,7 @@ public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
      * @param allowExtraParameters
      */
     public AppDescriptorImpl(final String fileName,
+            final boolean systemApp,
             final String name,
             final String description,
             final String iconUrl,
@@ -35,6 +39,7 @@ public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
             final Map<String, ParamDescriptor> params) {
         super(name, description, iconUrl, allowExtraParameters, params);
         this.fileName = fileName;
+        this.systemApp =  systemApp;
         this.key = removeExtension(fileName);
     }
 
@@ -43,8 +48,8 @@ public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
      * @param fileName
      * @param appSchema
      */
-    AppDescriptorImpl(final String fileName, final AppSchema appSchema) {
-        this(fileName, appSchema.getName(), appSchema.getDescription(), appSchema.getIconUrl(),
+    AppDescriptorImpl(final String fileName, final boolean systemApp, final AppSchema appSchema) {
+        this(fileName,systemApp, appSchema.getName(), appSchema.getDescription(), appSchema.getIconUrl(),
                 appSchema.getAllowExtraParameters(), appSchema.getParams());
     }
 
@@ -64,4 +69,13 @@ public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
         return key;
     }
 
+
+    /**
+     * This tells you if this app is a system app
+     * if false, it means the app has been uploaded by a user
+     * @return
+     */
+    public boolean isSystemApp() {
+        return systemApp;
+    }
 }
