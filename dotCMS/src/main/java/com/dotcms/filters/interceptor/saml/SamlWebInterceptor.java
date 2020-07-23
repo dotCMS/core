@@ -113,12 +113,14 @@ public class SamlWebInterceptor implements WebInterceptor {
             return Result.NEXT;
         }
 
+        IdentityProviderConfiguration identityProviderConfiguration = null;
+
         try {
 
             if (null != this.samlConfig() && null != session && this.isAnySamlConfigurated()) {
 
                 final Host host = hostWebAPI.getCurrentHostNoThrow(request);
-                final IdentityProviderConfiguration identityProviderConfiguration = // gets the SAML Configuration for this site.
+                identityProviderConfiguration = // gets the SAML Configuration for this site.
                         this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(
                                 host.getIdentifier());
 
@@ -157,6 +159,7 @@ public class SamlWebInterceptor implements WebInterceptor {
 
                         if (this.doLogout(response, request, session, identityProviderConfiguration)) {
 
+                            Logger.info(this, "SAML Logout DONE!!!");
                         }
                     }
                 } else {
@@ -171,6 +174,10 @@ public class SamlWebInterceptor implements WebInterceptor {
                     request.getServerName() + "'. Incoming URL: " + request.getRequestURL(), exception);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return Result.SKIP_NO_CHAIN;
+        } finally {
+            if (null != identityProviderConfiguration) {
+                identityProviderConfiguration.destroy();
+            }
         }
 
         return Result.NEXT;

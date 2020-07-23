@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.dotcms.auth.providers.saml.v1.DotSamlResource;
+import com.dotcms.rest.api.v1.system.logger.LoggerResource;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rest.RulesEnginePortlet;
@@ -156,6 +157,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(ResourceLinkResource.class)
 			.add(PushPublishFilterResource.class)
 			.add(DotSamlResource.class)
+			.add(LoggerResource.class)
 			.build();
 
 

@@ -73,4 +73,9 @@ public interface IdentityProviderConfiguration {
      * @return boolean
      */
     boolean containsOptionalProperty(String propertyKey);
+
+    /**
+     * Destroy this configuration.
+     */
+    void destroy ();
 }

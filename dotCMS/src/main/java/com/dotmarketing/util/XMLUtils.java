@@ -1,27 +1,24 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.exception.DotRuntimeException;
+import org.apache.commons.io.IOUtils;
+import org.xml.sax.InputSource;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.util.regex.Pattern;
-import org.apache.commons.io.IOUtils;
-import com.dotmarketing.exception.DotRuntimeException;
-import org.xml.sax.SAXException;
-
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
 
 public class XMLUtils {
+
+    private static final DocumentBuilderFactory factory  = DocumentBuilderFactory.newInstance();
 
 	/**
 	 * This will take the three pre-defined entities in XML 1.0 (used
@@ -82,16 +79,19 @@ public class XMLUtils {
      */
 	public static boolean isValidXML (final String xml) {
 
-        final SchemaFactory schemaFactory = SchemaFactory
-                .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        /*try {
+	    if (UtilMethods.isNotSet(xml)) {
+	        return false;
+        }
 
-            schemaFactory.newSchema().newValidator()
-                    .validate(new StreamSource(new StringReader(xml)));
-        } catch (SAXException| IOException e) {
+        try {
 
+            final DocumentBuilder documentBuilder = factory.newDocumentBuilder();
+            documentBuilder.parse(new InputSource(new StringReader(xml)));
+        } catch (Exception e) {
+
+            Logger.error(XMLUtils.class, e.getMessage(), e);
             return false;
-        }*/
+        }
 
         return true;
     }

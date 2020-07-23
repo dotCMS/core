@@ -654,6 +654,7 @@ customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a
 
 compileAspect.dependsOn 'immutables'
 compileAspect {
+    additionalAjcArgs = ['showWeaveInfo' : 'false']
     println "\nCompiling Aspect..."
 }
 // This task defines if the immutables folder is generated, otherwise will generate it.

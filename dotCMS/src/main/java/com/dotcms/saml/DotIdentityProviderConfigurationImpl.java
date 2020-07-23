@@ -5,7 +5,8 @@ import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import io.vavr.control.Try;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 
 import java.util.Optional;
 
@@ -15,29 +16,23 @@ import java.util.Optional;
  */
 public class DotIdentityProviderConfigurationImpl implements IdentityProviderConfiguration {
 
-    private final AppsAPI appsAPI;
-    private final Host    host;
+    private final AppsAPI    appsAPI;
+    private final Host       host;
+    private final AppSecrets appSecrets;
 
-    public DotIdentityProviderConfigurationImpl(final AppsAPI appsAPI, final Host host) {
+    public DotIdentityProviderConfigurationImpl(final AppsAPI appsAPI, final Host host) throws DotSecurityException, DotDataException {
 
-        this.appsAPI = appsAPI;
-        this.host    = host;
+        this.appsAPI    = appsAPI;
+        this.host       = host;
+        this.appSecrets = this.appsAPI.getSecrets(DotSamlProxyFactory.SAML_APP_CONFIG_KEY,
+                true, host, APILocator.systemUser()).get();
 
     }
 
     private Optional<Secret> findSecret (final String key) {
 
-        try {
-            final Optional<AppSecrets> appSecretOpt =
-                    Try.of(() -> this.appsAPI.getSecrets(DotSamlProxyFactory.SAML_APP_CONFIG_KEY, // todo: not sure if change this.
-                            true, host, APILocator.systemUser())).getOrElseGet(e -> Optional.empty());
-
-
-            return appSecretOpt.isPresent() && appSecretOpt.get().getSecrets().containsKey(key) ?
-                    Optional.of(appSecretOpt.get().getSecrets().get(key)) : Optional.empty();
-        } finally {
-            // destroy here
-        }
+        return this.appSecrets.getSecrets().containsKey(key)?
+                Optional.ofNullable(this.appSecrets.getSecrets().get(key)) : Optional.empty();
     }
 
     @Override
@@ -125,5 +120,11 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
     public boolean containsOptionalProperty(final String propertyKey) {
 
         return this.findSecret(propertyKey).isPresent();
+    }
+
+    @Override
+    public void destroy() {
+
+        this.appSecrets.destroy();
     }
 }

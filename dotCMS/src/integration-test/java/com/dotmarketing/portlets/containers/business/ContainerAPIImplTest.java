@@ -97,7 +97,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                 PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_READ);
         APILocator.getPermissionAPI().save(permissionWrite, host, APILocator.systemUser(), false);
 
-        try {
+
             final ContentType contentType1 = TestDataUtils
                     .getBlogLikeContentType("Blog" + System.currentTimeMillis(), host);
             final ContentType contentType2 = TestDataUtils
@@ -107,6 +107,10 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                     .withContentType(contentType2, "")
                     .nextPersisted();
 
+            
+            
+            
+            
             ContainerAPIImpl containerAPI = new ContainerAPIImpl();
             List<ContentType> contentTypesInContainer = containerAPI
                     .getContentTypesInContainer(APILocator.systemUser(), container);
@@ -119,14 +123,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
             assertTrue("Blog like CT was expected", optionalContentType1.isPresent());
             assertTrue("Banner Like CT was expected", optionalContentType2.isPresent());
 
-        } finally {
-            HibernateUtil.startTransaction();
-            if (container != null) {
-                APILocator.getContainerAPI().delete(container, APILocator.systemUser(), false);
-            }
 
-            HibernateUtil.commitTransaction();
-        }
     }
 
     @Test
