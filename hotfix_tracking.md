@@ -50,3 +50,5 @@ This release includes the following code fixes:
 21. https://github.com/dotCMS/core/issues/18744 : Global URLMaps
 
 22. https://github.com/dotCMS/core/issues/18187 : Aliases not working correctly
+
+23. https://github.com/dotCMS/core/issues/18964 : [REST] : Missing endpoint for retrieving folder tree 
