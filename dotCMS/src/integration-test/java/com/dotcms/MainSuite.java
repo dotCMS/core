@@ -26,6 +26,7 @@ import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
+import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
@@ -168,6 +169,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.business.ContentletCheckInTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest.class,
         com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
+        ContainerStructureFinderStrategyResolverTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
