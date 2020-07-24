@@ -11,7 +11,7 @@ public class ConfigTool implements ViewTool {
     public void init(Object initData) {}
 
     public String getStringProperty(String name, String defValue) {
-        return Config.getStringProperty(name, defValue, true);
+        return Config.getStringProperty(name, defValue);
     }
 
     public String getStringProperty(String name) {
