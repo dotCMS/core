@@ -1,15 +1,5 @@
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.com.google.common.base.Supplier;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.util.ConfigurationInterpolator;
-import com.dotcms.util.FileWatcherAPI;
-import com.dotcms.util.ReflectionUtils;
-import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
-import com.dotcms.util.transform.StringToEntityTransformer;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.google.common.collect.ImmutableSet;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +13,16 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.com.google.common.base.Supplier;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.util.ConfigurationInterpolator;
+import com.dotcms.util.FileWatcherAPI;
+import com.dotcms.util.ReflectionUtils;
+import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
+import com.dotcms.util.transform.StringToEntityTransformer;
+import com.dotmarketing.business.APILocator;
+import com.google.common.collect.ImmutableSet;
+import io.vavr.control.Try;
 
 /**
  * This class provides access to the system configuration parameters that are
@@ -63,10 +62,7 @@ public class Config {
 	public static javax.servlet.ServletContext CONTEXT = null;
 	public static String CONTEXT_PATH = null;
 
-	//PERMISSION CONSTANTS
-	public static final int PERMISSION_READ = 1;
-	public static final int PERMISSION_WRITE = 2;
-	public static final int PERMISSION_PUBLISH = 4;
+
 
 	//Config internal properties
 	private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
@@ -78,7 +74,6 @@ public class Config {
     private static int prevInterval = Integer.MIN_VALUE;
     private static FileWatcherAPI fileWatcherAPI = null;
 
-    private static final String syncMe = "esSync";
 
 	/**
 	 * Config internal methods
@@ -114,7 +109,7 @@ public class Config {
 
 		// checki if the watcher is already instantiated.
 		if (null == fileWatcherAPI) {
-			synchronized (syncMe) {
+			synchronized (Config.class) {
 
 				if (null == fileWatcherAPI) {
 
@@ -157,6 +152,10 @@ public class Config {
 
         //Reading both property files
         readProperties( dotmarketingPropertiesUrl, clusterPropertiesUrl );
+        
+        // Include ENV variables that start with DOT_
+
+        readEnvironmentVariables();
     }
 
 	/**
@@ -174,7 +173,7 @@ public class Config {
 		Date lastClusterModified = new Date(clusterFile.lastModified());
 
 		if (props == null) {
-			synchronized (syncMe) {
+			synchronized (Config.class) {
 				if (props == null) {
 					readProperties(dotmarketingFile,
 							"dotmarketing-config.properties");
@@ -187,7 +186,7 @@ public class Config {
 			// properties files
 			if (lastDotmarketingModified.after(lastRefreshTime)
 					|| lastClusterModified.after(lastRefreshTime)) {
-				synchronized (syncMe) {
+				synchronized (Config.class) {
 					if (lastDotmarketingModified.after(lastRefreshTime)
 							|| lastClusterModified.after(lastRefreshTime)) {
 						try {
@@ -298,119 +297,56 @@ public class Config {
 		}
 	}
 
-	/**
-	 * 
-	 * @param name
-	 * @param defValue
-	 * @return
-	 */
-	public static String getStringProperty(String name, String defValue) {
-		return getStringProperty(name, defValue, true);
-	}
 
+	private final static String ENV_PREFIX="DOT_";
+	
+    private static void readEnvironmentVariables() {
+        
+        
+        System.getenv().entrySet().stream().filter(e->e.getKey().startsWith(ENV_PREFIX)).forEach(e->
+            props.addProperty(e.getKey(), e.getValue())
+        );
+        
+
+
+    }
+	
+	
+	private static String envKey(final String theKey) {
+
+        String envKey = ENV_PREFIX + theKey.toUpperCase().replace(".", "_");
+        while (envKey.contains("__")) {
+            envKey = envKey.replace("__", "_");
+        }
+        return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
+
+	}
+	
 	/**
 	 * Returns a string property
 	 *
 	 * @param name     The name of the property to locate.
 	 * @param defValue Value to return if property is not found.
-	 * @param forceDefaultToString If the provided default value should be returned as a string, even when null (marshals literal null to "null").
 	 * @return The value of the property.  If property is found more than once, all the occurrences will be concatenated (with a comma separating each
 	 * element).
 	 */
-	public static String getStringProperty(String name, String defValue, boolean forceDefaultToString) {
-		_refreshProperties();
-		String result = defValue;
+	public static String getStringProperty(final String name, final String defValue) {
 
-		if(props != null) {
-			String[] propsArr = props.getStringArray(name);
-			StringBuilder property = new StringBuilder();
+	    final String[] propsArr = getStringArrayProperty(name,  defValue==null ? null : new String[] {defValue});
 
-			if(propsArr != null && propsArr.length > 0) {
-				buildProperty(propsArr, property);
-				result = property.toString();
-			} else if(forceDefaultToString) {
-				result = String.valueOf(defValue);
-			}
-		} else {
-			// default is not forced to string here for historical reasons. Presumably props is never actually null.
-			result = defValue;
-		}
-		return result;
+		if (propsArr == null || propsArr.length == 0) {
+		    return defValue;
+		} 
+		
+		return String.join(",", propsArr);
+		
 	}
 
-	/**
-	 * Returns a string property. The {@link Supplier} is useful when you want
-	 * lazy evaluation for the default value. This means that figuring out the
-	 * value of the supplier will not happen until the logic determines that the
-	 * property specified by the {@code name} parameter does not map to a value
-	 * in the properties files.
-	 *
-	 * @param name
-	 *            - The name of the property to read.
-	 * @param defValue
-	 *            - The default value as a {@link Supplier}, in case the
-	 *            property is not defined.
-	 * @return The value of the specified property, or its default value.
-	 */
-	public static String getAsString(String name, Supplier<String> defValue) {
-		return getAsString(name, defValue, true);
-	}
-
-	/**
-	 * Returns a string property. The {@link Supplier} is useful when you want
-	 * lazy evaluation for the default value. This means that figuring out the
-	 * value of the supplier will not happen until the logic determines that the
-	 * property specified by the {@code name} parameter does not map to a value
-	 * in the properties files.
-	 *
-	 * @param name
-	 *            - The name of the property to read.
-	 * @param defValue
-	 *            - The default value as a {@link Supplier}, in case the
-	 *            property is not defined.
-	 * @param forceDefaultToString
-	 *            - If the default value is to be returned when the property is
-	 *            not defined in the configuration files, set to {@code true}.
-	 *            Otherwise, set to {@code false}.
-	 * @return The value of the specified property, or its default value.
-	 */
-	public static String getAsString(String name, Supplier<String> defValue, boolean forceDefaultToString) {
-		_refreshProperties();
-		String result = StringUtils.EMPTY;
-		if (props != null) {
-			String[] propsArr = props.getStringArray(name);
-			StringBuilder property = new StringBuilder();
-			if (propsArr != null && propsArr.length > 0) {
-				buildProperty(propsArr, property);
-				result = property.toString();
-			} else if (forceDefaultToString) {
-				result = (defValue != null) ? defValue.get() : "";
-			}
-		} else {
-			// Default is not forced to string here for historical reasons.
-			// Presumably props are never actually null.
-			result = (defValue != null) ? defValue.get() : "";
-		}
-		return result;
-	}
-
-	/**
-	 * 
-	 * @param propsArr
-	 * @param property
-	 */
-	private static void buildProperty(String[] propsArr, StringBuilder property) {
-
-		int i = 0;
-
-		for (String propItem : propsArr) {
-            if(i > 0) {
-                property.append(",");
-            }
-            property.append(propItem);
-            i++;
-        }
-	}
+	
+	
+	
+	
+	
 
 	/**
 	 * @deprecated  Use getStringProperty(String name, String default) and
@@ -418,17 +354,7 @@ public class Config {
 	 */
 	@Deprecated
     public static String getStringProperty (String name) {
-        _refreshProperties ();
-        String[] propsArr = props.getStringArray(name);
-        String property = new String ();
-        int i = 0;
-        for (String propItem : propsArr) {
-            if (i > 0)
-                property += ",";
-            property += propItem;
-            i++;
-        }
-        return property;
+        return getStringProperty(name, null);
     }
 
 	/**
@@ -437,8 +363,7 @@ public class Config {
 	 * @return
 	 */
 	public static String[] getStringArrayProperty (String name) {
-	    _refreshProperties ();
-	    return props.getStringArray(name);
+	    return getStringArrayProperty(name, null);
 	}
 
 	/**
@@ -473,17 +398,22 @@ public class Config {
 		return entities;
 	}
 
-	/**
-	 * If config value == null, returns the default
-	 * @param name
-	 * @param defaultValue
-	 * @return
-	 */
-  public static String[] getStringArrayProperty (String name, String[] defaultValue) {
-      _refreshProperties ();
-      
-      return props.containsKey(name) ? props.getStringArray(name) : defaultValue;
-  }
+    /**
+     * If config value == null, returns the default
+     * 
+     * @param name
+     * @param defaultValue
+     * @return
+     */
+    public static String[] getStringArrayProperty(String name, String[] defaultValue) {
+        _refreshProperties();
+
+        return props.containsKey(envKey(name)) 
+                ? props.getStringArray(envKey(name))
+                : props.containsKey(name) 
+                    ? props.getStringArray(name) 
+                    : defaultValue;
+    }
 	/**
 	 * @deprecated  Use getIntProperty(String name, int default) and
 	 * set an intelligent default
@@ -491,6 +421,13 @@ public class Config {
 	@Deprecated
 	public static int getIntProperty (String name) {
 	    _refreshProperties ();
+	    
+        Integer prop = Try.of(()->props.getInt(envKey(name))).getOrNull();
+        if(prop!=null) {
+            return prop;
+        }
+	    
+	    
 	    return props.getInt(name);
 	}
 
@@ -596,14 +533,6 @@ public class Config {
 		return ImmutableSet.copyOf(props.subset(prefix).getKeys()).iterator();
 	}
 
-	/**
-	 * 
-	 * @param key
-	 * @return
-	 */
-	public static boolean containsProperty(String key) {
-		return props.containsKey(key);
-	}
 
 	/**
 	 * Spindle Config
@@ -615,23 +544,7 @@ public class Config {
 		CONTEXT_PATH = myApp.getRealPath("/");
 	}
 
-	/**
-	 * 
-	 * @param limit
-	 * @param offset
-	 * @return
-	 */
-	public static String getLimitOffsetQuery(int limit, int offset) {
-		String db = DbConnectionFactory.getDBType();
 
-	    if (db.equals("PostgreSQL")){
-			return " limit " + limit + " offset " + offset;
-		}
-		else if (db.equals("MySQL")){
-			return " limit " + offset + " ," + limit;
-		}
-		return "";
-	}
 
 	/**
 	 * 
