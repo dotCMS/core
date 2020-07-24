@@ -25,7 +25,7 @@ public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
 
     /**
      * Takes all the params individually to build the AppDescriptor
-     * Used by a DaaGen Builder pattern
+     * Used by a DataGen Builder pattern
      * @param fileName
      * @param name
      * @param description
