@@ -3,6 +3,7 @@ package com.dotcms.security.apps;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 
 /***
@@ -24,12 +25,14 @@ public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
 
     /**
      * Takes all the params individually to build the AppDescriptor
+     * Used by a DaaGen Builder pattern
      * @param fileName
      * @param name
      * @param description
      * @param iconUrl
      * @param allowExtraParameters
      */
+    @VisibleForTesting
     public AppDescriptorImpl(final String fileName,
             final boolean systemApp,
             final String name,
