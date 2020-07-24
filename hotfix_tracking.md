@@ -1,6 +1,6 @@
 #DOTCMS_CORE
 
-Version: 22
+Version: 24
 
 
 This release includes the following code fixes:
@@ -52,3 +52,5 @@ This release includes the following code fixes:
 22. https://github.com/dotCMS/core/issues/18187 : Aliases not working correctly
 
 23. https://github.com/dotCMS/core/issues/18964 : [REST] : Missing endpoint for retrieving folder tree 
+
+24. https://github.com/dotCMS/core/issues/18920 : [Push Publishing] : Existing archived content is causing push to fail
