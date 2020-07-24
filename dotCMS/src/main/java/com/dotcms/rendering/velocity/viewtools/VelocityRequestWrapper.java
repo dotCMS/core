@@ -1,24 +1,10 @@
 package com.dotcms.rendering.velocity.viewtools;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.DispatcherType;
-import javax.servlet.RequestDispatcher;
+import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.*;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
@@ -26,322 +12,138 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.Xss;
 
-public class VelocityRequestWrapper extends javax.servlet.http.HttpServletRequestWrapper  {
+/**
+ * This class wraps the incoming HttpServletRequest to provide security and to allow uris to be
+ * overridden
+ * 
+ * @author will
+ *
+ */
+public class VelocityRequestWrapper extends javax.servlet.http.HttpServletRequestWrapper {
 
-	private HttpServletRequest _request;
+
     private String customUserAgentHeader;
-	private String dotCMSUri;
-    final protected static Set<String> SET_VALUE_BLACKLIST = Config.getBooleanProperty("VELOCITY_PREVENT_SETTING_USER_ID", true) ? ImmutableSet.of(WebKeys.USER_ID, WebKeys.USER) : ImmutableSet.of();
-	public VelocityRequestWrapper(HttpServletRequest req) {
+    private String dotCMSUri;
+    final protected static Set<String> SET_VALUE_BLACKLIST =
+                    Config.getBooleanProperty("VELOCITY_PREVENT_SETTING_USER_ID", true)
+                                    ? ImmutableSet.of(WebKeys.USER_ID, WebKeys.USER)
+                                    : ImmutableSet.of();
+
+    private VelocityRequestWrapper(final HttpServletRequest req) {
         super(req);
-		this._request = req;
-	}
-	
-	public String getActualParameter(String arg0) {
-		return _request.getParameter(arg0);
-	}
-	
-	public String getAuthType() {
-		return _request.getAuthType();
-	}
 
-	public String getContextPath() {
-		return null;
-	}
+    }
 
-	public Cookie[] getCookies() {
-		return _request.getCookies();
-	}
+    public String getActualParameter(final String param) {
+        return super.getParameter(param);
+    }
 
-	public long getDateHeader(String arg0) {
-		return _request.getDateHeader(arg0);
-	}
+    @Override
+    public String getContextPath() {
+        return null;
+    }
 
-    public String getHeader ( String arg0 ) {
+    @Override
+    public String getHeader(final String header) {
 
-        if ( arg0 != null
-                && arg0.toLowerCase().equals( "user-agent" )
-                && this.getCustomUserAgentHeader() != null ) {
+        if ("user-agent".equalsIgnoreCase(header) && this.getCustomUserAgentHeader() != null) {
             return this.getCustomUserAgentHeader();
         }
-        return _request.getHeader( arg0 );
+        return super.getHeader(header);
     }
 
-	public Enumeration getHeaderNames() {
-		return _request.getHeaderNames();
-	}
 
-	public Enumeration getHeaders(String arg0) {
-		return _request.getHeaders(arg0);
-	}
-
-	public int getIntHeader(String arg0) {
-		return _request.getIntHeader(arg0);
-	}
-
-	public String getMethod() {
-		return _request.getMethod();
-	}
-
-	public String getPathInfo() {
-		return _request.getPathInfo();
-	}
-
-	public String getPathTranslated() {
-		return _request.getPathTranslated();
-	}
-
-	public String getQueryString() {
-		return _request.getQueryString();
-	}
-
-	public String getRemoteUser() {
-		return _request.getRemoteUser();
-	}
-
-	public String getRequestURI() {
-		if(this.dotCMSUri != null){
-			return this.dotCMSUri;
-		}
-		return _request.getRequestURI();
-	}
-
-	public StringBuffer getRequestURL() {
-		
-
-		return new StringBuffer(_request.getScheme() + "://" + _request.getServerName() + ":" + _request.getServerPort() + getRequestURI() + "?" + UtilMethods.webifyString(_request.getQueryString()));
-	}
-
-	public String getRequestedSessionId() {
-		return _request.getRequestedSessionId();
-	}
-
-	public String getServletPath() {
-		return _request.getServletPath();
-	}
-
-	public HttpSession getSession() {
-		return new VelocitySessionWrapper(_request.getSession());
-	}
-
-	public HttpSession getSession(boolean arg0) {
-	    HttpSession session = _request.getSession(arg0);
-		return session!=null ? getSession() : null;
-	}
-
-	public Principal getUserPrincipal() {
-		return _request.getUserPrincipal();
-	}
-
-	public boolean isRequestedSessionIdFromCookie() {
-		return _request.isRequestedSessionIdFromCookie();
-	}
-
-	public boolean isRequestedSessionIdFromURL() {
-		return _request.isRequestedSessionIdFromURL();
-	}
-
-	public boolean isRequestedSessionIdFromUrl() {
-		return _request.isRequestedSessionIdFromUrl();
-	}
-
-	public boolean isRequestedSessionIdValid() {
-		return _request.isRequestedSessionIdValid();
-	}
-
-	public boolean isUserInRole(String arg0) {
-		return _request.isUserInRole(arg0);
-	}
-
-	public Object getAttribute(String arg0) {
-		return _request.getAttribute(arg0);
-	}
-
-	public Enumeration getAttributeNames() {
-		return _request.getAttributeNames();
-	}
-
-	public String getCharacterEncoding() {
-		return _request.getCharacterEncoding();
-	}
-
-	public int getContentLength() {
-		return _request.getContentLength();
-	}
-
-	public String getContentType() {
-		return _request.getContentType();
-	}
-
-	public ServletInputStream getInputStream() throws IOException {
-		return _request.getInputStream();
-	}
-
-	public String getLocalAddr() {
-		return _request.getLocalAddr();
-	}
-
-	public String getLocalName() {
-		return _request.getLocalName();
-	}
-
-	public int getLocalPort() {
-		return _request.getLocalPort();
-	}
-
-	public Locale getLocale() {
-		return _request.getLocale();
-	}
-
-	public Enumeration getLocales() {
-		return _request.getLocales();
-	}
-
-	public String getParameter(String arg0) {
-		String ret = _request.getParameter(arg0);
-		if(UtilMethods.isSet(ret) && Xss.URLHasXSS(ret)){
-			ret = UtilMethods.htmlifyString(ret);
-		}
-		return ret;
-	}
-
-	public Map getParameterMap() {
-		return _request.getParameterMap();
-	}
-
-	public Enumeration getParameterNames() {
-		return _request.getParameterNames();
-	}
-
-	public String[] getParameterValues(String arg0) {
-		return _request.getParameterValues(arg0);
-	}
-
-	public String getProtocol() {
-		return _request.getProtocol();
-	}
-
-	public BufferedReader getReader() throws IOException {
-		return _request.getReader();
-	}
-
-	public String getRealPath(String arg0) {
-		return arg0;
-	}
-
-	public String getRemoteAddr() {
-		return _request.getRemoteAddr();
-	}
-
-	public String getRemoteHost() {
-		return _request.getRemoteHost();
-	}
-
-	public int getRemotePort() {
-		return _request.getRemotePort();
-	}
-
-	public RequestDispatcher getRequestDispatcher(String uri) {
-		return _request.getRequestDispatcher(uri);
-	}
-
-	public String getScheme() {
-		return _request.getScheme();
-	}
-
-	public String getServerName() {
-		return _request.getServerName();
-	}
-
-	public int getServerPort() {
-		return _request.getServerPort();
-	}
-
-	public boolean isSecure() {
-		return _request.isSecure();
-	}
-
-	public void removeAttribute(String arg0) {
-	    // do nothing
-	}
-
-	public void setAttribute(String arg0, Object arg1) {
-	    if(!SET_VALUE_BLACKLIST.contains(arg0)) {
-	        _request.setAttribute(arg0, arg1);
-	    }
-	}
-
-	public void setCharacterEncoding(String arg0) throws UnsupportedEncodingException {
-		_request.setCharacterEncoding(arg0);
-	}
-
-    public AsyncContext getAsyncContext() {
-        return _request.getAsyncContext();
+    @Override
+    public String getRequestURI() {
+        if (this.dotCMSUri != null) {
+            return this.dotCMSUri;
+        }
+        return super.getRequestURI();
     }
 
-    public DispatcherType getDispatcherType() {
-        return _request.getDispatcherType();
+    @Override
+    public StringBuffer getRequestURL() {
+        return new StringBuffer(super.getScheme() + "://" + super.getServerName() + ":"
+                        + super.getServerPort() + getRequestURI() + "?"
+                        + UtilMethods.webifyString(super.getQueryString()));
     }
 
+    @Override
+    public HttpSession getSession() {
+        return new VelocitySessionWrapper(super.getSession());
+    }
+
+    @Override
+    public HttpSession getSession(final boolean forceCreation) {
+        HttpSession session = super.getSession(forceCreation);
+        return session != null ? this.getSession() : null;
+    }
+
+    @Override
+    public String getParameter(final String param) {
+        String ret = super.getParameter(param);
+        if (UtilMethods.isSet(ret) && Xss.URLHasXSS(ret)) {
+            ret = UtilMethods.htmlifyString(ret);
+        }
+        return ret;
+    }
+
+    @Override
+    public String getRealPath(final String path) {
+        return path;
+    }
+
+    @Override
+    public void removeAttribute(String arg0) {
+        // do nothing
+    }
+
+    @Override
+    public void setAttribute(final String key, final Object value) {
+        if (SET_VALUE_BLACKLIST.contains(key)) {
+            return;
+        }
+        
+        super.setAttribute(key, value);
+        
+    }
+
+    @Override
     public ServletContext getServletContext() {
         SecurityLogger.logInfo(this.getClass(), "User trying to access ServletContext from Velocity");
         return null;
     }
 
-    public boolean isAsyncStarted() {
-        return _request.isAsyncStarted();
-    }
-
-    public boolean isAsyncSupported() {
-        return _request.isAsyncStarted();
-    }
-
-    public AsyncContext startAsync() {
-        return _request.startAsync();
-    }
-
-    public AsyncContext startAsync(ServletRequest arg0, ServletResponse arg1) {
-        return _request.startAsync(arg0, arg1);
-    }
-
-    public boolean authenticate(HttpServletResponse arg0) throws IOException,
-            ServletException {
-        return _request.authenticate(arg0);
-    }
-
-    public Part getPart(String arg0) throws IOException, IllegalStateException,
-            ServletException {
-        return _request.getPart(arg0);
-    }
-
-	public Collection<Part> getParts() throws IOException,
-            IllegalStateException, ServletException {
-        return _request.getParts();
-    }
-
+    @Override
     public void login(String arg0, String arg1) throws ServletException {
         // do nothing
     }
 
+    @Override
     public void logout() throws ServletException {
         // do nothing
     }
 
-    public String getCustomUserAgentHeader () {
+    public String getCustomUserAgentHeader() {
         return customUserAgentHeader;
     }
 
-    public void setCustomUserAgentHeader ( String customUserAgentHeader ) {
+    public void setCustomUserAgentHeader(String customUserAgentHeader) {
         this.customUserAgentHeader = customUserAgentHeader;
     }
-    
-    public void setRequestUri(String uri){
-    	this.dotCMSUri = uri;
-    	
-    	
-    	
+
+    public void setRequestUri(String uri) {
+        this.dotCMSUri = uri;
+
+
     }
-    
-    
+
+    public static VelocityRequestWrapper wrapVelocityRequest(final HttpServletRequest request) {
+        if (request instanceof VelocityRequestWrapper) {
+            return (VelocityRequestWrapper) request;
+        }
+        return new VelocityRequestWrapper(request);
+    }
+
 
 }

@@ -42,7 +42,7 @@ public class VelocityServlet extends HttpServlet {
     @Override
     @CloseDB
     protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
-        final VelocityRequestWrapper request = new VelocityRequestWrapper(req);
+        final VelocityRequestWrapper request =VelocityRequestWrapper.wrapVelocityRequest(req);
         final String uri = CMSUrlUtil.getCurrentURI(request);
         final boolean comeFromSomeWhere = request.getHeader("referer") != null;
         
