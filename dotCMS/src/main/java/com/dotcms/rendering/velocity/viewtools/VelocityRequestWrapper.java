@@ -70,13 +70,13 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
 
     @Override
     public HttpSession getSession() {
-        return new VelocitySessionWrapper(super.getSession(true));
+        return new VelocitySessionWrapper(super.getSession());
     }
 
     @Override
     public HttpSession getSession(final boolean forceCreation) {
         HttpSession session = super.getSession(forceCreation);
-        return session != null ? getSession() : null;
+        return session != null ? this.getSession() : null;
     }
 
     @Override
