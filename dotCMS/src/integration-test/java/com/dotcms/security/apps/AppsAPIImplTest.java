@@ -56,7 +56,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -810,7 +809,7 @@ public class AppsAPIImplTest {
                 final AppSecrets appSecrets = event.getAppSecrets();
                 final Map<String, Secret> secrets = appSecrets.getSecrets();
                 secrets.forEach((s, secret) -> {
-                    Assert.assertFalse(isSecretDestroyed(secret.getValue()));
+                    assertFalse(isSecretDestroyed(secret.getValue()));
                 });
                 callsCount.incrementAndGet();
             }
@@ -841,7 +840,7 @@ public class AppsAPIImplTest {
         //Save it
         api.saveSecrets(secrets, site, admin);
         DateUtil.sleep(2000);
-        Assert.assertEquals(callsCount.get(), 1);
+        assertEquals(callsCount.get(), 1);
 
         // Now Test Secret has been destroyed.
         final Map<String, Secret> secretsPostSave = secrets.getSecrets();
@@ -891,7 +890,7 @@ public class AppsAPIImplTest {
         //Move the file to the system folder
         final Path systemAppsDescriptorDirectory = AppsAPIImpl.getSystemAppsDescriptorDirectory();
         final boolean result = file.renameTo(new File(systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
-        Assert.assertTrue(result);
+        assertTrue(result);
 
         final User admin = TestUserUtils.getAdminUser();
         final AppsAPI api = APILocator.getAppsAPI();
@@ -904,10 +903,10 @@ public class AppsAPIImplTest {
         //Verify the file we just submitted is recognized as a system-app-file
         final Optional<AppDescriptor> optional = appDescriptors.stream()
                 .filter(appDescriptor -> dataGen.getKey().equals(appDescriptor.getKey())).findFirst();
-        Assert.assertTrue(optional.isPresent());
+        assertTrue(optional.isPresent());
         final AppDescriptor descriptor = optional.get();
         final AppDescriptorImpl impl = (AppDescriptorImpl)descriptor;
-        Assert.assertTrue(impl.isSystemApp());
+        assertTrue(impl.isSystemApp());
         //Now attempt a delete and instruct the api to remove the system app
         api.removeApp(descriptor.getKey(), admin, true);
     }
@@ -941,7 +940,7 @@ public class AppsAPIImplTest {
         //Move the file to the system folder
         final Path systemAppsDescriptorDirectory = AppsAPIImpl.getSystemAppsDescriptorDirectory();
         final boolean result = file.renameTo(new File(systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
-        Assert.assertTrue(result);
+        assertTrue(result);
         //Even though we just moved the file under apps-system-folder this should recreate the file again.
         //But before that.. lets make a small change so we can tell the difference between the tow files.
         dataGen.withDescription("user-app");
@@ -955,11 +954,11 @@ public class AppsAPIImplTest {
         //Verify the file we just submitted is recognized as a system-app-file
         final Optional<AppDescriptor> optional = appDescriptors.stream()
                 .filter(appDescriptor -> dataGen.getKey().equals(appDescriptor.getKey())).findFirst();
-        Assert.assertTrue(optional.isPresent());
+        assertTrue(optional.isPresent());
         //
         final AppDescriptor descriptor = optional.get();
         final AppDescriptorImpl impl = (AppDescriptorImpl)descriptor;
-        Assert.assertTrue(impl.isSystemApp());
+        assertTrue(impl.isSystemApp());
         //This proves that even though we had two files named the same. 1 in the user apps folder and another 1 in the system-apps folder.
         //The one from the system-folder takes precedence.
         assertEquals("system-app", impl.getDescription());

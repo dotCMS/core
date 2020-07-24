@@ -561,7 +561,7 @@ public class AppsAPIImpl implements AppsAPI {
      */
     private void removeDescriptor(final AppDescriptor descriptor)
             throws DotDataException, DotSecurityException {
-        final AppDescriptorImpl appDescriptor = ((AppDescriptorImpl)descriptor);
+        final AppDescriptorImpl appDescriptor = (AppDescriptorImpl)descriptor;
         if(appDescriptor.isSystemApp()){
             throw new DotSecurityException(" System app files are not allowed to be removed. ");
         }
@@ -706,7 +706,7 @@ public class AppsAPIImpl implements AppsAPI {
      * @return
      */
     static Path getSystemAppsDescriptorDirectory() throws URISyntaxException, IOException {
-        final URL res = AppsAPIImpl.class.getClassLoader().getResource("apps");
+        final URL res = Thread.currentThread().getContextClassLoader().getResource("apps");
         if(res == null) {
             throw new IOException("Unable to find Apps System folder. It should be at /WEB-INF/classes/apps ");
         } else {
