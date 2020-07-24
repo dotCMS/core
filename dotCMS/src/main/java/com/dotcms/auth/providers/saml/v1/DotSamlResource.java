@@ -66,22 +66,31 @@ public class DotSamlResource implements Serializable {
 						  @Context final HttpServletRequest httpServletRequest,
 						  @Context final HttpServletResponse httpServletResponse) {
 
-		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
+		IdentityProviderConfiguration identityProviderConfiguration = null;
 
-			final IdentityProviderConfiguration identityProviderConfiguration =
-					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
+		try {
+			if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
-			// If idpConfig is null, means this site does not need SAML processing
-			if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
+				identityProviderConfiguration =
+						this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
 
-				Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
-				this.samlHelper.doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
+				// If idpConfig is null, means this site does not need SAML processing
+				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
-				// This will redirect the user to the IdP Login Page.
-				this.samlAuthenticationService.authentication(httpServletRequest,
-						httpServletResponse, identityProviderConfiguration);
+					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
+					this.samlHelper.doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
 
-				return Response.ok().build();
+					// This will redirect the user to the IdP Login Page.
+					this.samlAuthenticationService.authentication(httpServletRequest,
+							httpServletResponse, identityProviderConfiguration);
+
+					return Response.ok().build();
+				}
+			}
+		} finally {
+
+			if (null != identityProviderConfiguration) {
+				identityProviderConfiguration.destroy();
 			}
 		}
 
@@ -102,70 +111,77 @@ public class DotSamlResource implements Serializable {
 
 			final IdentityProviderConfiguration identityProviderConfiguration =
 					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
-			// If idpConfig is null, means this site does not need SAML processing
-			if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
+			try {
 
-				Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
-				this.samlHelper.doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
+				// If idpConfig is null, means this site does not need SAML processing
+				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
-				final HttpSession session = httpServletRequest.getSession();
-				if (null == session) {
+					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
+					this.samlHelper.doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
 
-					throw new SamlException("No session has been created.");
+					final HttpSession session = httpServletRequest.getSession();
+					if (null == session) {
+
+						throw new SamlException("No session has been created.");
+					}
+
+					// Extracts data from the assertion - if it can't process a DotSamlException is thrown
+					final Attributes attributes = this.samlAuthenticationService.resolveAttributes(httpServletRequest,
+							httpServletResponse, identityProviderConfiguration);
+
+					if (null == attributes) {
+
+						throw new SamlException("User cannot be extracted from Assertion!");
+					}
+					// Creates the user object and adds a user if it doesn't already exist
+					final User user = this.samlHelper.resolveUser(attributes, identityProviderConfiguration);
+					if (null == user) {
+
+						throw new SamlException("User cannot be extracted from Assertion!");
+					}
+
+					Logger.debug(this, ()-> "Resolved user: " + user);
+
+					final String samlSessionIndex = attributes.getSessionIndex();
+					if (null != samlSessionIndex) {
+
+						Logger.debug(this, ()-> "SAMLSessionIndex: " + samlSessionIndex);
+						// Session Attributes used to build logout request
+						final String sessionIndexKey = identityProviderConfiguration.getId() + DotSamlConstants.SAML_SESSION_INDEX;
+						final String samlNameIdKey   = identityProviderConfiguration.getId() + DotSamlConstants.SAML_NAME_ID;
+						session.setAttribute(sessionIndexKey, samlSessionIndex);
+						session.setAttribute(samlNameIdKey,  attributes.getNameID());
+						Logger.debug(this, ()->"Session index with key: " + sessionIndexKey + " and value: " + session.getAttribute(sessionIndexKey) + " is already set.");
+						Logger.debug(this, ()->"NameID with key: " + samlNameIdKey + " and value: " + session.getAttribute(samlNameIdKey) + " is already set.");
+					}
+
+					// Add session based user ID to be used on the redirect.
+					session.setAttribute(identityProviderConfiguration.getId() + DotSamlConstants.SAML_USER_ID, user.getUserId());
+					session.setAttribute(com.liferay.portal.util.WebKeys.USER,    user);
+					session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+					session.setAttribute(WebKeys.CMS_USER, user);
+
+					String loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+					if (null == loginPath) {
+						// At this stage we cannot determine whether this was a front
+						// end or back end request since we cannot determine
+						// original request.
+						//
+						// REDIRECT_AFTER_LOGIN should have already been set in relay
+						// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
+						// session attribute.
+						loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+					} else {
+
+						session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+					}
+
+					httpServletResponse.sendRedirect(loginPath);
 				}
-
-				// Extracts data from the assertion - if it can't process a DotSamlException is thrown
-				final Attributes attributes = this.samlAuthenticationService.resolveAttributes(httpServletRequest,
-						httpServletResponse, identityProviderConfiguration);
-
-				if (null == attributes) {
-
-					throw new SamlException("User cannot be extracted from Assertion!");
+			} finally {
+				if (null != identityProviderConfiguration) {
+					identityProviderConfiguration.destroy();
 				}
-				// Creates the user object and adds a user if it doesn't already exist
-				final User user = this.samlHelper.resolveUser(attributes, identityProviderConfiguration);
-				if (null == user) {
-
-					throw new SamlException("User cannot be extracted from Assertion!");
-				}
-
-				Logger.debug(this, ()-> "Resolved user: " + user);
-
-				final String samlSessionIndex = attributes.getSessionIndex();
-				if (null != samlSessionIndex) {
-
-					Logger.debug(this, ()-> "SAMLSessionIndex: " + samlSessionIndex);
-					// Session Attributes used to build logout request
-					final String sessionIndexKey = identityProviderConfiguration.getId() + DotSamlConstants.SAML_SESSION_INDEX;
-					final String samlNameIdKey   = identityProviderConfiguration.getId() + DotSamlConstants.SAML_NAME_ID;
-					session.setAttribute(sessionIndexKey, samlSessionIndex);
-					session.setAttribute(samlNameIdKey,  attributes.getNameID());
-					Logger.debug(this, ()->"Session index with key: " + sessionIndexKey + " and value: " + session.getAttribute(sessionIndexKey) + " is already set.");
-					Logger.debug(this, ()->"NameID with key: " + samlNameIdKey + " and value: " + session.getAttribute(samlNameIdKey) + " is already set.");
-				}
-
-				// Add session based user ID to be used on the redirect.
-				session.setAttribute(identityProviderConfiguration.getId() + DotSamlConstants.SAML_USER_ID, user.getUserId());
-				session.setAttribute(com.liferay.portal.util.WebKeys.USER,    user);
-				session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-				session.setAttribute(WebKeys.CMS_USER, user);
-
-				String loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
-				if (null == loginPath) {
-					// At this stage we cannot determine whether this was a front
-					// end or back end request since we cannot determine
-					// original request.
-					//
-					// REDIRECT_AFTER_LOGIN should have already been set in relay
-					// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
-					// session attribute.
-					loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
-				} else {
-
-					session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
-				}
-
-				httpServletResponse.sendRedirect(loginPath);
 			}
 		}
 
@@ -190,13 +206,18 @@ public class DotSamlResource implements Serializable {
 
 			final IdentityProviderConfiguration identityProviderConfiguration =
 					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
+			try {
+				// If idpConfig is null, means this site does not need SAML processing
+				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
-			// If idpConfig is null, means this site does not need SAML processing
-			if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
-
-				Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
-				this.samlAuthenticationService.renderMetadataXML(httpServletResponse.getWriter(), identityProviderConfiguration);
-				noConfig = false;
+					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
+					this.samlAuthenticationService.renderMetadataXML(httpServletResponse.getWriter(), identityProviderConfiguration);
+					noConfig = false;
+				}
+			} finally {
+				if (null != identityProviderConfiguration) {
+					identityProviderConfiguration.destroy();
+				}
 			}
 		}
 
