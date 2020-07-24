@@ -57,7 +57,7 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      */
     @Override
     public AppDescriptor next() {
-        return new AppDescriptorImpl(fileName, name, description, iconUrl, allowExtraParameters, paramMap());
+        return new AppDescriptorImpl(fileName, false, name, description, iconUrl, allowExtraParameters, paramMap());
     }
 
     /**
