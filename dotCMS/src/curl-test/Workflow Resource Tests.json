@@ -2145,7 +2145,6 @@
 							"listen": "test",
 							"script": {
 								"id": "b5fded63-7d8b-43f3-90e5-7b20ceae4a91",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -2156,7 +2155,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -2185,15 +2185,92 @@
 					"response": []
 				},
 				{
-					"name": "Content type permissions",
+					"name": "NonExistingInode",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "167a2424-8ae5-4bfd-a758-f7ccadf8e6b5",
 								"exec": [
-									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									"tests[\"Status code is 404\"] = responseCode.code === 404;",
 									"var body = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Contentlet identified by inode\");",
+									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/123/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"contentlet",
+								"123",
+								"actions"
+							]
+						},
+						"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "33b2222d-ec68-4627-b7ec-ebd45ab21ece",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"postman\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"contentletIdShorty\", jsonData.entity.inode.replace(\"-\",\"\").substring(0,10));",
 									"",
 									""
 								],
@@ -2226,10 +2303,19 @@
 								}
 							]
 						},
-						"method": "GET",
-						"header": [],
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postmanXXY\",\n  \"value\": \"postmanXXY\"\n}\n}"
+						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a8/actions",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2237,12 +2323,12 @@
 								"api",
 								"v1",
 								"workflow",
-								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a8",
-								"actions"
+								"actions",
+								"b9d89c80-3d88-4311-8365-187323c96436",
+								"fire"
 							]
 						},
-						"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
 					},
 					"response": []
 				},
@@ -2253,82 +2339,15 @@
 							"listen": "test",
 							"script": {
 								"id": "1f4f62e9-d0fa-4e42-8b15-765ed15142b0",
-								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 404, Not found\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a",
-								"actions"
-							]
-						},
-						"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
-					},
-					"response": []
-				},
-				{
-					"name": "Success request",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "5975bda5-78c6-4a96-a41a-b1675f7e25a7",
-								"exec": [
-									"pm.test(\"Status code is 404, Not found\", function () {",
-									"    pm.response.to.have.status(404);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Publish\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -2363,7 +2382,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode}}/actions",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2372,7 +2391,7 @@
 								"v1",
 								"workflow",
 								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a",
+								"{{contentletInode}}",
 								"actions"
 							]
 						},
@@ -2387,18 +2406,18 @@
 							"listen": "test",
 							"script": {
 								"id": "ddc48da4-5ad3-4d2a-b171-9b1536ba8e44",
-								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 404, Not found\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Publish\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -2430,7 +2449,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletIdShorty}}/actions",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2439,7 +2458,7 @@
 								"v1",
 								"workflow",
 								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a",
+								"{{contentletIdShorty}}",
 								"actions"
 							]
 						},
@@ -11715,49 +11734,54 @@
 	],
 	"variable": [
 		{
-			"id": "315417dc-2afb-403c-a9be-e3bc0f5d4adf",
+			"id": "eb59bed0-fd6e-47d6-a645-cc429b1860dd",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "878ae0b6-3c2f-4836-bde0-db787e6d62be",
+			"id": "3f341876-b005-4b8c-b21b-5a9e4e19ead9",
 			"key": "actionId",
 			"value": "1f2ef528-9ffd-467f-865f-f40628b581dd"
 		},
 		{
-			"id": "f2ff6a61-1e9e-4867-9627-031e7dd7d6d1",
+			"id": "0270ba22-a5f6-46dd-a214-6d0998695ca0",
 			"key": "schemeId",
 			"value": "db5f86ea-61dd-4b4b-bcbb-1ac9d356685a"
 		},
 		{
-			"id": "71f9c9e5-9286-48df-95da-d4f148f572aa",
+			"id": "5600acc8-0e4a-4192-8933-a2bd63d5d42e",
 			"key": "schemeIdShorty",
 			"value": "db5f86ea61"
 		},
 		{
-			"id": "7b40a391-f479-4700-8e8f-141264396275",
+			"id": "825815b4-36f5-48e0-9eb8-db25cdaf4a49",
 			"key": "stepId",
 			"value": "3c4ec46f-ae1e-4c4e-ac46-14313e8ff1a4"
 		},
 		{
-			"id": "dac5e6c3-f564-4164-bdbd-2a66809c9f67",
+			"id": "397aeb87-50de-4e79-ad4d-598c500a53bf",
 			"key": "stepIdShorty",
 			"value": "3c4ec46fae"
 		},
 		{
-			"id": "b41a68b9-7b26-4639-8604-38759254cb66",
+			"id": "08e96699-e437-4563-aee8-4ebbf93490e7",
 			"key": "actionIdShorty",
 			"value": "1f2ef5289f"
 		},
 		{
-			"id": "b7f26b4a-d783-432a-94c5-a4d620e6cf2f",
+			"id": "f8a81d75-bbbb-4ef1-b8bf-0dde7d956388",
 			"key": "contentletIdentifier",
-			"value": "242a90d9-9681-438f-88ad-2e536f96dd73"
+			"value": "69ee466a-52ea-4859-b282-b2c8c0203b60"
 		},
 		{
-			"id": "666f48c2-bc16-47af-be8c-defbb083d2a9",
+			"id": "345afdfb-e6cc-409b-b9a7-1b3ec04604f3",
 			"key": "contentletInode",
-			"value": "ee56ecf8-df51-470f-9334-d3308001abe5"
+			"value": "93109eec-c450-4dc3-91b0-13de0442df16"
+		},
+		{
+			"id": "b25b55a1-9680-4c2a-ab49-d568ec490fef",
+			"key": "contentletIdShorty",
+			"value": "93109eecc4"
 		}
 	],
 	"protocolProfileBehavior": {}
