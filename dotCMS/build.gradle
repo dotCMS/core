@@ -1020,7 +1020,7 @@ class NpmArtifactExtractTask extends DefaultTask {
                 : version
         String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
         println "Downloading from $versionUrl"
-        "wget -O $artifactFolder/${artifact}.tgz $versionUrl".execute().text
+        "curl $versionUrl --output $artifactFolder/${artifact}.tgz".execute().text
 
         project.copy {
             from project.tarTree(project.file("$artifactFolder/${artifact}.tgz"))
