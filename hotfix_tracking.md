@@ -1,6 +1,6 @@
 #DOTCMS_CORE
 
-Version: 24
+Version: 25
 
 
 This release includes the following code fixes:
@@ -54,3 +54,5 @@ This release includes the following code fixes:
 23. https://github.com/dotCMS/core/issues/18964 : [REST] : Missing endpoint for retrieving folder tree 
 
 24. https://github.com/dotCMS/core/issues/18920 : [Push Publishing] : Existing archived content is causing push to fail
+
+25. https://github.com/dotCMS/core/issues/18951 : [Reindex] : Process is intermittently failing to retrieve content parent folder
