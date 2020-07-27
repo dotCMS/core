@@ -114,6 +114,14 @@ public class FolderResource implements Serializable {
         return response;
     }
 
+    /**
+     * <p>
+     * This endpoint returns a folder structure with their children recursively
+     * </p>
+     * @param siteName (site or host) and folder (name of the folder)
+     * @return a folder structure with their children recursively
+     * @see <a href="https://github.com/dotCMS/core/issues/18964">Please check the github issue!</a>
+     */
     @GET
     @Path ("/sitename/{siteName}/folder/{folder : .+}")
     @JSONP
@@ -138,6 +146,14 @@ public class FolderResource implements Serializable {
         return response;
     }
 
+    /**
+     * <p>
+     * This method returns a folder structure with their children recursively based on
+     * the folder returned by findFolderByPath
+     * </p>
+     * @param Folder (folder from findFolderByPath) and User (logged in user)
+     * @return CustomFolderView a folder structure with their children recursively
+     */
     private final CustomFolderView getFolderStructure(Folder folder, User user){
 
         CustomFolderView customFolder = convertFrom(folder);
@@ -162,6 +178,13 @@ public class FolderResource implements Serializable {
         return customFolder;
     }
 
+    /**
+     * <p>
+     * This method maps a Folder to a CustomFolderView
+     * </p>
+     * @param Folder
+     * @return CustomFolderView
+     */
     private CustomFolderView convertFrom(Folder folder){
         CustomFolderView customFolder = new CustomFolderView(
                 folder.getPath(),

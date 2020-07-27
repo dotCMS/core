@@ -7,6 +7,13 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * This class holds a view with all attributes of com.dotmarketing.portlets.folders.model.Folder
+ * plus a list to hold the children of a folder
+ *
+ * @author Luis Bacca
+ *
+ */
 @JsonPropertyOrder({ "path", "customFolders" })
 @JsonRootName("folder")
 public class CustomFolderView {
