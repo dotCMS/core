@@ -43,4 +43,8 @@
         color: $red;
         content: "* ";
     }
+
+    ::ng-deep ngx-md p {
+        margin: 0;
+    }
 }

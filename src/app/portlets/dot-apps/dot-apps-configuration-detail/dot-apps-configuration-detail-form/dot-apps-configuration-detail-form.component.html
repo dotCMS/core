@@ -41,7 +41,9 @@
                         [id]="field.name"
                         [formControlName]="field.name"
                     />
-                    <span class="form__group-hint">{{ field.hint }}</span>
+                    <span class="form__group-hint"
+                        ><ngx-md>{{ field.hint }}</ngx-md></span
+                    >
                 </ng-template>
                 <ng-template #textarea>
                     <ng-container
@@ -57,7 +59,9 @@
                         [id]="field.name"
                         [formControlName]="field.name"
                     ></textarea>
-                    <span class="form__group-hint">{{ field.hint }}</span>
+                    <span class="form__group-hint"
+                        ><ngx-md>{{ field.hint }}</ngx-md></span
+                    >
                 </ng-template>
             </ng-container>
             <ng-container *ngSwitchCase="'BOOL'">
@@ -74,7 +78,9 @@
                 <ng-container
                     *ngTemplateOutlet="warningIcon; context: { field: field }"
                 ></ng-container>
-                <span class="form__group-hint">{{ field.hint }}</span>
+                <span class="form__group-hint"
+                    ><ngx-md>{{ field.hint }}</ngx-md></span
+                >
             </ng-container>
             <ng-container *ngSwitchCase="'SELECT'">
                 <ng-container
@@ -91,7 +97,9 @@
                     }"
                     [options]="field.options"
                 ></p-dropdown>
-                <span class="form__group-hint">{{ field.hint }}</span>
+                <span class="form__group-hint"
+                    ><ngx-md>{{ field.hint }}</ngx-md></span
+                >
             </ng-container>
         </div>
     </div>

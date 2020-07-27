@@ -25,12 +25,12 @@
             <dot-icon
                 *ngIf="app.sitesWithWarnings"
                 name="warning"
-                pTooltip="{{
-                    app.sitesWithWarnings + ' ' + ('apps.invalid.configurations'| dm)
-                }}"
+                pTooltip="{{ app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm) }}"
                 size="18"
             ></dot-icon>
         </div>
     </p-header>
-    <ngx-md>{{ app.description }}</ngx-md>
+    <p>
+        <ngx-md>{{ app.description }}</ngx-md>
+    </p>
 </p-card>

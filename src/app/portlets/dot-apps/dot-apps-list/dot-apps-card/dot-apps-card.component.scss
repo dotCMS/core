@@ -94,7 +94,7 @@ dot-avatar {
     color: $gray;
     padding: 0;
 
-    .ui-card-content p {
+    .ui-card-content > p {
         height: 60px;
         font-size: $font-size-large;
         line-height: 1.5rem;
