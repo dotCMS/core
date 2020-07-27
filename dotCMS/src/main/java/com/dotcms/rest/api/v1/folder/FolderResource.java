@@ -33,6 +33,16 @@ import javax.ws.rs.core.Response;
 import com.liferay.util.StringPool;
 import org.glassfish.jersey.server.JSONP;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import org.springframework.beans.BeanUtils;
+import java.util.Date;
+import java.util.LinkedList;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+
+
 /**
  * Created by jasontesser on 9/28/16.
  */
@@ -104,6 +114,218 @@ public class FolderResource implements Serializable {
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return response;
+    }
+
+    @GET
+    @Path ("/sitename/{siteName}/folder/{folder : .+}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response loadFolderChildrenByURIPath(@Context final HttpServletRequest httpServletRequest,
+                                                      @Context final HttpServletResponse httpServletResponse,
+                                                      @PathParam("siteName") final String siteName,
+                                                      @PathParam("folder") final String uri){
+        Response response = null;
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        final User user = initData.getUser();
+        try{
+            final String uriParam = !uri.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(uri) : uri;
+            Host host = APILocator.getHostAPI().findByName(siteName, user, false);
+            //final Folder folder = folderHelper.loadFolderByURI(siteName,user,uriParam);
+            Folder folder = APILocator.getFolderAPI().findFolderByPath(uriParam, host, user, false);
+            if(host==null || folder==null) {
+                throw new Exception("No folder found for "+uri+" on site "+siteName);
+            }
+            CustomFolder root = getFolderStructure(folder, user);
+            response = Response.ok( new ResponseEntityView(root) ).build();
+        } catch (Exception e) { // this is an unknown error, so we report as a 500.
+            Logger.error(this, "Error gettign folder for URI", e);
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+    private CustomFolder getFolderStructure(Folder folder, User user){
+
+        CustomFolder customFolder = convertFrom(folder);
+
+        List<CustomFolder> foldersChildCustoms = new LinkedList<>();
+        List<Folder> children = null;
+        try {
+            children = APILocator.getFolderAPI().findSubFolders(folder, user, false);
+        } catch (Exception e) {
+            Logger.error(this, "Error getting findSubFolders for folder "+folder.getPath(), e);
+        }
+
+        if(children != null && children.size() != 0){
+            for(Folder child : children){
+                CustomFolder recursiveFolder = getFolderStructure(child, user);
+                foldersChildCustoms.add(recursiveFolder);
+            }
+        }
+
+        customFolder.setCustomFolders(foldersChildCustoms);
+
+        return customFolder;
+    }
+
+    private CustomFolder convertFrom(Folder folder){
+        CustomFolder customFolder = new CustomFolder();
+        try {
+            BeanUtils.copyProperties(folder, customFolder);
+            //TODO Research why for some reason path is not being copied on jostens dev
+            customFolder.setPath(folder.getPath());
+        }catch (Exception exception){
+            exception.printStackTrace();
+        }
+        return customFolder;
+    }
+
+    @JsonPropertyOrder({ "path", "customFolders" })
+    @JsonRootName("folder")
+    class CustomFolder {
+
+        private String path;
+
+        private List<CustomFolder> customFolders;
+
+        private String defaultFileType;
+        private String filesMasks;
+        private Date iDate;
+        private String hostId;
+        private String identifier;
+        private String inode;
+        private Date modDate;
+        private String name;
+        private Boolean showOnMenu;
+        private Integer sortOrder;
+        private String title;
+        private String type;
+
+
+
+        public CustomFolder(){}
+
+
+        public String getDefaultFileType() {
+            return defaultFileType;
+        }
+
+        public void setDefaultFileType(String defaultFileType) {
+            this.defaultFileType = defaultFileType;
+        }
+
+        public String getFilesMasks() {
+            return filesMasks;
+        }
+
+        public void setFilesMasks(String filesMasks) {
+            this.filesMasks = filesMasks;
+        }
+
+        public Date getiDate() {
+            return iDate;
+        }
+
+        public void setiDate(Date iDate) {
+            this.iDate = iDate;
+        }
+
+        public String getHostId() {
+            return hostId;
+        }
+
+        public void setHostId(String hostId) {
+            this.hostId = hostId;
+        }
+
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        public void setIdentifier(String identifier) {
+            this.identifier = identifier;
+        }
+
+        public String getInode() {
+            return inode;
+        }
+
+        public void setInode(String inode) {
+            this.inode = inode;
+        }
+
+        public Date getModDate() {
+            return modDate;
+        }
+
+        public void setModDate(Date modDate) {
+            this.modDate = modDate;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Boolean getShowOnMenu() {
+            return showOnMenu;
+        }
+
+        public void setShowOnMenu(Boolean showOnMenu) {
+            this.showOnMenu = showOnMenu;
+        }
+
+        public Integer getSortOrder() {
+            return sortOrder;
+        }
+
+        public void setSortOrder(Integer sortOrder) {
+            this.sortOrder = sortOrder;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public CustomFolder(String path){
+            this.path = path;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        @JsonProperty("children")
+        public List<CustomFolder> getCustomFolders() {
+            return customFolders;
+        }
+
+        public void setCustomFolders(List<CustomFolder> customFolders) {
+            this.customFolders = customFolders;
+        }
     }
 
 }
