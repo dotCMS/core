@@ -2145,7 +2145,6 @@
 							"listen": "test",
 							"script": {
 								"id": "b5fded63-7d8b-43f3-90e5-7b20ceae4a91",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -2156,7 +2155,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -2185,15 +2185,92 @@
 					"response": []
 				},
 				{
-					"name": "Content type permissions",
+					"name": "NonExistingInode",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "167a2424-8ae5-4bfd-a758-f7ccadf8e6b5",
 								"exec": [
-									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									"tests[\"Status code is 404\"] = responseCode.code === 404;",
 									"var body = JSON.parse(responseBody);",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Contentlet identified by inode\");",
+									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/123/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"contentlet",
+								"123",
+								"actions"
+							]
+						},
+						"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "33b2222d-ec68-4627-b7ec-ebd45ab21ece",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"postman\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"contentletIdShorty\", jsonData.entity.inode.replace(\"-\",\"\").substring(0,10));",
 									"",
 									""
 								],
@@ -2226,10 +2303,19 @@
 								}
 							]
 						},
-						"method": "GET",
-						"header": [],
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postmanXXY\",\n  \"value\": \"postmanXXY\"\n}\n}"
+						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a8/actions",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2237,12 +2323,12 @@
 								"api",
 								"v1",
 								"workflow",
-								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a8",
-								"actions"
+								"actions",
+								"b9d89c80-3d88-4311-8365-187323c96436",
+								"fire"
 							]
 						},
-						"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
 					},
 					"response": []
 				},
@@ -2253,82 +2339,15 @@
 							"listen": "test",
 							"script": {
 								"id": "1f4f62e9-d0fa-4e42-8b15-765ed15142b0",
-								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 404, Not found\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a",
-								"actions"
-							]
-						},
-						"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
-					},
-					"response": []
-				},
-				{
-					"name": "Success request",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "5975bda5-78c6-4a96-a41a-b1675f7e25a7",
-								"exec": [
-									"pm.test(\"Status code is 404, Not found\", function () {",
-									"    pm.response.to.have.status(404);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Publish\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -2363,7 +2382,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode}}/actions",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2372,7 +2391,7 @@
 								"v1",
 								"workflow",
 								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a",
+								"{{contentletInode}}",
 								"actions"
 							]
 						},
@@ -2387,18 +2406,18 @@
 							"listen": "test",
 							"script": {
 								"id": "ddc48da4-5ad3-4d2a-b171-9b1536ba8e44",
-								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 404, Not found\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"was Not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Publish\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -2430,7 +2449,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletIdShorty}}/actions",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2439,7 +2458,7 @@
 								"v1",
 								"workflow",
 								"contentlet",
-								"c9d74fae-7e9c-4283-b0de-335f8105e5a",
+								"{{contentletIdShorty}}",
 								"actions"
 							]
 						},
@@ -2998,7 +3017,7 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Save / Publish\");",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -3066,7 +3085,7 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Save / Publish\");",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -3590,7 +3609,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2a/actions",
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/d123/actions",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -3599,7 +3618,7 @@
 								"v1",
 								"workflow",
 								"schemes",
-								"d61a59e1-a49c-46f2-a929-db2b4bfa88b2a",
+								"d123",
 								"actions"
 							]
 						},
@@ -5979,7 +5998,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n        \"workflowObject\": {\n            \"version\": \"1.0\",\n            \"schemes\": [\n                {\n                    \"id\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"creationDate\": 1527690015552,\n                    \"name\": \"WF_Import_AsAdmin\",\n                    \"description\": \"REST_1\",\n                    \"archived\": false,\n                    \"mandatory\": false,\n                    \"defaultScheme\": false,\n                    \"modDate\": 1527689987834,\n                    \"entryActionId\": null,\n                    \"system\": false\n                }\n            ],\n            \"steps\": [\n                {\n                    \"id\": \"60cb7027-12d5-417c-90f9-c11eb18d1de6\",\n                    \"creationDate\": 1527690059907,\n                    \"name\": \"Step1\",\n                    \"schemeId\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"myOrder\": 0,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"6517bb86-4f03-40d5-aa13-83b28a568c43\",\n                    \"creationDate\": 1527690059908,\n                    \"name\": \"Step2\",\n                    \"schemeId\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"myOrder\": 1,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"2263ab85-f6c5-4958-a1d6-9ca4d99d1ad3\",\n                    \"creationDate\": 1527690059909,\n                    \"name\": \"Step3\",\n                    \"schemeId\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"myOrder\": 2,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"731e7ee6-b0fe-49ce-9843-dc6709512f45\",\n                    \"creationDate\": 1527690059909,\n                    \"name\": \"Step4\",\n                    \"schemeId\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"myOrder\": 3,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                }\n            ],\n            \"actions\": [\n                {\n                    \"id\": \"851b2ba9-4734-4733-97e4-f83e3631b6e0\",\n                    \"name\": \"Archive\",\n                    \"schemeId\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"09d794cb-c13a-4379-9553-cdef3842d98c\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"UNPUBLISHED\",\n                        \"UNLOCKED\",\n                        \"LOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"1f830279-cdf2-45f2-b947-439f979d4a1b\",\n                    \"name\": \"Publish\",\n                    \"schemeId\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"a0f9a62c-182a-4571-b136-6a807550e597\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"UNPUBLISHED\",\n                        \"UNLOCKED\",\n                        \"LOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"19262eb9-73ab-446f-ac0d-279102443ff3\",\n                    \"name\": \"Save\",\n                    \"schemeId\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"NEW\",\n                        \"UNLOCKED\",\n                        \"LOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"c0ab1517-2d52-4f10-bafb-9559d1b90e26\",\n                    \"name\": \"Un-Archive\",\n                    \"schemeId\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"currentstep\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": true,\n                    \"showOn\": [\n                        \"UNLOCKED\",\n                        \"LOCKED\",\n                        \"ARCHIVED\"\n                    ]\n                },\n                {\n                    \"id\": \"4aa0a2ee-5331-4a85-a419-ed5baaa51d69\",\n                    \"name\": \"Unpublish\",\n                    \"schemeId\": \"6d3a3ba8-2d7f-4671-960a-41de1603cb13\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"UNLOCKED\",\n                        \"LOCKED\",\n                        \"PUBLISHED\"\n                    ]\n                }\n            ],\n            \"actionSteps\": [\n                {\n                    \"stepId\": \"60cb7027-12d5-417c-90f9-c11eb18d1de6\",\n                    \"actionId\": \"19262eb9-73ab-446f-ac0d-279102443ff3\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"6517bb86-4f03-40d5-aa13-83b28a568c43\",\n                    \"actionId\": \"851b2ba9-4734-4733-97e4-f83e3631b6e0\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"6517bb86-4f03-40d5-aa13-83b28a568c43\",\n                    \"actionId\": \"1f830279-cdf2-45f2-b947-439f979d4a1b\",\n                    \"actionOrder\": \"1\"\n                },\n                {\n                    \"stepId\": \"2263ab85-f6c5-4958-a1d6-9ca4d99d1ad3\",\n                    \"actionId\": \"4aa0a2ee-5331-4a85-a419-ed5baaa51d69\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"731e7ee6-b0fe-49ce-9843-dc6709512f45\",\n                    \"actionId\": \"c0ab1517-2d52-4f10-bafb-9559d1b90e26\",\n                    \"actionOrder\": \"0\"\n                }\n            ],\n            \"actionClasses\": [\n                {\n                    \"id\": \"06a81705-6e66-4714-92c5-8f6f2af6564f\",\n                    \"actionId\": \"851b2ba9-4734-4733-97e4-f83e3631b6e0\",\n                    \"name\": \"Archive content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Archive content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will archive the content.\",\n                        \"localizedName\": \"Archive Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"bcc25153-a099-42bc-929d-99dd43c165c1\",\n                    \"actionId\": \"1f830279-cdf2-45f2-b947-439f979d4a1b\",\n                    \"name\": \"Publish content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Publish content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will publish the content.\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Publish Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"c66d006c-bb80-4cc4-bb9e-3a8fed721b6a\",\n                    \"actionId\": \"19262eb9-73ab-446f-ac0d-279102443ff3\",\n                    \"name\": \"Save content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Save content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will checkin the content.\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Save content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"e355d332-d1e4-4849-9240-4791b315f692\",\n                    \"actionId\": \"c0ab1517-2d52-4f10-bafb-9559d1b90e26\",\n                    \"name\": \"Unarchive content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Unarchive content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will un archive the content and return it to a working state\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Unarchive Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"88c86fbd-0662-4429-bafc-1ca91e5c61cb\",\n                    \"actionId\": \"4aa0a2ee-5331-4a85-a419-ed5baaa51d69\",\n                    \"name\": \"Publish content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Publish content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will publish the content.\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Publish Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo\"\n                    }\n                }\n            ],\n            \"actionClassParams\": []\n        },\n        \"permissions\": []\n    }\n}"
+							"raw": "{\n        \"workflowObject\": {\n            \"version\": \"1.0\",\n            \"schemes\": [\n                {\n                    \"id\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"creationDate\": 1527632337579,\n                    \"name\": \"WF_Import_AsAdmin\",\n                    \"description\": \"REST_1\",\n                    \"archived\": false,\n                    \"mandatory\": false,\n                    \"defaultScheme\": false,\n                    \"modDate\": 1527632329252,\n                    \"entryActionId\": null,\n                    \"system\": false\n                }\n            ],\n            \"steps\": [\n                {\n                    \"id\": \"4ec41c51-4006-4713-a28d-d42a719934ac\",\n                    \"creationDate\": 1527632495697,\n                    \"name\": \"Step1\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"myOrder\": 0,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"creationDate\": 1527632495698,\n                    \"name\": \"Step2\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"myOrder\": 1,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"a0f9a62c-182a-4571-b136-6a807550e597\",\n                    \"creationDate\": 1527632495699,\n                    \"name\": \"Step3\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"myOrder\": 2,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"09d794cb-c13a-4379-9553-cdef3842d98c\",\n                    \"creationDate\": 1527632495700,\n                    \"name\": \"Step4\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"myOrder\": 3,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                }\n            ],\n            \"actions\": [\n                {\n                    \"id\": \"1e916358-b9bf-4331-b28b-7af41eefc970\",\n                    \"name\": \"Archive\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"09d794cb-c13a-4379-9553-cdef3842d98c\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"UNPUBLISHED\",\n                        \"UNLOCKED\",\n                        \"LOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"e93c8802-2033-4c3b-88f9-8125301d9816\",\n                    \"name\": \"Publish\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"a0f9a62c-182a-4571-b136-6a807550e597\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"UNPUBLISHED\",\n                        \"UNLOCKED\",\n                        \"LOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"b588eae6-fa32-4eeb-b30e-fa9f7a80da7f\",\n                    \"name\": \"Save\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"NEW\",\n                        \"UNLOCKED\",\n                        \"LOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"334a0f26-76b9-4be7-803b-ab6dc5461023\",\n                    \"name\": \"Un-Archive\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"currentstep\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": true,\n                    \"showOn\": [\n                        \"UNLOCKED\",\n                        \"LOCKED\",\n                        \"ARCHIVED\"\n                    ]\n                },\n                {\n                    \"id\": \"0e807408-701d-4e02-b7a0-8279f3668fdd\",\n                    \"name\": \"Unpublish\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"UNLOCKED\",\n                        \"LOCKED\",\n                        \"PUBLISHED\"\n                    ]\n                }\n            ],\n            \"actionSteps\": [\n                {\n                    \"stepId\": \"4ec41c51-4006-4713-a28d-d42a719934ac\",\n                    \"actionId\": \"b588eae6-fa32-4eeb-b30e-fa9f7a80da7f\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"actionId\": \"1e916358-b9bf-4331-b28b-7af41eefc970\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"actionId\": \"e93c8802-2033-4c3b-88f9-8125301d9816\",\n                    \"actionOrder\": \"1\"\n                },\n                {\n                    \"stepId\": \"a0f9a62c-182a-4571-b136-6a807550e597\",\n                    \"actionId\": \"0e807408-701d-4e02-b7a0-8279f3668fdd\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"09d794cb-c13a-4379-9553-cdef3842d98c\",\n                    \"actionId\": \"334a0f26-76b9-4be7-803b-ab6dc5461023\",\n                    \"actionOrder\": \"0\"\n                }\n            ],\n            \"actionClasses\": [\n                {\n                    \"id\": \"889a58e3-2c22-4164-b3c1-62fbf93b5949\",\n                    \"actionId\": \"1e916358-b9bf-4331-b28b-7af41eefc970\",\n                    \"name\": \"Archive content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Archive content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will archive the content.\",\n                        \"localizedName\": \"Archive Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"51610a9a-9be6-489b-ba75-336bf632fc13\",\n                    \"actionId\": \"e93c8802-2033-4c3b-88f9-8125301d9816\",\n                    \"name\": \"Publish content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Publish content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will publish the content.\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Publish Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"f52163e8-c4a1-4862-be40-0c530cd8f154\",\n                    \"actionId\": \"b588eae6-fa32-4eeb-b30e-fa9f7a80da7f\",\n                    \"name\": \"Save content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Save content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will checkin the content.\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Save content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"789b3b43-0b19-40df-b5e0-e7e161dd1f39\",\n                    \"actionId\": \"334a0f26-76b9-4be7-803b-ab6dc5461023\",\n                    \"name\": \"Unarchive content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Unarchive content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will un archive the content and return it to a working state\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Unarchive Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"700330ab-8974-40d5-9131-67aa05731b48\",\n                    \"actionId\": \"0e807408-701d-4e02-b7a0-8279f3668fdd\",\n                    \"name\": \"Publish content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Publish content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will publish the content.\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Publish Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo\"\n                    }\n                }\n            ],\n            \"actionClassParams\": []\n        },\n        \"permissions\": []\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/import",
@@ -7972,13 +7991,45 @@
 			"name": "FireAction",
 			"item": [
 				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bf665ff9-33a0-4a61-bdcc-85407e5a0bd5",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "UserCredentialsValidation",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "94108f93-14e5-4c5e-ada0-b0d64fcd9d10",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -7997,7 +8048,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -8014,7 +8066,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"678d00bf-10b0-4080-99b4-9517ab9ea580\",\n  \"languageId\" : 1,\n  \"name\": \"postman1\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"678d00bf-10b0-4080-99b4-9517ab9ea580\",\n  \"languageId\" : 1,\n  \"name\": \"postman1\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/936f14eef2/fire",
@@ -8041,7 +8093,6 @@
 							"listen": "test",
 							"script": {
 								"id": "b9f9a1f1-93ae-4959-8a47-99d5a2fe3599",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8051,8 +8102,16 @@
 									"",
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"postman\");",
-									"});"
-								]
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"// pm.collectionVariables.set(\"contentletIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));",
+									"",
+									""
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -8090,83 +8149,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman\",\n  \"value\": \"postman\"\n}\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"b9d89c80-3d88-4311-8365-187323c96436",
-								"fire"
-							]
-						},
-						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
-					},
-					"response": []
-				},
-				{
-					"name": "ContentTypePermissions",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "2edd180a-0d4e-44d6-b4e8-1665ecc28f11",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 403, You need credentials\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"permissions\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman\",\n  \"value\": \"postman\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman3\",\n  \"value\": \"postman3\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
@@ -8193,7 +8176,6 @@
 							"listen": "test",
 							"script": {
 								"id": "fb7d3a0f-a9b1-48d5-8720-c66dd872047f",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -8202,9 +8184,10 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The action does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"The Workflow Action does not exist\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -8242,7 +8225,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman\",\n  \"value\": \"postman\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman\",\n  \"value\": \"postman\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/ab9d89c80-3d88-4311-8365-187323c96436/fire",
@@ -8269,18 +8252,19 @@
 							"listen": "test",
 							"script": {
 								"id": "c4a907b5-e538-4ffd-a4bb-60f543ef5fca",
-								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 404\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Content Type with id\");",
+									"    pm.expect(pm.response.text()).to.include(\"not found\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -8318,7 +8302,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"af4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman\",\n  \"value\": \"postman\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"af4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman\",\n  \"value\": \"postman\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
@@ -8345,7 +8329,6 @@
 							"listen": "test",
 							"script": {
 								"id": "1aceb1ec-2ec4-4421-9d18-ec68ae0ca98e",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8356,7 +8339,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"postman5\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -8394,7 +8378,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman5\",\n  \"value\": \"postman5\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman5\",\n  \"value\": \"postman5\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d8843/fire",
@@ -8421,7 +8405,6 @@
 							"listen": "test",
 							"script": {
 								"id": "f5536b44-37e7-44da-b1af-a93b659d5c46",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8430,9 +8413,10 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"About Quest\");",
+									"    pm.expect(pm.response.text()).to.include(\"postman\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -8473,7 +8457,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d8843/fire?inode=e79ab40f-0728-4995-ab3f-ee9f87340cad",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d8843/fire?inode={{contentletInode}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -8488,7 +8472,7 @@
 							"query": [
 								{
 									"key": "inode",
-									"value": "e79ab40f-0728-4995-ab3f-ee9f87340cad"
+									"value": "{{contentletInode}}"
 								}
 							]
 						},
@@ -8497,13 +8481,12 @@
 					"response": []
 				},
 				{
-					"name": "FormValidation",
+					"name": "ExistingUniqueContent_ShouldRespond400",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "86c9a142-e264-4ad9-aa9b-3ad6aebfd538",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 400, BadRequest\", function () {",
 									"    pm.response.to.have.status(400);",
@@ -8514,7 +8497,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"unique\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -8552,7 +8536,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman3\",\n  \"value\": \"postman3\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
@@ -8579,14 +8563,14 @@
 							"listen": "test",
 							"script": {
 								"id": "b35d1d1e-1d5e-44ca-821d-f44f1de66c26",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -8651,6 +8635,39 @@
 			"name": "CopyScheme",
 			"item": [
 				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b5dbd110-6f22-4e61-9601-308d8d834a45",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "UserCredentialsValidation",
 					"event": [
 						{
@@ -8711,7 +8728,6 @@
 							"listen": "test",
 							"script": {
 								"id": "b809c9d5-3386-4875-9be2-b0b6c92c4f70",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8729,7 +8745,8 @@
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -8770,7 +8787,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/copy?name=Copy from REST (automatic)",
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}/copy?name=Copy from REST (automatic)",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -8779,182 +8796,13 @@
 								"v1",
 								"workflow",
 								"schemes",
-								"d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+								"{{schemeId}}",
 								"copy"
 							],
 							"query": [
 								{
 									"key": "name",
 									"value": "Copy from REST (automatic)"
-								}
-							]
-						},
-						"description": "Do a copy of an existing scheme \n\n@Path(\"/schemes/{schemeId}/copy\")"
-					},
-					"response": []
-				},
-				{
-					"name": "PortletAccessValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "ce99abf7-fdc7-4acc-8e37-2c2f69374f82",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 403, You need credentials\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Access to the Workflows Portlet is not allowed\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/copy?name=Copy from REST (automatic)",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"schemes",
-								"d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-								"copy"
-							],
-							"query": [
-								{
-									"key": "name",
-									"value": "Copy from REST (automatic)"
-								}
-							]
-						},
-						"description": "Do a copy of an existing scheme \n\n@Path(\"/schemes/{schemeId}/copy\")"
-					},
-					"response": []
-				},
-				{
-					"name": "LimitedUserValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "38294ee0-6be9-4a74-8662-90b734833d01",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"_limited\");",
-									"});",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"creationDate\");",
-									"});",
-									""
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "chris",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "chris@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/copy?name=Copy from REST (automatic)_limited",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"schemes",
-								"d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-								"copy"
-							],
-							"query": [
-								{
-									"key": "name",
-									"value": "Copy from REST (automatic)_limited"
 								}
 							]
 						},
@@ -8969,7 +8817,6 @@
 							"listen": "test",
 							"script": {
 								"id": "928a5d9c-5ab8-4e75-bee4-fd498f2db3ee",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -8978,9 +8825,10 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exis\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9051,7 +8899,6 @@
 							"listen": "test",
 							"script": {
 								"id": "87583010-c6cd-4e8b-a3fd-ed64f78b2d81",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9062,7 +8909,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Copy from REST (automatic)_limited\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9103,7 +8951,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/copy?name=Copy from REST (automatic)_limited",
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}/copy?name=Copy from REST (automatic)_limited",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9112,7 +8960,7 @@
 								"v1",
 								"workflow",
 								"schemes",
-								"d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+								"{{schemeId}}",
 								"copy"
 							],
 							"query": [
@@ -9133,7 +8981,6 @@
 							"listen": "test",
 							"script": {
 								"id": "037c18e9-5c2c-430e-a6f0-8649d987bd83",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9143,7 +8990,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Copy from REST (automatic)_limited\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9184,7 +9032,7 @@
 							"raw": "{ \"name\":\"Copy from REST (automatic)_limited\" }"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/copy",
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}/copy",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9193,7 +9041,7 @@
 								"v1",
 								"workflow",
 								"schemes",
-								"d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+								"{{schemeId}}",
 								"copy"
 							]
 						},
@@ -9208,7 +9056,6 @@
 							"listen": "test",
 							"script": {
 								"id": "8f5a3c37-7fc2-4a83-bb5d-537320da6ec7",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9225,7 +9072,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"creationDate\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9266,7 +9114,7 @@
 							"raw": "{ \"name\":\"Copy from REST (automatic)_limited\" }"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a49/copy?name=Copy Using ShortlyID",
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeIdShorty}}/copy?name=Copy Using ShortlyID",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9275,7 +9123,7 @@
 								"v1",
 								"workflow",
 								"schemes",
-								"d61a59e1a49",
+								"{{schemeIdShorty}}",
 								"copy"
 							],
 							"query": [
@@ -9295,6 +9143,39 @@
 		{
 			"name": "DeleteStep",
 			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e61733f1-2367-47a1-839c-782731bc9911",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "UserCredentialsValidation",
 					"event": [
@@ -9347,7 +9228,6 @@
 							"listen": "test",
 							"script": {
 								"id": "c2ca6068-9347-4899-bf8b-f9270ae6147f",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9356,16 +9236,14 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Step1\");",
+									"    pm.expect(pm.response.text()).to.include(pm.collectionVariables.get(\"stepId\"));",
 									"});",
 									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"4ec41c51-4006-4713-a28d-d42a719934ac\");",
-									"});",
 									"",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9397,7 +9275,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps/4ec41c51-4006-4713-a28d-d42a719934ac",
+							"raw": "{{serverURL}}/api/v1/workflow/steps/{{stepId}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9406,73 +9284,7 @@
 								"v1",
 								"workflow",
 								"steps",
-								"4ec41c51-4006-4713-a28d-d42a719934ac"
-							]
-						},
-						"description": "This method deletes a step using the ID\n\n@Path(\"/steps/{stepId}\")\n"
-					},
-					"response": []
-				},
-				{
-					"name": "PortletActionValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "64a2e057-cf07-4f15-86e0-517fc0fe8ded",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 403, You need credentials\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Access to the Workflows Portlet is not allowed\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps/ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"steps",
-								"ee24a4cb-2d15-4c98-b1bd-6327126451f3"
+								"{{stepId}}"
 							]
 						},
 						"description": "This method deletes a step using the ID\n\n@Path(\"/steps/{stepId}\")\n"
@@ -9546,13 +9358,12 @@
 					"response": []
 				},
 				{
-					"name": "ValidStepId",
+					"name": "InvalidStepId",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "bc41ebda-b744-4f9b-99a2-cc6c4436d173",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -9561,9 +9372,10 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The step does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"The Workflow Step does not exist\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9612,24 +9424,106 @@
 					"response": []
 				},
 				{
+					"name": "GivenValidStep_shouldSave",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b067dd05-4bc2-4b74-8349-1a32e247a5b3",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"My REST step\\\"\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"stepId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"stepIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " { \"schemeId\" : \"{{schemeId}}\", \"stepName\":\"My REST step\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/steps",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"steps"
+							]
+						},
+						"description": "Add a new workflow step \n\n@Path(\"/steps\")"
+					},
+					"response": []
+				},
+				{
 					"name": "SupportShortly",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "d2ca147b-3ad7-4fa7-b884-36be81a853ff",
-								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 400\", function () {",
-									"    pm.response.to.have.status(400);",
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Editing\");",
-									"});"
-								]
+									"    pm.expect(pm.response.text()).to.include(pm.collectionVariables.get(\"stepId\"));",
+									"});",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9661,7 +9555,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps/c965f6a50a",
+							"raw": "{{serverURL}}/api/v1/workflow/steps/{{stepIdShorty}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9670,7 +9564,7 @@
 								"v1",
 								"workflow",
 								"steps",
-								"c965f6a50a"
+								"{{stepIdShorty}}"
 							]
 						},
 						"description": "This method deletes a step using the ID\n\n@Path(\"/steps/{stepId}\")\n"
@@ -9683,6 +9577,39 @@
 		{
 			"name": "DeleteAction (Permanently)",
 			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "611c840c-ebbf-487f-a192-44ad4f6b62cc",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "UserCredentialValidation",
 					"event": [
@@ -9737,13 +9664,12 @@
 					"response": []
 				},
 				{
-					"name": "SeccessRequest",
+					"name": "SuccessRequest",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "e7ddbe8a-ac07-4a79-90bb-94f786067702",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9754,7 +9680,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Ok\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9786,7 +9713,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/62078964-3ed4-4729-91d3-75e841736905",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9795,139 +9722,7 @@
 								"v1",
 								"workflow",
 								"actions",
-								"62078964-3ed4-4729-91d3-75e841736905"
-							]
-						},
-						"description": "Deletes an action associated to the scheme and all references into steps\n\n@Path(\"/actions/{actionId}\")\n"
-					},
-					"response": []
-				},
-				{
-					"name": "PortletAccessValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "21c15fbe-ab7b-4da0-bf67-d56cdeea5f30",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 403, You need credentials\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Access to the Workflows Portlet is not allowed\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/4e1efa41-789e-4f63-8e7f-30f5697e53e3",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"4e1efa41-789e-4f63-8e7f-30f5697e53e3"
-							]
-						},
-						"description": "Deletes an action associated to the scheme and all references into steps\n\n@Path(\"/actions/{actionId}\")\n"
-					},
-					"response": []
-				},
-				{
-					"name": "LimitedUserValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "bf460857-b12f-481b-919d-038c696dc6ad",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Ok\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "chris",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "chris@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/4e1efa41-789e-4f63-8e7f-30f5697e53e3",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"4e1efa41-789e-4f63-8e7f-30f5697e53e3"
+								"{{actionId}}"
 							]
 						},
 						"description": "Deletes an action associated to the scheme and all references into steps\n\n@Path(\"/actions/{actionId}\")\n"
@@ -9941,7 +9736,6 @@
 							"listen": "test",
 							"script": {
 								"id": "7fd474a0-ac64-433c-ba14-9f0eb8987400",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -9950,9 +9744,10 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The action does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"The Workflow Action does not exist\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9984,7 +9779,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/a4e1efa41-789e-4f63-8e7f-30f5697e53e3",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/123",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9993,10 +9788,166 @@
 								"v1",
 								"workflow",
 								"actions",
-								"a4e1efa41-789e-4f63-8e7f-30f5697e53e3"
+								"123"
 							]
 						},
 						"description": "Deletes an action associated to the scheme and all references into steps\n\n@Path(\"/actions/{actionId}\")\n"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenValidStep_shouldSave",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e147bacf-1617-4ee9-8682-fade6c63c5a2",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"My REST step\\\"\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"stepId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"stepIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " { \"schemeId\" : \"{{schemeId}}\", \"stepName\":\"My REST step\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/steps",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"steps"
+							]
+						},
+						"description": "Add a new workflow step \n\n@Path(\"/steps\")"
+					},
+					"response": []
+				},
+				{
+					"name": "ValidAction_shouldSave",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "97e2bb52-2ff3-48a9-837c-39378f99f054",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"actionId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"actionIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"stepId\": \"{{stepId}}\",\n      \"actionName\": \"saveContent FROM REST NEW\",\n      \"schemeId\": \"{{schemeId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions"
+							]
+						},
+						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
 					},
 					"response": []
 				},
@@ -10007,7 +9958,6 @@
 							"listen": "test",
 							"script": {
 								"id": "75936f20-48b2-4671-808b-ed33d4617002",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10018,7 +9968,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Ok\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10050,7 +10001,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/f2bb86bcf5",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionIdShorty}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -10059,7 +10010,7 @@
 								"v1",
 								"workflow",
 								"actions",
-								"f2bb86bcf5"
+								"{{actionIdShorty}}"
 							]
 						},
 						"description": "Deletes an action associated to the scheme and all references into steps\n\n@Path(\"/actions/{actionId}\")\n"
@@ -10072,6 +10023,195 @@
 		{
 			"name": "DeleteAction (from step)",
 			"item": [
+				{
+					"name": "GivenValidStep_shouldSave",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ad9ed75d-4e0e-4f4b-9778-a326f6bb1d76",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"My REST step\\\"\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"stepId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"stepIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " { \"schemeId\" : \"{{schemeId}}\", \"stepName\":\"My REST step\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/steps",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"steps"
+							]
+						},
+						"description": "Add a new workflow step \n\n@Path(\"/steps\")"
+					},
+					"response": []
+				},
+				{
+					"name": "ValidAction_shouldSave",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4b7f1ee7-ecf0-4b38-819a-84c694d64857",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"actionId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"actionIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"stepId\": \"{{stepId}}\",\n      \"actionName\": \"saveContent FROM REST NEW\",\n      \"schemeId\": \"{{schemeId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions"
+							]
+						},
+						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
+					},
+					"response": []
+				},
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "cdd3675b-5ea8-42dc-928d-2c753233fb67",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "UserCredentialValidation",
 					"event": [
@@ -10134,7 +10274,6 @@
 							"listen": "test",
 							"script": {
 								"id": "251c331a-3379-4c90-a902-51a56f280913",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10145,7 +10284,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Ok\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10177,7 +10317,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps/d6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/777f1c6b-c877-4a37-ba4b-10627316c2cc",
+							"raw": "{{serverURL}}/api/v1/workflow/steps/{{stepId}}/actions/{{actionId}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -10186,145 +10326,9 @@
 								"v1",
 								"workflow",
 								"steps",
-								"d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+								"{{stepId}}",
 								"actions",
-								"777f1c6b-c877-4a37-ba4b-10627316c2cc"
-							]
-						},
-						"description": "Deletes an action associated to the step\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
-					},
-					"response": []
-				},
-				{
-					"name": "PortletAccessValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "8383b890-4532-478c-9b79-f06f887b80c3",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 403, You need credentials\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Access to the Workflows Portlet is not allowed\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps/d6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/777f1c6b-c877-4a37-ba4b-10627316c2cc",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"steps",
-								"d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-								"actions",
-								"777f1c6b-c877-4a37-ba4b-10627316c2cc"
-							]
-						},
-						"description": "Deletes an action associated to the step\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
-					},
-					"response": []
-				},
-				{
-					"name": "LimitedUserValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "4ae42411-442f-434e-822a-da92815790c5",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Ok\");",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "chris",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "chris@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps/d6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/c92f9aa1-9503-4567-ac30-d3242b54d02d",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"steps",
-								"d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-								"actions",
-								"c92f9aa1-9503-4567-ac30-d3242b54d02d"
+								"{{actionId}}"
 							]
 						},
 						"description": "Deletes an action associated to the step\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
@@ -10338,7 +10342,6 @@
 							"listen": "test",
 							"script": {
 								"id": "6cac416b-3651-4d29-9739-1d3891b1f8f8",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -10347,9 +10350,10 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The step does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"The Workflow Step does not exist\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10381,7 +10385,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps/ad6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/c92f9aa1-9503-4567-ac30-d3242b54d02d",
+							"raw": "{{serverURL}}/api/v1/workflow/steps/123/actions/c92f9aa1-9503-4567-ac30-d3242b54d02d",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -10390,7 +10394,7 @@
 								"v1",
 								"workflow",
 								"steps",
-								"ad6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+								"123",
 								"actions",
 								"c92f9aa1-9503-4567-ac30-d3242b54d02d"
 							]
@@ -10406,7 +10410,6 @@
 							"listen": "test",
 							"script": {
 								"id": "89395374-87b6-4e03-a394-ecb194d3c6c5",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -10415,9 +10418,10 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The action does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"The Workflow Action does not exist\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10449,7 +10453,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps/d6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/ac92f9aa1-9503-4567-ac30-d3242b54d02d",
+							"raw": "{{serverURL}}/api/v1/workflow/steps/{{stepId}}/actions/123",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -10458,12 +10462,168 @@
 								"v1",
 								"workflow",
 								"steps",
-								"d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+								"{{stepId}}",
 								"actions",
-								"ac92f9aa1-9503-4567-ac30-d3242b54d02d"
+								"123"
 							]
 						},
 						"description": "Deletes an action associated to the step\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenValidStep_shouldSave",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15466f4c-5e65-4f3a-abd3-005b91081f52",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"My REST step\\\"\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"stepId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"stepIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " { \"schemeId\" : \"{{schemeId}}\", \"stepName\":\"My REST step\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/steps",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"steps"
+							]
+						},
+						"description": "Add a new workflow step \n\n@Path(\"/steps\")"
+					},
+					"response": []
+				},
+				{
+					"name": "ValidAction_shouldSave",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "785215f8-7c21-4bf4-91e6-2b8fdb3f1e73",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"actionId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"actionIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"stepId\": \"{{stepId}}\",\n      \"actionName\": \"saveContent FROM REST NEW\",\n      \"schemeId\": \"{{schemeId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions"
+							]
+						},
+						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
 					},
 					"response": []
 				},
@@ -10474,7 +10634,6 @@
 							"listen": "test",
 							"script": {
 								"id": "cc46cdda-2037-419a-9779-2f7dd4c92185",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10485,7 +10644,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Ok\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10517,7 +10677,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps/dc3c9cd084/actions/ceca71a0de",
+							"raw": "{{serverURL}}/api/v1/workflow/steps/{{stepIdShorty}}/actions/{{actionIdShorty}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -10526,9 +10686,9 @@
 								"v1",
 								"workflow",
 								"steps",
-								"dc3c9cd084",
+								"{{stepIdShorty}}",
 								"actions",
-								"ceca71a0de"
+								"{{actionIdShorty}}"
 							]
 						},
 						"description": "Deletes an action associated to the step\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
@@ -10541,6 +10701,39 @@
 		{
 			"name": "DeleteScheme",
 			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c2040f95-b652-46fa-b2f8-9499cb3b07bd",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "UserCredentialsValidation",
 					"event": [
@@ -10585,24 +10778,24 @@
 					"response": []
 				},
 				{
-					"name": "PortletAccessValidation",
+					"name": "archiveScheme",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "bea0a83e-e3fa-469e-95f9-6a3453eb1176",
-								"type": "text/javascript",
+								"id": "0eb41abd-118c-430f-b0e1-c1e34cc80468",
 								"exec": [
-									"pm.test(\"Status code is 403, You need credentials\", function () {",
-									"    pm.response.to.have.status(403);",
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Access to the Workflows Portlet is not allowed\");",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"WF_Import_AsAdmin_edited\\\"\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10612,12 +10805,12 @@
 							"basic": [
 								{
 									"key": "password",
-									"value": "bill",
+									"value": "admin",
 									"type": "string"
 								},
 								{
 									"key": "username",
-									"value": "bill@dotcms.com",
+									"value": "admin@dotcms.com",
 									"type": "string"
 								},
 								{
@@ -10631,10 +10824,19 @@
 								}
 							]
 						},
-						"method": "DELETE",
-						"header": [],
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"schemeName\": \"WF_Import_AsAdmin_edited\", \"schemeDescription\": \"AutomaticTest\", \"schemeArchived\": \"true\"}"
+						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/42771904-b7d9-42b7-b038-8e077fabcf3f",
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -10643,10 +10845,10 @@
 								"v1",
 								"workflow",
 								"schemes",
-								"42771904-b7d9-42b7-b038-8e077fabcf3f"
+								"{{schemeId}}"
 							]
 						},
-						"description": "Deletes an existing scheme (the response is async)\n\n@Path(\"/schemes/{schemeId}\")"
+						"description": "Updates an existing scheme\n\n@Path(\"/schemes/{schemeId}\")"
 					},
 					"response": []
 				},
@@ -10657,7 +10859,6 @@
 							"listen": "test",
 							"script": {
 								"id": "7acfd60a-80f4-4c80-a3ba-9f37208d6986",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10672,7 +10873,8 @@
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"name\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10704,7 +10906,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/42771904-b7d9-42b7-b038-8e077fabcf3f",
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -10713,7 +10915,7 @@
 								"v1",
 								"workflow",
 								"schemes",
-								"42771904-b7d9-42b7-b038-8e077fabcf3f"
+								"{{schemeId}}"
 							]
 						},
 						"description": "Deletes an existing scheme (the response is async)\n\n@Path(\"/schemes/{schemeId}\")"
@@ -10721,13 +10923,12 @@
 					"response": []
 				},
 				{
-					"name": "ValidSchemeId",
+					"name": "InvalidSchemeId",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "8cc29b35-111c-46be-a6d7-92a3d31459e8",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -10736,9 +10937,10 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10770,7 +10972,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/a60d40a6b-a677-45d6-8f5b-e16431b1eb1c",
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/123",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -10779,10 +10981,161 @@
 								"v1",
 								"workflow",
 								"schemes",
-								"a60d40a6b-a677-45d6-8f5b-e16431b1eb1c"
+								"123"
 							]
 						},
 						"description": "Deletes an existing scheme (the response is async)\n\n@Path(\"/schemes/{schemeId}\")"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenValidScheme_ShouldSave",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "243396a9-3d5b-4c63-8c8d-63d440d52ee0",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response includes name\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"REST Schema\\\"\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"schemeId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"schemeIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"schemeName\": \"REST Schema\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes"
+							]
+						},
+						"description": "Creates a new scheme \n\n@Path(\"/schemes\")"
+					},
+					"response": []
+				},
+				{
+					"name": "archiveScheme",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d8555d60-f7ea-4feb-a599-44c152ee753a",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"WF_Import_AsAdmin_edited\\\"\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"schemeName\": \"WF_Import_AsAdmin_edited\", \"schemeDescription\": \"AutomaticTest\", \"schemeArchived\": \"true\"}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"{{schemeId}}"
+							]
+						},
+						"description": "Updates an existing scheme\n\n@Path(\"/schemes/{schemeId}\")"
 					},
 					"response": []
 				},
@@ -10793,18 +11146,18 @@
 							"listen": "test",
 							"script": {
 								"id": "dc8e338d-975a-48eb-b867-599dcbf5d9d0",
-								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 403, You need credentials\", function () {",
-									"    pm.response.to.have.status(403);",
+									"pm.test(\"Status code is 200, You need credentials\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Invalid attempt to delete the system workflow\");",
+									"    pm.expect(pm.response.text()).to.include(\"WF_Import_AsAdmin_edited\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10836,7 +11189,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4",
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeIdShorty}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -10845,7 +11198,7 @@
 								"v1",
 								"workflow",
 								"schemes",
-								"d61a59e1a4"
+								"{{schemeIdShorty}}"
 							]
 						},
 						"description": "Deletes an existing scheme (the response is async)\n\n@Path(\"/schemes/{schemeId}\")"
@@ -10927,7 +11280,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n   \"defaultType\":false,\n   \"fixed\":false,\n   \"system\":false,\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"description\":\"\",\n   \"host\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"name\":\"TestContentTypeSystemActions\",\n   \"systemActionMappings\":{\n      \"NEW\":\"ceca71a0-deee-4999-bd47-b01baa1bcfc8\"\n   },\n   \"workflow\":[\n      \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n   ]\n}",
+							"raw": "{\n   \"defaultType\":false,\n   \"fixed\":false,\n   \"system\":false,\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"description\":\"\",\n   \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"name\":\"TestContentTypeSystemActions\",\n   \"systemActionMappings\":{\n      \"NEW\":\"ceca71a0-deee-4999-bd47-b01baa1bcfc8\"\n   },\n   \"workflow\":[\n      \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n   ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -11381,39 +11734,54 @@
 	],
 	"variable": [
 		{
-			"id": "3147eaa3-72a8-46d2-a565-f3cb4b2ccc6f",
+			"id": "35f6395f-fd37-4430-a8b5-fd7c138ab286",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "b979621c-7f83-46f9-96bb-f95bc2284d85",
+			"id": "de0e1519-2ef8-4238-a6bf-f322c2c622ff",
 			"key": "actionId",
-			"value": "c9c6ac6d-91f7-4597-b890-fae2fb6b3e2d"
+			"value": "47c38af4-209b-499a-9628-b2a8409cf03c"
 		},
 		{
-			"id": "55161449-2116-4cc7-8f4d-55d4eefc5800",
+			"id": "793b353b-e4a3-4229-98f6-124a7e5a88f3",
 			"key": "schemeId",
-			"value": "bf1790ec-dfde-4fc1-8b7b-2f04a3b381ea"
+			"value": "2e96562e-495c-4a29-8cd1-0410608e9a65"
 		},
 		{
-			"id": "2f0a1d7f-b83e-48a4-ba7e-01c67d87e52f",
+			"id": "a452544b-8109-4178-a189-9d3a5106424b",
 			"key": "schemeIdShorty",
-			"value": "bf1790ecdf"
+			"value": "2e96562e49"
 		},
 		{
-			"id": "2fdab2d9-c666-465d-a76e-89552ec09455",
+			"id": "ef1e915b-59ac-4458-a051-11df71586017",
 			"key": "stepId",
-			"value": "1ec639a0-a0a9-42bc-9821-b0a31f977639"
+			"value": "1c156cd2-eb58-4b57-986b-dc728cc3ea09"
 		},
 		{
-			"id": "e3bd937c-976f-479c-b728-0e9de908d20e",
+			"id": "84be34e0-cf68-45f9-99f8-ce3e2bfcf3d4",
 			"key": "stepIdShorty",
-			"value": "1ec639a0a0"
+			"value": "1c156cd2eb"
 		},
 		{
-			"id": "1015aac8-9339-4fb5-8df5-d0899eb27c07",
+			"id": "98f6e9dc-8424-40dc-8a52-8f383bd542e8",
 			"key": "actionIdShorty",
-			"value": "c9c6ac6d91"
+			"value": "47c38af420"
+		},
+		{
+			"id": "2e16f778-15d6-4e12-9226-5269d63eca24",
+			"key": "contentletIdentifier",
+			"value": null
+		},
+		{
+			"id": "285deb86-e879-46b5-a7be-8d9384e4245d",
+			"key": "contentletInode",
+			"value": null
+		},
+		{
+			"id": "293a13c6-307e-4b5b-8c97-ae19c216bc7b",
+			"key": "contentletIdShorty",
+			"value": "14c31e4294"
 		}
 	],
 	"protocolProfileBehavior": {}
