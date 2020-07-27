@@ -977,13 +977,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
 	    
 	    // Looking content up this way can avoid any DB hits as these calls are all cached.
-	    final List<Language> langs = APILocator.getLanguageAPI().getLanguages();
+	    final List<Language> langs = this.languageAPI.getLanguages();
 	    for(final Language language : langs) {
-	        final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-	        if(cvi != null  && UtilMethods.isSet(cvi.getIdentifier()) && !cvi.isDeleted()) {
-	            return find(cvi.getWorkingInode());
+	        final ContentletVersionInfo contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
+	        if (contentVersion != null  && UtilMethods.isSet(contentVersion.getIdentifier()) && !contentVersion.isDeleted()) {
+	            return find(contentVersion.getWorkingInode());
 	        }
-	    }
+            if (null != contentVersion && contentVersion.isDeleted()) {
+                Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
+                        identifier));
+            }
+        }
 	    return null;
 
     }
