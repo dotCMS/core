@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 
 
 /**
@@ -130,11 +131,11 @@ public class FolderResource implements Serializable {
         final User user = initData.getUser();
         try{
             final String uriParam = !uri.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(uri) : uri;
-            Host host = APILocator.getHostAPI().findByName(siteName, user, false);
+            final Host host = APILocator.getHostAPI().findByName(siteName, user, false);
             //final Folder folder = folderHelper.loadFolderByURI(siteName,user,uriParam);
-            Folder folder = APILocator.getFolderAPI().findFolderByPath(uriParam, host, user, false);
+            final Folder folder = APILocator.getFolderAPI().findFolderByPath(uriParam, host, user, false);
             if(host==null || folder==null) {
-                throw new Exception("No folder found for "+uri+" on site "+siteName);
+                throw new DoesNotExistException("No folder found for "+uri+" on site "+siteName);
             }
             CustomFolder root = getFolderStructure(folder, user);
             response = Response.ok( new ResponseEntityView(root) ).build();
@@ -148,7 +149,7 @@ public class FolderResource implements Serializable {
         return response;
     }
 
-    private CustomFolder getFolderStructure(Folder folder, User user){
+    private final CustomFolder getFolderStructure(Folder folder, User user){
 
         CustomFolder customFolder = convertFrom(folder);
 
@@ -161,7 +162,7 @@ public class FolderResource implements Serializable {
         }
 
         if(children != null && children.size() != 0){
-            for(Folder child : children){
+            for(final Folder child : children){
                 CustomFolder recursiveFolder = getFolderStructure(child, user);
                 foldersChildCustoms.add(recursiveFolder);
             }
@@ -179,7 +180,7 @@ public class FolderResource implements Serializable {
             //TODO Research why for some reason path is not being copied on jostens dev
             customFolder.setPath(folder.getPath());
         }catch (Exception exception){
-            exception.printStackTrace();
+            Logger.error(this, "Error copying properties");
         }
         return customFolder;
     }
