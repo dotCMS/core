@@ -7,6 +7,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import io.vavr.control.Try;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * DotCMS implementation for the {@link IdentityProviderConfigurationFactory}
@@ -33,8 +34,11 @@ public class DotIdentityProviderConfigurationFactoryImpl implements IdentityProv
 
     private boolean existsConfiguration(final String identityProviderIdentifier) {
 
+        final List hosts = Host.SYSTEM_HOST.equals(identityProviderIdentifier)?
+                Arrays.asList(identityProviderIdentifier):  Arrays.asList(Host.SYSTEM_HOST, identityProviderIdentifier);
+
         return !this.appsAPI.filterSitesForAppKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY,
-                Arrays.asList(identityProviderIdentifier), APILocator.systemUser()).isEmpty();
+                hosts, APILocator.systemUser()).isEmpty();
     }
 
     private IdentityProviderConfiguration createIdentityProviderConfigurationFor(final String identityProviderIdentifier) {
