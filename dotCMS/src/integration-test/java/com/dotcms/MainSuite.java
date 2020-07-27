@@ -19,6 +19,7 @@ import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
+import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
@@ -296,7 +297,8 @@ import org.junit.runners.Suite.SuiteClasses;
         DotParseTest.class,
         TestWorkflowAction.class,
         HostAPITest.class,
-        ESMappingUtilHelperTest.class
+        ESMappingUtilHelperTest.class,
+        BundleResourceTest.class
 })
 public class MainSuite {
 
