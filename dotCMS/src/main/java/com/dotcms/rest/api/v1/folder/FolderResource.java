@@ -125,27 +125,19 @@ public class FolderResource implements Serializable {
     public final Response loadFolderChildrenByURIPath(@Context final HttpServletRequest httpServletRequest,
                                                       @Context final HttpServletResponse httpServletResponse,
                                                       @PathParam("siteName") final String siteName,
-                                                      @PathParam("folder") final String uri){
+                                                      @PathParam("folder") final String uri) throws DotDataException, DotSecurityException, DotDataException, DotSecurityException   {
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         final User user = initData.getUser();
-        try{
-            final String uriParam = !uri.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(uri) : uri;
-            final Host host = APILocator.getHostAPI().findByName(siteName, user, false);
-            //final Folder folder = folderHelper.loadFolderByURI(siteName,user,uriParam);
-            final Folder folder = APILocator.getFolderAPI().findFolderByPath(uriParam, host, user, false);
-            if(host==null || folder==null) {
-                throw new DoesNotExistException("No folder found for "+uri+" on site "+siteName);
-            }
-            CustomFolder root = getFolderStructure(folder, user);
-            response = Response.ok( new ResponseEntityView(root) ).build();
-        } catch (Exception e) { // this is an unknown error, so we report as a 500.
-            Logger.error(this, "Error gettign folder for URI", e);
-            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-                throw new ForbiddenException(e);
-            }
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        final String uriParam = !uri.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(uri) : uri;
+        final Host host = APILocator.getHostAPI().findByName(siteName, user, false);
+        //final Folder folder = folderHelper.loadFolderByURI(siteName,user,uriParam);
+        final Folder folder = APILocator.getFolderAPI().findFolderByPath(uriParam, host, user, false);
+        if(host==null || folder==null) {
+            throw new DoesNotExistException("No folder found for "+uri+" on site "+siteName);
         }
+        CustomFolder root = getFolderStructure(folder, user);
+        response = Response.ok( new ResponseEntityView(root) ).build();
         return response;
     }
 
