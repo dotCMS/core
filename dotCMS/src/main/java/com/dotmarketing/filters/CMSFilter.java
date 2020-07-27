@@ -61,7 +61,7 @@ public class CMSFilter implements Filter {
         IAm iAm = IAm.NOTHING_IN_THE_CMS;
 
         // Set the request in the thread local.
-        this.requestThreadLocal.setRequest(request);
+
         this.responseThreadLocal.setResponse(response);
 
         // Get the URI and query string from the request

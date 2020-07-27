@@ -2,10 +2,16 @@ package com.dotcms.publisher.business;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
@@ -24,10 +30,14 @@ import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -205,7 +215,8 @@ public class PublisherQueueJob implements StatefulJob {
 	 *                               information or removing the current bundle from the Publish queue table.
 	 * @throws DotDataException      An error occurred when retrieving the end-points from the database.
 	 */
-	private void updateAuditStatus(final List<Map<String, Object>> bundlesInQueue) throws DotPublisherException, DotDataException {
+	private void updateAuditStatus(final List<Map<String, Object>> bundlesInQueue)
+			throws DotPublisherException, DotDataException, DotSecurityException, LanguageException {
 		final List<PublishAuditStatus> pendingBundleAudits = pubAuditAPI.getPendingPublishAuditStatus();
 		// For each bundle audit
  		for (final PublishAuditStatus bundleAudit : pendingBundleAudits) {
@@ -292,10 +303,22 @@ public class PublisherQueueJob implements StatefulJob {
 	@NotNull
 	private void updateBundleStatus(final PublishAuditStatus bundleAudit,
 									final Map<String, Map<String, EndpointDetail>> endpointTrackingMap,
-									final GroupPushStats groupPushStats, final List<Map<String, Object>> bundlesInQueue) throws DotDataException, DotPublisherException {
+									final GroupPushStats groupPushStats, final List<Map<String, Object>> bundlesInQueue)
+			throws DotDataException, DotPublisherException, DotSecurityException, LanguageException {
 		Status bundleStatus;
 		final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
 		final String auditedBundleId = bundleAudit.getBundleId();
+		//Info need to generate Growl Notification
+		final Bundle bundle = APILocator.getBundleAPI().getBundleById(auditedBundleId);
+		final boolean isBundleNameGenerated = bundle.getName().startsWith("bundle-");
+		String notificationMessage = "";
+		String notificationMessageArgument = "";
+		final SystemMessageBuilder message = new SystemMessageBuilder()
+				.setMessage(notificationMessage)
+				.setSeverity(MessageSeverity.SUCCESS)
+				.setType(MessageType.SIMPLE_MESSAGE)
+				.setLife(5000);
+
 		if ( localHistory.getNumTries() >= MAX_NUM_TRIES && (groupPushStats.getCountGroupFailed() > 0
                 || groupPushStats.getCountGroupPublishing() > 0) ) {
             // If bundle cannot be installed after [MAX_NUM_TRIES] tries
@@ -308,6 +331,14 @@ public class PublisherQueueJob implements StatefulJob {
             bundleStatus = Status.FAILED_TO_PUBLISH;
             pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
             pubAPI.deleteElementsFromPublishQueueTable(auditedBundleId);
+            //Update Notification Info
+            notificationMessage = isBundleNameGenerated ? "bundle.title.fail.notification" : "bundle.named.fail.notification";
+			notificationMessageArgument = isBundleNameGenerated ? generateBundleTitle(localHistory.getAssets()) : bundle.getName();
+			message.setMessage(LanguageUtil.get(
+					notificationMessage,
+					notificationMessageArgument));
+            message.setLife(86400000);
+            message.setSeverity(MessageSeverity.ERROR);
         } else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == endpointTrackingMap.size()) {
             // If bundle cannot be installed in all groups
             bundleStatus = Status.FAILED_TO_SEND_TO_ALL_GROUPS;
@@ -323,6 +354,12 @@ public class PublisherQueueJob implements StatefulJob {
             bundleStatus = Status.SUCCESS;
             pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
             pubAPI.deleteElementsFromPublishQueueTable(auditedBundleId);
+			//Update Notification Info
+			notificationMessage = isBundleNameGenerated ? "bundle.title.success.notification" : "bundle.named.success.notification";
+			notificationMessageArgument = isBundleNameGenerated ? generateBundleTitle(localHistory.getAssets()) : bundle.getName();
+			message.setMessage(LanguageUtil.get(
+					notificationMessage,
+					notificationMessageArgument));
         } else if ( groupPushStats.getCountGroupPublishing() == endpointTrackingMap.size() ) {
             // If bundle is still publishing in all groups
             bundleStatus = Status.PUBLISHING_BUNDLE;
@@ -355,6 +392,37 @@ public class PublisherQueueJob implements StatefulJob {
 			}
 		}
 		Logger.info(this, "===========================================================");
+
+		//Growl Notification
+		if(UtilMethods.isSet(notificationMessage)) {
+			SystemMessageEventUtil.getInstance().pushMessage(message.create(), ImmutableList.of(bundle.getOwner()));
+		}
+	}
+
+	/**
+	 * Utility method to generate the bundle title for the notification, checks the amount of assets and
+	 * only shows the assetType and assetTitle of the first three items, if there are more the amount of
+	 * remain assets is shown.
+	 *
+	 * @param bundleAssets assets that were added manually to the bundle
+	 * @return a string that will be the argument for the notification
+	 */
+	private String generateBundleTitle(final Map<String,String> bundleAssets)
+			throws LanguageException {
+		int count = 0;
+		String bundleTitle = "";
+		for(final String id : bundleAssets.keySet()){
+			if(count < 3) {
+				final String assetType = bundleAssets.get(id);
+				final String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id);
+				bundleTitle += "<strong>" + assetType + ":</strong> " + assetTitle + "<br/>";
+				count++;
+			} else {
+				bundleTitle += "..." + (bundleAssets.keySet().size()-3) + " " + LanguageUtil.get("publisher_audit_more_assets");
+				break;
+			}
+		}
+		return bundleTitle;
 	}
 
 	/**
