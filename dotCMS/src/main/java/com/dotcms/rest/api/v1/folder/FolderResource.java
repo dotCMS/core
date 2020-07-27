@@ -33,11 +33,8 @@ import javax.ws.rs.core.Response;
 import com.liferay.util.StringPool;
 import org.glassfish.jersey.server.JSONP;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonRootName;
 import org.springframework.beans.BeanUtils;
-import java.util.Date;
+
 import java.util.LinkedList;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -136,16 +133,16 @@ public class FolderResource implements Serializable {
         if(host==null || folder==null) {
             throw new DoesNotExistException("No folder found for "+uri+" on site "+siteName);
         }
-        CustomFolder root = getFolderStructure(folder, user);
+        CustomFolderView root = getFolderStructure(folder, user);
         response = Response.ok( new ResponseEntityView(root) ).build();
         return response;
     }
 
-    private final CustomFolder getFolderStructure(Folder folder, User user){
+    private final CustomFolderView getFolderStructure(Folder folder, User user){
 
-        CustomFolder customFolder = convertFrom(folder);
+        CustomFolderView customFolder = convertFrom(folder);
 
-        List<CustomFolder> foldersChildCustoms = new LinkedList<>();
+        List<CustomFolderView> foldersChildCustoms = new LinkedList<>();
         List<Folder> children = null;
         try {
             children = APILocator.getFolderAPI().findSubFolders(folder, user, false);
@@ -155,7 +152,7 @@ public class FolderResource implements Serializable {
 
         if(children != null && children.size() != 0){
             for(final Folder child : children){
-                CustomFolder recursiveFolder = getFolderStructure(child, user);
+                CustomFolderView recursiveFolder = getFolderStructure(child, user);
                 foldersChildCustoms.add(recursiveFolder);
             }
         }
@@ -165,160 +162,23 @@ public class FolderResource implements Serializable {
         return customFolder;
     }
 
-    private CustomFolder convertFrom(Folder folder){
-        CustomFolder customFolder = new CustomFolder();
-        try {
-            BeanUtils.copyProperties(folder, customFolder);
-            //TODO Research why for some reason path is not being copied on jostens dev
-            customFolder.setPath(folder.getPath());
-        }catch (Exception exception){
-            Logger.error(this, "Error copying properties");
-        }
+    private CustomFolderView convertFrom(Folder folder){
+        CustomFolderView customFolder = new CustomFolderView(
+                folder.getPath(),
+                folder.getDefaultFileType(),
+                folder.getFilesMasks(),
+                folder.getIDate(),
+                folder.getHostId(),
+                folder.getIdentifier(),
+                folder.getInode(),
+                folder.getModDate(),
+                folder.getName(),
+                folder.isShowOnMenu(),
+                folder.getSortOrder(),
+                folder.getTitle(),
+                folder.getType()
+        );
         return customFolder;
-    }
-
-    @JsonPropertyOrder({ "path", "customFolders" })
-    @JsonRootName("folder")
-    class CustomFolder {
-
-        private String path;
-
-        private List<CustomFolder> customFolders;
-
-        private String defaultFileType;
-        private String filesMasks;
-        private Date iDate;
-        private String hostId;
-        private String identifier;
-        private String inode;
-        private Date modDate;
-        private String name;
-        private Boolean showOnMenu;
-        private Integer sortOrder;
-        private String title;
-        private String type;
-
-
-
-        public CustomFolder(){}
-
-
-        public String getDefaultFileType() {
-            return defaultFileType;
-        }
-
-        public void setDefaultFileType(String defaultFileType) {
-            this.defaultFileType = defaultFileType;
-        }
-
-        public String getFilesMasks() {
-            return filesMasks;
-        }
-
-        public void setFilesMasks(String filesMasks) {
-            this.filesMasks = filesMasks;
-        }
-
-        public Date getiDate() {
-            return iDate;
-        }
-
-        public void setiDate(Date iDate) {
-            this.iDate = iDate;
-        }
-
-        public String getHostId() {
-            return hostId;
-        }
-
-        public void setHostId(String hostId) {
-            this.hostId = hostId;
-        }
-
-        public String getIdentifier() {
-            return identifier;
-        }
-
-        public void setIdentifier(String identifier) {
-            this.identifier = identifier;
-        }
-
-        public String getInode() {
-            return inode;
-        }
-
-        public void setInode(String inode) {
-            this.inode = inode;
-        }
-
-        public Date getModDate() {
-            return modDate;
-        }
-
-        public void setModDate(Date modDate) {
-            this.modDate = modDate;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public Boolean getShowOnMenu() {
-            return showOnMenu;
-        }
-
-        public void setShowOnMenu(Boolean showOnMenu) {
-            this.showOnMenu = showOnMenu;
-        }
-
-        public Integer getSortOrder() {
-            return sortOrder;
-        }
-
-        public void setSortOrder(Integer sortOrder) {
-            this.sortOrder = sortOrder;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-
-        public CustomFolder(String path){
-            this.path = path;
-        }
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-
-        @JsonProperty("children")
-        public List<CustomFolder> getCustomFolders() {
-            return customFolders;
-        }
-
-        public void setCustomFolders(List<CustomFolder> customFolders) {
-            this.customFolders = customFolders;
-        }
     }
 
 }
