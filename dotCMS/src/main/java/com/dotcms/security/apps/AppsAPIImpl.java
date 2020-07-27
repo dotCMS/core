@@ -35,11 +35,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,7 +50,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -417,7 +419,7 @@ public class AppsAPIImpl implements AppsAPI {
             return appsCache.getAppDescriptorsMeta(() -> {
                 try {
                     return loadAppDescriptors();
-                } catch (IOException e) {
+                } catch (IOException | URISyntaxException e) {
                     Logger.error(AppsAPIImpl.class,
                             "An error occurred while loading the service descriptor yml files. ",
                             e);
@@ -461,14 +463,14 @@ public class AppsAPIImpl implements AppsAPI {
                     "Invalid attempt to create an app descriptor performed by user with id `%s`.",
                     user.getUserId()));
         }
-        final String ymlFilesPath = getServiceDescriptorDirectory();
-        final File basePath = new File(ymlFilesPath);
+        final Path ymlFilesPath = getUserAppsDescriptorDirectory();
+        final File basePath = ymlFilesPath.toFile();
         if (!basePath.exists()) {
             basePath.mkdirs();
         }
         Logger.debug(AppsAPIImpl.class, () -> " ymlFiles are set under:  " + ymlFilesPath);
 
-            final AppSchema appSchema = readAppFile(file);
+            final AppSchema appSchema = readAppFile(file.toPath());
             // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
             if (validateAppDescriptor(appSchema)) {
                 final File incomingFile = new File(basePath, file.getName());
@@ -483,7 +485,7 @@ public class AppsAPIImpl implements AppsAPI {
 
                 invalidateCache();
             }
-            return new AppDescriptorImpl(file.getName(), appSchema);
+            return new AppDescriptorImpl(file.getName(), false, appSchema);
 
     }
 
@@ -495,8 +497,8 @@ public class AppsAPIImpl implements AppsAPI {
      * @return
      * @throws DotDataException
      */
-    private AppSchema readAppFile(final File file) throws DotDataException {
-        try (InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))) {
+    private AppSchema readAppFile(final Path file) throws DotDataException {
+        try (InputStream inputStream = Files.newInputStream(file)) {
             return ymlMapper.readValue(inputStream, AppSchema.class);
         }catch (Exception e){
             throw new DotDataException(e.getMessage(), e);
@@ -557,13 +559,18 @@ public class AppsAPIImpl implements AppsAPI {
      * @param descriptor
      * @throws DotDataException
      */
-    private void removeDescriptor(final AppDescriptor descriptor) throws DotDataException{
-        final String fileName = ((AppDescriptorImpl)descriptor).getFileName();
+    private void removeDescriptor(final AppDescriptor descriptor)
+            throws DotDataException, DotSecurityException {
+        final AppDescriptorImpl appDescriptor = (AppDescriptorImpl)descriptor;
+        if(appDescriptor.isSystemApp()){
+            throw new DotSecurityException(" System app files are not allowed to be removed. ");
+        }
+        final String fileName = appDescriptor.getFileName();
         //Now we need to remove the file it self.
-        final String ymlFilesPath = getServiceDescriptorDirectory();
+        final Path ymlFilesPath = getUserAppsDescriptorDirectory();
         final Path file = Paths.get(ymlFilesPath + File.separator + fileName).normalize();
         if (!file.toFile().exists()) {
-            throw new DotDataException(
+            throw new DoesNotExistException(
                     String.format(" File with path `%s` does not exist. ", file));
         }
         try {
@@ -681,28 +688,60 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
-    private static String getServiceDescriptorDirectory() {
+    /**
+     * This is the directory intended for customers use
+     * @return
+     */
+    private static Path getUserAppsDescriptorDirectory() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
         + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
         final String dirPath = Config
                 .getStringProperty(APPS_DIR_PATH_KEY, supplier.get());
-        return Paths.get(dirPath).normalize().toString();
+        return Paths.get(dirPath).normalize();
     }
 
-    private Set<String> listAvailableYamlFiles() throws IOException {
-        final String ymlFilesPath = getServiceDescriptorDirectory();
-        final File basePath = new File(ymlFilesPath);
+    /**
+     * This is the Apps-System-Folder which is meant to hold system apps.
+     * Those that can not be override and are always available.
+     * @return
+     */
+    static Path getSystemAppsDescriptorDirectory() throws URISyntaxException, IOException {
+        final URL res = Thread.currentThread().getContextClassLoader().getResource("apps");
+        if(res == null) {
+            throw new IOException("Unable to find Apps System folder. It should be at /WEB-INF/classes/apps ");
+        } else {
+            return Paths.get(res.toURI()).toAbsolutePath();
+        }
+    }
+
+    /**
+     *  This will get you a list with all the available app-yml files registered in the system.
+     *
+     * @return
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    private Set<Tuple2<Path, Boolean>> listAvailableYamlFiles() throws IOException, URISyntaxException {
+        final Path systemAppsDescriptorDirectory = getSystemAppsDescriptorDirectory();
+        final Set<Path> systemFiles = listFiles(systemAppsDescriptorDirectory);
+
+        final Path appsDescriptorDirectory = getUserAppsDescriptorDirectory();
+        final File basePath = appsDescriptorDirectory.toFile();
         if (!basePath.exists()) {
-            basePath.mkdir();
+            basePath.mkdirs();
         }
         Logger.debug(AppsAPIImpl.class,
-                () -> " ymlFiles are set under:  " + ymlFilesPath);
-        final Set<String> files = listFiles(ymlFilesPath);
-        if (!isSet(files)) {
-            return Collections.emptySet();
-        } else {
-            return files;
-        }
+                () -> " ymlFiles are set under:  " + basePath.toString());
+        final Set<Path> userFiles = listFiles(appsDescriptorDirectory);
+
+        final Set<Path> systemFileNames = systemFiles.stream().map(Path::getFileName)
+                .collect(Collectors.toSet());
+        final Set<Path> filteredUserFiles = userFiles.stream()
+                .filter(path -> !systemFileNames.contains(path.getFileName())).collect(Collectors.toSet());
+
+        return Stream.concat(systemFiles.stream().map(path -> Tuple.of(path, true)),
+                filteredUserFiles.stream().map(path -> Tuple.of(path, false)))
+                .collect(Collectors.toSet());
     }
 
     private static DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
@@ -721,31 +760,30 @@ public class AppsAPIImpl implements AppsAPI {
         }
     };
 
-    private Set<String> listFiles(final String dir) throws IOException {
-        final Set<String> fileList = new HashSet<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir), filter)) {
-            stream.forEach(path -> {
-                fileList.add(path.toString());
-            });
+    private Set<Path> listFiles(final Path dir) throws IOException {
+        final Set<Path> fileList = new HashSet<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
+            stream.forEach(fileList::add);
         }
         return fileList;
     }
 
     private List<AppDescriptor> loadAppDescriptors()
-            throws IOException {
+            throws IOException, URISyntaxException {
 
         final ImmutableList.Builder<AppDescriptor> builder = new ImmutableList.Builder<>();
-        final Set<String> fileNames = listAvailableYamlFiles();
-        for (final String fileName : fileNames) {
+        final Set<Tuple2<Path, Boolean>> filePaths = listAvailableYamlFiles();
+        for (final Tuple2<Path, Boolean> filePath : filePaths) {
             try {
-                final File file = new File(fileName);
-                final AppSchema appSchema = readAppFile(file);
+                final Path path = filePath._1;
+                final boolean systemApp = filePath._2;
+                final AppSchema appSchema = readAppFile(path);
                 if (validateAppDescriptor(appSchema)) {
-                    builder.add(new AppDescriptorImpl(file.getName(), appSchema));
+                    builder.add(new AppDescriptorImpl(path.getFileName().toString(), systemApp, appSchema));
                 }
             } catch (Exception e) {
                 Logger.error(AppsAPIImpl.class,
-                        String.format("Error reading yml file `%s`.", fileName), e);
+                        String.format("Error reading yml file `%s`.", filePath), e);
             }
         }
 
