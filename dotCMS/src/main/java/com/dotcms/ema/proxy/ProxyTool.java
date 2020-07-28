@@ -212,7 +212,7 @@ public class ProxyTool {
      * @return A ProxyResponse Object
      */
     public ProxyResponse send(String url, Map<String, String> params, String method, String contentType, Credentials creds) {
-        Logger.info(this, "send(Map) called with url=" + url + ", params=" + params + ", and method=" + method + ", contentType = "
+        Logger.debug(this, "send(Map) called with url=" + url + ", params=" + params + ", and method=" + method + ", contentType = "
                 + contentType + ", creds=" + UtilMethods.isSet(creds));
 
 
@@ -242,7 +242,7 @@ public class ProxyTool {
             } 
         
             
-            Logger.info(this, method  + " " + url);
+            Logger.debug(this, method  + " " + url);
             
             if (method.equalsIgnoreCase(METHOD_POST)) {
                 HttpPost m = new HttpPost(url);

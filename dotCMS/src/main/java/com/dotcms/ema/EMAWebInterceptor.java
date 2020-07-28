@@ -1,6 +1,11 @@
 package com.dotcms.ema;
 
+import com.dotcms.security.apps.AppSecrets;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,8 +36,9 @@ import com.liferay.portal.model.User;
 
 public class EMAWebInterceptor  implements WebInterceptor{
 
-    public  static final String      PROXY_EDIT_MODE_URL_VAR = "proxyEditModeUrl";
+    public  static final String      PROXY_EDIT_MODE_URL_VAR = "proxyEditModeURL";
     private static final String      API_CALL                = "/api/v1/page/render";
+    public static final String EMA_APP_CONFIG_KEY = "dotema-config";
     private static final ProxyTool   proxy                   = new ProxyTool();
 
 
@@ -46,14 +52,20 @@ public class EMAWebInterceptor  implements WebInterceptor{
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
 
+        final Host currentHost = getCurrentHost(request);
+
+        if (!this.existsConfiguration(currentHost.getIdentifier())) {
+            return Result.NEXT;
+        }
+
+        final Optional<String> proxyUrl = proxyUrl(currentHost);
         final PageMode mode             = PageMode.get(request);
-        final Optional<String> proxyUrl = this.proxyUrl(request);
 
         if (!proxyUrl.isPresent() || mode == PageMode.LIVE) {
             return Result.NEXT;
         }
 
-        Logger.info(this.getClass(), "GOT AN EMA Call -->" + request.getRequestURI());
+        Logger.info(this.getClass(), "GOT AN EMA Call --> " + request.getRequestURI());
 
         return new Result.Builder().wrap(new MockHttpCaptureResponse(response)).next().build();
     }
@@ -65,14 +77,15 @@ public class EMAWebInterceptor  implements WebInterceptor{
         try {
 
             if (response instanceof MockHttpCaptureResponse) {
-                
-                final Optional<String> proxyUrl            = proxyUrl(request);
+
+                final Host currentHost = getCurrentHost(request);
+                final Optional<String> proxyUrl            = proxyUrl(currentHost);
                 final MockHttpCaptureResponse mockResponse = (MockHttpCaptureResponse)response;
                 final String postJson                      = new String(mockResponse.getBytes());
                 final JSONObject json                      = new JSONObject(postJson);
                 final Map<String, String> params           = ImmutableMap.of("dotPageData", postJson);
                 
-                Logger.info(this.getClass(), "Proxying Request -->" + proxyUrl.get());
+                Logger.info(this.getClass(), "Proxying Request --> " + proxyUrl.get());
                 
                 String responseStr = new String();
                 final ProxyResponse pResponse = proxy.sendPost(proxyUrl.get(), params);
@@ -105,38 +118,40 @@ public class EMAWebInterceptor  implements WebInterceptor{
                 response.getWriter().write(json.toString());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.error(this, e.getMessage());
         }
 
         return true;
     }
 
 
-    private Optional<String> proxyUrl(HttpServletRequest request) {
+    /**
+     * Gets the proxyUrl for the given host
+     * @param currentHost current Host to get the proxyUrl value
+     * @return Optional String of the proxyUrl, if there is not found or an error is thrown returns an empty
+     */
+    private Optional<String> proxyUrl(final Host currentHost) {
+        AppSecrets appSecrets = null;
 
+        try{
+            appSecrets = APILocator.getAppsAPI().getSecrets(EMA_APP_CONFIG_KEY,
+                    true, currentHost, APILocator.systemUser()).get();
+            return appSecrets.getSecrets().containsKey(PROXY_EDIT_MODE_URL_VAR)?
+                    Optional.ofNullable(appSecrets.getSecrets().get(PROXY_EDIT_MODE_URL_VAR).getString()) : Optional.empty();
 
-        final String uri = request.getRequestURI();
-
-        if (!uri.startsWith(API_CALL)) {
+        } catch (DotSecurityException | DotDataException e) {
+            Logger.error(this, e.getMessage());
             return Optional.empty();
+        } finally {
+            if(UtilMethods.isSet(appSecrets)){
+                appSecrets.destroy();
+            }
         }
-
-
-        Host host = this.getCurrentHost(request);
-        if(host==null) {
-            return Optional.empty();
-        }
-        String proxyUrl = host.getStringProperty(PROXY_EDIT_MODE_URL_VAR);
-
-
-        return Optional.ofNullable(proxyUrl);
-
-
     }
 
 
     @CloseDBIfOpened
-    public Host getCurrentHost(HttpServletRequest request) {
+    private Host getCurrentHost(HttpServletRequest request) {
         try {
             Host host = null;
             HttpSession session = request.getSession(false);
@@ -171,8 +186,21 @@ public class EMAWebInterceptor  implements WebInterceptor{
             }
             return host;
         } catch (Exception e) {
+            Logger.error(this, e.getMessage());
             throw new DotRuntimeException(e);
         }
+    }
+
+    /**
+     * Check if a configuration exists for the given site
+     * @param hostId host id to check
+     * @return true if the configuration exists, false if does not
+     */
+    private boolean existsConfiguration(final String hostId) {
+        final List hosts = Host.SYSTEM_HOST.equals(hostId) ?
+                Arrays.asList(hostId):  Arrays.asList(Host.SYSTEM_HOST, hostId);
+        return !APILocator.getAppsAPI().filterSitesForAppKey(EMA_APP_CONFIG_KEY,
+                hosts, APILocator.systemUser()).isEmpty();
     }
 
 
