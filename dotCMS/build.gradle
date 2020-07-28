@@ -1020,10 +1020,12 @@ class NpmArtifactExtractTask extends DefaultTask {
                 : version
         String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
         println "Downloading from $versionUrl"
-        "curl $versionUrl --output $artifactFolder/${artifact}.tgz".execute().text
+        String downloadArtifact = "$artifactFolder/${artifact}.tgz"
+        def downloadFile = new File(downloadArtifact)
+        new URL(versionUrl).withInputStream{ i -> downloadFile.withOutputStream{ it << i }}
 
         project.copy {
-            from project.tarTree(project.file("$artifactFolder/${artifact}.tgz"))
+            from project.tarTree(project.file(downloadArtifact))
             into dest
         }
     }
