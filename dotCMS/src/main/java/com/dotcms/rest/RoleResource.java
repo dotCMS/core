@@ -382,7 +382,7 @@ public class RoleResource {
 	@Path("/users/id/{roleid}")
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
-	public Response loadUsersByRole(@Context final HttpServletRequest request,
+	public Response loadUsersAndRolesByRoleId(@Context final HttpServletRequest request,
 								   @Context final HttpServletResponse response,
 								   @PathParam   ("roleid") final String roleId,
 								   @DefaultValue("false") @QueryParam("roleHierarchyForAssign") final boolean roleHierarchyForAssign,
