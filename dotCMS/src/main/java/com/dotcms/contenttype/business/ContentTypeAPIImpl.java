@@ -517,7 +517,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
       for (Field oldField : oldFields) {
         if (!newFields.stream().anyMatch(f -> f.id().equals(oldField.id()))) {
-          if (!oldField.fixed()) {
+          if (!oldField.fixed() && !oldField.readOnly()) {
             Logger.info(this, "Deleting no longer needed Field: " + oldField.name() + " with ID: " + oldField.id()
                 + ", from Content Type: " + contentTypeToSave.name());
 

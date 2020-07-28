@@ -21,16 +21,21 @@
     or the documentation at https://hazelcast.org/documentation/
 -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.8.xsd"
-           xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.9.xsd">
     <group>
         <name>dev</name>
         <password>dev-pass</password>
     </group>
+    <properties>
+        <property name="hazelcast.discovery.enabled">true</property>
+        <property name="hazelcast.shutdownhook.enabled">false</property>
+    </properties>
     <management-center enabled="false">http://localhost:8081/mancenter</management-center>
     <network>
-        <port auto-increment="true" port-count="100">5701</port>
+        <port auto-increment="false">5701</port>
         <outbound-ports>
             <!--
             Allowed port range when connecting to other nodes.
@@ -54,6 +59,13 @@
                 <tag-value>hz-nodes</tag-value>
             </aws>
             <discovery-strategies>
+                <discovery-strategy enabled="false" class="com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
+                  <properties>
+                    <property name="namespace">dotcms</property>
+                    <property name="service-name">dotcms</property>
+                    <property name="service-port">5701</property>
+                  </properties>
+                </discovery-strategy>
             </discovery-strategies>
         </join>
         <interfaces enabled="false">

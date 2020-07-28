@@ -2,6 +2,8 @@ package com.dotcms.security.apps;
 
 import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.util.UtilMethods.isSet;
 import static com.google.common.collect.ImmutableList.of;
 import static java.util.Collections.emptyMap;
 
@@ -24,7 +26,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -34,11 +35,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,10 +50,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -129,7 +133,7 @@ public class AppsAPIImpl implements AppsAPI {
         // if Empty ServiceKey is passed everything will be set under systemHostIdentifier:dotCMSGlobalService
         //Otherwise the internal Key will look like:
         // `5e096068-edce-4a7d-afb1-95f30a4fa80e:serviceKeyNameXYZ` where the first portion is the hostId
-        final String key = UtilMethods.isSet(serviceKey) ? serviceKey : DOT_GLOBAL_SERVICE;
+        final String key = isSet(serviceKey) ? serviceKey : DOT_GLOBAL_SERVICE;
         final String identifier =
                 (null == hostIdentifier) ? APILocator.systemHost().getIdentifier() : hostIdentifier;
         return (identifier + HOST_SECRET_KEY_SEPARATOR + key).toLowerCase();
@@ -415,7 +419,7 @@ public class AppsAPIImpl implements AppsAPI {
             return appsCache.getAppDescriptorsMeta(() -> {
                 try {
                     return loadAppDescriptors();
-                } catch (IOException e) {
+                } catch (IOException | URISyntaxException e) {
                     Logger.error(AppsAPIImpl.class,
                             "An error occurred while loading the service descriptor yml files. ",
                             e);
@@ -459,16 +463,16 @@ public class AppsAPIImpl implements AppsAPI {
                     "Invalid attempt to create an app descriptor performed by user with id `%s`.",
                     user.getUserId()));
         }
-        final String ymlFilesPath = getServiceDescriptorDirectory();
-        final File basePath = new File(ymlFilesPath);
+        final Path ymlFilesPath = getUserAppsDescriptorDirectory();
+        final File basePath = ymlFilesPath.toFile();
         if (!basePath.exists()) {
             basePath.mkdirs();
         }
         Logger.debug(AppsAPIImpl.class, () -> " ymlFiles are set under:  " + ymlFilesPath);
 
-            final AppSchema appSchema = readAppFile(file);
+            final AppSchema appSchema = readAppFile(file.toPath());
             // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
-            if (validateServiceDescriptor(appSchema)) {
+            if (validateAppDescriptor(appSchema)) {
                 final File incomingFile = new File(basePath, file.getName());
                 if (incomingFile.exists()) {
                     throw new AlreadyExistException(
@@ -481,7 +485,7 @@ public class AppsAPIImpl implements AppsAPI {
 
                 invalidateCache();
             }
-            return new AppDescriptorImpl(file.getName(), appSchema);
+            return new AppDescriptorImpl(file.getName(), false, appSchema);
 
     }
 
@@ -493,8 +497,8 @@ public class AppsAPIImpl implements AppsAPI {
      * @return
      * @throws DotDataException
      */
-    private AppSchema readAppFile(final File file) throws DotDataException {
-        try (InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))) {
+    private AppSchema readAppFile(final Path file) throws DotDataException {
+        try (InputStream inputStream = Files.newInputStream(file)) {
             return ymlMapper.readValue(inputStream, AppSchema.class);
         }catch (Exception e){
             throw new DotDataException(e.getMessage(), e);
@@ -555,13 +559,18 @@ public class AppsAPIImpl implements AppsAPI {
      * @param descriptor
      * @throws DotDataException
      */
-    private void removeDescriptor(final AppDescriptor descriptor) throws DotDataException{
-        final String fileName = ((AppDescriptorImpl)descriptor).getFileName();
+    private void removeDescriptor(final AppDescriptor descriptor)
+            throws DotDataException, DotSecurityException {
+        final AppDescriptorImpl appDescriptor = (AppDescriptorImpl)descriptor;
+        if(appDescriptor.isSystemApp()){
+            throw new DotSecurityException(" System app files are not allowed to be removed. ");
+        }
+        final String fileName = appDescriptor.getFileName();
         //Now we need to remove the file it self.
-        final String ymlFilesPath = getServiceDescriptorDirectory();
+        final Path ymlFilesPath = getUserAppsDescriptorDirectory();
         final Path file = Paths.get(ymlFilesPath + File.separator + fileName).normalize();
         if (!file.toFile().exists()) {
-            throw new DotDataException(
+            throw new DoesNotExistException(
                     String.format(" File with path `%s` does not exist. ", file));
         }
         try {
@@ -622,8 +631,7 @@ public class AppsAPIImpl implements AppsAPI {
                     final String paramName = entry.getKey();
                     final ParamDescriptor descriptor = entry.getValue();
                     final Secret secret = appSecrets.getSecrets().get(paramName);
-                    if (descriptor.isRequired() && UtilMethods.isNotSet(descriptor.getValue()) && (
-                            null == secret || UtilMethods.isNotSet(secret.getValue()))) {
+                    if (isRequiredWithNoDefaultValue(descriptor, secret)) {
                         warnings.put(paramName, of(String
                                 .format("`%s` is required. It is missing a value and no default is provided.",
                                         paramName)));
@@ -635,66 +643,147 @@ public class AppsAPIImpl implements AppsAPI {
         return emptyMap();
     }
 
+    /**
+     * Condition check This verifies the descriptor demands the param to be required but.. No default value is provided and the secret neither has a stored value
+     * @param descriptor ParamDescriptor
+     * @param secret stored secret
+     * @return
+     */
+    private boolean isRequiredWithNoDefaultValue(final ParamDescriptor descriptor, final Secret secret ){
+        //Verify we have a param marked required and no default Value
+        final boolean isRequiredWithNoDefaultParam = (descriptor.isRequired() && isEmpty(descriptor.getValue()));
+        //Verify the secret is empty
+        final boolean isSecretWithEmptyValue = (null == secret || isNotSet(secret.getValue()));
+        return isRequiredWithNoDefaultParam && isSecretWithEmptyValue;
+    }
+
+    /**
+     * Verify an object is an empty value
+     * @param value
+     * @return
+     */
+    private boolean isEmpty(final Object value){
+        if(value == null){
+           return true;
+        }
+
+        if(value instanceof String){
+           return isNotSet((String)value);
+        }
+
+        if(value instanceof char[]){
+            return isNotSet((char[]) value);
+        }
+
+        if(value instanceof List){
+           return  ((List)value).isEmpty();
+        }
+
+        return false;
+    }
+
     private void invalidateCache() {
         synchronized (AppsAPIImpl.class) {
             appsCache.invalidateDescriptorsCache();
         }
     }
 
-    private static String getServiceDescriptorDirectory() {
+    /**
+     * This is the directory intended for customers use
+     * @return
+     */
+    private static Path getUserAppsDescriptorDirectory() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
         + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
         final String dirPath = Config
                 .getStringProperty(APPS_DIR_PATH_KEY, supplier.get());
-        return Paths.get(dirPath).normalize().toString();
+        return Paths.get(dirPath).normalize();
     }
 
-    private Set<String> listAvailableYamlFiles() throws IOException {
-        final String ymlFilesPath = getServiceDescriptorDirectory();
-        final File basePath = new File(ymlFilesPath);
+    /**
+     * This is the Apps-System-Folder which is meant to hold system apps.
+     * Those that can not be override and are always available.
+     * @return
+     */
+    static Path getSystemAppsDescriptorDirectory() throws URISyntaxException, IOException {
+        final URL res = Thread.currentThread().getContextClassLoader().getResource("apps");
+        if(res == null) {
+            throw new IOException("Unable to find Apps System folder. It should be at /WEB-INF/classes/apps ");
+        } else {
+            return Paths.get(res.toURI()).toAbsolutePath();
+        }
+    }
+
+    /**
+     *  This will get you a list with all the available app-yml files registered in the system.
+     *
+     * @return
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    private Set<Tuple2<Path, Boolean>> listAvailableYamlFiles() throws IOException, URISyntaxException {
+        final Path systemAppsDescriptorDirectory = getSystemAppsDescriptorDirectory();
+        final Set<Path> systemFiles = listFiles(systemAppsDescriptorDirectory);
+
+        final Path appsDescriptorDirectory = getUserAppsDescriptorDirectory();
+        final File basePath = appsDescriptorDirectory.toFile();
         if (!basePath.exists()) {
-            basePath.mkdir();
+            basePath.mkdirs();
         }
         Logger.debug(AppsAPIImpl.class,
-                () -> " ymlFiles are set under:  " + ymlFilesPath);
-        final Set<String> files = listFiles(ymlFilesPath);
-        if (!UtilMethods.isSet(files)) {
-            return Collections.emptySet();
-        } else {
-            return files;
-        }
+                () -> " ymlFiles are set under:  " + basePath.toString());
+        final Set<Path> userFiles = listFiles(appsDescriptorDirectory);
+
+        final Set<Path> systemFileNames = systemFiles.stream().map(Path::getFileName)
+                .collect(Collectors.toSet());
+        final Set<Path> filteredUserFiles = userFiles.stream()
+                .filter(path -> !systemFileNames.contains(path.getFileName())).collect(Collectors.toSet());
+
+        return Stream.concat(systemFiles.stream().map(path -> Tuple.of(path, true)),
+                filteredUserFiles.stream().map(path -> Tuple.of(path, false)))
+                .collect(Collectors.toSet());
     }
 
-    private Set<String> listFiles(final String dir) throws IOException {
-        final Set<String> fileList = new HashSet<>();
-        try (final DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir))) {
-            for (final Path path : stream) {
-                if (!Files.isDirectory(path)) {
-                    final String fileName = path.getFileName().toString();
-                    if (fileName.endsWith("yaml") || fileName.endsWith("yml")) {
-                        fileList.add(path.toString());
-                    }
-                }
+    private static DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
+
+        private static final String ignorePrefix = "_ignore_me_";
+        private static final String yml = "yml";
+        private static final String yaml = "yaml";
+
+        @Override
+        public boolean accept(final Path path) {
+            if (Files.isDirectory(path)) {
+              return false;
             }
+            final String fileName = path.getFileName().toString();
+            return !fileName.startsWith(ignorePrefix) && (fileName.endsWith(yaml) || fileName.endsWith(yml)) ;
+        }
+    };
+
+    private Set<Path> listFiles(final Path dir) throws IOException {
+        final Set<Path> fileList = new HashSet<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
+            stream.forEach(fileList::add);
         }
         return fileList;
     }
 
     private List<AppDescriptor> loadAppDescriptors()
-            throws IOException {
+            throws IOException, URISyntaxException {
 
         final ImmutableList.Builder<AppDescriptor> builder = new ImmutableList.Builder<>();
-        final Set<String> fileNames = listAvailableYamlFiles();
-        for (final String fileName : fileNames) {
+        final Set<Tuple2<Path, Boolean>> filePaths = listAvailableYamlFiles();
+        for (final Tuple2<Path, Boolean> filePath : filePaths) {
             try {
-                final File file = new File(fileName);
-                final AppSchema appSchema = readAppFile(file);
-                if (validateServiceDescriptor(appSchema)) {
-                    builder.add(new AppDescriptorImpl(file.getName(), appSchema));
+                final Path path = filePath._1;
+                final boolean systemApp = filePath._2;
+                final AppSchema appSchema = readAppFile(path);
+                if (validateAppDescriptor(appSchema)) {
+                    builder.add(new AppDescriptorImpl(path.getFileName().toString(), systemApp, appSchema));
                 }
             } catch (Exception e) {
                 Logger.error(AppsAPIImpl.class,
-                        String.format("Error reading yml file `%s`.", fileName), e);
+                        String.format("Error reading yml file `%s`.", filePath), e);
             }
         }
 
@@ -707,28 +796,28 @@ public class AppsAPIImpl implements AppsAPI {
      * @return
      * @throws DotDataValidationException
      */
-   private boolean validateServiceDescriptor(final AppSchema appDescriptor)
+   private boolean validateAppDescriptor(final AppSchema appDescriptor)
            throws DotDataValidationException {
 
        final List<String> errors = new ArrayList<>();
 
-       if(UtilMethods.isNotSet(appDescriptor.getName())){
+       if(isNotSet(appDescriptor.getName())){
            errors.add("The required field `name` isn't set on the incoming file.");
        }
 
-       if(UtilMethods.isNotSet(appDescriptor.getDescription())){
+       if(isNotSet(appDescriptor.getDescription())){
            errors.add("The required field `description` isn't set on the incoming file.");
        }
 
-       if(UtilMethods.isNotSet(appDescriptor.getIconUrl())){
+       if(isNotSet(appDescriptor.getIconUrl())){
            errors.add("The required field `iconUrl` isn't set on the incoming file.");
        }
 
-       if(!UtilMethods.isSet(appDescriptor.getAllowExtraParameters())){
+       if(!isSet(appDescriptor.getAllowExtraParameters())){
            errors.add("The required boolean field `allowExtraParameters` isn't set on the incoming file.");
        }
 
-       if(!UtilMethods.isSet(appDescriptor.getParams())){
+       if(!isSet(appDescriptor.getParams())){
            errors.add("The required field `params` isn't set on the incoming file.");
        }
 
@@ -752,11 +841,11 @@ public class AppsAPIImpl implements AppsAPI {
      * @throws DotDataValidationException
      */
     private List<String> validateParamDescriptor(final String name,
-            final ParamDescriptor descriptor)  {
+            final ParamDescriptor descriptor) {
 
-        final List<String> errors = new ArrayList<>();
+        final List<String> errors = new LinkedList<>();
 
-        if (UtilMethods.isNotSet(name)) {
+        if (isNotSet(name)) {
             errors.add("Param descriptor is missing required  field `name` .");
         }
 
@@ -766,50 +855,102 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         if (null == descriptor.getValue()) {
-            errors.add(String.format("`%s`: is missing required field `value`. It is mandatory that the param exist. ", name));
+            errors.add(String.format(
+                    "`%s`: is missing required field `value` or a value hasn't been set. Value is mandatory. ",
+                    name));
         }
 
-        if (UtilMethods.isNotSet(descriptor.getHint())) {
+        if (isNotSet(descriptor.getHint())) {
             errors.add(String.format("Param `%s`: is missing required field `hint` .", name));
         }
 
-        if (UtilMethods.isNotSet(descriptor.getLabel())) {
+        if (isNotSet(descriptor.getLabel())) {
             errors.add(String.format("Param `%s`: is missing required field `hint` .", name));
         }
 
         if (null == descriptor.getType()) {
-            errors.add(String.format("Param `%s`: is missing required field `type` (STRING|BOOL|FILE) .",
+            errors.add(String.format(
+                    "Param `%s`: is missing required field `type` (STRING|BOOL|SELECT) .",
                     name));
         }
 
-        if (!UtilMethods.isSet(descriptor.getRequired())) {
-            errors.add(String.format("Param `%s`: is missing required field `required` (true|false) .",
-                    name));
-        }
-
-        if (!UtilMethods.isSet(descriptor.getHidden())) {
+        if (!isSet(descriptor.getRequired())) {
             errors.add(
-                    String.format("Param `%s`: is missing required field `hidden` (true|false) .", name));
+                    String.format("Param `%s`: is missing required field `required` (true|false) .",
+                            name));
         }
 
-        if (Type.BOOL.equals(descriptor.getType()) && UtilMethods.isSet(descriptor.getHidden()) && descriptor.isHidden()) {
-            errors.add(String.format(
-                    "Param `%s`: Bool params can not be marked hidden. The combination (Bool + Hidden) isn't allowed.",
-                    name));
+        if (!isSet(descriptor.getHidden())) {
+            errors.add(
+                    String.format("Param `%s`: is missing required field `hidden` (true|false) .",
+                            name));
         }
 
-        if (Type.BOOL.equals(descriptor.getType()) && UtilMethods.isSet(descriptor.getValue())
-                && !isBoolString(descriptor.getValue())) {
-            errors.add(String.format(
-                    "Boolean Param `%s` has a default value `%s` that can not be parsed to bool (true|false).",
-                    name, descriptor.getValue()));
-        }
-
-        if (StringPool.NULL.equalsIgnoreCase(descriptor.getValue()) && descriptor.isRequired()) {
+        if (isSet(descriptor.getValue()) && StringPool.NULL
+                .equalsIgnoreCase(descriptor.getValue().toString()) && descriptor.isRequired()) {
             errors.add(String.format(
                     "Null isn't allowed as the default value on required params see `%s`. ",
                     name)
             );
+        }
+
+        if (Type.BOOL.equals(descriptor.getType())) {
+            if (isSet(descriptor.getHidden())
+                    && descriptor.isHidden()) {
+                errors.add(String.format(
+                        "Param `%s`: Bool params can not be marked hidden. The combination (Bool + Hidden) isn't allowed.",
+                        name));
+            }
+
+            if (isSet(descriptor.getValue())
+                    && !isBoolString(descriptor.getValue().toString())) {
+                errors.add(String.format(
+                        "Boolean Param `%s` has a default value `%s` that can not be parsed to bool (true|false).",
+                        name, descriptor.getValue()));
+            }
+        }
+
+        if(Type.STRING.equals(descriptor.getType()) && !(descriptor.getValue() instanceof String)){
+                errors.add(String.format(
+                        "Value Param `%s` has a default value `%s` that isn't a string .",
+                        name, descriptor.getValue()));
+        }
+
+        if (Type.SELECT.equals(descriptor.getType())) {
+
+            if (isSet(descriptor.getHidden()) && descriptor.isHidden()) {
+                errors.add(String.format(
+                        "Param `%s`: List params can not be marked hidden. The combination (List + Hidden) isn't allowed.",
+                        name));
+            }
+
+            if (!(descriptor.getValue() instanceof List)) {
+                errors.add(String.format(
+                        " As param `%s`:  is marked as `List` the field value is expected to hold a list of objects. ",
+                        name));
+            } else {
+                final int minSelectedElements = 1;
+                int selectedCount = 0;
+                final List list = (List) descriptor.getValue();
+                for (final Object object : list) {
+                    if (!(object instanceof Map)) {
+                        errors.add(String.format(
+                                "Malformed list. Param: `%s` is marked as `List` therefore field `value` is expected to have a list of objects. ",
+                                name));
+                    } else {
+                        final Map map = (Map) object;
+                        if (!map.containsKey("label") || !map.containsKey("value") ) {
+                            errors.add(String.format("Malformed list. Param: `%s`. Every entry of the `List` has to have the following fields (`label`,`value`). ", name));
+                        }
+                         if(map.containsKey("selected")){
+                             selectedCount++;
+                         }
+                    }
+                }
+                if(selectedCount > minSelectedElements ){
+                    errors.add(String.format("Malformed list. Param: `%s`. There must be only 1 item marked as selected ", name));
+                }
+            }
         }
 
         return errors;
