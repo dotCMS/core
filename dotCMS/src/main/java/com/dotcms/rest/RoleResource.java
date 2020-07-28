@@ -377,7 +377,17 @@ public class RoleResource {
 		return jsonChildren;
 	}
 
-
+	/**
+	 * Load the user and roles by role id.
+	 * @param request   {@link HttpServletRequest}
+	 * @param response  {@link HttpServletResponse}
+	 * @param roleId    {@link String} role
+	 * @param roleHierarchyForAssign {@link Boolean} true if want to include the hierarchy, false by default
+	 * @param roleNameToFilter {@link String} prefix role name, if you want to filter the results
+	 * @return Response
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	@GET
 	@Path("/users/id/{roleid}")
 	@Produces("application/json")
