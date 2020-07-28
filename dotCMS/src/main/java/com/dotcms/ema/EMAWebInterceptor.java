@@ -34,6 +34,14 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 
+/**
+ * Intercepts a content managers's request to dotCMS EDIT_MODE in the admin of dotCMS,
+ * transparently POSTs the dotCMS page API data to the remote site/server (hosted elsewhere) and
+ * then proxies the remote response back to the dotCMS admin, which allows dotCMS
+ * to render the EDIT_MODE request in context.
+ *
+ * More info on how EMA works https://github.com/dotcms-plugins/com.dotcms.ema#dotcms-edit-mode-anywhere---ema
+ */
 public class EMAWebInterceptor  implements WebInterceptor{
 
     public  static final String      PROXY_EDIT_MODE_URL_VAR = "proxyEditModeURL";
@@ -50,9 +58,9 @@ public class EMAWebInterceptor  implements WebInterceptor{
     }
 
     @Override
-    public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+    public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
 
-        final Host currentHost = getCurrentHost(request);
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
         if (!this.existsConfiguration(currentHost.getIdentifier())) {
             return Result.NEXT;
@@ -78,7 +86,7 @@ public class EMAWebInterceptor  implements WebInterceptor{
 
             if (response instanceof MockHttpCaptureResponse) {
 
-                final Host currentHost = getCurrentHost(request);
+                final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
                 final Optional<String> proxyUrl            = proxyUrl(currentHost);
                 final MockHttpCaptureResponse mockResponse = (MockHttpCaptureResponse)response;
                 final String postJson                      = new String(mockResponse.getBytes());
@@ -86,32 +94,31 @@ public class EMAWebInterceptor  implements WebInterceptor{
                 final Map<String, String> params           = ImmutableMap.of("dotPageData", postJson);
                 
                 Logger.info(this.getClass(), "Proxying Request --> " + proxyUrl.get());
-                
-                String responseStr = new String();
+
+                final StringBuilder responseStringBuilder = new StringBuilder();
                 final ProxyResponse pResponse = proxy.sendPost(proxyUrl.get(), params);
 
                 if (pResponse.getResponseCode() == 200) {
-                    responseStr = new String(pResponse.getResponse());
+                    responseStringBuilder.append(pResponse.getResponse());
                 }else {
-                    responseStr+="<html><body>";
-                    responseStr+="<h3>Unable to connect with the rendering engine</h3>";
-                    responseStr+="<br><div style='display:inline-block;width:80px'>Trying: </div><b>" + proxyUrl.get()  + "</b>";
-                    responseStr+="<br><div style='display:inline-block;width:80px'>Got:</div><b>" + pResponse.getStatus() + "</b>";
-                    responseStr+="<hr>";
-                    responseStr+="<h4>Headers</h4>";
-                    responseStr+="<table border=1 style='min-width:500px'>";
+                    responseStringBuilder.append("<html><body>")
+                    .append("<h3>Unable to connect with the rendering engine</h3>")
+                    .append("<br><div style='display:inline-block;width:80px'>Trying: </div><b>" + proxyUrl.get()  + "</b>")
+                    .append("<br><div style='display:inline-block;width:80px'>Got:</div><b>" + pResponse.getStatus() + "</b>")
+                    .append("<hr>")
+                    .append("<h4>Headers</h4>")
+                    .append("<table border=1 style='min-width:500px'>");
 
-                    for(Header header : pResponse.getHeaders()) {
-                      responseStr+="<tr><td style='font-weight:bold;padding:5px;'><pre>" + header.getName() + "</pre></td><td><pre>" + header.getValue() + "</td></tr>";
+                    for(final Header header : pResponse.getHeaders()) {
+                        responseStringBuilder.append("<tr><td style='font-weight:bold;padding:5px;'><pre>" + header.getName() + "</pre></td><td><pre>" + header.getValue() + "</td></tr>");
                     }
-                    responseStr+="</table>";
-                    
-                    responseStr+="<p>The Json Payload, POSTing as Content-Type:'application/x-www-form-urlencoded' with form param <b>dotPageData</b>, has been printed in the logs.</p>";
-                    responseStr+="</body></html>";
+                    responseStringBuilder.append("</table>")
+                    .append("<p>The Json Payload, POSTing as Content-Type:'application/x-www-form-urlencoded' with form param <b>dotPageData</b>, has been printed in the logs.</p>")
+                    .append("</body></html>");
 
                 }
 
-                json.getJSONObject("entity").getJSONObject("page").put("rendered", responseStr);
+                json.getJSONObject("entity").getJSONObject("page").put("rendered", responseStringBuilder.toString());
                 json.getJSONObject("entity").getJSONObject("page").put("remoteRendered", true);
                 response.setContentType("application/json");
 
@@ -146,48 +153,6 @@ public class EMAWebInterceptor  implements WebInterceptor{
             if(UtilMethods.isSet(appSecrets)){
                 appSecrets.destroy();
             }
-        }
-    }
-
-
-    @CloseDBIfOpened
-    private Host getCurrentHost(HttpServletRequest request) {
-        try {
-            Host host = null;
-            HttpSession session = request.getSession(false);
-            UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-            User systemUser = APILocator.systemUser();
-            boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
-
-            PageMode mode = PageMode.get(request);
-
-            String pageHostId = request.getParameter("host_id");
-            if (pageHostId != null && mode.isAdmin) {
-                host = APILocator.getHostAPI().find(pageHostId, systemUser, respectFrontendRoles);
-            } else {
-                if (session != null && session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID) != null && mode.isAdmin) {
-                    host = APILocator.getHostAPI().find((String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID), systemUser, false);
-                } else if (session != null && mode.isAdmin && session.getAttribute(WebKeys.CURRENT_HOST) != null) {
-                    host = (Host) session.getAttribute(WebKeys.CURRENT_HOST);
-                } else if (request.getAttribute(WebKeys.CURRENT_HOST) != null) {
-                    host = (Host) request.getAttribute(WebKeys.CURRENT_HOST);
-                } else {
-                    String serverName = request.getServerName();
-                    if (UtilMethods.isSet(serverName)) {
-                        host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-                    }
-                }
-            }
-
-            request.setAttribute(WebKeys.CURRENT_HOST, host);
-            if (session != null && mode.isAdmin) {
-                session.setAttribute(WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
-                session.setAttribute(WebKeys.CURRENT_HOST, host);
-            }
-            return host;
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage());
-            throw new DotRuntimeException(e);
         }
     }
 
