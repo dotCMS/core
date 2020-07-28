@@ -133,7 +133,7 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 			try {
     				return (fileDimension = ImageUtil.getInstance().getDimension(file));
 			} catch (Throwable e) {
-				Logger.warn(this,
+				Logger.debug(this,
 						"Error computing dimensions for file asset with id: " + getIdentifier(), e);
 			}
 		}
