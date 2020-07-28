@@ -4,7 +4,7 @@
 <%@include file="/html/common/top_inc.jsp"%>
 
 <style>
-	#headerContainer {
+	body {
 		margin-top:16px;
 	}
 </style>
