@@ -741,7 +741,10 @@ public class AppsAPIImpl implements AppsAPI {
         final Set<Path> systemFileNames = systemFiles.stream().map(Path::getFileName)
                 .collect(Collectors.toSet());
         final Set<Path> filteredUserFiles = userFiles.stream()
-                .filter(path -> !systemFileNames.contains(path.getFileName())).collect(Collectors.toSet());
+                .filter(path -> systemFileNames.stream().noneMatch(
+                        systemPath -> systemPath.toString()
+                                .equalsIgnoreCase((path.getFileName().toString().toLowerCase()))))
+                .collect(Collectors.toSet());
 
         return Stream.concat(systemFiles.stream().map(path -> Tuple.of(path, true)),
                 filteredUserFiles.stream().map(path -> Tuple.of(path, false)))

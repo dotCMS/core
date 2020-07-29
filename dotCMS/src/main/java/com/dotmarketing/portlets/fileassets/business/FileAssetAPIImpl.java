@@ -804,8 +804,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         final String inode = fileAsset.getInode();
         if (UtilMethods.isSet(inode)) {
             final String realAssetPath = getRealAssetsRootPath();
-            java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator
-                    + "dotGenerated" + java.io.File.separator + inode.charAt(0)
+            java.io.File tumbnailDir = new java.io.File(ConfigUtils.getDotGeneratedPath() + java.io.File.separator + inode.charAt(0)
                     + java.io.File.separator + inode.charAt(1));
             if (tumbnailDir != null) {
                 java.io.File[] files = tumbnailDir.listFiles();

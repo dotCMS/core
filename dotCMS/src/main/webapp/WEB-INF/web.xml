@@ -183,6 +183,9 @@
 	<listener>
 		<listener-class>com.dotcms.listeners.SwitchSiteListener</listener-class>
 	</listener>
+    <listener>
+      <listener-class>com.dotcms.api.web.RequestThreadLocalListener</listener-class>
+    </listener>
 	<!-- this must be the last listener -->
 	<listener>
 	  <listener-class>com.dotmarketing.listeners.HibernateSessionsListener</listener-class>
