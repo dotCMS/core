@@ -33,6 +33,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 
@@ -429,6 +430,67 @@ public class AppsResource {
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),String.format("Exception creating secret for key %s",serviceKey), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @POST
+    @Path("/export")
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public final Response exportSecrets(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final ExportSecretForm exportSecretForm
+    ) {
+        exportSecretForm.checkValid();
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            final StreamingOutput streamingOutput = helper.exportSecrets(exportSecretForm, user);
+            return Response.ok(streamingOutput, MediaType.APPLICATION_OCTET_STREAM)
+                    .header("content-disposition", "attachment; filename=appSecrets.export")
+                    .build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),"Exception exporting secrets.", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+
+    @POST
+    @Path("/import")
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response importSecrets(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final FormDataMultiPart form
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            helper.importSecrets(form, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),"Exception importing secrets.", e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }

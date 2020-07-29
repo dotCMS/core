@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class AppSecrets implements Serializable {
 
@@ -36,6 +37,22 @@ public class AppSecrets implements Serializable {
         }
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final AppSecrets that = (AppSecrets) o;
+        return key.equals(that.key) && this.secrets.equals(that.secrets); //areEqual(this.secrets, that.secrets);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key, secrets);
+    }
 
     public static class Builder {
 

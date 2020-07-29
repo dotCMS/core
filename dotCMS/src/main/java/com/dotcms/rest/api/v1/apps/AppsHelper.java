@@ -1,14 +1,19 @@
 package com.dotcms.rest.api.v1.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.util.UtilMethods.isSet;
 
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.api.MultiPartUtils;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.Type;
@@ -29,9 +34,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.liferay.util.EncryptorException;
 import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -45,6 +54,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import jersey.repackaged.com.google.common.collect.Sets;
 import jersey.repackaged.com.google.common.collect.Sets.SetView;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -55,6 +65,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
  */
 class AppsHelper {
 
+    public static final String APPS_SECRETS_EXPORT_DEFAULT_PASSWORD = "APPS_SECRETS_EXPORT_DEFAULT_PASSWORD";
     private final AppsAPI appsAPI;
     private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
@@ -698,6 +709,86 @@ class AppsHelper {
             }
          }
          return true;
+    }
+
+    /**
+     *
+     * @param form
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws DotDataException
+     */
+    StreamingOutput exportSecrets(final ExportSecretForm form, final User user)
+            throws DotSecurityException, IOException, DotDataException {
+
+        if(UtilMethods.isNotSet(form.getPassword())){
+           throw new DotDataException("Unable to locate password param.");
+        }
+        final String password = form.getPassword();
+        final Key key = AppsUtil.generateKey(password);
+        final File file = appsAPI
+                .exportSecrets(key, form.isExportAll(), form.getAppKeysBySite(), user);
+        try {
+            return outputStream -> {
+                final InputStream is = Files.newInputStream(file.toPath());
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                //read from is to buffer
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+                is.close();
+                //flush OutputStream to write any buffered data to file
+                outputStream.flush();
+                outputStream.close();
+            };
+        } finally {
+            file.delete();
+        }
+    }
+
+    /**
+     *
+     * @param multipart
+     * @param user
+     * @throws IOException
+     * @throws DotDataException
+     * @throws JSONException
+     * @throws DotSecurityException
+     * @throws EncryptorException
+     * @throws ClassNotFoundException
+     */
+    void importSecrets(final FormDataMultiPart multipart, final User user)
+            throws IOException, DotDataException, JSONException, DotSecurityException, EncryptorException, ClassNotFoundException {
+        final MultiPartUtils multiPartUtils = new MultiPartUtils();
+        final List<File> files = multiPartUtils.getBinariesFromMultipart(multipart);
+        if(!UtilMethods.isSet(files)){
+            throw new DotDataException("Unable to extract any files from multi-part request.");
+        }
+
+        final Map<String, Object> bodyMapFromMultipart = multiPartUtils
+                .getBodyMapFromMultipart(multipart);
+        final Object object = bodyMapFromMultipart.get("password");
+
+        if(null == object){
+            throw new DotDataException("Unable to locate password param.");
+        }
+        final String password = object.toString();
+        final Key key = AppsUtil.generateKey(password);
+        final Map<String, List<AppSecrets>> importedSecretsBySiteId = appsAPI
+                .importSecrets(files.get(0).toPath(), key, user);
+        for (Entry<String, List<AppSecrets>> entry : importedSecretsBySiteId.entrySet()) {
+            final String siteId = entry.getKey();
+            final List<AppSecrets> secrets = entry.getValue();
+            final Host site = hostAPI.find(siteId, user, false);
+            if(null != site && isSet(site.getIdentifier())){
+                for (final AppSecrets appSecrets : secrets) {
+                    appsAPI.saveSecrets(appSecrets, site, user);
+                }
+            }
+        }
     }
 
 }

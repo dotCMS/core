@@ -162,4 +162,13 @@ public class AppsUtilTest {
         Assert.assertEquals(input, new String(decrypted));
     }
 
+     @Test
+     public void Test_Key_Padding(){
+         assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(14)).length(),32);
+         assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(140)).length(),32);
+         assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(32)).length(),32);
+         assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(3)).length(),32);
+         assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(0)).length(),32);
+     }
+
 }
