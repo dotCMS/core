@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.collect.ImmutableMap;
 import com.jayway.jsonpath.JsonPath;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -42,6 +43,7 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -106,7 +108,7 @@ public class ESMappingUtilHelper {
      * @throws JSONException
      */
     @CloseDBIfOpened
-    public void addCustomMapping(final String indexName, Field field)
+    public void addCustomMapping(final String indexName, final Field field)
             throws DotSecurityException, DotDataException, IOException, JSONException {
         final ContentType contentType = contentTypeAPI.find(field.contentTypeId());
         if (field instanceof RelationshipField){
@@ -308,6 +310,9 @@ public class ESMappingUtilHelper {
      * @return
      */
     private String getMappingForField(final Field field, final String fieldVariableName) {
+        final Map<DataTypes, String> dataTypesMap = ImmutableMap
+                .of(DataTypes.BOOL, "boolean", DataTypes.FLOAT, "float", DataTypes.INTEGER,
+                        "integer");
         String mappingForField = null;
         if (field instanceof DateField || field instanceof DateTimeField
                 || field instanceof TimeField) {
@@ -316,12 +321,8 @@ public class ESMappingUtilHelper {
         } else if (field instanceof TextField || field instanceof TextAreaField
                 || field instanceof WysiwygField || field instanceof RadioField
                 || field instanceof SelectField) {
-            if (field.dataType() == DataTypes.BOOL) {
-                mappingForField = "{\n\"type\":\"boolean\"\n}";
-            } else if (field.dataType() == DataTypes.FLOAT) {
-                mappingForField = "{\n\"type\":\"float\"\n}";
-            } else if (field.dataType() == DataTypes.INTEGER) {
-                mappingForField = "{\n\"type\":\"integer\"\n}";
+            if (dataTypesMap.containsKey(field.dataType())) {
+                mappingForField = String.format("{\n\"type\":\"%s\"\n}", dataTypesMap.get(field.dataType()));
             } else if (!matchesExclusions(fieldVariableName)){
                 mappingForField = "{\n"
                         + "\"type\":\"text\",\n"
