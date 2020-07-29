@@ -16,3 +16,4 @@ jobs:
         with:
           project: 'https://github.com/dotCMS/core/projects/7'
           column_name: 'Waiting for QA'
+          
