@@ -23,6 +23,7 @@ import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
@@ -182,7 +183,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         // add CONTENT interface fields
         fieldDefinitions.addAll(TypeUtil
-                .getGraphQLFieldDefinitionsFromMap(InterfaceType.getContentFields()));
+                .getGraphQLFieldDefinitionsFromMap(ContentFields.getContentFields()));
 
         return fieldDefinitions;
     }
@@ -210,7 +211,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      *<p>
      * The {@link Field} is deemed compatibly if any of the followings conditions are true:
      * <ul>
-     *     <li>The field variable does not match any of the inherited fields names from the {@link InterfaceType#getContentFields()} </li>
+     *     <li>The field variable does not match any of the inherited fields names from the {@link ContentFields#getContentFields()} </li>
      *     <li>The field variable matches the name of a inherited field but neither of them have a {@link CustomFieldType}
      *     as its mapped GraphQL Type
      * </ul>
@@ -220,12 +221,11 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      */
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
         // first let's check if there's an inherited field with the same variable
-        if (InterfaceType.getContentFields().containsKey(variable)) {
+        if (ContentFields.getContentFields().containsKey(variable)) {
             // now let's check if the graphql types are compatible
 
             // get inherited field's graphql type
-            final GraphQLType inheritedFieldGraphQLType = InterfaceType
-                    .getContentFields()
+            final GraphQLType inheritedFieldGraphQLType = ContentFields.getContentFields()
                     .get(variable).getType();
 
             // get new field's type
