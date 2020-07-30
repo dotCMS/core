@@ -354,7 +354,11 @@ public class Config {
 	 */
 	@Deprecated
     public static String getStringProperty (String name) {
-        return getStringProperty(name, null);
+        String retVal = getStringProperty(name, null);
+        if(null == retVal) {
+            throw new NoSuchElementException("unable to find value for: " + name);
+        }
+        return retVal;
     }
 
 	/**
@@ -405,7 +409,7 @@ public class Config {
      * @param defaultValue
      * @return
      */
-    public static String[] getStringArrayProperty(String name, String[] defaultValue) {
+    public static String[] getStringArrayProperty(final String name, final String[] defaultValue) {
         _refreshProperties();
 
         return props.containsKey(envKey(name)) 
@@ -419,7 +423,7 @@ public class Config {
 	 * set an intelligent default
 	 */
 	@Deprecated
-	public static int getIntProperty (String name) {
+	public static int getIntProperty (final String name) {
 	    _refreshProperties ();
 	    
         Integer prop = Try.of(()->props.getInt(envKey(name))).getOrNull();
@@ -431,10 +435,11 @@ public class Config {
 	    return props.getInt(name);
 	}
 
-	public static long getLongProperty (String name, final long defaultVal) {
+	public static long getLongProperty (final String name, final long defaultVal) {
 		_refreshProperties ();
-		if ( props == null ) {
-			return defaultVal;
+		Long prop = Try.of(()->props.getLong(envKey(name))).getOrNull();
+		if ( props != null ) {
+			return prop;
 		}
 		return props.getLong(name, defaultVal);
 	}
@@ -445,11 +450,13 @@ public class Config {
 	 * @param defaultVal
 	 * @return
 	 */
-	public static int getIntProperty (String name, int defaultVal) {
+	public static int getIntProperty (final String name, final int defaultVal) {
 	    _refreshProperties ();
-        if ( props == null ) {
-            return defaultVal;
+        Integer prop = Try.of(()->props.getInt(envKey(name))).getOrNull();
+        if(prop!=null) {
+            return prop;
         }
+        
         return props.getInt(name, defaultVal);
 	}
 
@@ -458,8 +465,15 @@ public class Config {
 	 * set an intelligent default
 	 */
 	@Deprecated
-	public static float getFloatProperty (String name) {
+	public static float getFloatProperty (final String name) {
 	    _refreshProperties ();
+	    
+        Float prop = Try.of(()->props.getFloat(envKey(name))).getOrNull();
+        if(prop!=null) {
+            return prop;
+        }
+        
+	    
 	    return props.getFloat( name );
 	}
 
@@ -469,10 +483,11 @@ public class Config {
 	 * @param defaultVal
 	 * @return
 	 */
-	public static float getFloatProperty (String name, float defaultVal) {
+	public static float getFloatProperty (final String name, final float defaultVal) {
 	    _refreshProperties ();
-        if ( props == null ) {
-            return defaultVal;
+        Float prop = Try.of(()->props.getFloat(envKey(name))).getOrNull();
+        if(prop!=null) {
+            return prop;
         }
         return props.getFloat(name, defaultVal);
 	}
@@ -484,7 +499,11 @@ public class Config {
 	@Deprecated
 	public static boolean getBooleanProperty (String name) {
 	    _refreshProperties ();
-	    return props.getBoolean(name);
+        Boolean prop = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
+        if(prop!=null) {
+            return prop;
+        }
+        return props.getBoolean(name);
 	}
 
 	/**
@@ -495,8 +514,9 @@ public class Config {
 	 */
 	public static boolean getBooleanProperty (String name, boolean defaultVal) {
 	    _refreshProperties ();
-        if ( props == null ) {
-            return defaultVal;
+        Boolean prop = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
+        if(prop!=null) {
+            return prop;
         }
         return props.getBoolean(name, defaultVal);
 	}
