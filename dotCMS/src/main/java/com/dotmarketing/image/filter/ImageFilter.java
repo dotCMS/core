@@ -10,19 +10,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.focalpoint.FocalPoint;
 import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.WebKeys;
+import io.vavr.Lazy;
 
 public abstract class ImageFilter implements ImageFilterIf {
 	protected final static String FILE_EXT = "png";
 	public    static final String CROP     = "crop";
 
+
+	
+	
 	/**
 	 * the value of this field is used to insure that the generated cache files
 	 * 1) do not overwrite each other.
@@ -192,8 +197,8 @@ public abstract class ImageFilter implements ImageFilterIf {
 				catch (Exception e){
 					inode = parameters.get("assetInodeOrIdentifier")[0];
 				}
-				String realAssetPath = APILocator.getFileAssetAPI().getRealAssetsRootPath();
-				File dirs = new File(realAssetPath + File.separator + "dotGenerated" + File.separator + inode.charAt(0) + File.separator + inode.charAt(1));
+
+				File dirs = new File(ConfigUtils.getDotGeneratedPath()  + File.separator + inode.charAt(0) + File.separator + inode.charAt(1));
 				if(!dirs.exists()){
 				    dirs.mkdirs();
 				}

@@ -6,6 +6,7 @@ import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
@@ -19,6 +20,7 @@ import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
+import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
@@ -298,7 +300,9 @@ import org.junit.runners.Suite.SuiteClasses;
         TestWorkflowAction.class,
         TestSamlConfigurationService.class,
         HostAPITest.class,
-        ESMappingUtilHelperTest.class
+        ClusterFactoryTest.class,
+        ESMappingUtilHelperTest.class,
+        BundleResourceTest.class
 })
 public class MainSuite {
 
