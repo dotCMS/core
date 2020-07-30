@@ -39,7 +39,9 @@ node {
     }
 
 }
+
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import groovy.json.JsonSlurper
 
 configurations {
     compile
@@ -302,7 +304,7 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'deployPlugins','initNpm'
+war.dependsOn 'deployPlugins','extractDotCmsArtifacts'
 
 war {
 
@@ -1002,56 +1004,78 @@ class DeployWarTomcatTask extends DefaultTask{
     }
 }
 
-task initNpm(type: NpmTask) {
-    args = ['init', '--yes']
+class NpmArtifactExtractTask extends DefaultTask {
+    String url = 'https://registry.npmjs.org'
+    String artifactFolder = './tmp'
+    String artifact
+    String version
+    String dest
 
-    finalizedBy 'installDotcmsUI', 'installDotcmsWebComponents'
-}
+    @TaskAction
+    def extract() {
+        project.mkdir(artifactFolder)
+        String artifactUrl = "$url/$artifact"
+        String artifactVersion = version == 'latest'
+                ? new JsonSlurper().parse(new URL(artifactUrl))."dist-tags".latest
+                : version
+        String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
+        println "Downloading from $versionUrl"
+        String downloadArtifact = "$artifactFolder/${artifact}.tgz"
+        def downloadFile = new File(downloadArtifact)
+        new URL(versionUrl).withInputStream{ i -> downloadFile.withOutputStream{ it << i }}
 
-task installDotcmsUI(type: NpmTask) {
-    if ("latest".equals(coreWebReleaseVersion)) {
-        args = ['install', 'dotcms-ui']
-    }else{
-        args = ['install', 'dotcms-ui@' + coreWebReleaseVersion]
+        project.copy {
+            from project.tarTree(project.file(downloadArtifact))
+            into dest
+        }
     }
-
-    finalizedBy 'copyDotcmsUI'
 }
 
-task installDotcmsWebComponents(type: NpmTask) {
-    if ("latest".equals(webComponentsReleaseVersion)) {
-        args = ['install', 'dotcms-webcomponents']
-    } else {
-        args = ['install', 'dotcms-webcomponents@' + webComponentsReleaseVersion]
-    }
-    finalizedBy 'copyDotCMSWebComponents'
-}
-
-task makeDotAdminFolder(type: DefaultTask) {
-    String dotAdminFolder = "./src/main/webapp/$angularFolder"
-    project.mkdir(dotAdminFolder)
-}
-
-task cleanNodeModules(type: Delete) {
-    delete './package.json'
-    delete './package-lock.json'
-    delete "./node_modules"
-    followSymlinks = true
-}
-
-task copyDotcmsUI(type: Copy) {
-    dependsOn 'makeDotAdminFolder'
-
+task cleanDotCmsUi {
+    delete './tmp/dotcms-ui.tgz'
     delete "./src/main/webapp/$angularFolder"
-    from (file("./node_modules/dotcms-ui"))
+}
+
+task cleanDotCmsWebComponents {
+    delete './tmp/dotcms-webcomponents.tgz'
+    delete './src/main/webapp/dotcms-webcomponents/package'
+}
+
+task copyDotCmsUi(type: Copy) {
+    from(file("./src/main/webapp/$angularFolder/package"))
     into("./src/main/webapp/$angularFolder")
 }
 
-task copyDotCMSWebComponents(type: Copy) {
-    from "./node_modules/dotcms-webcomponents/dist/"
-    into "./src/main/webapp/"
-    include 'dotcms-webcomponents/*'
-    finalizedBy 'cleanNodeModules'
+task deleteDotCmsUiPackage(type: Delete) {
+    delete "./src/main/webapp/$angularFolder/package"
+}
+
+task extractDotCmsUi(type: NpmArtifactExtractTask) {
+    artifact = 'dotcms-ui'
+    version = coreWebReleaseVersion
+    dest = "./src/main/webapp/$angularFolder"
+    dependsOn 'cleanDotCmsUi'
+    finalizedBy 'copyDotCmsUi', 'deleteDotCmsUiPackage'
+}
+extractDotCmsUi.group = 'extract dotcms-ui'
+extractDotCmsUi.description = 'Extracts package from dotcms-ui artifact to dotAdmin'
+
+task extractDotCmsWebComponents(type: NpmArtifactExtractTask) {
+    artifact = 'dotcms-webcomponents'
+    version = webComponentsReleaseVersion
+    dest = './src/main/webapp/dotcms-webcomponents'
+    dependsOn 'cleanDotCmsWebComponents'
+}
+extractDotCmsWebComponents.group = 'extract dotcms-webcomponents'
+extractDotCmsWebComponents.description = 'Extracts package from dotcms-webcomponents to dotcms-webcomponents'
+
+task cleanTmp(type: Delete) {
+    delete './tmp'
+}
+
+task extractDotCmsArtifacts {
+    dependsOn 'extractDotCmsUi', 'extractDotCmsWebComponents'
+    finalizedBy'cleanTmp'
 }
 
 task downloadDependencies(type: Exec) {
@@ -1078,8 +1102,6 @@ task downloadDependencies(type: Exec) {
     commandLine 'echo', 'Downloaded all dependencies'
 }
 
-
-
 // reference:  https://github.com/palantir/gradle-docker
 docker {
     name "dotcms/dotcms:base-$dotcmsReleaseVersion-$dotcmsReleaseBuild"
@@ -1101,6 +1123,3 @@ task upgradeTask << {
         args("$task")
     }
 }
-
-
-

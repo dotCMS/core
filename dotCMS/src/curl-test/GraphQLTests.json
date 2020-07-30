@@ -405,7 +405,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/build/src/core/dotCMS/src/curl-test/resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
 								}
 							],
 							"options": {
@@ -469,7 +469,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/build/src/core/dotCMS/src/curl-test/resources/GraphQL/Test_GraphQL_Image_Field_fields/Readme18005.md"
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/Readme18005.md"
 								}
 							],
 							"options": {
@@ -1021,123 +1021,93 @@
 			"name": "Page API",
 			"item": [
 				{
-					"name": "CreateTestContext",
-					"item": [
-						{
-							"name": "pre_ImportBundleWithContext",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"id": "d7ce458d-7749-4ce1-9655-c3d9c0ae5cf0",
-										"exec": [
-											"pm.test(\"Bundle uploaded sucessfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"",
-											"    var jsonData = pm.response.json();",
-											"    console.log(jsonData);",
-											"",
-											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"pages.tar.gz\");",
-											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"type": "text",
-										"value": "application/octet-stream"
-									},
-									{
-										"key": "Content-Disposition",
-										"type": "text",
-										"value": "attachment"
-									}
-								],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "file",
-											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/PageResource/pages.tar.gz"
-										}
-									],
-									"options": {
-										"formdata": {}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/bundle?sync=true",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"bundle"
-									],
-									"query": [
-										{
-											"key": "sync",
-											"value": "true"
-										},
-										{
-											"key": "AUTH_TOKEN",
-											"value": "",
-											"disabled": true
-										}
-									]
-								},
-								"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
-							},
-							"response": []
-						}
-					],
-					"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail",
+					"name": "pre_ImportBundleWithContext",
 					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"id": "00245b12-472d-4c7e-ae97-0512e8cc633e",
-								"type": "text/javascript",
-								"exec": [
-									""
-								]
-							}
-						},
 						{
 							"listen": "test",
 							"script": {
-								"id": "4de0d0e2-a6a3-4ead-926a-fd0fd875d9e5",
-								"type": "text/javascript",
+								"id": "d7ce458d-7749-4ce1-9655-c3d9c0ae5cf0",
 								"exec": [
-									""
-								]
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/assets.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
 				},
 				{
 					"name": "GivenRequestByURI_ShouldReturnExpectedPage",
@@ -1259,91 +1229,200 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Empty Collection",
+			"item": [
+				{
+					"name": "Create ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3fbe595a-e5f3-4320-aa86-f2a23496ba64",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+									"",
+									"pm.collectionVariables.set(\"imageFieldVariable\", jsonData.entity[0].fields[1].variable);",
+									"",
+									"pm.collectionVariables.set(\"fileFieldVariable\", jsonData.entity[0].fields[2].variable);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": false,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 2,\n              \"unique\": false\n       },\n\t   {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\"\n\t   }\n\t]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RequestEmptyCollection_ShouldReturnEmpty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ba29446d-4c81-4e34-b7e5-a013783f8ed1",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(limit: 20) {\n    title\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
 		{
-			"id": "a4790167-8fe5-4992-8d25-bfb779975787",
+			"id": "1c18aa8a-bc14-4812-8e9c-9644f9ea77e0",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "e77e98d9-65bb-4b5e-a3f5-5caf8cbec100",
+			"id": "ead4446e-9a97-47da-8fdb-9a1fe6e35368",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "6462e7ad-cbd8-4965-861d-424fe57d92ec",
+			"id": "1d33c71e-54fd-45cb-a253-231e9ff10179",
 			"key": "contentTypeVariable",
-			"value": "MyCustomType62924696"
+			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "48483daf-1169-4cad-a39f-21ae163917cd",
+			"id": "6f6b66fe-f5c4-4524-9c28-92bf35c549e2",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "efe4123f-4978-470a-91bc-1d88d6192af8",
+			"id": "a83d773a-d089-4e52-b24f-c16b4ab020dc",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "0235b183-9c42-40bc-b0d1-a80d3deb7a9e",
+			"id": "8d2c94f6-cec3-4875-a901-dddd6e146fd2",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "1d4b7e2a-accf-4594-9235-64af8298107a",
+			"id": "0e1f2095-11be-4ccc-a076-06c3babccc01",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "6d955fc9-47f0-40c6-88e0-ea410fc02534",
+			"id": "a5393977-ce55-43be-935b-04ebb3fb40ea",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "36ae2765-e29b-4a1d-b646-eb83ebd751b6",
+			"id": "4007d295-e4bf-429a-a304-42d8a3f0eb12",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "e6d06db3-2390-4801-a69e-1b58acaeb1c8",
+			"id": "b3d0a2bb-c822-4576-9241-62ac9d79a630",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "a7d3df74-4189-411e-b106-e3b3f96948c0",
+			"id": "5cbe87cc-3e04-4f27-b9fb-8f0b56a78032",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "409b67a5-9c02-46ef-ac7a-0f001346f7f9",
+			"id": "360eedc6-b3cc-41a1-b87c-6cb3b0cdec2e",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "65a05516-d5c8-42b2-84b9-a02e2a1d5db6",
+			"id": "3a627dd4-6dea-4a5b-a08c-ddcbc24b9467",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "982c132f-a4de-4ad4-b471-218054694f19",
+			"id": "9a7da04b-e3ac-4794-bc7e-0b62ebd06fff",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "061fcf08-7a15-4856-875b-965077d03d05",
+			"id": "9507d2bb-eb17-41ff-a0bc-55fe8b828592",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "12a5e4dc-36d4-4bee-935a-b16df34f9ad8",
+			"id": "a662a647-b5fc-4527-b1ee-438adcc008c0",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "5346c820-1a66-4f8d-a3ec-ca8dbb70d1f7",
+			"id": "c8212d4f-5e33-4a33-a286-b653a2378d9a",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
