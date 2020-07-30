@@ -98,10 +98,11 @@ public class LanguagesResource {
                 languageAPI.getAvailableContentLanguages(contentInode, user) :
                 languageAPI.getLanguages();
 
-        final List<LanguageView> languageViews = languages.stream().map(language -> new LanguageView(language)).collect(
-                Collectors.toList());
+//        final List<LanguageView> languageViews = languages.stream().map(LanguageView::new).collect(
+//                Collectors.toList());
 
-        return Response.ok(new ResponseEntityView(ImmutableList.copyOf(languageViews))).build();
+        return Response.ok(new ResponseEntityView(languages.stream().map(LanguageView::new).collect(
+                Collectors.toList()))).build();
     }
 
     /**
