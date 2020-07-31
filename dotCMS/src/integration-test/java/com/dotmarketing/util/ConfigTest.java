@@ -31,6 +31,29 @@ public class ConfigTest {
     final static String UNABLE_TO_READ_VAR="UNABLE_TO_READ_VAR";
     
     
+    
+    /**
+     * This method sets environmental variables that are intended for testing.
+     * 
+     */
+    private static void setTestEnvVariables() {
+        
+        System.getenv().put(DOT_TESTING_INTEGER, String.valueOf(Integer.MAX_VALUE));
+        System.getenv().put(XXX_TESTING_INTEGER, String.valueOf(Integer.MIN_VALUE));
+        System.getenv().put(DOT_TESTING_LONG, String.valueOf(Long.MAX_VALUE));
+        System.getenv().put(DOT_TESTING_BOOLEAN, String.valueOf(Boolean.TRUE));
+        System.getenv().put(DOT_TESTING_FLOAT, String.valueOf(Float.MAX_VALUE));
+        System.getenv().put(DOT_TESTING_STRING_WITH_COMMA, "VALUE1, VALUE2");
+        System.getenv().put(DOT_TESTING_STRING_WITH_SPACES, "VALUE1 VALUE2");
+        System.getenv().put(DOT_TESTING_STRING, "VALUE_ABC");
+        System.getenv().put(UNABLE_TO_READ_VAR, "NOPE");
+    }
+    
+    
+    
+    
+    
+    
     @Test
     public void testing_null_returns() {
 
@@ -51,11 +74,24 @@ public class ConfigTest {
         
     }
     
+    @Test
+    public void testing_notfound_string_returns() {
+
+        try {
+            Config.getStringProperty("no-property");
+            assert(false);
+        }
+        catch(Exception e) {
+            assert(e instanceof NoSuchElementException);
+        }
+
+        
+    }
+
+
     
     @Test
-    public void test_get_integer_from_env() {
-
-
+    public void testing_notfound_int_returns() {
 
         try {
             Config.getIntProperty("no-property");
@@ -66,6 +102,46 @@ public class ConfigTest {
             
         }
  
+        
+    }
+
+    @Test
+    public void testing_notfound_float_returns() {
+
+        try {
+            Config.getFloatProperty("no-property");
+            assert(false);
+        }
+        catch(Exception e) {
+            assert(e instanceof NoSuchElementException);
+            
+        }
+ 
+        
+    }
+    
+
+    @Test
+    public void testing_notfound_booean_returns() {
+
+        try {
+            Config.getBooleanProperty("no-property");
+            assert(false);
+        }
+        catch(Exception e) {
+            assert(e instanceof NoSuchElementException);
+            
+        }
+ 
+        
+    }
+    
+    
+    
+    @Test
+    public void test_get_integer_from_env() {
+
+
         int value =Config.getIntProperty("no-property", -99);
         assert(value==-99);
         
@@ -82,15 +158,6 @@ public class ConfigTest {
     public void test_get_float_from_env() {
 
 
-
-        try {
-            Config.getFloatProperty("no-property");
-            assert(false);
-        }
-        catch(Exception e) {
-            assert(e instanceof NoSuchElementException);
-        }
- 
         float value =Config.getFloatProperty("no-property", 3.14f);
         assert(value==3.14f);
         
@@ -98,7 +165,7 @@ public class ConfigTest {
         value =Config.getFloatProperty(XXX_TESTING_INTEGER, 3.14f);
         assert(value==3.14f);
         
-        // we should get back Integer.MAX_VALUE
+        // we should get back Integer.MAX_VALUE, not the default
         value =Config.getFloatProperty("testing_float",-1f);
         assert(value==Float.MAX_VALUE);
     }
@@ -108,14 +175,6 @@ public class ConfigTest {
     public void test_get_string_from_env() {
 
 
-
-        try {
-            Config.getStringProperty("no-property");
-            assert(false);
-        }
-        catch(Exception e) {
-            assert(e instanceof NoSuchElementException);
-        }
  
         String value =Config.getStringProperty("no-property", TESTING_VALUE);
         assert(value.equals(TESTING_VALUE));
@@ -142,21 +201,7 @@ public class ConfigTest {
     }
     
     
-    
-    private static void setTestEnvVariables() {
-        
-        System.getenv().put(DOT_TESTING_INTEGER, String.valueOf(Integer.MAX_VALUE));
-        System.getenv().put(XXX_TESTING_INTEGER, String.valueOf(Integer.MIN_VALUE));
-        System.getenv().put(DOT_TESTING_LONG, String.valueOf(Long.MAX_VALUE));
-        System.getenv().put(DOT_TESTING_BOOLEAN, String.valueOf(Boolean.TRUE));
-        System.getenv().put(DOT_TESTING_FLOAT, String.valueOf(Float.MAX_VALUE));
-        System.getenv().put(DOT_TESTING_STRING_WITH_COMMA, "VALUE1, VALUE2");
-        System.getenv().put(DOT_TESTING_STRING_WITH_SPACES, "VALUE1 VALUE2");
-        System.getenv().put(DOT_TESTING_STRING, "VALUE_ABC");
-        System.getenv().put(UNABLE_TO_READ_VAR, "NOPE");
-    }
-    
-    
+
     
     
     
