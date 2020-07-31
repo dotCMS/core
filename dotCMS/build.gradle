@@ -166,15 +166,6 @@ dependencies {
     felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
     felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
 
-  /*  felix group: 'org.opensaml',          name: 'opensaml-core',           version: '3.4.5'
-    felix group: 'org.opensaml',          name: 'opensaml-saml-api',       version: '3.4.5'
-    felix group: 'org.opensaml',          name: 'opensaml-security-api',   version: '3.4.5'
-    felix group: 'org.opensaml',          name: 'opensaml-xmlsec-impl',    version: '3.4.5'
-    felix group: 'org.opensaml',          name: 'opensaml-xmlsec-api',     version: '3.4.5'
-    felix group: 'org.opensaml',          name: 'opensaml-security-impl',  version: '3.4.5'
-    felix group: 'org.opensaml',          name: 'opensaml-messaging-impl', version: '3.4.5'
-    felix group: 'org.opensaml',          name: 'opensaml-messaging-api',  version: '3.4.5'*/
-
     felix group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '5.3.3'
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
