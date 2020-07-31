@@ -1338,91 +1338,497 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Test BaseType fields ",
+			"item": [
+				{
+					"name": "RequestPageBaseType_ReturnsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6fff3e00-260e-4748-992c-e351ae010266",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"'PageBaseTypeCollection' includes all fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.PageBaseTypeCollection[0];",
+									"",
+									"    pm.expect(page[\"title\"], 'FAILED:[title]').equal(\"Blogs\");",
+									"    pm.expect(page[\"url\"], 'FAILED:[url]').equal(\"/blog/index\");",
+									"    pm.expect(page.hostFolder.hostName, 'FAILED:[hostFolder.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(page.hostFolder.folderName, 'FAILED:[hostFolder.folderName]').equal(\"blog\");",
+									"    pm.expect(page.template, 'FAILED:[template]').equal(\"64269d16-2710-4919-88ec-3b09c89ea004\");",
+									"    pm.expect(page.showOnMenu.length, 'FAILED:[showOnMenu]').to.eql(0);",
+									"    pm.expect(page[\"sortOrder\"], 'FAILED:[sortOrder]').equal(0);",
+									"    pm.expect(page[\"cachettl\"], 'FAILED:[cachettl]').equal(\"0\");",
+									"    pm.expect(page[\"friendlyName\"], 'FAILED:[friendlyName]').equal(\"Blog\");",
+									"    pm.expect(page[\"redirecturl\"], 'FAILED:[redirecturl]').equal(null);",
+									"    pm.expect(page.httpsreq.length, 'FAILED:[httpsreq]').to.eql(0);",
+									"    pm.expect(page[\"seodescription\"], 'FAILED:[seodescription]').equal(\"Help understanding your financial future and hoe Quest Financial and our advisors and help you plan for tomorrow with confidence\");",
+									"    pm.expect(page[\"seokeywords\"], 'FAILED:[seokeywords]').equal(\"Financial Blog\");",
+									"    pm.expect(page[\"pagemetadata\"], 'FAILED:[pagemetadata]').equal(null); ",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  PageBaseTypeCollection(limit: 1) {\n    title\n    url\n    hostFolder {\n      hostName\n      folderName\n    }\n    template\n    showOnMenu\n    sortOrder\n    cachettl\n    friendlyName\n    redirecturl\n    httpsreq\n    seodescription\n    seokeywords\n    pagemetadata\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithPersonas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9f53bc11-d480-4feb-a011-4e10b9cffd0e",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"personas.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/personas.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports personas"
+					},
+					"response": []
+				},
+				{
+					"name": "RequestPersonaBaseType_ReturnsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "31904990-e291-44ae-9ade-478858cc2979",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"'PersonaBaseTypeCollection' includes all fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.PersonaBaseTypeCollection[0];",
+									"",
+									"    pm.expect(page[\"name\"], 'FAILED:[name]').equal(\"Ocean Enthusiast\");",
+									"    pm.expect(page[\"keyTag\"], 'FAILED:[keyTag]').equal(\"OceanEnthusiast\");",
+									"    pm.expect(page.hostFolder.hostName, 'FAILED:[hostFolder.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(page.hostFolder.folderName, 'FAILED:[hostFolder.folderName]').equal(\"system folder\");",
+									"    pm.expect(page.tags.length, 'FAILED:[tags]').to.eql(4);",
+									"    pm.expect(page[\"description\"], 'FAILED:[description]').equal(\"People who typically vacation around water sports such as surfing, wind surfing, etc.\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  PersonaBaseTypeCollection(limit: 1) {\n    name\n    hostFolder {\n      hostName\n      folderName\n    }\n    keyTag\n    photo {\n      name\n    }\n    tags\n    description\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RequestFileAssetBaseType_ReturnsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "da1864cf-249a-45ec-aba5-c447a32750fd",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"'FileBaseTypeCollection' includes all fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.FileBaseTypeCollection[0];",
+									"",
+									"    pm.expect(page[\"title\"], 'FAILED:[title]').equal(\"plugins.css\");",
+									"    pm.expect(page.hostFolder.hostName, 'FAILED:[hostFolder.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(page.hostFolder.folderName, 'FAILED:[hostFolder.folderName]').equal(\"plugins\");",
+									"    pm.expect(page.fileName, 'FAILED:[fileName]').equal(\"plugins.css\");",
+									"    pm.expect(page.fileAsset.name, 'FAILED:[fileAsset.name]').equal(\"plugins.css\");",
+									"    pm.expect(page.metaData[0].key, 'FAILED:[metaData.key]').equal(\"content\");",
+									"    pm.expect(page.metaData[0].value, 'FAILED:[metaData.value]').equal(\"/*!\\n * Bootstrap v4.1.0 (https://getbootstrap.com/)\\n * Copyright 2011-2018 The Bootstrap Authors\\n * Copyright 2011-2018 Twitter, Inc.\\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\\n */:root{--blue: #007bff;--indigo: #6610f2;--purple: #6f42c1;--pink: #e83e8c;--red: #dc3545;--orange: #fd7e14;--yellow: #ffc107;--green: #28a745;--teal: #20c997;--cyan: #17a2b8;--white: #fff;--gray: #6c757d;--gray-dark: #343a40;--primary: #007bff;--secondary: #6c757d;--success: #28a745;--info: #17a2b8;--warning: #ffc107;--danger: #dc3545;--light: #f8f9fa;--dark: #343a40;--breakpoint-xs: 0;--breakpoint-sm: 576px;--breakpoint-md: 768px;--breakpoint-lg: 992px;--breakpoint-xl: 1200px;--font-family-sans-serif: -apple-system, BlinkMacSystemFont, \\\"Segoe UI\\\", Roboto, \\\"Helvetica Neue\\\", Arial, sans-serif, \\\"Apple Color Emoji\\\", \\\"Segoe UI Emoji\\\", \\\"Segoe UI Symbol\\\";--font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, \\\"Liberation Mono\\\", \\\"Courier New\\\", monospace}*,*::before,*::after{box-sizing:border-box}html{font-family:sans-serif;line-height:1.15;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;-ms-overflow-style:scrollbar;-webkit-tap-highlight-color:rgba(0,0,0,0)}@-ms-viewport{width:device-width}article,aside,dialog,figcaption,figure,footer,header,hgroup,main,nav,section{display:block}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,\\\"Segoe UI\\\",Roboto,\\\"Helvetica Neue\\\",Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\",\\\"Segoe UI Symbol\\\";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;text-align:left;background-color:#fff}[tabindex=\\\"-1\\\"]:focus{outline:0 !important}hr{box-sizing:content-box;height:0;overflow:visible}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem}p{margin-top:0;margin-bottom:1rem}abbr[title],abbr[data-original-title]{text-decoration:underline;text-decoration:underline dotted;cursor:help;border-bottom:0}address{margin-bottom:1rem;font-style:normal;line-height:inherit}ol,ul,dl{margin-top:0;margin-bottom:1rem}ol ol,ul ul,ol ul,ul ol{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}dfn{font-style:italic}b,strong{font-weight:bolder}small{font-size:80%}sub,sup{position:relative;font-size:75%;line-height:0;vertical-align:baseline}sub{bottom:-0.25em}sup{top:-0.5em}a{color:#007bff;text-decoration:none;background-color:transparent;-webkit-text-decoration-skip:objects}a:hover{color:#0056b3;text-decoration:underline}a:not([href]):not([tabindex]){color:inherit;text-decoration:none}a:not([href]):not([tabindex]):hover,a:not([href]):not([tabindex]):focus{color:inherit;text-decoration:none}a:not([href]):not([tabindex]):focus{outline:0}pre,code,kbd,samp{font-family:monospace,monospace;font-size:1em}pre{margin-top:0;margin-bottom:1rem;overflow:auto;-ms-overflow-style:scrollbar}figure{margin:0 0 1rem}img{vertical-align:middle;border-style:none}svg:not(:root){overflow:hidden}table{border-collapse:collapse}caption{padding-top:.75rem;padding-bottom:.75rem;color:#6c757d;text-align:left;caption-side:bottom}th{text-align:inherit}label{display:inline-block;margin-bottom:.5rem}button{border-radius:0}button:focus{outline:1px dotted;outline:5px auto -webkit-focus-ring-color}input,button,select,optgroup,textarea{margin:0;font-family:inherit;font-size:inherit;line-height:inherit}button,input{overflow:visible}button,select{text-transform:none}button,html [type=button],[type=reset],[type=submit]{-webkit-appearance:button}button::-moz-focus-inner,[type=button]::-moz-focus-inner,[type=reset]::-moz-focus-inner,[type=submit]::-moz-focus-inner{padding:0;border-style:none}input[type=radio],input[type=checkbox]{box-sizing:border-box;padding:0}input[type=date],input[type=time],input[type=datetime-local],input[type=month]{-webkit-appearance:listbox}textarea{overflow:auto;resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{display:block;width:100%;max-width:100%;padding:0;margin-bottom:.5rem;font-size:1.5rem;line-height:inherit;color:inherit;white-space:normal}progress{vertical-align:baseline}[type=number]::-webkit-inner-spin-button,[type=number]::-webkit-outer-spin-button{height:auto}[type=search]{outline-offset:-2px;-webkit-appearance:none}[type=search]::-webkit-search-cancel-button,[type=search]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{font:inherit;-webkit-appearance:button}output{display:inline-block}summary{display:list-item;cursor:pointer}template{display:none}[hidden]{display:none !important}h1,h2,h3,h4,h5,h6,.h1,.h2,.h3,.h4,.h5,.h6{margin-bottom:.5rem;font-family:inherit;font-weight:500;line-height:1.2;color:inherit}h1,.h1{font-size:2.5rem}h2,.h2{font-size:2rem}h3,.h3{font-size:1.75rem}h4,.h4{font-size:1.5rem}h5,.h5{font-size:1.25rem}h6,.h6{font-size:1rem}.lead{font-size:1.25rem;font-weight:300}.display-1{font-size:6rem;font-weight:300;line-height:1.2}.display-2{font-size:5.5rem;font-weight:300;line-height:1.2}.display-3{font-size:4.5rem;font-weight:300;line-height:1.2}.display-4{font-size:3.5rem;font-weight:300;line-height:1.2}hr{margin-top:1rem;margin-bottom:1rem;border:0;border-top:1px solid rg\");",
+									"    pm.expect(page.showOnMenu.length, 'FAILED:[showOnMenu]').to.eql(0);",
+									"    pm.expect(page.sortOrder, 'FAILED:[sortOrder]').to.eql(0);",
+									"    pm.expect(page.description, 'FAILED:[description]').to.eql(plugins);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  FileBaseTypeCollection(limit: 1) {\n    title\n    hostFolder {\n      hostName\n      folderName\n    }\n    fileName\n    fileAsset {\n      name\n    }\n    metaData {\n      key\n      value\n    }\n    showOnMenu\n    sortOrder\n    description\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithKeyValue",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "80116f04-0625-4544-a952-180cd5e78c3a",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"keyvalue.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/keyvalue.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports personas"
+					},
+					"response": []
+				},
+				{
+					"name": "RequestKeyValuetBaseType_ReturnsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5bfea9fd-07c6-4449-8991-56451e38eb0a",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"'FileBaseTypeCollection' includes all fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.KeyValueBaseTypeCollection[0];",
+									"",
+									"    pm.expect(page[\"key\"], 'FAILED:[key]').equal(\"key1\");",
+									"    pm.expect(page[\"value\"], 'FAILED:[key]').equal(\"value1\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  KeyValueBaseTypeCollection(limit: 1) {\n    key\n    value\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
 		{
-			"id": "1c18aa8a-bc14-4812-8e9c-9644f9ea77e0",
+			"id": "c37bbb1e-f148-49d4-aace-d23f163e377b",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "ead4446e-9a97-47da-8fdb-9a1fe6e35368",
+			"id": "6e5ac1ed-72c9-4392-a5f3-ababf92106d2",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "1d33c71e-54fd-45cb-a253-231e9ff10179",
+			"id": "47843f84-fac5-46fb-b4d0-2e096f512e1f",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "6f6b66fe-f5c4-4524-9c28-92bf35c549e2",
+			"id": "82fc25b2-918a-4ded-b6dc-81dc0eccce48",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "a83d773a-d089-4e52-b24f-c16b4ab020dc",
+			"id": "51df93f3-89cb-4a4a-a3b5-8aee49495ebe",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "8d2c94f6-cec3-4875-a901-dddd6e146fd2",
+			"id": "ce592e51-3b9f-4ecd-b8bf-26665ee8c6da",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "0e1f2095-11be-4ccc-a076-06c3babccc01",
+			"id": "e478b8b7-dc4d-432b-a59d-32e8e7ea3360",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "a5393977-ce55-43be-935b-04ebb3fb40ea",
+			"id": "84520856-9924-4b7c-b2bb-a94c20706a81",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "4007d295-e4bf-429a-a304-42d8a3f0eb12",
+			"id": "9749f9ad-8b5e-48ef-90f7-780525f5f999",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "b3d0a2bb-c822-4576-9241-62ac9d79a630",
+			"id": "9a41ba3c-ab1b-4c16-9b47-149afd718da0",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "5cbe87cc-3e04-4f27-b9fb-8f0b56a78032",
+			"id": "67866b7c-ed4f-4ebd-8b92-ff21b0892c63",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "360eedc6-b3cc-41a1-b87c-6cb3b0cdec2e",
+			"id": "1f5e10f6-6f53-4358-ab81-8b5fba348dbf",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "3a627dd4-6dea-4a5b-a08c-ddcbc24b9467",
+			"id": "034108c3-9688-4af7-9fb2-e22c1305167a",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "9a7da04b-e3ac-4794-bc7e-0b62ebd06fff",
+			"id": "cfd563f3-d199-47c4-8b35-a0fc49bf10f0",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "9507d2bb-eb17-41ff-a0bc-55fe8b828592",
+			"id": "8b6a44b9-df9b-4b5a-9bc5-fdd4296578b8",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "a662a647-b5fc-4527-b1ee-438adcc008c0",
+			"id": "bb004765-8201-4656-81a0-cb54453604da",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "c8212d4f-5e33-4a33-a286-b653a2378d9a",
+			"id": "96b241eb-9744-4b3e-b670-29b985ccc979",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
