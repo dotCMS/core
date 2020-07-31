@@ -1063,7 +1063,7 @@ public class AppsAPIImplTest {
         api.deleteSecrets(appKey, site, admin);
 
         final Map<String, List<AppSecrets>> secretAppsBySiteId = api.importSecrets(exportSecretsFile.toPath(), key, admin);
-        assertEquals(1, secretAppsBySiteId.size());
+        assertTrue(secretAppsBySiteId.size() >= 1);
         assertTrue(secretAppsBySiteId.containsKey(site.getIdentifier()));
         final List<AppSecrets> appSecretsBySite = secretAppsBySiteId.get(site.getIdentifier());
         assertFalse(appSecretsBySite.isEmpty());

@@ -38,14 +38,14 @@ public class AppSecrets implements Serializable {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
+    public boolean equals(final Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        final AppSecrets that = (AppSecrets) o;
+        final AppSecrets that = (AppSecrets) object;
         return key.equals(that.key) && this.secrets.equals(that.secrets); //areEqual(this.secrets, that.secrets);
     }
 

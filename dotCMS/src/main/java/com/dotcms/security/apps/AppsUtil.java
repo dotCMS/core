@@ -185,12 +185,11 @@ public class AppsUtil {
         if (keySeed.length() > maxSize) {
             keySeed = keySeed.substring(0, maxSize);
         } else {
-            final char paddingChar = '_' ;
             final int count = Math.abs(maxSize - keySeed.length());
             final StringBuilder builder = new StringBuilder(keySeed);
             if (count > 0) {
                 for (int i = 1; i <= count; i++) {
-                    builder.append(paddingChar);
+                    builder.append((char)i);
                 }
             }
             keySeed = builder.toString();

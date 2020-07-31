@@ -4,9 +4,7 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.api.MultiPartUtils;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
@@ -54,7 +52,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import jersey.repackaged.com.google.common.collect.Sets;
 import jersey.repackaged.com.google.common.collect.Sets.SetView;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -65,7 +62,6 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
  */
 class AppsHelper {
 
-    public static final String APPS_SECRETS_EXPORT_DEFAULT_PASSWORD = "APPS_SECRETS_EXPORT_DEFAULT_PASSWORD";
     private final AppsAPI appsAPI;
     private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
@@ -712,7 +708,7 @@ class AppsHelper {
     }
 
     /**
-     *
+     * Secrets export
      * @param form
      * @param user
      * @return
@@ -720,10 +716,10 @@ class AppsHelper {
      * @throws IOException
      * @throws DotDataException
      */
-    StreamingOutput exportSecrets(final ExportSecretForm form, final User user)
+    InputStream exportSecrets(final ExportSecretForm form, final User user)
             throws DotSecurityException, IOException, DotDataException {
 
-        if(UtilMethods.isNotSet(form.getPassword())){
+        if(isNotSet(form.getPassword())){
            throw new DotDataException("Unable to locate password param.");
         }
         final String password = form.getPassword();
@@ -731,26 +727,14 @@ class AppsHelper {
         final File file = appsAPI
                 .exportSecrets(key, form.isExportAll(), form.getAppKeysBySite(), user);
         try {
-            return outputStream -> {
-                final InputStream is = Files.newInputStream(file.toPath());
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                //read from is to buffer
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-                is.close();
-                //flush OutputStream to write any buffered data to file
-                outputStream.flush();
-                outputStream.close();
-            };
+            return  Files.newInputStream(file.toPath());
         } finally {
             file.delete();
         }
     }
 
     /**
-     *
+     * Secrets import
      * @param multipart
      * @param user
      * @throws IOException

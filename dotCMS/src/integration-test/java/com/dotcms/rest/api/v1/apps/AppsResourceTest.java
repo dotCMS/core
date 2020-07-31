@@ -12,10 +12,12 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -59,15 +61,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.message.internal.OutboundJaxrsResponse;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -123,15 +130,39 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     }
 
-    private FormDataMultiPart createFormDataMultiPart(final String fileName,
-            final InputStream inputStream) {
+    /**
+     * mock a multi-part with a file
+     * @param fileName
+     * @param inputStream
+     * @return
+     */
+    private FormDataMultiPart createFormDataMultiPart(final String fileName, final InputStream inputStream) {
+       return createFormDataMultiPart(fileName, inputStream, null);
+    }
+
+    /**
+     * mock a multipart with file and json
+     * @param fileName
+     * @param inputStream
+     * @param json
+     * @return
+     */
+    private FormDataMultiPart createFormDataMultiPart(final String fileName, final InputStream inputStream, final String json) {
+        final FormDataMultiPart formDataMultiPart = mock(FormDataMultiPart.class);
         final FormDataBodyPart filePart1 = mock(FormDataBodyPart.class);
         when(filePart1.getEntityAs(any(Class.class))).thenReturn(inputStream);
-        final ContentDisposition contentDisposition = mock(ContentDisposition.class);
-        when(contentDisposition.getFileName()).thenReturn(fileName);
-        when(filePart1.getContentDisposition()).thenReturn(contentDisposition);
-        final FormDataMultiPart formDataMultiPart = mock(FormDataMultiPart.class);
+        final ContentDisposition contentDisposition1 = mock(ContentDisposition.class);
+        when(contentDisposition1.getFileName()).thenReturn(fileName);
+        when(filePart1.getContentDisposition()).thenReturn(contentDisposition1);
         when(formDataMultiPart.getFields("file")).thenReturn(Collections.singletonList(filePart1));
+        if(null != json) {
+            final FormDataBodyPart filePart2 = mock(FormDataBodyPart.class);
+            when(filePart2.getEntityAs(any(Class.class))).thenReturn(IOUtils.toInputStream(json));
+            final ContentDisposition contentDisposition2 = mock(ContentDisposition.class);
+            when(contentDisposition2.getParameters()).thenReturn(ImmutableMap.of("name", "json"));
+            when(filePart2.getContentDisposition()).thenReturn(contentDisposition2);
+            when(formDataMultiPart.getBodyParts()).thenReturn(Collections.singletonList(filePart2));
+        }
         return formDataMultiPart;
     }
 
@@ -1244,6 +1275,68 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
 
     }
+
+    /**
+     * Given Scenario: We create secrets then export that particular one then the generated file is used as the input for the import method.
+     * Expected Results: The secrets are imported correctly and replace the same old exiting secrets. No additional secrets are created.
+     * @throws IOException
+     */
+     @Test
+     public void Test_Export_Import() throws IOException {
+         final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                 .stringParam("param1", false,  true)
+                 .stringParam("param2", false,  true)
+                 .withName("import-export-test")
+                 .withDescription("import-export-test")
+                 //We're indicating that extra params are allowed to test required params are still required.
+                 .withExtraParameters(true);
+         final String key = dataGen.getKey();
+         final HttpServletRequest request = mock(HttpServletRequest.class);
+         final HttpServletResponse response = mock(HttpServletResponse.class);
+
+         when(request.getRequestURI()).thenReturn("/baseURL");
+         final String fileName = dataGen.getFileName();
+         final File file = dataGen.nextPersistedDescriptor();
+         try(InputStream inputStream = Files.newInputStream(file.toPath())){
+             final FormDataMultiPart formDataMultiPart = createFormDataMultiPart(fileName, inputStream);
+             final Response appResponseOk = appsResource.createApp(request, response,formDataMultiPart);
+             Assert.assertNotNull(appResponseOk);
+             Assert.assertEquals(HttpStatus.SC_OK, appResponseOk.getStatus());
+
+             final Response availableAppsResponse = appsResource
+                     .listAvailableApps(request, response, null);
+             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
+             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
+                     .getEntity();
+             final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
+                     .getEntity();
+             assertFalse(integrationViewList.isEmpty());
+
+             final Host site = new SiteDataGen().nextPersisted();
+
+             final String siteId = site.getIdentifier();
+             final Map<String, Input> inputParamMap = ImmutableMap.of(
+              "param1", newInputParam("value".toCharArray()),
+              "param2", newInputParam("value".toCharArray())
+             );
+             final SecretForm secretForm1 = new SecretForm(inputParamMap);
+             final Response createSecretResponse1 = appsResource.createAppSecrets(request, response, key, siteId, secretForm1);
+             Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse1.getStatus());
+
+             final String password = "123456789";
+             ExportSecretForm form = new ExportSecretForm(password,false, ImmutableMap.of(siteId, ImmutableSet.of(key)));
+             final OutboundJaxrsResponse exportResponse = (OutboundJaxrsResponse)appsResource.exportSecrets(request, response, form);
+             final String json = String.format("{ password: \"%s\" }",password);
+             final InputStream entity = (InputStream) exportResponse.getEntity();
+             final File targetFile = File.createTempFile("secrets", ".export");
+             FileUtils.copyInputStreamToFile(entity, targetFile);
+
+             final InputStream exportInputStream = Files.newInputStream(targetFile.toPath());
+             final Response appResponse = appsResource.importSecrets(request, response,createFormDataMultiPart(targetFile.getName(), exportInputStream, json) );
+             Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+
+         }
+     }
 
     /**
      * This basically tests that we can not use the  list endpoint that list available apps

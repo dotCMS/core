@@ -16,6 +16,8 @@ import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -434,6 +436,13 @@ public class AppsResource {
         }
     }
 
+    /**
+     * Secrets export
+     * @param request
+     * @param response
+     * @param exportSecretForm
+     * @return
+     */
     @POST
     @Path("/export")
     @JSONP
@@ -454,8 +463,8 @@ public class AppsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final StreamingOutput streamingOutput = helper.exportSecrets(exportSecretForm, user);
-            return Response.ok(streamingOutput, MediaType.APPLICATION_OCTET_STREAM)
+            final InputStream stream = helper.exportSecrets(exportSecretForm, user);
+            return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM)
                     .header("content-disposition", "attachment; filename=appSecrets.export")
                     .build(); // 200
         } catch (Exception e) {
@@ -465,7 +474,13 @@ public class AppsResource {
         }
     }
 
-
+    /**
+     * Secrets import
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     */
     @POST
     @Path("/import")
     @JSONP

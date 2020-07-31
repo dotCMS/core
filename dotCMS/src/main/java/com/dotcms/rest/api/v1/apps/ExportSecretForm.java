@@ -24,6 +24,7 @@ public class ExportSecretForm extends Validated {
 
     @JsonCreator
     public ExportSecretForm(@JsonProperty("password") final String password, @JsonProperty("exportAll") final boolean exportAll, @JsonProperty("appKeys") final Map<String, Set<String>> appKeysBySite) {
+        super();
         this.password = password;
         this.exportAll = exportAll;
         this.appKeysBySite = appKeysBySite;
