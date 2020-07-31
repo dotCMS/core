@@ -7,7 +7,7 @@ import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.IdentityProviderConfigurationFactory;
 import com.dotcms.saml.SamlAuthenticationService;
-import com.dotcms.saml.SamlException;
+import com.dotcms.saml.DotSamlException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
@@ -31,6 +31,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This endpoint handles the interaction between the IDP callbacks and dotCMS.
+ * - doLogin makes the AuthRequest in order to send the user to the IDP third party login screen.
+ * - processLogin handles the callback from the IDP when the user gets successfully login, it will retrieve the user information from the assertion and based on that proceed to get login into dotcms
+ * - metadata renders the XML metadata.
+ * @author jsanca
+ */
 @Path("/v1/dotsaml")
 public class DotSamlResource implements Serializable {
 
@@ -56,7 +63,14 @@ public class DotSamlResource implements Serializable {
 		this.samlHelper                           = new SAMLHelper(this.samlAuthenticationService);
 	}
 
-	// Login configuration by id
+	/**
+	 * doLogin makes the AuthRequest in order to send the user to the IDP third party login screen.
+	 * It will needs the IDP metadata in order to now the SSO Login endpoint
+	 * @param idpConfigId			{@link String} identifier config (here the host id)
+	 * @param httpServletRequest    {@link HttpServletRequest}
+	 * @param httpServletResponse   {@link HttpServletResponse}
+	 * @return Response
+	 */
 	@GET
 	@Path( "/login/{idpConfigId}" )
 	@JSONP
@@ -96,9 +110,16 @@ public class DotSamlResource implements Serializable {
 
 		final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
 		Logger.debug( this, ()-> message);
-		throw new SamlException(message);
+		throw new DotSamlException(message);
 	}
 
+	/**
+	 * processLogin handles the callback from the IDP when the user gets successfully login, it will retrieve the user information from the assertion and based on that proceed to get login into dotcms
+	 * @param idpConfigId           {@link String} identifier config (here the host id)
+	 * @param httpServletRequest    {@link HttpServletRequest}
+	 * @param httpServletResponse   {@link HttpServletResponse}
+	 * @throws IOException
+	 */
 	@POST
 	@Path("/login/{idpConfigId}")
 	@Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_FORM_URLENCODED})
@@ -122,7 +143,7 @@ public class DotSamlResource implements Serializable {
 					final HttpSession session = httpServletRequest.getSession();
 					if (null == session) {
 
-						throw new SamlException("No session has been created.");
+						throw new DotSamlException("No session has been created.");
 					}
 
 					// Extracts data from the assertion - if it can't process a DotSamlException is thrown
@@ -131,13 +152,13 @@ public class DotSamlResource implements Serializable {
 
 					if (null == attributes) {
 
-						throw new SamlException("User cannot be extracted from Assertion!");
+						throw new DotSamlException("User cannot be extracted from Assertion!");
 					}
 					// Creates the user object and adds a user if it doesn't already exist
 					final User user = this.samlHelper.resolveUser(attributes, identityProviderConfiguration);
 					if (null == user) {
 
-						throw new SamlException("User cannot be extracted from Assertion!");
+						throw new DotSamlException("User cannot be extracted from Assertion!");
 					}
 
 					Logger.debug(this, ()-> "Resolved user: " + user);
@@ -177,6 +198,7 @@ public class DotSamlResource implements Serializable {
 					}
 
 					httpServletResponse.sendRedirect(loginPath);
+					return;
 				}
 			} finally {
 				if (null != identityProviderConfiguration) {
@@ -187,10 +209,16 @@ public class DotSamlResource implements Serializable {
 
 		final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
 		Logger.debug( this, ()-> message);
-		throw new SamlException(message);
+		throw new DotSamlException(message);
 	}
 
-	// Gets metadata configuration by id
+	/**
+	 * Renders the XML metadata.
+	 * @param idpConfigId          {@link String} identifier config (here the host id)
+	 * @param httpServletRequest   {@link HttpServletRequest}
+	 * @param httpServletResponse   {@link HttpServletResponse}
+	 * @throws IOException
+	 */
 	@GET
 	@Path( "/metadata/{idpConfigId}" )
 	@JSONP
@@ -199,8 +227,6 @@ public class DotSamlResource implements Serializable {
 	public void metadata( @PathParam( "idpConfigId" ) final String idpConfigId,
 						  @Context final HttpServletRequest httpServletRequest,
 						  @Context final HttpServletResponse httpServletResponse ) throws IOException {
-
-		boolean noConfig = true;
 
 		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
@@ -212,7 +238,7 @@ public class DotSamlResource implements Serializable {
 
 					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
 					this.samlAuthenticationService.renderMetadataXML(httpServletResponse.getWriter(), identityProviderConfiguration);
-					noConfig = false;
+					return;
 				}
 			} finally {
 				if (null != identityProviderConfiguration) {
@@ -221,12 +247,9 @@ public class DotSamlResource implements Serializable {
 			}
 		}
 
-		if (noConfig) {
-
-			final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
-			Logger.debug(this, () -> message);
-			throw new DoesNotExistException(message);
-		}
+		final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
+		Logger.debug(this, () -> message);
+		throw new DoesNotExistException(message);
 	}
 }
 

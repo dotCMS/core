@@ -13,8 +13,18 @@ import io.vavr.control.Try;
 
 import java.util.Arrays;
 
+/**
+ * This SAML Validator validates the url and the metadata XML.
+ * @author jsanca
+ */
 public class SamlValidator {
 
+    /**
+     * Validates an url
+     * @param fieldName
+     * @param value
+     * @param userId
+     */
     public static void validateURL(final String fieldName, final String value, final String userId) {
 
         boolean validateURL = false;
@@ -35,6 +45,12 @@ public class SamlValidator {
         }
     }
 
+    /**
+     * Validates a XML
+     * @param fieldName
+     * @param sourceXML
+     * @param userId
+     */
     public static void validateXML(final String fieldName, final String sourceXML, final String userId) {
 
         if (null == sourceXML || !XMLUtils.isValidXML(sourceXML)) {

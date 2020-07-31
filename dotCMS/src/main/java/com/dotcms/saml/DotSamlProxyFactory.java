@@ -48,6 +48,10 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
     private SamlConfigurationService  samlConfigurationService;
     private SamlAuthenticationService samlAuthenticationService;
 
+    public DotSamlProxyFactory() {
+        addRedirects();
+    }
+
     private static class SingletonHolder {
 
         private static final DotSamlProxyFactory INSTANCE = new DotSamlProxyFactory();
@@ -58,7 +62,6 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
      */
     public static DotSamlProxyFactory getInstance() {
 
-        addRedirects();
         return DotSamlProxyFactory.SingletonHolder.INSTANCE;
     } // getInstance.
 
@@ -234,7 +237,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
             return this.samlAuthenticationService;
         }
 
-        throw new SamlException("Not any host has been configured as a SAML");
+        throw new DotSamlException("Not any host has been configured as a SAML");
     }
 
     /**

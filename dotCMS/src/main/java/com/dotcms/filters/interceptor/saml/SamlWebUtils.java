@@ -121,7 +121,7 @@ public class SamlWebUtils {
         return uri.startsWith("/dotCMS/login") || uri.startsWith("/application/login");
     }
 
-    public boolean isLogoutRequest(final String requestURI, final String[] logoutPathArray) {
+    public boolean isLogoutRequest(final String requestURI, final String... logoutPathArray) {
 
         Logger.debug(this, ()-> "----------------------------- isLogoutRequest --------------------------------");
         Logger.debug(this, ()-> "- requestURI = " + requestURI);

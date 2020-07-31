@@ -1,13 +1,10 @@
 package com.dotcms.saml;
 
-import org.apache.commons.io.IOUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyPair;
-import java.security.cert.Certificate;
-
+/**
+ * This is a mock to returns hardcoded values and avoid to have an app configured which is is out of testing scope
+ * @author jsanca
+ */
 public class MockIdentityProviderConfigurationFactory implements IdentityProviderConfigurationFactory {
 
 
@@ -72,7 +69,7 @@ public class MockIdentityProviderConfigurationFactory implements IdentityProvide
 
             @Override
             public void destroy() {
-
+                // do nothing
             }
         };
     }
