@@ -342,8 +342,20 @@ public class Config {
 		
 	}
 
-	
-	
+	/**
+	 * this is only here so the test passes
+	 * @param name
+	 * @param defValue
+	 * @param thing
+	 * @return
+	 */
+	@Deprecated
+    public static String getStringProperty(final String name, final String defValue, boolean thing) {
+
+        return getStringProperty(name, defValue);
+        
+    }
+
 	
 	
 	
