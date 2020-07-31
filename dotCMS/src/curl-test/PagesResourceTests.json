@@ -22,7 +22,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"pages.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
@@ -65,7 +65,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/build/src/core/dotCMS/src/curl-test/resources/PageResource/pages.tar.gz"
+									"src": "resources/GraphQL/assets.tar.gz"
 								}
 							],
 							"options": {

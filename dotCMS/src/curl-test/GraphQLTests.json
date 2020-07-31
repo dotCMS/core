@@ -1034,7 +1034,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"pages.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
@@ -1077,7 +1077,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/PageResource/pages.tar.gz"
+									"src": "resources/GraphQL/assets.tar.gz"
 								}
 							],
 							"options": {
@@ -1342,87 +1342,87 @@
 	],
 	"variable": [
 		{
-			"id": "730bb746-a8f0-4ef9-a0cd-a244da6c6a75",
+			"id": "1c18aa8a-bc14-4812-8e9c-9644f9ea77e0",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "c161d5d2-7e3a-4e04-8b7a-2c9ca18e8be3",
+			"id": "ead4446e-9a97-47da-8fdb-9a1fe6e35368",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "a1af15e6-c610-4cea-b695-06402085c9ef",
+			"id": "1d33c71e-54fd-45cb-a253-231e9ff10179",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "ad28b31f-a2e2-4211-87a7-4d84c8ea8864",
+			"id": "6f6b66fe-f5c4-4524-9c28-92bf35c549e2",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "e99e511a-6263-46b9-a669-defdcf2ed374",
+			"id": "a83d773a-d089-4e52-b24f-c16b4ab020dc",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "95d02adc-dd78-4484-8a04-ce5cd0bc8864",
+			"id": "8d2c94f6-cec3-4875-a901-dddd6e146fd2",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "f79d568e-5312-4929-b3cc-27ef8381b026",
+			"id": "0e1f2095-11be-4ccc-a076-06c3babccc01",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "03b82d92-a499-4bfc-87a0-40b02df82e29",
+			"id": "a5393977-ce55-43be-935b-04ebb3fb40ea",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "066859be-291e-413b-a3a7-ea2f428e8de6",
+			"id": "4007d295-e4bf-429a-a304-42d8a3f0eb12",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "ca274e2e-d83b-421f-a2ab-efeccf86a125",
+			"id": "b3d0a2bb-c822-4576-9241-62ac9d79a630",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "bf1e578a-af61-4512-9965-47d5ced3b28f",
+			"id": "5cbe87cc-3e04-4f27-b9fb-8f0b56a78032",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "0e16e200-7d16-48c2-b41b-cb1f40390fa8",
+			"id": "360eedc6-b3cc-41a1-b87c-6cb3b0cdec2e",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "47a7c27c-b704-4c4e-8af0-32b52f750c89",
+			"id": "3a627dd4-6dea-4a5b-a08c-ddcbc24b9467",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "085afc10-0a06-4c30-bd7c-123cc2413986",
+			"id": "9a7da04b-e3ac-4794-bc7e-0b62ebd06fff",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "09b3fc1b-1ad8-421a-bbed-f394fe0a0a67",
+			"id": "9507d2bb-eb17-41ff-a0bc-55fe8b828592",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "54b37820-dd93-4ca4-a7b4-a41a29d88286",
+			"id": "a662a647-b5fc-4527-b1ee-438adcc008c0",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "14913149-047b-4315-9fbc-db67538ae224",
+			"id": "c8212d4f-5e33-4a33-a286-b653a2378d9a",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
