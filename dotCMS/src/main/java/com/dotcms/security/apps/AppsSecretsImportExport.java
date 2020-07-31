@@ -4,13 +4,13 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public class AppSecretsImportExport implements Serializable {
+public class AppsSecretsImportExport implements Serializable {
 
     static final long serialVersionUID = 1L;
 
-    private Map<String, List<AppSecrets>> secrets;
+    private final Map<String, List<AppSecrets>> secrets;
 
-    public AppSecretsImportExport(
+    public AppsSecretsImportExport(
             Map<String, List<AppSecrets>> secrets) {
         this.secrets = secrets;
     }

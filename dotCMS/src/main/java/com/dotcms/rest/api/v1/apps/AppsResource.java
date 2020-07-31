@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -35,7 +34,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 
@@ -463,6 +461,7 @@ public class AppsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
+            //no need to close i'll get closed upon writing the response
             final InputStream stream = helper.exportSecrets(exportSecretForm, user);
             return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM)
                     .header("content-disposition", "attachment; filename=appSecrets.export")

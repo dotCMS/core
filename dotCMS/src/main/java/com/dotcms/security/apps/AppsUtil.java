@@ -16,7 +16,6 @@ import java.security.Key;
 import java.util.ArrayList;
 import java.util.List;
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.io.input.CharSequenceInputStream;
 import org.apache.commons.lang3.ArrayUtils;

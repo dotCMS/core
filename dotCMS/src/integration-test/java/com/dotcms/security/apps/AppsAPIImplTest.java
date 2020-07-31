@@ -8,7 +8,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.AppDescriptorDataGen;
@@ -1063,7 +1062,7 @@ public class AppsAPIImplTest {
         api.deleteSecrets(appKey, site, admin);
 
         final Map<String, List<AppSecrets>> secretAppsBySiteId = api.importSecrets(exportSecretsFile.toPath(), key, admin);
-        assertTrue(secretAppsBySiteId.size() >= 1);
+        assertFalse(secretAppsBySiteId.isEmpty());
         assertTrue(secretAppsBySiteId.containsKey(site.getIdentifier()));
         final List<AppSecrets> appSecretsBySite = secretAppsBySiteId.get(site.getIdentifier());
         assertFalse(appSecretsBySite.isEmpty());

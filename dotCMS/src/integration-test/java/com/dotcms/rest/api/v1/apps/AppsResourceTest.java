@@ -17,7 +17,6 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -61,11 +60,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -1331,10 +1328,11 @@ public class AppsResourceTest extends IntegrationTestBase {
              final File targetFile = File.createTempFile("secrets", ".export");
              FileUtils.copyInputStreamToFile(entity, targetFile);
 
-             final InputStream exportInputStream = Files.newInputStream(targetFile.toPath());
-             final Response appResponse = appsResource.importSecrets(request, response,createFormDataMultiPart(targetFile.getName(), exportInputStream, json) );
-             Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
-
+            try(InputStream exportInputStream = Files.newInputStream(targetFile.toPath())){
+                 final Response appResponse = appsResource.importSecrets(request, response,
+                         createFormDataMultiPart(targetFile.getName(), exportInputStream, json));
+                 Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+             }
          }
      }
 

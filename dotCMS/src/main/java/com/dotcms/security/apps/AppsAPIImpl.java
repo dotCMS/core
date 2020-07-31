@@ -1023,7 +1023,7 @@ public class AppsAPIImpl implements AppsAPI {
             throw new DotSecurityException("Only Admins are allowed to perform an export operation.");
         }
 
-        final AppSecretsImportExport exportedSecrets;
+        final AppsSecretsImportExport exportedSecrets;
         if (exportAll) {
             exportedSecrets = collectSecretsForExport(appKeysByHost(), user);
         } else {
@@ -1057,7 +1057,7 @@ public class AppsAPIImpl implements AppsAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private AppSecretsImportExport collectSecretsForExport(final Map<String, Set<String>> paramAppKeysBySite, final User user)
+    private AppsSecretsImportExport collectSecretsForExport(final Map<String, Set<String>> paramAppKeysBySite, final User user)
             throws DotDataException, DotSecurityException {
         final Map<String, List<AppSecrets>> exportedSecrets = new HashMap<>();
         final Map<String, Set<String>> keysByHost = appKeysByHost();
@@ -1086,7 +1086,7 @@ public class AppsAPIImpl implements AppsAPI {
                 Logger.warn(AppsAPIImpl.class, "An exception occurred collecting the secrets for export", e);
             }
         });
-        return new AppSecretsImportExport(
+        return new AppsSecretsImportExport(
                 exportedSecrets);
     }
 
@@ -1096,7 +1096,7 @@ public class AppsAPIImpl implements AppsAPI {
      * @param file
      * @throws IOException
      */
-    private void writeObject(final AppSecretsImportExport bean, final Path file)
+    private void writeObject(final AppsSecretsImportExport bean, final Path file)
             throws IOException {
         try (OutputStream outputStream = Files.newOutputStream(file)) {
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
@@ -1128,7 +1128,7 @@ public class AppsAPIImpl implements AppsAPI {
         try (OutputStream outputStream = Files.newOutputStream(importFile.toPath())) {
             outputStream.write(decryptedBytes);
         }
-       final AppSecretsImportExport importExport;
+       final AppsSecretsImportExport importExport;
        try {
            importExport = readObject(importFile.toPath());
            return importExport.getSecrets();
@@ -1144,10 +1144,10 @@ public class AppsAPIImpl implements AppsAPI {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    private AppSecretsImportExport readObject(final Path importFile)
+    private AppsSecretsImportExport readObject(final Path importFile)
             throws IOException, ClassNotFoundException {
         try(InputStream inputStream = Files.newInputStream(importFile)){
-            return (AppSecretsImportExport)new ObjectInputStream(inputStream).readObject();
+            return (AppsSecretsImportExport)new ObjectInputStream(inputStream).readObject();
         }
     }
 
