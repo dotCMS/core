@@ -204,7 +204,7 @@ public class ConfigTest {
         
         // this should  work, as we prefix DOT_ to the env variable lookup
         value =Config.getStringArrayProperty("testing_string_with_comma");
-        assert(value.length>1);
+        assert(value.length==2);
         assert(value[1].equals("VALUE2"));
         
         String notArray  =Config.getStringProperty("testing_string_with_comma");
