@@ -119,36 +119,6 @@ jobs:
           else
             echo ::set-env name=jobRun::'false'
           fi
-
-          if [[ ${IS_PR} == false && ${SPECIAL_BRANCH} == true ]]; then
-            PUSH_AND_SPECIAL_BRANCH=true
-          else
-            PUSH_AND_SPECIAL_BRANCH=false
-          fi
-
-          if [[ (! ${COMMIT_MESSG} =~ github-mysql|github-oracle|github-mssql ) || ${COMMIT_MESSG} =~ github-all|github-postgres ]]; then
-            echo ::set-env name=runPostgres::'true'
-          else
-            echo ::set-env name=runPostgres::'false'
-          fi
-
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-mysql ]]; then
-            echo ::set-env name=runMysql::'true'
-          else
-            echo ::set-env name=runMysql::'false'
-          fi
-
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-oracle ]]; then
-            echo ::set-env name=runOracle::'true'
-          else
-            echo ::set-env name=runOracle::'false'
-          fi
-
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-mssql ]]; then
-            echo ::set-env name=runMssql::'true'
-          else
-            echo ::set-env name=runMssql::'false'
-          fi
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
@@ -181,34 +151,7 @@ jobs:
           databaseType: postgres
           PROVIDER_DB_USERNAME: postgres
           PROVIDER_DB_PASSWORD: postgres
-        if: (success() || failure()) && env.jobRun == 'true' && env.runPostgres == 'true'
-      - name: Run Curl Tests - mysql
-        run: |
-          dotcicd/library/pipeline.sh runCurl
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-          databaseType: mysql
-          PROVIDER_DB_USERNAME: mysql
-          PROVIDER_DB_PASSWORD: mysql
-        if: (success() || failure()) && env.jobRun == 'true' && env.runMysql == 'true'
-      - name: Run Curl Tests - oracle
-        run: |
-          dotcicd/library/pipeline.sh runCurl
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-          databaseType: oracle
-          PROVIDER_DB_USERNAME: oracle
-          PROVIDER_DB_PASSWORD: oracle
-        if: false #(success() || failure()) && env.jobRun == 'true' && env.runOracle == 'true'
-      - name: Run Curl Tests - mssql
-        run: |
-          dotcicd/library/pipeline.sh runCurl
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-          databaseType: mssql
-          PROVIDER_DB_USERNAME: sa
-          PROVIDER_DB_PASSWORD: mssqldotCMS2019
-        if: (success() || failure()) && env.jobRun == 'true' && env.runMssql == 'true'
+        if: (success() || failure()) && env.jobRun == 'true'
   run-integration-tests-job:
     name: Integration Tests
     runs-on: ubuntu-latest
