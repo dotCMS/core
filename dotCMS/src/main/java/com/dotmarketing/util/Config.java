@@ -354,11 +354,9 @@ public class Config {
 	 */
 	@Deprecated
     public static String getStringProperty (String name) {
-        String retVal = getStringProperty(name, null);
-        if(null == retVal) {
-            throw new NoSuchElementException("unable to find value for: " + name);
-        }
-        return retVal;
+        String value = getStringProperty(name, null);
+
+        return value;
     }
 
 	/**
@@ -426,9 +424,9 @@ public class Config {
 	public static int getIntProperty (final String name) {
 	    _refreshProperties ();
 	    
-        Integer prop = Try.of(()->props.getInt(envKey(name))).getOrNull();
-        if(prop!=null) {
-            return prop;
+        Integer value = Try.of(()->props.getInt(envKey(name))).getOrNull();
+        if(value!=null) {
+            return value;
         }
 	    
 	    
@@ -437,9 +435,9 @@ public class Config {
 
 	public static long getLongProperty (final String name, final long defaultVal) {
 		_refreshProperties ();
-		Long prop = Try.of(()->props.getLong(envKey(name))).getOrNull();
-		if ( props != null ) {
-			return prop;
+		Long value = Try.of(()->props.getLong(envKey(name))).getOrNull();
+		if ( value != null ) {
+			return value;
 		}
 		return props.getLong(name, defaultVal);
 	}
@@ -452,9 +450,9 @@ public class Config {
 	 */
 	public static int getIntProperty (final String name, final int defaultVal) {
 	    _refreshProperties ();
-        Integer prop = Try.of(()->props.getInt(envKey(name))).getOrNull();
-        if(prop!=null) {
-            return prop;
+        Integer value = Try.of(()->props.getInt(envKey(name))).getOrNull();
+        if(value!=null) {
+            return value;
         }
         
         return props.getInt(name, defaultVal);
@@ -468,9 +466,9 @@ public class Config {
 	public static float getFloatProperty (final String name) {
 	    _refreshProperties ();
 	    
-        Float prop = Try.of(()->props.getFloat(envKey(name))).getOrNull();
-        if(prop!=null) {
-            return prop;
+        Float value = Try.of(()->props.getFloat(envKey(name))).getOrNull();
+        if(value!=null) {
+            return value;
         }
         
 	    
@@ -485,9 +483,9 @@ public class Config {
 	 */
 	public static float getFloatProperty (final String name, final float defaultVal) {
 	    _refreshProperties ();
-        Float prop = Try.of(()->props.getFloat(envKey(name))).getOrNull();
-        if(prop!=null) {
-            return prop;
+        Float value = Try.of(()->props.getFloat(envKey(name))).getOrNull();
+        if(value!=null) {
+            return value;
         }
         return props.getFloat(name, defaultVal);
 	}
@@ -499,9 +497,9 @@ public class Config {
 	@Deprecated
 	public static boolean getBooleanProperty (String name) {
 	    _refreshProperties ();
-        Boolean prop = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
-        if(prop!=null) {
-            return prop;
+        Boolean value = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
+        if(value!=null) {
+            return value;
         }
         return props.getBoolean(name);
 	}
@@ -514,9 +512,9 @@ public class Config {
 	 */
 	public static boolean getBooleanProperty (String name, boolean defaultVal) {
 	    _refreshProperties ();
-        Boolean prop = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
-        if(prop!=null) {
-            return prop;
+        Boolean value = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
+        if(value!=null) {
+            return value;
         }
         return props.getBoolean(name, defaultVal);
 	}

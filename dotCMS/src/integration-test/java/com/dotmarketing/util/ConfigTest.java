@@ -24,6 +24,7 @@ public class ConfigTest {
     
     final static String SIMPLE_TESTING_STRING = "SIMPLE_TESTING_STRING";
     final static String TESTING_VALUE = "TESTING_VALUE";
+    final static String[] TESTING_ARRAY = new String[]{"TESTING_VALUE"};
     final static String NO_VALUE = "NO_VALUE";
     final static String DOT_TESTING_STRING_WITH_COMMA ="DOT_TESTING_STRING_WITH_COMMA";
     final static String DOT_TESTING_STRING_WITH_SPACES ="DOT_TESTING_STRING_WITH_SPACES";
@@ -43,7 +44,7 @@ public class ConfigTest {
         System.getenv().put(DOT_TESTING_LONG, String.valueOf(Long.MAX_VALUE));
         System.getenv().put(DOT_TESTING_BOOLEAN, String.valueOf(Boolean.TRUE));
         System.getenv().put(DOT_TESTING_FLOAT, String.valueOf(Float.MAX_VALUE));
-        System.getenv().put(DOT_TESTING_STRING_WITH_COMMA, "VALUE1, VALUE2");
+        System.getenv().put(DOT_TESTING_STRING_WITH_COMMA, "VALUE1,VALUE2");
         System.getenv().put(DOT_TESTING_STRING_WITH_SPACES, "VALUE1 VALUE2");
         System.getenv().put(DOT_TESTING_STRING, "VALUE_ABC");
         System.getenv().put(UNABLE_TO_READ_VAR, "NOPE");
@@ -51,6 +52,14 @@ public class ConfigTest {
     
     
     
+    @Test
+    public void testing_string_with_comma() {
+
+        String value = Config.getStringProperty("TESTING_STRING_WITH_COMMA");
+        assert(value.equals(Config.getStringProperty("testing.String.with_comma")));
+
+        
+    }
     
     
     
@@ -77,13 +86,10 @@ public class ConfigTest {
     @Test
     public void testing_notfound_string_returns() {
 
-        try {
-            Config.getStringProperty("no-property");
-            assert(false);
-        }
-        catch(Exception e) {
-            assert(e instanceof NoSuchElementException);
-        }
+
+        assert(Config.getStringProperty("no-property") ==null);
+  
+
 
         
     }
@@ -188,6 +194,22 @@ public class ConfigTest {
 
     }
     
+    @Test
+    public void test_get_string_array_from_env() {
+
+
+ 
+        String[] value =Config.getStringArrayProperty("no-property", TESTING_ARRAY);
+        assertArrayEquals(value, TESTING_ARRAY);
+        
+        // this should  work, as we prefix DOT_ to the env variable lookup
+        value =Config.getStringArrayProperty("testing_string_with_comma");
+        assert(value.length>1);
+        assert(value[1].equals("VALUE2"));
+        
+        String notArray  =Config.getStringProperty("testing_string_with_comma");
+        assertEquals(notArray, "VALUE1,VALUE2");
+    }
     
     
     /*
