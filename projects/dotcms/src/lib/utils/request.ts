@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import { DotCMSConfigurationParams, DotAppHttpRequestParams } from '../models';
 
 function getQueryParams(language: string, hostId: string): string {
-    let result = '?';
+    let result = language || hostId ? '?' : '';
 
     if (language) {
         result += `language_id=${language}`;
