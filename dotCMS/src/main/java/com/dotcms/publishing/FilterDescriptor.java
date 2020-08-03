@@ -85,6 +85,28 @@ public class FilterDescriptor {
         this.key = key;
     }
 
+    public void validate() throws DotDataValidationException {
+
+        final List<String> errors = new ArrayList<>();
+
+        if(isNotSet(getTitle())){
+            errors.add("The required field `Title` isn't set on the incoming file.");
+        }
+
+        if(isNotSet(getRoles())){
+            errors.add("The required field `Roles` isn't set on the incoming file.");
+        }
+
+        if(!isSet(getFilters())){
+            errors.add("The required field `Filters` isn't set on the incoming file.");
+        }
+
+        if(!errors.isEmpty()){
+            throw new DotDataValidationException(String.join(" \n", errors));
+        }
+
+    }
+
     @Override
     public String toString() {
         return "FilterDescriptor{" +
