@@ -21,6 +21,7 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
 import com.dotcms.util.transform.StringToEntityTransformer;
 import com.dotmarketing.business.APILocator;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import io.vavr.control.Try;
 
@@ -343,12 +344,14 @@ public class Config {
 	}
 
 	/**
-	 * this is only here so the test passes
+	 * this is only here so the old tests pass
+	 * 
 	 * @param name
 	 * @param defValue
 	 * @param thing
 	 * @return
 	 */
+	@VisibleForTesting
 	@Deprecated
     public static String getStringProperty(final String name, final String defValue, boolean thing) {
 
