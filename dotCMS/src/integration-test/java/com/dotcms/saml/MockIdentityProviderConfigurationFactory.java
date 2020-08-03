@@ -5,6 +5,7 @@ package com.dotcms.saml;
  * This is a mock to returns hardcoded values and avoid to have an app configured which is is out of testing scope
  * @author jsanca
  */
+
 public class MockIdentityProviderConfigurationFactory implements IdentityProviderConfigurationFactory {
 
 

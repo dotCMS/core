@@ -77,8 +77,8 @@ public class DotSamlResource implements Serializable {
 	@NoCache
 	@Produces( { MediaType.APPLICATION_JSON, "application/javascript" } )
 	public Response doLogin(@PathParam( "idpConfigId" ) final String idpConfigId,
-						  @Context final HttpServletRequest httpServletRequest,
-						  @Context final HttpServletResponse httpServletResponse) {
+							@Context final HttpServletRequest httpServletRequest,
+							@Context final HttpServletResponse httpServletResponse) {
 
 		IdentityProviderConfiguration identityProviderConfiguration = null;
 
@@ -125,8 +125,8 @@ public class DotSamlResource implements Serializable {
 	@Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_FORM_URLENCODED})
 	@NoCache
 	public void processLogin(@PathParam("idpConfigId") final String idpConfigId,
-					  @Context final HttpServletRequest httpServletRequest,
-					  @Context final HttpServletResponse httpServletResponse) throws IOException {
+							 @Context final HttpServletRequest httpServletRequest,
+							 @Context final HttpServletResponse httpServletResponse) throws IOException {
 
 		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
@@ -252,4 +252,3 @@ public class DotSamlResource implements Serializable {
 		throw new DoesNotExistException(message);
 	}
 }
-

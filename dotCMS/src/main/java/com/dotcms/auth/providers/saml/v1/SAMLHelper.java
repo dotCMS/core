@@ -2,10 +2,10 @@ package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
+import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.SamlAuthenticationService;
-import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.SamlName;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -455,8 +455,8 @@ public class SAMLHelper {
             final String log = new Date() + ": SAML login request for Site '" + host.getHostname() + "' with IdP ID: "
                     + identityProviderConfiguration.getId() + " (" + env + ") from " + request.getRemoteAddr();
 
-            // “$TIMEDATE: SAML login request for $host (frontend|backend)from
-            // $REQUEST_ADDR”
+            // $TIMEDATE: SAML login request for $host (frontend|backend)from
+            // $REQUEST_ADDR
             SecurityLogger.logInfo(SecurityLogger.class, this.getClass() + " - " + log);
             Logger.debug(this, ()-> log);
         } catch (Exception e) {
