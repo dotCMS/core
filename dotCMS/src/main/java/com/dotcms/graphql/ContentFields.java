@@ -30,7 +30,12 @@ import graphql.schema.GraphQLTypeReference;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ContentFields {
+/**
+ * Utility class that defines and returns the available fields for the {@link InterfaceType#CONTENTLET}
+ */
+public final class ContentFields {
+
+    private ContentFields() {}
 
     public static Map<String, TypeFetcher> getContentFields() {
         final Map<String, TypeFetcher> contentFields = new HashMap<>();
