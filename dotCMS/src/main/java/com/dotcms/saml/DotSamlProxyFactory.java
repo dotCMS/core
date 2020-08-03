@@ -144,8 +144,8 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
                             Logger.info(this, "SAML Osgi Bundle has been started");
                         } catch (Exception e) {
-                            Logger.error(this.getClass(),
-                                    String.format("Failure retrieving OSGI Service [%s] in bundle [%s]",
+                            Logger.warnAndDebug(this.getClass(),
+                                    String.format("Failure retrieving OSGI Service [%s] in bundle [%s]:",
                                             SamlServiceBuilder.class,
                                             OSGIConstants.BUNDLE_NAME_DOTCMS_SAML), e);
                         }
