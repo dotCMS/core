@@ -1,7 +1,13 @@
 package com.dotcms.publishing;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.util.UtilMethods.isSet;
+
+import com.dotmarketing.exception.DotDataValidationException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +34,13 @@ public class FilterDescriptor {
     private final boolean defaultFilter;
     private final String roles;
     private final Map<String,Object> filters;
+    public static final String DEPENDENCIES_KEY = "dependencies";
+    public static final String RELATIONSHIPS_KEY = "relationships";
+    public static final String EXCLUDE_CLASSES_KEY = "excludeClasses";
+    public static final String EXCLUDE_DEPENDENCY_CLASSES_KEY = "excludeDependencyClasses";
+    public static final String EXCLUDE_QUERY_KEY = "excludeQuery";
+    public static final String EXCLUDE_DEPENDENCY_QUERY_KEY = "excludeDependencyQuery";
+    public static final String FORCE_PUSH_KEY = "forcePush";
 
     /**
      * This constructor isn't used by the object mapper that reads the yml files.
