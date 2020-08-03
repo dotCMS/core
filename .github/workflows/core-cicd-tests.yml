@@ -6,6 +6,7 @@ on:
       - master
       - release-*
       - test-*
+      - mssql-its-fix
 jobs:
   run-integration-tests-job:
     name: Integration Tests
@@ -65,6 +66,7 @@ jobs:
             PUSH_AND_SPECIAL_BRANCH=false
           fi
 
+          echo ::set-env name=jobRun::'true'
           echo ::set-env name=runPostgres::'false'
           echo ::set-env name=runMysql::'false'
           echo ::set-env name=runOracle::'false'
