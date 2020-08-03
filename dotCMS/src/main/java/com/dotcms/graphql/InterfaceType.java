@@ -48,7 +48,7 @@ public enum InterfaceType {
     FORM(FormContentType.class),
     DOTASSET(DotAssetContentType.class);
 
-    final private Class<? extends ContentType> baseContentType;
+    private final Class<? extends ContentType> baseContentType;
 
     InterfaceType(final Class<? extends ContentType> baseContentType) {
         this.baseContentType = baseContentType;
@@ -56,7 +56,7 @@ public enum InterfaceType {
 
     public static Set<String> CONTENT_INTERFACE_FIELDS = new HashSet<>();
 
-    final private static Map<String, GraphQLInterfaceType> interfaceTypes = new HashMap<>();
+    private static final Map<String, GraphQLInterfaceType> interfaceTypes = new HashMap<>();
 
     public static final String CONTENT_INTERFACE_NAME = "ContentBaseType";
     public static final String FILE_INTERFACE_NAME = "FileBaseType";
