@@ -2076,87 +2076,87 @@
 	],
 	"variable": [
 		{
-			"id": "bdfa427a-8ba8-4f11-9cc6-0a1cd128c645",
+			"id": "234a5eee-fe42-483f-87b4-ed5ef04072af",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "fabbbc02-c5f0-4fb9-aa86-be0d3769eda8",
+			"id": "a8e88b30-d7f5-42ad-b977-c7b55b493cd5",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "923685b0-b04a-4694-b714-cac0173b9e4f",
+			"id": "56a6e0a0-d3c1-4c72-81c6-e6220e249e60",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "d9753917-7418-4b94-8ed7-e0808801fdba",
+			"id": "9ecc4905-471a-46e5-9175-b268548b40fe",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "d72bfd4c-9e71-4043-90cc-734b4dbaeb57",
+			"id": "cd251aa1-c231-4495-8c26-a871c92f33b5",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "d7234405-9c61-48c6-b639-a257c87d0092",
+			"id": "2cbf2230-1958-4580-b2f4-138ea9826972",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "5f02e8df-cdc3-4939-93b8-52117a6386a1",
+			"id": "31c9c853-5fab-4937-8c22-3441e97b9fd3",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "c05b8bff-e66f-4f5d-a768-67280618d380",
+			"id": "71be07d7-ee63-45b8-b31b-e7ab5381c66d",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "f85d45e2-7e2d-4591-8526-97290ec8000c",
+			"id": "c8060676-13cc-4b20-a413-11e91dc601c6",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "43193042-fce9-4952-956e-3e458efc45b8",
+			"id": "3481e1bd-97ac-4813-bff9-0d72e8649ca4",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "e6f2e9f1-59bb-425e-b050-a859e2cc056b",
+			"id": "a5c98c23-ac63-41c7-ae32-5ac2f7abed1b",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "675af3ce-e4d1-45c8-9408-00d6707b48d3",
+			"id": "71ae013b-c948-4dd4-a407-af936fa7fb85",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "8cd065ad-d21b-43c7-8444-6633c87f38af",
+			"id": "3f01bc02-2518-45de-8a7b-37e377d0ff42",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "ee895bac-a864-4532-a5c7-21288aebb78d",
+			"id": "340f835b-53a7-4b5d-8647-6815663f26d3",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "f61bd3b9-5c78-4855-92cc-b538b759c896",
+			"id": "c1e5290d-fb3b-4975-85ad-aef9af1df0c4",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "68c3d5e8-6f21-4ddc-bfd8-7c94c8ea6618",
+			"id": "d06fa6b3-d677-4e92-8af0-33f8d1a3eb94",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "bca9b402-813a-4d1f-9a4c-983c04a43d11",
+			"id": "45c40763-a424-47f2-b2a0-d1496618e95a",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
