@@ -98,7 +98,8 @@ public class LanguagesResource {
                 languageAPI.getAvailableContentLanguages(contentInode, user) :
                 languageAPI.getLanguages();
 
-        return Response.ok(new ResponseEntityView(ImmutableList.copyOf(languages))).build();
+        return Response.ok(new ResponseEntityView(languages.stream().map(LanguageView::new).collect(
+                Collectors.toList()))).build();
     }
 
     /**
