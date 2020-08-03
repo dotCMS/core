@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.EnterpriseType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
+import com.dotcms.contenttype.model.type.ImmutableDotAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFormContentType;
 import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
@@ -114,6 +115,8 @@ public enum InterfaceType {
                 new ContentResolver()));
 
         final Map<String, TypeFetcher> dotAssetFields = new HashMap<>(contentFields);
+        addBaseTypeFields(dotAssetFields, ImmutableDotAssetContentType.builder().name("dummy")
+                .build().requiredFields());
         interfaceTypes.put("DOTASSET", createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()));
     }
 
