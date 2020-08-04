@@ -9,6 +9,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * This bean to read data from the yml file that stores the Push Publishing Filters
@@ -99,6 +100,19 @@ public class FilterDescriptor {
 
         if(!isSet(getFilters())){
             errors.add("The required field `Filters` isn't set on the incoming file.");
+        }
+
+        final List <String> listOfPossibleFilters = new ArrayList<>();
+        listOfPossibleFilters.add(DEPENDENCIES_KEY);
+        listOfPossibleFilters.add(RELATIONSHIPS_KEY);
+        listOfPossibleFilters.add(EXCLUDE_CLASSES_KEY);
+        listOfPossibleFilters.add(EXCLUDE_DEPENDENCY_CLASSES_KEY);
+        listOfPossibleFilters.add(EXCLUDE_QUERY_KEY);
+        listOfPossibleFilters.add(EXCLUDE_DEPENDENCY_QUERY_KEY);
+        listOfPossibleFilters.add(FORCE_PUSH_KEY);
+
+        if(!getFilters().keySet().stream().allMatch(element -> listOfPossibleFilters.contains(element))){
+            errors.add("The field `Filters` has a property that is not expected. Possible Properties: " + listOfPossibleFilters.toString());
         }
 
         if(!errors.isEmpty()){
