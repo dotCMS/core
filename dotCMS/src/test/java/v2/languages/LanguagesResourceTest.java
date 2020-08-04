@@ -42,7 +42,7 @@ public class LanguagesResourceTest {
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
         final Response response = languagesResource.list(request, httpServletResponse, null);
 
-        assertEquals(languages, ((ResponseEntityView) response.getEntity()).getEntity());
+        assertEquals(languages.size(), ((List) ((ResponseEntityView) response.getEntity()).getEntity()).size());
     }
 
     @Test
@@ -62,7 +62,7 @@ public class LanguagesResourceTest {
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
         final Response response = languagesResource.list(request, httpServletResponse, "2");
 
-        assertEquals(languages, ((ResponseEntityView) response.getEntity()).getEntity());
+        assertEquals(languages.size(), ((List) ((ResponseEntityView) response.getEntity()).getEntity()).size());
     }
 
     @Test(expected = DotDataException.class)
