@@ -164,7 +164,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                     }
                 } else {
 
-                    Logger.info(this, "No idpConfig for site '" + request.getServerName()
+                    Logger.debug(this, ()-> "No idpConfig for site '" + request.getServerName()
                             + "'. No SAML filtering for this request: " + request.getRequestURI());
                 }
             }
