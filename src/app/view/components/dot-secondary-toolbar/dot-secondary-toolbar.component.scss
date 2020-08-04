@@ -1,7 +1,6 @@
 @import "variables";
 
 :host {
-
     .dot-secondary-toolbar__main,
     .dot-secondary-toolbar__lower:empty {
         display: none;
@@ -16,7 +15,6 @@
 
     .dot-secondary-toolbar__lower {
         display: flex;
-        height: $dot-secondary-toolbar-height;
         padding: 0 $basic-padding * 2;
     }
 
@@ -31,6 +29,17 @@
         .lower-toolbar-right {
             align-items: center;
             display: flex;
+        }
+
+        .lower-toolbar-left,
+        .lower-toolbar-right {
+            height: $dot-secondary-toolbar-height;
+        }
+
+        @media only screen and (max-width: $screen-device-container-max) {
+            .lower-toolbar-right {
+                flex-flow: row-reverse;
+            }
         }
     }
 }

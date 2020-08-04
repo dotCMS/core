@@ -87,6 +87,7 @@ $screen-xs-max: ($screen-sm-min - 1);
 $screen-sm-max: ($screen-md-min - 1);
 $screen-md-max: ($screen-lg-min - 1);
 $screen-lg-max: ($screen-xl-min - 1);
+$screen-device-container-max: 1545px;
 
 // .container size
 $container-md: (680px + $gutter-width);

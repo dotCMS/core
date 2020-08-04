@@ -11,7 +11,6 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
 import { mockDotDevices } from '../../../test/dot-device.mock';
 import { DotDevice } from '@models/dot-device/dot-device.model';
-import { Dropdown } from 'primeng/primeng';
 import { of } from 'rxjs/internal/observable/of';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
@@ -31,7 +30,6 @@ describe('DotDeviceSelectorComponent', () => {
     let deHost: DebugElement;
     let dotDeviceService;
     let component: DotDeviceSelectorComponent;
-    // let fixture: ComponentFixture<DotDeviceSelectorComponent>;
     let de: DebugElement;
 
     const defaultDevice: DotDevice = {
@@ -108,12 +106,6 @@ describe('DotDeviceSelectorComponent', () => {
         expect(component.options.length).toEqual(2);
         expect(component.options[0]).toEqual(defaultDevice);
         expect(component.options[1]).toEqual(devicesMock[0]);
-    });
-
-    it('should set fixed width to dropdown', () => {
-        fixtureHost.detectChanges();
-        const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
-        expect(pDropDown.style).toEqual({ width: '120px' });
     });
 
     it('should reload options when value change', () => {

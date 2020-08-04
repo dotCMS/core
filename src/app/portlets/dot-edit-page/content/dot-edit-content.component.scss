@@ -27,8 +27,9 @@ dot-whats-changed,
     width: 100%;
 }
 
-.dot-edit__page-wrapper--deviced {
-    padding: $basic-padding * 3 0;
+.device-info {
+    align-self: center;
+    padding: $basic-padding 0;
 }
 
 .dot-edit__device-wrapper {
@@ -79,7 +80,7 @@ dot-whats-changed,
         }
     }
 
-    .dot-edit__iframe-wrapper{
+    .dot-edit__iframe-wrapper {
         display: flex;
         flex-grow: 1;
         flex-direction: column;

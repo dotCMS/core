@@ -19,6 +19,9 @@
             [disabled]="disabled"
             [isEditMode]="isEditMode"
             [persona]="persona"
+            [pTooltip]="!disabled ? persona?.name || ('modes.persona.no.persona' | dm) : ''"
+            tooltipPosition="bottom"
+            appendTo="target"
             (click)="!disabled && searchableDropdown.toggleOverlayPanel($event)"
         ></dot-persona-selected-item>
     </ng-template>

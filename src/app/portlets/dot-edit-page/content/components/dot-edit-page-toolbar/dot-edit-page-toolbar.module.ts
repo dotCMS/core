@@ -6,7 +6,6 @@ import { FormsModule } from '@angular/forms';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
-import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -21,7 +20,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DotEditPageViewAsControllerModule,
         DotEditPageStateControllerModule,
         DotSecondaryToolbarModule,
-        DotGlobalMessageModule,
         FormsModule,
         ToolbarModule,
         DotPipesModule

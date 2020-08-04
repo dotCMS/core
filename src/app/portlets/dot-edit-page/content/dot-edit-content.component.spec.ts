@@ -46,6 +46,7 @@ import { DotPageMode, DotPageContainer, DotPageContent } from '../shared/models'
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 
 @Component({
     selector: 'dot-global-message',
@@ -194,7 +195,8 @@ describe('DotEditContentComponent', () => {
                             }
                         }
                     }
-                }
+                },
+                DotMessageDisplayService
             ]
         });
 

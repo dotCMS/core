@@ -47,9 +47,23 @@ p-inputSwitch {
         .ui-state-disabled .ui-inputswitch-slider:after {
             color: $white;
         }
+
+        .ui-tooltip {
+            display: none !important;
+        }
     }
 
     &.warn ::ng-deep .ui-inputswitch-slider:after {
         color: $orange;
+    }
+}
+
+@media only screen and (max-width: $screen-device-container-max) {
+    p-inputSwitch ::ng-deep .ui-tooltip {
+        display: inline-block !important;
+    }
+
+    dot-edit-page-lock-info {
+        display: none;
     }
 }

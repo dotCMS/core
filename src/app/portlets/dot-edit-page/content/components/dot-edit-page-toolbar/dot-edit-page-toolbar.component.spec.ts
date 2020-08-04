@@ -19,7 +19,6 @@ import { FormsModule } from '@angular/forms';
 import { Observable, of } from 'rxjs';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
-import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { SiteService, LoginService } from 'dotcms-js';
 import { SiteServiceMock } from '@tests/site-service.mock';
@@ -27,6 +26,9 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { mockDotPersona } from '@tests/dot-persona.mock';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -52,6 +54,8 @@ describe('DotEditPageToolbarComponent', () => {
     let de: DebugElement;
     let deHost: DebugElement;
     let dotLicenseService: DotLicenseService;
+    let dotEventsService: DotEventsService;
+    let dotMessageDisplayService: DotMessageDisplayService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -65,7 +69,6 @@ describe('DotEditPageToolbarComponent', () => {
                 ToolbarModule,
                 DotEditPageViewAsControllerModule,
                 DotEditPageStateControllerModule,
-                DotGlobalMessageModule,
                 DotEditPageInfoModule,
                 DotEditPageWorkflowsActionsModule
             ],
@@ -89,7 +92,9 @@ describe('DotEditPageToolbarComponent', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
-                }
+                },
+                DotMessageDisplayService,
+                DotEventsService
             ]
         });
     }));
@@ -103,6 +108,8 @@ describe('DotEditPageToolbarComponent', () => {
         component = de.componentInstance;
 
         dotLicenseService = de.injector.get(DotLicenseService);
+        dotEventsService = de.injector.get(DotEventsService);
+        dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
     });
 
     describe('elements', () => {
@@ -114,9 +121,6 @@ describe('DotEditPageToolbarComponent', () => {
             const editToolbar = de.query(By.css('dot-secondary-toolbar'));
             const editPageInfo = de.query(
                 By.css('dot-secondary-toolbar .main-toolbar-left dot-edit-page-info')
-            );
-            const globalMessage = de.query(
-                By.css('dot-secondary-toolbar .main-toolbar-right dot-global-message')
             );
             const editCancelBtn = de.query(
                 By.css('dot-secondary-toolbar .main-toolbar-right .edit-page-toolbar__cancel')
@@ -137,7 +141,6 @@ describe('DotEditPageToolbarComponent', () => {
             );
             expect(editToolbar).toBeDefined();
             expect(editPageInfo).toBeDefined();
-            expect(globalMessage).toBeDefined();
             expect(editCancelBtn).toBeDefined();
             expect(editWorkflowActions).toBeDefined();
             expect(editStateController).toBeDefined();
@@ -254,6 +257,7 @@ describe('DotEditPageToolbarComponent', () => {
 
         beforeEach(() => {
             spyOn(component.whatschange, 'emit');
+            spyOn(dotMessageDisplayService, 'push');
 
             componentHost.pageState.state.mode = DotPageMode.PREVIEW;
             delete componentHost.pageState.viewAs.persona;
@@ -271,6 +275,19 @@ describe('DotEditPageToolbarComponent', () => {
             whatsChangedElem.triggerEventHandler('onChange', false);
             expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+        });
+
+        it('should set the value of the message to DotMessageDisplayService with the corresponding data', () => {
+            dotEventsService.notify('dot-global-message', {
+                value: 'test',
+                type: DotMessageSeverity.SUCCESS
+            });
+            expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
+                life: 3000,
+                severity: DotMessageSeverity.SUCCESS,
+                type: DotMessageType.SIMPLE_MESSAGE,
+                message: 'test'
+            });
         });
 
         describe('whats change on state change', () => {

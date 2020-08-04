@@ -2,7 +2,6 @@
 @import "primeng-theme/utils/theme-variables";
 @import "primeng-theme/utils/extends";
 
-
 :host {
     display: flex;
     align-items: center;
@@ -10,6 +9,7 @@
     &::ng-deep {
         .ui-dropdown {
             box-shadow: none;
+            width: 120px !important;
         }
     }
 
@@ -17,6 +17,21 @@
         &::ng-deep dot-icon i,
         label {
             color: $field-disabled-color;
+        }
+    }
+
+    @media only screen and (max-width: $screen-device-container-max) {
+        ::ng-deep {
+            p-dropdown .ui-dropdown {
+                width: 10px !important;
+
+                label {
+                    display: none;
+                }
+            }
+            label {
+                display: none;
+            }
         }
     }
 }

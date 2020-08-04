@@ -32,10 +32,14 @@ import { DotPageStateService } from '../../services/dot-page-state/dot-page-stat
 import { DotPageStateServiceMock } from '@tests/dot-page-state.service.mock';
 import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
 import { DotPersonalizeServiceMock } from '@tests/dot-personalize-service.mock';
+import { TooltipModule } from 'primeng/primeng';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
     selector: 'dot-test-host',
-    template: `<dot-edit-page-view-as-controller [pageState]="pageState"></dot-edit-page-view-as-controller>`
+    template: `<dot-edit-page-view-as-controller
+        [pageState]="pageState"
+    ></dot-edit-page-view-as-controller>`
 })
 class DotTestHostComponent implements OnInit {
     @Input()
@@ -86,9 +90,9 @@ class MockDotLanguageSelectorComponent {
     selected = new EventEmitter<DotLanguage>();
 }
 
-
 const messageServiceMock = new MockDotMessageService({
-    'editpage.viewas.previewing': 'Previewing'
+    'editpage.viewas.previewing': 'Previewing',
+    'editpage.viewas.default.device': 'Default Device'
 });
 
 describe('DotEditPageViewAsControllerComponent', () => {
@@ -111,7 +115,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
                 MockDotDeviceSelectorComponent,
                 MockDotLanguageSelectorComponent
             ],
-            imports: [BrowserAnimationsModule],
+            imports: [BrowserAnimationsModule, TooltipModule, DotPipesModule],
             providers: [
                 DotLicenseService,
                 {
@@ -230,8 +234,12 @@ describe('DotEditPageViewAsControllerComponent', () => {
             // });
         });
 
-        it('should have Device selector', () => {
+        it('should have Device selector with tooltip', () => {
+            const deviceSelectorDe =  de.query(By.css('dot-device-selector'));
             expect(deviceSelector).not.toBeNull();
+            expect(deviceSelectorDe.attributes.appendTo).toBe('target');
+            expect(deviceSelectorDe.attributes['ng-reflect-text']).toBe('Default Device');
+            expect(deviceSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
         });
 
         it('should emit changes in Device', () => {
@@ -247,7 +255,10 @@ describe('DotEditPageViewAsControllerComponent', () => {
         });
 
         it('should have Language selector', () => {
+            const languageSelectorDe =  de.query(By.css('dot-language-selector'));
             expect(languageSelector).not.toBeNull();
+            expect(languageSelectorDe.attributes.appendTo).toBe('target');
+            expect(languageSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
         });
 
         it('should emit changes in Language', () => {
@@ -269,7 +280,8 @@ describe('DotEditPageViewAsControllerComponent', () => {
         });
 
         it('should propagate the values to the selector components on init', () => {
-            componentHost.pageState = new DotPageRenderState(mockUser,
+            componentHost.pageState = new DotPageRenderState(
+                mockUser,
                 new DotPageRender({
                     ...mockDotRenderedPage,
                     viewAs: mockDotEditPageViewAs
@@ -282,20 +294,6 @@ describe('DotEditPageViewAsControllerComponent', () => {
 
             // expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
             // expect(personaSelector.pageId).toEqual(mockDotRenderedPage.page.identifier);
-        });
-
-        it('should show device information', () => {
-            componentHost.pageState = new DotPageRenderState(mockUser,
-                new DotPageRender({
-                    ...mockDotRenderedPage,
-                    viewAs: mockDotEditPageViewAs
-                })
-            );
-            fixtureHost.detectChanges();
-            const label = de.query(By.css('.device-info__label'));
-            const content = de.query(By.css('.device-info__content'));
-            expect(label.nativeElement.textContent.trim()).toEqual('Previewing:');
-            expect(content.nativeElement.textContent.trim()).toEqual('iphone - 200 x 100');
         });
     });
 });

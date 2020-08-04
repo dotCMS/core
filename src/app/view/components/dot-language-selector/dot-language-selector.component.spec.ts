@@ -7,7 +7,6 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DebugElement, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { mockDotLanguage } from '../../../test/dot-language.mock';
-import { Dropdown } from 'primeng/primeng';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
@@ -31,11 +30,9 @@ class TestHostComponent {
 
 describe('DotLanguageSelectorComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
-    // let componentHost: TestHostComponent;
     let deHost: DebugElement;
     let dotLanguagesService: DotLanguagesService;
     let component: DotLanguageSelectorComponent;
-    // let fixture: ComponentFixture<DotLanguageSelectorComponent>;
     let de: DebugElement;
 
     beforeEach(() => {
@@ -56,7 +53,6 @@ describe('DotLanguageSelectorComponent', () => {
 
         fixtureHost = DOTTestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
-        // componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-language-selector'));
         component = de.componentInstance;
 
@@ -102,12 +98,6 @@ describe('DotLanguageSelectorComponent', () => {
 
         expect(component.change).toHaveBeenCalledWith(mockDotLanguage);
         expect(component.selected.emit).toHaveBeenCalledWith(mockDotLanguage);
-    });
-
-    it('should set fixed width to dropdown', () => {
-        fixtureHost.detectChanges();
-        const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
-        expect(pDropDown.style).toEqual({ width: '120px' });
     });
 
     describe('disabled', () => {

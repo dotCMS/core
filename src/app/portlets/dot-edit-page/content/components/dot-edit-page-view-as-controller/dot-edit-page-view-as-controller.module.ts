@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
-import { DropdownModule } from 'primeng/primeng';
+import { DropdownModule, TooltipModule } from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
 import { DotLanguageSelectorModule } from '@components/dot-language-selector/dot-language-selector.module';
 import { DotDeviceSelectorModule } from '@components/dot-device-selector/dot-device-selector.module';
@@ -13,6 +13,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         CommonModule,
         DropdownModule,
         FormsModule,
+        TooltipModule,
         DotPersonaSelectorModule,
         DotLanguageSelectorModule,
         DotDeviceSelectorModule,

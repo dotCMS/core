@@ -59,7 +59,7 @@ describe('DotPersonaSelectedItemComponent', () => {
     it('should render persona name and label', () => {
         const label = de.query(By.css('.dot-persona-selector__label')).nativeElement;
         const name = de.query(By.css('.dot-persona-selector__name')).nativeElement;
-        expect(label.innerText).toBe('Previewing As');
+        expect(label.innerText.trim()).toBe('Previewing As');
         expect(name.innerText).toBe('Global Investor');
     });
 

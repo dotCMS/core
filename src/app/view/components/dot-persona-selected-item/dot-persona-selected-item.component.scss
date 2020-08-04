@@ -4,7 +4,6 @@
 
 :host {
     width: 200px;
-    position: relative;
     display: flex;
     cursor: pointer;
     align-items: center;
@@ -36,6 +35,12 @@
         .dot-persona-selector__label,
         .dot-persona-selector__name {
             color: $field-disabled-color;
+        }
+    }
+
+    @media only screen and (max-width: $screen-device-container-max) {
+        & {
+            width: unset;
         }
     }
 }
@@ -87,5 +92,15 @@ dot-icon {
     i.material-icons {
         color: $gray;
         font-size: $md-icon-size-big;
+    }
+}
+
+@media only screen and (max-width: $screen-device-container-max) {
+    .dot-persona-selector__label-container {
+        display: none;
+    }
+
+    .dot-persona-selector__container {
+        width: 48px;
     }
 }

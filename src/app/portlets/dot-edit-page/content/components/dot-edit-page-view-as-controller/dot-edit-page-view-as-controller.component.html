@@ -1,21 +1,17 @@
 <ng-container *ngIf="isEnterpriseLicense$ | async as isEnterpriseLicense; else language">
-    <ng-template [ngIf]="isEnterpriseLicense">
-        <div class="device-info" *ngIf="pageState.viewAs.device">
-            <span class="device-info__label">{{ 'editpage.viewas.previewing' | dm }}:</span>
-            <span class="device-info__content">
-                {{ pageState.viewAs.device.name }} - {{ pageState.viewAs.device.cssWidth }} x
-                {{ pageState.viewAs.device.cssHeight }}
-            </span>
-        </div>
-    </ng-template>
-
     <dot-language-selector
+        [pTooltip]="pageState.viewAs.language.language"
+        tooltipPosition="bottom"
+        appendTo="target"
         (selected)="changeLanguageHandler($event)"
         [value]="pageState.viewAs.language"
     ></dot-language-selector>
 
     <ng-template [ngIf]="isEnterpriseLicense">
         <dot-device-selector
+            [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
+            tooltipPosition="bottom"
+            appendTo="target"
             (selected)="changeDeviceHandler($event)"
             [value]="pageState.viewAs.device"
         ></dot-device-selector>

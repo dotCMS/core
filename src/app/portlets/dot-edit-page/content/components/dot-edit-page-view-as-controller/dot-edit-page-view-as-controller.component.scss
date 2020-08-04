@@ -10,6 +10,26 @@
             margin-left: 0;
         }
     }
+
+    dot-language-selector,
+    dot-device-selector,
+    dot-persona-selector {
+        ::ng-deep .ui-tooltip {
+            display: none !important;
+        }
+    }
+
+    @media only screen and (max-width: $screen-device-container-max) {
+        dot-language-selector,
+        dot-device-selector,
+        dot-persona-selector {
+            margin-left: $basic-padding * 2;
+
+            ::ng-deep .ui-tooltip {
+                display: inline-block !important;
+            }
+        }
+    }
 }
 
 ::ng-deep {
@@ -22,7 +42,7 @@
         }
     }
 
-    .ui-chkbox:not(.ui-state-disabled){
+    .ui-chkbox:not(.ui-state-disabled) {
         .ui-chkbox-box.ui-state-default {
             border-color: $gray;
         }
@@ -30,24 +50,5 @@
 
     .ui-chkbox-label {
         color: $gray;
-    }
-}
-
-.device-info {
-    align-items: center;
-    border-right: solid 1px $gray;
-    display: flex;
-    margin-right: $basic-padding;
-    padding-right: $basic-padding * 2;
-    white-space: nowrap;
-
-    &__label {
-        color: $gray;
-        margin-right: $basic-padding / 4;
-    }
-
-    &__content {
-        font-size: $font-size-small;
-        text-transform: uppercase;
     }
 }
