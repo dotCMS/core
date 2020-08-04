@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
@@ -225,7 +226,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
                             this.samlAuthenticationService =
                                     this.samlServiceBuilder.buildAuthenticationService(this.identityProviderConfigurationFactory(),
-                                            this.messageObserver(), this.samlConfigurationService());
+                                            VelocityUtil.getEngine(), this.messageObserver(), this.samlConfigurationService());
 
                             Logger.info(this, "Initing SAML Authentication");
                             samlAuthenticationService.initService(Collections.emptyMap());
