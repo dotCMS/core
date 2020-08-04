@@ -86,6 +86,14 @@ public class FilterDescriptor {
         this.key = key;
     }
 
+    /**
+     * Validates the structure and the data of the YAML File and adds the errors to a list.
+     * Validates:
+     * - Remove required Property (Title, Roles or Filters, default property if not set it will be set to true as default, properties inside Filters are not required).
+     * - Add New Property to Filters property.
+     * - Boolean property set as any other value than true | false
+     * @throws DotDataValidationException
+     */
     public void validate() throws DotDataValidationException {
 
         final List<String> errors = new ArrayList<>();
@@ -115,8 +123,37 @@ public class FilterDescriptor {
             errors.add("The field `Filters` has a property that is not expected. Possible Properties: " + listOfPossibleFilters.toString());
         }
 
+        if(getFilters().containsKey(DEPENDENCIES_KEY)) {
+            try {
+                Boolean.class.cast(getFilters()
+                        .get(FilterDescriptor.DEPENDENCIES_KEY));
+            } catch (ClassCastException e){
+            errors.add("The value of the field `dependencies` cannot be cast to Boolean");
+            }
+        }
+
+        if(getFilters().containsKey(RELATIONSHIPS_KEY)) {
+            try {
+                Boolean.class.cast(getFilters()
+                        .get(FilterDescriptor.RELATIONSHIPS_KEY));
+            } catch (ClassCastException e){
+                errors.add("The value of the field `relationships` cannot be cast to Boolean");
+            }
+        }
+
+        if(getFilters().containsKey(FORCE_PUSH_KEY)) {
+            try {
+                Boolean.class.cast(getFilters()
+                        .get(FilterDescriptor.FORCE_PUSH_KEY));
+            } catch (ClassCastException e){
+                errors.add("The value of the field `forcePush` cannot be cast to Boolean");
+            }
+        }
+
+
+
         if(!errors.isEmpty()){
-            throw new DotDataValidationException(String.join(" \n", errors));
+            throw new DotDataValidationException(errors.size() + " error(s): " + String.join(" , ", errors));
         }
 
     }
