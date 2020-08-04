@@ -341,6 +341,12 @@ public enum SamlName {
 	DOTCMS_SAML_LOGIN_UPDATE_EMAIL("login.email.update"),
 
 	/**
+	 * By default the authentication uses the Http-Redirect but you can set to Http-POST if needed
+	 *
+	 */
+	DOTCMS_SAML_AUTHN_PROTOCOL_BINDING("authn.protocol.binding"),
+
+	/**
 	 * In case the session wants to be renew, should be true by default.
 	 */
 	DOT_RENEW_SESSION("renew.session");

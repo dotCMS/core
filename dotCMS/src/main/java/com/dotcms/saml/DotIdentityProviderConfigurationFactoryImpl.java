@@ -37,8 +37,8 @@ public class DotIdentityProviderConfigurationFactoryImpl implements IdentityProv
         final List hosts = Host.SYSTEM_HOST.equals(identityProviderIdentifier)?
                 Arrays.asList(identityProviderIdentifier):  Arrays.asList(Host.SYSTEM_HOST, identityProviderIdentifier);
 
-        return !this.appsAPI.filterSitesForAppKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY,
-                hosts, APILocator.systemUser()).isEmpty();
+        return Try.of(()->!this.appsAPI.filterSitesForAppKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY,
+                hosts, APILocator.systemUser()).isEmpty()).getOrElse(false);
     }
 
     private IdentityProviderConfiguration createIdentityProviderConfigurationFor(final String identityProviderIdentifier) {

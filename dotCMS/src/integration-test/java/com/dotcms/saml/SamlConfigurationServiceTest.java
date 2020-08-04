@@ -3,11 +3,10 @@ package com.dotcms.saml;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
 import org.apache.felix.framework.OSGIUtil;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestSamlConfigurationService {
+public class SamlConfigurationServiceTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -29,5 +28,7 @@ public class TestSamlConfigurationService {
 
         Assert.assertEquals("10000", clockSkew);*/
     }
+
+
 
 }
