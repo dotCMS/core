@@ -3,7 +3,7 @@ package com.dotcms.graphql.business;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 
-import com.dotcms.graphql.datafetcher.CountDataFetcher;
+import com.dotcms.graphql.datafetcher.QueryMetadataDataFetcher;
 import com.dotmarketing.exception.DotDataException;
 import graphql.schema.GraphQLFieldDefinition;
 import java.util.Collection;
@@ -18,6 +18,6 @@ public enum QueryMetadataFieldProvider implements GraphQLFieldsProvider {
         return Collections.singleton(newFieldDefinition()
                 .name("QueryMetadata")
                 .type(list(QueryMetadataTypeProvider.INSTANCE.getTypes().iterator().next()))
-                .dataFetcher(new CountDataFetcher()).build());
+                .dataFetcher(new QueryMetadataDataFetcher()).build());
     }
 }

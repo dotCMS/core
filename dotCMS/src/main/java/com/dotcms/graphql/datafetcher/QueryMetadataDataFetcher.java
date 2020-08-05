@@ -14,7 +14,7 @@ import java.util.Map;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
-public class CountDataFetcher implements DataFetcher<List<Map<String, Object>>> {
+public class QueryMetadataDataFetcher implements DataFetcher<List<Map<String, Object>>> {
     @Override
     public List<Map<String, Object>> get(final DataFetchingEnvironment environment) throws Exception {
         try {
