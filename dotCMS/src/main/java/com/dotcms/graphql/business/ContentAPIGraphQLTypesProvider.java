@@ -234,7 +234,8 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             // if at least one of them is a custom type, they need to be equal to be compatible
             return (!isCustomFieldType(inheritedFieldGraphQLType)
                     && !isCustomFieldType(fieldGraphQLType))
-                    || inheritedFieldGraphQLType.equals(fieldGraphQLType);
+                    || inheritedFieldGraphQLType.equals(fieldGraphQLType)
+                    || inheritedFieldGraphQLType.getName().equals(fieldGraphQLType.getName());
         }
 
         return true;
