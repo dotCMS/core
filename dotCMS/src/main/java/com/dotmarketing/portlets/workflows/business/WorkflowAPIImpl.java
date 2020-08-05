@@ -1,13 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.FORCE_PUSH;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_DATE;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_TIME;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_NEVER_EXPIRE;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_DATE;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_TIME;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
 
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -2885,13 +2878,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private Contentlet applyAdditionalParams(final AdditionalParamsBean additionalParamsBean, Contentlet contentlet){
 		if(UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getPushPublishBean()) ){
 			final PushPublishBean pushPublishBean = additionalParamsBean.getPushPublishBean();
-			contentlet.setStringProperty(WF_PUBLISH_DATE, pushPublishBean.getPublishDate());
-			contentlet.setStringProperty(WF_PUBLISH_TIME, pushPublishBean.getPublishTime());
-			contentlet.setStringProperty(WF_EXPIRE_DATE, pushPublishBean.getExpireDate());
-			contentlet.setStringProperty(WF_EXPIRE_TIME, pushPublishBean.getExpireTime());
-			contentlet.setStringProperty(WF_NEVER_EXPIRE, pushPublishBean.getNeverExpire());
-			contentlet.setStringProperty(WHERE_TO_SEND, pushPublishBean.getWhereToSend());
-			contentlet.setStringProperty(FORCE_PUSH, pushPublishBean.getForcePush());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, pushPublishBean.getPublishDate());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, pushPublishBean.getPublishTime());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, pushPublishBean.getExpireDate());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, pushPublishBean.getExpireTime());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, pushPublishBean.getNeverExpire());
+			contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, pushPublishBean.getWhereToSend());
+			contentlet.setStringProperty(Contentlet.FILTER_KEY, pushPublishBean.getFilterKey());
 		}
 		return contentlet;
 	}
@@ -3016,6 +3009,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
 			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
 		}
+
+		//metodo para todas las propiedades del PPActionlet
 
 		this.validateActionStepAndWorkflow(contentlet, dependencies.getModUser());
 		this.checkShorties (contentlet);

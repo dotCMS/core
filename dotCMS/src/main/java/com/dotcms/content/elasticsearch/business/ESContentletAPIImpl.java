@@ -570,7 +570,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void publish(final Contentlet contentlet, final User userIn, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
         final User user = (userIn!=null) ? userIn : APILocator.getUserAPI().getAnonymousUser();
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+        String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
         String contentPushExpireDate  = contentlet.getStringProperty("wfExpireDate");
 
         contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
@@ -1438,8 +1438,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("The contentlet cannot Be null");
         }
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unlocking Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2980,8 +2980,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Locking Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -3219,8 +3219,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -3417,8 +3417,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void unarchive(final Contentlet contentlet, final User user, final boolean respectFrontendRoles)
             throws DotDataException,DotSecurityException, DotContentletStateException {
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -4134,8 +4134,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         try {
 
-            String wfPublishDate = contentletIn.getStringProperty("wfPublishDate");
-            String wfExpireDate  = contentletIn.getStringProperty("wfExpireDate");
+            String wfPublishDate = contentletIn.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
+            String wfExpireDate  = contentletIn.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
             final boolean isWorkflowInProgress = contentletIn.isWorkflowInProgress();
             final String contentPushPublishDateBefore = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
             final String contentPushExpireDateBefore  = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
@@ -4177,8 +4177,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                  bubbleUpException(t);
             }
 
-            wfPublishDate = contentletOut.getStringProperty("wfPublishDate");
-            wfExpireDate = contentletOut.getStringProperty("wfExpireDate");
+            wfPublishDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
+            wfExpireDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
 
             final String contentPushPublishDateAfter = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
             final String contentPushExpireDateAfter = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
@@ -4563,13 +4563,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             // Keep the 5 properties BEFORE store the contentlet on DB.
-            final String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-            final String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-            final String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-            final String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-            final String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
-            final String contentWhereToSend = contentlet.getStringProperty("whereToSend");
-            final String forcePush = contentlet.getStringProperty("forcePush");
+            final String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
+            final String contentPushPublishTime = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME);
+            final String contentPushExpireDate = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
+            final String contentPushExpireTime = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME);
+            final String contentPushNeverExpire = contentlet.getStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE);
+            final String contentWhereToSend = contentlet.getStringProperty(Contentlet.WHERE_TO_SEND);
+            final String filterKey = contentlet.getStringProperty(Contentlet.FILTER_KEY);
 
                 /*
                  For HTMLPages get the url of the page sent by the user, we use the Contentlet object to
@@ -5116,13 +5116,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             // Set the properties again after the store on DB and before the fire on an Actionlet.
-            contentlet.setStringProperty("wfPublishDate", contentPushPublishDate);
-            contentlet.setStringProperty("wfPublishTime", contentPushPublishTime);
-            contentlet.setStringProperty("wfExpireDate", contentPushExpireDate);
-            contentlet.setStringProperty("wfExpireTime", contentPushExpireTime);
-            contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
-            contentlet.setStringProperty("whereToSend", contentWhereToSend);
-            contentlet.setStringProperty("forcePush", forcePush);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, contentPushPublishDate);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, contentPushPublishTime);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, contentPushExpireDate);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, contentPushExpireTime);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, contentPushNeverExpire);
+            contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, contentWhereToSend);
+            contentlet.setStringProperty(Contentlet.FILTER_KEY, filterKey);
 
             //wapi.
             if(workflow!=null) {
@@ -8210,13 +8210,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                        final String description, final User user) {
 
         String contentPushPublishDate = contentlet
-                .getStringProperty("wfPublishDate");
+                .getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
         String contentPushPublishTime = contentlet
-                .getStringProperty("wfPublishTime");
+                .getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME);
         String contentPushExpireDate = contentlet
-                .getStringProperty("wfExpireDate");
+                .getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
         String contentPushExpireTime = contentlet
-                .getStringProperty("wfExpireTime");
+                .getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME);
         contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate) ? contentPushPublishDate
                 : "N/A";
         contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime) ? contentPushPublishTime

@@ -30,13 +30,6 @@ import java.util.stream.Stream;
 @Actionlet(pushPublish = true)
 public class PushPublishActionlet extends WorkFlowActionlet implements BatchAction <String>  {
 
-	public static final String WF_PUBLISH_DATE = "wfPublishDate";
-	public static final String WF_PUBLISH_TIME = "wfPublishTime";
-	public static final String WF_EXPIRE_DATE = "wfExpireDate";
-	public static final String WF_EXPIRE_TIME = "wfExpireTime";
-	public static final String WF_NEVER_EXPIRE = "wfNeverExpire";
-	public static final String WHERE_TO_SEND = "whereToSend";
-	public static final String FORCE_PUSH = "forcePush";
 	private PublisherAPI publisherAPI = PublisherAPI.getInstance();
 
 	/**
@@ -132,16 +125,15 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 	private void doPushPublish(final Map<String,String> pushPublishData, final List<String> identifiers, final User user)
 			throws DotDataException, ParseException, DotPublisherException {
 
-			final String contentPushPublishDate = pushPublishData.get(WF_PUBLISH_DATE);
-			final String contentPushPublishTime = pushPublishData.get(WF_PUBLISH_TIME);
-			final String contentPushExpireDate = pushPublishData.get(WF_EXPIRE_DATE);
-			final String contentPushExpireTime = pushPublishData.get(WF_EXPIRE_TIME);
-			final String contentNeverExpire = pushPublishData.get(WF_NEVER_EXPIRE);
+			final String contentPushPublishDate = pushPublishData.get(Contentlet.WORKFLOW_PUBLISH_DATE);
+			final String contentPushPublishTime = pushPublishData.get(Contentlet.WORKFLOW_PUBLISH_TIME);
+			final String contentPushExpireDate = pushPublishData.get(Contentlet.WORKFLOW_EXPIRE_DATE);
+			final String contentPushExpireTime = pushPublishData.get(Contentlet.WORKFLOW_EXPIRE_TIME);
+			final String contentNeverExpire = pushPublishData.get(Contentlet.WORKFLOW_NEVER_EXPIRE);
 			final boolean contentPushNeverExpire = ("on".equals(contentNeverExpire) ||
 					  "true".equals(contentNeverExpire)
 			);
-			final String whoToSendTmp = pushPublishData.get(WHERE_TO_SEND);
-			final String forcePushStr = pushPublishData.get(FORCE_PUSH);
+			final String whoToSendTmp = pushPublishData.get(Contentlet.WHERE_TO_SEND);
 			final String filterKey = pushPublishData.get(Contentlet.FILTER_KEY);
 			final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
 			final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
@@ -168,13 +160,12 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 
 	private Map<String,String> getPushPublishDataAsMap(final Contentlet contentlet){
 		final Map<String,String> map = new HashMap<>();
-        map.put(WF_PUBLISH_DATE,contentlet.getStringProperty(WF_PUBLISH_DATE));
-		map.put(WF_PUBLISH_TIME,contentlet.getStringProperty(WF_PUBLISH_TIME));
-		map.put(WF_EXPIRE_DATE,contentlet.getStringProperty(WF_EXPIRE_DATE));
-		map.put(WF_EXPIRE_TIME,contentlet.getStringProperty(WF_EXPIRE_TIME));
-		map.put(WF_NEVER_EXPIRE,contentlet.getStringProperty(WF_NEVER_EXPIRE));
-		map.put(WHERE_TO_SEND,contentlet.getStringProperty(WHERE_TO_SEND));
-		map.put(FORCE_PUSH,contentlet.getStringProperty(FORCE_PUSH));
+        map.put(Contentlet.WORKFLOW_PUBLISH_DATE,contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE));
+		map.put(Contentlet.WORKFLOW_PUBLISH_TIME,contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME));
+		map.put(Contentlet.WORKFLOW_EXPIRE_DATE,contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE));
+		map.put(Contentlet.WORKFLOW_EXPIRE_TIME,contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME));
+		map.put(Contentlet.WORKFLOW_NEVER_EXPIRE,contentlet.getStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE));
+		map.put(Contentlet.WHERE_TO_SEND,contentlet.getStringProperty(Contentlet.WHERE_TO_SEND));
 		map.put(Contentlet.FILTER_KEY,contentlet.getStringProperty(Contentlet.FILTER_KEY));
 		return map;
 	}
