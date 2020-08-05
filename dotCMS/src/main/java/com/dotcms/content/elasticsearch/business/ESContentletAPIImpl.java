@@ -5850,6 +5850,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 (String) properties.get(Contentlet.WORKFLOW_EXPIRE_TIME));
         contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE,
                 (String) properties.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
+        contentlet.setStringProperty(Contentlet.FILTER_KEY,
+                (String) properties.get(Contentlet.FILTER_KEY));
+        contentlet.setStringProperty(Contentlet.WHERE_TO_SEND,
+                (String) properties.get(Contentlet.WHERE_TO_SEND));
     }
 
     @Override

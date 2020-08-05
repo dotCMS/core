@@ -147,7 +147,6 @@ public class WorkflowResource {
     private static final String EXPIRE_DATE   = "expireDate";
     private static final String EXPIRE_TIME   = "expireTime";
     private static final String NEVER_EXPIRE  = "neverExpire";
-    private static final String WHERE_TO_SEND = "whereToSend";
     private static final String FORCE_PUSH    = "forcePush";
     private static final String BINARY_FIELDS = "binaryFields";
     private static final String PREFIX_BINARY = "binary";
@@ -1866,10 +1865,10 @@ public class WorkflowResource {
             contentMap.remove(NEVER_EXPIRE);
         }
 
-        if (contentMap.containsKey(WHERE_TO_SEND)) {
+        if (contentMap.containsKey(Contentlet.WHERE_TO_SEND)) {
 
-            fireActionFormBuilder.whereToSend((String)contentMap.get(WHERE_TO_SEND));
-            contentMap.remove(WHERE_TO_SEND);
+            fireActionFormBuilder.whereToSend((String)contentMap.get(Contentlet.WHERE_TO_SEND));
+            contentMap.remove(Contentlet.WHERE_TO_SEND);
         }
 
         if (contentMap.containsKey(FORCE_PUSH)) {
@@ -1882,6 +1881,11 @@ public class WorkflowResource {
 
             fireActionFormBuilder.actionName((String)contentMap.get(ACTION_NAME));
             contentMap.remove(ACTION_NAME);
+        }
+
+        if (contentMap.containsKey(Contentlet.FILTER_KEY)) {
+            fireActionFormBuilder.filterKey((String)contentMap.get(Contentlet.FILTER_KEY));
+            contentMap.remove(Contentlet.FILTER_KEY);
         }
     }
 
@@ -2013,8 +2017,9 @@ public class WorkflowResource {
         contentlet.setStringProperty("wfExpireDate",  fireActionForm.getExpireDate());
         contentlet.setStringProperty("wfExpireTime",  fireActionForm.getExpireTime());
         contentlet.setStringProperty("wfNeverExpire", fireActionForm.getNeverExpire());
-        contentlet.setStringProperty(WHERE_TO_SEND,   fireActionForm.getWhereToSend());
+        contentlet.setStringProperty(Contentlet.WHERE_TO_SEND,   fireActionForm.getWhereToSend());
         contentlet.setStringProperty(FORCE_PUSH,     fireActionForm.getForcePush());
+        contentlet.setStringProperty(Contentlet.FILTER_KEY, fireActionForm.getFilterKey());
 
         for(Field constant : contentlet.getContentType().fields()) {
           if(constant instanceof ConstantField)

@@ -142,14 +142,15 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			);
 			final String whoToSendTmp = pushPublishData.get(WHERE_TO_SEND);
 			final String forcePushStr = pushPublishData.get(FORCE_PUSH);
-			final boolean forcePush = "true".equals(forcePushStr);
+			final String filterKey = pushPublishData.get(Contentlet.FILTER_KEY);
+			final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
 			final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
 
 			final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 			final Date publishDate = dateFormat
 					.parse(contentPushPublishDate + "-" + contentPushPublishTime);
 
-			Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,"");
+			Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,filterKey);
 			APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
 			publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
@@ -157,7 +158,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 					.equals(contentPushExpireTime.trim()))) {
 				Date expireDate = dateFormat
 						.parse(contentPushExpireDate + "-" + contentPushExpireTime);
-				bundle = new Bundle(null, publishDate, expireDate, user.getUserId(), forcePush,"");
+				bundle = new Bundle(null, publishDate, expireDate, user.getUserId(), forcePush,filterKey);
 				APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 				publisherAPI.addContentsToUnpublish(identifiers, bundle.getId(), expireDate, user);
 			}
@@ -174,6 +175,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 		map.put(WF_NEVER_EXPIRE,contentlet.getStringProperty(WF_NEVER_EXPIRE));
 		map.put(WHERE_TO_SEND,contentlet.getStringProperty(WHERE_TO_SEND));
 		map.put(FORCE_PUSH,contentlet.getStringProperty(FORCE_PUSH));
+		map.put(Contentlet.FILTER_KEY,contentlet.getStringProperty(Contentlet.FILTER_KEY));
 		return map;
 	}
 

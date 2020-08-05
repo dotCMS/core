@@ -18,6 +18,7 @@ public class FireActionForm extends Validated {
     private final String neverExpire;
     private final String whereToSend;
     private final String forcePush;
+    private final String filterKey;
     private final Map<String, Object> contentletFormData;
 
     public String getComments() {
@@ -56,6 +57,10 @@ public class FireActionForm extends Validated {
         return forcePush;
     }
 
+    public String getFilterKey() {
+        return filterKey;
+    }
+
     public Map<String, Object> getContentletFormData() {
         return contentletFormData;
     }
@@ -71,6 +76,7 @@ public class FireActionForm extends Validated {
         this.neverExpire = builder.neverExpire;
         this.whereToSend = builder.whereToSend;
         this.forcePush   = builder.forcePush;
+        this.filterKey = builder.filterKey;
         this.contentletFormData =
                 builder.contentlet;
     }
@@ -95,6 +101,8 @@ public class FireActionForm extends Validated {
         private String whereToSend;
         @JsonProperty()
         private String forcePush;
+        @JsonProperty()
+        private String filterKey;
         @JsonProperty("contentlet")
         private Map<String, Object> contentlet;
 
@@ -140,6 +148,11 @@ public class FireActionForm extends Validated {
 
         public Builder forcePush(final String forcePush) {
             this.forcePush = forcePush;
+            return this;
+        }
+
+        public Builder filterKey(final String filterKey) {
+            this.filterKey = filterKey;
             return this;
         }
 
