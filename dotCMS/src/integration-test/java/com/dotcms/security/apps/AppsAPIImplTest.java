@@ -17,6 +17,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
@@ -32,6 +33,7 @@ import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -44,10 +46,13 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -537,10 +542,10 @@ public class AppsAPIImplTest {
         for (final Map.Entry<String, ParamDescriptor> entry : testCase.params.entrySet()) {
             descriptorDataGen.param(entry.getKey(), entry.getValue());
         }
-        final File inputStream = descriptorDataGen.nextPersistedDescriptor();
+        final File file = descriptorDataGen.nextPersistedDescriptor();
         final AppsAPI api = APILocator.getAppsAPI();
         final User admin = TestUserUtils.getAdminUser();
-        return api.createAppDescriptor(inputStream, admin);
+        return api.createAppDescriptor(file, admin);
 
     }
 
@@ -721,13 +726,15 @@ public class AppsAPIImplTest {
 
     }
 
-    private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(APILocator.getUserAPI(), APILocator.getLayoutAPI(),
+    private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(APILocator.getUserAPI(),
+            APILocator.getLayoutAPI(),
             APILocator.getHostAPI(), APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
-            CacheLocator.getAppsCache(), new LicenseValiditySupplier() {
-        public boolean hasValidLicense() {
-            return false;
-        }
-    });
+            CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
+            new LicenseValiditySupplier() {
+                public boolean hasValidLicense() {
+                    return false;
+                }
+            });
 
     /**
      * Given scenario: We simulate a non valid license situation then we call  AppsAPI#getAppDescriptors
@@ -785,4 +792,233 @@ public class AppsAPIImplTest {
         nonValidLicenseAppsAPI.getSecrets("anyKey", true, systemHost, admin);
     }
 
+    /**
+     * Given scenario: We subscribe an event listener and save an event
+     * Expected Results: We expect that an event is fired and that after firing the event the AppsSecret that was initially passed to the save method is now destroyed
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Save_Secret_Expect_Event_Notification() throws DotDataException, DotSecurityException{
+        final AtomicInteger callsCount = new AtomicInteger(0);
+        final AppsAPI api = APILocator.getAppsAPI();
+        final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+        localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, new AppsSecretEventSubscriber(){
+            @Override
+            public void notify(AppSecretSavedEvent event) {
+                final AppSecrets appSecrets = event.getAppSecrets();
+                final Map<String, Secret> secrets = appSecrets.getSecrets();
+                secrets.forEach((s, secret) -> {
+                    assertFalse(isSecretDestroyed(secret.getValue()));
+                });
+                callsCount.incrementAndGet();
+            }
+        });
+
+        final String appKey = AppsSecretEventSubscriber.appKey;
+
+        final AppDescriptor descriptor = mock(AppDescriptor.class);
+        when(descriptor.isAllowExtraParameters()).thenReturn(false);
+        final Map<String, ParamDescriptor> params = of(
+                "requiredNoDefault",newParam(null, false, Type.STRING, "any", "hint", true),
+                "requiredDefault", newParam("default", false, Type.STRING, "any", "hint", true),
+                "nonRequiredNoDefault", newParam(null, false, Type.STRING, "any", "hint", false)
+        );
+        when(descriptor.getParams()).thenReturn(params);
+        when(descriptor.getName()).thenReturn("any-name");
+        when(descriptor.getKey()).thenReturn(appKey);
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final User admin = TestUserUtils.getAdminUser();
+
+        //Let's create a set of secrets for a service
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppSecrets secrets = builder1.withKey(appKey)
+                .withHiddenSecret("requiredNoDefault", "value") //We're providing the expected value
+                .withHiddenSecret("requiredDefault", "secret-2")
+                .build();
+        //Save it
+        api.saveSecrets(secrets, site, admin);
+        DateUtil.sleep(2000);
+        assertEquals(callsCount.get(), 1);
+
+        // Now Test Secret has been destroyed.
+        final Map<String, Secret> secretsPostSave = secrets.getSecrets();
+        for(final String key: secretsPostSave.keySet()){
+            final char[] value = secretsPostSave.get(key).getValue();
+            assertTrue(isSecretDestroyed(value));
+        }
+    }
+
+    /**
+     * for internal use validate a secret has been destroyed
+     * @param chars
+     * @return
+     */
+    private boolean isSecretDestroyed(final char [] chars){
+        final char nullChar = (char) 0;
+        for(final char chr: chars){
+            if(chr != nullChar){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /***
+     * Given scenario: We create a file then move it into the system folder we clear cache and the the request app-descriptors again
+     * Expected: The Key must appear marked as System-app. If we attempt a delete
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void Test_Add_System_File_Retrieve_Descriptors_Verify_()
+            throws DotDataException, DotSecurityException, IOException, URISyntaxException {
+            //Generate a yml file
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .stringParam("p3", false,  true)
+                .withName("system-app-example")
+                .withDescription("system-app-demo")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+
+        //Move the file to the system folder
+        final Path systemAppsDescriptorDirectory = AppsAPIImpl.getSystemAppsDescriptorDirectory();
+        final boolean result = file.renameTo(new File(systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
+        assertTrue(result);
+
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final AppsCache appsCache = CacheLocator.getAppsCache();
+
+        //Invalidate cache so the new descriptors get picked
+        appsCache.invalidateDescriptorsCache();
+        final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
+
+        //Verify the file we just submitted is recognized as a system-app-file
+        final Optional<AppDescriptor> optional = appDescriptors.stream()
+                .filter(appDescriptor -> dataGen.getKey().equals(appDescriptor.getKey())).findFirst();
+        assertTrue(optional.isPresent());
+        final AppDescriptor descriptor = optional.get();
+        final AppDescriptorImpl impl = (AppDescriptorImpl)descriptor;
+        assertTrue(impl.isSystemApp());
+        //Now attempt a delete and instruct the api to remove the system app
+        api.removeApp(descriptor.getKey(), admin, true);
+    }
+
+    /**
+     * Given scenario: We have two files almost identical. one under user-apps-folder and another under system-app-folder
+     * Expected: The file placed under system-app-folder must take precedence.
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws URISyntaxException
+     * @throws AlreadyExistException
+     */
+    @Test
+    public void Test_System_File_Has_Precedence()
+            throws DotDataException, DotSecurityException, IOException, URISyntaxException, AlreadyExistException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final AppsCache appsCache = CacheLocator.getAppsCache();
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .withName("system-app-example")
+                .withDescription("system-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+
+        //Move the file to the system folder
+        final Path systemAppsDescriptorDirectory = AppsAPIImpl.getSystemAppsDescriptorDirectory();
+        final boolean result = file.renameTo(new File(systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
+        assertTrue(result);
+        //Even though we just moved the file under apps-system-folder this should recreate the file again.
+        //But before that.. lets make a small change so we can tell the difference between the tow files.
+        dataGen.withDescription("user-app");
+        final File newFile = dataGen.nextPersistedDescriptor();
+         api.createAppDescriptor(newFile, admin);
+
+        //Invalidate cache so the new descriptors get picked
+        appsCache.invalidateDescriptorsCache();
+        final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
+
+        //Verify the file we just submitted is recognized as a system-app-file
+        final Optional<AppDescriptor> optional = appDescriptors.stream()
+                .filter(appDescriptor -> dataGen.getKey().equals(appDescriptor.getKey())).findFirst();
+        assertTrue(optional.isPresent());
+        //
+        final AppDescriptor descriptor = optional.get();
+        final AppDescriptorImpl impl = (AppDescriptorImpl)descriptor;
+        assertTrue(impl.isSystemApp());
+        //This proves that even though we had two files named the same. 1 in the user apps folder and another 1 in the system-apps folder.
+        //The one from the system-folder takes precedence.
+        assertEquals("system-app", impl.getDescription());
+    }
+
+    /**
+     * Given scenario: We have two files almost identical. one under user-apps-folder and another under system-app-folder,
+     * with the same file name but one in lower case and the other in upper case.
+     * Expected: The file name case must be ignored and the file placed under system-app-folder must take precedence.
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws URISyntaxException
+     * @throws AlreadyExistException
+     */
+    @Test
+    public void Test_File_Comparison_Is_Case_Sensitive()
+            throws DotDataException, DotSecurityException, IOException, URISyntaxException, AlreadyExistException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final AppsCache appsCache = CacheLocator.getAppsCache();
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .withName("system-app-example")
+                .withDescription("system-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+
+        //Move the file to the system folder and save it in upper case
+        final Path systemAppsDescriptorDirectory = AppsAPIImpl.getSystemAppsDescriptorDirectory();
+        final boolean result = file.renameTo(new File(
+                systemAppsDescriptorDirectory.toString() + File.separator + file.getName()
+                        .toUpperCase().replace("YML", "yml")));
+        assertTrue(result);
+        //Even though we just moved the file under apps-system-folder this should recreate the file again.
+        //But before that.. lets make a small change so we can tell the difference between the two files.
+        dataGen.withDescription("user-app");
+        final File newFile = dataGen.nextPersistedDescriptor();
+        api.createAppDescriptor(newFile, admin);
+
+        //Invalidate cache so the new descriptors get picked
+        appsCache.invalidateDescriptorsCache();
+        final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
+
+        //Verify the file we just submitted is recognized as a system-app-file
+        assertEquals(1, appDescriptors.stream()
+                .filter(appDescriptor -> dataGen.getKey().equalsIgnoreCase(appDescriptor.getKey())).count());
+        final Optional<AppDescriptor> optional = appDescriptors.stream()
+                .filter(appDescriptor -> dataGen.getKey().equalsIgnoreCase(appDescriptor.getKey())).findFirst();
+        assertTrue(optional.isPresent());
+        //
+        final AppDescriptor descriptor = optional.get();
+        final AppDescriptorImpl impl = (AppDescriptorImpl)descriptor;
+        assertTrue(impl.isSystemApp());
+        //This proves that even though we had two files named the same. 1 in the user apps folder and another 1 in the system-apps folder.
+        //The one from the system-folder takes precedence.
+        assertEquals("system-app", impl.getDescription());
+    }
 }

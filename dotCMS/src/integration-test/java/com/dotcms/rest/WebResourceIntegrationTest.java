@@ -2,6 +2,9 @@ package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import com.dotcms.IntegrationTestBase;
+import com.dotmarketing.exception.InvalidLicenseException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
@@ -17,7 +20,7 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 
-public class WebResourceIntegrationTest {
+public class WebResourceIntegrationTest extends IntegrationTestBase {
 
   private static final String WRITE = "WRITE";
   private static final String READ = "READ";
@@ -340,6 +343,14 @@ public class WebResourceIntegrationTest {
                     .requestAndResponse(anonymousRequest(), response)
                     .init();
 
+  }
+
+  @Test(expected = InvalidLicenseException.class)
+  public void webResource_NoLicense_RequiredLicense_returnInvalidLicenseException() throws Exception {
+    runNoLicense(() -> new WebResource.InitBuilder()
+            .requestAndResponse(apiRequest(), response)
+            .requireLicense(true)
+            .init());
   }
 
 }

@@ -580,6 +580,18 @@ public class DotDatabaseMetaData {
         throw new DotDataException("Unknown database type.");
     }
 
+    /**
+     * Indicates if a column exists on a given table
+     * @param tableName
+     * @param columnName
+     * @return - boolean indicating if the column exists on the referenced table
+     * @throws SQLException
+     */
+    public boolean hasColumn(final String tableName, final String columnName) throws SQLException {
+       return this.getColumnNames(DbConnectionFactory.getConnection(), tableName).stream()
+                .anyMatch(dbcolumn -> dbcolumn.equalsIgnoreCase(columnName));
+    }
+
     private static String POSTGRES_CONSTRAINT_SQL =
             " SELECT con.*\n"
             + "       FROM pg_catalog.pg_constraint con\n"

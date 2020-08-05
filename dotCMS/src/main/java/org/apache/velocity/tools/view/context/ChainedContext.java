@@ -110,7 +110,7 @@ public class ChainedContext extends VelocityContext implements ViewContext
         super(null, ctx);
 
         this.velocity = velocity;
-        this.request = (request instanceof VelocityRequestWrapper) ? request : new VelocityRequestWrapper(request);
+        this.request = VelocityRequestWrapper.wrapVelocityRequest(request);
         this.response = response;
         this.session = request.getSession(false);
 

@@ -1,20 +1,838 @@
 {
 	"info": {
-		"_postman_id": "c2d96fa8-d46f-4a71-87d3-827cdf08e5e8",
-		"name": "Bundle Resource [/api/bundle]",
+		"_postman_id": "7d3d2861-429b-4152-a633-446f01efd478",
+		"name": "Bundle Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
+			"name": "deleteBundlesByIdentifiers",
+			"item": [
+				{
+					"name": "Delete Bundle By Id Non User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8ab9762d-6109-415d-90e5-779cc808043e",
+								"exec": [
+									"pm.test(\"Status code is 401, You need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"identifiers\":[\"876dc8d8-18c1-4eb0-815e-981619635532\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/ids",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"ids"
+							]
+						},
+						"description": "Tries to call a delete bundle by id, without user."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle Non-Existing  Bundles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2c8ca21c-d218-4859-8d1f-770d5f4d2486",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Removing bundles in a separated process\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"identifiers\":[\"n0ex1st-18c1-4eb0-815e-981619635532\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/ids",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"ids"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Path: /api/bundle/ids",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "011547e9-2116-46f0-bf57-70e49af4cc7c",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "e13150a3-c75b-46a9-972e-f52ede0f5aef",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "deleteBundlesOlderThan",
+			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "af02c32c-9ad9-4198-8a08-a2842bc9caf3",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Future Date",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d121dcd8-5647-4c06-bcb4-3db096659958",
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/olderthan/2100-02-05T02:05:17+00:00",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"olderthan",
+								"2100-02-05T02:05:17+00:00"
+							]
+						},
+						"description": "Tries to delete a bundle by date, in a far far future day"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Date Non User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3f39c039-a6db-4300-92d9-f1daa8f56fc6",
+								"exec": [
+									"pm.test(\"Status code is 401, You need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/olderthan/2019-02-05T02:05:17+00:00",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"olderthan",
+								"2019-02-05T02:05:17+00:00"
+							]
+						},
+						"description": "Tries to delete a bundle by date, without user"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Date Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "93f43124-f361-4df5-97ec-3bbe457890d2",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/olderthan/2019-02-05T02:05:17+00:00",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"olderthan",
+								"2019-02-05T02:05:17+00:00"
+							]
+						},
+						"description": "Tries to delete a bundle by date"
+					},
+					"response": []
+				}
+			],
+			"description": "Path: api/bundle/olderthan/{olderThan}",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "e43dbca6-c1ea-4f33-87bb-6c170d658596",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "45e692ac-c178-4122-9ede-df1d0583eaca",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "deleteAllFail",
+			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "967ab64b-bb42-4486-a00d-c3c283c049e5",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Fail Non User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "cf2c1f22-a21b-401c-a3b3-6d2abc0f1091",
+								"exec": [
+									"pm.test(\"Status code is 401, You need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/all/fail",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"all",
+								"fail"
+							]
+						},
+						"description": "Tries to delete a bundle failed, without user"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle Failed Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d98a96f7-e709-411c-b642-3cab2dbec123",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/all/fail",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"all",
+								"fail"
+							]
+						},
+						"description": "Tries to delete a bundle failed"
+					},
+					"response": []
+				}
+			],
+			"description": "Path: api/bundle/all/fail",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "2640c6d0-ede6-4b60-ba84-268e6f7664d1",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "c7e2bff7-ca86-4b5a-a76f-97cc52d45dd0",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "deleteAllSuccess",
+			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "08c78a54-ec9f-4c0e-99c7-975815751ccc",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Success Non User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9f7a253a-353e-4116-9802-629ce518cd81",
+								"exec": [
+									"pm.test(\"Status code is 401, You need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/all/success",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"all",
+								"success"
+							]
+						},
+						"description": "Tries to delete a bundle success, without user"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "832be078-cf8e-4b70-9b92-0d1d9d64588c",
+								"exec": [
+									"pm.test(\"Status code is 200, You need credentials\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/all/success",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"all",
+								"success"
+							]
+						},
+						"description": "Tries to delete a bundle failed"
+					},
+					"response": []
+				}
+			],
+			"description": "Path: /api/budle/all/success",
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "deleteAll",
+			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8affb923-f9d6-4e62-98e3-1b0101e98d2a",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by All Non User ",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a5f3ef4c-e2be-4a1f-b7a2-33f340d7e3fa",
+								"exec": [
+									"pm.test(\"Status code is 401, You need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/all",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"all"
+							]
+						},
+						"description": "Tries to delete a bundle all, without user"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle All",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c9fd4dbf-71ac-4e50-bc50-378c0e416254",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/all",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"all"
+							]
+						},
+						"description": "Tries to delete a bundle all"
+					},
+					"response": []
+				}
+			],
+			"description": "Path: /api/bundle/all",
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "Upload Bundle",
 			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1e074ba6-4bb7-4258-9755-c1b742687830",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "GivenNoUser_ShouldRespond401",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "2305dc20-7cfd-4df6-860d-e9631b0327b8",
+								"id": "d35bf253-7fca-4878-885f-ac16c1b3aef7",
 								"exec": [
 									"pm.test(\"Response code is 401\", pm.response.to.have.status(401));"
 								],
@@ -45,7 +863,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": []
+									"src": "resources/BundleResource/testBundle.tar.gz"
 								}
 							],
 							"options": {
@@ -53,7 +871,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -62,10 +880,6 @@
 								"bundle"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -82,7 +896,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "20ad8dfc-6837-4047-8664-9f6d968cd9ff",
+								"id": "47b9e01a-0479-4fd1-a4e9-2c775c67c4fd",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -132,6 +946,7 @@
 							"formdata": [
 								{
 									"key": "file",
+									"contentType": "application/tar+gzip ",
 									"type": "file",
 									"src": "/build/src/core/dotCMS/src/curl-test/resources/BundleResource/testBundle.tar.gz"
 								}
@@ -141,19 +956,16 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -171,7 +983,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6519457b-3419-48a3-bea5-1821ad32032c",
+								"id": "863b93fe-6a92-4fd6-8b65-8e83e7c91aee",
 								"exec": [
 									"pm.test(\"Content imported in bundle exists\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -212,6 +1024,92 @@
 								"content",
 								"id",
 								"d84e5b70-ae46-42a8-80ff-62ba9d7095d5"
+							],
+							"query": [
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenValidBundle_ShouldUploadAsync",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "093e4c9d-8f2f-466b-8756-29dfbb975dac",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"testBundle.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"contentType": "application/tar+gzip ",
+									"type": "file",
+									"src": "resources/BundleResource/testBundle.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
 							],
 							"query": [
 								{

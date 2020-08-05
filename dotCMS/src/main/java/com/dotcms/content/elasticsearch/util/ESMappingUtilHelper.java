@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
@@ -26,9 +27,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.collect.ImmutableMap;
 import com.jayway.jsonpath.JsonPath;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -39,6 +43,7 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -77,10 +82,10 @@ public class ESMappingUtilHelper {
     }
 
     /**
-     * Sets a custom index mapping for relationships and also for mapping defined on field variables
-     * using `esCustomMapping` property
+     * Sets a custom index mapping for all fields in a full reindex (including relationship fields and
+     * field variables that define the `esCustomMapping` key)
      *
-     * @param indexName - Index where mapping will be updated
+     * @param indexName - Index where mapping will be applied
      */
     @CloseDBIfOpened
     public void addCustomMapping(final String indexName) {
@@ -90,6 +95,30 @@ public class ESMappingUtilHelper {
         addCustomMappingForRelationships(indexName, mappedFields);
 
         addMappingForRemainingFields(indexName, mappedFields);
+    }
+
+    /**
+     * Sets an ES mapping for a {@link Field} (it does not include field variables) on a specified index.
+     * This method is used when a new field is created
+     * @param indexName - Index where mapping will be applied
+     * @param field
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     * @throws JSONException
+     */
+    @CloseDBIfOpened
+    public void addCustomMapping(final String indexName, final Field field)
+            throws DotSecurityException, DotDataException, IOException, JSONException {
+        final ContentType contentType = contentTypeAPI.find(field.contentTypeId());
+        if (field instanceof RelationshipField){
+            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, APILocator.systemUser());
+            putRelationshipMapping(indexName, relationship.getRelationTypeValue().toLowerCase());
+        } else {
+            final String fieldVariableName = (contentType.variable() + StringPool.PERIOD + field.variable())
+                    .toLowerCase();
+            putMappingForField(indexName, contentType, field, getMappingForField(field, fieldVariableName));
+        }
     }
 
     /**
@@ -108,15 +137,9 @@ public class ESMappingUtilHelper {
         for (final Relationship relationship : relationships) {
             final String relationshipName = relationship.getRelationTypeValue().toLowerCase();
             if (!mappedFields.contains(relationshipName)) {
-                final JSONObject properties = new JSONObject();
+
                 try {
-                    properties.put("properties", new JSONObject()
-                            .put(relationshipName,
-                                    new JSONObject("{\n"
-                                            + "\"type\":  \"keyword\",\n"
-                                            + "\"ignore_above\": 8191\n"
-                                            + "}")));
-                    esMappingAPI.putMapping(indexName, properties.toString());
+                    putRelationshipMapping(indexName, relationshipName);
 
                     //Adds to the set the mapped already set for this field
                     mappedFields.add(relationshipName);
@@ -130,6 +153,25 @@ public class ESMappingUtilHelper {
                 }
             }
         }
+    }
+
+    /**
+     * Creates a json mapping for a relationship and saves it into the specified index
+     * @param indexName - Index where the mapping will be saved (Full index name including cluster id)
+     * @param relationshipName - Relationship to be indexed
+     * @throws JSONException
+     * @throws IOException
+     */
+    private void putRelationshipMapping(final String indexName, final String relationshipName)
+            throws JSONException, IOException {
+        final JSONObject properties = new JSONObject();
+        properties.put("properties", new JSONObject()
+                .put(relationshipName,
+                        new JSONObject("{\n"
+                                + "\"type\":  \"keyword\",\n"
+                                + "\"ignore_above\": 8191\n"
+                                + "}")));
+        esMappingAPI.putMapping(indexName, properties.toString());
     }
 
     /**
@@ -176,19 +218,12 @@ public class ESMappingUtilHelper {
                 Field field = null;
                 ContentType type = null;
                 try {
+
                     field = fieldFactory.byId(fieldVariable.fieldId());
                     type = contentTypeAPI.find(field.contentTypeId());
-                    final JSONObject jsonObject = new JSONObject();
-                    final JSONObject properties = new JSONObject();
 
-                    jsonObject.put(type.variable().toLowerCase(),
-                            new JSONObject()
-                                    .put("properties", new JSONObject()
-                                            .put(field.variable()
-                                                            .toLowerCase(),
-                                                    new JSONObject(fieldVariable.value()))));
-                    properties.put("properties", jsonObject);
-                    esMappingAPI.putMapping(indexName, properties.toString());
+                    putMappingForField(indexName, type, field, fieldVariable.value());
+
 
                     //Adds to the set the mapped already set for this field
                     mappedFields.add((type.variable() + StringPool.PERIOD + field.variable())
@@ -250,40 +285,10 @@ public class ESMappingUtilHelper {
         final String fieldVariableName = (contentType.variable() + StringPool.PERIOD + field.variable())
                         .toLowerCase();
         if (!mappedFields.contains(fieldVariableName)) {
-            String mappingForField = null;
-            if (field instanceof DateField || field instanceof DateTimeField
-                    || field instanceof TimeField) {
-                mappingForField = "\"type\":\"date\",\n";
-                mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n";
-            } else if (field instanceof TextField || field instanceof TextAreaField
-                    || field instanceof WysiwygField || field instanceof RadioField
-                    || field instanceof SelectField) {
-                if (field.dataType() == DataTypes.BOOL) {
-                    mappingForField = "\"type\":\"boolean\"\n";
-                } else if (field.dataType() == DataTypes.FLOAT) {
-                    mappingForField = "\"type\":\"float\"\n";
-                } else if (field.dataType() == DataTypes.INTEGER) {
-                    mappingForField = "\"type\":\"integer\"\n";
-                } else if (!matchesExclusions(fieldVariableName)){
-                    mappingForField = "\"type\":\"text\"\n";
-                }
-            }
+            String mappingForField = getMappingForField(field, fieldVariableName);
             if (mappingForField != null) {
                 try {
-
-                    final JSONObject jsonObject = new JSONObject();
-                    final JSONObject properties = new JSONObject();
-
-                    jsonObject.put(contentType.variable().toLowerCase(),
-                            new JSONObject()
-                                    .put("properties", new JSONObject()
-                                            .put(field.variable().toLowerCase(),
-                                                    new JSONObject("{\n"
-                                                            + mappingForField
-                                                            + "}"))));
-                    properties.put("properties", jsonObject);
-                    esMappingAPI.putMapping(indexName, properties.toString());
-
+                    putMappingForField(indexName, contentType, field, mappingForField);
                     //Adds to the set the mapped already set for this field
                     mappedFields.add(fieldVariableName);
                 } catch (Exception e) {
@@ -297,6 +302,63 @@ public class ESMappingUtilHelper {
             }
         }
     }
+
+    /**
+     * Given a {@link Field}, obtains the ES mapping according to the {@link Field} type
+     * @param field
+     * @param fieldVariableName
+     * @return
+     */
+    private String getMappingForField(final Field field, final String fieldVariableName) {
+        final Map<DataTypes, String> dataTypesMap = ImmutableMap
+                .of(DataTypes.BOOL, "boolean", DataTypes.FLOAT, "float", DataTypes.INTEGER,
+                        "integer");
+        String mappingForField = null;
+        if (field instanceof DateField || field instanceof DateTimeField
+                || field instanceof TimeField) {
+            mappingForField = "{\n\"type\":\"date\",\n";
+            mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n}";
+        } else if (field instanceof TextField || field instanceof TextAreaField
+                || field instanceof WysiwygField || field instanceof RadioField
+                || field instanceof SelectField) {
+            if (dataTypesMap.containsKey(field.dataType())) {
+                mappingForField = String.format("{\n\"type\":\"%s\"\n}", dataTypesMap.get(field.dataType()));
+            } else if (!matchesExclusions(fieldVariableName)){
+                mappingForField = "{\n"
+                        + "\"type\":\"text\",\n"
+                        + "\"analyzer\":\"my_analyzer\""
+                        + "\n}";
+            }
+        }
+        return mappingForField;
+    }
+
+    /**
+     * Generates a json mapping for a field with the details set in `mappingForField`.
+     * This mapping will be applied into the specified index
+     * @param indexName - Index where the mapping will be applied (Full index name including cluster id)
+     * @param contentType
+     * @param field
+     * @param mappingForField - Mapping details to be added
+     * @throws JSONException
+     * @throws IOException
+     */
+    private void putMappingForField(final String indexName, final ContentType contentType, final Field field,
+            final String mappingForField) throws JSONException, IOException {
+
+        final JSONObject jsonObject = new JSONObject();
+        final JSONObject properties = new JSONObject();
+
+        jsonObject.put(contentType.variable().toLowerCase(),
+                new JSONObject()
+                        .put("properties", new JSONObject()
+                                .put(field.variable().toLowerCase(),
+                                        new JSONObject(mappingForField))));
+        properties.put("properties", jsonObject);
+        esMappingAPI.putMapping(indexName, properties.toString());
+    }
+
+
 
     /**
      * Verifies if a field variable name is part of the exclusions defined in the `es-content-mapping.json` </p>

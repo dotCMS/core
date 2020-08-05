@@ -4,6 +4,7 @@ import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
 
+import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
@@ -26,7 +27,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     @Override
     public Collection<? extends GraphQLType> getTypes() {
 
-        final Map<String, TypeFetcher> pageFields = new HashMap<>(InterfaceType.getContentFields());
+        final Map<String, TypeFetcher> pageFields = new HashMap<>(ContentFields.getContentFields());
         pageFields.put("__icon__", new TypeFetcher(GraphQLString));
         pageFields.put("cachettl", new TypeFetcher(GraphQLString));
         pageFields.put("canEdit", new TypeFetcher(GraphQLBoolean));

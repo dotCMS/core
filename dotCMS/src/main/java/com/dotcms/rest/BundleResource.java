@@ -1,12 +1,5 @@
 package com.dotcms.rest;
 
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_BUNDLE;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_PUBLISH;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SENT;
-import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS;
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
@@ -25,6 +18,7 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -44,16 +38,12 @@ import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLDecoder;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -65,16 +55,30 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.ServerErrorException;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.ContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.server.JSONP;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLDecoder;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_BUNDLE;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_PUBLISH;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SENT;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS;
 
 @Path("/bundle")
 public class BundleResource {
@@ -621,66 +625,53 @@ public class BundleResource {
                 "Removing bundles in a separated process, the result of the operation will be notified")).build();
     } // deleteAllSuccess.
 
+    @Path("/sync")
     @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response uploadBundle(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            FormDataMultiPart multipart,
-            @Context UriInfo uriInfo, @QueryParam("sync") boolean sync) throws DotPublisherException {
+    public final Response uploadBundleSync(@Context final HttpServletRequest request,
+                                       @Context final HttpServletResponse response,
+                                       FormDataMultiPart multipart) throws DotPublisherException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
+                .requireLicense(true)
                 .init();
 
         for (final BodyPart part : multipart.getBodyParts()) {
-            try(InputStream inputStream = part.getEntity() instanceof InputStream ? (InputStream) part
-                    .getEntity()
+
+            try(InputStream inputStream = part.getEntity() instanceof InputStream ?
+                    (InputStream)  part.getEntity()
                     : Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull()) {
 
-                if (inputStream == null) {
-                    continue;
-                }
-                final ContentDisposition meta = part.getContentDisposition();
-                if (meta == null) {
-                    continue;
-                }
-                final String fileName = meta.getFileName();
-                if (UtilMethods.isNotSet(fileName) || fileName.startsWith(".") || fileName
-                        .contains("/.")) {
+                final String fileName = this.validateInputsAndGetFileName(part, inputStream);
+                if (fileName == null) {
+
                     continue;
                 }
 
-                String bundleName = BundlerUtil.sanitizeBundleName(fileName);
-                String bundlePath = ConfigUtils.getBundlePath() + File.separator;
+                final String bundleName = BundlerUtil.sanitizeBundleName(fileName);
+                final String bundlePath = ConfigUtils.getBundlePath() + File.separator;
 
                 FileUtil.writeToFile(inputStream, bundlePath + bundleName);
 
-                String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
-                String endpointId = initData.getUser().getUserId();
+                final String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+                final String endpointId   = initData.getUser().getUserId();
                 response.setContentType("text/html; charset=utf-8");
                 PublishAuditStatus previousStatus = PublishAuditAPI
                         .getInstance().updateAuditTable(endpointId, endpointId, bundleFolder);
 
-                PublisherConfig config = null;
+                final PublisherConfig config = !previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)?
+                        new PublishThread(bundleName, null, endpointId, previousStatus).processBundle(): null;
 
-                if (!previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
-                    if (sync) {
-                        config = new PublishThread(bundleName, null, endpointId, previousStatus)
-                                .processBundle();
-                    } else {
-                        new Thread(new PublishThread(bundleName, null, endpointId,
-                                previousStatus)).start();
-                    }
-                }
-
-                String finalStatus =
-                        config != null ? config.getPublishAuditStatus().getStatus().name()
-                                : Status.RECEIVED_BUNDLE.name();
+                final String finalStatus = config != null ?
+                        config.getPublishAuditStatus().getStatus().name():
+                        Status.RECEIVED_BUNDLE.name();
 
                 return Response.ok(ImmutableMap.of("bundleName", bundleName, "status", finalStatus))
                         .build();
@@ -692,6 +683,107 @@ public class BundleResource {
         }
 
         return Response.ok().build();
+    } // uploadBundleSync.
+
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final void uploadBundleAsync(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                       @Suspended final AsyncResponse asyncResponse,
+                                        FormDataMultiPart multipart) throws DotPublisherException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requireLicense(true)
+                .init();
+
+        for (final BodyPart part : multipart.getBodyParts()) {
+
+            try(InputStream inputStream = part.getEntity() instanceof InputStream ? (InputStream) part
+                    .getEntity()
+                    : Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull()) {
+
+                final String fileName = this.validateInputsAndGetFileName(part, inputStream);
+                if (fileName == null) {
+                    continue;
+                }
+
+                final String bundleName = BundlerUtil.sanitizeBundleName(fileName);
+                final String bundlePath = ConfigUtils.getBundlePath() + File.separator;
+
+                FileUtil.writeToFile(inputStream, bundlePath + bundleName);
+
+                final String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+                final String endpointId = initData.getUser().getUserId();
+                response.setContentType("text/html; charset=utf-8");
+                final PublishAuditStatus previousStatus = PublishAuditAPI
+                        .getInstance().updateAuditTable(endpointId, endpointId, bundleFolder);
+
+                if (!previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
+
+                    final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
+                            .getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
+                    dotSubmitter.execute(() -> {
+
+                        final PublisherConfig config = new PublishThread(bundleName, null, endpointId, previousStatus)
+                                .processBundle();
+
+                        final String finalStatus =
+                                config != null ? config.getPublishAuditStatus().getStatus().name()
+                                        : Status.RECEIVED_BUNDLE.name();
+
+                        asyncResponse.resume(
+                                Response.ok(ImmutableMap.of("bundleName", bundleName, "status", finalStatus)).build()
+                        );
+                    });
+                } else {
+
+                    asyncResponse.resume(
+                            Response.ok(ImmutableMap.of("bundleName", bundleName, "status", Status.RECEIVED_BUNDLE.name())).build()
+                    );
+                }
+
+                return;
+            } catch (IOException e) {
+                Logger.error(this, "Unable to import Bundle", e);
+                asyncResponse.resume(ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR));
+            }
+        }
+
+        asyncResponse.resume(
+                Response.ok(Response.ok().build()).build()
+        );
+    } // uploadBundleAsync.
+
+    private String validateInputsAndGetFileName(final BodyPart part, final InputStream inputStream) {
+
+        if (inputStream == null) {
+
+            Logger.warn(this, () -> "Skipping part since input stream is null on body part: " + part);
+            return null;
+        }
+
+        final ContentDisposition meta = part.getContentDisposition();
+        if (meta == null) {
+
+            Logger.warn(this, () -> "Skipping part since Content Disposition is null on body part: " + part);
+            return null;
+        }
+
+        final String fileName = meta.getFileName();
+        if (UtilMethods.isNotSet(fileName) || fileName.startsWith(".") || fileName
+                .contains("/.")) {
+
+            Logger.warn(this, () -> "Skipping part since file Name is invalid on body part: " + part);
+            return null;
+        }
+
+        return fileName;
     }
 
 }

@@ -146,9 +146,11 @@ public class ReindexQueueFactory {
      */
     protected boolean hasReindexRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
-        String sql = (DbConnectionFactory.isMsSql()) 
-                        ? "SELECT TOP 1 from dist_reindex_journal where priority >= ? and  priority < ?"
-                                : "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
+        String sql = DbConnectionFactory.isMsSql()
+                ? "SELECT TOP 1 id from dist_reindex_journal where priority >= ? and  priority < ?"
+                : DbConnectionFactory.isOracle() ?
+                        "select 1 from dist_reindex_journal where priority >= ? and  priority < ? and rownum=1"
+                        : "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
         dc.setSQL(sql);
         
         dc.addParam(Priority.REINDEX.dbValue());
