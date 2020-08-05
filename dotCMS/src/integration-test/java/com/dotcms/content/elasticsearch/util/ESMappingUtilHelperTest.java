@@ -128,7 +128,7 @@ public class ESMappingUtilHelperTest {
                 {"geomapping", new String[]{"mylatlon"}, "geo_point"},
                 {"geomapping_2", new String[]{"latlong"}, "geo_point"},
                 {"keywordmapping", new String[]{"categories", "tags", "conhost", "conhostname",
-                        "wfstep", "structurename", "contenttype", "parentpath", "path", "urlmap",
+                        "wfstep", "structurename", "contenttype", "parentpath", "path",
                         "moduser", "owner"}, "keyword"}
         };
     }
@@ -476,7 +476,7 @@ public class ESMappingUtilHelperTest {
             } catch(NotFoundInDbException e){
                 final List<Field> eventFields = new ArrayList<>();
                 eventFields
-                        .add(new FieldDataGen().name("Title").velocityVarName("title").indexed(true)
+                        .add(new FieldDataGen().type(TextField.class).name("Title").velocityVarName("title").indexed(true)
                                 .next());
                 eventFields.add(new FieldDataGen().type(DateField.class).name("StartDate").defaultValue(null)
                         .velocityVarName("startDate").indexed(true).next());
@@ -500,6 +500,17 @@ public class ESMappingUtilHelperTest {
                     .setProperty("recurrenceEnd", new Date()).nextPersisted();
 
             validateMappingForFields(testCase, null, fields, expectedResult);
+
+            //verifies analyzer for common text fields
+            final Map<String, String> mapping = (Map<String, String>) esMappingAPI
+                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                            "calendarevent.title").entrySet().iterator()
+                    .next().getValue();
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("text", mapping.get("type"));
+
+            assertTrue(UtilMethods.isSet(mapping.get("analyzer")));
+            assertEquals("my_analyzer", mapping.get("analyzer"));
         }finally {
             if (event != null){
                 ContentletDataGen.destroy(event);

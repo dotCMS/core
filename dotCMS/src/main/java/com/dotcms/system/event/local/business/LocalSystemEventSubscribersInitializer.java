@@ -1,6 +1,9 @@
 package com.dotcms.system.event.local.business;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
+import com.dotcms.saml.DotSamlProxyFactory;
+import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.AppsKeyResetEventListener;
 import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
 import java.util.List;
@@ -41,6 +44,8 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, PushPublishKeyResetEventListener.INSTANCE.get());
 
         APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, AppsKeyResetEventListener.INSTANCE.get());
+
+        APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class,  DotSamlProxyFactory.getInstance());
 
     }
 

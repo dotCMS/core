@@ -26,8 +26,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.business.FieldAPITest.UniqueConstraintTestCase.DuplicateType;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -67,9 +70,11 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1387,6 +1392,129 @@ public class FieldAPITest extends IntegrationTestBase {
 
         } finally {
             contentTypeAPI.delete(type);
+        }
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FieldAPIImpl#save(Field, User)}
+     * <p>
+     * <b>Given scenario:</b> A new {@link Field} is saved and marked as `indexed=false`
+     * <p>
+     * <b>Expected result:</b> The field should be saved without ES mapping
+     */
+    @Test
+    public void test_SaveNewNoIndexedField_ShouldNotAddESMapping()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        final ContentType type = new ContentTypeDataGen().nextPersisted();
+        try {
+            Field field = FieldBuilder.builder(DateField.class)
+                    .name("field" + time)
+                    .variable("field" + time)
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+
+            //verify mapping on working index
+            Map<String, Object> mapping = mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                            (type.variable() + StringPool.PERIOD + field.variable()));
+            assertFalse(UtilMethods.isSet(mapping));
+
+            //verify mapping on live index
+            mapping = mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                            (type.variable() + StringPool.PERIOD + field.variable()));
+            assertFalse(UtilMethods.isSet(mapping));
+        }finally{
+            ContentTypeDataGen.remove(type);
+        }
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FieldAPIImpl#save(Field, User)}
+     * <p>
+     * <b>Given scenario:</b> A new {@link DateField} is saved and marked as `indexed=true`
+     * <p>
+     * <b>Expected result:</b> The field should be saved and mapped in ES with `type=date`
+     */
+    @Test
+    public void test_SaveNewIndexedField_ShouldAddESMapping()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        final ContentType type = new ContentTypeDataGen().nextPersisted();
+        try {
+            Field field = FieldBuilder.builder(DateField.class)
+                    .name("field" + time)
+                    .variable("field" + time)
+                    .contentTypeId(type.id())
+                    .indexed(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+
+            //verify mapping on working index
+            Map<String, String> mapping = (Map<String, String>) mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                            (type.variable() + StringPool.PERIOD + field.variable())
+                                    .toLowerCase()).get(field.variable());
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("date", mapping.get("type"));
+
+            //verify mapping on live index
+            mapping = (Map<String, String>) mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                            (type.variable() + StringPool.PERIOD + field.variable())
+                                    .toLowerCase()).get(field.variable());
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("date", mapping.get("type"));
+        }finally{
+            ContentTypeDataGen.remove(type);
+        }
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FieldAPIImpl#save(Field, User)}
+     * <p>
+     * <b>Given scenario:</b> A new {@link RelationshipField} is saved and marked as `indexed=true`
+     * <p>
+     * <b>Expected result:</b> The field should be saved and mapped in ES with `type=keyword`
+     */
+    @Test
+    public void test_SaveNewRelationshipField_ShouldAddESMapping()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("contentType" + time);
+        try {
+            final Field field = createAndSaveRelationshipField("newRel",
+                    type.id(), type.variable(), CARDINALITY);
+
+            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+
+            //verify mapping on working index
+            Map<String, String> mapping = (Map<String, String>) mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                            (type.variable() + StringPool.PERIOD + field.variable())
+                                    .toLowerCase()).get(field.variable().toLowerCase());
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("keyword", mapping.get("type"));
+
+            //verify mapping on live index
+            mapping = (Map<String, String>) mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                            (type.variable() + StringPool.PERIOD + field.variable())
+                                    .toLowerCase()).get(field.variable().toLowerCase());
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("keyword", mapping.get("type"));
+        }finally{
+            ContentTypeDataGen.remove(type);
         }
     }
 

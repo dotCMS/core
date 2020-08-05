@@ -2,9 +2,10 @@ package com.dotmarketing.business.cache.provider.h22;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.lang.RandomStringUtils;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class H22CacheTest {
@@ -32,52 +34,70 @@ public class H22CacheTest {
 					+ "C"
 					+ "ASDSADFDDSFasfddsadasdsadsadasdq3r4efwqrrqwerqewrqewrqreqwreqwrqewrqwerqewrqewrqwerqwerqwerqewr43545324542354235243524354325423qwerewds fds fds gf eqgq ewg qeg qe wg egw	ww	eeR ASdsadsadadsadsadsadaqrewq43223t14@#$#@^%$%&%#$sfwf	erqwfewfqewfgqewdsfqewtr243fq43f4q444fa4ferfrearge");;
 	final String CANT_CACHE_KEYNAME = "CantCacheMe";
-	final int numberOfPuts = 5000;
+	final int numberOfPuts = 1000;
 	final int numberOfThreads = 40;
 	final int numberOfGroups = 100;
 	final int maxCharOfObjects = 100;
+	static H22Cache cache ;
+	
+	@BeforeClass
+	public static void initCache(){
+	       // File dir = Files.createTempDir();
+        File dir = new File("/tmp/h2cachetest");
+        FileUtil.deltree(dir);
+        dir.mkdirs();
 
+        cache = new H22Cache(dir.getAbsolutePath());
+        try {
+            cache.init();
+        }
+        catch(Exception e) {
+            throw new DotRuntimeException(e);
+        }
+	}
+	
+	
+	
+    @Test
+    public void test_basic_cache_operations() throws Exception {
+
+
+        assertThat("Are we the H2 Cache Loader?", "H22Cache".equals(cache.getKey()));
+
+        for (String group : GROUPNAMES) {
+            // put content
+            cache.put(group, KEYNAME, CONTENT);
+
+
+            // get content from cache
+            assertThat("Did we cache something", CONTENT.equals(getFromCacheLoop(group, KEYNAME)));
+            // flush the group and check that we are null
+            cache.remove(group);
+            assertThat("we should be null", cache.get(group, KEYNAME) == null);
+
+            // put content
+            cache.put(group, KEYNAME, CONTENT);
+
+            // get content from cache
+            assertThat("Did we cache something", CONTENT.equals(getFromCacheLoop(group, KEYNAME)));
+
+            // remove the keyname
+            cache.remove(group, KEYNAME);
+
+            // get content from cache and check that we are null after remove
+            assertThat("we should be null after remove", getFromCacheLoop(group, KEYNAME) == null);
+
+        }
+    }
+	
+	
 	@Test
-	public void testInit() throws Exception {
+	public void test_special_cases_like_long_names() throws Exception {
 
-		// File dir = Files.createTempDir();
-		File dir = new File("/tmp/h2cachetest");
-		dir.delete();
-		dir.mkdirs();
-
-		H22Cache cache = new H22Cache(dir.getCanonicalPath());
-		cache.init();
-
-		
-		
-		assertThat("Are we the H2 Cache Loader?", "H22Cache".equals(cache.getKey()));
-
-		for (String group : GROUPNAMES) {
-			// put content
-			cache.put(group, KEYNAME, CONTENT);
-			// get content from cache
-			assertThat("Did we cache something", CONTENT.equals(cache.get(group, KEYNAME)));
-			// flush the group and check that we are null
-			cache.remove(group);
-			assertThat("we should be null", cache.get(group, KEYNAME) == null);
-
-			// put content
-			cache.put(group, KEYNAME, CONTENT);
-
-			// get content from cache
-			assertThat("Did we cache something", CONTENT.equals(cache.get(group, KEYNAME)));
-
-			// remove the keyname
-			cache.remove(group, KEYNAME);
-
-			// get content from cache and check that we are null after remove
-			assertThat("we should be null after remove", cache.get(group, KEYNAME) == null);
-
-		}
 
 		// try to cache a log key
 		cache.put(LONG_GROUPNAME, LONG_KEYNAME, CONTENT);
-		assertThat("We should cache with a long key", CONTENT.equals(cache.get(LONG_GROUPNAME, LONG_KEYNAME)));
+		assertThat("We should cache with a long key", CONTENT.equals(getFromCacheLoop(LONG_GROUPNAME, LONG_KEYNAME)));
 
 		// try to remove the long key
 		cache.remove(LONG_GROUPNAME);
@@ -85,12 +105,17 @@ public class H22CacheTest {
 
 		// try to cache something that can't be cached
 		cache.put(LONG_GROUPNAME, CANT_CACHE_KEYNAME, new CantCacheMeObject());
-		assertThat("we should be null because of the CANT_CACHE_ME ", cache.get(LONG_GROUPNAME, CANT_CACHE_KEYNAME) == null);
+		assertThat("we should be null because of the CANT_CACHE_ME ", getFromCacheLoop(LONG_GROUPNAME, CANT_CACHE_KEYNAME) == null);
 
 		// try to cache a log key
 		cache.put(LONG_GROUPNAME, LONG_KEYNAME, CONTENT);
-		assertThat("We should cache with a long key", CONTENT.equals(cache.get(LONG_GROUPNAME, LONG_KEYNAME)));
+		assertThat("We should cache with a long key", CONTENT.equals(getFromCacheLoop(LONG_GROUPNAME, LONG_KEYNAME)));
 
+		
+        // get content from cache
+        assertThat("Did we cache something", CONTENT.equals(getFromCacheLoop(LONG_GROUPNAME, LONG_KEYNAME)));
+        
+        
 		Fqn fqn = new Fqn(LONG_GROUPNAME, LONG_KEYNAME);
 		Set<String> keys = cache.getKeys(LONG_GROUPNAME);
 		assertThat("Keys should include long key", keys.contains(fqn.id));
@@ -100,34 +125,33 @@ public class H22CacheTest {
 		cache.removeAll();
 		assertThat("Cache flushed, we have no groups", cache.getGroups().size() == 0);
 
-
-		
-		// test dumping and rebuilding cache
-		//testMultithreaded(cache, numberOfThreads,true, false, true);
-		
-		// test causing an error and recovering
-		testMultithreaded(cache, numberOfThreads,false, true, false);
-		
-		//
-		cache.shutdown();
-
-		// cleanup
-		FileUtil.deltree(dir);
-
 	}
 
-	void testMultithreaded(H22Cache cache, int numberOfThreads,boolean dumpCacheInMiddle, boolean breakCache, final boolean dieOnError) throws InterruptedException, SQLException{
+	   
+        final String getFromCacheLoop(String groupName, String keyName) throws InterruptedException {
+
+            String fromCache = null;
+            for (int i = 0; i < 10; i++) {
+                fromCache = (String) cache.get(groupName, keyName);
+                if (fromCache != null) {
+                    return fromCache;
+                }
+                Thread.sleep(500l);
+            }
+            return fromCache;
+        }
+	
+	
+    @Test
+    public void test_multi_threaded_h22_including_recovery() throws Exception{
 
 		ExecutorService pool = Executors.newFixedThreadPool(numberOfThreads);
-
+		boolean dumpCacheInMiddle=false;
+		boolean dieOnError=false;
 
 		final List<Throwable> errors = new ArrayList<>();
 		for (int i = 0; i < numberOfPuts; i++) {
-			//test breaking the db mid test
-			if(i==numberOfPuts/4 && breakCache){
-				breakCache(cache);
-			}
-			
+
 			//test dumping the db mid test
 			if(i==numberOfPuts/2 && dumpCacheInMiddle){
 				cache.dispose(true);
@@ -174,7 +198,7 @@ public class H22CacheTest {
 
 	}
 	
-	void breakCache(H22Cache cache) throws SQLException{
+	void breakCache() throws SQLException{
 		Optional<Connection> conn = cache.createConnection(true, 0);
 		if(conn.isPresent()){
 			Statement stmt = conn.get().createStatement();
@@ -205,7 +229,7 @@ public class H22CacheTest {
 			cache.put(group, key, val);
 			String newVal = null;
 
-			newVal = (String) cache.get(group, key);
+			newVal = (String) Try.of(()->getFromCacheLoop(group, key)).getOrNull();
 			int testTimes=10;
 			// if the put failed (because the cache was rebuilding
 			// and initiing, it is possible to get a null value, so we try again
@@ -218,7 +242,7 @@ public class H22CacheTest {
 				}
 				
 				cache.put(group, key, val);
-				newVal = (String) cache.get(group, key);
+				newVal = (String) Try.of(()->getFromCacheLoop(group, key)).getOrNull();
 
 			}
 			try{

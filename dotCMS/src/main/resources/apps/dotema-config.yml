@@ -1,0 +1,12 @@
+name: "EMA APP"
+iconUrl: "/black_18dp.png"
+allowExtraParameters: false 
+description: "EMA APP"
+params:
+  proxyEditModeURL:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Proxy Edit Mode URL"
+    hint: "Your rendering server and endpoint that dotCMS will be proxying the request to, including the port"
+    required: true
