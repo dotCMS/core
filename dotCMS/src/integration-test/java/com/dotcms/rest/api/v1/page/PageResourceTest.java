@@ -486,6 +486,8 @@ public class PageResourceTest {
 
     @Test
     public void shouldReturnPageByURLPattern() throws DotDataException, DotSecurityException, InterruptedException {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
         final String baseUrl = String.format("/test%s", System.currentTimeMillis());
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -508,6 +510,7 @@ public class PageResourceTest {
         contentletDataGen
                 .setProperty("text", "text")
                 .languageId(1)
+                .host(host)
                 .nextPersisted();
 
         Thread.sleep(500);
@@ -531,6 +534,8 @@ public class PageResourceTest {
      */
     @Test(expected = HTMLPageAssetNotFoundException.class)
     public void shouldReturn404ForPageWithURLPatternWithNotLIVEContentInAdminMode() throws DotDataException, DotSecurityException, InterruptedException {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
         final String baseUrl = String.format("/test%s", System.currentTimeMillis());
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -573,6 +578,8 @@ public class PageResourceTest {
      */
     @Test(expected = HTMLPageAssetNotFoundException.class)
     public void shouldReturn404ForPageWithURLPatternWithNotLIVEContentInLiveMode() throws DotDataException, DotSecurityException, InterruptedException {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
         final String baseUrl = String.format("/test%s", System.currentTimeMillis());
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();

@@ -2,6 +2,7 @@ package com.dotmarketing.common.reindex;
 
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -69,8 +70,6 @@ import org.elasticsearch.action.bulk.BulkRequest;
  */
 public class ReindexThread {
 
-    private static AtomicBoolean currentIndexReadOnly = new AtomicBoolean();
-
     private enum ThreadState {
         STOPPED, PAUSED, RUNNING;
     }
@@ -89,10 +88,10 @@ public class ReindexThread {
     private long contentletsIndexed = 0;
     // bulk up to this many requests
     public static final int ELASTICSEARCH_BULK_ACTIONS = Config
-            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 1000);
+            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 250);
     //how many threads will be used per shard
     public static final int ELASTICSEARCH_CONCURRENT_REQUESTS = Config
-            .getIntProperty("REINDEX_THREAD_CONCURRENT_REQUESTS", 3);
+            .getIntProperty("REINDEX_THREAD_CONCURRENT_REQUESTS", 1);
     //Bulk size in MB. -1 means disabled
     public static final int ELASTICSEARCH_BULK_SIZE = Config
             .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 10);
@@ -184,16 +183,16 @@ public class ReindexThread {
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
               || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
-            if (bulkProcessor == null || rebuildBulkIndexer.get()) {
-              closeBulkProcessor(bulkProcessor);
-              bulkProcessorListener = new BulkProcessorListener();
-              bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
-            }
-            bulkProcessorListener.workingRecords.putAll(workingRecords);
-            indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-            contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
-          // otherwise, reindex normally
-          } else if (!currentIndexReadOnly.get()){
+              if (bulkProcessor == null || rebuildBulkIndexer.get()) {
+                  closeBulkProcessor(bulkProcessor);
+                  bulkProcessorListener = new BulkProcessorListener();
+                  bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
+              }
+              bulkProcessorListener.workingRecords.putAll(workingRecords);
+              indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
+              contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
+              // otherwise, reindex normally
+          } else if (!ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()){
               reindexWithBulkRequest(workingRecords);
           }
         } else {
@@ -325,8 +324,4 @@ public class ReindexThread {
                 notificationLevel, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
         systemUser.getLocale());
   }
-
-    public static void setCurrentIndexReadOnly(final boolean currentIndexReadOnly) {
-        ReindexThread.currentIndexReadOnly.set(currentIndexReadOnly);
-    }
 }

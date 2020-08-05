@@ -17,5 +17,5 @@ public interface GraphQLTypesProvider {
      * @return a collection of {@link GraphQLType}s
      * @throws DotDataException in case of invalid data
      */
-    Collection<GraphQLType> getTypes() throws DotDataException;
+    Collection<? extends GraphQLType> getTypes() throws DotDataException;
 }

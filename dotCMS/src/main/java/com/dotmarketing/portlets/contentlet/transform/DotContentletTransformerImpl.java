@@ -9,11 +9,11 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
-import com.dotmarketing.portlets.contentlet.transform.strategy.TransformToolbox;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -52,9 +52,10 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
             final StrategyResolver strategyResolver,
             final Set<TransformOptions> options,
             final User user) {
-        if(!isSet(contentlets)){
-           throw new DotRuntimeException("At least 1 contentlet must be set.");
-        }
+
+        DotPreconditions.checkArgument(contentlets!=null, "List of contentlets can't be null",
+                IllegalArgumentException.class);
+
         this.contentlets = contentlets;
         this.strategyResolver = strategyResolver;
         this.options = options;
@@ -118,7 +119,11 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
      * @return a copy contentlet
      */
     private Contentlet copy(final Contentlet contentlet) {
-       return TransformToolbox.copyContentlet(contentlet);
+        final Contentlet newContentlet = new Contentlet();
+        if (null != contentlet && null != contentlet.getMap()) {
+            newContentlet.getMap().putAll(contentlet.getMap());
+        }
+        return newContentlet;
     }
 
 }

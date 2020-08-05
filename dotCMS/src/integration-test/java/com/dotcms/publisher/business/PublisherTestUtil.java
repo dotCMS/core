@@ -40,8 +40,11 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import com.liferay.util.Encryptor;
+import com.liferay.util.EncryptorException;
 import java.io.File;
 import java.io.IOException;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -49,7 +52,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 
@@ -105,7 +107,35 @@ public class PublisherTestUtil {
     } // createEndpoint
 
     /**
-     * Deletes the bundle, endpoitn and environment, specially util at the end of a PP process for testing
+     * Creates a generic TestEndpoint
+     * @param environment
+     * @return
+     * @throws DotDataException
+     */
+    public static PublishingEndPoint createEndpoint (final Environment environment, final Key newKey, final String seedText)
+            throws DotDataException, EncryptorException {
+
+        final PublishingEndPointAPI publisherEndPointAPI  = APILocator.getPublisherEndPointAPI();
+        final PublishingEndPointFactory factory = new PublishingEndPointFactory();
+        final PublishingEndPoint endpoint1 = factory.getPublishingEndPoint(PROTOCOL);
+        endpoint1.setServerName( new StringBuilder( "TestEndPoint" + valueOf( new Date().getTime() ) ) );
+        endpoint1.setAddress( "127.0.0.1" );
+        endpoint1.setPort( "999" );
+        endpoint1.setProtocol(PROTOCOL);
+
+        final String encryptedKey =  Encryptor.encrypt(newKey,seedText);
+        endpoint1.setAuthKey( new StringBuilder( encryptedKey ) );
+        endpoint1.setEnabled( true );
+        endpoint1.setSending( false );
+        endpoint1.setGroupId( environment.getId() );
+
+        publisherEndPointAPI.saveEndPoint( endpoint1 );
+
+        return endpoint1;
+    } // createEnd
+
+    /**
+     * Deletes the bundle, endpoint and environment, specially util at the end of a PP process for testing
      * @param bundle1
      * @param endpoint1
      * @param environment1

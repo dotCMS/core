@@ -3384,11 +3384,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					this.findActions(step, user);
 
 			for (final WorkflowAction action : actionSteps) {
-
-				final String stepId   = steps.get(step.getId()).getId();
-				final String actionId = actions.get(action.getId()).getId();
-
-				this.saveAction(actionId, stepId, user, actionOrder++);
+				if (steps.containsKey(step.getId()) && actions.containsKey(action.getId())) {
+					final String stepId = steps.get(step.getId()).getId();
+					final String actionId = actions.get(action.getId()).getId();
+					this.saveAction(actionId, stepId, user, actionOrder++);
+				}
 			}
 		}
 

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 
 import java.io.Serializable;
 import java.util.*;
@@ -397,7 +398,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	}
 
 	public String getCondition() {
-		return condition;
+		return null == condition? StringPool.BLANK: condition;
 	}
 
 	public void setCondition(String condition) {

@@ -8,12 +8,14 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URL;
 import java.nio.CharBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -32,6 +34,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -116,8 +119,23 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
-        final String esProtocol = Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL);
-        final boolean securedConnection = HTTPS_PROTOCOL.equals(esProtocol);
+        
+        final HttpHost[] esEndpoints = getEndpoints();
+        
+        
+        
+        
+        
+        Logger.info(this.getClass(),
+                        "Initializing Elastic RestHighLevelClient using endpoints [");
+        for(HttpHost host : esEndpoints) {
+            Logger.info(this.getClass(), "  - " + host);
+        }
+        Logger.info(this.getClass(),
+                        "]");
+        
+        
+        final boolean securedConnection = esEndpoints[0].getSchemeName().equalsIgnoreCase("https");
         if (securedConnection){
             Logger.info(this.getClass(),
                     "Initializing Elastic RestHighLevelClient using a secured https connection");
@@ -126,10 +144,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     "Initializing Elastic RestHighLevelClient using an unsecured http connection");
         }
 
-
         final RestClientBuilder clientBuilder = RestClient
-                .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
-                        Config.getIntProperty("ES_PORT", 9200), esProtocol))
+                .builder(esEndpoints)
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
                     
                     
@@ -170,6 +186,30 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         return clientBuilder;
     }
 
+    
+    private HttpHost[] getEndpoints() {
+
+        final String[] endpoints = Config.getStringArrayProperty("ES_ENDPOINTS", getDefaultEndpoint());
+        return Arrays.asList(endpoints).stream().map(h -> {
+            URL url = Try.of(()->new URL(h)).getOrElseThrow(e->new DotRuntimeException(e));
+            return new HttpHost(url.getHost(), url.getPort(), url.getProtocol());
+        }).toArray(HttpHost[]::new);
+    }
+    
+    
+    private String[] getDefaultEndpoint() {
+
+        String ES_HOSTNAME   = Config.getStringProperty("ES_HOSTNAME", "localhost");
+        String ES_PROTOCOL   = Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL);
+        int ES_PORT          = Config.getIntProperty("ES_PORT", 9200);
+        
+        return new String[] {ES_PROTOCOL + "://" + ES_HOSTNAME + ":" + ES_PORT};
+    }
+    
+    
+
+
+    
     private String getESAuthType() {
         return Config.getStringProperty("ES_AUTH_TYPE", BASIC_AUTH_TYPE);
     }

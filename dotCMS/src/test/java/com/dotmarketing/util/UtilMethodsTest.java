@@ -13,6 +13,30 @@ import org.junit.Test;
 public class UtilMethodsTest extends UnitTestBase {
 
 	@Test
+	public void testIsValidURL_Valid() {
+
+		final String url = "https://demo.dotcms.com";
+
+		assertTrue(UtilMethods.isValidURL(url));
+	}
+
+	@Test
+	public void testIsValidURL_NULL() {
+
+		final String url = null;
+
+		assertFalse(UtilMethods.isValidURL(url));
+	}
+
+	@Test
+	public void testIsValidURL_Invalid() {
+
+		final String url = "xxx";
+
+		assertFalse(UtilMethods.isValidURL(url));
+	}
+
+	@Test
     public void testValidateFileName_Valid() {
 		String fileName = "abc.html";
 

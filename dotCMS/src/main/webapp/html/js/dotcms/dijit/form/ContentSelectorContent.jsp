@@ -1,4 +1,11 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
+<style>
+    .content-search-dialog__content-type-menu {
+        display: block;
+        max-height: 88vh;
+        overflow-y: auto !important;
+    }
+</style>
 <form
     dojoAttachPoint="search_form"
     onsubmit="return false;"
@@ -30,15 +37,19 @@
                 <div dojoAttachPoint="search_general">
                     <dl class="vertical">
                         <dt>
-                            <label><%= LanguageUtil.get(pageContext, "Search") %>:</label>
+                            <label
+                                ><%= LanguageUtil.get(pageContext, "Search")
+                                %>:</label
+                            >
                         </dt>
                         <dd>
-                        <input
-                            type="text"
-                            dojoType="dijit.form.TextBox"
-                            data-dojo-props="intermediateChanges:true"
-                            dojoAttachEvent="onKeyUp:_doDebounceSearch"
-                            dojoAttachPoint="generalSearch" />
+                            <input
+                                type="text"
+                                dojoType="dijit.form.TextBox"
+                                data-dojo-props="intermediateChanges:true"
+                                dojoAttachEvent="onKeyUp:_doSearchPage1"
+                                dojoAttachPoint="generalSearch"
+                            />
                         </dd>
                     </dl>
                 </div>
@@ -65,7 +76,7 @@
                         dojoAttachEvent="onClick:_clearSearch"
                         iconClass="cancelIcon"
                         class="dijitButtonFlat"
-                        style="margin-top: 16px"
+                        style="margin-top: 16px;"
                     >
                         <%= LanguageUtil.get(pageContext, "Clear") %>
                     </button>
@@ -81,7 +92,7 @@
                 <div
                     dojoAttachPoint="matchingResultsDiv"
                     class="portlet-toolbar__matching-results"
-                    style="visibility: hidden"
+                    style="visibility: hidden;"
                 >
                     <%= LanguageUtil.get(pageContext, "Results") %>
                 </div>
@@ -89,7 +100,7 @@
                 <div
                     dojoAttachPoint="addContentletButton"
                     class="portlet-toolbar__add-contentlet"
-                    style="display: none"
+                    style="display: none;"
                 >
                     <button
                         dojoType="dijit.form.Button"

@@ -6,6 +6,7 @@ import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_F
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_METADATA_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SHOW_ON_MENU_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
@@ -24,6 +25,7 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeReference;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -61,15 +63,6 @@ public enum CustomFieldType {
         categoryTypeFields.put("velocityVar", GraphQLString);
         customFieldTypes.put("CATEGORY", TypeUtil.createObjectType("Category", categoryTypeFields,
             new MapFieldPropertiesDataFetcher()));
-
-        final Map<String, GraphQLOutputType> siteTypeFields = new HashMap<>();
-        siteTypeFields.put("hostId", GraphQLString);
-        siteTypeFields.put("hostName", GraphQLString);
-        siteTypeFields.put("hostAliases", GraphQLString);
-        siteTypeFields.put("hostTagStorage", GraphQLString);
-        customFieldTypes.put("SITE", TypeUtil.createObjectType("Site", siteTypeFields,
-            new MapFieldPropertiesDataFetcher()));
-
 
         final Map<String, GraphQLOutputType> folderTypeFields = new HashMap<>();
         folderTypeFields.put("folderId", GraphQLString);
@@ -129,6 +122,25 @@ public enum CustomFieldType {
         fileAssetTypeFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString), new MultiValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt, new FieldDataFetcher()));
         customFieldTypes.put("FILEASSET", TypeUtil.createObjectType("Fileasset", fileAssetTypeFields));
+
+        final Map<String, TypeFetcher> siteTypeFields = new HashMap<>(ContentFields.getContentFields());
+        siteTypeFields.remove(HOST_KEY); // remove myself
+        siteTypeFields.put("hostId", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("hostName", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("hostAliases", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("hostTagStorage", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("tagStorage", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("aliases", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("isDefault", new TypeFetcher(GraphQLBoolean));
+        siteTypeFields.put("hostThumbnail", new TypeFetcher(CustomFieldType.BINARY.getType(),new BinaryFieldDataFetcher()));
+        siteTypeFields.put("googleMap", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("googleAnalytics", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("addThis", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("runDashboard", new TypeFetcher(GraphQLBoolean));
+        siteTypeFields.put("keywords", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("description", new TypeFetcher(GraphQLString));
+        siteTypeFields.put("embeddedDashboard", new TypeFetcher(GraphQLString));
+        customFieldTypes.put("SITE", TypeUtil.createObjectType("Site", siteTypeFields));
     }
 
     public GraphQLObjectType getType() {
@@ -140,8 +152,19 @@ public enum CustomFieldType {
     }
 
     public static boolean isCustomFieldType(final GraphQLType type) {
-        return  type instanceof GraphQLList ? getCustomFieldTypes()
-                .contains(((GraphQLList) type).getWrappedType())
-                : getCustomFieldTypes().contains(type);
+        boolean isCustomField = false;
+
+        if(type instanceof GraphQLList) {
+            isCustomField = getCustomFieldTypes()
+                    .contains(((GraphQLList) type).getWrappedType());
+        }
+        else if(type instanceof GraphQLTypeReference) {
+            isCustomField = getCustomFieldTypes().stream().anyMatch(customType->
+                    customType.getName().equals(type.getName()));
+        } else {
+            isCustomField = getCustomFieldTypes().contains(type);
+        }
+
+        return isCustomField;
     }
 }

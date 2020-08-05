@@ -1,9 +1,11 @@
 package com.dotcms.rest.config;
 
-import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResource;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.dotcms.auth.providers.saml.v1.DotSamlResource;
+import com.dotcms.rest.api.v1.system.logger.LoggerResource;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rest.RulesEnginePortlet;
@@ -36,6 +38,7 @@ import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.portlet.PortletResource;
+import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResource;
 import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
@@ -153,6 +156,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(BrowserResource.class)
 			.add(ResourceLinkResource.class)
 			.add(PushPublishFilterResource.class)
+			.add(DotSamlResource.class)
+			.add(LoggerResource.class)
 			.build();
 
 

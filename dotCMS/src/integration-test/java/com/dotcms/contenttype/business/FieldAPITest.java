@@ -26,8 +26,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.business.FieldAPITest.UniqueConstraintTestCase.DuplicateType;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -37,8 +40,10 @@ import com.dotcms.contenttype.model.field.ImmutableDateField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
+import com.dotcms.contenttype.model.field.ImmutableTagField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -65,9 +70,11 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1083,6 +1090,7 @@ public class FieldAPITest extends IntegrationTestBase {
         final GraphQLFieldNameCompatibilityTestCase caseTitleImageCompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseTitleImageCompatible.fieldName = TITLE_IMAGE_KEY;
         caseTitleImageCompatible.fieldType = ImmutableBinaryField.class;
+        caseTitleImageCompatible.testCaseName = "caseTitleImageCompatible";
 
         final GraphQLFieldNameCompatibilityTestCase caseContentTypeCompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseContentTypeCompatible.fieldName = CONTENT_TYPE;
@@ -1198,6 +1206,11 @@ public class FieldAPITest extends IntegrationTestBase {
         caseConLanguageIncompatible.fieldType = ImmutableCategoryField.class;
         caseConLanguageIncompatible.testCaseName = "caseConLanguageIncompatible";
 
+        final GraphQLFieldNameCompatibilityTestCase caseConLanguageParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseConLanguageParentIncompatible.fieldName = "conLanguage";
+        caseConLanguageParentIncompatible.fieldType = ImmutableTagField.class;
+        caseConLanguageParentIncompatible.testCaseName = "caseConLanguageParentIncompatible";
+
         final GraphQLFieldNameCompatibilityTestCase caseIdentifierIncompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseIdentifierIncompatible.fieldName = IDENTIFIER;
         caseIdentifierIncompatible.fieldType = ImmutableCategoryField.class;
@@ -1213,10 +1226,20 @@ public class FieldAPITest extends IntegrationTestBase {
         caseHostIncompatible.fieldType = ImmutableCategoryField.class;
         caseHostIncompatible.testCaseName = "caseHostIncompatible";
 
+        final GraphQLFieldNameCompatibilityTestCase caseHostParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseHostParentIncompatible.fieldName = HOST_KEY;
+        caseHostParentIncompatible.fieldType = ImmutableTagField.class;
+        caseHostParentIncompatible.testCaseName = "caseHostParentIncompatible";
+
         final GraphQLFieldNameCompatibilityTestCase caseFolderIncompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseFolderIncompatible.fieldName = FOLDER_KEY;
         caseFolderIncompatible.fieldType = ImmutableCategoryField.class;
         caseFolderIncompatible.testCaseName = "caseFolderIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseFolder_ParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseFolder_ParentIncompatible.fieldName = "conLanguage";
+        caseFolder_ParentIncompatible.fieldType = ImmutableTagField.class;
+        caseFolder_ParentIncompatible.testCaseName = "caseFolder_ParentIncompatible";
 
         final GraphQLFieldNameCompatibilityTestCase caseUrlMapIncompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseUrlMapIncompatible.fieldName = URL_MAP;
@@ -1228,25 +1251,41 @@ public class FieldAPITest extends IntegrationTestBase {
         caseOwnerIncompatible.fieldType = ImmutableCategoryField.class;
         caseOwnerIncompatible.testCaseName = "caseOwnerIncompatible";
 
+        final GraphQLFieldNameCompatibilityTestCase caseOwner_ParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseOwner_ParentIncompatible.fieldName = OWNER_KEY;
+        caseOwner_ParentIncompatible.fieldType = ImmutableTagField.class;
+        caseOwner_ParentIncompatible.testCaseName = "caseOwner_ParentIncompatible";
+
         final GraphQLFieldNameCompatibilityTestCase caseModUserIncompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseModUserIncompatible.fieldName = MOD_USER_KEY;
         caseModUserIncompatible.fieldType = ImmutableCategoryField.class;
         caseModUserIncompatible.testCaseName = "caseModUserIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseModUser_ParentIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseModUser_ParentIncompatible.fieldName = MOD_USER_KEY;
+        caseModUser_ParentIncompatible.fieldType = ImmutableTagField.class;
+        caseModUser_ParentIncompatible.testCaseName = "caseModUser_ParentIncompatible";
 
         return new GraphQLFieldNameCompatibilityTestCase[] {
                 caseModDateIncompatible,
                 caseTitleIncompatible,
                 caseTitleImageIncompatible,
                 caseContentTypeIncompatible,
+                caseConLanguageIncompatible,
+                caseConLanguageParentIncompatible,
                 caseBaseTypeIncompatible,
                 caseLiveIncompatible,
                 caseIdentifierIncompatible,
                 caseInodeIncompatible,
                 caseHostIncompatible,
+                caseHostParentIncompatible,
                 caseFolderIncompatible,
+                caseFolder_ParentIncompatible,
                 caseUrlMapIncompatible,
                 caseOwnerIncompatible,
-                caseModUserIncompatible
+                caseOwner_ParentIncompatible,
+                caseModUserIncompatible,
+                caseModUser_ParentIncompatible
         };
     }
 
@@ -1312,9 +1351,8 @@ public class FieldAPITest extends IntegrationTestBase {
      * Expected result: {@link DotDataException} thrown
      */
 
-    @Test(expected = DotDataException.class)
     @UseDataProvider("dataProviderGraphQLIncompatibleFields")
-    public void test_SaveField_GivenGraphQLIncompatibleVariable_ShouldThrowException(
+    public void test_SaveField_GivenGraphQLIncompatibleVariable_ShouldSave(
             final GraphQLFieldNameCompatibilityTestCase testCase)
             throws DotSecurityException, DotDataException {
 
@@ -1324,6 +1362,7 @@ public class FieldAPITest extends IntegrationTestBase {
             // passing the invalid graphql variable as both name and variable of the field
             final Field field = createField(contentType, testCase.fieldName,
                     testCase.fieldName, testCase.fieldType);
+            Assert.assertEquals(testCase.fieldName, field.variable());
         } finally {
             contentTypeAPI.delete(type);
         }
@@ -1332,7 +1371,7 @@ public class FieldAPITest extends IntegrationTestBase {
     /**
      * Method to test: {@link FieldAPIImpl#save(Field, User)}
      * <p>
-     * Given scenario: A {@link ContentType} with an incompatible `variable` with the current GraphQL Schema.
+     * Given scenario: A {@link ContentType} with a compatible `variable` with the current GraphQL Schema.
      * <p>
      * Expected result: Field saved with given variable
      */
@@ -1354,6 +1393,129 @@ public class FieldAPITest extends IntegrationTestBase {
 
         } finally {
             contentTypeAPI.delete(type);
+        }
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FieldAPIImpl#save(Field, User)}
+     * <p>
+     * <b>Given scenario:</b> A new {@link Field} is saved and marked as `indexed=false`
+     * <p>
+     * <b>Expected result:</b> The field should be saved without ES mapping
+     */
+    @Test
+    public void test_SaveNewNoIndexedField_ShouldNotAddESMapping()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        final ContentType type = new ContentTypeDataGen().nextPersisted();
+        try {
+            Field field = FieldBuilder.builder(DateField.class)
+                    .name("field" + time)
+                    .variable("field" + time)
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+
+            //verify mapping on working index
+            Map<String, Object> mapping = mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                            (type.variable() + StringPool.PERIOD + field.variable()));
+            assertFalse(UtilMethods.isSet(mapping));
+
+            //verify mapping on live index
+            mapping = mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                            (type.variable() + StringPool.PERIOD + field.variable()));
+            assertFalse(UtilMethods.isSet(mapping));
+        }finally{
+            ContentTypeDataGen.remove(type);
+        }
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FieldAPIImpl#save(Field, User)}
+     * <p>
+     * <b>Given scenario:</b> A new {@link DateField} is saved and marked as `indexed=true`
+     * <p>
+     * <b>Expected result:</b> The field should be saved and mapped in ES with `type=date`
+     */
+    @Test
+    public void test_SaveNewIndexedField_ShouldAddESMapping()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        final ContentType type = new ContentTypeDataGen().nextPersisted();
+        try {
+            Field field = FieldBuilder.builder(DateField.class)
+                    .name("field" + time)
+                    .variable("field" + time)
+                    .contentTypeId(type.id())
+                    .indexed(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+
+            //verify mapping on working index
+            Map<String, String> mapping = (Map<String, String>) mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                            (type.variable() + StringPool.PERIOD + field.variable())
+                                    .toLowerCase()).get(field.variable());
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("date", mapping.get("type"));
+
+            //verify mapping on live index
+            mapping = (Map<String, String>) mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                            (type.variable() + StringPool.PERIOD + field.variable())
+                                    .toLowerCase()).get(field.variable());
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("date", mapping.get("type"));
+        }finally{
+            ContentTypeDataGen.remove(type);
+        }
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FieldAPIImpl#save(Field, User)}
+     * <p>
+     * <b>Given scenario:</b> A new {@link RelationshipField} is saved and marked as `indexed=true`
+     * <p>
+     * <b>Expected result:</b> The field should be saved and mapped in ES with `type=keyword`
+     */
+    @Test
+    public void test_SaveNewRelationshipField_ShouldAddESMapping()
+            throws DotSecurityException, DotDataException, IOException {
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("contentType" + time);
+        try {
+            final Field field = createAndSaveRelationshipField("newRel",
+                    type.id(), type.variable(), CARDINALITY);
+
+            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+
+            //verify mapping on working index
+            Map<String, String> mapping = (Map<String, String>) mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                            (type.variable() + StringPool.PERIOD + field.variable())
+                                    .toLowerCase()).get(field.variable().toLowerCase());
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("keyword", mapping.get("type"));
+
+            //verify mapping on live index
+            mapping = (Map<String, String>) mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                            (type.variable() + StringPool.PERIOD + field.variable())
+                                    .toLowerCase()).get(field.variable().toLowerCase());
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("keyword", mapping.get("type"));
+        }finally{
+            ContentTypeDataGen.remove(type);
         }
     }
 

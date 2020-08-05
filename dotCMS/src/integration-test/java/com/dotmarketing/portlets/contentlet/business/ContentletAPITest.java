@@ -5658,7 +5658,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
                 false);
 
-            List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent);
+            List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent,false);
 
             assertTrue(relatedContentFromDB.containsAll(relatedContent));
 
@@ -5669,7 +5669,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
                 null, null, user, false);
 
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent, false);
 
             assertTrue(existingRelationships.containsAll(relatedContent));
         } finally {

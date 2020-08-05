@@ -1,7 +1,15 @@
 package com.dotcms.graphql.util;
 
+import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 
+import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import graphql.GraphQLException;
+import graphql.schema.GraphQLFieldDefinition;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import graphql.schema.DataFetcher;
@@ -10,6 +18,8 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
+import java.util.Map.Entry;
+import org.jetbrains.annotations.NotNull;
 
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
@@ -34,19 +44,34 @@ public class TypeUtil {
 
     public static GraphQLObjectType createObjectType(final String typeName,
             final Map<String, TypeFetcher> fieldsTypesAndFetchers) {
+
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(typeName);
 
-        fieldsTypesAndFetchers.keySet().forEach((key)->{
-            builder.field(newFieldDefinition()
-                    .name(key)
-                    .type(fieldsTypesAndFetchers.get(key).getType())
-                    .dataFetcher(fieldsTypesAndFetchers.get(key).getDataFetcher()!=null
-                            ?fieldsTypesAndFetchers.get(key).getDataFetcher()
-                            :new PropertyDataFetcher<String>(key))
-            );
-        });
+        List<GraphQLFieldDefinition> fieldDefinitionList = getGraphQLFieldDefinitionsFromMap(
+                fieldsTypesAndFetchers);
+
+        builder.fields(fieldDefinitionList);
 
         return builder.build();
+    }
+
+    public static List<GraphQLFieldDefinition> getGraphQLFieldDefinitionsFromMap(
+            Map<String, TypeFetcher> fieldsTypesAndFetchers) {
+        List<GraphQLFieldDefinition> fieldDefinitionList = new ArrayList<>();
+        fieldsTypesAndFetchers.forEach((key, value) -> {
+            try {
+                fieldDefinitionList.add(newFieldDefinition()
+                        .name(key)
+                        .type(value.getType())
+                        .dataFetcher(value.getDataFetcher() != null
+                                ? value.getDataFetcher()
+                                : new PropertyDataFetcher<String>(key)).build()
+                );
+            } catch (GraphQLException e) {
+                Logger.error("Error creating GraphQL Type. Type name: " + key, e);
+            }
+        });
+        return fieldDefinitionList;
     }
 
     public static GraphQLInterfaceType createInterfaceType(final String typeName,
@@ -54,13 +79,11 @@ public class TypeUtil {
                                                            final TypeResolver typeResolver) {
         final GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface().name(typeName);
 
-        fieldsTypesAndFetchers.keySet().forEach((key)->{
-            builder.field(newFieldDefinition()
+        fieldsTypesAndFetchers.forEach((key, value) -> builder.field(newFieldDefinition()
                 .name(key)
-                .type(fieldsTypesAndFetchers.get(key).getType())
-                .dataFetcher(fieldsTypesAndFetchers.get(key).getDataFetcher())
-            );
-        });
+                .type(value.getType())
+                .dataFetcher(value.getDataFetcher())
+        ));
 
         builder.typeResolver(typeResolver);
         return builder.build();

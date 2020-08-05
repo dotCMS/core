@@ -38,7 +38,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                   .add("basetype")
                   .add("categories")
                   .add("conhost")
-                  .add("conhost")
                   .add("conhostname")
                   .add("contenttype")
                   .add("deleted")

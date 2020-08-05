@@ -1,18 +1,18 @@
 {
 	"info": {
-		"_postman_id": "fa50fbd3-161d-4b97-b568-50362171aa01",
+		"_postman_id": "80df4e6f-e0fe-4c6e-9cdc-75eaf59b51a7",
 		"name": "FolderResource",
 		"description": "Test for FolderResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "create folders success",
+			"name": "createFolders Success",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "95bfbcdc-8f0c-49a5-b12e-f20e54e2d1c5",
+						"id": "54a5adfa-0e79-43b0-95cf-7a68f52ebdf9",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -23,11 +23,138 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
 					"raw": "[\"/folder1\",\"/folder2/subfolder1\"]\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"createfolders",
+						"default"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Folder Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "86afcaff-a5fe-4081-a5be-c6707e235773",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/folder2/subfolder1",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"sitename",
+						"default",
+						"uri",
+						"folder2",
+						"subfolder1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createFolders BadRequest with Restricted Name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "568bde89-4681-4368-9232-6afa54bb14da",
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\"/dotcms\",\"/folder2/subfolder1\"]\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -51,12 +178,12 @@
 			"response": []
 		},
 		{
-			"name": "Create Folders Invalid SiteName",
+			"name": "createFolders BadRequest with Invalid SiteName",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "f3b9e75f-d251-4be9-8e16-dbf34c2646e7",
+						"id": "6875270e-74e0-4a68-8ced-7bc2864c7369",
 						"exec": [
 							"pm.test(\"Status code should be 400\", function () {",
 							"    pm.response.to.have.status(400);",
@@ -104,84 +231,6 @@
 						"folder",
 						"createfolders",
 						"siteNotExist"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Logout User",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/logout",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"logout"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Folders User without Permissions",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "f3b9e75f-d251-4be9-8e16-dbf34c2646e7",
-						"exec": [
-							"pm.test(\"Status code should be 403\", function () {",
-							"    pm.response.to.have.status(403);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "chris",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "chris@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "[\"test5\"]",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/createfolders/demo.dotcms.com",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"folder",
-						"createfolders",
-						"demo.dotcms.com"
 					]
 				}
 			},

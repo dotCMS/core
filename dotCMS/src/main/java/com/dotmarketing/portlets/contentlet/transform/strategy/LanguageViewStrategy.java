@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.liferay.portal.language.LanguageUtil.getLiteralLocale;
 
+import com.dotcms.api.APIProvider;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
@@ -21,7 +22,7 @@ public class LanguageViewStrategy extends AbstractTransformStrategy<Contentlet>{
      * Main Constructor
      * @param toolBox
      */
-    LanguageViewStrategy(final TransformToolbox toolBox) {
+    LanguageViewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 

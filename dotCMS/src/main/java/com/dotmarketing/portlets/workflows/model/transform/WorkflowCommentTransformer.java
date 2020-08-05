@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * DBTransformer that converts DB objects into {@link com.dotmarketing.portlets.workflows.model.WorkflowComment}
  * instances
  */
-public class WorkflowCommentTransformer implements DBTransformer {
+public class WorkflowCommentTransformer implements DBTransformer<WorkflowComment> {
     final List<WorkflowComment> list;
 
 

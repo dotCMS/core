@@ -8,6 +8,7 @@ import static com.dotmarketing.util.UtilHTML.getIconClass;
 import static com.dotmarketing.util.UtilHTML.getStatusIcons;
 import static com.dotmarketing.util.UtilMethods.getFileExtension;
 
+import com.dotcms.api.APIProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -29,7 +30,7 @@ public class DotAssetViewStrategy extends WebAssetStrategy<Contentlet> {
      * Main constructor
      * @param toolBox
      */
-    DotAssetViewStrategy(final TransformToolbox toolBox) {
+    DotAssetViewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 
@@ -60,7 +61,7 @@ public class DotAssetViewStrategy extends WebAssetStrategy<Contentlet> {
             Logger.warn(DotAssetViewStrategy.class, "dotAsset does not have a binary ", e);
         }
         map.put(MIMETYPE_FIELD, toolBox.fileAssetAPI.getMimeType(fileName));
-
+        map.put("isContentlet", true);
         map.put(TITLE_FIELD, fileName);
         map.put("type", "dotasset");
         map.put("path", ResourceLink.getPath(dotAsset));

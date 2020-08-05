@@ -55,9 +55,13 @@ public class PushPublishFiltersInitializer implements DotInitializer {
     protected void loadFilter(final Path path){
         final String fileName = path.getFileName().toString();
         Logger.info(PushPublishFiltersInitializer.class, " ymlFileName:  " + fileName);
-        final FilterDescriptor filterDescriptor = YamlUtil.parse(path,FilterDescriptor.class);
-        filterDescriptor.setKey(fileName);
-        Logger.info(PushPublishFiltersInitializer.class, filterDescriptor.toString());
-        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+        try {
+            final FilterDescriptor filterDescriptor = YamlUtil.parse(path, FilterDescriptor.class);
+            filterDescriptor.setKey(fileName);
+            Logger.info(PushPublishFiltersInitializer.class, filterDescriptor.toString());
+            APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+        }catch(Exception e) {
+            Logger.warnAndDebug(this.getClass(), "unable to load PP filter:" + path.toString() + " cause: " + e.getMessage(), e);
+        }
     }
 }
