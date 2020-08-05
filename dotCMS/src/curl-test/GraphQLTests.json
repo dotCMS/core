@@ -2352,91 +2352,330 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Metadata ",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithPersonas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2faf096d-b38b-4e9b-b109-b5b5cc7b4966",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"personas.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/personas.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports personas"
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithVanityUrl",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "940848d6-42bb-43d6-9f8b-23dcce7c5225",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"vanity.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/vanity.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Vanity URL"
+					},
+					"response": []
+				},
+				{
+					"name": "RequestCount_ShouldReturnProperCount",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "165bb850-5f6d-4f51-9e31-144d10b4bf09",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"'QueryMetadata' includes all fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var metadata = jsonData.data.QueryMetadata[0];",
+									"",
+									"    pm.expect(metadata[\"fieldName\"], 'FAILED:[fieldName]').equal(\"PersonaBaseTypeCollection\");",
+									"    pm.expect(metadata[\"totalCount\"]>0, 'FAILED:[totalCount]').to.be.true;",
+									"",
+									"    metadata = jsonData.data.QueryMetadata[1];",
+									"",
+									"    pm.expect(metadata[\"fieldName\"], 'FAILED:[fieldName]').equal(\"KeyValueBaseTypeCollection\");",
+									"    pm.expect(metadata[\"totalCount\"]>0, 'FAILED:[totalCount]').to.be.true;",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  PersonaBaseTypeCollection {\n    title\n  }\n\n  KeyValueBaseTypeCollection {\n    key\n    value\n  }\n\n  QueryMetadata {\n    fieldName\n    totalCount\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
 		{
-			"id": "b6cb519f-357e-4d62-9cac-7589cc64931a",
+			"id": "b4f33d3e-986f-44d2-99af-1c3b105bdaa3",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "59e0c339-fa3e-4854-8361-6a35b6d81450",
+			"id": "0b2033f1-1dbc-40b3-b509-dadfb7b14193",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "eaa31ee4-e96b-4505-b833-0c9dd9d57654",
+			"id": "311aa046-5d5b-482e-8882-153a90b02501",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "73d05396-bcf1-4429-9a73-0636a96837f4",
+			"id": "81d43443-05d9-42b1-abf8-c11b0a61c56c",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "7a581a83-9aad-49b1-b41b-a55464da7ffa",
+			"id": "fee259b6-df28-41ba-9042-04f108111a78",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "ba8efb65-7998-4d02-9de8-b313e1e49afa",
+			"id": "d9c0d00a-bac9-4d7b-a5dc-a2d9d8c240ad",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "ce86d0d6-5841-4a64-a5e2-1963e4dd1849",
+			"id": "7819b0e9-5347-4198-aa8b-e86e2b203690",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "79aa6a86-6e28-4f37-8fb8-8850c9c1dd03",
+			"id": "9ed3655e-26b6-4760-a220-0c0b0b4dadfe",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "dc49ed3c-14ac-46bc-913d-c7249c424b2a",
+			"id": "9df52262-e15d-4995-ae92-512fa1269936",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "2c123b07-9652-460e-b9f1-9bbb27c9df0c",
+			"id": "aa501809-2544-470f-8bc0-bd9f5a7fc2a6",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "ed70c65e-934a-4314-8906-251c3b4e5e4b",
+			"id": "939a41da-e7db-439f-82cf-3a877f4eb4d9",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "8c783cbb-9682-490f-826d-e84ce686d303",
+			"id": "9b2bda01-b3b1-440e-95c6-8b1d81a307e9",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "391fcf23-7d13-4104-89ef-c54275ccdcc7",
+			"id": "cdd1afb4-11d4-45ef-abec-e2cbbd76479c",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "ad958f66-5b0f-4798-87a2-1c5d8215a90c",
+			"id": "18e805c5-48b1-4133-a808-aa8f7909e552",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "bb583b27-2187-44b5-854d-1117da589ed4",
+			"id": "3dfd8b3a-d3d2-4a46-8643-703d96a9edc5",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "9cbaea9a-b866-4725-87b7-570a5387f857",
+			"id": "fcea6bec-4d3c-46ad-9093-e424f51da8b4",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "16e0587c-24fc-4fd0-9b38-e9a28decb83a",
+			"id": "a1abfa7e-6095-40da-b1c8-a50bb63cfb15",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

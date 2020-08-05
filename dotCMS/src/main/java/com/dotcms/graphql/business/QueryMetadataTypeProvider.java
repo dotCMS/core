@@ -11,7 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public enum CountTypeProvider implements GraphQLTypesProvider {
+public enum QueryMetadataTypeProvider implements GraphQLTypesProvider {
 
     INSTANCE;
 
@@ -19,7 +19,7 @@ public enum CountTypeProvider implements GraphQLTypesProvider {
             "totalCount", GraphQLString,
             "fieldName", GraphQLString);
 
-    GraphQLObjectType countType = TypeUtil.createObjectType("Count", pageFields, null);
+    GraphQLObjectType countType = TypeUtil.createObjectType("QueryMetadata", pageFields, null);
 
     @Override
     public Collection<? extends GraphQLType> getTypes() {
