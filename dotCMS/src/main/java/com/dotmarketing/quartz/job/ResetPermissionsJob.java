@@ -8,10 +8,8 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
+import com.dotmarketing.quartz.DotStatefulJob.TriggerBuilder;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
@@ -21,7 +19,6 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
 
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -29,7 +26,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -42,6 +38,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import org.quartz.StatefulJob;
+import org.quartz.Trigger;
 
 /**
  * This job is called when the permissions on a given {@link Permissionable} have changed. A
@@ -85,19 +82,19 @@ public class ResetPermissionsJob implements StatefulJob {
 		}
 		dataMap.put("userId", userId);
 
-		final JobDetail jd = new JobDetail("ResetPermissionsJob-" + randomID, "dotcms_jobs", ResetPermissionsJob.class);
-		jd.setJobDataMap(dataMap);
-		jd.setDurability(false);
-		jd.setVolatility(false);
-		jd.setRequestsRecovery(true);
-		
-		final long startTime = System.currentTimeMillis();
-		final SimpleTrigger trigger = new SimpleTrigger("permissionsResetTrigger-"+randomID, "dotcms_triggers",  new Date(startTime));
+		final JobDetail jobDetail = new JobDetail("ResetPermissionsJob-" + randomID, "dotcms_jobs", ResetPermissionsJob.class);
+		jobDetail.setJobDataMap(dataMap);
+		jobDetail.setDurability(false);
+		jobDetail.setVolatility(false);
+		jobDetail.setRequestsRecovery(true);
+
+        final Trigger trigger = new TriggerBuilder().jobDetail(jobDetail)
+                .triggerGroupName("dotcms_triggers").build();
 		
 		try {
 
-			final Scheduler sched = QuartzUtils.getSequentialScheduler();
-			sched.scheduleJob(jd, trigger);
+			final Scheduler scheduler = QuartzUtils.getSequentialScheduler();
+			scheduler.scheduleJob(jobDetail, trigger);
 		} catch (SchedulerException e) {
 			Logger.error(ResetPermissionsJob.class, "Error scheduling the reset of permissions", e);
 			throw new DotRuntimeException("Error scheduling the reset of permissions", e);
