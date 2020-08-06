@@ -234,7 +234,7 @@
 									"",
 									"    pm.expect(host[\"hostName\"], 'FAILED:[hostName]').equal(\"demo.dotcms.com\");",
 									"    pm.expect(host[\"googleMap\"], 'FAILED:[googleMap]').equal(\"AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0\");",
-									"    pm.expect(host[\"modDate\"], 'FAILED:[modDate]').equal(\"2020-02-04 09:44:16.732\");",
+									"    pm.expect(host[\"modDate\"], 'FAILED:[modDate]').contains(\"2020-02-04\");",
 									"    pm.expect(host[\"aliases\"], 'FAILED:[aliases]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
 									"    pm.expect(host[\"keywords\"], 'FAILED:[keywords]').equal(\"CMS, Web Content Management, Open Source, Java, J2EE, DXP, NoCode, OSGI, Apache Velocity, Elasticsearch, RESTful Services, REST API, Workflows, Personalization, Multilingual, I18N, L10N, Internationalization, Localization, Docker CMS, Containerized CMS\");",
 									"    pm.expect(host[\"description\"], 'FAILED:[description]').equal(\"dotCMS starter site was designed to demonstrate what you can do with dotCMS.\");",
@@ -2691,87 +2691,87 @@
 	],
 	"variable": [
 		{
-			"id": "bef5345b-3f94-4f90-9049-2dfbd6156fbf",
+			"id": "0e76a0e7-e0b9-4c1d-968a-397b4562148d",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "0b559abb-7058-470c-85b8-334b9ce1d7c9",
+			"id": "b975460f-d2e6-4771-baee-4c189f1a56a8",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "b533516d-b81b-4e89-ac21-59c0f2bdc0ed",
+			"id": "103e9947-007f-4f60-a8fe-8c3fef265820",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "1e3b0fbe-efa6-4ac5-8443-99379f343666",
+			"id": "e3a3b619-2f1a-4ac7-bdb5-bd8c68859056",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "d09cd705-7b69-4f39-8dca-2cca384f2443",
+			"id": "9ff039a2-e516-4345-aee6-c6accd3a03ac",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "0fc335a4-d06c-457f-914c-8de6ffc9d409",
+			"id": "e7f32e36-adb4-49ab-b5b6-ef5f68a7c02e",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "5b0ce91a-ecd4-4511-8825-9f31c934ca58",
+			"id": "a6591c3d-3a61-4523-a8e5-ffed727ba8ba",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "7fcc1b90-6fc5-45e1-b9b3-f762df41d885",
+			"id": "a5bd32fd-a26d-46c4-ae6f-8ae50b49d948",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "3129cd38-3242-4e2c-8b42-3cb85a5dcb54",
+			"id": "431d66fc-8120-4ec8-9cb4-ce6baf9f081e",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "31c3cee5-62f7-4039-b3da-555d0d520f9d",
+			"id": "61e7df22-44cc-4b8a-93d2-3c796aba0d60",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "d6f49caf-325b-4773-896b-ef646ba8375d",
+			"id": "a728fad1-07d0-4e35-b805-e35789363769",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "511e936b-0e97-4dc8-b8bc-fc9b864428c5",
+			"id": "deef1905-923f-4cc3-8eee-b51e0dd67374",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "8907ce9d-0eb1-4fed-9c27-edfbfab827de",
+			"id": "6d0b9afb-0fbd-4417-85e2-68fac1784dda",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "a28213a0-9588-4602-adbe-83d14abe195e",
+			"id": "04203425-fc41-406e-8cf7-a8aa20369f2a",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "fbb2e2c2-2de2-43e0-b6cb-d2d634cfc510",
+			"id": "1781d65b-9a0d-4423-8d31-42cf4ef55ac9",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "3489be0b-6982-43ed-bedc-8c7aa8e1fa93",
+			"id": "4d2932de-e0f2-43b5-8002-bdd2036f2ae9",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "c4345406-e92d-4f0e-90f3-0d3356dfdfc0",
+			"id": "3d223cb3-e9e4-45fe-96f7-4f2748b4a2d8",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
