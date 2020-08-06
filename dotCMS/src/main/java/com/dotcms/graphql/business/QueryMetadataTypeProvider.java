@@ -11,6 +11,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * This TypesProvider provides a new type called "QueryMetadata" which includes
+ * the "totalCount" and "fieldName" for each requested field of the GraphQL Content Delivery API
+ */
+
 public enum QueryMetadataTypeProvider implements GraphQLTypesProvider {
 
     INSTANCE;

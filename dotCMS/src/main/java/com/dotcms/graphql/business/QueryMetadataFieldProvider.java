@@ -9,6 +9,10 @@ import graphql.schema.GraphQLFieldDefinition;
 import java.util.Collection;
 import java.util.Collections;
 
+/**
+ * This FieldsProvider provides a "QueryMetadata" field which includes the totalCount of results
+ */
+
 public enum QueryMetadataFieldProvider implements GraphQLFieldsProvider {
 
     INSTANCE;
