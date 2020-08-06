@@ -2885,6 +2885,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, pushPublishBean.getNeverExpire());
 			contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, pushPublishBean.getWhereToSend());
 			contentlet.setStringProperty(Contentlet.FILTER_KEY, pushPublishBean.getFilterKey());
+			contentlet.setStringProperty(Contentlet.I_WANT_TO, pushPublishBean.getIWantTo());
 		}
 		return contentlet;
 	}

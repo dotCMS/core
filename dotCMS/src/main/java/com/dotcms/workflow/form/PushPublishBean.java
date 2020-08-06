@@ -12,6 +12,7 @@ public class PushPublishBean {
     private final String expireTime;
     private final String neverExpire;
     private final String filterKey;
+    private final String iWantTo;
 
     @JsonCreator
     public PushPublishBean(
@@ -21,7 +22,8 @@ public class PushPublishBean {
             @JsonProperty("expireDate") final String expireDate,
             @JsonProperty("expireTime") final String expireTime,
             @JsonProperty("neverExpire") final String neverExpire,
-            @JsonProperty("filterKey") final String filterKey) {
+            @JsonProperty("filterKey") final String filterKey,
+            @JsonProperty("iWantTo") final String iWantTo) {
         this.whereToSend = whereToSend;
         this.publishDate = publishDate;
         this.publishTime = publishTime;
@@ -29,6 +31,7 @@ public class PushPublishBean {
         this.expireTime = expireTime;
         this.neverExpire = neverExpire;
         this.filterKey = filterKey;
+        this.iWantTo = iWantTo;
     }
 
     public String getWhereToSend() {
@@ -57,6 +60,10 @@ public class PushPublishBean {
 
     public String getFilterKey() {
         return filterKey;
+    }
+
+    public String getIWantTo() {
+        return iWantTo;
     }
 
 }

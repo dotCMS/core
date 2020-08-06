@@ -4570,6 +4570,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String contentPushNeverExpire = contentlet.getStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE);
             final String contentWhereToSend = contentlet.getStringProperty(Contentlet.WHERE_TO_SEND);
             final String filterKey = contentlet.getStringProperty(Contentlet.FILTER_KEY);
+            final String iWantTo = contentlet.getStringProperty(Contentlet.I_WANT_TO);
 
                 /*
                  For HTMLPages get the url of the page sent by the user, we use the Contentlet object to
@@ -5123,6 +5124,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, contentPushNeverExpire);
             contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, contentWhereToSend);
             contentlet.setStringProperty(Contentlet.FILTER_KEY, filterKey);
+            contentlet.setStringProperty(Contentlet.I_WANT_TO, iWantTo);
 
             //wapi.
             if(workflow!=null) {
@@ -5854,6 +5856,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 (String) properties.get(Contentlet.FILTER_KEY));
         contentlet.setStringProperty(Contentlet.WHERE_TO_SEND,
                 (String) properties.get(Contentlet.WHERE_TO_SEND));
+        contentlet.setStringProperty(Contentlet.I_WANT_TO,
+                (String) properties.get(Contentlet.I_WANT_TO));
     }
 
     @Override

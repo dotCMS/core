@@ -342,6 +342,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		currentContentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, (String) contentletFormData.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
 		currentContentlet.setStringProperty(Contentlet.WHERE_TO_SEND, (String) contentletFormData.get(Contentlet.WHERE_TO_SEND));
 		currentContentlet.setStringProperty(Contentlet.FILTER_KEY, (String) contentletFormData.get(Contentlet.FILTER_KEY));
+		currentContentlet.setStringProperty(Contentlet.I_WANT_TO, (String) contentletFormData.get(Contentlet.I_WANT_TO));
 
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);

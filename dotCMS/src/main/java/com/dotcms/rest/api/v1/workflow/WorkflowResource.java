@@ -1880,6 +1880,11 @@ public class WorkflowResource {
             fireActionFormBuilder.filterKey((String)contentMap.get(Contentlet.FILTER_KEY));
             contentMap.remove(Contentlet.FILTER_KEY);
         }
+
+        if (contentMap.containsKey(Contentlet.I_WANT_TO)) {
+            fireActionFormBuilder.filterKey((String)contentMap.get(Contentlet.I_WANT_TO));
+            contentMap.remove(Contentlet.I_WANT_TO);
+        }
     }
 
     private Contentlet getContentlet(final String inode,
@@ -2012,6 +2017,7 @@ public class WorkflowResource {
         contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, fireActionForm.getNeverExpire());
         contentlet.setStringProperty(Contentlet.WHERE_TO_SEND,   fireActionForm.getWhereToSend());
         contentlet.setStringProperty(Contentlet.FILTER_KEY, fireActionForm.getFilterKey());
+        contentlet.setStringProperty(Contentlet.I_WANT_TO, fireActionForm.getFilterKey());
 
         for(Field constant : contentlet.getContentType().fields()) {
           if(constant instanceof ConstantField)
