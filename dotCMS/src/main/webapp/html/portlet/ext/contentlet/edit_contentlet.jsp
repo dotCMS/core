@@ -180,9 +180,13 @@
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
-               && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
+    
+    boolean canSeePermissions = layoutAPI.doesUserHaveAccessToPortlet("permissions", user)
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user);
 
-	Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
+    Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
 	isContentEditable = isContentEditable != null ? isContentEditable : false;
 	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode()) ? isContentEditable : false);
 
@@ -194,7 +198,7 @@
 	   targetFrame = (String)request.getSession().getAttribute(WebKeys.FRAME);
 	}
 
-	boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
+    boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 
 %>
 
@@ -226,7 +230,7 @@
 	<!--  START TABS -->
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit__main">
 		<!--  IF THE FIRST FIELD IS A TAB-->
-		<% if(fields != null &&
+        <% if(fields != null &&
 			fields.size()>0 &&
 			fields.get(0) != null &&
 			fields.get(0).getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
@@ -525,13 +529,14 @@
 	<% } %>
 
 
-	<!-- Permissions -->
-	
+    <!-- Permissions -->
+    <% if (canSeePermissions) { %>
 		<div id="permissionsTab" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab()">
 			<div id="permissionsTabDiv">
                 <%-- This loads the edit_permission_tab_inc_wrapper.jsp passing in the contentletId as a request parameter --%>
 			</div>
-		</div>
+        </div>
+    <% } %>
 
 
 
