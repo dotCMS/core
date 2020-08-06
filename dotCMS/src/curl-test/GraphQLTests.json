@@ -214,6 +214,102 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_SiteElementContainsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "660cfe4e-65d2-4c3b-b08f-33d249785c41",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Site' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var host = jsonData.data.page.host;",
+									"",
+									"    pm.expect(host[\"hostName\"], 'FAILED:[hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(host[\"googleMap\"], 'FAILED:[googleMap]').equal(\"AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0\");",
+									"    pm.expect(host[\"modDate\"], 'FAILED:[modDate]').contains(\"2020-02-04\");",
+									"    pm.expect(host[\"aliases\"], 'FAILED:[aliases]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
+									"    pm.expect(host[\"keywords\"], 'FAILED:[keywords]').equal(\"CMS, Web Content Management, Open Source, Java, J2EE, DXP, NoCode, OSGI, Apache Velocity, Elasticsearch, RESTful Services, REST API, Workflows, Personalization, Multilingual, I18N, L10N, Internationalization, Localization, Docker CMS, Containerized CMS\");",
+									"    pm.expect(host[\"description\"], 'FAILED:[description]').equal(\"dotCMS starter site was designed to demonstrate what you can do with dotCMS.\");",
+									"    pm.expect(host[\"hostAliases\"], 'FAILED:[hostAliases]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
+									"    pm.expect(host[\"title\"], 'FAILED:[title]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
+									"    pm.expect(host[\"baseType\"], 'FAILED:[baseType]').equal(\"CONTENT\");",
+									"    pm.expect(host[\"inode\"], 'FAILED:[inode]').equal(\"0c3418eb-4c27-4d71-937d-bf231399312a\");",
+									"    pm.expect(host[\"archived\"], 'FAILED:[archived]').equal(false);",
+									"    pm.expect(host[\"addThis\"], 'FAILED:[addThis]').equal(\"ra-4e02119211875e7b\");",
+									"    pm.expect(host[\"working\"], 'FAILED:[working]').equal(true);",
+									"    pm.expect(host[\"locked\"], 'FAILED:[locked]').equal(false);",
+									"    pm.expect(host[\"contentType\"], 'FAILED:[contentType]').equal(\"Host\");",
+									"    pm.expect(host[\"live\"], 'FAILED:[live]').equal(true);",
+									"    pm.expect(host[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(\"Admin\");",
+									"    ////",
+									"    pm.expect(host[\"identifier\"], 'FAILED:[identifier]').equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(host[\"hostThumbnail\"].name, 'FAILED:[hostThumbnail.name]').equal(null);",
+									"    pm.expect(host[\"runDashboard\"], 'FAILED:[runDashboard]').equal(false);",
+									"    pm.expect(host[\"conLanguage\"].languageCode, 'FAILED:[conLanguage.languageCode]').equal(\"en\");",
+									"    pm.expect(host[\"hostTagStorage\"], 'FAILED:[hostTagStorage]').equal(\"SYSTEM_HOST\");",
+									"    pm.expect(host[\"hostId\"], 'FAILED:[hostId]').equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(host[\"titleImage\"].name, 'FAILED:[titleImage.name]').equal(null);",
+									"    pm.expect(host[\"embeddedDashboard\"], 'FAILED:[embeddedDashboard]').equal(null);",
+									"    pm.expect(host[\"urlMap\"], 'FAILED:[urlMap]').equal(null);",
+									"    pm.expect(host[\"isDefault\"], 'FAILED:[isDefault]').equal(true)",
+									"    ///",
+									"    pm.expect(host[\"folder\"].folderName, 'FAILED:[folder.folderName]').equal(\"system folder\");",
+									"    pm.expect(host[\"googleAnalytics\"], 'FAILED:[googleAnalytics]').equal(\"UA-9877660-3\");",
+									"    pm.expect(host[\"tagStorage\"], 'FAILED:[tagStorage]').equal(\"SYSTEM_HOST\");",
+									"    pm.expect(host[\"modUser\"].firstName, 'FAILED:[modUser.firstName]').equal(\"Admin\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    host {\n      hostName\n      googleMap\n      modDate\n      aliases\n      keywords\n      description\n      hostAliases\n      title\n      baseType\n      inode\n      archived\n      addThis\n      working\n      locked\n      contentType\n      live\n      owner {\n        firstName\n      }\n      identifier\n      hostThumbnail {\n        name\n      }\n      runDashboard\n      conLanguage {\n        languageCode\n      }\n      hostTagStorage\n      hostId\n      titleImage {\n        name\n      }\n      embeddedDashboard\n      urlMap\n      isDefault\n      folder {\n        folderName\n      }\n      googleAnalytics\n      tagStorage\n      modUser {\n        firstName\n      }\n      \n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -2595,87 +2691,87 @@
 	],
 	"variable": [
 		{
-			"id": "b4f33d3e-986f-44d2-99af-1c3b105bdaa3",
+			"id": "0e76a0e7-e0b9-4c1d-968a-397b4562148d",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "0b2033f1-1dbc-40b3-b509-dadfb7b14193",
+			"id": "b975460f-d2e6-4771-baee-4c189f1a56a8",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "311aa046-5d5b-482e-8882-153a90b02501",
+			"id": "103e9947-007f-4f60-a8fe-8c3fef265820",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "81d43443-05d9-42b1-abf8-c11b0a61c56c",
+			"id": "e3a3b619-2f1a-4ac7-bdb5-bd8c68859056",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "fee259b6-df28-41ba-9042-04f108111a78",
+			"id": "9ff039a2-e516-4345-aee6-c6accd3a03ac",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "d9c0d00a-bac9-4d7b-a5dc-a2d9d8c240ad",
+			"id": "e7f32e36-adb4-49ab-b5b6-ef5f68a7c02e",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "7819b0e9-5347-4198-aa8b-e86e2b203690",
+			"id": "a6591c3d-3a61-4523-a8e5-ffed727ba8ba",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "9ed3655e-26b6-4760-a220-0c0b0b4dadfe",
+			"id": "a5bd32fd-a26d-46c4-ae6f-8ae50b49d948",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "9df52262-e15d-4995-ae92-512fa1269936",
+			"id": "431d66fc-8120-4ec8-9cb4-ce6baf9f081e",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "aa501809-2544-470f-8bc0-bd9f5a7fc2a6",
+			"id": "61e7df22-44cc-4b8a-93d2-3c796aba0d60",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "939a41da-e7db-439f-82cf-3a877f4eb4d9",
+			"id": "a728fad1-07d0-4e35-b805-e35789363769",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "9b2bda01-b3b1-440e-95c6-8b1d81a307e9",
+			"id": "deef1905-923f-4cc3-8eee-b51e0dd67374",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "cdd1afb4-11d4-45ef-abec-e2cbbd76479c",
+			"id": "6d0b9afb-0fbd-4417-85e2-68fac1784dda",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "18e805c5-48b1-4133-a808-aa8f7909e552",
+			"id": "04203425-fc41-406e-8cf7-a8aa20369f2a",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "3dfd8b3a-d3d2-4a46-8643-703d96a9edc5",
+			"id": "1781d65b-9a0d-4423-8d31-42cf4ef55ac9",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "fcea6bec-4d3c-46ad-9093-e424f51da8b4",
+			"id": "4d2932de-e0f2-43b5-8002-bdd2036f2ae9",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "a1abfa7e-6095-40da-b1c8-a50bb63cfb15",
+			"id": "3d223cb3-e9e4-45fe-96f7-4f2748b4a2d8",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
