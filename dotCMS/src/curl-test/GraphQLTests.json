@@ -214,6 +214,102 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_SiteElementContainsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "660cfe4e-65d2-4c3b-b08f-33d249785c41",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Site' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var host = jsonData.data.page.host;",
+									"",
+									"    pm.expect(host[\"hostName\"], 'FAILED:[hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(host[\"googleMap\"], 'FAILED:[googleMap]').equal(\"AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0\");",
+									"    pm.expect(host[\"modDate\"], 'FAILED:[modDate]').equal(\"2020-02-04 09:44:16.732\");",
+									"    pm.expect(host[\"aliases\"], 'FAILED:[aliases]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
+									"    pm.expect(host[\"keywords\"], 'FAILED:[keywords]').equal(\"CMS, Web Content Management, Open Source, Java, J2EE, DXP, NoCode, OSGI, Apache Velocity, Elasticsearch, RESTful Services, REST API, Workflows, Personalization, Multilingual, I18N, L10N, Internationalization, Localization, Docker CMS, Containerized CMS\");",
+									"    pm.expect(host[\"description\"], 'FAILED:[description]').equal(\"dotCMS starter site was designed to demonstrate what you can do with dotCMS.\");",
+									"    pm.expect(host[\"hostAliases\"], 'FAILED:[hostAliases]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
+									"    pm.expect(host[\"title\"], 'FAILED:[title]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
+									"    pm.expect(host[\"baseType\"], 'FAILED:[baseType]').equal(\"CONTENT\");",
+									"    pm.expect(host[\"inode\"], 'FAILED:[inode]').equal(\"0c3418eb-4c27-4d71-937d-bf231399312a\");",
+									"    pm.expect(host[\"archived\"], 'FAILED:[archived]').equal(false);",
+									"    pm.expect(host[\"addThis\"], 'FAILED:[addThis]').equal(\"ra-4e02119211875e7b\");",
+									"    pm.expect(host[\"working\"], 'FAILED:[working]').equal(true);",
+									"    pm.expect(host[\"locked\"], 'FAILED:[locked]').equal(false);",
+									"    pm.expect(host[\"contentType\"], 'FAILED:[contentType]').equal(\"Host\");",
+									"    pm.expect(host[\"live\"], 'FAILED:[live]').equal(true);",
+									"    pm.expect(host[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(\"Admin\");",
+									"    ////",
+									"    pm.expect(host[\"identifier\"], 'FAILED:[identifier]').equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(host[\"hostThumbnail\"].name, 'FAILED:[hostThumbnail.name]').equal(null);",
+									"    pm.expect(host[\"runDashboard\"], 'FAILED:[runDashboard]').equal(false);",
+									"    pm.expect(host[\"conLanguage\"].languageCode, 'FAILED:[conLanguage.languageCode]').equal(\"en\");",
+									"    pm.expect(host[\"hostTagStorage\"], 'FAILED:[hostTagStorage]').equal(\"SYSTEM_HOST\");",
+									"    pm.expect(host[\"hostId\"], 'FAILED:[hostId]').equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(host[\"titleImage\"].name, 'FAILED:[titleImage.name]').equal(null);",
+									"    pm.expect(host[\"embeddedDashboard\"], 'FAILED:[embeddedDashboard]').equal(null);",
+									"    pm.expect(host[\"urlMap\"], 'FAILED:[urlMap]').equal(null);",
+									"    pm.expect(host[\"isDefault\"], 'FAILED:[isDefault]').equal(true)",
+									"    ///",
+									"    pm.expect(host[\"folder\"].folderName, 'FAILED:[folder.folderName]').equal(\"system folder\");",
+									"    pm.expect(host[\"googleAnalytics\"], 'FAILED:[googleAnalytics]').equal(\"UA-9877660-3\");",
+									"    pm.expect(host[\"tagStorage\"], 'FAILED:[tagStorage]').equal(\"SYSTEM_HOST\");",
+									"    pm.expect(host[\"modUser\"].firstName, 'FAILED:[modUser.firstName]').equal(\"Admin\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    host {\n      hostName\n      googleMap\n      modDate\n      aliases\n      keywords\n      description\n      hostAliases\n      title\n      baseType\n      inode\n      archived\n      addThis\n      working\n      locked\n      contentType\n      live\n      owner {\n        firstName\n      }\n      identifier\n      hostThumbnail {\n        name\n      }\n      runDashboard\n      conLanguage {\n        languageCode\n      }\n      hostTagStorage\n      hostId\n      titleImage {\n        name\n      }\n      embeddedDashboard\n      urlMap\n      isDefault\n      folder {\n        folderName\n      }\n      googleAnalytics\n      tagStorage\n      modUser {\n        firstName\n      }\n      \n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -2595,87 +2691,87 @@
 	],
 	"variable": [
 		{
-			"id": "b4f33d3e-986f-44d2-99af-1c3b105bdaa3",
+			"id": "bef5345b-3f94-4f90-9049-2dfbd6156fbf",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "0b2033f1-1dbc-40b3-b509-dadfb7b14193",
+			"id": "0b559abb-7058-470c-85b8-334b9ce1d7c9",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "311aa046-5d5b-482e-8882-153a90b02501",
+			"id": "b533516d-b81b-4e89-ac21-59c0f2bdc0ed",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "81d43443-05d9-42b1-abf8-c11b0a61c56c",
+			"id": "1e3b0fbe-efa6-4ac5-8443-99379f343666",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "fee259b6-df28-41ba-9042-04f108111a78",
+			"id": "d09cd705-7b69-4f39-8dca-2cca384f2443",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "d9c0d00a-bac9-4d7b-a5dc-a2d9d8c240ad",
+			"id": "0fc335a4-d06c-457f-914c-8de6ffc9d409",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "7819b0e9-5347-4198-aa8b-e86e2b203690",
+			"id": "5b0ce91a-ecd4-4511-8825-9f31c934ca58",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "9ed3655e-26b6-4760-a220-0c0b0b4dadfe",
+			"id": "7fcc1b90-6fc5-45e1-b9b3-f762df41d885",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "9df52262-e15d-4995-ae92-512fa1269936",
+			"id": "3129cd38-3242-4e2c-8b42-3cb85a5dcb54",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "aa501809-2544-470f-8bc0-bd9f5a7fc2a6",
+			"id": "31c3cee5-62f7-4039-b3da-555d0d520f9d",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "939a41da-e7db-439f-82cf-3a877f4eb4d9",
+			"id": "d6f49caf-325b-4773-896b-ef646ba8375d",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "9b2bda01-b3b1-440e-95c6-8b1d81a307e9",
+			"id": "511e936b-0e97-4dc8-b8bc-fc9b864428c5",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "cdd1afb4-11d4-45ef-abec-e2cbbd76479c",
+			"id": "8907ce9d-0eb1-4fed-9c27-edfbfab827de",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "18e805c5-48b1-4133-a808-aa8f7909e552",
+			"id": "a28213a0-9588-4602-adbe-83d14abe195e",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "3dfd8b3a-d3d2-4a46-8643-703d96a9edc5",
+			"id": "fbb2e2c2-2de2-43e0-b6cb-d2d634cfc510",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "fcea6bec-4d3c-46ad-9093-e424f51da8b4",
+			"id": "3489be0b-6982-43ed-bedc-8c7aa8e1fa93",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "a1abfa7e-6095-40da-b1c8-a50bb63cfb15",
+			"id": "c4345406-e92d-4f0e-90f3-0d3356dfdfc0",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
