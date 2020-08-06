@@ -1,6 +1,5 @@
 package com.dotmarketing.quartz.job;
 
-import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -10,7 +9,6 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
 
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -36,6 +34,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
+import org.quartz.Trigger;
 
 /**
  * @deprecated This job was replaced by {@link FieldAPI#delete(com.dotcms.contenttype.model.field.Field)}
@@ -137,21 +136,22 @@ public class DeleteFieldJob extends DotStatefulJob {
         dataMap.put("fieldInode", field.getInode());
         dataMap.put("user", user);
 
-        String randomID = UUID.randomUUID().toString();
+        final String randomID = UUID.randomUUID().toString();
 
-        JobDetail jd = new JobDetail("DeleteFieldJob-" + randomID, "delete_field_jobs", DeleteFieldJob.class);
-        jd.setJobDataMap(dataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
+        final JobDetail jobDetail = new JobDetail("DeleteFieldJob-" + randomID, "delete_field_jobs",
+                DeleteFieldJob.class);
+        jobDetail.setJobDataMap(dataMap);
+        jobDetail.setDurability(false);
+        jobDetail.setVolatility(false);
+        jobDetail.setRequestsRecovery(true);
 
-        long startTime = System.currentTimeMillis();
-        SimpleTrigger trigger = new SimpleTrigger("deleteFieldTrigger-"+randomID, "delete_field_triggers",
-                new Date(startTime));
+        final Trigger trigger = new TriggerBuilder().jobDetail(jobDetail)
+                .triggerGroupName("delete_field_triggers").build();
+
 
         try {
-            Scheduler sched = QuartzUtils.getSequentialScheduler();
-            sched.scheduleJob(jd, trigger);
+            final Scheduler scheduler = QuartzUtils.getSequentialScheduler();
+            scheduler.scheduleJob(jobDetail, trigger);
         } catch (SchedulerException e) {
             Logger.error(DeleteFieldJob.class, "Error scheduling DeleteFieldJob", e);
             throw new DotRuntimeException("Error scheduling DeleteFieldJob", e);

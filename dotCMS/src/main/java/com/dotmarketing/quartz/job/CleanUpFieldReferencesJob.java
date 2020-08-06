@@ -13,7 +13,6 @@ import com.dotcms.contenttype.model.field.PermissionTabField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.TabDividerField;
-import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -23,8 +22,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -41,8 +38,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 
 /**
  * Stateful job used to remove content type field references before its deletion
@@ -114,20 +110,20 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
 
         final String randomID = UUID.randomUUID().toString();
 
-        final JobDetail jd = new JobDetail("CleanUpFieldReferencesJob-" + randomID, "clean_up_field_reference_jobs",
-                        CleanUpFieldReferencesJob.class);
-        jd.setJobDataMap(jobDataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
+        final JobDetail jobDetail = new JobDetail("CleanUpFieldReferencesJob-" + randomID,
+                "clean_up_field_reference_jobs",
+                CleanUpFieldReferencesJob.class);
+        jobDetail.setJobDataMap(jobDataMap);
+        jobDetail.setDurability(false);
+        jobDetail.setVolatility(false);
+        jobDetail.setRequestsRecovery(true);
 
-        long startTime = System.currentTimeMillis();
-        final SimpleTrigger trigger = new SimpleTrigger("deleteFieldStatefulTrigger-" + randomID,
-                        "clean_up_field_reference_job_triggers", new Date(startTime));
+        final Trigger trigger = new TriggerBuilder().jobDetail(jobDetail)
+                .triggerGroupName("clean_up_field_reference_job_triggers").build();
 
         HibernateUtil.addCommitListenerNoThrow(Sneaky.sneaked(()-> {
-                Scheduler sched = QuartzUtils.getSequentialScheduler();
-                sched.scheduleJob(jd, trigger);
+                final Scheduler scheduler = QuartzUtils.getSequentialScheduler();
+                scheduler.scheduleJob(jobDetail, trigger);
             }
         ));
     }

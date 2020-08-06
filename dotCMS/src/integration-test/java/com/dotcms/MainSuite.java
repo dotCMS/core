@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
+import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
@@ -304,7 +305,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
-        EMAWebInterceptorTest.class
+        EMAWebInterceptorTest.class,
+        DotStatefulJobTest.class
 })
 public class MainSuite {
 
