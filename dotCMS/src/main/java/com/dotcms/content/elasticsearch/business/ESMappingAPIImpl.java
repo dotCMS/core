@@ -117,18 +117,21 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	/**
-	 * This method takes a mapping string, a type and puts it as the mapping
-	 * @param indexName
-	 * @param mapping
-	 * @return
-	 * @throws ElasticsearchException
-	 * @throws IOException
-	 */
-	public  boolean putMapping(final String indexName, final String mapping) throws ElasticsearchException, IOException{
+    /**
+     * This method takes a mapping string and puts it in a collection of
+     * indexes
+     * @param indexes
+     * @param mapping
+     * @return
+     * @throws ElasticsearchException
+     * @throws IOException
+     */
+    public boolean putMapping(final List<String> indexes, final String mapping)
+            throws ElasticsearchException, IOException {
 
         final PutMappingRequest request = new PutMappingRequest(
-                APILocator.getESIndexAPI().getNameWithClusterIDPrefix(indexName));
+                indexes.stream().map(indexName -> APILocator.getESIndexAPI()
+                        .getNameWithClusterIDPrefix(indexName)).toArray(String[]::new));
         request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         request.source(mapping, XContentType.JSON);
 
@@ -137,7 +140,21 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 .putMapping(request, RequestOptions.DEFAULT);
 
         return putMappingResponse.isAcknowledged();
-	}
+    }
+
+    /**
+     * This method takes a mapping string and puts it in the specified index
+     * @param indexName
+     * @param mapping
+     * @return
+     * @throws ElasticsearchException
+     * @throws IOException
+     */
+    public boolean putMapping(final String indexName, final String mapping)
+            throws ElasticsearchException, IOException {
+
+        return putMapping(CollectionsUtils.list(indexName), mapping);
+    }
 
 
 	/**
