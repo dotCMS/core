@@ -131,7 +131,6 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
                 if (null == this.samlServiceBuilder) {
 
-
                     try {
                         if (!OSGIUtil.getInstance().isInitialized()) {
                             Logger.warn(this.getClass(),

@@ -8,6 +8,8 @@ import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.IdentityProviderConfigurationFactory;
 import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.DotSamlException;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlName;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
@@ -43,6 +45,7 @@ public class DotSamlResource implements Serializable {
 
 	private static final long serialVersionUID = 8015545653539491684L;
 
+	private final SamlConfigurationService             samlConfigurationService;
 	private final SAMLHelper           				   samlHelper;
 	private final SamlAuthenticationService            samlAuthenticationService;
 	private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
@@ -58,6 +61,7 @@ public class DotSamlResource implements Serializable {
 
 	public DotSamlResource() {
 
+		this.samlConfigurationService			  = DotSamlProxyFactory.getInstance().samlConfigurationService();
 		this.samlAuthenticationService            = DotSamlProxyFactory.getInstance().samlAuthenticationService();
 		this.identityProviderConfigurationFactory = DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory();
 		this.samlHelper                           = new SAMLHelper(this.samlAuthenticationService);
@@ -250,5 +254,52 @@ public class DotSamlResource implements Serializable {
 		final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
 		Logger.debug(this, () -> message);
 		throw new DoesNotExistException(message);
+	}
+
+	@POST
+	@Path("/logout/{idpConfigId}")
+	@NoCache
+	// Login configuration by id
+	public void logout(@PathParam("idpConfigId") final String idpConfigId,
+					   @Context final HttpServletRequest httpServletRequest,
+					   @Context final HttpServletResponse httpServletResponse) throws IOException {
+
+		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
+
+			final IdentityProviderConfiguration identityProviderConfiguration =
+					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
+			try {
+				// If idpConfig is null, means this site does not need SAML processing
+				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
+
+					Logger.debug(this, () -> "Processing saml logout request for idpConfig id: " + idpConfigId);
+					final String logoutPath = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
+							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
+							()->buildBaseUrlFromRequest(httpServletRequest) + "/");
+
+					httpServletResponse.sendRedirect(logoutPath);
+					return;
+				}
+			} finally {
+				if (null != identityProviderConfiguration) {
+					identityProviderConfiguration.destroy();
+				}
+			}
+		}
+
+		final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
+		Logger.debug(this, () -> message);
+		throw new DoesNotExistException(message);
+	}
+
+	/*
+	 * Builds the base url from the initiating Servlet Request.
+	 */
+	private String buildBaseUrlFromRequest(final HttpServletRequest httpServletRequest) {
+
+		final String uri = httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":"
+				+ httpServletRequest.getServerPort();
+
+		return uri;
 	}
 }
