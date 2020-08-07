@@ -1,12 +1,12 @@
 package v2.languages;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v2.languages.LanguageView;
 import com.dotcms.rest.api.v2.languages.LanguagesResource;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.exception.DotDataException;
@@ -15,10 +15,12 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * @test LanguageResource
@@ -38,8 +40,12 @@ public class LanguagesResourceTest {
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(request, httpServletResponse,true)).thenReturn(initDataObject);
         when(languageAPI.getLanguages()).thenReturn(languages);
+        final LanguageView languageView = mock(LanguageView.class);
 
-        final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
+        final LanguagesResource languagesResource = spy(new LanguagesResource(languageAPI, webResource));
+        Mockito.doReturn((Function<Language, LanguageView>) language -> languageView)
+                .when(languagesResource)
+                .instanceLanguageView();
         final Response response = languagesResource.list(request, httpServletResponse, null);
 
         assertEquals(languages.size(), ((List) ((ResponseEntityView) response.getEntity()).getEntity()).size());
@@ -54,12 +60,17 @@ public class LanguagesResourceTest {
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         final List<Language> languages = CollectionsUtils.list(mock(Language.class));
+        final LanguageView languageView = mock(LanguageView.class);
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(request, httpServletResponse,true)).thenReturn(initDataObject);
         when(languageAPI.getAvailableContentLanguages("2", user)).thenReturn(languages);
 
-        final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
+        final LanguagesResource languagesResource = spy(new LanguagesResource(languageAPI, webResource));
+        Mockito.doReturn((Function<Language, LanguageView>) language -> languageView)
+                .when(languagesResource)
+                .instanceLanguageView();
+
         final Response response = languagesResource.list(request, httpServletResponse, "2");
 
         assertEquals(languages.size(), ((List) ((ResponseEntityView) response.getEntity()).getEntity()).size());
