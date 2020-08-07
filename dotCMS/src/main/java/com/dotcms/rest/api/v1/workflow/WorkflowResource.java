@@ -1385,7 +1385,15 @@ public class WorkflowResource {
         if(fireActionForm != null) {
 
             formBuilder.workflowActionComments(fireActionForm.getComments())
-                    .workflowAssignKey(fireActionForm.getAssign());
+                    .workflowAssignKey(fireActionForm.getAssign())
+                    .workflowPublishDate(fireActionForm.getPublishDate())
+                    .workflowPublishTime(fireActionForm.getPublishTime())
+                    .workflowExpireDate(fireActionForm.getExpireDate())
+                    .workflowExpireTime(fireActionForm.getExpireTime())
+                    .workflowNeverExpire(fireActionForm.getNeverExpire())
+                    .workflowFilterKey(fireActionForm.getFilterKey())
+                    .workflowWhereToSend(fireActionForm.getWhereToSend())
+                    .workflowIWantTo(fireActionForm.getIWantTo());
         }
 
         if (contentlet.getMap().containsKey(Contentlet.RELATIONSHIP_KEY)) {

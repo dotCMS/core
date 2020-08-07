@@ -2999,19 +2999,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			);
 		}
 
-		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
-			contentlet.setActionId(dependencies.getWorkflowActionId());
-		}
-
-		if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
-			contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
-		}
-
-		if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
-			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
-		}
-
-		//metodo para todas las propiedades del PPActionlet
+		setWorkflowPropertiesToContentlet(contentlet, dependencies);
 
 		this.validateActionStepAndWorkflow(contentlet, dependencies.getModUser());
 		this.checkShorties (contentlet);
@@ -3033,6 +3021,54 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return processor.getContentlet();
 	} // fireContentWorkflow
+
+	private void setWorkflowPropertiesToContentlet(final Contentlet contentlet,
+			final ContentletDependencies dependencies) {
+
+		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
+			contentlet.setActionId(dependencies.getWorkflowActionId());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowPublishDate())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, dependencies.getWorkflowPublishDate());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowPublishTime())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, dependencies.getWorkflowPublishTime());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowExpireDate())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, dependencies.getWorkflowExpireDate());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowExpireTime())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, dependencies.getWorkflowExpireTime());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowNeverExpire())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, dependencies.getWorkflowNeverExpire());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowWhereToSend())){
+			contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, dependencies.getWorkflowWhereToSend());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowFilterKey())){
+			contentlet.setStringProperty(Contentlet.FILTER_KEY, dependencies.getWorkflowFilterKey());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowIWantTo())){
+			contentlet.setStringProperty(Contentlet.I_WANT_TO, dependencies.getWorkflowIWantTo());
+		}
+	}
 
 
 	@WrapInTransaction
