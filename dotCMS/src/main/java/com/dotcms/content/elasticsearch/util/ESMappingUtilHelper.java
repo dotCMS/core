@@ -263,7 +263,7 @@ public class ESMappingUtilHelper {
             final Set<String> mappedFields) {
         try {
             final List<ContentType> contentTypes = contentTypeAPI.findAll();
-            contentTypes.forEach(contentType -> contentType.fields().forEach(
+            contentTypes.forEach(contentType -> contentType.fields().stream().filter(f->f.indexed()).forEach(
                     field -> addMappingForFieldIfNeeded(indexName, contentType, field,
                             mappedFields)));
         } catch (DotDataException e) {
@@ -282,6 +282,9 @@ public class ESMappingUtilHelper {
      */
     private void addMappingForFieldIfNeeded(final String indexName,
             final ContentType contentType, final Field field, final Set<String> mappedFields) {
+        if(!field.indexed()) {
+            return;
+        }
         final String fieldVariableName = (contentType.variable() + StringPool.PERIOD + field.variable())
                         .toLowerCase();
         if (!mappedFields.contains(fieldVariableName)) {
