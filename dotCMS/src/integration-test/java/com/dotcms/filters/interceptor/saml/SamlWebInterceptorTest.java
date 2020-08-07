@@ -9,6 +9,7 @@ import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.security.Encryptor;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
+import com.dotmarketing.filters.CMSUrlUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,10 +33,11 @@ public class SamlWebInterceptorTest {
         final SamlWebUtils    samlWebUtils   = mock(SamlWebUtils.class);
         final HttpServletRequest request     = mock(HttpServletRequest.class);
         final HttpServletResponse response   = mock(HttpServletResponse.class);
+        final CMSUrlUtil cmsUrlUtil          = mock(CMSUrlUtil.class);
         final SamlConfigurationService samlConfigurationService = mock(SamlConfigurationService.class);
         final IdentityProviderConfigurationFactory identityProviderConfigurationFactory = new MockIdentityProviderConfigurationFactory();
         final SamlWebInterceptor interceptor = new SamlWebInterceptor(encryptor, loginService, userAPI, hostWebAPI,
-                appsAPI, samlWebUtils, identityProviderConfigurationFactory);
+                appsAPI, samlWebUtils, cmsUrlUtil, identityProviderConfigurationFactory);
 
         interceptor.setSamlConfig(samlConfigurationService);
         when(request.getParameter(SamlWebUtils.BY_PASS_KEY)).thenReturn("true");
@@ -55,10 +57,11 @@ public class SamlWebInterceptorTest {
         final SamlWebUtils    samlWebUtils   = mock(SamlWebUtils.class);
         final HttpServletRequest request     = mock(HttpServletRequest.class);
         final HttpServletResponse response   = mock(HttpServletResponse.class);
+        final CMSUrlUtil cmsUrlUtil          = mock(CMSUrlUtil.class);
         final SamlConfigurationService samlConfigurationService = mock(SamlConfigurationService.class);
         final IdentityProviderConfigurationFactory identityProviderConfigurationFactory = new MockIdentityProviderConfigurationFactory();
         final SamlWebInterceptor interceptor = new SamlWebInterceptor(encryptor, loginService, userAPI, hostWebAPI,
-                appsAPI, samlWebUtils, identityProviderConfigurationFactory);
+                appsAPI, samlWebUtils, cmsUrlUtil, identityProviderConfigurationFactory);
 
         interceptor.setSamlConfig(samlConfigurationService);
         final Result result = interceptor.intercept(request, response);
