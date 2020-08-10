@@ -60,6 +60,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.scheduler.SchedulerAPI;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
@@ -239,6 +240,13 @@ public class APILocator extends Locator<APIIndex>{
 		return (WebSocketContainerAPI)getInstance(APIIndex.WEB_SOCKET_CONTAINER_API);
 	}
 
+	
+    public static SchedulerAPI getSchedulerAPI() {
+        return SchedulerAPI.getInstance();
+    }
+
+	
+	
 	/**
 	 * Creates a single instance of the {@link PermissionAPI} class.
 	 *
