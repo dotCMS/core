@@ -314,8 +314,8 @@ public class SamlWebInterceptor implements WebInterceptor {
 
         Logger.debug(this, ()-> "------------------------------ IdP doLogout ---------------------------------");
 
-        final Object nameID           = session.getAttribute(identityProviderConfiguration.getId() + SamlAuthenticationService.SAML_NAME_ID);
-        final String samlSessionIndex = (String) session.getAttribute(identityProviderConfiguration.getId() + SamlAuthenticationService.SAML_SESSION_INDEX);
+        final Object nameID           = null != session? session.getAttribute(identityProviderConfiguration.getId() + SamlAuthenticationService.SAML_NAME_ID) : null;
+        final String samlSessionIndex = null != session? (String) session.getAttribute(identityProviderConfiguration.getId() + SamlAuthenticationService.SAML_SESSION_INDEX) : null;
         boolean doLogoutDone          = false;
         Logger.debug(this, ()-> "- idpConfig = " + identityProviderConfiguration);
         Logger.debug(this, ()-> "- NameID = " + nameID);
