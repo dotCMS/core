@@ -10,7 +10,7 @@ params:
     hidden: false
     type: "BOOL"
     label: "Enable?"
-    hint: "Enable | Disable the SAML Configuration"
+    hint: "Enable | Disable this Configuration"
     required: true
   idpName:
     value: ""
@@ -23,15 +23,15 @@ params:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Service Provider Issuer URL"
-    hint: "A Unique Id that is shared with the IDP - usually a fully qualified url, e.g. https://dotcms.com/dotAdmin or https://testing.dotcms.com:8443/dotAdmin"
+    label: "Service Provider Issuer ID"
+    hint: "A unique Id that is shared with the IDP - usually the fully qualified url to your dotcms instance, e.g. https://dotcms.com/dotAdmin or https://testing.dotcms.com:8443/dotAdmin"
     required: true
   sPEndpointHostname:
     value: ""
     hidden: false
     type: "STRING"
     label: "Service Provider Endpoint Hostname/Port"
-    hint: "e.g. dotcms.com or testing.dotcms.com:8443"
+    hint: "The fully qualified domain and optionally, port for your dotCMS installation (HTTPS is assumed). This will be used by your IDP for callbacks.  E.g. dotcms.com or testing.dotcms.com:8443"
     required: true
   signatureValidationType:
     hidden: false
@@ -66,7 +66,7 @@ params:
     required: true
   privateKey:
     value: ""
-    hidden: false
+    hidden: true
     type: "STRING"
     label: "Private Key"
     hint: "Cut and paste your Private Key here"
