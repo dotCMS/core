@@ -240,7 +240,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
             return this.samlAuthenticationService;
         }
 
-        throw new DotSamlException("Not any host has been configured as a SAML");
+        throw new DotSamlException("There is no SAML Configuration for this host");
     }
 
     /**
