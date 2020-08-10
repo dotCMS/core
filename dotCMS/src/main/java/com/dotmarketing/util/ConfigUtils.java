@@ -1,7 +1,9 @@
 package com.dotmarketing.util;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.image.filter.ImageFilter;
 import com.liferay.util.FileUtil;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
 
@@ -139,4 +141,21 @@ public class ConfigUtils {
             return realPath;
         }
     }
+    
+    
+
+    private static final String LOCAL = "LOCAL";
+    public static String getDotGeneratedPath() {
+        return dotGeneratedPath.get() + File.separator + "dotGenerated";
+    }
+    
+    private static Lazy<String> dotGeneratedPath =Lazy.of(()->{
+        return LOCAL.equalsIgnoreCase(Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL))
+                    ? ConfigUtils.getDynamicContentPath()
+                    : ConfigUtils.getAbsoluteAssetsRootPath();
+            });
+
+    
+    
+    
 }

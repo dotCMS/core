@@ -1,7 +1,7 @@
 name: "Saml Integration"
 iconUrl: "/black_18dp.png"
 allowExtraParameters: true
-description: "This App will auto tag images by connecting to Amazon's deep learning technology that requires no expertise to use.  The tagged images and assets will be searchable in dotCMS"
+description: "Saml Configuration"
 
 
 params:
@@ -34,12 +34,22 @@ params:
     hint: "Usually a dotCMS host url"
     required: true
   signatureValidationType:
-    value: ""
     hidden: false
-    type: "STRING"
+    type: "SELECT"
     label: "Validation Type"
     hint: "Validation Type"
     required: true
+    value:
+      -
+        label: "Only Response"
+        value: "response"
+        selected: true
+      -
+        label: "Only Assertion"
+        value: "assertion"
+      -
+        label: "Response & Assertion"
+        value: "responseandassertion"
   idPMetadataFile:
     value: ""
     hidden: false
@@ -61,6 +71,7 @@ params:
     label: "Private Key"
     hint: "Private Key"
     required: true
+
 
 
 

@@ -242,6 +242,14 @@ public class Logger{
         }
         try{
             logger.warn(message);
+            //we don't want to eat the real message - EVER
+            logger.warn(ex.getMessage());
+            try {
+                logger.warn(ex.getStackTrace()[0]);
+            }
+            catch(Throwable t) {
+                logger.debug(()-> t);
+            }
             logger.debug(()-> message, ex);
         }
         catch(java.lang.IllegalStateException e){

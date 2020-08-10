@@ -39,8 +39,10 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     public GraphqlAPIImpl() {
         typesProviders.add(ContentAPIGraphQLTypesProvider.INSTANCE);
         typesProviders.add(PageAPIGraphQLTypesProvider.INSTANCE);
+        typesProviders.add(QueryMetadataTypeProvider.INSTANCE);
         fieldsProviders.add(ContentAPIGraphQLFieldsProvider.INSTANCE);
         fieldsProviders.add(PageAPIGraphQLFieldsProvider.INSTANCE);
+        fieldsProviders.add(QueryMetadataFieldProvider.INSTANCE);
     }
 
     /**
