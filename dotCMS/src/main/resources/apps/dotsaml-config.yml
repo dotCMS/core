@@ -1,7 +1,7 @@
-name: "Saml Integration"
-iconUrl: "/black_18dp.png"
+name: "SSO - SAML"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/saml.png"
 allowExtraParameters: true
-description: "Saml Configuration"
+description: "SAML SSO provides users the ability to authentcate against a centralized IDP/Authentication source such as Azure AD or Google's G Suite'.  For information on how to use this App, see the [online documentation](https://dotcms.com/docs/latest/sso-saml)."
 
 
 params:
