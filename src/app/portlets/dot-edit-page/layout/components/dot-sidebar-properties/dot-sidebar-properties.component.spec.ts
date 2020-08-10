@@ -14,7 +14,7 @@ describe('DotSidebarPropertiesComponent', () => {
     let fixture: ComponentFixture<DotSidebarPropertiesComponent>;
     let de: DebugElement;
     let dotEventsService: DotEventsService;
-    let mainButton: DebugElement;
+    let mainButton: HTMLElement;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -35,8 +35,8 @@ describe('DotSidebarPropertiesComponent', () => {
         component = fixture.componentInstance;
         dotEventsService = de.injector.get(DotEventsService);
 
-        mainButton = de.query(By.css('button'));
-        mainButton.triggerEventHandler('click', {});
+        mainButton = de.query(By.css('button')).nativeElement;
+        mainButton.dispatchEvent(new MouseEvent('click'));
         fixture.detectChanges();
     });
 

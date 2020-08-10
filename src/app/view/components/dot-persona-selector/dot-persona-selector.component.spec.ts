@@ -69,7 +69,7 @@ describe('DotPersonaSelectorComponent', () => {
         const personaSelectedItem = hostFixture.debugElement.query(
             By.css('dot-persona-selected-item')
         );
-        personaSelectedItem.triggerEventHandler('click', new MouseEvent('mousedown'));
+        personaSelectedItem.nativeElement.dispatchEvent(new MouseEvent('click'));
         hostFixture.detectChanges();
     };
 
@@ -134,7 +134,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should set dot-persona-selected-item with right attributes', () => {
-        const personaSelectedItemDe =  de.query(By.css('dot-persona-selected-item'));
+        const personaSelectedItemDe = de.query(By.css('dot-persona-selected-item'));
         expect(personaSelectedItemDe.attributes.appendTo).toBe('target');
         expect(personaSelectedItemDe.attributes['ng-reflect-text']).toBe('Default Visitor');
         expect(personaSelectedItemDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
@@ -166,27 +166,23 @@ describe('DotPersonaSelectorComponent', () => {
     it('should execute "change" event from dot-persona-selector-option', () => {
         hostFixture.whenStable().then(() => {
             spyOn(component.selected, 'emit');
-            spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
             openOverlay();
             const personaOption = hostFixture.debugElement.query(
                 By.css('dot-persona-selector-option')
             );
             personaOption.triggerEventHandler('change', defaultPersona);
             expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
-            expect(dropdown.componentInstance.toggleOverlayPanel).toHaveBeenCalled();
         });
     });
 
     it('should execute "delete" event from dot-persona-selector-option', () => {
         hostFixture.whenStable().then(() => {
-            spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
             spyOn(component.delete, 'emit');
             openOverlay();
             const personaOption = hostFixture.debugElement.query(
                 By.css('dot-persona-selector-option')
             );
             personaOption.triggerEventHandler('delete', defaultPersona);
-            expect(dropdown.componentInstance.toggleOverlayPanel).toHaveBeenCalled();
             expect(component.delete.emit).toHaveBeenCalledWith(defaultPersona);
         });
     });
@@ -210,6 +206,8 @@ describe('DotPersonaSelectorComponent', () => {
             expect(dropdown.componentInstance.toggleOverlayPanel).toHaveBeenCalled();
             expect(personaDialog.visible).toBe(true);
             expect(personaDialog.personaName).toBe('Bill');
+            personaDialog.visible = false;
+            hostFixture.detectChanges();
         });
 
         it('should emit persona and refresh the list on Add new persona', () => {

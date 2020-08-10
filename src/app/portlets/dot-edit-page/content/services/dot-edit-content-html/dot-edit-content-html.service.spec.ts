@@ -953,4 +953,7 @@ describe('DotEditContentHtmlService', () => {
             expect(doc.querySelector('.loader__overlay')).toBeNull();
         });
     });
+    afterEach(() => {
+        document.body.removeChild(fakeIframeEl);
+    });
 });

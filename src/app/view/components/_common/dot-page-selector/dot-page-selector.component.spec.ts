@@ -180,7 +180,7 @@ describe('DotPageSelectorComponent', () => {
 
     it('should not search for pages if has less than 3 characters', () => {
         component.results = Object.assign({}, mockDotSiteSelectorResults);
-        spyOn(dotPageSelectorService, 'search');
+        spyOn(dotPageSelectorService, 'search').and.returnValue(observableOf(null));
         autocomplete.triggerEventHandler('completeMethod', invalidSearchPageObj);
 
         expect(dotPageSelectorService.search).not.toHaveBeenCalled();
@@ -189,7 +189,7 @@ describe('DotPageSelectorComponent', () => {
 
     it('should search for host', () => {
         spyOn(dotPageSelectorService, 'search').and.returnValue(
-            observableOf(mockDotSiteSelectorResults)
+            observableOf({...mockDotSiteSelectorResults})
         );
         autocomplete.triggerEventHandler('completeMethod', searchHostObj);
         expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchHostObj.query);
@@ -197,7 +197,7 @@ describe('DotPageSelectorComponent', () => {
 
     it('should set current host on selection', () => {
         component.results = mockDotSiteSelectorResults;
-        spyOn(dotPageSelectorService, 'setCurrentHost');
+        spyOn(dotPageSelectorService, 'setCurrentHost').and.returnValue(observableOf(null));
         autocomplete.triggerEventHandler('onSelect', mockDotSiteSelectorResults.data[0]);
         expect(dotPageSelectorService.setCurrentHost).toHaveBeenCalledWith(
             mockDotSiteSelectorResults.data[0].payload
@@ -205,7 +205,7 @@ describe('DotPageSelectorComponent', () => {
     });
 
     it('should remove special characters when searching for pages', () => {
-        spyOn(dotPageSelectorService, 'search');
+        spyOn(dotPageSelectorService, 'search').and.returnValue(observableOf({ ...mockDotSiteSelectorResults }));
         autocomplete.triggerEventHandler('completeMethod', specialSearchObj);
         expect(dotPageSelectorService.search).toHaveBeenCalledWith('demo');
     });
