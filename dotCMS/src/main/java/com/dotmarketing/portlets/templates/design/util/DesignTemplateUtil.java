@@ -419,7 +419,11 @@ public class DesignTemplateUtil {
     	final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     	final Optional<ShortyId> shortyId = shortyIdAPI.getShorty(containerId);
 
-		return shortyId.isPresent() && shortyId.get().subType == ShortType.CONTAINER ?
+    	if (!shortyId.isPresent()) {
+    		return containerId;
+		}
+
+		return shortyId.get().subType == ShortType.CONTAINER ?
 				containerId:
 				FileAssetContainerUtil.getInstance().getFullPath(identifierAPI.find(containerId).getParentPath());
 	}

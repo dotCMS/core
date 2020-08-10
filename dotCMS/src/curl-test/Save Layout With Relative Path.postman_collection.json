@@ -1,0 +1,166 @@
+{
+	"info": {
+		"_postman_id": "41780f23-6f2e-4fe7-851b-f9ae3ad2c121",
+		"name": "Save Layout With Relative Path",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "push contents with relationship Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "53158e3d-0f27-4f91-ae6d-e7f7ceb2dcef",
+						"exec": [
+							"pm.test(\"Bundle uploaded sucessfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/octet-stream"
+					},
+					{
+						"key": "Content-Disposition",
+						"type": "text",
+						"value": "attachment"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"contentType": "application/tar+gzip ",
+							"type": "file",
+							"src": "/build/src/core/dotCMS/src/curl-test/resources/relationship_push_publish/create_relationship_content-01EDS47ZT8AHF92NQ29K3RJ88W.tar.gz"
+						}
+					],
+					"options": {
+						"formdata": {}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/bundle/sync",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"bundle",
+						"sync"
+					],
+					"query": [
+						{
+							"key": "AUTH_TOKEN",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+			},
+			"response": []
+		},
+		{
+			"name": "Save Layout With relative Path",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "c50e3863-b57f-491d-8b31-b8e790169ecf",
+						"exec": [
+							"pm.test(\"Relative path should be save as Absolute path\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var jsonData = pm.response.json();",
+							"    var layout = jsonData[\"entity\"][\"layout\"];",
+							"    var rows = layout[\"body\"][\"rows\"]",
+							"",
+							"    pm.expect(rows.length).to.eql(1);",
+							"",
+							"    var columns = rows[0].columns;",
+							"    pm.expect(columns.length).to.eql(1);",
+							"",
+							"    var containers = columns[0].containers;",
+							"    pm.expect(containers.length).to.eql(1);",
+							"",
+							"    pm.expect(containers[0].identifier).to.eql(\"//demo.dotcms.com/application/containers/default/\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\":null,\n    \"themeId\":\"d7b0ebc2-37ca-4a5a-b769-e8a3ff187661\",\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":null,\n                    \"columns\":[\n                        {\n                            \"styleClass\":null,\n                            \"leftOffset\":1,\n                            \"width\":10,\n                            \"containers\":[\n                                {\n                                    \"identifier\":\"/application/containers/default/\",\n                                    \"uuid\":\"1234\"\n                                }\n                            ]\n                        }\n                    ]\n                }\n            ]\n        },\n        \"header\":true,\n        \"footer\":true,\n        \"sidebar\":{\n            \"location\":\"\",\n            \"containers\":[],\n            \"width\":\"small\"\n        }\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/page/24ca92bb-c71a-4d85-9a9c-a2719df9b05b/layout",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"page",
+						"24ca92bb-c71a-4d85-9a9c-a2719df9b05b",
+						"layout"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

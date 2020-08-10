@@ -17,13 +17,19 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Class that represents the javascript parameter for edit the drawed template.
@@ -187,6 +193,27 @@ public class TemplateLayout implements Serializable {
                 .anyMatch(containerUUID ->
                         containerUUID.getIdentifier().equals(identifier) && isTheSameUUID(containerUUID.getUUID(), uuid)
                 );
+    }
+
+    @JsonIgnore
+    @NotNull
+    public Set<String> getContainersIdentifierOrPath() {
+
+        final Set<String> containersIdOrPath = this.getBody()
+                .getRows()
+                .stream()
+                .flatMap(row -> row.getColumns().stream())
+                .flatMap(column -> column.getContainers().stream())
+                .map(ContainerUUID::getIdentifier)
+                .collect(Collectors.toSet());
+
+        if (null != layout && null != this.getSidebar()) {
+            containersIdOrPath.addAll(this.getSidebar().getContainers().stream()
+                    .map(ContainerUUID::toString)
+                    .collect(Collectors.toSet()));
+        }
+
+        return containersIdOrPath;
     }
 
     private boolean isTheSameUUID(final String uuid1, final String uuid2) {

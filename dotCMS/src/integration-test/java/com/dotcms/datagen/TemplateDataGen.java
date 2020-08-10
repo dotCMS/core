@@ -83,6 +83,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         return this;
     }
 
+    public TemplateDataGen drawedBody(final String drawedBody) {
+        this.drawedBody = drawedBody;
+        return this;
+    }
+
     /**
      * Sets footer property to the TemplateDataGen instance. This will be used when a new {@link
      * Template} instance is created

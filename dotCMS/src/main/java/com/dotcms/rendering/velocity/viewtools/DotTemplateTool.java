@@ -186,15 +186,31 @@ public class DotTemplateTool implements ViewTool {
             throw new RuntimeException("Template with inode: " + themeInode + " has not drawedBody");
         }
 
+        layout = getTemplateLayout(isPreview, drawedBodyAsString);
+
+        layout.setTitle(drawedBody.getTitle());
+        layoutCache.put(key, layout);
+
+        return layout;
+    }
+
+    public static TemplateLayout getTemplateLayout(String drawedBodyAsString) {
+        TemplateLayout layout;
+        try {
+            layout = getTemplateLayoutFromJSON(drawedBodyAsString);
+        } catch (IOException e) {
+            layout = DesignTemplateUtil.getDesignParameters(drawedBodyAsString, false);
+        }
+        return layout;
+    }
+
+    private static TemplateLayout getTemplateLayout(Boolean isPreview, String drawedBodyAsString) {
+        TemplateLayout layout;
         try {
             layout = getTemplateLayoutFromJSON(drawedBodyAsString);
         } catch (IOException e) {
             layout = DesignTemplateUtil.getDesignParameters(drawedBodyAsString, isPreview);
         }
-
-        layout.setTitle(drawedBody.getTitle());
-        layoutCache.put(key, layout);
-
         return layout;
     }
 

@@ -1,5 +1,8 @@
 package com.dotcms.datagen;
 
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.templates.design.bean.*;
 
 import java.util.ArrayList;
@@ -38,5 +41,11 @@ public class TemplateLayoutDataGen  {
         final TemplateLayout templateLayout = new TemplateLayout();
         templateLayout.setBody(body);
         return templateLayout;
+    }
+
+    public TemplateLayoutDataGen withContainer(final Container container) {
+        final FileAssetContainerUtil fileAssetContainerUtil = FileAssetContainerUtil.getInstance();
+        return withContainer(fileAssetContainerUtil.isFileAssetContainer(container) ?
+                fileAssetContainerUtil.getFullPath((FileAssetContainer) container) : container.getIdentifier());
     }
 }

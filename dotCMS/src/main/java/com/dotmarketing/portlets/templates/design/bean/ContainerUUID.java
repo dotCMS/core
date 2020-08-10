@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.templates.design.bean;
 
 import java.io.Serializable;
 
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,10 +21,10 @@ public class ContainerUUID implements Serializable{
 
 
     public ContainerUUID(final @JsonProperty("identifier") String containerIdentifier,
-                         final @JsonProperty("uuid") String containerUUID) {
+                         final @JsonProperty("uuid") String containerIdOrPath) {
 
         this.identifier = containerIdentifier;
-        this.uuid = containerUUID == null ? UUID_DEFAULT_VALUE : containerUUID;
+        this.uuid = containerIdOrPath == null ? UUID_DEFAULT_VALUE : containerIdOrPath;
     }
 
     public String getIdentifier() {

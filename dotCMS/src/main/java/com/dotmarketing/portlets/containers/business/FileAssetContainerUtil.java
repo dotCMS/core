@@ -33,6 +33,8 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.util.StringPool;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -66,8 +68,6 @@ public class FileAssetContainerUtil {
     static final String PRE_LOOP             = "preloop.vtl";
     static final String POST_LOOP            = "postloop.vtl";
     static final String CONTAINER_META_INFO  = "container.vtl";
-
-
 
     private static class SingletonHolder {
         private static final FileAssetContainerUtil INSTANCE = new FileAssetContainerUtil();
@@ -211,6 +211,11 @@ public class FileAssetContainerUtil {
         final int indexOf = fullPath.indexOf(hostname);
 
         return -1 != indexOf? fullPath.substring(indexOf + hostname.length()): fullPath;
+    }
+
+    public String getRelativePath(final String path) {
+        final String hostName = this.getHostName(path);
+        return this.getPathFromFullPath(hostName, path);
     }
 
     /**
@@ -519,7 +524,11 @@ public class FileAssetContainerUtil {
         }
     }
 
-    private String getFullPath(final Host host, final String containerPath) {
-        return builder(HOST_INDICATOR, host.getHostname(), containerPath).toString();
+    public String getFullPath(final Host host, final String containerPath) {
+        return getFullPath(host.getHostname(), containerPath);
+    }
+
+    public String getFullPath(final String hostName, final String containerPath) {
+        return builder(HOST_INDICATOR, hostName, containerPath).toString();
     }
 }

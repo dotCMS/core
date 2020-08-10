@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.ajax.util.ContainerAjaxUtil;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.util.Logger;
@@ -89,7 +90,10 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
                 contMap.put("source", container.getSource().toString());
                 if (container instanceof FileAssetContainer) {
 
-                    contMap.put("path", FileAssetContainer.class.cast(container).getPath());
+                    contMap.put("path",
+                            FileAssetContainerUtil.getInstance()
+                                    .getFullPath(FileAssetContainer.class.cast(container))
+                    );
                 }
 
 //                StringBuffer containerCode = new StringBuffer( cont.getCode() );
