@@ -29,8 +29,7 @@ public class PushPublishFiltersInitializer implements DotInitializer {
                 basePath.mkdir();
                 //If the directory does not exists, copy the YAML files that are ship with
                 //dotcms to the created directory
-                final String systemFiltersDirectory = "com" + File.separator + "dotcms" +
-                        File.separator + "publishing-filters" + File.separator;
+                final String systemFiltersDirectory = "publishing-filters" + File.separator;
                 final String systemFiltersPathString = Config.CONTEXT
                         .getRealPath("/WEB-INF/" + systemFiltersDirectory);
                 final File systemFilters = new File(systemFiltersPathString);
