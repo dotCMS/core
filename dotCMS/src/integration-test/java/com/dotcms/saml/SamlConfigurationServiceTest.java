@@ -10,18 +10,24 @@ public class SamlConfigurationServiceTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
-        //Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-
         if (!OSGIUtil.getInstance().isInitialized()) {
             OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
         }
+
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+
+
     }
 
     @Test
     public void test_getConfigAsString() {
 
-        /*final IdentityProviderConfigurationFactory configurationFactory = new MockIdentityProviderConfigurationFactory();
+   /*     if (!OSGIUtil.getInstance().isInitialized()) {
+            OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+        }
+
+        final IdentityProviderConfigurationFactory configurationFactory = new MockIdentityProviderConfigurationFactory();
         final SamlConfigurationService samlConfigurationService = DotSamlProxyFactory.getInstance().samlConfigurationService();
         final String clockSkew = samlConfigurationService.getConfigAsString(
                 configurationFactory.findIdentityProviderConfigurationById("demo.dotcms.com"), SamlName.DOT_SAML_CLOCK_SKEW);

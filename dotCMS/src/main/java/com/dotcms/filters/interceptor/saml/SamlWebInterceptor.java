@@ -18,11 +18,14 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 import com.liferay.portal.servlet.PortletSessionPool;
@@ -60,8 +63,10 @@ public class SamlWebInterceptor implements WebInterceptor {
     protected final HostWebAPI      hostWebAPI;
     protected final AppsAPI         appsAPI;
     protected final SamlWebUtils    samlWebUtils;
+    protected final CMSUrlUtil      cmsUrlUtil;
     protected final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
     protected volatile SamlConfigurationService samlConfigurationService;
+
 
     public SamlWebInterceptor() {
 
@@ -71,6 +76,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                 WebAPILocator.getHostWebAPI(),
                 APILocator.getAppsAPI(),
                 new SamlWebUtils(),
+                CMSUrlUtil.getInstance(),
                 DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory());
     }
 
@@ -80,6 +86,7 @@ public class SamlWebInterceptor implements WebInterceptor {
             final HostWebAPI      hostWebAPI,
             final AppsAPI         appsAPI,
             final SamlWebUtils    samlWebUtils,
+            final CMSUrlUtil      cmsUrlUtil,
             final IdentityProviderConfigurationFactory identityProviderConfigurationFactory) {
 
         this.encryptor    = encryptor;
@@ -88,6 +95,7 @@ public class SamlWebInterceptor implements WebInterceptor {
         this.hostWebAPI   = hostWebAPI;
         this.appsAPI      = appsAPI;
         this.samlWebUtils = samlWebUtils;
+        this.cmsUrlUtil   = cmsUrlUtil;
         this.identityProviderConfigurationFactory = identityProviderConfigurationFactory;
     }
 
@@ -99,6 +107,12 @@ public class SamlWebInterceptor implements WebInterceptor {
         }
 
         return this.samlConfigurationService;
+    }
+
+    @VisibleForTesting
+    protected void setSamlConfig(final SamlConfigurationService samlConfigurationService) {
+
+        this.samlConfigurationService = samlConfigurationService;
     }
 
     @Override
@@ -117,23 +131,24 @@ public class SamlWebInterceptor implements WebInterceptor {
 
         try {
 
-            if (null != this.samlConfig() && null != session && this.isAnySamlConfigurated()) {
+            if (null != this.samlConfig() && this.isAnySamlConfigurated()) {
 
                 final Host host = hostWebAPI.getCurrentHostNoThrow(request);
                 identityProviderConfiguration = // gets the SAML Configuration for this site.
-                        this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(
-                                host.getIdentifier());
+                        null != host?
+                                this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(host.getIdentifier()): null;
 
                 // If idpConfig is null, means this site does not need SAML processing
                 if (null != identityProviderConfiguration && identityProviderConfiguration.isEnabled()) { // SAML is configurated, so continue
 
                     // check if there is any exception filter path, to avoid to canApply all the logic.
-                    if (!this.checkAccessFilters(request.getRequestURI(), this.getAccessFilterArray(identityProviderConfiguration))
+                    if (!this.checkAccessFilters(request.getRequestURI(), host, request, this.getAccessFilterArray(identityProviderConfiguration))
                             && this.checkIncludePath(request.getRequestURI(), this.getIncludePathArray(identityProviderConfiguration))) {
 
                         if (this.samlWebUtils.isNotLogged(request)) {
 
-                            final AutoLoginResult autoLoginResult = this.autoLogin(request, response, session, identityProviderConfiguration);
+                            final AutoLoginResult autoLoginResult = this.autoLogin(request, response,
+                                    null != session? session: this.getSession(request), identityProviderConfiguration);
 
                             // we have to assign again the session, since the doAutoLogin might be renewed.
                             session = autoLoginResult.getSession();
@@ -168,7 +183,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                             + "'. No SAML filtering for this request: " + request.getRequestURI());
                 }
             }
-        } catch (final Exception exception) { // todo: better error handling?
+        } catch (final Exception exception) {
 
             Logger.error(this,  "Error [" + exception.getMessage() + "] Unable to get idpConfig for Site '" +
                     request.getServerName() + "'. Incoming URL: " + request.getRequestURL(), exception);
@@ -182,6 +197,12 @@ public class SamlWebInterceptor implements WebInterceptor {
 
         return Result.NEXT;
     } // intercept.
+
+    private HttpSession getSession (final HttpServletRequest httpServletRequest) {
+
+        final HttpSession session = httpServletRequest.getSession(false);
+        return session != null? session: httpServletRequest.getSession(true);
+    }
 
     private void doAuthentication(final HttpServletRequest request,
                                   final HttpServletResponse response,
@@ -450,7 +471,7 @@ public class SamlWebInterceptor implements WebInterceptor {
         final String samlUserId = (String) session.getAttribute(samlUserIdAttribute);
         session.removeAttribute(identityProviderConfiguration.getId() + SAML_USER_ID);
 
-        try { // todo: double check if this should switch between email or user id, or this way is ok.
+        try {
             systemUser = this.userAPI.getSystemUser();
             user       = this.userAPI.loadUserById(samlUserId, systemUser, false);
         } catch (NoSuchUserException e) {
@@ -533,8 +554,11 @@ public class SamlWebInterceptor implements WebInterceptor {
      *            {@link String} array
      * @return boolean
      */
-    protected boolean checkAccessFilters(final String uri, final String... filterPaths) {
-        boolean filter = false;
+    protected boolean checkAccessFilters(final String uri, final Host host,
+                                         final HttpServletRequest request, final String... filterPaths) {
+
+        // filter it if it is an asset
+        boolean filter = this.isFile(uri, host, WebAPILocator.getLanguageWebAPI().getLanguage(request).getId());
 
         if (null != filterPaths) {
             for (String filterPath : filterPaths) {
@@ -543,6 +567,22 @@ public class SamlWebInterceptor implements WebInterceptor {
         }
 
         return filter;
+    }
+
+    private boolean isFile(final String uri, final Host host, final long languageId) {
+
+        if (CMSFilter.IAm.FILE != this.cmsUrlUtil.resolveResourceType(null, uri, host, languageId)) {
+
+            final String uriWithoutQueryString = this.cmsUrlUtil.getUriWithoutQueryString(uri.toLowerCase());
+            return  uriWithoutQueryString.endsWith(".jpg")  ||
+                    uriWithoutQueryString.endsWith(".jpeg") ||
+                    uriWithoutQueryString.endsWith(".png")  ||
+                    uriWithoutQueryString.endsWith(".gif")  ||
+                    uriWithoutQueryString.endsWith(".css")  ||
+                    uriWithoutQueryString.endsWith(".js");
+        }
+
+        return true;
     }
 
     public  String[] getAccessFilterArray(final IdentityProviderConfiguration identityProviderConfiguration) {

@@ -131,7 +131,6 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
                 if (null == this.samlServiceBuilder) {
 
-
                     try {
                         if (!OSGIUtil.getInstance().isInitialized()) {
                             Logger.warn(this.getClass(),
@@ -241,7 +240,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
             return this.samlAuthenticationService;
         }
 
-        throw new DotSamlException("Not any host has been configured as a SAML");
+        throw new DotSamlException("There is no SAML Configuration for this host");
     }
 
     /**
