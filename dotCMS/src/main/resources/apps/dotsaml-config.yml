@@ -16,28 +16,28 @@ params:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Configuration Name"
-    hint: "Name for the Service"
+    label: "IDP Name"
+    hint: "Name for the IDP - for reference"
     required: true
   sPIssuerURL:
     value: ""
     hidden: false
     type: "STRING"
-    label: "SP Issuer URL"
-    hint: "Usually a dotCMS host url as an unique ID"
+    label: "Service Provider Issuer URL"
+    hint: "A Unique Id that is shared with the IDP - usually a fully qualified url, e.g. https://dotcms.com/dotAdmin or https://testing.dotcms.com:8443/dotAdmin"
     required: true
   sPEndpointHostname:
     value: ""
     hidden: false
     type: "STRING"
-    label: "SP Endpoint Hostname"
-    hint: "Usually a dotCMS host url"
+    label: "Service Provider Endpoint Hostname/Port"
+    hint: "e.g. dotcms.com or testing.dotcms.com:8443"
     required: true
   signatureValidationType:
     hidden: false
     type: "SELECT"
     label: "Validation Type"
-    hint: "Validation Type"
+    hint: "Depends on your IDP Configuration."
     required: true
     value:
       -
@@ -54,22 +54,22 @@ params:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Idp Metadata File"
-    hint: "Idp Metadata File"
+    label: "IDP Metadata File"
+    hint: "Cut and paste your IDP Metadata File here - this should be valid XML"
     required: true
   publicCert:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Public Cert"
-    hint: "Public Cert"
+    label: "Public Certifcate"
+    hint: "Cut and paste your Public Certificate here"
     required: true
   privateKey:
     value: ""
     hidden: false
     type: "STRING"
     label: "Private Key"
-    hint: "Private Key"
+    hint: "Cut and paste your Private Key here"
     required: true
 
 
