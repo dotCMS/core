@@ -123,7 +123,7 @@ public enum CustomFieldType {
         fileAssetTypeFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt, new FieldDataFetcher()));
         customFieldTypes.put("FILEASSET", TypeUtil.createObjectType("Fileasset", fileAssetTypeFields));
 
-        final Map<String, TypeFetcher> siteTypeFields = new HashMap<>(InterfaceType.getContentFields());
+        final Map<String, TypeFetcher> siteTypeFields = new HashMap<>(ContentFields.getContentFields());
         siteTypeFields.remove(HOST_KEY); // remove myself
         siteTypeFields.put("hostId", new TypeFetcher(GraphQLString));
         siteTypeFields.put("hostName", new TypeFetcher(GraphQLString));

@@ -6,6 +6,7 @@ import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
@@ -25,6 +26,7 @@ import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.saml.TestSamlConfigurationService;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -297,10 +299,12 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05350AddDotSaltClusterColumnTest.class,
         DotParseTest.class,
         TestWorkflowAction.class,
+        TestSamlConfigurationService.class,
         HostAPITest.class,
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,
-        BundleResourceTest.class
+        BundleResourceTest.class,
+        EMAWebInterceptorTest.class
 })
 public class MainSuite {
 

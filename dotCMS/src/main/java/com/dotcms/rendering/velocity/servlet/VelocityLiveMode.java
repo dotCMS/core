@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -155,6 +156,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
             try (Writer tmpOut = (key != null) ? new StringWriter(4096) : new BufferedWriter(new OutputStreamWriter(out))) {
 
+                HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
                 this.getTemplate(htmlPage, mode).merge(context, tmpOut);
 
                 if (key != null) {
