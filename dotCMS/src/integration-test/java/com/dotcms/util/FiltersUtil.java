@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
+import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -50,7 +51,7 @@ public class FiltersUtil {
     /**
      * Creates a new Vanity URL contentlet
      */
-    public Contentlet createVanityUrl(String title, String site, String uri,
+    public DefaultVanityUrl createVanityUrl(String title, String site, String uri,
             String forwardTo, int action, int order, long languageId)
             throws DotDataException, DotSecurityException {
 
@@ -85,7 +86,7 @@ public class FiltersUtil {
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
-        return contentlet;
+        return (DefaultVanityUrl) APILocator.getVanityUrlAPI().fromContentlet(contentlet);
     }
 
     /**

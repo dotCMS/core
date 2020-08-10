@@ -1,14 +1,15 @@
 package com.dotcms.security.apps;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,7 @@ public interface AppsAPI {
      * Conforms a map where the Elements are lists of app unique names, organized by host as key.
      * @return
      */
-    Map<String, Set<String>> appKeysByHost();
+    Map<String, Set<String>> appKeysByHost() throws DotSecurityException, DotDataException;
 
     /**
      * This returns a json object read from the secret store that contains the apps integration configuration and secret.
@@ -118,7 +119,7 @@ public interface AppsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     *
+     * Given an app key and the current user this will give back the appDescriptor
      * @param key
      * @param user
      * @return
@@ -129,19 +130,20 @@ public interface AppsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     *
-     * @param inputStream
+     * Create an App-Descriptor given an InputStream from a yml file read
+     * @param file
      * @param user
      * @throws IOException
      * @throws DotDataException
      * @throws DotSecurityException
      * @return
      */
-    AppDescriptor createAppDescriptor(final InputStream inputStream,
-            User user) throws IOException, DotDataException, DotSecurityException;
+
+    AppDescriptor createAppDescriptor(final File file,
+            User user) throws DotDataException, AlreadyExistException, DotSecurityException;
 
     /**
-     *
+     * Remove an App and all the secrets underneath.
      * @param key
      * @param user
      * @param removeDescriptor
@@ -151,6 +153,51 @@ public interface AppsAPI {
     void removeApp(final String key, final User user,
             final boolean removeDescriptor)
             throws DotSecurityException, DotDataException;
+
+    /**
+     * Method meant to to be consumed from a site delete event.
+     * @param host
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void removeSecretsForSite(Host host, User user)
+                    throws DotDataException, DotSecurityException;
+    /**
+     * Warnings are any secrets missing required values stated on the AppDescriptor
+     * @param appDescriptor
+     * @param sitesWithConfigurations
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    Map<String, Map<String, List<String>>> computeWarningsBySite(final AppDescriptor appDescriptor,
+            final Set<String> sitesWithConfigurations, final User user)
+            throws DotSecurityException, DotDataException;
+
+    /**
+     * Warnings are any secrets missing required values stated on the AppDescriptor
+     * @param appDescriptor
+     * @param site
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    Map<String, List<String>> computeSecretWarnings(final AppDescriptor appDescriptor, final Host site, final User user)
+            throws DotSecurityException, DotDataException;
+
+
+    /**
+     * The On secrets key reset is handled down here.
+     * @param user
+     * @throws DotDataException
+     * @throws IOException
+     */
+    void resetSecrets(User user)
+                    throws DotDataException, IOException;
+
 
     enum INSTANCE {
         INSTANCE;

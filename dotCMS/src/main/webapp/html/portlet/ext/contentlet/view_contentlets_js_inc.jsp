@@ -975,7 +975,7 @@
 
                 var categoriesValues = new Array ();
                 var form = document.getElementById("search_form");
-                var categories = form.categories;
+                var categories = document.getElementsByName("categories");
                 if (categories != null) {
                         if (categories.options != null) {
                                 var opts = categories.options;
@@ -1620,7 +1620,7 @@
                         showDeleted = true;
                 }
 
-                dijit.byId("searchButton").attr("disabled", true);
+                //dijit.byId("searchButton").attr("disabled", true);
                 //dijit.byId("clearButton").attr("disabled", false);
 
                 document.getElementById('fieldsValues').value = fieldsValues;
@@ -1676,6 +1676,7 @@
                 var checkAll = dijit.byId("checkAll");
                 var check;
 
+	            getViewCardEl().value = ''
                 for (var i = 0; i < cbContentInodeList.length; ++i) {
                         check = dijit.byId("checkbox" + i);
                         if(check) {
@@ -2386,11 +2387,11 @@
                         list.style.display = '';
                     }
 
-                    let dataViewButton = "<dot-data-view-button style=\"margin-right:32px" + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
+                    let dataViewButton = "<dot-data-view-button style=\"margin-left:24px" + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div>" + dataViewButton + "<div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>" + dataViewButton ;
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {

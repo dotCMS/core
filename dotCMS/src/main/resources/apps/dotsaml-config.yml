@@ -1,0 +1,78 @@
+name: "Saml Integration"
+iconUrl: "/black_18dp.png"
+allowExtraParameters: true
+description: "Saml Configuration"
+
+
+params:
+  enable:
+    value: true
+    hidden: false
+    type: "BOOL"
+    label: "Enable?"
+    hint: "Enable | Disable the SAML Configuration"
+    required: true
+  idpName:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Configuration Name"
+    hint: "Name for the Service"
+    required: true
+  sPIssuerURL:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "SP Issuer URL"
+    hint: "Usually a dotCMS host url as an unique ID"
+    required: true
+  sPEndpointHostname:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "SP Endpoint Hostname"
+    hint: "Usually a dotCMS host url"
+    required: true
+  signatureValidationType:
+    hidden: false
+    type: "SELECT"
+    label: "Validation Type"
+    hint: "Validation Type"
+    required: true
+    value:
+      -
+        label: "Only Response"
+        value: "response"
+        selected: true
+      -
+        label: "Only Assertion"
+        value: "assertion"
+      -
+        label: "Response & Assertion"
+        value: "responseandassertion"
+  idPMetadataFile:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Idp Metadata File"
+    hint: "Idp Metadata File"
+    required: true
+  publicCert:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Public Cert"
+    hint: "Public Cert"
+    required: true
+  privateKey:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Private Key"
+    hint: "Private Key"
+    required: true
+
+
+
+
+

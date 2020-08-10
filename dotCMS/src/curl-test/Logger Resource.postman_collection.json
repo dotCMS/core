@@ -1,0 +1,512 @@
+{
+	"info": {
+		"_postman_id": "89239414-6e93-45d7-9785-6daae53070b6",
+		"name": "Logger Resource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Invalid User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "2b94b3d1-adc1-4c7f-876e-44ee3f560b8c",
+						"exec": [
+							"pm.test(\"Status code should be 401\", function () {",
+							"    pm.response.to.have.status(401);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logger",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logger"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get loggers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "23c5f6a4-657d-4888-b168-94c067148411",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logger",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logger"
+					]
+				},
+				"description": "Just get the current memory list of the loggers"
+			},
+			"response": []
+		},
+		{
+			"name": "change level debug",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "2dfd1512-d714-451e-9ae6-18676a00882e",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": " {\n        \"level\": \"DEBUG\",\n        \"name\": \"com.dotmarketing.common.db.DotConnect\"\n   \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logger/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logger",
+						""
+					]
+				},
+				"description": "Change the log of the DotConnect logger in order to set it to DEBUG"
+			},
+			"response": []
+		},
+		{
+			"name": "get logger debug expected",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "43c95d4b-9bd5-47fe-9266-068da5908e95",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Includes level\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"DEBUG\");",
+							"});",
+							"",
+							"pm.test(\"Includes name\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"com.dotmarketing.common.db.DotConnect\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logger/com.dotmarketing.common.db.DotConnect",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logger",
+						"com.dotmarketing.common.db.DotConnect"
+					]
+				},
+				"description": "Checking if the level for DotConnect has changed to DEBUG"
+			},
+			"response": []
+		},
+		{
+			"name": "change level INFO",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7bb3c113-146e-42e5-8764-b6fb4f18c1a9",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": " {\n        \"level\": \"INFO\",\n        \"name\": \"com.dotmarketing.common.db.DotConnect\"\n   \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logger/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logger",
+						""
+					]
+				},
+				"description": "Getting back to the original level for DotConnect"
+			},
+			"response": []
+		},
+		{
+			"name": "get logger info expected again",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6bca11f5-1fb8-4704-ad04-49a0806d8731",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Includes level\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"INFO\");",
+							"});",
+							"",
+							"pm.test(\"Includes name\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"com.dotmarketing.common.db.DotConnect\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logger/com.dotmarketing.common.db.DotConnect",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logger",
+						"com.dotmarketing.common.db.DotConnect"
+					]
+				},
+				"description": "Double check DotConnect gets back to INFO"
+			},
+			"response": []
+		},
+		{
+			"name": "get logger with Logger not exist return NotFound",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "d8cc38ba-0cea-45e9-a3ca-0e9b096954ef",
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logger/Logger.not.exist",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logger",
+						"Logger.not.exist"
+					]
+				},
+				"description": "Check the log level of a Logger that does not exists, return 404"
+			},
+			"response": []
+		},
+		{
+			"name": "change level with Invalid Level return BadRequest",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "070b19b5-f0d5-4591-b6c8-e9894d1c2bfe",
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": " {\n        \"level\": \"INVALID\",\n        \"name\": \"com.dotmarketing.common.db.DotConnect\"\n   \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logger/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logger",
+						""
+					]
+				},
+				"description": "Change the Level of a Logger, but the Level is not a valid option, return 400"
+			},
+			"response": []
+		},
+		{
+			"name": "change level with Logger not exist return NotFound",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e99c6a86-8cbd-4f4c-bb20-2c9b37fb7c99",
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": " {\n        \"level\": \"INFO\",\n        \"name\": \"Logger.not.exist\"\n   \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logger/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logger",
+						""
+					]
+				},
+				"description": "Change the log Level of a Logger that does not exists, return a 404"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

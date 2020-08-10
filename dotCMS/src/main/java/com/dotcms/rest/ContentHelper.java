@@ -15,20 +15,18 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Encapsulate helper method for the {@link com.dotcms.rest.ContentResource}
@@ -138,13 +136,13 @@ public class ContentHelper {
     }
 
     /**
-     * Serves as an Entry point to the ContentletToMapTransformer
-     * @See ContentletToMapTransformer
+     * Serves as an Entry point to the DotTransformerBuilder
+     * @See DotTransformerBuilder
      * @param contentlet {@link Contentlet} original contentlet to hydrate, won't be modified.
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes, otherwise will the same instance
      */
     public Contentlet hydrateContentlet(final Contentlet contentlet) {
-       return new ContentletToMapTransformer(contentlet).hydrate().get(0);
+        return new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
     } // hydrateContentlet.
 
     /**

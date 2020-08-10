@@ -75,7 +75,7 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotSecurityException, DotDataException
      */
     @Override
-    @WrapInTransaction
+    @CloseDBIfOpened
     public Host findDefaultHost(User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         Host host;
@@ -254,6 +254,7 @@ public class HostAPIImpl implements HostAPI {
         Host host = null;
 
         try {
+
             StringBuilder queryBuffer = new StringBuilder();
             queryBuffer.append(String.format("%s:%s", CONTENT_TYPE_CONDITION, Host.HOST_VELOCITY_VAR_NAME ));
             queryBuffer.append(String.format(" +working:true +%s.aliases:%s", Host.HOST_VELOCITY_VAR_NAME, alias));
@@ -745,6 +746,12 @@ public class HostAPIImpl implements HostAPI {
                 // Remove Host
                 Contentlet c = contentAPI.find(host.getInode(), user, respectFrontendRoles);
                 contentAPI.delete(c, user, respectFrontendRoles);
+
+                try {
+                    APILocator.getAppsAPI().removeSecretsForSite(host, APILocator.systemUser());
+                }catch (Exception e){
+                    Logger.error(HostAPIImpl.class, "Error removing secrets for site",  e);
+                }
                 hostCache.remove(host);
                 hostCache.clearAliasCache();
             }

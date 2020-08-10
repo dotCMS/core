@@ -18,11 +18,11 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import org.glassfish.jersey.internal.util.Base64;
 import org.junit.Assert;
@@ -32,6 +32,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -44,6 +45,21 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
         IntegrationTestInitService.getInstance().init();
     }
 
+    private void setUselessFieldVariablesFromAllDotAssets() throws DotSecurityException, DotDataException {
+
+        final List<ContentType> dotAssetContentTypes =
+                APILocator.getContentTypeAPI(APILocator.systemUser()).findByType(BaseContentType.DOTASSET);
+
+        for(final ContentType dotAssetContentType : dotAssetContentTypes) {
+
+            final Map<String, Field> fieldMap = dotAssetContentType.fieldMap();
+            com.dotcms.contenttype.model.field.Field binaryField           = fieldMap.get(DotAssetContentType.ASSET_FIELD_VAR);
+            final FieldVariable allowFileTypes = ImmutableFieldVariable.builder().key(BinaryField.ALLOWED_FILE_TYPES)
+                    .value("application/vnd.hzn-3d-crossword").fieldId(binaryField.id()).build(); // nothing will match with application/vnd.hzn-3d-crossword
+            APILocator.getContentTypeFieldAPI().save(allowFileTypes, APILocator.systemUser());
+        }
+    }
+
     /**
      * 1) creates a dotAsset content type for text plain
      * 2) creates a temporal file asset and gets the id
@@ -54,6 +70,7 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
     @Test
     public void test_apply_with_temporal_file() throws Exception {
 
+        this.setUselessFieldVariablesFromAllDotAssets();
         // creates a dotAsset for text files
         final String variable = "testDotAsset" + System.currentTimeMillis();
         final ContentType dotAssetContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).

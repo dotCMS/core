@@ -52,8 +52,26 @@
 	function reloadTail(){
 		var x = dijit.byId("fileName").getValue();
 		dojo.byId("tailingFrame").src='/dotTailLogServlet/?fileName='+x;
-
+        disableFollowOnScrollUp();
 	}
+
+    function disableFollowOnScrollUp() {
+        var iframe = dojo.byId('tailingFrame');
+        var logWindow = iframe.contentWindow;
+        var lastScrollTop = 0;
+        var followCB = dojo.byId("scrollMe");
+        var cbWidget = dijit.getEnclosingWidget(followCB);
+        setTimeout(() => {
+            logWindow.addEventListener("scroll", function(){
+                var st = logWindow.pageYOffset || logWindow.document.documentElement.scrollTop;
+                //scroll up
+                if (st < lastScrollTop && cbWidget.get('checked')){
+                    cbWidget.set('checked', false);
+                }
+                lastScrollTop = st <= 0 ? 0 : st; // For Mobile or negative scrolling
+            }, false);
+        }, 200)
+    };
 
 	function doPopup(){
 			var x = dijit.byId("fileName").getValue();
@@ -206,6 +224,10 @@
         var dialog = dijit.byId("logman_dia");
     	dojo.connect(dialog, "onShow", null, getCurrentLogs);
     	dojo.connect(dialog, "onCancel", null, destroyCheckboxNodes);
+
+
+
+
     });
 
 </script>

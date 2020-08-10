@@ -4,6 +4,8 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
+import com.dotcms.browser.BrowserAPI;
+import com.dotcms.browser.BrowserAPIImpl;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -665,6 +667,15 @@ public class APILocator extends Locator<APIIndex>{
 		return (BundleAPI)getInstance(APIIndex.BUNDLE_API);
 	}
 
+	/**
+	 * Creates a single instance of the {@link BrowserAPI} class.
+	 *
+	 * @return The {@link BrowserAPI} class.
+	 */
+	public static BrowserAPI getBrowserAPI() {
+		return (BrowserAPI)getInstance(APIIndex.BROWSER_API);
+	}
+
 	public static TempFileAPI getTempFileAPI() {
 	  return new TempFileAPI();
 	}
@@ -920,9 +931,9 @@ public class APILocator extends Locator<APIIndex>{
 	}
 	
     /**
-     * Creates a single instance of the {@link JWTTokenAPI} class.
+     * Creates a single instance of the {@link ApiTokenAPI} class.
      *
-     * @return The {@link JWTTokenAPI} class.
+     * @return The {@link ApiTokenAPI} class.
      */
     public static ApiTokenAPI getApiTokenAPI() {
         return (ApiTokenAPI) getInstance(APIIndex.API_TOKEN_API);
@@ -1111,7 +1122,8 @@ enum APIIndex
 	CONTENT_TYPE_FIELD_LAYOUT_API,
 	PUBLISH_AUDIT_API,
 	APPS_API,
-	DOT_ASSET_API;
+	DOT_ASSET_API,
+	BROWSER_API;
 
 
 
@@ -1192,6 +1204,7 @@ enum APIIndex
 			case PUBLISH_AUDIT_API: return PublishAuditAPIImpl.getInstance();
 			case APPS_API: return AppsAPI.INSTANCE.get();
 			case DOT_ASSET_API: return new DotAssetAPIImpl();
+			case BROWSER_API: return new BrowserAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
@@ -1203,17 +1216,8 @@ enum APIIndex
 	 */
 	private static VanityUrlAPI createVanityUrlAPI () {
 
-		VanityUrlAPI vanityUrlAPI = null;
-
-		try {
-
-			vanityUrlAPI = new VanityUrlAPIImpl();
-		} catch (DotDataException e) {
-			Logger.error(APILocator.class, "The Vanity API couldn't be created", e);
-		}
-
-		return vanityUrlAPI;
-	} // createVanityUrlAPI.
+		return new VanityUrlAPIImpl();
+	}
 
     /**
      * Correctly initializes a new single instance of the {@link FileWatcherAPI}.

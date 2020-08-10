@@ -72,12 +72,21 @@ function submitform(cacheName)
 
 var stillInReindexation = false;
 function checkReindexationCallback (response) {
-	var inFullReindexation = response['inFullReindexation'];
-	var contentCountToIndex = response['contentCountToIndex'];
-	var lastIndexationProgress = response['lastIndexationProgress'];
-	var currentIndexPath = response['currentIndexPath'];
-	var newIndexPath = response['newIndexPath'];
-	var reindexTimeElapsed = response['reindexTimeElapsed'];
+	var inFullReindexation = response.entity.inFullReindexation;
+	var contentCountToIndex = response.entity.contentCountToIndex;
+	var lastIndexationProgress = response.entity.lastIndexationProgress;
+	var currentIndexPath = response.entity.currentIndexPath;
+	var newIndexPath = response.entity.newIndexPath;
+	var reindexTimeElapsed = response.entity.reindexTimeElapsed;
+    var failedRecords = response.entity.errorCount;
+    
+    if(failedRecords > 0){
+        dojo.byId("failedReindexRecordsDiv").style.display="";
+        dojo.byId("failedReindexRecordsMessage").innerHTML= failedRecords;
+        
+    }else{
+        dojo.byId("failedReindexRecordsDiv").style.display="none";
+    }
 
 
 	var reindexationInProgressDiv = document.getElementById("reindexationInProgressDiv");
@@ -116,56 +125,216 @@ function checkReindexationCallback (response) {
 
 function checkReindexation () {
 
-	CMSMaintenanceAjax.getReindexationProgress(checkReindexationCallback);
+    fetch('/api/v1/esindex/reindex',{cache: 'no-cache'})
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data));
+
 }
+function deleteFailedRecords () {
+
+    fetch('/api/v1/esindex/failed', {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data));
+
+}
+
 
 /** Stops de re-indexation process and clears the database table that contains 
     the remaining non re-indexed records. */
 function stopReIndexing(){
-	CMSMaintenanceAjax.stopReindexation(checkReindexationCallback);
+    
+    fetch('/api/v1/esindex/reindex?switch=false', {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data));
+    
+
 }
 
 /** Stops de re-indexation process and clears the database table that contains 
     the remaining non re-indexed records. Moreover, switches the current index 
     to point to the new one. */
 function stopReIndexingAndSwitchover() {
-	dijit.byId('stopReindexAndSwitch').set('label', '<%= LanguageUtil.get(pageContext,"Switching-To-New-Index") %>');
-	dijit.byId('stopReindexAndSwitch').set('disabled', true);
-	CMSMaintenanceAjax.stopReindexationAndSwitchover(checkReindexationCallback);
+    fetch('/api/v1/esindex/reindex?switch=true', {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data));
+    
 }
 
 /** Downloads the main information of the records that could not be re-indexed 
     as a .CSV file*/
-function downloadFailedAsCsv() {
-	var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-    href += "<portlet:param name='struts_action' value='/ext/cmsmaintenance/view_cms_maintenance' />";
-    href += "<portlet:param name='cmd' value='export-failed-as-csv' />";      
-    href += "<portlet:param name='referer' value='<%= java.net.URLDecoder.decode(referer, "UTF-8") %>' />";       
-    href += "</portlet:actionURL>";
-    window.location.href=href;
+function downloadFailedAsJson() {
+	var href = "/api/v1/esindex/failed";
+	window.open(href);
 }
 
-function optimizeCallback() {
-	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"Optimize-Done")%>");
+
+function optimizeIndices(){
+    fetch('/api/v1/esindex/optimize', {method:'POST',cache: 'no-cache'} )
+    .then(response => response.json());
+
 }
 
-function flushIndiciesCacheCallback(data) {
-	console.log("flushIndiciesCacheCallback",data);
-	var message = "<%=LanguageUtil.get(pageContext,"maintenance.index.cache.flush.message")%>";
-	message=message.replace("{0}", data.successfulShards);
-	message=message.replace("{1}", data.failedShards);
-    showDotCMSSystemMessage(message);
+
+function flushIndiciesCache(){
+    fetch('/api/v1/esindex/cache', {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json());
+
 }
+
+function deleteIndex(indexName, live){
+
+    if(live && ! confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Delete-Live-Index")) %>")){
+        return;
+    }
+    
+    fetch('/api/v1/esindex/' + indexName, {method:'DELETE',cache: 'no-cache'} )
+    .then(response => response.json())
+    .then(()=>refreshIndexStats());
+    
+
+}
+
+function refreshIndexStats(){
+    var x = dijit.byId("indexStatsCp");
+    var y =Math.floor(Math.random()*1123213213);
+    
+
+    x.attr( "href","/html/portlet/ext/cmsmaintenance/index_stats.jsp?r=" + y  );
+    
+    /**
+    fetch('/api/v1/index', {cache: 'no-cache'})
+    .then(response => response.json())
+    .then(data =>paintStatusTable(data))   
+    **/
+}
+
+
+function doReindex(){
+    var shards =1
+    var contentType = dijit.byId('structure').item != null ? dijit.byId('structure').item.id : "DOTALL";
+    if("DOTALL"=== contentType){
+        var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 2)%>);
+        if(!number){
+            return;
+        }
+        shards = parseInt(number);
+        if(shards == null || shards <1){
+            return;
+        }
+    }
+    dijit.byId('structure').reset();
+        
+    fetch('/api/v1/esindex/reindex?shards=' + shards + '&contentType=' + contentType, {method:'POST'})
+    .then(response => response.json())
+    .then(data =>checkReindexationCallback(data))
+    .then(()=>refreshIndexStats());
+}
+
+function doCloseIndex(indexName) {
+
+    fetch('/api/v1/esindex/' + indexName + '?action=close', {method:'PUT'} )
+    .then(response => response.json())
+    .then(()=>refreshIndexStats());
+}
+
+function doOpenIndex(indexName) {
+
+
+    fetch('/api/v1/esindex/' + indexName + '?action=open', {method:'PUT'} )
+    .then(response => response.json())
+    .then(()=>refreshIndexStats());
+}
+
+function doClearIndex(indexName){
+
+    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index"))%>")){
+        return;
+
+    }
+
+    fetch('/api/v1/esindex/' + indexName + '?action=clear', {method:'PUT'} )
+    .then(response => response.json())
+    .then(()=>refreshIndexStats());
+}
+
+function doActivateIndex(indexName){
+
+    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index"))%>")){
+        return;
+    }
+
+    fetch('/api/v1/esindex/' + indexName, {method:'PUT'} )
+    .then(response => response.json())
+    
+    .then(()=>refreshIndexStats());
+}
+
+
+function doDeactivateIndex(indexName){
+
+    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index"))%>")){
+        return;
+
+    }
+
+    fetch('/api/v1/esindex/' + indexName + '?action=deactivate', {method:'PUT'} )
+    .then(response => response.json())
+    .then(()=>refreshIndexStats());
+
+}
+
+
+
+
+
+
+const indexTableRowTmpl = (data) => `<tr class="${data.rowClass} showPointer" id="${data.indexName}Row">
+    <td  align="center" class="showPointer">${data.state}</td>
+    <td  class="showPointer" >${data.indexName}</td>
+    <td>${data.created}</td>
+    <td align="center">${data.documentCount}</td>
+    <td align="center">${data.numberOfShards}</td>
+    <td align="center">${data.numberOfReplicas}</td>
+    <td align="center">${data.size}</td>
+    <td align="center">
+          <div onclick="showIndexClusterStatus('${data.indexName}')"  style='cursor:pointer;background:${data.indexColor}; width:20px;height:20px;'></div>
+    </td>
+</tr>`;
+
+/**
+ * 
+ */
+function paintStatusTable(data){
+    
+    const indexTable = document.getElementById("indexStatsCp");
+    
+    indexTable.innerHTML="";
+    
+    console.log("found rows:" + indexTable.rows.length);
+    data.entity.forEach(function (item, index) {
+        const data = {};
+        data.rowClass= item.active ? "trIdxActive" : item.building ? "trIdxBuilding" : "trIdxNothing";
+        data.state = item.active ? "<%= LanguageUtil.get(pageContext,"active") %>" : item.building ? "<%= LanguageUtil.get(pageContext,"building") %>" : "";
+        data.indexName = item.indexName;
+        data.created = item.created;
+        data.indexColor=item.health.status; 
+        data.numberOfReplicas=item.health.numberOfReplicas; 
+        data.numberOfShards=item.health.numberOfShards; 
+        data.documentCount=(item.status === undefined) ? "n/a"  : item.status.documentCount; 
+        data.size=(item.status === undefined) ? "n/a"  : item.status.size; 
+
+        let row  = indexTable.insertRow();
+        row.outerHTML = indexTableRowTmpl(data);
+      });
+
+}
+
+
+
 
 function checkFixAsset()
 {
 	CMSMaintenanceAjax.getFixAssetsProgress(fixAssetsCallback);
-}
-
-function doCreateZipAjax(dataOnly)
-{
-	showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext,"Backup-file-created-on-background") %>");
-	CMSMaintenanceAjax.doBackupExport("createZip",dataOnly,showDotCMSSystemMessage);
 }
 
 function doReplace () {
@@ -415,318 +584,8 @@ function refreshCache(){
 
 }
 
-function deleteIndex(indexName, live){
-
-	if(live && ! confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Delete-Live-Index")) %>")){
-		return;
-	}
-	CMSMaintenanceAjax.deleteIndex(indexName,deleteIndexCallback);
-
-}
-
-function deleteIndexCallback(data){
-
-	refreshIndexStats();
-}
 
 
-function refreshIndexStats(){
-	var x = dijit.byId("indexStatsCp");
-	var y =Math.floor(Math.random()*1123213213);
-
-	x.attr( "href","/html/portlet/ext/cmsmaintenance/index_stats.jsp?r=" + y  );
-
-
-
-}
-
-function doDownloadIndex(indexName){
-
-
-	window.location="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/downloadIndex/indexName/" + indexName;
-
-}
-
-function doReindex(){
-	var shards;
-
-    if(dijit.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
-    	//document.getElementById('defaultStructure').value = "Rebuild Whole Index";
-    	dojo.byId('defaultStructure').value = "Rebuild Whole Index";
-
-		var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 2)%>);
-
-		if(!number){
-			return;
-		}
-			shards = parseInt(number);
-    	}
-    else{
-    		shards =1
-     	 }
-		if(shards <1){
-			return;
-		}
-		if(dijit.byId('structure').item && dijit.byId('structure').item.id){
-		    dijit.byId('structure').setValue(dijit.byId('structure').item.id);
-		}
-		dojo.byId("numberOfShards").value = shards;
-		dijit.byId('idxReindexButton').setDisabled(true);
-		dijit.byId('idxShrinkBtn').setDisabled(true);
-		submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
-		return false;
-}
-
-function doCloseIndex(indexName) {
-	var xhrArgs = {
-
-        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/closeIndex/indexName/" + indexName,
-
-        handleAs: "text",
-        handle : function(dataOrError, ioArgs) {
-            if (dojo.isString(dataOrError)) {
-                if (dataOrError.indexOf("FAILURE") == 0) {
-                    showDotCMSSystemMessage(dataOrError, true);
-                } else {
-                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Closed"))%>", true);
-                    refreshIndexStats();
-                }
-            } else {
-                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-            }
-        }
-    };
-    dojo.xhrPost(xhrArgs);
-}
-
-function doOpenIndex(indexName) {
-	var xhrArgs = {
-
-        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/openIndex/indexName/" + indexName,
-
-        handleAs: "text",
-        handle : function(dataOrError, ioArgs) {
-            if (dojo.isString(dataOrError)) {
-                if (dataOrError.indexOf("FAILURE") == 0) {
-                    showDotCMSSystemMessage(dataOrError, true);
-                } else {
-                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Opened"))%>", true);
-                    refreshIndexStats();
-                }
-            } else {
-                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-            }
-        }
-    };
-    dojo.xhrPost(xhrArgs);
-}
-
-function doClearIndex(indexName){
-
-	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index"))%>")){
-		return;
-
-	}
-
-	var xhrArgs = {
-
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/clearIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Cleared"))%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
-
-}
-function doActivateIndex(indexName){
-
-	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index"))%>")){
-		return;
-
-	}
-
-	var xhrArgs = {
-
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/activateIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Activated"))%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
-}
-function doDeactivateIndex(indexName){
-
-	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index"))%>")){
-		return;
-
-	}
-
-	var xhrArgs = {
-
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/deactivateIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Deactivated"))%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
-
-}
-
-function hideRestoreIndex() {
-    dijit.byId("restoreIndexDialog").hide();
-}
-
-function hideRestoreSnapshotIndex() {
-    dijit.byId("restoreSnapshotDialog").hide();
-    refreshIndexStats();
-}
-
-function showRestoreIndexDialog(indexName) {
-	dojo.byId("indexToRestore").value=indexName;
-	var dialog=dijit.byId("restoreIndexDialog");
-	dialog.set('title','Restore index '+indexName);
-	dojo.byId("uploadFileName").innerHTML='';
-	dijit.byId('uploadSubmit').set('disabled',false);
-	dojo.query('#uploadProgress').style({display:"none"});
-	connectUploadEvents();
-	dojo.byId("uploadWarningLive").style.display="none";
-	dojo.byId("uploadWarningWorking").style.display="none";
-	dialog.show();
-}
-
-function showRestoreSnapshotDialog() {
-	  var dialog=dijit.byId("restoreSnapshotDialog");
-	  dojo.byId("uploadSnapshotFileName").innerHTML='';
-	  dijit.byId('uploadSnapshotSubmit').set('disabled',false);
-	  dojo.query('#uploadSnapshotProgress').style({display:"none"});
-	  dialog.show();
-	}
-
-function doRestoreIndex() {
-	if(dojo.byId("uploadFileName").innerHTML=='') {
-		showDotCMSErrorMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "No-File-Selected"))%>");
-	}
-	else {
-		dijit.byId('uploadSubmit').set('disabled',true);
-	    dojo.query('#uploadProgress').style({display:"block"});
-	    dijit.byId("restoreIndexUploader").submit();
-	}
-}
-
-function restoreUploadCompleted() {
-	hideRestoreIndex();
-}
-
-function restoreSnapshotUploadCompleted() {
-	hideRestoreSnapshotIndex();
-}
-
-dojo.ready(function() {
-	dojo.require("dojox.form.Uploader");
-    dojo.require("dojox.embed.Flash");
-    if(dojox.embed.Flash.available){
-      dojo.require("dojox.form.uploader.plugins.Flash");
-    }else{
-      dojo.require("dojox.form.uploader.plugins.IFrame");
-    }
-});
-
-function connectUploadEvents() {
-	var uploader=dijit.byId("restoreIndexUploader");
-	dojo.connect(uploader, "onChange", function(dataArray){
-		 dojo.forEach(dataArray, function(data){
-			    dojo.byId("uploadFileName").innerHTML=data.name;
-			    var uploadName=data.name;
-			    var indexName=dojo.byId("indexToRestore").value;
-
-			    if(indexName.indexOf("working")==0 && uploadName.indexOf("working")!=0)
-			    	dojo.byId("uploadWarningWorking").style.display="block";
-			    else
-			    	dojo.byId("uploadWarningWorking").style.display="none";
-
-			    if(indexName.indexOf("live")==0 && uploadName.indexOf("live")!=0)
-			    	dojo.byId("uploadWarningLive").style.display="block";
-                else
-                	dojo.byId("uploadWarningLive").style.display="none";
-		 });
-	});
-	dojo.connect(uploader, "onComplete", function(dataArray) {
-           hideRestoreIndex();
-           showDotCMSSystemMessage("Upload Complete. Index Restores in background");
-    });
-}
-
-function doCreateWorking() {
-	dijit.byId('addIndex').show();
-	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 2)%>;
-	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/shards/";
-}
-
-function doCreateLive() {
-	dijit.byId('addIndex').show();
-	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 2)%>;
-	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/";
-}
-
-function shardCreating(){	
-	dijit.byId('addIndex').hide();
-	var shards = document.getElementById('shards').value;
-	if(shards <1){
-		return;
-	}
-	
-	var xhrArgs = {
-       url: shardsUrl + shards,
-       handleAs: "text",
-       handle : function(dataOrError, ioArgs) {
-           if (dojo.isString(dataOrError)) {
-               if (dataOrError.indexOf("FAILURE") == 0) {
-                   showDotCMSSystemMessage(dataOrError, true);
-               } else {
-                   showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
-                   refreshIndexStats();
-
-               }
-           } else {
-               showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-           }
-       }
-    };
-    dojo.xhrPost(xhrArgs);
-}
 
 function dohighlight(id) {
 	dojo.addClass(id,"highlight");
@@ -769,6 +628,22 @@ function hideAllThreads() {
     document.getElementById('threadList').innerHTML = "";
 }
 
+/**
+* Remove all the elements with a given class name
+* @param rowsClass
+ */
+const cleanTable = function (rowsClass) {
+
+    //First we need to remove the old rows
+    var currentItems = dojo.query( "." + rowsClass );
+    if ( currentItems.length ) {
+        for ( i = 0; i < currentItems.length; i++ ) {
+            dojo.destroy( currentItems[i] );
+        }
+    }
+};
+
+
 function getSysInfo() {
 
     var tableId = "sysInfo";
@@ -797,20 +672,7 @@ function getSysInfo() {
     });
 }
 
-/**
-* Remove all the elements with a given class name
-* @param rowsClass
- */
-var cleanTable = function (rowsClass) {
 
-    //First we need to remove the old rows
-    var currentItems = dojo.query( "." + rowsClass );
-    if ( currentItems.length ) {
-        for ( i = 0; i < currentItems.length; i++ ) {
-            dojo.destroy( currentItems[i] );
-        }
-    }
-};
 
 /**
 * Creates a tr node and add it to a table
@@ -1359,7 +1221,7 @@ dd.leftdl {
                             <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> 
                         </td>
                         <td align="center">
-                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
+                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="optimizeIndices()">
                                 <%= LanguageUtil.get(pageContext,"Optimize-Index") %>
                             </button>
                          </td>
@@ -1369,7 +1231,7 @@ dd.leftdl {
                             <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %> 
                         </td>
                         <td align="center">
-                            <button dojoType="dijit.form.Button"  onClick="CMSMaintenanceAjax.flushIndiciesCache(flushIndiciesCacheCallback)">
+                            <button dojoType="dijit.form.Button"  onClick="flushIndiciesCache()">
                                 <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush") %>
                             </button>
                          </td>
@@ -1402,12 +1264,24 @@ dd.leftdl {
                             <button dojoType="dijit.form.Button"  iconClass="resolveIcon" id="stopReindexAndSwitch" onClick="stopReIndexingAndSwitchover();">
                                 <%= LanguageUtil.get(pageContext,"Stop-Reindexation-And-Make-Active") %>
                             </button>
-                            <button dojoType="dijit.form.Button"  iconClass="downloadIcon" onClick="downloadFailedAsCsv();">
-                                <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-CSV") %>
-                            </button>
                         </td>
                     </tr>
                 </table>
+            </div>
+            <div id="failedReindexRecordsDiv" style="display:none;border:1px solid silver;background-color:#ffdddd;border-radius:10px;width:50%;padding-bottom:15px;margin:auto;text-align: center">
+                
+                <div style="padding:15px;margin:auto;text-align: center;font-weight: bold;">
+                    <span id="failedReindexRecordsMessage"></span> <%= LanguageUtil.get(pageContext,"Contents-Failed-Reindex") %>
+                </div>
+          
+                   <button dojoType="dijit.form.Button"  onClick="downloadFailedAsJson();">
+                       <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-JSON") %>
+                   </button>
+                    &nbsp; &nbsp; 
+                   <button dojoType="dijit.form.Button"  onClick="deleteFailedRecords();">
+                       <%= LanguageUtil.get(pageContext,"Delete-Failed-Reindex-Records") %>
+                   </button>
+            
             </div>
 
             <div id="indexStatsCp"  dojoType="dijit.layout.ContentPane"></div>
@@ -1428,10 +1302,10 @@ dd.leftdl {
                     <td><%= LanguageUtil.get(pageContext,"Backup-to-Zip-file") %></td>
                     <td style="text-align:center;white-space:nowrap;">
 						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('true');" iconClass="backupIcon">
+							<button dojoType="dijit.form.Button" onClick="doCreateZip('true');" iconClass="backupIcon">
 							   <%= LanguageUtil.get(pageContext,"Backup-Data-Only") %>
 							</button>
-							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('false');" iconClass="backupIcon">
+							<button dojoType="dijit.form.Button" onClick="doCreateZip('false');" iconClass="backupIcon">
 							  <%= LanguageUtil.get(pageContext,"Backup-Data/Assets") %>
 							</button>
 						</div>

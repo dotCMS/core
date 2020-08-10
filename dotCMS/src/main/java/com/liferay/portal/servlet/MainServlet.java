@@ -19,6 +19,7 @@
 
 package com.liferay.portal.servlet;
 
+import com.dotmarketing.startup.runalways.Task00030ClusterInitialize;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -111,16 +112,21 @@ public class MainServlet extends ActionServlet {
       new ESIndexAPI().waitUtilIndexReady();
       
       
-      
-      
+
+
 
       // Checking for execute upgrades
       try {
-        StartupTasksExecutor.getInstance().executeUpgrades(config.getServletContext().getRealPath("/"));
-      } catch (DotRuntimeException e1) {
-        throw new ServletException(e1);
-      } catch (DotDataException e1) {
-        throw new ServletException(e1);
+        StartupTasksExecutor.getInstance().executeStartUpTasks();
+        StartupTasksExecutor.getInstance().executeUpgrades();
+
+        final Task00030ClusterInitialize clusterInitializeTask = new Task00030ClusterInitialize();
+        if(clusterInitializeTask.forceRun()){
+          clusterInitializeTask.executeUpgrade();
+        }
+
+      } catch (Exception e1) {
+        throw new DotRuntimeException(e1);
       } finally {
         DbConnectionFactory.closeSilently();
       }

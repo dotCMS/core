@@ -388,7 +388,7 @@
 					};
 					var pushHandler = new dotcms.dojo.push.PushHandler(
 							'<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
-					pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback);
+					pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback, true);
 				} else {
 					contentAdmin.saveAssign();
 				}
@@ -429,7 +429,6 @@
 			assignComment:assignComment,
 			pushPublish:pushPublish
 		};
-
 		let fireResult = fireAction(actionId, data);
 		if(fireResult){
 		  doFilter();
@@ -442,7 +441,6 @@
 		if(!selectedInodes){
 			return;
 		}
-
 		var assignComment = null;
 
 		if((typeof popupData != "undefined") && (typeof popupData.assignComment != "undefined")){

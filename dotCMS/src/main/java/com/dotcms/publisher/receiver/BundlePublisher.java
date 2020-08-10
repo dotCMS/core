@@ -134,7 +134,7 @@ public class BundlePublisher extends Publisher {
         }
 
         String bundleName = config.getId();
-        String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+        String bundleID = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
         String bundlePath =
                 ConfigUtils.getBundlePath() + File.separator + BundlePublisherResource.MY_TEMP;
 
@@ -152,13 +152,13 @@ public class BundlePublisher extends Publisher {
             String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
             currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
 
-            auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.PUBLISHING_BUNDLE,
+            auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.PUBLISHING_BUNDLE,
                 currentStatusHistory);
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
 
-        File folderOut = new File(bundlePath + bundleFolder);
+        File folderOut = new File(bundlePath + bundleID);
         if(folderOut.exists()){
           FileUtil.deltree(folderOut);
         }
@@ -179,7 +179,7 @@ public class BundlePublisher extends Publisher {
 
         try {
             //Read the bundle to see what kind of configuration we need to apply
-            String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleFolder;
+            String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
             File xml = new File(finalBundlePath + File.separator + "bundle.xml");
             PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
 
@@ -222,7 +222,7 @@ public class BundlePublisher extends Publisher {
                 currentStatusHistory.setPublishEnd(new Date());
                 currentStatusHistory.setAssets(assetsDetails);
 
-                auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
+                auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
                         currentStatusHistory);
             } catch (DotPublisherException e1) {
                 throw new DotPublishingException("Cannot update audit of bundle with ID '" + bundleName + "': ", e);
@@ -240,7 +240,8 @@ public class BundlePublisher extends Publisher {
             currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
             currentStatusHistory.setPublishEnd(new Date());
             currentStatusHistory.setAssets(assetsDetails);
-            auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+            auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+            config.setPublishAuditStatus(auditAPI.getPublishAuditStatus(bundleID));
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }

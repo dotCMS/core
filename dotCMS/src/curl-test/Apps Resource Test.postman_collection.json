@@ -68,7 +68,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/build/src/curl-test/resources/app-descriptor.yml"
+									"src": "/build/src/core/dotCMS/src/curl-test/resources/app-descriptor.yml"
 								}
 							]
 						},
@@ -1287,7 +1287,7 @@
 		{
 			"id": "5ccba6e0-d83a-463d-821f-678c710d35f5",
 			"key": "key",
-			"value": "postman-test-service-descriptor",
+			"value": "app-descriptor",
 			"type": "string"
 		},
 		{
@@ -1299,7 +1299,7 @@
 		{
 			"id": "398c71b3-c141-4c4f-8ba8-aac824fbef83",
 			"key": "service_key",
-			"value": "postman-test-service-descriptor",
+			"value": "app-descriptor",
 			"type": "string"
 		}
 	],

@@ -1,7 +1,8 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -53,7 +54,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
         if (null != pageView.getUrlContent()) {
 
-            final ContentletToMapTransformer transformer = new ContentletToMapTransformer(pageView.getUrlContent());
+            final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(pageView.getUrlContent()).build();
             final Map<String, Object>   urlContentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
             pageViewMap.put("urlContentMap", urlContentletMap);
         }
@@ -62,7 +63,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
     }
 
     private Map<Object, Object> asPageMap(final PageView pageView)  {
-        final Map<Object, Object> pageMap = this.asMap(pageView.getPageInfo());
+        final Map<Object, Object> pageMap = this.asMap(pageView.getPage());
 
         final String pageUrlMapper = pageView.getPageUrlMapper();
 

@@ -1,5 +1,6 @@
 package com.dotcms.publisher.ajax;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -47,7 +48,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
@@ -75,11 +75,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.Arrays;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -203,10 +201,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentFilterDate = request.getParameter( "remoteFilterDate" );
             String _iWantTo = request.getParameter( "iWantTo" );
             String whoToSendTmp = request.getParameter( "whoToSend" );
-            String forcePushStr = request.getParameter( "forcePush" );
-            boolean forcePush = (forcePushStr!=null && forcePushStr.equals("true"));
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
+            final String filterKey = request.getParameter("filterKey");
+            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
+
+
 
             // Lists of Environments to push to
             for (String envId : whereToSend) {
@@ -243,7 +243,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             Map<String, Object> responseMap = null;
 
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
-            	Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId(), forcePush);
+            	Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId(), forcePush,filterKey);
             	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
                 responseMap = publisherAPI.addContentsToPublish( ids, bundle.getId(), publishDate, getUser() );
@@ -252,7 +252,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
                     Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
 
-                    Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId(), forcePush);
+                    Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId(), forcePush,filterKey);
                 	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
                     responseMap = publisherAPI.addContentsToUnpublish( ids, bundle.getId(), expireDate, getUser() );
@@ -305,7 +305,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
         // Read the parameters
         String bundlesIds = request.getParameter( "bundlesIds" );
-		final String forcePush = request.getParameter("forcePush");
+		final String forcePush = request.getParameter("forcePush");//TODO: this option still lives in the retry dialog, need to remove??
 		final boolean isForcePush = UtilMethods.isSet(forcePush) ? Boolean.valueOf(forcePush) : Boolean.FALSE;
 		final String strategy = request.getParameter("deliveryStrategy");
 		final DeliveryStrategy deliveryStrategy = "1".equals(strategy) ? DeliveryStrategy.ALL_ENDPOINTS
@@ -539,7 +539,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @param response HttpResponse
      * @throws IOException If fails sending back to the user response information
      */
-    public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
+    public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response )
+            throws IOException, DotDataException {
     	try {
 			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", getUser())){
 				response.sendError(401);
@@ -551,9 +552,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			return;
 		}
         //Read the parameters
-        Map<String, String> map = getURIParams();
+        final Map<String, String> map = getURIParams();
         final String bundleId = map.get( "bundleId" );
-        String paramOperation = map.get( "operation" );
+        final String paramOperation = map.get( "operation" );
+        final String bundleFilter = UtilMethods.isSet(map.get("filterKey")) ? map.get("filterKey") : "";
         if ( bundleId == null || bundleId.isEmpty() ) {
             Logger.error( this.getClass(), "No Bundle Found with id: " + bundleId );
             response.sendError( 500, "No Bundle Found with id: " + bundleId );
@@ -571,12 +573,18 @@ public class RemotePublishAjaxAction extends AjaxAction {
         
         
         File bundle;
-        String generatedBundleId;
         try {
+            //set Filter to the bundle
+            dbBundle.setFilterKey(bundleFilter);
+            //set ForcePush value of the filter to the bundle
+            dbBundle.setForcePush(
+                    (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(bundleFilter).getFilters().getOrDefault("forcePush",false));
+            //Update Bundle
+            APILocator.getBundleAPI().updateBundle(dbBundle);
+
             //Generate the bundle file for this given operation
-            Map<String, Object> bundleData = generateBundle( bundleId, operation );
+            final Map<String, Object> bundleData = generateBundle( bundleId, operation );
             bundle = (File) bundleData.get( "file" );
-            generatedBundleId = (String) bundleData.get( "id" );
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
             response.sendError( 500, "Error trying to generate bundle with id: " + bundleId );
@@ -588,7 +596,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         BufferedInputStream in = null;
         try {
             in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
-            byte[] buf = new byte[4096];
+            final byte[] buf = new byte[4096];
             int len;
 
             while ( (len = in.read( buf, 0, buf.length )) != -1 ) {
@@ -605,8 +613,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //Clean the just created bundle because on each download we will generate a new bundle file with a new id in order to avoid conflicts with ids
-            File bundleRoot = BundlerUtil.getBundleRoot( generatedBundleId );
-            File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + generatedBundleId + ".tar.gz" );
+            final File bundleRoot = BundlerUtil.getBundleRoot( bundleId );
+            final File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz" );
             if ( compressedBundle.exists() ) {
                 compressedBundle.delete();
                 if ( bundleRoot.exists() ) {
@@ -630,72 +638,68 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @throws DotBundleException If fails generating the Bundle
      * @throws IOException If fails compressing the all the Bundle contents into the final Bundle file
      */
+    @CloseDBIfOpened
     @SuppressWarnings ("unchecked")
     private Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
 
-        PushPublisherConfig pconf = new PushPublisherConfig();
-        PublisherAPI pubAPI = PublisherAPI.getInstance();
+        final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig();
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
 
-        List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId( bundleId );
-        List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); 
+        final List<PublishQueueElement> tempBundleContents = publisherAPI.getQueueElementsByBundleId( bundleId );
+        final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
 
-        for ( PublishQueueElement c : tempBundleContents ) {
-                assetsToPublish.add( c );
+        for ( final PublishQueueElement publishQueueElement : tempBundleContents ) {
+                assetsToPublish.add( publishQueueElement );
         }
 
-        pconf.setDownloading( true );
-        pconf.setOperation(operation);
+        pushPublisherConfig.setDownloading( true );
+        pushPublisherConfig.setOperation(operation);
 
-        pconf.setAssets( assetsToPublish );
+        pushPublisherConfig.setAssets( assetsToPublish );
         //Queries creation
-        pconf.setLuceneQueries( PublisherUtil.prepareQueries( tempBundleContents ) );
-        pconf.setId( bundleId );
-        pconf.setUser( APILocator.getUserAPI().getSystemUser() );
+        pushPublisherConfig.setLuceneQueries( PublisherUtil.prepareQueries( tempBundleContents ) );
+        pushPublisherConfig.setId( bundleId );
+        pushPublisherConfig.setUser( APILocator.getUserAPI().getSystemUser() );
 
         //BUNDLERS
 
-        List<Class<IBundler>> bundlers = new ArrayList<Class<IBundler>>();
-        List<IBundler> confBundlers = new ArrayList<IBundler>();
+        final List<Class<IBundler>> bundlers = new ArrayList<Class<IBundler>>();
+        final List<IBundler> confBundlers = new ArrayList<IBundler>();
 
-        Publisher publisher = new PushPublisher();
-        publisher.init( pconf );
+        final Publisher publisher = new PushPublisher();
+        publisher.init( pushPublisherConfig );
         //Add the bundles for this publisher
-        for ( Class clazz : publisher.getBundlers() ) {
+        for ( final Class clazz : publisher.getBundlers() ) {
             if ( !bundlers.contains( clazz ) ) {
                 bundlers.add( clazz );
             }
         }
-
-        //Create a new bundle id for this generated bundle
-        String newBundleId = UUID.randomUUID().toString();
-        pconf.setId( newBundleId );
-        File bundleRoot = BundlerUtil.getBundleRoot( pconf );
+        final File bundleRoot = BundlerUtil.getBundleRoot( pushPublisherConfig );
 
         // Run bundlers
-        BundlerUtil.writeBundleXML( pconf );
-        for ( Class<IBundler> c : bundlers ) {
+        BundlerUtil.writeBundleXML( pushPublisherConfig );
+        for ( final Class<IBundler> clazzBundler : bundlers ) {
 
-            IBundler bundler = c.newInstance();
+            final IBundler bundler = clazzBundler.newInstance();
             confBundlers.add( bundler );
-            bundler.setConfig( pconf );
+            bundler.setConfig( pushPublisherConfig );
             bundler.setPublisher(publisher);
-            BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
+            final BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
             //Generate the bundler
-            Logger.info(this, "Start of Bundler: " + c.getSimpleName());
+            Logger.info(this, "Start of Bundler: " + clazzBundler.getSimpleName());
             bundler.generate( bundleRoot, bundlerStatus );
-            Logger.info(this, "End of Bundler: " + c.getSimpleName());
+            Logger.info(this, "End of Bundler: " + clazzBundler.getSimpleName());
         }
 
-        pconf.setBundlers( confBundlers );
+        pushPublisherConfig.setBundlers( confBundlers );
 
         //Compressing bundle
-        ArrayList<File> list = new ArrayList<File>();
-        list.add( bundleRoot );
-        File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz" );
+        final ArrayList<File> fileList = new ArrayList<File>();
+        fileList.add( bundleRoot );
+        final File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pushPublisherConfig.getId() + ".tar.gz" );
 
-        Map<String, Object> bundleData = new HashMap<String, Object>();
-        bundleData.put( "id", newBundleId );
-        bundleData.put( "file", PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() ) );
+        final Map<String, Object> bundleData = new HashMap<String, Object>();
+        bundleData.put( "file", PushUtils.compressFiles( fileList, bundle, bundleRoot.getAbsolutePath() ) );
         return bundleData;
     }
 
@@ -827,8 +831,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
     public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
 
         final PublisherAPI publisherAPI = PublisherAPI.getInstance();
-        final String _assetId = request.getParameter( "assetIdentifier" );
-        final String _contentFilterDate = request.getParameter( "remoteFilterDate" );
+        final String assetIdentifier = request.getParameter( "assetIdentifier" );
+        final String contentFilterDate = request.getParameter( "remoteFilterDate" );
         final String bundleName = request.getParameter( "bundleName" );
         final String bundleId = (UtilMethods.isNotSet(request.getParameter( "bundleSelect" ))) ? request.getParameter( "bundleId" ):request.getParameter( "bundleSelect" );
         final String query = request.getParameter( "query" );
@@ -864,19 +868,19 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 queries.add( luceneQuery );
                 ids = PublisherUtil.getContentIds( queries );
             }
-            else if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries in the _assetId field (legacy support)
+            else if ( assetIdentifier.startsWith( "query_" ) ) { //Support for lucene queries in the assetIdentifier field (legacy support)
 
-                String luceneQuery = _assetId.replace( "query_", "" );
+                String luceneQuery = assetIdentifier.replace( "query_", "" );
                 List<String> queries = new ArrayList<String>();
                 queries.add( luceneQuery );
                 ids = PublisherUtil.getContentIds( queries );
 
             } else {
 
-                String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
-                List<String> assetsIds = Arrays.asList( _assetsIds );
+                String[] assetsIds = assetIdentifier.split( "," );//Support for multiple ids in the assetIdentifier parameter
+                List<String> assetsIdsList = Arrays.asList( assetsIds );
 
-                ids = getIdsToPush( assetsIds,bundle.getId(), _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
+                ids = getIdsToPush( assetsIdsList,bundle.getId(), contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
             }
 
             Map<String, Object> responseMap = publisherAPI.saveBundleAssets( ids, bundle.getId(), getUser() );
@@ -937,19 +941,15 @@ public class RemotePublishAjaxAction extends AjaxAction {
             PublisherAPI publisherAPI = PublisherAPI.getInstance();
 
             //Read the form values
-            String bundleId = request.getParameter( "assetIdentifier" );
-            String _contentPushPublishDate = request.getParameter( "remotePublishDate" );
-            String _contentPushPublishTime = request.getParameter( "remotePublishTime" );
-            String _contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
-            String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
-            String _iWantTo = request.getParameter( "iWantTo" );
-            String whoToSendTmp = request.getParameter( "whoToSend" );
-            String forcePushTmp = request.getParameter( "forcePush" );
-            
-            Boolean forcePush = false;
-            if(UtilMethods.isSet(forcePushTmp)){
-                forcePush = Boolean.valueOf(forcePushTmp);
-            }
+            final String bundleId = request.getParameter( "assetIdentifier" );
+            final String contentPushPublishDate = request.getParameter( "remotePublishDate" );
+            final String contentPushPublishTime = request.getParameter( "remotePublishTime" );
+            final String contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
+            final String contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
+            final String iWantTo = request.getParameter( "iWantTo" );
+            final String whoToSendTmp = request.getParameter( "whoToSend" );
+            final String filterKey = request.getParameter("filterKey");
+            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
             
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
@@ -975,29 +975,30 @@ public class RemotePublishAjaxAction extends AjaxAction {
             request.getSession().removeAttribute( WebKeys.SELECTED_BUNDLE + getUser().getUserId() );
 
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
-            Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
-            Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+            Date publishDate = dateFormat.parse( contentPushPublishDate + "-" + contentPushPublishTime );
+            final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
             bundle.setForcePush(forcePush);
+            bundle.setFilterKey(filterKey);
             APILocator.getBundleAPI().saveBundleEnvironments(bundle, envsToSendTo);
 
-            if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH )) {
+            if ( iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH )) {
             	bundle.setPublishDate(publishDate);
              	APILocator.getBundleAPI().updateBundle(bundle);
 
              	publisherAPI.publishBundleAssets(bundle.getId(), publishDate);
 
-            } else if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE )) {
-            	if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
-                    Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
+            } else if ( iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE )) {
+            	if ( (!"".equals( contentPushExpireDate.trim() ) && !"".equals( contentPushExpireTime.trim() )) ) {
+                    Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
                     bundle.setExpireDate(expireDate);
                 	APILocator.getBundleAPI().updateBundle(bundle);
 
                 	publisherAPI.unpublishBundleAssets(bundle.getId(), expireDate);
                 }
 
-            } else if(_iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
-                if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
-                    Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
+            } else if(iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
+                if ( (!"".equals( contentPushExpireDate.trim() ) && !"".equals( contentPushExpireTime.trim() )) ) {
+                    Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
                     bundle.setPublishDate(publishDate);
                     bundle.setExpireDate(expireDate);
                 	APILocator.getBundleAPI().updateBundle(bundle);
@@ -1039,18 +1040,18 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
     	List<String> ids = new ArrayList<String>();
 
-        for ( String _assetId : assetIds ) {
+        for ( String assetId : assetIds ) {
 
-            if ( _assetId != null && !_assetId.trim().isEmpty() ) {
+            if ( assetId != null && !assetId.trim().isEmpty() ) {
 
-                if ( ids.contains( _assetId ) ) {
+                if ( ids.contains( assetId ) ) {
                     continue;
                 }
 
                 // check for the categories
-                if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
+                if ( assetId.contains( "user_" ) || assetId.contains( "users_" ) ) {//Trying to publish users
                     //If we are trying to push users a filter date must be available
-                    if ( _assetId.contains( "users_" ) ) {
+                    if ( assetId.contains( "users_" ) ) {
                         Date filteringDate = dateFormat.parse( _contentFilterDate );
                         //Get users where createdate >= ?
                         List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
@@ -1062,54 +1063,54 @@ public class RemotePublishAjaxAction extends AjaxAction {
                             }
                         }
                     } else {
-                    	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(_assetId, bundleId)){
-                    		ids.add( _assetId );
+                    	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(assetId, bundleId)){
+                    		ids.add( assetId );
                     	}
                     }
-                } else if ( _assetId.equals( "CAT" ) ) {
-                	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(_assetId, bundleId)){
-                		ids.add( _assetId );
+                } else if ( assetId.equals( "CAT" ) ) {
+                	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(assetId, bundleId)){
+                		ids.add( assetId );
                 	}
-                } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
-                	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(_assetId, bundleId)){
-                		ids.add( _assetId );
+                } else if ( assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
+                	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(assetId, bundleId)){
+                		ids.add( assetId );
                 	}
                 } else {
 
                     try {
                         // if the asset is a folder put the inode instead of the identifier
                         //At first we try to find the Asset Type by hitting identifier table.
-                        String assetType = APILocator.getIdentifierAPI().getAssetTypeFromDB(_assetId);
+                        String assetType = APILocator.getIdentifierAPI().getAssetTypeFromDB(assetId);
 
                         //If we don't find the Type in table identifier we try to hit table inode.
                         if(assetType == null) {
-                            assetType = InodeUtils.getAssetTypeFromDB(_assetId);
+                            assetType = InodeUtils.getAssetTypeFromDB(assetId);
                         }
 
                         // If we don't find the Type in Inode table, we try to 
                         // determine the type in a different way
 						if (assetType == null
-								&& (APILocator.getLanguageAPI().isAssetTypeLanguage(_assetId) || APILocator.getRulesAPI()
-										.getRuleById(_assetId, getUser(), false) != null)) {
-							ids.add(_assetId);
+								&& (APILocator.getLanguageAPI().isAssetTypeLanguage(assetId) || APILocator.getRulesAPI()
+										.getRuleById(assetId, getUser(), false) != null)) {
+							ids.add(assetId);
 						} else if(assetType != null && assetType.equals(Identifier.ASSET_TYPE_FOLDER)){
                             Folder folder = null;
 
                             try {
-                                folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
+                                folder = APILocator.getFolderAPI().find( assetId, getUser(), false );
                             } catch ( DotSecurityException e ) {
-                                Logger.error( getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId );
+                                Logger.error( getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + assetId );
                             } catch ( DotDataException e ) {
                                 Logger.info( getClass(), "FolderAPI.find(): Identifier is null" );
                             }
 
                             if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
-                                if (!isAssetInBundle(_assetId, bundleId)) {
-                                    ids.add(_assetId);
+                                if (!isAssetInBundle(assetId, bundleId)) {
+                                    ids.add(assetId);
                                 }
                             }
                         } else { // if the asset is not a folder and has identifier, put it, if not, put the inode
-                            Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
+                            Identifier iden = APILocator.getIdentifierAPI().findFromInode( assetId );
                             if ( !ids.contains( iden.getId() ) ) {//Multiples languages have the same identifier
                             	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(iden.getId(), bundleId)){
                             		ids.add( iden.getId() );
@@ -1117,14 +1118,14 @@ public class RemotePublishAjaxAction extends AjaxAction {
                             }
                         }
                     } catch ( DotStateException e ) {
-                        Logger.warn(RemotePublishAjaxAction.class, "Unable to find asset id = [" + _assetId + "]");
+                        Logger.warn(RemotePublishAjaxAction.class, "Unable to find asset id = [" + assetId + "]");
 
-                    	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(_assetId, bundleId)){
-                    		ids.add( _assetId );
+                    	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(assetId, bundleId)){
+                    		ids.add( assetId );
                     	}
                     } catch (DotSecurityException e1) {
 						Logger.error(RemotePublishAjaxAction.class, "User " + getUser().getUserId()
-								+ " does not have permission to access asset ID " + _assetId);
+								+ " does not have permission to access asset ID " + assetId);
 					}
                 }
             }

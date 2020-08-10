@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.apps;
 
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
@@ -15,6 +17,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -29,9 +32,6 @@ import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -95,14 +95,32 @@ class AppsHelper {
             appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
                     Collectors.toList());
         }
-        final Set<String> hostIdentifiers = appsAPI.appKeysByHost().keySet();
+        final Set<String> siteIdentifiers = appsAPI.appKeysByHost().keySet();
         for (final AppDescriptor appDescriptor : appDescriptors) {
             final String appKey = appDescriptor.getKey();
-            final long configurationsCount = appsAPI
-                    .filterSitesForAppKey(appKey, hostIdentifiers, user).size();
-            views.add(new AppView(appDescriptor, configurationsCount));
+            final int configurationsCount = appsAPI.filterSitesForAppKey(appKey, siteIdentifiers, user).size();
+            final int sitesWithWarning = computeWarningsBySite(appDescriptor, siteIdentifiers, user);
+            views.add(new AppView(appDescriptor, configurationsCount, sitesWithWarning));
         }
         return views.stream().sorted(compareByCountAndName).collect(CollectionsUtils.toImmutableList());
+    }
+
+    /**
+     * Computes the number of warnings regardless of site under the given app-descriptor
+     * @param appDescriptor
+     * @param sitesWithConfigurations
+     * @param user
+     * @return sum or warnings for the given app-descriptor. Regardless of site.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private int computeWarningsBySite(final AppDescriptor appDescriptor,
+            final Set<String> sitesWithConfigurations, final User user)
+            throws DotDataException, DotSecurityException {
+        final Map<String, Map<String, List<String>>> warningsBySite = appsAPI
+                .computeWarningsBySite(appDescriptor, sitesWithConfigurations, user);
+        return (int) warningsBySite.values().stream().map(Map::values).filter(lists -> !lists.isEmpty())
+                .count();
     }
 
     /**
@@ -139,8 +157,11 @@ class AppsHelper {
         final Set<String> sitesWithConfigurations = appsAPI
                 .filterSitesForAppKey(appDescriptor.getKey(), appKeysByHost.keySet(), user);
 
+        final Map<String, Map<String, List<String>>> warningsBySite = appsAPI
+                .computeWarningsBySite(appDescriptor, sitesWithConfigurations, user);
+
         final PaginationUtil paginationUtil = new PaginationUtil(new SiteViewPaginator(
-                () -> sitesWithConfigurations, hostAPI, contentletAPI));
+                () -> sitesWithConfigurations, ()-> warningsBySite, hostAPI, contentletAPI));
         return paginationUtil
                 .getPage(request, user,
                         paginationContext.getFilter(),
@@ -150,7 +171,7 @@ class AppsHelper {
                         orderDirection,
                         Collections.emptyMap(),
                         (Function<PaginatedArrayList<SiteView>, AppView>) paginatedArrayList -> {
-                            final long count = sitesWithConfigurations.size();
+                            final int count = sitesWithConfigurations.size();
                             return new AppView(appDescriptor, count,
                                     paginatedArrayList);
                         });
@@ -174,34 +195,38 @@ class AppsHelper {
         if (appDescriptorOptional.isPresent()) {
             final AppDescriptor appDescriptor = appDescriptorOptional.get();
             final Host host = hostAPI.find(siteId, user, false);
-            if (null == host) {
+            if (null == host || host.isArchived()) {
                 throw new DoesNotExistException(
                       String.format(" Couldn't find any host with identifier `%s` ", siteId)
                 );
             }
 
             final Optional<AppSecrets> optionalAppSecrets = appsAPI
-                    .getSecrets(key, true, host, user);
+                    .getSecrets(key, false, host, user);
 
             //We need to return a view with all the secrets and also descriptors of the remaining parameters merged.
             //So we're gonna need a copy of the params on the yml.
             final Map<String, ParamDescriptor> descriptorParams = appDescriptor.getParams();
 
+            final Map<String, List<String>> warningsMap = appsAPI
+                    .computeSecretWarnings(appDescriptor, host, user);
+
             final Map<String,SecretView> mappedParams = appDescriptor.getParams().keySet().stream()
-                .map(paramKey -> new SecretView(paramKey, null, descriptorParams.get(paramKey)))
+                .map(paramKey -> new SecretView(paramKey, null, descriptorParams.get(paramKey), warningsMap.get(paramKey)))
                 .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
                         LinkedHashMap::new));
 
-            final AppSecrets appSecrets = optionalAppSecrets.isPresent() ? protectHiddenSecrets(optionalAppSecrets.get()) : AppSecrets.empty() ;
+            final AppSecrets appSecrets = optionalAppSecrets.orElseGet(AppSecrets::empty);
 
-            final  Map<String,SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
+            final Map<String, SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
                     .stream()
-                    .map(e -> new SecretView(e.getKey(), e.getValue(), descriptorParams.get(e.getKey())))
-                    .sorted((o1, o2) ->  Boolean.compare(o1.isDynamic(), o2.isDynamic()))
+                    .map(e -> new SecretView(e.getKey(), e.getValue(),
+                            descriptorParams.get(e.getKey()), warningsMap.get(e.getKey())))
+                    .sorted((o1, o2) -> Boolean.compare(o1.isDynamic(), o2.isDynamic()))
                     .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
                             LinkedHashMap::new));
 
-            final int secretsCount = mappedSecrets.size();
+            final int configurationsCount = appsAPI.filterSitesForAppKey(key, appsAPI.appKeysByHost().keySet(), user).size();
 
             final List<SecretView> mergedParamsAndSecrets = mappedParams.entrySet().stream()
                 .map(paramViewEntry -> {
@@ -216,7 +241,7 @@ class AppsHelper {
             );
 
             final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(), mergedParamsAndSecrets);
-            return Optional.of(new AppView(appDescriptor, secretsCount,
+            return Optional.of(new AppView(appDescriptor, configurationsCount,
                     ImmutableList.of(siteView))
             );
 
@@ -296,6 +321,8 @@ class AppsHelper {
      */
     private void saveSecretForm(final String key, final Host host,
             final AppDescriptor appDescriptor, final SecretForm form, final User user) throws DotSecurityException, DotDataException {
+        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
+
         final Map<String, Input> params = validateFormForSave(form, appDescriptor);
         //Create a brand new secret for the present app.
         final AppSecrets.Builder builder = new AppSecrets.Builder();
@@ -311,21 +338,42 @@ class AppsHelper {
                 secret = Secret.newSecret(inputParam.getValue(), Type.STRING, inputParam.isHidden());
             } else {
                 if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
-                    Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
-                    continue;
+                    //If we're dealing with a hidden param and there's a secret already saved...
+                    //The param must be override and replaced for that reason we must delete the existing saved secret.
+                    //In order to keep all existing secrets we grab the saved one and push it into the new.
+                    Logger.debug(AppsHelper.class, ()->"found hidden secret sent with no value.");
+                    if(appSecretsOptional.isPresent()) {
+                        final AppSecrets appSecrets = appSecretsOptional.get();
+                        final Map<String, Secret> secrets = appSecrets.getSecrets();
+                        final Secret hiddenSecret = secrets.get(name);
+                        if(null != hiddenSecret){
+                          secret = Secret.newSecret(hiddenSecret.getValue(), describedParam.getType(), describedParam.isHidden());
+                          Logger.debug(AppsHelper.class, ()->" hidden secret sent with masked value we must grab the value from the saved secret so we dont lose it.");
+                        } else {
+                           //There is an AppSecrets but the secret in particular is grabbed from the default value provided by the yml.
+                           continue;
+                        }
+                    } else {
+                       //The secret isn't there at all. Let's just continue.
+                       continue;
+                    }
+                } else {
+                   secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
                 }
-                secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
             }
             builder.withSecret(name, secret);
         }
         // We're gonna build the secret upfront and have it ready.
         // Since the next step is potentially risky (delete a secret that already exist).
         final AppSecrets secrets = builder.build();
-        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
         if (appSecretsOptional.isPresent()) {
+            Logger.debug(AppsHelper.class, ()->"Secrets already exist in storage. We must override it.");
             appsAPI.deleteSecrets(key, host, user);
         }
         appsAPI.saveSecrets(secrets, host, user);
+
+        //This operation needs to executed at the very end.
+        appSecretsOptional.ifPresent(AppSecrets::destroy);
     }
 
     /**
@@ -388,7 +436,6 @@ class AppsHelper {
 
     /**
      * This method allows deleting a single secret/property from a stored integration.
-     * TODO: if a required property/secret is deleted.. the app must enter into some sort of invalid state.
      * @param form Secret specific-form
      * @param user Logged in user.
      * @throws DotSecurityException
@@ -454,14 +501,19 @@ class AppsHelper {
                 .entrySet()) {
             final String describedParamName = appDescriptorParam.getKey();
             final Input input = params.get(describedParamName);
-            if (appDescriptorParam.getValue().isRequired() && (input == null || UtilMethods
-                    .isNotSet(input.getValue()))) {
+            if (appDescriptorParam.getValue().isRequired() && (input == null || isNotSet(input.getValue()))) {
                 throw new IllegalArgumentException(
                         String.format(
                                 "Param `%s` is marked required in the descriptor but does not come with a value.",
                                 describedParamName
                         )
                 );
+            }
+
+            if(null == input){
+              //Param wasn't sent but it doesn't matter since it isn't required.
+              Logger.debug(AppsHelper.class, ()-> String.format("Non required param `%s` was not sent in the request.",describedParamName));
+              continue;
             }
 
             if (Type.BOOL.equals(appDescriptorParam.getValue().getType()) && UtilMethods
@@ -477,6 +529,23 @@ class AppsHelper {
                             )
                     );
                 }
+            }
+
+            if (Type.SELECT.equals(appDescriptorParam.getValue().getType()) && UtilMethods
+                    .isSet(input.getValue())) {
+                final List<Map> list = appDescriptorParam.getValue().getList();
+                final Set<String> values = list.stream().filter(map -> null != map.get("value"))
+                        .map(map -> map.get("value").toString()).collect(Collectors.toSet());
+                 final String asString = new String(input.getValue());
+                 if(!values.contains(asString)){
+                     throw new IllegalArgumentException(
+                             String.format(
+                                     "Can not find value `%s` in the list of permitted values `%s`.",
+                                     asString, describedParamName
+                             )
+                     );
+                 }
+
             }
         }
 
@@ -523,7 +592,7 @@ class AppsHelper {
                         paramName));
             } else {
                 if (null != paramDescriptor && paramDescriptor.isRequired() && null != entry
-                        .getValue() && UtilMethods.isNotSet(entry.getValue().getValue())) {
+                        .getValue() && isNotSet(entry.getValue().getValue())) {
                     throw new IllegalArgumentException(
                             String.format(
                                     "Param `%s` is marked required in the descriptor but does not come with a value.",
@@ -589,21 +658,15 @@ class AppsHelper {
      * @throws DotDataException
      */
     List<AppView> createApp(final FormDataMultiPart multipart, final User user)
-            throws IOException, DotDataException {
+            throws IOException, DotDataException, AlreadyExistException, DotSecurityException  {
         final List<File> files = new MultiPartUtils().getBinariesFromMultipart(multipart);
         if(!UtilMethods.isSet(files)){
             throw new DotDataException("Unable to extract any files from multi-part request.");
         }
-        List<AppView> appViews = new ArrayList<>(files.size());
+        final List<AppView> appViews = new ArrayList<>(files.size());
         for (final File file : files) {
-            try(final InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))){
-                final AppDescriptor appDescriptor = appsAPI
-                        .createAppDescriptor(inputStream, user);
-                appViews.add(new AppView(appDescriptor,0L));
-            }catch (Exception e){
-               Logger.error(AppsHelper.class, e);
-               throw new DotDataException(e);
-            }
+            final AppDescriptor appDescriptor = appsAPI.createAppDescriptor(file, user);
+            appViews.add(new AppView(appDescriptor, 0, 0));
         }
         return appViews;
     }
@@ -620,34 +683,15 @@ class AppsHelper {
         appsAPI.removeApp(key, user, removeDescriptor);
     }
 
-    @VisibleForTesting
-    static final String HIDDEN_SECRET_MASK = "*****";
-
-    /**
-     * Hidden secrets should never be exposed so this will replace the secret values with anything
-     * @param appSecrets
-     * @return
-     */
-    private AppSecrets protectHiddenSecrets(final AppSecrets appSecrets){
-        final AppSecrets.Builder builder = new AppSecrets.Builder();
-        builder.withKey(appSecrets.getKey());
-        final Map<String,Secret> sourceSecrets = appSecrets.getSecrets();
-        for (final Entry<String, Secret> secretEntry : sourceSecrets.entrySet()) {
-            if(secretEntry.getValue().isHidden()){
-                builder.withHiddenSecret(secretEntry.getKey(), HIDDEN_SECRET_MASK);
-            } else {
-                builder.withSecret(secretEntry.getKey(),secretEntry.getValue());
-            }
-        }
-        return builder.build();
-    }
-
     /**
      * This method checks if we're looking at a char array all filled with the character `*`
      * @param chars
      * @return
      */
     private boolean isAllFilledWithAsters(final char [] chars){
+         if(isNotSet(chars)){
+           return false;
+         }
          for(final char chr: chars){
             if(chr != '*'){
                return false;

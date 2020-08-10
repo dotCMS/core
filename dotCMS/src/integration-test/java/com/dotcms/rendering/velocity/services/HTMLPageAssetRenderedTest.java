@@ -23,7 +23,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -109,9 +108,20 @@ public class HTMLPageAssetRenderedTest {
     }
 
     private static Template createTemplate(final Container container) throws DotSecurityException, WebAssetException, DotDataException {
-        final Template template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
-                .host(site)
-                .withContainer(container, UUID).nextPersisted();
+        return createTemplate(new TestContainerUUID(container, UUID));
+    }
+
+    private static Template createTemplate(final TestContainerUUID... containers) throws DotSecurityException, WebAssetException, DotDataException {
+        final TemplateDataGen templateDataGen = new TemplateDataGen()
+                .title("PageContextBuilderTemplate" + System.currentTimeMillis())
+                .host(site);
+
+        for (TestContainerUUID testContainerUUID : containers) {
+            templateDataGen.withContainer(testContainerUUID.container, testContainerUUID.UUID).nextPersisted();
+        }
+
+        final Template template = templateDataGen.nextPersisted();
+
         PublishFactory.publishAsset(template, systemUser, false, false);
         return template;
     }
@@ -358,7 +368,7 @@ public class HTMLPageAssetRenderedTest {
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
-        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getContainerMultiTrees(container.getIdentifier());
+        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageEnglishVersion, container);
         Assert.assertNotNull(multiTrees);
         Assert.assertEquals(4, multiTrees.size());
 
@@ -416,7 +426,7 @@ public class HTMLPageAssetRenderedTest {
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
-        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getContainerMultiTrees(container.getIdentifier());
+        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageEnglishVersion, container);
         Assert.assertNotNull(multiTrees);
         Assert.assertEquals(4, multiTrees.size());
 
@@ -1472,4 +1482,112 @@ public class HTMLPageAssetRenderedTest {
                 contentlet, APILocator.systemUser(), false);
     }
 
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A container is add twice in a page
+     * Should: render the pge
+     */
+    @Test
+    public void containerTwiceIntoPage() throws Exception{
+
+        final Container container = createFileContainer();
+        final Template template = createTemplate(
+                new TestContainerUUID(container, "1"),
+                new TestContainerUUID(container, "2")
+        );
+
+        Config.setProperty(contentFallbackProperty,false);
+        Config.setProperty(pageFallbackProperty,true);
+
+        final String pageName = "test1Page-"+System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
+
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "1");
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "2");
+
+        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getContainerMultiTrees(container.getIdentifier());
+        Assert.assertNotNull(multiTrees);
+        Assert.assertEquals(8, multiTrees.size());
+
+
+        //request page ENG version
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                .request();
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals(html , "content1content2content1content2");
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A container is add twice in a page using a TemplateLayout
+     * Should: render the pge
+     */
+    @Test
+    public void containerTwiceIntoPageAndTemplateLayout() throws Exception{
+
+        final FileAssetContainer container = createFileContainer();
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .withContainer(container.getPath())
+                .withContainer(container.getPath())
+                .next();
+
+        final Contentlet theme = new ThemeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .host(site)
+                .drawedBody(templateLayout)
+                .theme(theme)
+                .nextPersisted();
+
+        Config.setProperty(contentFallbackProperty,false);
+        Config.setProperty(pageFallbackProperty,true);
+
+        final String pageName = "test1Page-"+System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
+
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "1");
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "2");
+
+        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getContainerMultiTrees(container.getIdentifier());
+        Assert.assertNotNull(multiTrees);
+        Assert.assertEquals(8, multiTrees.size());
+
+
+        //request page ENG version
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                .request();
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue(html.contains("content1content2content1content2"));
+    }
+
+    private static class TestContainerUUID{
+        Container container;
+        String UUID;
+
+        public TestContainerUUID(final Container container, final String UUID) {
+            this.container = container;
+            this.UUID = UUID;
+        }
+    }
 }

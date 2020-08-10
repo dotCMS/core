@@ -23,6 +23,8 @@
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
+<%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
+<%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
 
 
 <%
@@ -85,13 +87,15 @@
                     textValue = textValue.replaceAll(">", "&gt;");
                 }
 
-                boolean isNumber = (field.getFieldContentlet().startsWith(Field.DataType.INTEGER.toString())
-                        || field.getFieldContentlet().startsWith(Field.DataType.FLOAT.toString())
-                );
+
+                boolean isNumber = field.getFieldContentlet().startsWith(Field.DataType.INTEGER.toString());
+                boolean isFloat = field.getFieldContentlet().startsWith(Field.DataType.FLOAT.toString());
+
+                String regex = (isNumber) ? "[0-9]*" : (isFloat) ? "[+-]?([0-9]*[.])?[0-9]+" : "";
         %>
         <%---  Renders the field it self --%>
         <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
-                <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
+                <%=(isFloat || isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'"+regex+"', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
                value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
         <%
         }
@@ -196,7 +200,7 @@
         %>
 
 
-        <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" onChange="updateHostFolderValues('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
+        <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" onChange="updateHostFolderValues('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true); setDotAssetHost();"
              value="<%= selectorValue %>"></div>
         <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
                value="<%= selectorValue %>"/>
@@ -232,36 +236,39 @@
         %>
         <div class="wysiwyg-wrapper">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
-            <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
-                    class="editWYSIWYGField aceText aceTall" 
-                    name="<%=field.getFieldContentlet()%>"
-                    id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%></textarea>
-
-            <div class="wysiwyg-tools">
-                <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">
-                    <option value="WYSIWYG">WYSIWYG</option>
-                    <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
-                    <option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
-                </select>
-
-                <div class="langVariablesField inline-form">
-                    <label for="glossary_term_<%= field.getVelocityVarName() %>">
-                        <%= LanguageUtil.get(pageContext, "Language-Variables") %>:
-                    </label>
-                    <input type="text" dojoType="dijit.form.TextBox"
-                           id="glossary_term_<%= field.getVelocityVarName() %>"
-                           name="glossary_term_<%= field.getVelocityVarName() %>"
-                           style="margin: 0"
-                           onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
-
-                    <div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
-                        <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
-                    </div>
-                    <script type="text/javascript">
-                        dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
-                    </script>
+                <div class="wysiwyg-container">
+                  <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
+                  <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
+                      class="editWYSIWYGField aceText aceTall"
+                      name="<%=field.getFieldContentlet()%>"
+                      id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%>
+                  </textarea>
                 </div>
-            </div>
+            <div class="wysiwyg-tools">
+              <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">
+                  <option value="WYSIWYG">WYSIWYG</option>
+                  <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
+                  <option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
+              </select>
+
+              <div class="langVariablesField inline-form">
+                  <label for="glossary_term_<%= field.getVelocityVarName() %>">
+                      <%= LanguageUtil.get(pageContext, "Language-Variables") %>:
+                  </label>
+                  <input type="text" dojoType="dijit.form.TextBox"
+                          id="glossary_term_<%= field.getVelocityVarName() %>"
+                          name="glossary_term_<%= field.getVelocityVarName() %>"
+                          style="margin: 0"
+                          onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
+
+                  <div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
+                      <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
+                  </div>
+                  <script type="text/javascript">
+                      dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
+                  </script>
+              </div>
+          </div>
 
             <!-- AChecker errors -->
             <div id="acheck<%=field.getVelocityVarName()%>"></div>
@@ -428,11 +435,7 @@
                 binInode=sib;
             }
 
-            ResourceLink resourceLink = null;
-
-            if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
-                resourceLink = new ResourceLinkBuilder().build(request, user, contentlet);
-            }
+            ResourceLink resourceLink = new ResourceLinkBuilder().build(request, user, contentlet, field.getVelocityVarName());
 
         %>
 
@@ -482,9 +485,6 @@
            </div>
        </div>
 
-
-
-
     <%}else{ %>
        <div id="thumbnailParent<%=field.getVelocityVarName()%>">
            <div dojoType="dotcms.dijit.image.ImageEditor"
@@ -507,7 +507,7 @@
             <% if(UtilMethods.isSet(resourceLink) && !resourceLink.isDownloadRestricted()){ %>
 
                 <div id="<%=field.getVelocityVarName()%>ThumbnailSliderWrapper">
-                    <a class="bg" href="javascript: serveFile('','<%=binInode%>','<%=field.getVelocityVarName()%>');"
+                    <a class="bg" href="/contentAsset/raw-data/<%=binInode%>/<%=field.getVelocityVarName()%>?byInode=true&force_download=true" download
                        id="<%=field.getVelocityVarName()%>BinaryFile"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download"))%></a>
                     <br/>
                 </div>
@@ -538,7 +538,16 @@
     
 
     <%-- File uploader --%>
+
     <div
+            resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"
+            resourceLinkUri="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkUriAsString() : "" %>"
+            resourceLinkLabel="<%= contentlet.isFileAsset() ? LanguageUtil.get(pageContext, "Resource-Link") : "" %>"
+            versionPath="<%= !resourceLink.isDownloadRestricted() ? resourceLink.getVersionPath() : "" %>"
+            versionPathLabel="<%= LanguageUtil.get(pageContext, "VersionPath") %>"
+            idPath="<%= !resourceLink.isDownloadRestricted() ? resourceLink.getIdPath() : "" %>"
+            idPathLabel="<%= LanguageUtil.get(pageContext, "IdPath") %>:"
+
             id="<%=field.getVelocityVarName()%>"
             name="<%=field.getFieldContentlet()%>"
             fileNameVisible="false"
@@ -585,22 +594,10 @@
     %>
 
         <%if(canUserWriteToContentlet){%>
-        <div id="<%=field.getVelocityVarName()%>dt" class="field__editable-content">
-
-            <%
-              if(!resourceLink.isDownloadRestricted()){ %>
-               <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
-               <div style="padding:10px;">
-                <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
-               </div>
-             <% } else { %>
-                <br>
-             <% }  %>
-        </div>
             <% if (resourceLink.isEditableAsText()) { %>
                 <%
                     if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
-                        final FileAsset fa = resourceLink.getFileAsset();
+
                 %>
                     <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
                 <%  } %>
@@ -614,11 +611,14 @@
     <script type="text/javascript">
 
         function serveFile(doStuff,conInode,velVarNm){
+            var link
 
-            if(doStuff != ''){
-                window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm ,'fileWin','toolbar=no,resizable=yes,width=400,height=300');
-            }else{
+            if (doStuff != ''){
+                link = '/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true";
+            } else {
+                link = '/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true";
             }
+            window.location.href = link
         }
 
         function change<%=field.getFieldContentlet()%>ThumbnailSize(newValue) {
@@ -972,7 +972,7 @@
 //END of CUSTOM_FIELD
 //KEY_VALUE Field
     else if(field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
-
+ 
     %>
     <script>
         dojo.ready(function () {
@@ -982,11 +982,14 @@
     </script>
     <%
 
-        java.util.Map<String, Object> keyValueMap = null;
+        java.util.Map<String, Object> keyValueMap = new HashMap<>();
         String JSONValue = UtilMethods.isSet(value)? (String)value:"";
         //Convert JSON to Table Display {key, value, order}
         if(UtilMethods.isSet(JSONValue)){
             keyValueMap =  com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap(JSONValue);
+            if(field.getVelocityVarName().equals("metaData")){
+               keyValueMap.put("content", "...");
+            }
         }
     %>
     <div class="key-value-form" style="display:<%=field.isReadOnly()?"none":"flex"%>">
@@ -1009,47 +1012,24 @@
     </div>
     <div id="mainHolder" class="key-value-items">
 
-        <%
-            String licenseMessage = LanguageUtil.get(pageContext, "Go-Enterprise-To-Access") + "!" ;
-            String licenseURL = "http://dotcms.com/buy-now";
-            List<Layout> layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
-            for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
-                List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-                if (portletIdsForLicenseManager.contains(PortletID.CONFIGURATION)) {
-                    licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id="+PortletID.CONFIGURATION+"&p_p_action=0&tab=licenseTab";
-                    break;
-                }
-            }
-
-            if(!field.getVelocityVarName().equals("metaData") || LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {  %>
         <table class="listingTable" id="<%=field.getFieldContentlet()%>_kvtable">
-            <%if(keyValueMap!=null && !keyValueMap.isEmpty()){
-                int k = 0;
-                for(String key : keyValueMap.keySet()){
-                    String str_style = "";
-                    if ((k%2)==0) {
-                        str_style = "class=\"dojoDndItem alternate_1\"";
-                    }else{
-                        str_style = "class=\"dojoDndItem alternate_2\"";
-                    }
-            %>
-            <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%= key %>" />
-            <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= keyValueMap.get(key) %>" />
-            <tr id="<%=field.getFieldContentlet()+"_"+key%>" <%=str_style %>>
-                <td>
-                    <%if(!field.isReadOnly()){ %>
-                    <a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=UtilMethods.escapeSingleQuotes(key)%>');"><span class="deleteIcon"></span></a>
-                    <%} %>
-                </td>
-                <td><span><%= key %></span></td>
-                <td><span><%= keyValueMap.get(key) %></span></td>
-            </tr>
-            <%k++;}
-            }%>
+            <% boolean showAlt=false;
+            for(String key : keyValueMap.keySet()){%>
+               <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%= key %>" />
+               <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(keyValueMap.get(key).toString())) %>" />
+               <tr id="<%=field.getFieldContentlet()+"_"+key%>" class="dojoDndItem <%=showAlt ?  "alternate_1" :"alternate_2"%>">
+                   <td>
+                       <%if(!field.isReadOnly()){ %>
+                        <a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=UtilMethods.escapeSingleQuotes(key)%>');"><span class="deleteIcon"></span></a>
+                       <%} %>
+                   </td>
+                   <td><span><%= key %></span></td>
+                   <td><span><%= UtilMethods.htmlifyString(keyValueMap.get(key).toString()) %></span></td>
+               </tr>
+                <%showAlt=!showAlt;%>
+            <%}%>
         </table>
-        <%} else  {%>
-        <a class="goEnterpriseLink" href="<%=licenseURL%>"><span class="keyIcon"></span><%=licenseMessage%></a>
-        <%} %>
+
     </div>
     <%if(!field.isReadOnly()){ %>
     <script>

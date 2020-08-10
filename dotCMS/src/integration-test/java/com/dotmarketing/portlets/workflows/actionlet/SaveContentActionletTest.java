@@ -31,6 +31,7 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import graphql.AssertException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -48,6 +49,8 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
     private static User systemUser = APILocator.systemUser();
     private static List<ContentType> contentTypes = new ArrayList<>();
+    private static WorkflowAction saveAction;
+    private static WorkflowAction publishAction;
 
     private static class TestCase {
         private final boolean respectFrontendRoles;
@@ -72,11 +75,22 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
     @DataProvider
     public static Object[] usersAndContentTypeWithoutHostField() throws Exception {
+        IntegrationTestInitService.getInstance().init();
+
+        final Optional<WorkflowAction> optionalSaveAction = getWorkflowActionByName("Save");
+        final Optional<WorkflowAction> optionalPublishAction = getWorkflowActionByName("Publish");;
+
+        if (!optionalSaveAction.isPresent() || !optionalPublishAction.isPresent()) {
+            throw new AssertException("Publish and Save Actions Expected");
+        }
+
+        saveAction = getWorkflowActionByName("Save").get();
+        publishAction = getWorkflowActionByName("Publish").get();
+
         // creates the type to trigger the scheme
         final ContentType contentType = createTestType();
         contentTypes.add(contentType);
 
-        final User userWithPermission = createUserWithPermission(contentType);
         final User userWithoutPermission = new UserDataGen().nextPersisted();
         final User userWithJustActionPermission = createUserWithJustActionPermission();
 
@@ -122,15 +136,6 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         } catch (DotDataException e) {
             throw  new RuntimeException(e);
         }
-    }
-
-    private static User createUserWithPermission(final ContentType contentType) throws DotDataException {
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
-
-        addPermissionToAddChildren(role, contentType);
-        //addPermissionToActions(role);
-        return user;
     }
 
     private static User createUserWithJustActionPermission() throws DotDataException {
@@ -228,7 +233,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                             new ContentletDependencies.Builder()
                                     .modUser(testCase.user)
                                     .respectAnonymousPermissions(testCase.respectFrontendRoles)
-                                    .workflowActionId(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID)
+                                    .workflowActionId(saveAction.getId())
                                     .build());
 
             checkContentSaved(contentletSaved);
@@ -259,7 +264,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                 workflowAPI.fireContentWorkflow(contentletSaved,
                         new ContentletDependencies.Builder()
                                 .modUser(APILocator.systemUser())
-                                .workflowActionId(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID)
+                                .workflowActionId(publishAction.getId())
                                 .respectAnonymousPermissions(testCase.respectFrontendRoles)
                                 .build());
 
@@ -314,8 +319,6 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
     @NotNull
     private static void addPermissionToActions(final Role role) throws DotDataException {
-        final WorkflowAction saveAction = FactoryLocator.getWorkFlowFactory().findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID);
-        final WorkflowAction publishAction = FactoryLocator.getWorkFlowFactory().findAction(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID);
 
         final Permission publishPermission = getPermission(role, publishAction, PermissionLevel.USE.getType());
         final Permission savePermission = getPermission(role, saveAction, PermissionLevel.USE.getType());
@@ -360,4 +363,22 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         return permission;
     }
 
+    private static Optional<WorkflowAction> getWorkflowActionByName(final String name) {
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+        try {
+            final WorkflowScheme systemWorkflowScheme = workflowAPI.findSystemWorkflowScheme();
+            final List<WorkflowAction> actions = APILocator.getWorkflowAPI().findActions(systemWorkflowScheme, APILocator.systemUser());
+
+            for (final WorkflowAction action : actions) {
+                if (action.getName().equals(name)) {
+                    return Optional.of(action);
+                }
+            }
+
+            return Optional.empty();
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

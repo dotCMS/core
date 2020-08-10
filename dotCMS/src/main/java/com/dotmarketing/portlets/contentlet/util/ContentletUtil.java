@@ -1,18 +1,14 @@
 package com.dotmarketing.portlets.contentlet.util;
 
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.business.Unexportable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-import com.dotcms.rest.ContentHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -20,16 +16,11 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ContentletUtil {
 
@@ -43,9 +34,12 @@ public class ContentletUtil {
 			FieldType.BUTTON.toString()
 	);
 
-
 	public static boolean isFieldTypeAllowedOnImportExport(final Field field){
 		return !fieldTypesToExcludeFromImportExport.contains(field.getFieldType());
+	}
+
+	public static boolean isNewFieldTypeAllowedOnImportExport(final com.dotcms.contenttype.model.field.Field field){
+		return !(field.getClass().isAnnotationPresent(Unexportable.class));
 	}
 
 	public static boolean isHost(final Contentlet contentlet){
@@ -143,76 +137,8 @@ public class ContentletUtil {
 	public static Map<String, Object> getContentPrintableMap(
 			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo)
 			throws DotDataException, IOException {
-
-		Map<String, Object> m = new HashMap<>();
-
 		sourceContentlet.setTags();
-		final Contentlet contentlet = ContentHelper.getInstance().hydrateContentlet(sourceContentlet);
-		m.putAll(contentlet.getMap());
-
-		ContentType type=contentlet.getContentType();
-		m.put("contentType", type.variable());
-        m.put("baseType", type.baseType().name());
-		for(com.dotcms.contenttype.model.field.Field f : type.fields()){
-			if(f instanceof BinaryField){
-			  File fsFile = contentlet.getBinary(f.variable());
-			  if(fsFile !=null && fsFile.exists()) {
-			    m.put(f.variable() + "Version", "/dA/" +  contentlet.getInode() + "/" + f.variable() + "/" + fsFile.getName()  );
-				m.put(f.variable(), "/dA/" +  contentlet.getIdentifier() + "/" + f.variable() + "/" + fsFile.getName()	);
-				m.put(f.variable() + "ContentAsset", contentlet.getIdentifier() + "/" +f.variable()	);
-			  }
-			} else if(f instanceof CategoryField) {
-
-				List<Category> cats = null;
-				try {
-					cats = APILocator.getCategoryAPI().getParents(contentlet, user, true);
-				} catch (Exception e) {
-					Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", contentlet.getInode()));
-				}
-
-				if(cats!=null && !cats.isEmpty()) {
-					try {
-						final Category parentCategory        = APILocator.getCategoryAPI().find(f.values(), user, true);
-						final List<Category> childCategories = new ArrayList<>();
-
-						if(parentCategory != null) {
-							for (Category category : cats) {
-								if (APILocator.getCategoryAPI().isParent(category, parentCategory, user,true)) {
-									childCategories.add(category);
-								}
-							}
-						}
-
-						if (!childCategories.isEmpty()){
-							Object categoriesValue;
-							if (allCategoriesInfo) {
-								categoriesValue = childCategories.stream()
-										.map(Category::getMap)
-										.collect(Collectors.toList());
-							} else {
-								categoriesValue = childCategories.stream()
-										.map(Category::getCategoryName)
-										.collect(Collectors.joining(", "));
-							}
-							m.put(f.variable(), categoriesValue);
-						}
-					} catch (DotSecurityException e) {
-						Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", contentlet.getInode()));
-					}
-				}
-			}
-		}
-
-		if (type .baseType() == BaseContentType.HTMLPAGE ||type .baseType() == BaseContentType.FILEASSET){
-			m.put("path", APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getPath());
-		}
-		try {
-            m.put("hostName", APILocator.getHostAPI().find(contentlet.getHost(), user, true).getHostname());
-        } catch (Exception e) {
-            Logger.warn(ContentletUtil.class, "unable to get host:" + contentlet.getHost() + " : " + e.getMessage());
-        }
-
-		return m;
+		return new DotTransformerBuilder().contentResourceOptions(allCategoriesInfo).content(sourceContentlet).build().toMaps().get(0);
 	}
 
 	/**

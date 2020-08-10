@@ -1,33 +1,23 @@
 package com.dotcms.graphql;
 
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.BASE_TYPE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENT_TYPE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.IDENTIFIER;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.INODE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LIVE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.TITLE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.URL_MAP;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
 import static com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import static com.dotcms.graphql.util.TypeUtil.createInterfaceType;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
-import static graphql.Scalars.GraphQLBoolean;
-import static graphql.Scalars.GraphQLID;
-import static graphql.Scalars.GraphQLString;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.EnterpriseType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
+import com.dotcms.contenttype.model.type.ImmutableDotAssetContentType;
+import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
+import com.dotcms.contenttype.model.type.ImmutableFormContentType;
+import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
+import com.dotcms.contenttype.model.type.ImmutablePageContentType;
+import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
+import com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType;
+import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.KeyValueContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.contenttype.model.type.PersonaContentType;
@@ -36,16 +26,13 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.graphql.datafetcher.FolderFieldDataFetcher;
-import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
-import com.dotcms.graphql.datafetcher.SiteFieldDataFetcher;
-import com.dotcms.graphql.datafetcher.TitleImageFieldDataFetcher;
-import com.dotcms.graphql.datafetcher.UserDataFetcher;
+import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
 import com.dotcms.graphql.resolver.ContentResolver;
 import com.dotmarketing.util.Logger;
 import graphql.schema.GraphQLInterfaceType;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -61,7 +48,7 @@ public enum InterfaceType {
     FORM(FormContentType.class),
     DOTASSET(DotAssetContentType.class);
 
-    private Class<? extends ContentType> baseContentType;
+    private final Class<? extends ContentType> baseContentType;
 
     InterfaceType(final Class<? extends ContentType> baseContentType) {
         this.baseContentType = baseContentType;
@@ -69,7 +56,7 @@ public enum InterfaceType {
 
     public static Set<String> CONTENT_INTERFACE_FIELDS = new HashSet<>();
 
-    private static Map<String, GraphQLInterfaceType> interfaceTypes = new HashMap<>();
+    private static final Map<String, GraphQLInterfaceType> interfaceTypes = new HashMap<>();
 
     public static final String CONTENT_INTERFACE_NAME = "ContentBaseType";
     public static final String FILE_INTERFACE_NAME = "FileBaseType";
@@ -81,26 +68,9 @@ public enum InterfaceType {
     public static final String FORM_INTERFACE_NAME = "FormBaseType";
     public static final String DOTASSET_INTERFACE_NAME = "DotAssetBaseType";
 
-    private static final Map<String, TypeFetcher> contentFields = new HashMap<>();
-
     static {
-        contentFields.put(MOD_DATE, new TypeFetcher(GraphQLString));
-        contentFields.put(TITLE, new TypeFetcher(GraphQLString));
-        contentFields.put(TITLE_IMAGE_KEY, new TypeFetcher(CustomFieldType.BINARY.getType(), new TitleImageFieldDataFetcher()));
-        contentFields.put(CONTENT_TYPE, new TypeFetcher(GraphQLString));
-        contentFields.put(BASE_TYPE, new TypeFetcher(GraphQLString));
-        contentFields.put(LIVE, new TypeFetcher(GraphQLBoolean));
-        contentFields.put(WORKING, new TypeFetcher(GraphQLBoolean));
-        contentFields.put(ARCHIVED_KEY, new TypeFetcher(GraphQLBoolean));
-        contentFields.put(LOCKED_KEY, new TypeFetcher(GraphQLBoolean));
-        contentFields.put("conLanguage", new TypeFetcher(CustomFieldType.LANGUAGE.getType(), new LanguageDataFetcher()));
-        contentFields.put(IDENTIFIER, new TypeFetcher(GraphQLID));
-        contentFields.put(INODE, new TypeFetcher(GraphQLID));
-        contentFields.put(HOST_KEY, new TypeFetcher(CustomFieldType.SITE.getType(), new SiteFieldDataFetcher()));
-        contentFields.put(FOLDER_KEY, new TypeFetcher(CustomFieldType.FOLDER.getType(), new FolderFieldDataFetcher()));
-        contentFields.put(URL_MAP, new TypeFetcher(GraphQLString));
-        contentFields.put(OWNER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
-        contentFields.put(MOD_USER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
+
+        Map<String, TypeFetcher> contentFields = ContentFields.getContentFields();
 
         CONTENT_INTERFACE_FIELDS.addAll(contentFields.keySet());
 
@@ -109,28 +79,55 @@ public enum InterfaceType {
         interfaceTypes.put("CONTENT", createInterfaceType(CONTENT_INTERFACE_NAME, contentFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> fileAssetFields = new HashMap<>(contentFields);
+        addBaseTypeFields(fileAssetFields, ImmutableFileAssetContentType.builder().name("dummy")
+                .build().requiredFields());
         interfaceTypes.put("FILEASSET", createInterfaceType(FILE_INTERFACE_NAME, fileAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> pageAssetFields = new HashMap<>(contentFields);
+        addBaseTypeFields(pageAssetFields, ImmutablePageContentType.builder().name("dummy")
+                .build().requiredFields());
         interfaceTypes.put("HTMLPAGE", createInterfaceType(PAGE_INTERFACE_NAME, pageAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> personaFields = new HashMap<>(contentFields);
+        addBaseTypeFields(personaFields, ImmutablePersonaContentType.builder().name("dummy")
+                .build().requiredFields());
         interfaceTypes.put("PERSONA", createInterfaceType(PERSONA_INTERFACE_NAME, personaFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> widgetFields = new HashMap<>(contentFields);
+        addBaseTypeFields(widgetFields, ImmutableWidgetContentType.builder().name("dummy")
+                .build().requiredFields());
         interfaceTypes.put("WIDGET", createInterfaceType(WIDGET_INTERFACE_NAME, widgetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> vanityUrlFields = new HashMap<>(contentFields);
+        addBaseTypeFields(vanityUrlFields, ImmutableVanityUrlContentType.builder().name("dummy")
+                .build().requiredFields());
         interfaceTypes.put("VANITY_URL", createInterfaceType(VANITY_URL_INTERFACE_NAME, vanityUrlFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> keyValueFields = new HashMap<>(contentFields);
+        addBaseTypeFields(keyValueFields, ImmutableKeyValueContentType.builder().name("dummy")
+                .build().requiredFields());
         interfaceTypes.put("KEY_VALUE", createInterfaceType(KEY_VALUE_INTERFACE_NAME, keyValueFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> formFields = new HashMap<>(contentFields);
-        interfaceTypes.put("FORM", createInterfaceType(FORM_INTERFACE_NAME, formFields, new ContentResolver()));
+        addBaseTypeFields(formFields, ImmutableFormContentType.builder().name("dummy")
+                .build().requiredFields());
+        interfaceTypes.put("FORM", createInterfaceType(FORM_INTERFACE_NAME, formFields,
+                new ContentResolver()));
 
         final Map<String, TypeFetcher> dotAssetFields = new HashMap<>(contentFields);
+        addBaseTypeFields(dotAssetFields, ImmutableDotAssetContentType.builder().name("dummy")
+                .build().requiredFields());
         interfaceTypes.put("DOTASSET", createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()));
+    }
+
+    private static void addBaseTypeFields(Map<String, TypeFetcher> baseTypeFields,
+            List<Field> requiredFormFields) {
+        for (final Field formField : requiredFormFields) {
+            if(!formField.fixed()) continue;
+            baseTypeFields.put(formField.variable(), new TypeFetcher(
+                    ContentAPIGraphQLTypesProvider.INSTANCE
+                            .getGraphqlTypeForFieldClass(formField.type(), formField)));
+        }
     }
 
     public GraphQLInterfaceType getType() {
@@ -163,7 +160,4 @@ public enum InterfaceType {
         return type;
     }
 
-    public static Map<String, TypeFetcher> getContentletInheritedFields() {
-        return contentFields;
-    }
 }

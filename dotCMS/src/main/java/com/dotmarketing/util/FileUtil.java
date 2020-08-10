@@ -3,6 +3,7 @@ package com.dotmarketing.util;
 import com.dotcms.util.CloseUtils;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +46,27 @@ public class FileUtil {
 	public static File createTemporalFile (final String prefix, final String extension) throws IOException {
 
 		return File.createTempFile(prefix + System.currentTimeMillis(), UtilMethods.isSet(extension)?extension:"tmp");
+	}
+
+	/**
+	 * Creates a temporal file with unique name, in case you have a small initial content to write, you can include as a third parameter
+	 * In case you need to write a long string, use another strategy
+	 * @param prefix String name
+	 * @param extension String optional extension, if null "tmp" will be use
+	 * @param initialContent String small content to add to the file.
+	 *
+	 * @return File
+	 * @throws IOException
+	 */
+	public static File createTemporalFile (final String prefix, final String extension, final String initialContent) throws IOException {
+
+		final File file = createTemporalFile(prefix, extension);
+		try (final FileWriter fileWriter = new FileWriter(file)) {
+
+			fileWriter.write(initialContent);
+		}
+
+		return file;
 	}
 
 	/**

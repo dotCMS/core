@@ -60,10 +60,6 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
 				return false;
 			}
-			else if (document.getElementById("titleField").value.indexOf(" ")>-1) {
-				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.no.space.in.url")) %>');
-				return false;
-			}
 		}
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>';
 		submitForm(form);

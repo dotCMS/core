@@ -32,17 +32,20 @@ import java.util.stream.Collectors;
  */
 public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
-    private static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true ";
-    private static final String CONTENT_TYPE_HOST_WITH_TITLE_QUERY = "+contentType:Host +working:true +title:*%s*";
+    private static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true -deleted:true ";
+    private static final String CONTENT_TYPE_HOST_WITH_TITLE_QUERY = "+contentType:Host +working:true -deleted:true +title:*%s*";
 
     private final Supplier<Set<String>> configuredSitesSupplier;
+    private final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier;
     private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
 
     @VisibleForTesting
     public SiteViewPaginator(final Supplier<Set<String>> configuredSitesSupplier,
-            final HostAPI hostAPI, final ContentletAPI contentletAPI) {
+        final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier,
+        final HostAPI hostAPI, final ContentletAPI contentletAPI) {
         this.configuredSitesSupplier = configuredSitesSupplier;
+        this.warningsBySiteSupplier = warningsBySiteSupplier;
         this.hostAPI = hostAPI;
         this.contentletAPI = contentletAPI;
     }
@@ -83,6 +86,9 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
             final List<String> finalList = join(configuredSites, allSitesIdentifiers).stream()
                     .skip(offset).limit(limit).collect(Collectors.toList());
 
+            final Map<String, Map<String, List<String>>> warningsBySite = warningsBySiteSupplier
+                    .get();
+
             //And finally load from db and map into the desired view.
             final List<SiteView> siteViews = finalList.stream().map(id -> {
                 try {
@@ -92,8 +98,11 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
                 }
                 return null;
             }).filter(Objects::nonNull).map(host -> {
-                final boolean configured = configuredSites.contains(host.getIdentifier().toLowerCase());
-                return new SiteView(host.getIdentifier(), host.getName(), configured);
+                final String siteId = host.getIdentifier().toLowerCase();
+                final Map<String, List<String>> secretsWithWarnings = warningsBySite.get(siteId);
+                final int secretsWithWarningsCount = null != secretsWithWarnings ? secretsWithWarnings.size() : 0;
+                final boolean configured = configuredSites.contains(siteId);
+                return new SiteView(host.getIdentifier(), host.getName(), configured, secretsWithWarningsCount);
             }).collect(Collectors.toList());
 
             //And then we're done and out of here.

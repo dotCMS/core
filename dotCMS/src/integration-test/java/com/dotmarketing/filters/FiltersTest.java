@@ -2,35 +2,10 @@ package com.dotmarketing.filters;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import com.dotcms.LicenseTestUtil;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.rendering.velocity.servlet.VelocityServlet;
-import com.dotcms.util.FiltersUtil;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.servlets.SpeedyAssetServlet;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -54,14 +29,44 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
-
-import com.liferay.portal.util.WebKeys;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.mock.response.MockHttpStatusResponse;
+import com.dotcms.rendering.velocity.servlet.VelocityServlet;
+import com.dotcms.util.FiltersUtil;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.vanityurl.filters.VanityURLFilter;
+import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.servlets.SpeedyAssetServlet;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 
 public class FiltersTest {
 
@@ -159,7 +164,7 @@ public class FiltersTest {
     }
 
     @Test
-    public void shouldWorkVanityUrl() throws IOException, DotDataException {
+    public void shouldWorkVanityUrl() throws Exception {
 
         //Init APIs and test values
         Contentlet vanityUrl1 = null;
@@ -167,113 +172,176 @@ public class FiltersTest {
         Contentlet vanityUrl3 = null;
         Contentlet vanityUrl4 = null;
         Contentlet vanityUrl5 = null;
+        final String uniqueUrl = UUIDGenerator.shorty();
+        // build them up
+
+        vanityUrl1 = filtersUtil.createVanityUrl("test link1", Host.SYSTEM_HOST, "/" + uniqueUrl + "1",
+                "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
+        filtersUtil.publishVanityUrl(vanityUrl1);
+
+        vanityUrl2 = filtersUtil.createVanityUrl("test link2", site.getIdentifier(),
+                "/" + uniqueUrl + "2", "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1,
+                defaultLanguageId);
+        filtersUtil.publishVanityUrl(vanityUrl2);
+
+        vanityUrl3 = filtersUtil.createVanityUrl("test link3", site.getIdentifier(),
+                "/" + uniqueUrl + "3", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+                301, 1, defaultLanguageId);
+        filtersUtil.publishVanityUrl(vanityUrl3);
+
+        vanityUrl4 = filtersUtil.createVanityUrl("test link4", site.getIdentifier(),
+                "/" + uniqueUrl + "4", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+                301, 1, defaultLanguageId);
+        filtersUtil.publishVanityUrl(vanityUrl4);
+
+        vanityUrl5 = filtersUtil.createVanityUrl("test link5", Host.SYSTEM_HOST,
+                "/forbidden", "/products/" + CMSFilter.CMS_INDEX_PAGE, 302, 1, defaultLanguageId);
+        filtersUtil.publishVanityUrl(vanityUrl5);
+
+        VanityURLFilter filter = new VanityURLFilter();
+        HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
+        MockResponseWrapper response = new MockResponseWrapper(res);
+        FilterChain chain = Mockito.mock(FilterChain.class);
+        Logger.info(this.getClass(),
+                "/" + uniqueUrl + "1 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
+        
+        HttpServletRequest request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "1");
+        filter.doFilter(request, response, chain);
+        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+                request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+
+        Logger.info(this.getClass(),
+                "/" + uniqueUrl + "2 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
+        request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "2");
+        response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
+        filter.doFilter(request, response, chain);
+        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+                request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+
+        Logger.info(this.getClass(),
+                "/" + uniqueUrl + "3 should redirect to http://demo.dotcms.com/about-us/"
+                        + CMSFilter.CMS_INDEX_PAGE);
+        request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "3");
+        response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
+        filter.doFilter(request, response, chain);
+        Assert.assertEquals(301, response.getStatus());
+        Assert.assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+                response.getRedirectLocation());
+
+        Logger.info(this.getClass(),
+                "/" + uniqueUrl + "4 should redirect to http://demo.dotcms.com/about-us/"
+                        + CMSFilter.CMS_INDEX_PAGE);
+        request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "4");
+        response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
+        filter.doFilter(request, response, chain);
+        Assert.assertEquals(301, response.getStatus());
+        Assert.assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+                response.getRedirectLocation());
+
+        Logger.info(this.getClass(),
+                "/forbidden should 302 Redirect to /products/" + CMSFilter.CMS_INDEX_PAGE);
+        request = getMockRequest(site.getHostname(), "/forbidden");
+        response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
+        filter.doFilter(request, response, chain);
+        Assert.assertEquals(302, response.getStatus());
+
+
+    }
+    
+    
+    final static String VANITY="VANITY";
+    final static String URL="URL";
+    
+    /**
+     * this method tests whether url query params are being passed properly
+     * @throws IOException
+     * @throws DotDataException
+     * @throws ServletException 
+     */
+    @Test
+    public void vanityUrlsShouldPassParams() throws Exception {
+
+
+        String uniqueUrl = UUIDGenerator.shorty();
+        
+        
+        
+        //Init APIs and test values
+        Contentlet vanityUrl1 = null;
+        Contentlet vanityUrl2 = null;
 
         // build them up
-        try {
-            vanityUrl1 = filtersUtil.createVanityUrl("test link1", Host.SYSTEM_HOST, "/testLink1",
-                    "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
-            filtersUtil.publishVanityUrl(vanityUrl1);
+        vanityUrl1 = filtersUtil.createVanityUrl("test link1", Host.SYSTEM_HOST, "/" + uniqueUrl + "1",
+                "/about-us/" + CMSFilter.CMS_INDEX_PAGE + "?param1="+ VANITY, 200, 1, defaultLanguageId);
+        filtersUtil.publishVanityUrl(vanityUrl1);
 
-            vanityUrl2 = filtersUtil.createVanityUrl("test link2", site.getIdentifier(),
-                    "/testLink2", "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1,
-                    defaultLanguageId);
-            filtersUtil.publishVanityUrl(vanityUrl2);
+        vanityUrl2 = filtersUtil.createVanityUrl("test link2", site.getIdentifier(),
+                "/" + uniqueUrl + "2", "/about-us/" + CMSFilter.CMS_INDEX_PAGE+ "?param1=" + VANITY, 200, 1,
+                defaultLanguageId);
+        filtersUtil.publishVanityUrl(vanityUrl2);
 
-            vanityUrl3 = filtersUtil.createVanityUrl("test link3", site.getIdentifier(),
-                    "/testLink3", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    301, 1, defaultLanguageId);
-            filtersUtil.publishVanityUrl(vanityUrl3);
+        VanityURLFilter filter = new VanityURLFilter();
+        
+        HttpServletResponse response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
+        HttpServletRequest request = new MockHttpRequest(site.getHostname(), "/" + uniqueUrl + "1?param2=" + URL).request();
+        
+        MockFilterChain chain = new MockFilterChain();
+        
+        Logger.info(this.getClass(),
+                "/" + uniqueUrl + "1 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
 
-            vanityUrl4 = filtersUtil.createVanityUrl("test link4", site.getIdentifier(),
-                    "/testLink4", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    301, 1, defaultLanguageId);
-            filtersUtil.publishVanityUrl(vanityUrl4);
+        filter.doFilter(request, response, chain);
+        
+        //get the wrapped request out of the chain
+        request =(HttpServletRequest) chain.request;
+        
+        //assert that we have a new request wrapper
+        assertTrue(request instanceof VanityUrlRequestWrapper);
+        
+        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE, request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+        
+        
+        assertTrue(VANITY.equals(request.getParameter("param1")));
+        assertTrue(URL.equals(request.getParameter("param2")));
+        
 
-            vanityUrl5 = filtersUtil.createVanityUrl("test link5", Host.SYSTEM_HOST,
-                    "forbidden", "/products/" + CMSFilter.CMS_INDEX_PAGE, 302, 1, defaultLanguageId);
-            filtersUtil.publishVanityUrl(vanityUrl5);
+        Logger.info(this.getClass(),
+                "/" + uniqueUrl + "2 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
+        
+        request = new MockHttpRequest(site.getHostname(), "/" + uniqueUrl + "2?param1=" + URL + "&param2=" + URL).request();
+        
+        response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
+        filter.doFilter(request, response, chain);
+        //get the wrapped request out of the chain
+        request =(HttpServletRequest) chain.request;
+        
+        
+        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+                request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
-            VanityURLFilter filter = new VanityURLFilter();
-            HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
-            MockResponseWrapper response = new MockResponseWrapper(res);
-            FilterChain chain = Mockito.mock(FilterChain.class);
-            Logger.info(this.getClass(),
-                    "/testLink1 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
-            HttpServletRequest request = getMockRequest(site.getHostname(), "/testLink1");
-            filter.doFilter(request, response, chain);
-            Assert.assertEquals(200, response.getStatus());
-            Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+        // VANITY - from the VANITY takes priority
+        assertTrue(VANITY.equals(request.getParameter("param1")));
 
-            Logger.info(this.getClass(),
-                    "/testLink2 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
-            request = getMockRequest(site.getHostname(), "/testLink2");
-            response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
-            filter.doFilter(request, response, chain);
-            Assert.assertEquals(200, response.getStatus());
-            Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+        // the value passed in the URL takes secondary priority
+        assertTrue(VANITY.equals(request.getParameterValues("param1")[0]));
+        assertTrue(URL.equals(request.getParameterValues("param1")[1]));
+        assertTrue(URL.equals(request.getParameter("param2")));
 
-            Logger.info(this.getClass(),
-                    "/testLink3 should redirect to http://demo.dotcms.com/about-us/"
-                            + CMSFilter.CMS_INDEX_PAGE);
-            request = getMockRequest(site.getHostname(), "/testLink3");
-            response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
-            filter.doFilter(request, response, chain);
-            Assert.assertEquals(301, response.getStatus());
-            Assert.assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    response.getRedirectLocation());
 
-            Logger.info(this.getClass(),
-                    "/testLink4 should redirect to http://demo.dotcms.com/about-us/"
-                            + CMSFilter.CMS_INDEX_PAGE);
-            request = getMockRequest(site.getHostname(), "/testLink4");
-            response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
-            filter.doFilter(request, response, chain);
-            Assert.assertEquals(301, response.getStatus());
-            Assert.assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    response.getRedirectLocation());
 
-            Logger.info(this.getClass(),
-                    "/forbidden should forward to /products/" + CMSFilter.CMS_INDEX_PAGE);
-            request = getMockRequest(site.getHostname(), "/forbidden");
-            response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
-            filter.doFilter(request, response, chain);
-            Assert.assertEquals(200, response.getStatus());
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-            Assert.fail();
-
-        } finally {
-            // cleanup
-            try {
-                if (vanityUrl1 != null) {
-
-                    contentletAPI.destroy(vanityUrl1, user, false);
-                }
-                if (vanityUrl2 != null) {
-
-                    contentletAPI.destroy(vanityUrl2, user, false);
-                }
-                if (vanityUrl3 != null) {
-                    contentletAPI.destroy(vanityUrl3, user, false);
-                }
-                if (vanityUrl4 != null) {
-
-                    contentletAPI.destroy(vanityUrl4, user, false);
-                }
-                if (vanityUrl5 != null) {
-
-                    contentletAPI.destroy(vanityUrl5, user, false);
-                }
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "Error cleaning up Vanity Url Links");
-            }
-
-        }
     }
+    
+    
+    
+    
+    
+    
+    
+    
 
     /**
      * Creates a vanity url that will change the cmsHomePage(redirect) to about-us/index.
@@ -340,18 +408,7 @@ public class FiltersTest {
             e.printStackTrace();
             Assert.fail();
 
-        } finally {
-            try {
-                //Delete the test Vanity URL
-                if(vanityURLContentlet != null) {
-
-                    contentletAPI.destroy(vanityURLContentlet, user, false);
-                }
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "Error deleting Vanity URL");
-            }
-
-        }
+        } 
     }
 
     /**
@@ -507,7 +564,7 @@ public class FiltersTest {
     }
 
 
-    public void runTests() throws IOException, DotDataException {
+    public void runTests() throws Exception {
 
         shouldRedirectToFolderIndex();
         shouldWorkVanityUrl();
@@ -600,7 +657,7 @@ public class FiltersTest {
      * /products/
      */
     @Test
-    public void shouldRedirectToFolderIndex() throws IOException {
+    public void shouldRedirectToFolderIndex() throws Exception {
         Logger.info(this.getClass(), "/products should redirect to /products/");
 
         MockResponseWrapper response = new MockResponseWrapper(
@@ -623,7 +680,7 @@ public class FiltersTest {
         request = getMockRequest(site.getHostname(), "/products/");
         response = getMockResponse();
 
-        try {
+ 
             new CMSFilter().doFilter(request, response, chain);
             Logger.info(this.getClass(),
                     "looking for /products/" + CMSFilter.CMS_INDEX_PAGE + " , got;" + request
@@ -632,9 +689,7 @@ public class FiltersTest {
                     request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
             Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
             Assert.assertEquals(200, response.getStatus());
-        } catch (ServletException e) {
-            Assert.fail();
-        }
+
 
 
     }
@@ -831,5 +886,27 @@ public class FiltersTest {
             return null;
         }
     }
+    
+    class MockFilterChain implements FilterChain{
+
+        public ServletRequest request;
+        
+        
+        
+        
+        @Override
+        public void doFilter(ServletRequest arg0, ServletResponse arg1) throws IOException, ServletException {
+            this.request=arg0;
+            
+        }
+        
+        
+        
+        
+    }
+
+    
+    
+    
 
 }

@@ -18,26 +18,28 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.ConfigTestHelper;
-import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -500,6 +502,102 @@ public class TestDataUtils {
         return newsType;
     }
 
+    @WrapInTransaction
+    public static Contentlet getDotAssetLikeContentlet() {
+        return getDotAssetLikeContentlet(APILocator.getLanguageAPI().getDefaultLanguage().getId(), Try.of(()->APILocator.getHostAPI().findSystemHost()).getOrNull());
+        
+    }
+    
+    @WrapInTransaction
+    public static Contentlet getDotAssetLikeContentlet(final Treeable hostOrFolder) {
+        return getDotAssetLikeContentlet(APILocator.getLanguageAPI().getDefaultLanguage().getId(), hostOrFolder);
+        
+    }
+
+    @WrapInTransaction
+    public static Contentlet getDotAssetLikeContentlet(long languageId, final Treeable hostOrFolder) {
+
+        Host host=null;
+        Folder folder=null;
+
+        host = Try.of(()->APILocator.getHostAPI().find(hostOrFolder.getIdentifier(), APILocator.systemUser(), false)).getOrNull();
+        if(host==null) {
+            folder = Try.of(()->APILocator.getFolderAPI().find(hostOrFolder.getInode(), APILocator.systemUser(), false)).getOrNull();
+            if(folder==null) {
+                folder = Try.of(()->APILocator.getFolderAPI().find(hostOrFolder.getInode(), APILocator.systemUser(), false)).getOrNull();
+            }
+            if(folder!=null) {
+                final Folder finalFolder = folder;
+                host =  Try.of(()->APILocator.getHostAPI().find(finalFolder.getHostId(),APILocator.systemUser(), false)).getOrNull();
+            }
+        }
+        
+        if(host==null) {
+            host = Try.of(()->APILocator.getHostAPI().findSystemHost()).getOrNull();
+        }
+            
+
+        ContentType dotAssetType = getDotAssetLikeContentType("dotAsset" + UUIDGenerator.shorty(), host);
+
+        
+        
+        URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
+
+        File testImage = new File(url.getFile());
+        
+        
+        ContentletDataGen contentletDataGen = new ContentletDataGen(dotAssetType.id())
+                        .languageId(languageId)
+                        .setProperty("asset", testImage)
+                        .setProperty("hostFolder", folder!=null ? folder.getInode() : host.getIdentifier())
+                        .setProperty("tags", "tag1, tag2");
+                        
+        
+        if(folder!=null) {
+            contentletDataGen.folder(folder);
+        }
+        if(host!=null) {
+            contentletDataGen.host(host);
+        }
+        
+        return contentletDataGen.nextPersisted();
+
+
+
+    }
+    
+    
+    @WrapInTransaction
+    public static ContentType getDotAssetLikeContentType(final String contentTypeVar,
+                    final Host host) {
+
+
+
+        ContentType dotAssetType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeVar)).getOrNull();
+
+            if (dotAssetType == null) {
+                ContentTypeDataGen dataGen = new ContentTypeDataGen()
+                                .name(contentTypeVar)
+                                .host(host)
+                                .velocityVarName(contentTypeVar)
+                                .baseContentType(BaseContentType.DOTASSET);
+
+                if(host!=null) {
+                    dataGen.host(host);
+                }
+                dotAssetType = dataGen.nextPersisted();
+            }
+
+
+        return dotAssetType;
+    }
+    
+    
+    
+    
+    
+    
     public static ContentType getWikiLikeContentType() {
         return getWikiLikeContentType("Wiki" + System.currentTimeMillis(), null);
     }
@@ -844,22 +942,41 @@ public class TestDataUtils {
 
             //Test file
             final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
-            final File originalTestImage = new File(
-                    ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-            final File testImage = new File(Files.createTempDir(),
-                    "test_image1" + System.currentTimeMillis() + ".jpg");
-            FileUtil.copyFile(originalTestImage, testImage);
-
-            ContentletDataGen fileAssetDataGen = new FileAssetDataGen(folder, testImage)
-                    .languageId(languageId);
-
-            if (persist) {
-                return ContentletDataGen.publish(fileAssetDataGen.nextPersisted());
-            } else {
-                return fileAssetDataGen.next();
-            }
+            return createFileAsset(testImagePath, folder, languageId, persist);
         } catch (Exception e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    public static Contentlet getFileAssetSVGContent(Boolean persist, long languageId) {
+
+        try {
+            final Folder folder = new FolderDataGen().nextPersisted();
+
+            //Test file
+            final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image.svg";
+            return createFileAsset(testImagePath, folder, languageId, persist);
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private static Contentlet createFileAsset(final String testImagePath, final Folder folder, final long languageId, final boolean persist) throws Exception{
+        //Test file
+        final String extension = UtilMethods.getFileExtension(testImagePath);
+        final File originalTestImage = new File(
+                ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
+        final File testImage = new File(Files.createTempDir(),
+                "test_image1" + System.currentTimeMillis() + "." + extension);
+        FileUtil.copyFile(originalTestImage, testImage);
+
+        ContentletDataGen fileAssetDataGen = new FileAssetDataGen(folder, testImage)
+                .languageId(languageId);
+
+        if (persist) {
+            return ContentletDataGen.publish(fileAssetDataGen.nextPersisted());
+        } else {
+            return fileAssetDataGen.next();
         }
     }
 

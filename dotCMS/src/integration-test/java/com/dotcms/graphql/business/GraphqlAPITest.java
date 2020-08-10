@@ -50,6 +50,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.ImmutableTimeField;
 import com.dotcms.contenttype.model.field.ImmutableWysiwygField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -62,6 +63,7 @@ import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -85,10 +87,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class GraphqlAPITest extends IntegrationTestBase {
@@ -102,107 +106,97 @@ public class GraphqlAPITest extends IntegrationTestBase {
     }
 
 
-    @DataProvider
+    @DataProvider(format = "%m: %p[0]")
     public static Object[] typeTestCases() {
 
         return new TypeTestCase[]{
 
-                // TODO commented cases pending for researching. Do not remove them
-
                 // CREATE TYPE CASES
                 new TypeTestCase.Builder()
+                        .description("Given Content BaseType, Should Create Type")
                         .operations(Collections.singletonList(GraphqlAPITest::createType))
                         .baseType(BaseContentType.CONTENT)
                         .contentTypeName("newContentContentType" + random.nextPositive())
-//                        .expectedGraphQLInterfaceToInherit(CONTENT_INTERFACE_NAME)
                         .assertions(
                                 Arrays.asList(
                                         GraphqlAPITest::assertTypeCreated
-//                                        GraphqlAPITest::assertTypeInheritFromInterface
                                 )
                         )
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given Widget BaseType, Should Create Type")
                         .operations(Collections.singletonList(GraphqlAPITest::createType))
                         .baseType(BaseContentType.WIDGET)
                         .contentTypeName("newWidgetContentType" + random.nextPositive())
-//                        .expectedGraphQLInterfaceToInherit(WIDGET_INTERFACE_NAME)
                         .assertions(
                                 Arrays.asList(
                                         GraphqlAPITest::assertTypeCreated
-//                                        GraphqlAPITest::assertTypeInheritFromInterface
                                 )
                         )
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given FORM BaseType, Should Create Type")
                         .operations(Collections.singletonList(GraphqlAPITest::createType))
                         .baseType(BaseContentType.FORM)
-//                        .expectedGraphQLInterfaceToInherit(FORM_INTERFACE_NAME)
                         .contentTypeName("newFormContentType" + random.nextPositive())
                         .assertions(
                                 Arrays.asList(
                                         GraphqlAPITest::assertTypeCreated
-//                                        GraphqlAPITest::assertTypeInheritFromInterface
                                 )
                         )
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given FILEASSET BaseType, Should Create Type")
                         .operations(Collections.singletonList(GraphqlAPITest::createType))
                         .baseType(BaseContentType.FILEASSET)
-//                        .expectedGraphQLInterfaceToInherit(FILE_INTERFACE_NAME)
                         .contentTypeName("newFileContentType" + random.nextPositive())
                         .assertions(
                                 Arrays.asList(
-//                                        GraphqlAPITest::assertTypeCreated,
-                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                        GraphqlAPITest::assertTypeCreated
                                 )
                         )
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given HTMLPAGE BaseType, Should Create Type")
                         .operations(Collections.singletonList(GraphqlAPITest::createType))
                         .baseType(BaseContentType.HTMLPAGE)
-//                        .expectedGraphQLInterfaceToInherit(PAGE_INTERFACE_NAME)
                         .contentTypeName("newPageContentType" + random.nextPositive())
                         .assertions(
                                 Arrays.asList(
                                         GraphqlAPITest::assertTypeCreated
-//                                        GraphqlAPITest::assertTypeInheritFromInterface
                                 )
                         )
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given PERSONA BaseType, Should Create Type")
                         .operations(Collections.singletonList(GraphqlAPITest::createType))
                         .baseType(BaseContentType.PERSONA)
-//                        .expectedGraphQLInterfaceToInherit(PERSONA_INTERFACE_NAME)
                         .contentTypeName("newPersonaContentType" + random.nextPositive())
                         .assertions(
                                 Arrays.asList(
-//                                        GraphqlAPITest::assertTypeCreated
-                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                        GraphqlAPITest::assertTypeCreated
                                 )
                         )
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given VANITY_URL BaseType, Should Create Type")
                         .operations(Collections.singletonList(GraphqlAPITest::createType))
                         .baseType(BaseContentType.VANITY_URL)
-//                        .expectedGraphQLInterfaceToInherit(VANITY_URL_INTERFACE_NAME)
                         .contentTypeName("newVanityURLContentType" + random.nextPositive())
                         .assertions(
                                 Arrays.asList(
                                         GraphqlAPITest::assertTypeCreated
-//                                        GraphqlAPITest::assertTypeInheritFromInterface
                                 )
                         )
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given KEY_VALUE BaseType, Should Create Type")
                         .operations(Collections.singletonList(GraphqlAPITest::createType))
                         .baseType(BaseContentType.KEY_VALUE)
-//                        .expectedGraphQLInterfaceToInherit(KEY_VALUE_INTERFACE_NAME)
                         .contentTypeName("newKeyValueContentType" + random.nextPositive())
                         .assertions(
                                 Arrays.asList(
                                         GraphqlAPITest::assertTypeCreated
-//                                        GraphqlAPITest::assertTypeInheritFromInterface
                                 )
                         )
                         .build(),
@@ -210,6 +204,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 // DELETE TYPE CASES
 
                 new TypeTestCase.Builder()
+                        .description("Given existing CONTENT BaseType, Should Delete Type")
                         .operations(
                                 Arrays.asList(
                                         GraphqlAPITest::createType,
@@ -223,6 +218,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .build(),
 
                 new TypeTestCase.Builder()
+                        .description("Given existing WIDGET BaseType, Should Delete Type")
                         .operations(
                                 Arrays.asList(
                                         GraphqlAPITest::createType,
@@ -235,6 +231,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given existing FORM BaseType, Should Delete Type")
                         .operations(
                                 Arrays.asList(
                                         GraphqlAPITest::createType,
@@ -247,6 +244,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given existing FILEASSET BaseType, Should Delete Type")
                         .operations(
                                 Arrays.asList(
                                         GraphqlAPITest::createType,
@@ -259,6 +257,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given existing HTMLPAGE BaseType, Should Delete Type")
                         .operations(
                                 Arrays.asList(
                                         GraphqlAPITest::createType,
@@ -271,6 +270,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given existing PERSONA BaseType, Should Delete Type")
                         .operations(
                                 Arrays.asList(
                                         GraphqlAPITest::createType,
@@ -283,6 +283,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given existing VANITY_URL BaseType, Should Delete Type")
                         .operations(
                                 Arrays.asList(
                                         GraphqlAPITest::createType,
@@ -295,6 +296,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
+                        .description("Given existing KEY_VALUE BaseType, Should Delete Type")
                         .operations(
                                 Arrays.asList(
                                         GraphqlAPITest::createType,
@@ -482,21 +484,17 @@ public class GraphqlAPITest extends IntegrationTestBase {
     public void testGetSchema_ContentTypeOperations(final TypeTestCase testCase)
             throws DotDataException, DotSecurityException {
 
-        ContentType contentType = null;
-
         // contentType gets assigned to the return of the last operation
         for (BiFunction<String, BaseContentType, ContentType> operation : testCase
                 .getOperations()) {
-            contentType = operation.apply(testCase.getContentTypeName(), testCase.getBaseType());
+            operation.apply(testCase.getContentTypeName(), testCase.getBaseType());
         }
-
-        final String contentTypeVar = contentType != null ? contentType.variable() : null;
 
         final GraphqlAPI api = APILocator.getGraphqlAPI();
         final GraphQLSchema schema = api.getSchema();
 
         final TypeTestCase.AssertionParams assertionParams =
-                new TypeTestCase.AssertionParams(schema, contentTypeVar, testCase.expectedGraphQLInterfaceToInherit);
+                new TypeTestCase.AssertionParams(schema, testCase.getContentTypeName(), testCase.expectedGraphQLInterfaceToInherit);
 
         testCase.assertions.forEach((assertion) -> assertion.accept(assertionParams));
 
@@ -519,7 +517,8 @@ public class GraphqlAPITest extends IntegrationTestBase {
         final GraphQLFieldDefinition fieldDefinition =
                 schema.getObjectType(testCase.contentTypeName).getFieldDefinition(testCase.fieldVarName);
 
-        GraphQLOutputType expectedType = api.getGraphqlTypeForFieldClass(
+        GraphQLOutputType expectedType = ContentAPIGraphQLTypesProvider.INSTANCE
+                .getGraphqlTypeForFieldClass(
                 (Class<? extends Field>) testCase.fieldType.getSuperclass(), field);
 
         final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
@@ -644,40 +643,33 @@ public class GraphqlAPITest extends IntegrationTestBase {
 
     }
 
-    @DataProvider
-    public static List<Object> dataProviderEEContentTypes() throws Exception {
-        // data provider needs stuff to get initialized because of API access
-        IntegrationTestInitService.getInstance().init();
+    @Test
+    public void testGetSchema_GivenNoEELicense_EnterpriseTypesShouldNotBeAvailableInSchema() throws Exception{
 
         // filter only Enterprise content types
-        final List<ContentType> eeTypes = APILocator
+        List<ContentType> eeTypes = APILocator
                 .getContentTypeAPI(APILocator.systemUser()).findAll().stream()
                 .filter((type)->type instanceof EnterpriseType).collect(Collectors.toList());
 
-        // returns a List of Tuple (typeName, baseType)
-        return eeTypes.stream().map((type)->
-                new Tuple2<>("my"+type.variable(), type.baseType())
-        ).collect(Collectors.toList());
-    }
+        List<Tuple2<String, BaseContentType>> eeTypesList = eeTypes.stream().map((type)->
+                        new Tuple2<>("my"+type.variable(), type.baseType())).collect(Collectors.toList());
 
-    @Test
-    @UseDataProvider("dataProviderEEContentTypes")
-    public void testGetSchema_GivenNoEELicense_EnterpriseTypesShouldNotBeAvailableInSchema(
-            final Tuple2<String, BaseContentType> testCase) throws Exception{
-        ContentType customType = null;
+        for (Tuple2<String, BaseContentType> testCase : eeTypesList) {
+            ContentType customType = null;
 
-        try {
-            // create custom persona type. 1=typeName, 2=BaseType
-            customType = createType(testCase._1,
-                    testCase._2);
+            try {
+                // create custom persona type. 1=typeName, 2=BaseType
+                customType = createType(testCase._1,
+                        testCase._2);
 
-            runNoLicense(() -> {
-                final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
-                assertNull(schema.getType(testCase._1));
-            });
-        } finally {
-            if(customType!=null) {
-                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
+                runNoLicense(() -> {
+                    final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+                    assertNull(schema.getType(testCase._1));
+                });
+            } finally {
+                if(customType!=null) {
+                    APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
+                }
             }
         }
     }
@@ -760,6 +752,74 @@ public class GraphqlAPITest extends IntegrationTestBase {
         } finally {
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
         }
+    }
+
+    /**
+     * Method to rest: {@link GraphqlAPI#getSchema()}
+     * Given scenario: A bad relationship field which returns null when trying to get the
+     * {@link com.dotmarketing.portlets.structure.model.Relationship} out of it.
+     * Expected result: The schema should be able to generate but without that field present
+     */
+    @Test
+    public void testGetSchema_GivenFailuresInRelationshipField_SchemaShouldStillGenerate()
+            throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            contentType = new ContentTypeDataGen().nextPersisted();
+
+            Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                    .name("relationshipField")
+                    .contentTypeId(contentType.id())
+                    .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                    .relationType(contentType.variable()).build();
+
+            final Field titleField = new FieldDataGen().contentTypeId(contentType.id())
+                    .type(TextField.class).nextPersisted();
+
+            APILocator.getGraphqlAPI().invalidateSchema();
+
+            // this mock relationship api will produce errors when generating the rel field
+            setMockRelationshipAPI(relationshipField);
+
+            GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+
+            final GraphQLFieldDefinition relationshipFieldDefinition = schema
+                    .getObjectType(contentType.variable())
+                    .getFieldDefinition(relationshipField.variable());
+
+            final GraphQLFieldDefinition titleFieldDefinition = schema
+                    .getObjectType(contentType.variable())
+                    .getFieldDefinition(titleField.variable());
+
+            assertNull(relationshipFieldDefinition);
+            assertNotNull(titleFieldDefinition);
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+            // restore normal RelationshipAPI for ContentAPIGraphQLTypesProvider
+            ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(
+                    new GraphQLFieldGeneratorFactory());
+        }
+    }
+
+    @NotNull
+    private void setMockRelationshipAPI(Field relationshipField)
+            throws DotDataException, DotSecurityException {
+        RelationshipAPI relationshipAPI = Mockito.mock(RelationshipAPI.class);
+        Mockito.when(relationshipAPI.
+                getRelationshipFromField(relationshipField, APILocator.systemUser()))
+                .thenReturn(null);
+
+        RelationshipFieldGenerator relationshipFieldGenerator =
+                new RelationshipFieldGenerator(relationshipAPI);
+
+        // lets create a mocked FieldGeneratorFactory
+        GraphQLFieldGeneratorFactory fieldGeneratorFactory =
+                Mockito.spy(new GraphQLFieldGeneratorFactory());
+
+        Mockito.doReturn(relationshipFieldGenerator).when(fieldGeneratorFactory)
+                .getGenerator(relationshipField);
+
+        ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(fieldGeneratorFactory);
     }
 
     private boolean areFileassetFieldsPresent(final GraphQLObjectType objectType) {

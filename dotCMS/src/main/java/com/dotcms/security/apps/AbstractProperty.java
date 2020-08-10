@@ -1,19 +1,23 @@
 package com.dotcms.security.apps;
 
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * Duh its a super class that serves as the base form both Params and Secrets.
+ * its a super class that serves as the base form both Params and Secrets.
  * @param <T>
  */
 public abstract class AbstractProperty<T> {
 
     protected final T value;
-    protected final boolean hidden;
+    protected final Boolean hidden;
     protected final Type type;
 
-    AbstractProperty(final T value, final boolean hidden, final Type type) {
+    AbstractProperty(final T value, final Boolean hidden, final Type type) {
         this.value = value;
         this.hidden = hidden;
         this.type = type;
@@ -24,6 +28,10 @@ public abstract class AbstractProperty<T> {
     }
 
     public boolean isHidden() {
+        return UtilMethods.isSet(hidden) ? hidden : false;
+    }
+
+    public Boolean getHidden() {
         return hidden;
     }
 
@@ -44,6 +52,12 @@ public abstract class AbstractProperty<T> {
         return Boolean.parseBoolean(getString());
     }
 
+    @JsonIgnore
+    public List<Map> getList() {
+       final List list = (List)value;
+       return new ArrayList<>(list);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -53,7 +67,7 @@ public abstract class AbstractProperty<T> {
             return false;
         }
         final AbstractProperty<?> that = (AbstractProperty<?>) o;
-        return hidden == that.hidden &&
+        return  Objects.equals(hidden, that.hidden) &&
                 Objects.deepEquals(value, that.value) &&
                 type == that.type;
     }

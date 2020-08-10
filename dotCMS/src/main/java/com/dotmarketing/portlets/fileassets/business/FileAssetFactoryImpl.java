@@ -29,7 +29,7 @@ public class FileAssetFactoryImpl implements FileAssetFactory {
                 "contentlet_version_info.identifier = identifier.id and " +
                 "contentlet_version_info.%s_inode = contentlet.inode and " +
                 "contentlet.structure_inode = structure.inode and " +
-                "structure.structuretype =4;";
+                "structure.structuretype =4";
 
     public FileAssetFactoryImpl() {
         permissionAPI = APILocator.getPermissionAPI();

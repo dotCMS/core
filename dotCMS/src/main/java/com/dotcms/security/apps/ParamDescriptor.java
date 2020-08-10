@@ -1,5 +1,6 @@
 package com.dotcms.security.apps;
 
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -8,40 +9,70 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Class used to collect properties or secrets set from the front-end
  * This is mostly used to pass values from the front-end into the Resource.
  */
-public class ParamDescriptor extends AbstractProperty<String>{
+public final class ParamDescriptor extends AbstractProperty<Object>{
 
     private final String label;
 
     private final String hint;
 
-    private final boolean required;
+    private final Boolean required;
 
-    private ParamDescriptor(final String value, final boolean hidden, final Type type, final String label, final String hint, final boolean required) {
+    /**
+     * Private Constructor
+     * @param value
+     * @param hidden
+     * @param type
+     * @param label
+     * @param hint
+     * @param required
+     */
+    private ParamDescriptor(final Object value, final Boolean hidden, final Type type, final String label, final String hint, final Boolean required) {
         super(value, hidden, type);
         this.label = label;
         this.hint = hint;
         this.required = required;
     }
 
+    /**
+     * Label getter
+     * @return
+     */
     public String getLabel() {
         return label;
     }
 
+    /**
+     * Hint getter
+     * @return
+     */
     public String getHint() {
         return hint;
     }
 
+    /**
+     * required getter
+     * @return
+     */
     public boolean isRequired() {
+        return UtilMethods.isSet(required) ? required : false ;
+    }
+
+    /**
+     * required getter
+     * @return
+     */
+    public Boolean getRequired() {
         return required;
     }
 
     @JsonCreator
-    public static ParamDescriptor newParam(@JsonProperty("value") final String value,
-            @JsonProperty("hidden") final boolean hidden,
+    public static ParamDescriptor newParam(
+            @JsonProperty("value") final Object value,
+            @JsonProperty("hidden") final Boolean hidden,
             @JsonProperty("type") final Type type,
             @JsonProperty("label") final String label,
             @JsonProperty("hint") final String hint,
-            @JsonProperty("required") final boolean required) {
+            @JsonProperty("required") final Boolean required) {
         return new ParamDescriptor(value, hidden, type, label, hint, required);
     }
 
