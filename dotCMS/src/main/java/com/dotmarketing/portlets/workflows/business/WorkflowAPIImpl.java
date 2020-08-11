@@ -2035,7 +2035,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					List<WorkFlowActionlet> actionletList = new ArrayList<WorkFlowActionlet>();
 
 					// get the dotmarketing-config.properties actionlet classes
-					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES);
+					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES, "");
 
 					StringTokenizer st = new StringTokenizer(customActionlets, ",");
 					while (st.hasMoreTokens()) {
