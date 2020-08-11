@@ -9,10 +9,9 @@
 
     textarea {
         font-family: $code-text;
-        font-size: $font-size-medium;
         height: 36px;
         max-height: 300px;
-        overflow: auto!important;
+        overflow: auto !important;
     }
 }
 
@@ -25,7 +24,13 @@
 
     input,
     textarea {
+        font-size: $font-size-large;
         width: 100%;
+    }
+
+    .form__label {
+        font-size: $font-size-medium;
+        font-weight: $font-weight-semi-bold;
     }
 
     dot-icon {
@@ -34,17 +39,24 @@
         vertical-align: middle;
     }
 
-    ::ng-deep p-dropdown .ui-dropdown {
-        min-width: 200px;
-    }
+    ::ng-deep {
+        p-dropdown .ui-dropdown {
+            min-width: 200px;
+            margin-bottom: $basic-padding;
+        }
 
-    ::ng-deep p-checkbox.required label:before,
-    label.required:before {
-        color: $red;
-        content: "* ";
-    }
+        p-checkbox label {
+            font-size: $font-size-large;
+        }
 
-    ::ng-deep ngx-md p {
-        margin: 0;
+        p-checkbox.required label:before,
+        label.required:before {
+            color: $red;
+            content: "* ";
+        }
+
+        ngx-md p {
+            margin: 0;
+        }
     }
 }
