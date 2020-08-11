@@ -6,7 +6,6 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.security.apps.AppSecrets;
-import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -17,12 +16,11 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,14 +39,16 @@ import javax.servlet.http.HttpServletRequest;
 public class GoogleTranslationService extends AbstractTranslationService {
 
     private JSONTool jsonTool;
-    public static final String BASE_URL = "https://www.googleapis.com/language/translate/v2";
+    public static final String BASE_URL = "https://translation.googleapis.com/language/translate/v2";
     private String serviceUrl = Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_BASE_URL",
         BASE_URL);
     private String apiKey;
     private List<ServiceParameter> params;
+    public static final String GOOGLE_TRANSLATE_APP_CONFIG_KEY = "googleTranslate-config";
+    public static final String API_KEY_VAR = "apiKey";
 
     public GoogleTranslationService() {
-        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", ""), new JSONTool(), new ApiProvider());
+        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK), new JSONTool(), new ApiProvider());
     }
 
     public GoogleTranslationService(String apiKey, JSONTool jsonTool, ApiProvider apiProvider) {
@@ -60,12 +60,12 @@ public class GoogleTranslationService extends AbstractTranslationService {
 
     @VisibleForTesting
     protected GoogleTranslationService(JSONTool jsonTool) {
-        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", ""), jsonTool, new ApiProvider());
+        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK), jsonTool, new ApiProvider());
     }
 
     @VisibleForTesting
     protected GoogleTranslationService(ApiProvider apiProvider) {
-        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", ""), new JSONTool(), apiProvider);
+        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK), new JSONTool(), apiProvider);
     }
 
     private static class Holder {
@@ -104,7 +104,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
         
 
         try {
-            Logger.info(this.getClass(), "translating:" + restURL);
+            Logger.debug(this.getClass(), "translating:" + restURL + "params: " + params.toString());
             JSONObject json = (JSONObject) jsonTool.post(restURL.toString(), 15000,ImmutableMap.of(), new JSONObject(params).toString());
 
             json = json.getJSONObject("data");
@@ -141,26 +141,24 @@ public class GoogleTranslationService extends AbstractTranslationService {
 
     private String getFallbackApiKey (final Optional<String> hostIdOpt) {
 
-        final String appsTranslationKey    = Config.getStringProperty("apps_translation_key", "app-translation");
-        final String appsTranslationApiKey = Config.getStringProperty("apps_translation_apikey", "apiKey");
-
-        Optional<AppSecrets> appSecretsOpt = Optional.empty();
+        AppSecrets appSecrets = null;
         try {
-            appSecretsOpt = APILocator.getAppsAPI().getSecrets
-                    (appsTranslationKey, true, this.resolveHost(hostIdOpt), APILocator.systemUser());
+            appSecrets = APILocator.getAppsAPI().getSecrets
+                    (GOOGLE_TRANSLATE_APP_CONFIG_KEY, true, this.resolveHost(hostIdOpt), APILocator.systemUser()).get();
+
+            return appSecrets.getSecrets().containsKey(API_KEY_VAR) ?
+                    appSecrets.getSecrets().get(API_KEY_VAR).getString() :
+                    Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK);
+
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage());
-        }
-
-        if (appSecretsOpt.isPresent()) {
-
-            final Secret secret = appSecretsOpt.get().getSecrets().get(appsTranslationApiKey);
-            if (null != secret) {
-                return secret.getString();
+            return Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK);
+        } finally {
+            if(UtilMethods.isSet(appSecrets)){
+                appSecrets.destroy();
             }
         }
 
-        return Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK);
     }
 
     private Host resolveHost (final Optional<String> hostIdOpt) {
