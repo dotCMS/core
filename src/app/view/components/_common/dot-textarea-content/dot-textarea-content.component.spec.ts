@@ -5,9 +5,9 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { SelectButtonModule, InputTextareaModule } from 'primeng/primeng';
 
 import { DotTextareaContentComponent } from './dot-textarea-content.component';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { AceEditorModule } from 'ng2-ace-editor';
 import { TinymceModule } from 'angular2-tinymce';
+import { FormsModule } from '@angular/forms';
 
 function cleanOptionText(option) {
     return option.replace(/\r?\n|\r/g, '');
@@ -19,15 +19,16 @@ describe('DotTextareaContentComponent', () => {
     let de: DebugElement;
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotTextareaContentComponent],
             imports: [
                 AceEditorModule,
                 SelectButtonModule,
                 InputTextareaModule,
-                TinymceModule.withConfig({})
+                TinymceModule.withConfig({}),
+                FormsModule
             ]
-        });
+        }).compileComponents();
 
         fixture = TestBed.createComponent(DotTextareaContentComponent);
         component = fixture.componentInstance;

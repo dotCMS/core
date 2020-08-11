@@ -1,9 +1,9 @@
 import { StringPixels } from './string-pixels-util';
-import { DOTTestBed } from '../../test/dot-test-bed';
+import { TestBed } from '@angular/core/testing';
 
 describe('StringPixelsUtil', () => {
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [StringPixels]
         });
     });

@@ -1,8 +1,7 @@
 import { Observable, of, throwError } from 'rxjs';
-import { async } from '@angular/core/testing';
+import { async, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotGravatarService } from './dot-gravatar-service';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { Jsonp } from '@angular/http';
 
 const mockProfile = {
@@ -38,7 +37,7 @@ describe('DotGravatarService', () => {
     let mockJsonp: Jsonp;
 
     beforeEach(async(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        const testbed = TestBed.configureTestingModule({
             providers: [
                 DotGravatarService,
                 { provide: Jsonp, useClass: MockJsonp },

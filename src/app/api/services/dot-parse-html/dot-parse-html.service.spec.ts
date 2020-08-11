@@ -1,5 +1,4 @@
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
@@ -15,7 +14,7 @@ describe('DotParseHtmlService', () => {
     const target = document.createElement('div');
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             imports: [],
             declarations: [TestHostComponent],
             providers: [DotParseHtmlService]

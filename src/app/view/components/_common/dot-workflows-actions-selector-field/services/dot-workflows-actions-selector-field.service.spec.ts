@@ -38,7 +38,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
                     }
                 }
             ]
-        })
+        }).compileComponents()
     );
 
     beforeEach(() => {

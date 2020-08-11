@@ -1,7 +1,6 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
 import { INotification } from '@shared/models/notifications';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -11,6 +10,8 @@ import { NotificationsService } from '@services/notifications-service';
 import { Observable, Subject } from 'rxjs';
 import { of as observableOf } from 'rxjs';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
     selector: 'dot-dropdown-component',
@@ -85,12 +86,13 @@ describe('DotToolbarNotificationsComponent', () => {
     });
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [
                 DotToolbarNotificationsComponent,
                 MockDotDropDownComponent,
                 MockDotNotificationsListComponent
             ],
+            imports: [DotPipesModule, ButtonModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock},
                 { provide: IframeOverlayService, useClass: MockIframeOverlayService },
@@ -98,9 +100,9 @@ describe('DotToolbarNotificationsComponent', () => {
                 { provide: LoginService, useClass: MockLoginService },
                 { provide: NotificationsService, useClass: MockNotificationsService },
             ]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotToolbarNotificationsComponent);
+        fixture = TestBed.createComponent(DotToolbarNotificationsComponent);
     }));
 
     it(`should has a badge`, () => {

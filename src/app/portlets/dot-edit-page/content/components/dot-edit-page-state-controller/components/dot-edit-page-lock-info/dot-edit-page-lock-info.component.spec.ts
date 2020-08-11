@@ -1,8 +1,7 @@
-import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { async, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
 import { mockUser } from '@tests/login-service.mock';
 
@@ -10,6 +9,7 @@ import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.componen
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.toolbar.page.cant.edit': 'No permissions...',
@@ -22,7 +22,8 @@ describe('DotEditPageLockInfoComponent', () => {
     let de: DebugElement;
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
+            imports: [DotPipesModule],
             declarations: [DotEditPageLockInfoComponent],
             providers: [
                 {
@@ -34,7 +35,7 @@ describe('DotEditPageLockInfoComponent', () => {
     }));
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotEditPageLockInfoComponent);
+        fixture = TestBed.createComponent(DotEditPageLockInfoComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
     });

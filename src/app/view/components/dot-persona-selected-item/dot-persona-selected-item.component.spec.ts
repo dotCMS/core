@@ -1,7 +1,6 @@
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
 import { DebugElement } from '@angular/core';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
@@ -12,6 +11,7 @@ import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({
     'modes.persona.selector.title.preview': 'Previewing As',
@@ -26,7 +26,7 @@ describe('DotPersonaSelectedItemComponent', () => {
     let de: DebugElement;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotPersonaSelectedItemComponent],
             providers: [
                 {
@@ -38,10 +38,10 @@ describe('DotPersonaSelectedItemComponent', () => {
                     useValue: messageServiceMock
                 }
             ],
-            imports: [BrowserAnimationsModule, DotIconModule, DotAvatarModule, TooltipModule]
-        });
+            imports: [BrowserAnimationsModule, DotIconModule, DotAvatarModule, TooltipModule, DotPipesModule]
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotPersonaSelectedItemComponent);
+        fixture = TestBed.createComponent(DotPersonaSelectedItemComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
         component.persona = mockDotPersona;

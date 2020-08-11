@@ -1,7 +1,6 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { CommonModule } from '@angular/common';
 import { By } from '@angular/platform-browser';
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
@@ -11,6 +10,7 @@ import { NgxMdModule } from 'ngx-md';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DebugElement } from '@angular/core';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const messages = {
     'apps.configurations': 'Configurations',
@@ -43,12 +43,13 @@ describe('DotAppsConfigurationHeaderComponent', () => {
 
     beforeEach(
         async(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 imports: [
                     CommonModule,
                     DotAvatarModule,
                     DotCopyButtonModule,
-                    NgxMdModule
+                    NgxMdModule,
+                    DotPipesModule
                 ],
                 declarations: [DotAppsConfigurationHeaderComponent],
                 providers: [
@@ -58,12 +59,12 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                         useClass: MockDotRouterService
                     }
                 ]
-            });
+            }).compileComponents();
         })
     );
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotAppsConfigurationHeaderComponent);
+        fixture = TestBed.createComponent(DotAppsConfigurationHeaderComponent);
         de = fixture.debugElement;
         component = fixture.debugElement.componentInstance;
         routerService = fixture.debugElement.injector.get(DotRouterService);

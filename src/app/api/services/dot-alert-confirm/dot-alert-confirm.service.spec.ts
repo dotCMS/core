@@ -3,10 +3,9 @@ import { DotAlertConfirm } from '@models/dot-alert-confirm/dot-alert-confirm.mod
 import { ConfirmationService } from 'primeng/primeng';
 import { LoginService } from 'dotcms-js';
 import { DotAlertConfirmService } from './dot-alert-confirm.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
-import { fakeAsync, tick } from '@angular/core/testing';
+import { fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { DotMessageService } from '../dot-message/dot-messages.service';
 import { take } from 'rxjs/operators';
 
@@ -21,7 +20,7 @@ describe('DotDialogService', () => {
     let confirmationService: ConfirmationService;
 
     beforeEach(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        const testbed = TestBed.configureTestingModule({
             providers: [
                 DotAlertConfirmService,
                 ConfirmationService,

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DotMessageDisplayComponent } from './dot-message-display.component';
 import { ComponentFixture, async, TestBed } from '@angular/core/testing';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { By } from '@angular/platform-browser';
@@ -33,7 +32,7 @@ describe('DotMessageDisplayComponent', () => {
 
     beforeEach(
         async(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 imports: [ToastModule, DotIconModule, DotIconButtonModule, BrowserAnimationsModule],
                 declarations: [DotMessageDisplayComponent],
                 providers: [

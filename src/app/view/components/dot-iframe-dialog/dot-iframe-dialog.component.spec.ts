@@ -78,7 +78,7 @@ describe('DotIframeDialogComponent', () => {
         let hostFixture: ComponentFixture<TestHostComponent>;
 
         beforeEach(async(() => {
-            DOTTestBed.configureTestingModule(getTestConfig(TestHostComponent)).compileComponents();
+            DOTTestBed.configureTestingModule(getTestConfig(TestHostComponent));
         }));
 
         beforeEach(() => {
@@ -231,7 +231,7 @@ describe('DotIframeDialogComponent', () => {
         beforeEach(async(() => {
             DOTTestBed.configureTestingModule(
                 getTestConfig(TestHost2Component)
-            ).compileComponents();
+            );
         }));
 
         beforeEach(() => {

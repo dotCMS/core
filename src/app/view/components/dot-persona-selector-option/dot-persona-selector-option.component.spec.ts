@@ -1,13 +1,14 @@
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { By } from '@angular/platform-browser';
 import { mockDotPersona } from '@tests/dot-persona.mock';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { ButtonModule } from 'primeng/button';
 
 describe('DotPersonaSelectorOptionComponent', () => {
     let component: DotPersonaSelectorOptionComponent;
@@ -18,18 +19,18 @@ describe('DotPersonaSelectorOptionComponent', () => {
     });
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotPersonaSelectorOptionComponent],
-            imports: [BrowserAnimationsModule, DotAvatarModule],
+            imports: [BrowserAnimationsModule, DotAvatarModule, DotPipesModule, ButtonModule],
             providers: [
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 }
             ]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotPersonaSelectorOptionComponent);
+        fixture = TestBed.createComponent(DotPersonaSelectorOptionComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
         component.persona = mockDotPersona;

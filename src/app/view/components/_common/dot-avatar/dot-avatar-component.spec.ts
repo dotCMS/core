@@ -1,6 +1,5 @@
 import { DebugElement } from '@angular/core/src/debug/debug_node';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { async, ComponentFixture } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DotAvatarComponent } from './dot-avatar.component';
 import { CommonModule } from '@angular/common';
@@ -32,12 +31,12 @@ describe('DotAvatarComponent', () => {
     let de: DebugElement;
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [HostTestComponent, DotAvatarComponent],
             imports: [CommonModule]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(HostTestComponent);
+        fixture = TestBed.createComponent(HostTestComponent);
         de = fixture.debugElement;
         component = fixture.debugElement.query(By.css('dot-avatar')).componentInstance;
     }));

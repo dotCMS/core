@@ -30,7 +30,7 @@ describe('Directive: DotAutofocus', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotAutofocusDirective]
-        });
+        }).compileComponents();
         fixture = TestBed.createComponent(TestHostComponent);
         component = fixture.componentInstance;
     });

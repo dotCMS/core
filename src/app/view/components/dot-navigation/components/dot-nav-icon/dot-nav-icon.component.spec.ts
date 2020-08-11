@@ -1,7 +1,6 @@
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotNavIconComponent } from './dot-nav-icon.component';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotIconModule } from '../../../_common/dot-icon/dot-icon.module';
 import { DotIconComponent } from '../../../_common/dot-icon/dot-icon.component';
 import { By } from '@angular/platform-browser';
@@ -12,12 +11,12 @@ describe('DotNavIconComponent', () => {
     let de: DebugElement;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotNavIconComponent],
             imports: [DotIconModule]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotNavIconComponent);
+        fixture = TestBed.createComponent(DotNavIconComponent);
         de = fixture.debugElement;
         comp = fixture.componentInstance;
     });

@@ -8,8 +8,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/primeng';
-import { async, ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { mockDotRenderedPage } from '../../../../test/dot-page-render.mock';
 import { mockUser } from './../../../../test/login-service.mock';
 import { Injectable, Component, Input } from '@angular/core';
@@ -17,6 +16,7 @@ import { ActivatedRoute } from '@angular/router';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -60,8 +60,8 @@ describe('DotEditPageNavComponent', () => {
     });
 
     beforeEach(async(() => {
-        testbed = DOTTestBed.configureTestingModule({
-            imports: [RouterTestingModule, TooltipModule, DotIconModule],
+        testbed = TestBed.configureTestingModule({
+            imports: [RouterTestingModule, TooltipModule, DotIconModule, DotPipesModule],
             declarations: [DotEditPageNavComponent, TestHostComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

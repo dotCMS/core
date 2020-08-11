@@ -50,7 +50,7 @@ describe('DotKeyValueTableInputRowComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotMessageDisplayService
             ]
-        }).compileComponents();
+        });
 
         hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
         hostComponent = hostComponentfixture.componentInstance;

@@ -41,7 +41,7 @@ describe('DotEditContentletComponent', () => {
                 }
             ],
             imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
-        }).compileComponents();
+        });
     }));
 
     beforeEach(() => {

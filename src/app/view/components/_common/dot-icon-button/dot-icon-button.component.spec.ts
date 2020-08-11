@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotIconModule } from '../dot-icon/dot-icon.module';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotIconButtonComponent } from './dot-icon-button.component';
 import { By } from '@angular/platform-browser';
 
@@ -9,10 +8,10 @@ describe('DotIconButtonComponent', () => {
     let fixture: ComponentFixture<DotIconButtonComponent>;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotIconButtonComponent],
             imports: [DotIconModule]
-        });
+        }).compileComponents();
 
         fixture = TestBed.createComponent(DotIconButtonComponent);
         comp = fixture.componentInstance;

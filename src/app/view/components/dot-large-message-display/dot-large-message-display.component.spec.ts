@@ -1,7 +1,6 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { By } from '@angular/platform-browser';
 import { DotcmsEventsService } from 'dotcms-js';
@@ -24,7 +23,7 @@ describe('DotLargeMessageDisplayComponent', () => {
     let dotcmsEventsServiceMock;
 
     beforeEach(async(() =>
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             imports: [DotDialogModule],
             declarations: [DotLargeMessageDisplayComponent, TestHostComponent],
             providers: [

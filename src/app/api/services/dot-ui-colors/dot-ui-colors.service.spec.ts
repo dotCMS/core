@@ -1,5 +1,5 @@
 import { DotUiColorsService } from './dot-ui-colors.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { TestBed } from '@angular/core/testing';
 
 describe('DotUiColorsService', () => {
     let service: DotUiColorsService;
@@ -7,7 +7,7 @@ describe('DotUiColorsService', () => {
     let setPropertySpy;
 
     beforeEach(() => {
-        injector = DOTTestBed.configureTestingModule({
+        injector = TestBed.configureTestingModule({
             providers: [DotUiColorsService]
         });
 

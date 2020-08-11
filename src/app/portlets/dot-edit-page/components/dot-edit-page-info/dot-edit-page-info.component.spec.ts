@@ -1,10 +1,9 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
 import { SiteService } from 'dotcms-js';
 
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { SiteServiceMock } from '@tests/site-service.mock';
 import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
@@ -16,6 +15,7 @@ import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { LOCATION_TOKEN } from 'src/app/providers';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.message.pageurl.copy.clipboard': 'Copy url page'
@@ -29,9 +29,9 @@ describe('DotEditPageInfoComponent', () => {
 
     beforeEach(
         async(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 declarations: [DotEditPageInfoComponent],
-                imports: [DotApiLinkModule, DotCopyButtonModule],
+                imports: [DotApiLinkModule, DotCopyButtonModule, DotPipesModule],
                 providers: [
                     {
                         provide: DotMessageService,
@@ -54,7 +54,7 @@ describe('DotEditPageInfoComponent', () => {
     );
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotEditPageInfoComponent);
+        fixture = TestBed.createComponent(DotEditPageInfoComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
         siteService = de.injector.get(SiteService);

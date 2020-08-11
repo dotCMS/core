@@ -1,6 +1,5 @@
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -88,7 +87,7 @@ describe('DotNavigationComponent', () => {
     let dotNavigationService;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotNavigationComponent, DotSubNavComponent, DotNavItemComponent],
             imports: [
                 DotNavIconModule,
@@ -109,11 +108,10 @@ describe('DotNavigationComponent', () => {
                     useClass: LoginServiceMock
                 }
             ]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotNavigationComponent);
+        fixture = TestBed.createComponent(DotNavigationComponent);
         de = fixture.debugElement;
-        fixture.componentRef;
 
         dotNavigationService = de.injector.get(DotNavigationService);
 

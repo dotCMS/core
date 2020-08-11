@@ -1,13 +1,13 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { DotAppsCardComponent } from './dot-apps-card.component';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { CardModule, TooltipModule } from 'primeng/primeng';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { NgxMdModule } from 'ngx-md';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 describe('DotAppsCardComponent', () => {
     let component: DotAppsCardComponent;
@@ -20,15 +20,15 @@ describe('DotAppsCardComponent', () => {
     });
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            imports: [CardModule, DotAvatarModule, DotIconModule, NgxMdModule, TooltipModule],
+        TestBed.configureTestingModule({
+            imports: [CardModule, DotAvatarModule, DotIconModule, NgxMdModule, TooltipModule, DotPipesModule],
             declarations: [DotAppsCardComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+        }).compileComponents();
     }));
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotAppsCardComponent);
+        fixture = TestBed.createComponent(DotAppsCardComponent);
         component = fixture.debugElement.componentInstance;
     });
 

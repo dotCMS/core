@@ -57,7 +57,7 @@ describe('DotFormBuilderComponent', () => {
                     PushPublishService,
                     DotPushPublishDialogService
                 ]
-            }).compileComponents();
+            });
         })
     );
 

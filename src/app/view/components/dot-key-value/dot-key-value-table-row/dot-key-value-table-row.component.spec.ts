@@ -105,7 +105,7 @@ describe('DotKeyValueTableRowComponent', () => {
             ],
             imports: [DotIconButtonModule, InputSwitchModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
+        });
 
         hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
         hostComponent = hostComponentfixture.componentInstance;

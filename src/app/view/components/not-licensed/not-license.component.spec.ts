@@ -42,7 +42,7 @@ describe('NotLicensedComponent', () => {
                 },
                 DotLicenseService
             ]
-        }).compileComponents();
+        });
 
         fixture = DOTTestBed.createComponent(NotLicensedComponent);
         de = fixture.debugElement;

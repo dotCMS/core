@@ -1,16 +1,16 @@
 import { DotLoginPageStateService, LOGIN_LABELS } from './dot-login-page-state.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { LoginService } from 'dotcms-js';
 import { LoginServiceMock, mockLoginFormResponse } from '@tests/login-service.mock';
 import { of } from 'rxjs';
 import { DotLoginInformation } from '@models/dot-login';
+import { TestBed } from '@angular/core/testing';
 
 describe('DotLoginPageStateServiceService', () => {
     let dotloginPageStateService: DotLoginPageStateService;
     let loginService: LoginService;
 
     beforeEach(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        const testbed = TestBed.configureTestingModule({
             providers: [
                 DotLoginPageStateService,
                 { provide: LoginService, useClass: LoginServiceMock }

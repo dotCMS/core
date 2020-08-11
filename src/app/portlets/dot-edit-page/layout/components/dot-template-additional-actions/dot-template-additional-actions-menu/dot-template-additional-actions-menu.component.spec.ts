@@ -1,5 +1,4 @@
-import { ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '../../../../../../test/dot-test-bed';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, Input } from '@angular/core';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -30,12 +29,12 @@ describe('DotLegacyAdditionalActionsMenuComponent', () => {
             'template.action.additional.properties': 'properties'
         });
 
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotTemplateAdditionalActionsMenuComponent, MockPrimeNGMenuComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotTemplateAdditionalActionsMenuComponent);
+        fixture = TestBed.createComponent(DotTemplateAdditionalActionsMenuComponent);
         component = fixture.componentInstance;
         component.inode = '1';
     });

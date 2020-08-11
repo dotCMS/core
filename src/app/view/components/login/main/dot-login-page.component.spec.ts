@@ -1,6 +1,5 @@
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
-import { ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { mockLoginFormResponse } from '@tests/login-service.mock';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +20,7 @@ describe('DotLoginPageComponent', () => {
     let fixture: ComponentFixture<DotLoginPageComponent>;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotLoginPageComponent],
             imports: [
                 BrowserAnimationsModule,
@@ -37,9 +36,9 @@ describe('DotLoginPageComponent', () => {
                     useClass: MockLoginPageStateService
                 }
             ]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotLoginPageComponent);
+        fixture = TestBed.createComponent(DotLoginPageComponent);
         fixture.detectChanges();
     });
 

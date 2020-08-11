@@ -33,7 +33,7 @@ describe('DotCreateContentletComponent', () => {
                 }
             ],
             imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
-        }).compileComponents();
+        });
     }));
 
     beforeEach(() => {

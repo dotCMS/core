@@ -1,12 +1,12 @@
 import { HintPropertyComponent } from './index';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup, FormControl } from '@angular/forms';
+import { FormGroup, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 describe('HintPropertyComponent', () => {
     let comp: HintPropertyComponent;
@@ -16,13 +16,13 @@ describe('HintPropertyComponent', () => {
     });
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [HintPropertyComponent],
-            imports: [],
+            imports: [ReactiveFormsModule, DotPipesModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(HintPropertyComponent);
+        fixture = TestBed.createComponent(HintPropertyComponent);
         comp = fixture.componentInstance;
     }));
 

@@ -1,9 +1,8 @@
 import { DotRouterService } from './dot-router.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { RouterTestingModule } from '@angular/router/testing';
 import { LoginService } from 'dotcms-js';
 import { Router, ActivatedRoute } from '@angular/router';
-import { async } from '@angular/core/testing';
+import { async, TestBed } from '@angular/core/testing';
 
 class RouterMock {
     url = '/c/test';
@@ -40,7 +39,7 @@ describe('DotRouterService', () => {
     let router: Router;
 
     beforeEach(async(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        const testbed = TestBed.configureTestingModule({
             providers: [
                 DotRouterService,
                 {

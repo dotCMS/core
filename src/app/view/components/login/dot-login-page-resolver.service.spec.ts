@@ -1,9 +1,9 @@
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { Injectable } from '@angular/core';
 import { mockLoginFormResponse } from '@tests/login-service.mock';
 import { of } from 'rxjs';
+import { TestBed } from '@angular/core/testing';
 
 @Injectable()
 export class MockDotLoginPageStateService {
@@ -25,7 +25,7 @@ describe('DotLoginPageResolver', () => {
     let dotLoginPageResolver: DotLoginPageResolver;
 
     beforeEach(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        const testbed = TestBed.configureTestingModule({
             providers: [
                 DotLoginPageResolver,
                 {

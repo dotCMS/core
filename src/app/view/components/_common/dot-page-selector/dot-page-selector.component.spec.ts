@@ -145,7 +145,7 @@ describe('DotPageSelectorComponent', () => {
 
     beforeEach(
         async(() => {
-            DOTTestBed.configureTestingModule(config(FakeFormComponent)).compileComponents();
+            DOTTestBed.configureTestingModule(config(FakeFormComponent));
         })
     );
 

@@ -35,7 +35,7 @@ describe('DotPortletDetailComponent', () => {
                 RouterTestingModule,
                 BrowserAnimationsModule
             ]
-        }).compileComponents();
+        });
     }));
 
     beforeEach(() => {

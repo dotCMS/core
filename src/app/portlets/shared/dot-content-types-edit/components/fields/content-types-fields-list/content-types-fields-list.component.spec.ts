@@ -1,6 +1,5 @@
 import { of } from 'rxjs';
-import { async, ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
 import { By } from '@angular/platform-browser';
@@ -45,7 +44,7 @@ describe('ContentTypesFieldsListComponent', () => {
 
     beforeEach(
         async(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 declarations: [ContentTypesFieldsListComponent],
                 imports: [DragulaModule, DotIconModule],
                 providers: [
@@ -60,9 +59,9 @@ describe('ContentTypesFieldsListComponent', () => {
                         }
                     }
                 ]
-            });
+            }).compileComponents();
 
-            fixture = DOTTestBed.createComponent(ContentTypesFieldsListComponent);
+            fixture = TestBed.createComponent(ContentTypesFieldsListComponent);
             de = fixture.debugElement;
         })
     );

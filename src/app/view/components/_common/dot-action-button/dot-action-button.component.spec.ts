@@ -4,7 +4,6 @@ import { DebugElement } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MenuModule } from 'primeng/primeng';
 import { DotActionButtonComponent } from './dot-action-button.component';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
@@ -14,7 +13,7 @@ describe('ActionButtonComponent', () => {
     let de: DebugElement;
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotActionButtonComponent],
             imports: [
                 BrowserAnimationsModule,
@@ -27,7 +26,7 @@ describe('ActionButtonComponent', () => {
                     }
                 ])
             ]
-        });
+        }).compileComponents();
 
         fixture = TestBed.createComponent(DotActionButtonComponent);
         de = fixture.debugElement;

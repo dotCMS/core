@@ -3,7 +3,6 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement, Input, Component } from '@angular/core';
 
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotWhatsChangedComponent } from './dot-whats-changed.component';
 import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
@@ -34,7 +33,7 @@ describe('DotWhatsChangedComponent', () => {
     let dotIframe: IframeComponent;
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotWhatsChangedComponent, TestDotIframeComponent, TestHostComponent],
             providers: [
                 {
@@ -42,7 +41,7 @@ describe('DotWhatsChangedComponent', () => {
                     useClass: LoginServiceMock
                 }
             ]
-        });
+        }).compileComponents();
     }));
 
     beforeEach(() => {

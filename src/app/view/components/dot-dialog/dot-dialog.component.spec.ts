@@ -1,7 +1,6 @@
 import { DebugElement, Component } from '@angular/core';
-import { async, ComponentFixture } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { DotDialogComponent, DotDialogActions } from './dot-dialog.component';
 import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
@@ -71,7 +70,7 @@ describe('DotDialogComponent', () => {
         let hostFixture: ComponentFixture<TestHostComponent>;
 
         beforeEach(async(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 imports: [DotIconButtonModule, ButtonModule, BrowserAnimationsModule],
                 providers: [],
                 declarations: [DotDialogComponent, TestHostComponent]
@@ -79,7 +78,7 @@ describe('DotDialogComponent', () => {
         }));
 
         beforeEach(() => {
-            hostFixture = DOTTestBed.createComponent(TestHostComponent);
+            hostFixture = TestBed.createComponent(TestHostComponent);
             hostDe = hostFixture.debugElement;
             hostComponent = hostFixture.componentInstance;
         });
@@ -370,7 +369,7 @@ describe('DotDialogComponent', () => {
         let hostFixture: ComponentFixture<TestHost2Component>;
 
         beforeEach(async(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 imports: [DotIconButtonModule, ButtonModule, BrowserAnimationsModule],
                 providers: [],
                 declarations: [DotDialogComponent, TestHost2Component]
@@ -378,7 +377,7 @@ describe('DotDialogComponent', () => {
         }));
 
         beforeEach(() => {
-            hostFixture = DOTTestBed.createComponent(TestHost2Component);
+            hostFixture = TestBed.createComponent(TestHost2Component);
             hostDe = hostFixture.debugElement;
             hostComponent = hostFixture.componentInstance;
             hostComponent.show = true;

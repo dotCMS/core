@@ -1,10 +1,9 @@
 import { DotCMSContentType } from 'dotcms-models';
 import { DotIconButtonTooltipModule } from '../dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { ActionMenuButtonComponent } from './action-menu-button.component';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 import { DotMenuModule } from '../dot-menu/dot-menu.module';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
@@ -15,12 +14,12 @@ describe('ActionMenuButtonComponent', () => {
     let de: DebugElement;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [ActionMenuButtonComponent],
             imports: [DotIconButtonTooltipModule, DotMenuModule]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(ActionMenuButtonComponent);
+        fixture = TestBed.createComponent(ActionMenuButtonComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
     });

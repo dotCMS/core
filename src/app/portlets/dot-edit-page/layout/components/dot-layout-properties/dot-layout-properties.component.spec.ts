@@ -1,4 +1,3 @@
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
@@ -6,7 +5,7 @@ import { OverlayPanelModule, ButtonModule } from 'primeng/primeng';
 import { DotLayoutSidebarModule } from './dot-layout-property-sidebar/dot-layout-property-sidebar.module';
 import { DotLayoutPropertiesItemModule } from './dot-layout-properties-item/dot-layout-properties-item.module';
 import { DotLayoutPropertiesComponent } from './dot-layout-properties.component';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 
 @Component({
@@ -39,7 +38,7 @@ describe('DotLayoutPropertiesComponent', () => {
     });
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotLayoutPropertiesComponent, TestHostComponent],
             imports: [
                 DotLayoutPropertiesItemModule,
@@ -49,9 +48,9 @@ describe('DotLayoutPropertiesComponent', () => {
                 ReactiveFormsModule
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotLayoutPropertiesComponent);
+        fixture = TestBed.createComponent(DotLayoutPropertiesComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
     });

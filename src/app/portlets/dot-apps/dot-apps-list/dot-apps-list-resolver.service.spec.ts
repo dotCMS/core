@@ -1,7 +1,6 @@
 import { of as observableOf } from 'rxjs';
-import { async } from '@angular/core/testing';
+import { async, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
@@ -24,7 +23,7 @@ describe('DotAppsListResolver', () => {
     let dotAppsListResolver: DotAppsListResolver;
 
     beforeEach(async(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        const testbed = TestBed.configureTestingModule({
             providers: [
                 DotAppsListResolver,
                 { provide: DotLicenseService, useClass: DotLicenseServicesMock },

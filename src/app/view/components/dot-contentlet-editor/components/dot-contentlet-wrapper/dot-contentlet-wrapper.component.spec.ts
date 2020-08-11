@@ -56,7 +56,7 @@ describe('DotContentletWrapperComponent', () => {
                 }
             ],
             imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
-        }).compileComponents();
+        });
     }));
 
     beforeEach(() => {

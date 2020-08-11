@@ -1,14 +1,14 @@
 import { ValuesPropertyComponent } from './index';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup, FormControl, NgControl } from '@angular/forms';
+import { FormGroup, FormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -29,13 +29,13 @@ describe('ValuesPropertyComponent', () => {
 
     beforeEach(
         async(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 declarations: [TestFieldValidationMessageComponent, ValuesPropertyComponent],
-                imports: [DotTextareaContentModule, DotFieldHelperModule],
+                imports: [DotTextareaContentModule, DotFieldHelperModule, ReactiveFormsModule, DotPipesModule],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            });
+            }).compileComponents();
 
-            fixture = DOTTestBed.createComponent(ValuesPropertyComponent);
+            fixture = TestBed.createComponent(ValuesPropertyComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
 

@@ -1,13 +1,13 @@
 import { NamePropertyComponent } from './index';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup, FormControl, NgControl } from '@angular/forms';
+import { FormGroup, FormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -30,13 +30,13 @@ describe('NamePropertyComponent', () => {
     });
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
-            imports: [DotCopyButtonModule],
+            imports: [DotCopyButtonModule, ReactiveFormsModule, DotPipesModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(NamePropertyComponent);
+        fixture = TestBed.createComponent(NamePropertyComponent);
         de = fixture.debugElement;
         comp = fixture.componentInstance;
 

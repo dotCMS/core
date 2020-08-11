@@ -1,10 +1,10 @@
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotCrumbtrailService, DotCrumb } from './dot-crumbtrail.service';
 import { Injectable } from '@angular/core';
 import { DotNavigationService } from '../../dot-navigation/services/dot-navigation.service';
 import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { Observable, Subject, of, BehaviorSubject } from 'rxjs';
 import { DotMenu } from '../../../../shared/models/navigation';
+import { TestBed } from '@angular/core/testing';
 
 @Injectable()
 class MockDotNavigationService {
@@ -112,7 +112,7 @@ describe('DotCrumbtrailService', () => {
     let secondCrumb: DotCrumb[];
 
     beforeEach(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        const testbed = TestBed.configureTestingModule({
             providers: [
                 DotCrumbtrailService,
                 {

@@ -81,7 +81,7 @@ describe('MainComponentLegacyComponent', () => {
                     MockDotLargeMessageDisplayComponent,
                     MockDotPushPublishDialogComponent
                 ]
-            }).compileComponents();
+            });
         })
     );
 

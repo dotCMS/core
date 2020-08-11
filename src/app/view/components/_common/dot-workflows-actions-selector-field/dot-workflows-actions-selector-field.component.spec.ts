@@ -83,7 +83,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                 }
             ],
             imports: [DropdownModule]
-        }).compileComponents();
+        });
     }));
 
     beforeEach(() => {

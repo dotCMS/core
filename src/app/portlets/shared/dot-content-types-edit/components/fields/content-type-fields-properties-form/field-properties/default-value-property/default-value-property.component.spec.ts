@@ -1,13 +1,13 @@
 import { DefaultValuePropertyComponent } from './index';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormGroup, FormControl, Validators, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 describe('DefaultValuePropertyComponent', () => {
     let comp: DefaultValuePropertyComponent;
@@ -22,13 +22,13 @@ describe('DefaultValuePropertyComponent', () => {
     });
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DefaultValuePropertyComponent, DotFieldValidationMessageComponent],
-            imports: [],
+            imports: [ReactiveFormsModule, DotPipesModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DefaultValuePropertyComponent);
+        fixture = TestBed.createComponent(DefaultValuePropertyComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
         comp.group = new FormGroup({

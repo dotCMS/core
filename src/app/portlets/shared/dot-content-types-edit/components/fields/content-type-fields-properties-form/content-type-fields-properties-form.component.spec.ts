@@ -7,15 +7,15 @@ import {
     Component
 } from '@angular/core';
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, TestBed } from '@angular/core/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ValidationErrors, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FieldPropertyService } from '../service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotCMSContentTypeField } from 'dotcms-models';
 import { By } from '@angular/platform-browser';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,
@@ -124,13 +124,13 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
     };
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsPropertiesFormComponent,
                 DotHostTesterComponent,
                 TestDynamicFieldPropertyDirective
             ],
-            imports: [],
+            imports: [ReactiveFormsModule, DotPipesModule],
             providers: [
                 FormBuilder,
                 ComponentFactoryResolver,
@@ -138,9 +138,9 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
-        });
+        }).compileComponents();
 
-        hostFixture = DOTTestBed.createComponent(DotHostTesterComponent);
+        hostFixture = TestBed.createComponent(DotHostTesterComponent);
         hostComp = hostFixture.componentInstance;
         de = hostFixture.debugElement;
 

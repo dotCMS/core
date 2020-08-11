@@ -1,7 +1,6 @@
 import { of as observableOf } from 'rxjs';
-import { async } from '@angular/core/testing';
+import { async, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
 class AppsServicesMock {
@@ -20,7 +19,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
 
 
     beforeEach(async(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        const testbed = TestBed.configureTestingModule({
             providers: [
                 DotAppsConfigurationDetailResolver,
                 { provide: DotAppsService, useClass: AppsServicesMock },

@@ -44,7 +44,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
                 }
             ],
             imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
-        }).compileComponents();
+        });
     }));
 
     beforeEach(() => {

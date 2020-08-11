@@ -87,7 +87,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 DotAlertConfirmService
             ],
             imports: [InputSwitchModule, SelectButtonModule, TooltipModule, DotPipesModule]
-        }).compileComponents();
+        });
     }));
 
     beforeEach(() => {

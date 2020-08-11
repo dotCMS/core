@@ -1,10 +1,9 @@
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotFieldHelperComponent } from './dot-field-helper.component';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/primeng';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
@@ -15,12 +14,12 @@ describe('DotFieldHelperComponent', () => {
     let de: DebugElement;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotFieldHelperComponent],
             imports: [BrowserAnimationsModule, DotIconButtonModule, OverlayPanelModule]
-        });
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotFieldHelperComponent);
+        fixture = TestBed.createComponent(DotFieldHelperComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
         component.message = 'Hello World';

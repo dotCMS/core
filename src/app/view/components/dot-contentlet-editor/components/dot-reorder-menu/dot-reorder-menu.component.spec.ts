@@ -34,7 +34,7 @@ describe('DotReorderMenuComponent', () => {
                 }
             ],
             imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
-        }).compileComponents();
+        });
     });
 
     beforeEach(() => {

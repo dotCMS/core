@@ -1,11 +1,11 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotSafeUrlPipe } from '@pipes/dot-safe-url/dot-safe-url.pipe';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { TestBed } from '@angular/core/testing';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
 
 const fakeActivatedRoute = {
     snapshot: {
@@ -31,16 +31,17 @@ describe('DotSafeUrlPipe', () => {
     let dotRouterService: DotRouterService;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 { provide: ActivatedRoute, useValue: fakeActivatedRoute },
                 {
                     provide: DomSanitizer,
                     useValue: fakeDomSanitizer
-                }
+                },
+                { provide: DotRouterService, useClass: MockDotRouterService },
             ],
             imports: [BrowserAnimationsModule]
-        });
+        }).compileComponents();
         dotRouterService = TestBed.get(DotRouterService);
         activatedRoute = TestBed.get(ActivatedRoute);
         domSanitizer = TestBed.get(DomSanitizer);

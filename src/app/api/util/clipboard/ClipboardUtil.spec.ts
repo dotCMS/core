@@ -1,12 +1,12 @@
 import { DotClipboardUtil } from './ClipboardUtil';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { TestBed } from '@angular/core/testing';
 
 describe('DotClipboardUtil', () => {
     let service: DotClipboardUtil;
     let injector;
 
     beforeEach(() => {
-        injector = DOTTestBed.configureTestingModule({
+        injector = TestBed.configureTestingModule({
             providers: [DotClipboardUtil]
         });
 

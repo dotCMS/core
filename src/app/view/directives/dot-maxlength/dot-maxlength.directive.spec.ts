@@ -21,7 +21,7 @@ describe('DotMaxlengthDirective', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotMaxlengthDirective, TestComponent]
-        });
+        }).compileComponents();
 
         fixture = TestBed.createComponent(TestComponent);
         element = fixture.debugElement.query(By.css('div'));

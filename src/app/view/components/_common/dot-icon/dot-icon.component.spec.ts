@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotIconComponent } from './dot-icon.component';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 
 describe('DotIconComponent', () => {
@@ -10,9 +9,9 @@ describe('DotIconComponent', () => {
     let de: DebugElement;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotIconComponent]
-        });
+        }).compileComponents();
 
         fixture = TestBed.createComponent(DotIconComponent);
         de = fixture.debugElement;
