@@ -175,6 +175,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                         if (this.doLogout(response, request, session, identityProviderConfiguration)) {
 
                             Logger.info(this, "SAML Logout DONE!!!");
+                            return Result.SKIP_NO_CHAIN;
                         }
                     }
                 } else {
