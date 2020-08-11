@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -40,9 +41,9 @@ public class GoogleTranslationService extends AbstractTranslationService {
         BASE_URL);
     private String apiKey;
     private List<ServiceParameter> params;
-    private static final String GOOGLE_TRANSLATE_APP_CONFIG_KEY = "googleTranslate-config";
-    private static final String API_KEY_VAR = "apiKey";
-    private static final String GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY = "GOOGLE_TRANSLATE_SERVICE_API_KEY";
+    public static final String GOOGLE_TRANSLATE_APP_CONFIG_KEY = "googleTranslate-config";
+    public static final String API_KEY_VAR = "apiKey";
+    public static final String GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY = "GOOGLE_TRANSLATE_SERVICE_API_KEY";
 
     public GoogleTranslationService() {
         this(Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK), new JSONTool(), new ApiProvider());
@@ -132,7 +133,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
 
         this.apiKey = !Strings.isNullOrEmpty(apiKeyValue)
             ?apiKeyValue
-            :this.getFallbackApiKey(hostId);
+            :this.getFallbackAPIKey(hostId);
     }
 
     /**
@@ -141,27 +142,38 @@ public class GoogleTranslationService extends AbstractTranslationService {
      * @param hostId hostId of the contentlet to translate, to get the configuration from apps, if exists.
      * @return APIKey
      */
-    private String getFallbackApiKey (final String hostId) {
-
-        AppSecrets appSecrets = null;
+    private String getFallbackAPIKey(final String hostId) {
         final Host host = Try.of(() -> APILocator.getHostAPI().find(hostId, APILocator.systemUser(),false)).getOrElse(APILocator.systemHost());
+        Optional<AppSecrets> appSecrets = null;
         try {
             appSecrets = APILocator.getAppsAPI().getSecrets
-                    (GOOGLE_TRANSLATE_APP_CONFIG_KEY, true, host, APILocator.systemUser()).get();
+                    (GOOGLE_TRANSLATE_APP_CONFIG_KEY, true, host, APILocator.systemUser());
 
-            return appSecrets.getSecrets().containsKey(API_KEY_VAR) ?
-                    appSecrets.getSecrets().get(API_KEY_VAR).getString() :
-                    Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK);
+            if(appSecrets.isPresent()) {
+
+                return appSecrets.get().getSecrets().containsKey(API_KEY_VAR) ?
+                        appSecrets.get().getSecrets().get(API_KEY_VAR).getString() :
+                        Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY,
+                                StringPool.BLANK);
+            } else {
+                return Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY,
+                        StringPool.BLANK);
+            }
 
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error getting the API Key from the Apps Service: " + e.getMessage());
             return Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK);
         } finally {
-            if(UtilMethods.isSet(appSecrets)){
-                appSecrets.destroy();
+            if(UtilMethods.isSet(appSecrets) && appSecrets.isPresent()){
+                appSecrets.get().destroy();
             }
         }
 
+    }
+
+    @VisibleForTesting
+    protected String getApiKey() {
+        return apiKey;
     }
 
 }
