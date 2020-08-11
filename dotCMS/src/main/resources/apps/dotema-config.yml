@@ -1,5 +1,5 @@
 name: "EMA APP"
-iconUrl: "/black_18dp.png"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/ema-icon.png"
 allowExtraParameters: false 
 description: "EMA APP"
 params:
@@ -8,5 +8,5 @@ params:
     hidden: false
     type: "STRING"
     label: "Proxy Edit Mode URL"
-    hint: "Your rendering server and endpoint that dotCMS will be proxying the request to, including the port"
+    hint: "Your rendering server and endpoint that dotCMS will be proxying the request to, including the port, e.g. https://myspa.com:3000"
     required: true
