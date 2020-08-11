@@ -28,6 +28,7 @@ import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.TestSamlConfigurationService;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
@@ -304,7 +305,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
-        EMAWebInterceptorTest.class
+        EMAWebInterceptorTest.class,
+        GoogleTranslationServiceIntegrationTest.class
 })
 public class MainSuite {
 
