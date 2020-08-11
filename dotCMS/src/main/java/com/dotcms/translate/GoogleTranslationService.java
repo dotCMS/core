@@ -1,6 +1,5 @@
 package com.dotcms.translate;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.viewtools.JSONTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -10,7 +9,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -26,7 +24,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,7 +31,6 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
 
-import javax.servlet.http.HttpServletRequest;
 
 public class GoogleTranslationService extends AbstractTranslationService {
 
@@ -44,28 +40,29 @@ public class GoogleTranslationService extends AbstractTranslationService {
         BASE_URL);
     private String apiKey;
     private List<ServiceParameter> params;
-    public static final String GOOGLE_TRANSLATE_APP_CONFIG_KEY = "googleTranslate-config";
-    public static final String API_KEY_VAR = "apiKey";
+    private static final String GOOGLE_TRANSLATE_APP_CONFIG_KEY = "googleTranslate-config";
+    private static final String API_KEY_VAR = "apiKey";
+    private static final String GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY = "GOOGLE_TRANSLATE_SERVICE_API_KEY";
 
     public GoogleTranslationService() {
-        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK), new JSONTool(), new ApiProvider());
+        this(Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK), new JSONTool(), new ApiProvider());
     }
 
     public GoogleTranslationService(String apiKey, JSONTool jsonTool, ApiProvider apiProvider) {
         this.apiKey = apiKey;
         this.jsonTool = jsonTool;
         this.apiProvider = apiProvider;
-        this.params = Collections.singletonList(new ServiceParameter("apiKey", "Service API Key", apiKey));
+        this.params = Collections.singletonList(new ServiceParameter(API_KEY_VAR, "Service API Key", apiKey));
     }
 
     @VisibleForTesting
     protected GoogleTranslationService(JSONTool jsonTool) {
-        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK), jsonTool, new ApiProvider());
+        this(Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK), jsonTool, new ApiProvider());
     }
 
     @VisibleForTesting
     protected GoogleTranslationService(ApiProvider apiProvider) {
-        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK), new JSONTool(), apiProvider);
+        this(Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK), new JSONTool(), apiProvider);
     }
 
     private static class Holder {
@@ -127,58 +124,44 @@ public class GoogleTranslationService extends AbstractTranslationService {
     }
 
     @Override
-    public void setServiceParameters(final List<ServiceParameter> params, final Optional<String> hostOpt) {
+    public void setServiceParameters(final List<ServiceParameter> params, final String hostId) {
         this.params = params;
         Map<String, ServiceParameter> paramsMap = params.stream().collect(
             Collectors.toMap(ServiceParameter::getKey, Function.identity()));
-        String apiKeyValue = paramsMap.get("apiKey").getValue();
+        String apiKeyValue = paramsMap.get(API_KEY_VAR).getValue();
 
         this.apiKey = !Strings.isNullOrEmpty(apiKeyValue)
             ?apiKeyValue
-            :this.getFallbackApiKey(hostOpt);
+            :this.getFallbackApiKey(hostId);
     }
 
-
-    private String getFallbackApiKey (final Optional<String> hostIdOpt) {
+    /**
+     * Get the API Key from the APPS if is set, if not set fallback to the dotmarketing-config.properties
+     *
+     * @param hostId hostId of the contentlet to translate, to get the configuration from apps, if exists.
+     * @return APIKey
+     */
+    private String getFallbackApiKey (final String hostId) {
 
         AppSecrets appSecrets = null;
+        final Host host = Try.of(() -> APILocator.getHostAPI().find(hostId, APILocator.systemUser(),false)).getOrElse(APILocator.systemHost());
         try {
             appSecrets = APILocator.getAppsAPI().getSecrets
-                    (GOOGLE_TRANSLATE_APP_CONFIG_KEY, true, this.resolveHost(hostIdOpt), APILocator.systemUser()).get();
+                    (GOOGLE_TRANSLATE_APP_CONFIG_KEY, true, host, APILocator.systemUser()).get();
 
             return appSecrets.getSecrets().containsKey(API_KEY_VAR) ?
                     appSecrets.getSecrets().get(API_KEY_VAR).getString() :
-                    Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK);
+                    Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK);
 
         } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, e.getMessage());
-            return Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK);
+            Logger.error(this, "Error getting the API Key from the Apps Service: " + e.getMessage());
+            return Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK);
         } finally {
             if(UtilMethods.isSet(appSecrets)){
                 appSecrets.destroy();
             }
         }
 
-    }
-
-    private Host resolveHost (final Optional<String> hostIdOpt) {
-
-        Host host = hostIdOpt.isPresent()?
-                Try.of(() -> APILocator.getHostAPI().find(hostIdOpt.get(), APILocator.systemUser(),false)).getOrNull():null;
-
-        if (null == host) {
-
-            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            if (null != request) {
-                host = Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request)).getOrNull();
-            }
-
-            if (null == host) {
-                host = Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)).getOrNull();
-            }
-        }
-
-        return null == host? APILocator.systemHost(): host;
     }
 
 }
