@@ -70,6 +70,7 @@ export const getEditPageCss = (timestampId: string): string => {
     }
 
     ${timestampId} [data-dot-object="edit-content"]:hover {
+        background-color: rgba(68, 68, 68, 0.1) !important;
         opacity: 1 !important;
     }
 
