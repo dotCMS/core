@@ -2,12 +2,11 @@ package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
-import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.JsonMapper;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -50,7 +49,7 @@ public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
 
             final Template template = getTemplate(templateId, mode);
 
-            return asMap(template);
+            return asMap(template, user);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;
@@ -75,14 +74,25 @@ public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
         }
     }
 
-    private Map<Object, Object> asMap(final Object object)  {
+    private Map<Object, Object> asMap(final Template template, final User user)  {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
 
         try {
-            final String json = objectWriter.writeValueAsString(object);
+            final String json = objectWriter.writeValueAsString(template);
             final Map map = JsonMapper.mapper.readValue(new CharArrayReader(json.toCharArray()), Map.class);
 
             map.values().removeIf(Objects::isNull);
+
+            boolean canEditTemplate = false;
+            try {
+                canEditTemplate = APILocator.getPermissionAPI().
+                        doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+            } catch (DotDataException e) {
+                Logger.error(this, e.getMessage());
+            }
+
+            map.put("canEdit", canEditTemplate);
+
             return map;
         } catch (IOException e) {
             throw new DotRuntimeException(e);
