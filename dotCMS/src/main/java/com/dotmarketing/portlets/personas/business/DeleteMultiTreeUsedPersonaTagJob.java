@@ -4,7 +4,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
-import com.dotmarketing.quartz.DotStatefulJob.TriggerBuilder;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
@@ -15,6 +14,7 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.*;
 
+import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -55,8 +55,10 @@ public class DeleteMultiTreeUsedPersonaTagJob implements StatefulJob {
         jobDetail.setVolatility(false);
         jobDetail.setRequestsRecovery(true);
 
-        final Trigger trigger = new TriggerBuilder().jobDetail(jobDetail)
-                .triggerGroupName("delete_multitree_unusedpersonatag_triggers").build();
+        final long startTime = System.currentTimeMillis();
+        final SimpleTrigger trigger = new SimpleTrigger("deleteMultitreeUnusedPersonasTrigger-" + randomID,
+                "delete_multitree_unusedpersonatag_triggers",
+                new Date(startTime));
 
         try {
 

@@ -9,7 +9,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.quartz.DotStatefulJob.TriggerBuilder;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
@@ -19,6 +18,7 @@ import com.liferay.portal.model.User;
 import org.quartz.*;
 
 import java.text.MessageFormat;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -36,30 +36,30 @@ public class DeleteUserJob implements StatefulJob {
 
     public static void triggerDeleteUserJob(User userToDelete, User replacementUser, User user,
                                             boolean respectFrontEndRoles) {
-        final JobDataMap dataMap = new JobDataMap();
+        JobDataMap dataMap = new JobDataMap();
         dataMap.put("userToDelete", userToDelete);
         dataMap.put("replacementUser", replacementUser);
         dataMap.put("user", user);
         dataMap.put("respectFrontEndRoles", respectFrontEndRoles);
 
-        final String randomID = UUID.randomUUID().toString();
+        String randomID = UUID.randomUUID().toString();
 
-        final JobDetail jobDetail = new JobDetail("DeleteUserJob-" + randomID, "delete_user_jobs",
-                DeleteUserJob.class);
-        jobDetail.setJobDataMap(dataMap);
-        jobDetail.setDurability(false);
-        jobDetail.setVolatility(false);
-        jobDetail.setRequestsRecovery(true);
+        JobDetail jd = new JobDetail("DeleteUserJob-" + randomID, "delete_user_jobs", DeleteUserJob.class);
+        jd.setJobDataMap(dataMap);
+        jd.setDurability(false);
+        jd.setVolatility(false);
+        jd.setRequestsRecovery(true);
 
-        final Trigger trigger = new TriggerBuilder().jobDetail(jobDetail)
-                .triggerGroupName("delete_user_triggers").build();
+        long startTime = System.currentTimeMillis();
+        SimpleTrigger trigger = new SimpleTrigger("deleteUserTrigger-" + randomID, "delete_user_triggers",
+            new Date(startTime));
 
         try {
-            final Scheduler scheduler = QuartzUtils.getSequentialScheduler();
-            final UserAPI userAPI = APILocator.getUserAPI();
-            final NotificationAPI notAPI = APILocator.getNotificationAPI();
+            Scheduler sched = QuartzUtils.getSequentialScheduler();
+            UserAPI userAPI = APILocator.getUserAPI();
+            NotificationAPI notAPI = APILocator.getNotificationAPI();
 
-            final String deleteInProgress = MessageFormat.format(LanguageUtil.get(user,
+            String deleteInProgress = MessageFormat.format(LanguageUtil.get(user,
                 "com.dotmarketing.business.UserAPI.delete.inProgress"),
                 userToDelete.getUserId() + "/" + userToDelete.getFullName());
 
@@ -67,7 +67,7 @@ public class DeleteUserJob implements StatefulJob {
                 User freshUser = userAPI.loadUserById(userToDelete.getUserId());
                 if(! freshUser.isDeleteInProgress()) {
                     userAPI.markToDelete(userToDelete);
-                    scheduler.scheduleJob(jobDetail, trigger);
+                    sched.scheduleJob(jd, trigger);
                 } else {
                     notAPI.info(deleteInProgress, user.getUserId());
                 }

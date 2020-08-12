@@ -1,5 +1,8 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.model.User;
 import org.quartz.*;
 import org.quartz.spi.TriggerFiredBundle;
 
@@ -17,40 +20,33 @@ public class TestJobExecutor {
         }
     }
 
-    public static void execute(Job job, final JobDetail jobDetail, final Trigger trigger){
-        try {
-            job.execute(new JobContextTest(jobDetail, trigger));
-        } catch (JobExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static class JobContextTest extends JobExecutionContext {
+
+        private Structure st;
+        private User user;
+        private Field field;
+        private JobDetailTest jobDetail;
 
         public JobContextTest(Map<String, Object> jobMap) {
             super(null, new TriggerFiredBundleTest(new JobDetailTest(jobMap)), null);
-        }
 
-        public JobContextTest(final JobDetail jobDetail, final Trigger trigger) {
-            super(null, new TriggerFiredBundleTest(jobDetail, trigger), null);
+            this.st = st;
+            this.user = user;
+            this.field = field;
         }
     }
 
     private static class JobDetailTest    extends JobDetail {
 
 
-        public JobDetailTest(final Map<String, Object> jobMap) {
+        public JobDetailTest(Map<String, Object> jobMap) {
             this.setJobDataMap( new JobDataMap(jobMap) );
         }
     }
 
     private static class TriggerFiredBundleTest extends TriggerFiredBundle {
-        TriggerFiredBundleTest(final JobDetail jobDetail){
+        TriggerFiredBundleTest(JobDetail jobDetail){
             super(jobDetail , new TriggerTest(), null, false,null, null, null, null);
-        }
-
-        TriggerFiredBundleTest(final JobDetail jobDetail, final Trigger trigger){
-            super(jobDetail , trigger, null, false,null, null, null, null);
         }
     }
 

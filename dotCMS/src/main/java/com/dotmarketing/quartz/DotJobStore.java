@@ -16,11 +16,9 @@ import org.quartz.JobDetail;
 import org.quartz.JobPersistenceException;
 import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.SchedulerConfigException;
-import org.quartz.StatefulJob;
 import org.quartz.Trigger;
 import org.quartz.core.SchedulingContext;
 import org.quartz.impl.jdbcjobstore.JobStoreCMT;
-import org.quartz.impl.jdbcjobstore.JobStoreSupport;
 import org.quartz.impl.jdbcjobstore.UpdateLockRowSemaphore;
 import org.quartz.spi.ClassLoadHelper;
 import org.quartz.spi.SchedulerSignaler;
@@ -36,22 +34,7 @@ public class DotJobStore extends JobStoreCMT {
 
 	@Override
 	public void storeJobAndTrigger(SchedulingContext ctxt, JobDetail newJob, Trigger newTrigger) throws ObjectAlreadyExistsException, JobPersistenceException {
-
-        if (StatefulJob.class.isAssignableFrom(newJob.getJobClass())) {
-            this.executeInLock(this.isLockOnInsert() ? "TRIGGER_ACCESS" : null, conn -> {
-                if (newJob.isVolatile() && !newTrigger.isVolatile()) {
-                    JobPersistenceException jpe = new JobPersistenceException(
-                            "Cannot associate non-volatile trigger with a volatile job!");
-                    jpe.setErrorCode(100);
-                    throw jpe;
-                } else {
-                    storeJob(conn, ctxt, newJob, false);
-                    storeTrigger(conn, ctxt, newTrigger, newJob, true, "WAITING", false, false);
-                }
-            });
-        } else {
-            super.storeJobAndTrigger(ctxt, newJob, newTrigger);
-        }
+		super.storeJobAndTrigger(ctxt, newJob, newTrigger);
 	}
 
 	public static final String TX_DATA_SOURCE_PREFIX = "TxDataSource.";

@@ -11,7 +11,9 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.quartz.DotStatefulJob.TriggerBuilder;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,6 +23,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -47,7 +50,6 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import org.quartz.StatefulJob;
-import org.quartz.Trigger;
 
 /**
  * @author David H Torres
@@ -84,9 +86,9 @@ public class CascadePermissionsJob implements StatefulJob {
 	}
     
 	public static void triggerJobImmediately (Permissionable perm, Role role) {
-		final String randomID = UUID.randomUUID().toString();
+		String randomID = UUID.randomUUID().toString();
 		String userId = null;
-		final JobDataMap dataMap = new JobDataMap();
+		JobDataMap dataMap = new JobDataMap();
 		
 		dataMap.put("permissionableId", perm.getPermissionId());
 		dataMap.put("roleId", role.getId());
@@ -99,19 +101,18 @@ public class CascadePermissionsJob implements StatefulJob {
 		}
 		dataMap.put("userId", userId);
 
-        final JobDetail jobDetail = new JobDetail("CascadePermissionsJob-" + randomID,
-                "cascade_permissions_jobs", CascadePermissionsJob.class);
-        jobDetail.setJobDataMap(dataMap);
-        jobDetail.setDurability(false);
-        jobDetail.setVolatility(false);
-        jobDetail.setRequestsRecovery(true);
-
-        final Trigger trigger = new TriggerBuilder().jobDetail(jobDetail)
-                .triggerGroupName("cascade_permissions_triggers").build();
-
+		JobDetail jd = new JobDetail("CascadePermissionsJob-" + randomID, "cascade_permissions_jobs", CascadePermissionsJob.class);
+		jd.setJobDataMap(dataMap);
+		jd.setDurability(false);
+		jd.setVolatility(false);
+		jd.setRequestsRecovery(true);
+		
+		long startTime = System.currentTimeMillis();
+		SimpleTrigger trigger = new SimpleTrigger("permissionsCascadeTrigger-"+randomID, "cascade_permissions_triggers",  new Date(startTime));
+		
 		try {
-			final Scheduler scheduler = QuartzUtils.getSequentialScheduler();
-			scheduler.scheduleJob(jobDetail, trigger);
+			Scheduler sched = QuartzUtils.getSequentialScheduler();
+			sched.scheduleJob(jd, trigger);
 		} catch (SchedulerException e) {
 			Logger.error(CascadePermissionsJob.class, "Error scheduling the cascading of permissions", e);
 			throw new DotRuntimeException("Error scheduling the cascading of permissions", e);
