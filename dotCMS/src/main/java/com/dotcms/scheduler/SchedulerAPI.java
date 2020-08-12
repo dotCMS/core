@@ -11,11 +11,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.SchedulerName;
-import com.github.kagkarlsson.scheduler.task.CompletionHandler;
-import com.github.kagkarlsson.scheduler.task.ExecutionContext;
-import com.github.kagkarlsson.scheduler.task.ExecutionHandler;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
-import com.github.kagkarlsson.scheduler.task.helper.CustomTask;
 import com.github.kagkarlsson.scheduler.task.helper.OneTimeTask;
 import com.github.kagkarlsson.scheduler.task.helper.RecurringTask;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
@@ -49,9 +45,6 @@ public class SchedulerAPI {
                     Tasks.oneTime("one-time-task", DotTask.class).execute((inst, ctx) -> {
                         inst.getData().runTask(inst);
                     });
-
-    private CustomTask<DotTask> custom =null;
-    
 
 
     private SchedulerAPI() {
@@ -149,7 +142,7 @@ public class SchedulerAPI {
         final String topTask = new DotConnect()
                         .setMaxRows(1)
                         .setSQL(
-            "select task_instance as test from scheduled_tasks where task_instance like ? and picked=? order by execution_time")
+            "select task_instance as test from scheduled_tasks where task_instance like ? and picked=? order by task_instance")
             .addParam(clazz + "%")
             .addParam(true)
             .getString("test");

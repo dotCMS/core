@@ -1,6 +1,7 @@
 package com.dotcms.scheduler;
 
 import java.time.Duration;
+import java.util.Random;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.util.IntegrationTestInitService;
@@ -18,9 +19,16 @@ public class SchedulerAPITest {
     @Test
     public void test_sync_task() throws InterruptedException {
 
-        TestSyncronizedTask task = new TestSyncronizedTask();
-        TestSyncronizedTask task2 = new TestSyncronizedTask();
-        TestSyncronizedTask task3 = new TestSyncronizedTask();
+        int rand1 = new Random().nextInt(100);
+        int rand2 = new Random().nextInt(100);
+        int rand3 = new Random().nextInt(100);
+        
+        final int expecting =rand1 + rand2 +rand3;
+        
+        
+        TestSyncronizedTask task = new TestSyncronizedTask(rand1);
+        TestSyncronizedTask task2 = new TestSyncronizedTask(rand2);
+        TestSyncronizedTask task3 = new TestSyncronizedTask(rand3);
 
         
         APILocator.getSchedulerAPI().scheduleOneTimeTask(task);
@@ -29,17 +37,18 @@ public class SchedulerAPITest {
 
         
         int i=0;
-        while(TestSyncronizedTask.getNumberOfRuns()<3) {
+        while(TestSyncronizedTask.getTotalIncrement()<expecting) {
             Thread.sleep(1000);
             i++;
-            if(i>100) {
-                // task never ran
+            if(i>70) {
                 assert(false);
             }
         }
-        assert(i >15);
-        assert(i < 70);
-        assert(TestSyncronizedTask.getNumberOfRuns()==3);
+        
+        // this took less than 70 seconds to run
+        assert(i >15 && i< 70);
+        // we got what we were expecting
+        assert(TestSyncronizedTask.getTotalIncrement()==expecting);
 
     }
     

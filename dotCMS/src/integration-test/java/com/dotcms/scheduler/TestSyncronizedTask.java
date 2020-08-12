@@ -6,13 +6,16 @@ import io.vavr.control.Try;
 
 public class TestSyncronizedTask extends DotSyncronizedTask {
 
+    final int increment;
     
-    public final static int getNumberOfRuns() {
-        return Try.of(() -> Integer.parseInt(System.getProperty("SyncronizedTestTask_runs", "0"))).getOrElse(0);
+    public final static int getTotalIncrement() {
+        return Try.of(() -> Integer.parseInt(System.getProperty("SyncronizedTestTask_increment", "0"))).getOrElse(0);
     }
     
-    
-    
+    public TestSyncronizedTask(int inc) {
+        this.increment=inc;
+    }
+        
     @Override
     public void execute() {
 
@@ -27,11 +30,11 @@ public class TestSyncronizedTask extends DotSyncronizedTask {
         
         
         
-        int runs = getNumberOfRuns() ;
-        Logger.warn(this.getClass(), "SyncronizedTestTask runs:" + runs );
+        int runs = getTotalIncrement() ;
+        Logger.warn(this.getClass(), "TestSyncronizedTask runs:" + runs + ", adding:" + increment );
+        runs+=increment;
         
-        
-        System.setProperty("SyncronizedTestTask_runs", String.valueOf(++runs));
+        System.setProperty("SyncronizedTestTask_increment", String.valueOf(runs));
         
         }
         finally {

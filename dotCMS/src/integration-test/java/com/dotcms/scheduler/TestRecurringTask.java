@@ -15,9 +15,12 @@ public class TestRecurringTask extends DotTask {
     public void execute() {
 
         try {
-
-
             int runs = getNumberOfRuns();
+            System.err.println("TestRecurringTask runs:" + runs);
+            
+            
+
+     
             Logger.warn(this.getClass(), "TestRecurringTask runs:" + runs);
 
 

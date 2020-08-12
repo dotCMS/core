@@ -2,6 +2,7 @@ package com.dotcms.config;
 
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.publishing.PushPublishFiltersInitializer;
 import com.dotcms.rendering.velocity.events.ExceptionHandlersInitializer;
 import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
@@ -47,6 +48,7 @@ public class DotInitializationService implements Serializable {
 
     }
 
+    @CloseDBIfOpened
     private void initService (final DotInitializer initializer) {
 
         try {

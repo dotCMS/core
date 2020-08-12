@@ -2698,3 +2698,18 @@ CREATE TABLE api_token_issued(
 create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
 CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);
+
+create table scheduled_tasks (
+  task_name varchar(250) not null,
+  task_instance varchar(250) not null,
+  task_data  nvarchar(max),
+  execution_time datetimeoffset  not null,
+  picked bit,
+  picked_by text,
+  last_success datetimeoffset ,
+  last_failure datetimeoffset ,
+  consecutive_failures INT,
+  last_heartbeat datetimeoffset ,
+  [version] BIGINT not null,
+  PRIMARY KEY (task_name, task_instance)
+);
