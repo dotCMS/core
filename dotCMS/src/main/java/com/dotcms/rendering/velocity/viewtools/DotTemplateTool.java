@@ -118,12 +118,16 @@ public class DotTemplateTool implements ViewTool {
         }
 
         TemplateLayout layout = layoutCache.getIfPresent(key);
-
         if(layout == null) {
             layout = getLayout(themeInode, isPreview, getDrawedBody(themeInode, user));
         }
 
         return layout;
+    }
+
+    public static void removeFromLayoutCache(final String templateInode){
+        layoutCache.invalidate(templateInode + false);
+        layoutCache.invalidate(templateInode + true);
     }
 
     private static DrawedBody getDrawedBody(String themeInode, User user) throws DotDataException, DotSecurityException {

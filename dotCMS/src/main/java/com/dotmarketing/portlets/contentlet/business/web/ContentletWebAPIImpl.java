@@ -507,7 +507,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
 								", without an action.");
-				if (isHost(currentContentlet)) {
+				if (currentContentlet.isHost()) {
 
 					Logger.info(this, "Saving the Host");
 					currentContentlet.setInode(null);
@@ -516,7 +516,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 							(currentContentlet, contentletRelationships, categories, null, user, false, generateSystemEvent);
 
 					if (!currentContentlet.isNew() &&
-							!currentContentlet.getName().equals(oldContentletMap.get(Host.HOST_NAME_KEY))) {
+							!currentContentlet.getTitle().equals(oldContentletMap.get(Host.HOST_NAME_KEY))) {
 						UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
 								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
 								currentContentlet.getName()
@@ -573,10 +573,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			 */
 			contentletFormData.put(WebKeys.CONTENTLET_DELETED, Boolean.TRUE);
 		}
-	}
-
-	private boolean isHost(Contentlet currentContentlet) {
-		return Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName());
 	}
 
 	/**
@@ -871,8 +867,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		} catch (DotContentletStateException e) {
 			throw e;
 		} catch (Exception e) {
-			Logger.error(this, "Unable to populate content. ", e);
-			throw new Exception("Unable to populate content", e);
+			final String message = String.format("Unable to populate content: %s", e.getMessage());
+			Logger.error(this, message, e);
+			throw new Exception(message, e);
 		}
 
 		return contentlet;

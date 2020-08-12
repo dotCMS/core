@@ -18,6 +18,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+/**
+ * Change all the relative path into the template by absolute path, resolving them with the template's host
+ * @since 5.3.7
+ */
 public class Task05370ChangeContainerPathToAbsolute implements StartupTask {
 
     final String GET_TEMPLATES_QUERY = "SELECT contentlet.title as host_name, template.inode, template.drawed_body, template.body " +

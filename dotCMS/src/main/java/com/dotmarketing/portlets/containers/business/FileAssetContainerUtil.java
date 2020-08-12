@@ -7,7 +7,6 @@ import static com.liferay.util.StringPool.FORWARD_SLASH;
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
@@ -34,7 +33,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.util.StringPool;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;

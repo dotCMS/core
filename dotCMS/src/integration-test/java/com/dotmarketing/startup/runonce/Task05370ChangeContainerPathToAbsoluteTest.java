@@ -68,7 +68,7 @@ public class Task05370ChangeContainerPathToAbsoluteTest {
             "}" +
         "}";
 
-    final String legacyHTMLLayout = "" +
+    final String legacyHTMLLayout =
             "<div id=\"resp-template\" name=\"globalContainer\">" +
                 "<div id=\"hd-template\"><h1>Header</h1></div>" +
                 "<div id=\"bd-template\">" +
@@ -146,7 +146,6 @@ public class Task05370ChangeContainerPathToAbsoluteTest {
     public void whenTemplateLayoutHasRelativePathButBodyIsNullShouldTurnIntoAAbsolutePath() throws IOException, DotDataException, DotSecurityException {
 
         final String layout = String.format(jsonDrawBody, "");
-        final String testBody = String.format(body, "");
         final Host host = new SiteDataGen().nextPersisted();
 
         checkTemplateLayout(layout);

@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business.web;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
@@ -12,12 +11,9 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerExceptionNotifier;
-import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
-import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.HostCache;
+
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -26,15 +22,20 @@ import org.jetbrains.annotations.NotNull;
 import org.quartz.*;
 
 import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
+
+/**
+ * Should be run after a change in a host's name, it update all the path into the {@link TemplateLayout}
+ * to use the new host's name.
+ */
 public class UpdateContainersPathsJob extends DotStatefulJob  {
 
     final String GET_TEMPLATES_QUERY = "SELECT DISTINCT template.inode, template.drawed_body, template.body, identifier.host_inode " +
-            "FROM (identifier " +
+            "FROM ((identifier " +
             "INNER JOIN template ON identifier.id = template.identifier) " +
-            "where template.drawed_body is not null and template.drawed_body LIKE ?";
+            "INNER JOIN template_version_info ON identifier.id = template_version_info.identifier) " +
+            "where template.drawed_body is not null and template.drawed_body LIKE ? " +
+            "and (template.inode = template_version_info.working_inode or template.inode = template_version_info.live_inode)";
 
     @WrapInTransaction
     @Override
@@ -67,7 +68,7 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
                         jobContext.getTrigger().getName()
                 );
             } catch (SchedulerException e) {
-                e.printStackTrace();
+               Logger.error(UpdateContainersPathsJob.class, e.getMessage());
             }
         }
     }
@@ -77,8 +78,9 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
 
         for (final Map<String, Object> template : templates) {
             try {
-
-                CacheLocator.getTemplateCache().remove(template.get("inode").toString());
+                final String templateInode = template.get("inode").toString();
+                DotTemplateTool.removeFromLayoutCache(templateInode);
+                CacheLocator.getTemplateCache().remove(templateInode);
 
                 final String drawedBody = (String) template.get("drawed_body");
                 final TemplateLayout templateLayout = DotTemplateTool.getTemplateLayout(drawedBody);
