@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
@@ -24,6 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is the proxy to provides the object to interact with the Saml Osgi Bundle
@@ -47,6 +49,8 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
     private SamlServiceBuilder        samlServiceBuilder;
     private SamlConfigurationService  samlConfigurationService;
     private SamlAuthenticationService samlAuthenticationService;
+
+    private static final AtomicBoolean redirectsDone = new AtomicBoolean(false);
 
     private static class SingletonHolder {
 
@@ -98,21 +102,24 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
     private static void addRedirects() {
 
-        final NormalRule rule = new NormalRule();
-        rule.setFrom("^\\/dotsaml\\/("+String.join("|", DotSamlResource.dotsamlPathSegments)+")\\/(.+)$");
-        rule.setToType("forward");
-        rule.setTo("/api/v1/dotsaml/$1/$2");
-        rule.setName("Dotsaml REST Service Redirect");
-        DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
-        try {
-            if(urlRewriteFilter != null) {
-                urlRewriteFilter.addRule(rule);
-            }else {
-                throw new Exception();
+        if (!redirectsDone.get()) {
+            final NormalRule rule = new NormalRule();
+            rule.setFrom("^\\/dotsaml\\/(" + String.join("|", DotSamlResource.dotsamlPathSegments) + ")\\/(.+)$");
+            rule.setToType("forward");
+            rule.setTo("/api/v1/dotsaml/$1/$2");
+            rule.setName("Dotsaml REST Service Redirect");
+            DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
+            try {
+                if (urlRewriteFilter != null) {
+                    urlRewriteFilter.addRule(rule);
+                    redirectsDone.set(true);
+                } else {
+                    throw new Exception();
+                }
+            } catch (Exception e) {
+                Logger.error(DotSamlProxyFactory.class, "Could not add the Dotsaml REST Service Redirect Rule. Requests to " +
+                        "/dotsaml/login/{UUID} will fail!");
             }
-        } catch (Exception e) {
-            Logger.error(DotSamlProxyFactory.class, "Could not add the Dotsaml REST Service Redirect Rule. Requests to " +
-                    "/dotsaml/login/{UUID} will fail!");
         }
     }
 
@@ -123,7 +130,6 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
             synchronized (this) {
 
                 if (null == this.samlServiceBuilder) {
-
 
                     try {
                         if (!OSGIUtil.getInstance().isInitialized()) {
@@ -144,7 +150,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
                             Logger.info(this, "SAML Osgi Bundle has been started");
                         } catch (Exception e) {
-                            Logger.error(this.getClass(),
+                            Logger.warnAndDebug(this.getClass(),
                                     String.format("Failure retrieving OSGI Service [%s] in bundle [%s]",
                                             SamlServiceBuilder.class,
                                             OSGIConstants.BUNDLE_NAME_DOTCMS_SAML), e);
@@ -219,7 +225,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
                             this.samlAuthenticationService =
                                     this.samlServiceBuilder.buildAuthenticationService(this.identityProviderConfigurationFactory(),
-                                            this.messageObserver(), this.samlConfigurationService());
+                                            VelocityUtil.getEngine(), this.messageObserver(), this.samlConfigurationService());
 
                             Logger.info(this, "Initing SAML Authentication");
                             samlAuthenticationService.initService(Collections.emptyMap());
@@ -234,7 +240,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
             return this.samlAuthenticationService;
         }
 
-        throw new SamlException("Not any host has been configured as a SAML");
+        throw new DotSamlException("There is no SAML Configuration for this host");
     }
 
     /**
