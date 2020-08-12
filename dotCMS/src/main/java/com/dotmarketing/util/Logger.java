@@ -11,6 +11,7 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.loggers.Log4jUtil;
 import com.google.common.base.Objects;
 import com.google.common.hash.HashCode;
+import io.vavr.Lazy;
 import java.io.File;
 import java.util.List;
 import java.util.WeakHashMap;
@@ -168,7 +169,7 @@ public class Logger{
     /**
      * a map with a 5 minute max lifespan
      */
-    static ExpiringMap<Long, Long> logMap = new ExpiringMapBuilder().ttl(600*1000).size(2000).build();
+    static Lazy<ExpiringMap<Long, Long>> logMap = Lazy.of(()->new ExpiringMapBuilder().ttl(600*1000).size(2000).build());
 
 	/**
 	 * this method will print the message at WARN level every millis set
@@ -186,10 +187,10 @@ public class Logger{
         final StackTraceElement ste = ex.getStackTrace()[0];
 
         final Long hash=new Long(Objects.hashCode(ste,message.substring(0, Math.min(message.length(), 10)),cl));
-        final Long expireWhen = logMap.get(hash);
+        final Long expireWhen = logMap.get().get(hash);
         
         if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis );
             logger.warn(message + " (every "+warnEveryMillis + " millis)");
             
         }
@@ -210,10 +211,10 @@ public class Logger{
 
 
         final Long hash=new Long(Objects.hashCode(cl.getName(),message.substring(0, Math.min(message.length(), 10)),cl));
-        final Long expireWhen = logMap.get(hash);
+        final Long expireWhen = logMap.get().get(hash);
         
         if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis );
             logger.info(message + " (every "+warnEveryMillis + " millis)");
             
         }
