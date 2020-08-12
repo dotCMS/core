@@ -1,7 +1,6 @@
 import { take, mergeMap, pluck, takeUntil } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
-
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
@@ -15,12 +14,8 @@ import { FieldService } from './components/fields/service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import {
-    DotHttpErrorManagerService,
-    DotHttpErrorHandled
-} from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js';
-
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { MenuItem } from 'primeng/primeng';
 import { Subject } from 'rxjs';
@@ -76,10 +71,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.route.data
-            .pipe(
-                pluck('contentType'),
-                takeUntil(this.destroy$)
-            )
+            .pipe(pluck('contentType'), takeUntil(this.destroy$))
             .subscribe((contentType: DotCMSContentType) => {
                 this.data = contentType;
                 this.dotEditContentTypeCacheService.set(contentType);
@@ -144,13 +136,13 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             icon: this.contentTypesInfoService.getIcon(type),
             header: this.isEditMode()
                 ? this.dotMessageService.get(
-                    'contenttypes.content.edit.contenttype',
-                    contentTypeName
-                )
+                      'contenttypes.content.edit.contenttype',
+                      contentTypeName
+                  )
                 : this.dotMessageService.get(
-                    'contenttypes.content.create.contenttype',
-                    contentTypeName
-                )
+                      'contenttypes.content.create.contenttype',
+                      contentTypeName
+                  )
         };
     }
 
@@ -198,10 +190,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     removeFields(fieldsToDelete: DotCMSContentTypeField[]): void {
         this.fieldService
             .deleteFields(this.data.id, fieldsToDelete)
-            .pipe(
-                pluck('fields'),
-                take(1)
-            )
+            .pipe(pluck('fields'), take(1))
             .subscribe(
                 (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;
@@ -323,12 +312,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     }
 
     private handleHttpError(err: ResponseView) {
-        this.dotHttpErrorManagerService
-            .handle(err)
-            .pipe(take(1))
-            .subscribe((_handled: DotHttpErrorHandled) => {
-                this.dotRouterService.gotoPortlet(`/${this.dotRouterService.currentPortlet.id}`);
-            });
+        this.dotHttpErrorManagerService.handle(err).pipe(take(1));
     }
 
     private updateContentType(value: DotCMSContentType): void {

@@ -1,10 +1,9 @@
 import { throwError, of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 import { DotCrudService } from '@services/dot-crud/dot-crud.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import {
     DotCMSContentTypeField,
@@ -13,7 +12,7 @@ import {
 } from 'dotcms-models';
 import { FieldService } from './components/fields/service';
 import { Location } from '@angular/common';
-import { LoginService, SiteService } from 'dotcms-js';
+import { LoginService, SiteService, CoreWebService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async } from '@angular/core/testing';
@@ -24,17 +23,22 @@ import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { mockResponseView } from '../../../test/response-view.mock';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { HotkeysService } from 'angular2-hotkeys';
 import { TestHotkeysMock } from '../../../test/hotkeys-service.mock';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { MenuItem } from 'primeng/primeng';
+import { MenuItem, ConfirmationService } from 'primeng/primeng';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { SiteServiceMock } from 'src/app/test/site-service.mock';
 import * as _ from 'lodash';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { Http, ConnectionBackend, RequestOptions, BaseRequestOptions } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 import {
     dotcmsContentTypeFieldBasicMock,
     dotcmsContentTypeBasicMock
@@ -143,12 +147,21 @@ const getConfig = (route) => {
                 provide: HotkeysService,
                 useValue: testHotKeysMock
             },
-            DotCrudService,
-            FieldService,
+            { provide: ConnectionBackend, useClass: MockBackend },
+            { provide: RequestOptions, useClass: BaseRequestOptions },
+            { provide: DotRouterService, useClass: MockDotRouterService },
+            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            ConfirmationService,
+            DotAlertConfirmService,
             DotContentTypesInfoService,
+            DotCrudService,
+            DotEditContentTypeCacheService,
+            DotHttpErrorManagerService,
             DotMenuService,
-            Location,
-            DotEditContentTypeCacheService
+            DotEventsService,
+            FieldService,
+            Http,
+            Location
         ]
     };
 };
@@ -173,9 +186,9 @@ describe('DotContentTypesEditComponent', () => {
                 }
             });
 
-            DOTTestBed.configureTestingModule(configCreateMode);
+            TestBed.configureTestingModule(configCreateMode);
 
-            fixture = DOTTestBed.createComponent(DotContentTypesEditComponent);
+            fixture = TestBed.createComponent(DotContentTypesEditComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
 
@@ -208,7 +221,7 @@ describe('DotContentTypesEditComponent', () => {
             });
         });
 
-        it('should close the dialog and redirect', () => {
+        it('should close the dialog', () => {
             const dialogCancelButton = dialog.query(By.css('.dialog__button-cancel')).nativeElement;
             dialogCancelButton.click();
             fixture.detectChanges();
@@ -310,7 +323,10 @@ describe('DotContentTypesEditComponent', () => {
                 );
                 expect(comp.data).toEqual(responseContentType, 'set data with response');
                 expect(comp.layout).toEqual(responseContentType.layout, 'ser fields with response');
-                expect(dotRouterService.goToEditContentType).toHaveBeenCalledWith('123', dotRouterService.currentPortlet.id);
+                expect(dotRouterService.goToEditContentType).toHaveBeenCalledWith(
+                    '123',
+                    dotRouterService.currentPortlet.id
+                );
             });
 
             it('should handle error', () => {
@@ -318,7 +334,6 @@ describe('DotContentTypesEditComponent', () => {
                 spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
 
                 contentTypeForm.triggerEventHandler('onSubmit', mockContentType);
-                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith(`/${dotRouterService.currentPortlet.id}`);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
 
@@ -423,9 +438,9 @@ describe('DotContentTypesEditComponent', () => {
 
     describe('edit mode', () => {
         beforeEach(async(() => {
-            DOTTestBed.configureTestingModule(configEditMode);
+            TestBed.configureTestingModule(configEditMode);
 
-            fixture = DOTTestBed.createComponent(DotContentTypesEditComponent);
+            fixture = TestBed.createComponent(DotContentTypesEditComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
 
@@ -651,7 +666,7 @@ describe('DotContentTypesEditComponent', () => {
             expect(comp.layout).toEqual(layout);
         });
 
-        it('should handle 403 when user doesn\'t have permission to save feld', () => {
+        it("should handle 403 when user doesn't have permission to save feld", () => {
             const dropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
             spyOn(dropZone.componentInstance, 'cancelLastDragAndDrop').and.callThrough();
 
@@ -766,7 +781,6 @@ describe('DotContentTypesEditComponent', () => {
 
                 contentTypeForm.triggerEventHandler('onSubmit', fakeContentType);
 
-                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith(`/${dotRouterService.currentPortlet.id}`);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
         });
