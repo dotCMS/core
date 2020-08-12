@@ -52,17 +52,5 @@ public class SchedulerAPITest {
 
     }
     
-    
 
-    @Test
-    public void test_recurring_task() throws InterruptedException {
-        TestRecurringTask task = new TestRecurringTask();
-        APILocator.getSchedulerAPI().scheduleRecurringTask(task, Duration.ofSeconds(5));
-        Thread.sleep(60*1000);
-        assert(TestRecurringTask.getNumberOfRuns()>3);
-        
-        
-        
-    
-    }
 }
