@@ -26,7 +26,9 @@ import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
-import com.dotcms.saml.TestSamlConfigurationService;
+import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
+import com.dotcms.saml.SamlConfigurationServiceTest;
+import com.dotcms.scheduler.SchedulerAPITest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -300,13 +302,16 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05350AddDotSaltClusterColumnTest.class,
         DotParseTest.class,
         TestWorkflowAction.class,
-        TestSamlConfigurationService.class,
+        SamlConfigurationServiceTest.class,
         HostAPITest.class,
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
+        DotStatefulJobTest.class,
+        IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
-        DotStatefulJobTest.class
+        SchedulerAPITest.class
+
 })
 public class MainSuite {
 

@@ -21,6 +21,7 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
@@ -204,7 +205,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
             final String filterKey = request.getParameter("filterKey");
-            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
+            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(
+                    FilterDescriptor.FORCE_PUSH_KEY,false);
 
 
 
@@ -578,7 +580,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             dbBundle.setFilterKey(bundleFilter);
             //set ForcePush value of the filter to the bundle
             dbBundle.setForcePush(
-                    (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(bundleFilter).getFilters().getOrDefault("forcePush",false));
+                    (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(bundleFilter).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false));
             //Update Bundle
             APILocator.getBundleAPI().updateBundle(dbBundle);
 
@@ -949,7 +951,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             final String iWantTo = request.getParameter( "iWantTo" );
             final String whoToSendTmp = request.getParameter( "whoToSend" );
             final String filterKey = request.getParameter("filterKey");
-            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
+            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false);
             
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();

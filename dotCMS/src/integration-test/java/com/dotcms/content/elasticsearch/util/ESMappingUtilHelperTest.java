@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
@@ -45,6 +46,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -166,25 +168,25 @@ public class ESMappingUtilHelperTest {
                         new String[] {"MyRadioAsBoolean"},  "boolean" },
 
                 {  "radio_as_float", RadioField.class, DataTypes.FLOAT,
-                        new String[] {"MyRadioAsFloat"},  "float" },
+                        new String[] {"MyRadioAsFloat"},  "double" },
 
                 {  "radio_as_integer", RadioField.class, DataTypes.INTEGER,
-                        new String[] {"MyRadioAsInteger"},  "integer" },
+                        new String[] {"MyRadioAsInteger"},  "long" },
 
                 {  "select_as_boolean", SelectField.class, DataTypes.BOOL,
                         new String[] {"MySelectAsBoolean"},  "boolean" },
 
                 {  "select_as_float", SelectField.class, DataTypes.FLOAT,
-                        new String[] {"MySelectAsFloat"},  "float" },
+                        new String[] {"MySelectAsFloat"},  "double" },
 
                 {  "select_as_integer", SelectField.class, DataTypes.INTEGER,
-                        new String[] {"MySelectAsInteger"},  "integer" },
+                        new String[] {"MySelectAsInteger"},  "long" },
 
                 {  "text_as_float", TextField.class, DataTypes.FLOAT,
-                        new String[] {"MyTextAsFloat"},  "float" },
+                        new String[] {"MyTextAsFloat"},  "double" },
 
                 {  "text_as_integer", TextField.class, DataTypes.INTEGER,
-                        new String[] {"MyTextAsInteger"},  "integer" }
+                        new String[] {"MyTextAsInteger"},  "long" }
         };
     }
 
@@ -283,8 +285,12 @@ public class ESMappingUtilHelperTest {
 
             //Adding fields
             Field ageField = FieldBuilder.builder(TextField.class)
-                    .name("age").contentTypeId(parentContentType.id()).indexed(false).build();
+                    .name("age").contentTypeId(parentContentType.id()).indexed(true).build();
             ageField = fieldAPI.save(ageField, user);
+
+            Field nonIndexedField = FieldBuilder.builder(TextField.class)
+                    .name("nonIndexedField").contentTypeId(parentContentType.id()).indexed(false).build();
+            nonIndexedField = fieldAPI.save(nonIndexedField, user);
 
             Field relationshipField = FieldBuilder.builder(RelationshipField.class)
                     .name("relationshipField")
@@ -341,6 +347,9 @@ public class ESMappingUtilHelperTest {
             final JSONObject contentTypeJSON = (JSONObject) ((JSONObject) propertiesJSON
                     .get(parentContentType.variable().toLowerCase())).get("properties");
 
+            //validate no mapping is added for non-indexed fields
+            assertFalse(contentTypeJSON.has(nonIndexedField.variable().toLowerCase()));
+
             //validate age mapping results
             final Map ageMapping = ((JSONObject) contentTypeJSON
                     .get(ageField.variable().toLowerCase())).getAsMap();
@@ -393,7 +402,10 @@ public class ESMappingUtilHelperTest {
     public void testValidateNewsLikeMapping(final String testCase, final String[] fields, final String expectedResult)
             throws DotDataException, IOException, DotSecurityException {
         final ContentType newsContentType = TestDataUtils.getNewsLikeContentType();
-        fieldAPI.save( FieldBuilder.builder(TextField.class).contentTypeId(newsContentType.id()).name("mylatlon").variable("mylatlon").indexed(true).build(), user);
+        fieldAPI.save(FieldBuilder.builder(TextField.class).contentTypeId(newsContentType.id())
+                .name("mylatlon").variable("mylatlon").indexed(true).build(), user);
+
+
         Contentlet newsContent = null;
         try {
             final String categoryName = "myCategory" + System.currentTimeMillis();

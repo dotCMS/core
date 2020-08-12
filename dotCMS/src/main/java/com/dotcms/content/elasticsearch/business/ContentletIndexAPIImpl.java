@@ -145,7 +145,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public synchronized boolean createContentIndex(String indexName) throws ElasticsearchException, IOException {
-        return createContentIndex(indexName, 0);
+        boolean result;
+        try {
+            result = createContentIndex(indexName, 0);
+            HibernateUtil
+                    .addCommitListener(() -> ESMappingUtilHelper.getInstance().addCustomMapping(indexName));
+        } catch (DotHibernateException e) {
+            throw new ElasticsearchException(e);
+        }
+        return result;
     }
 
     @Override
@@ -176,7 +184,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         mappingAPI.putMapping(indexName, mapping);
-        ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
 
         return true;
     }
@@ -210,6 +217,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             createContentIndex(info.getLive(), 0);
 
             APILocator.getIndiciesAPI().point(info);
+
+            HibernateUtil.addCommitListener(() -> ESMappingUtilHelper.getInstance()
+                    .addCustomMapping(info.getWorking(), info.getLive()));
             return timeStamp;
         } catch (Exception e) {
             throw new ElasticsearchException(e.getMessage(), e);
@@ -298,6 +308,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 createContentIndex(info.getReindexLive(), 0);
 
                 APILocator.getIndiciesAPI().point(info);
+
+                HibernateUtil.addCommitListener(() -> ESMappingUtilHelper.getInstance()
+                        .addCustomMapping(info.getReindexWorking(), info.getReindexLive()));
 
                 return timeStamp;
             } catch (Exception e) {

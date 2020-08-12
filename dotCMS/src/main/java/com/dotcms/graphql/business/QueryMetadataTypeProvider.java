@@ -1,6 +1,7 @@
 package com.dotcms.graphql.business;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
 
 import com.dotcms.graphql.util.TypeUtil;
@@ -21,7 +22,7 @@ public enum QueryMetadataTypeProvider implements GraphQLTypesProvider {
     INSTANCE;
 
     final Map<String, GraphQLOutputType> pageFields = map(
-            "totalCount", GraphQLString,
+            "totalCount", GraphQLLong,
             "fieldName", GraphQLString);
 
     GraphQLObjectType countType = TypeUtil.createObjectType("QueryMetadata", pageFields, null);

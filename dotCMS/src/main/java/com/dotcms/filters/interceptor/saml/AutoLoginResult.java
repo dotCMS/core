@@ -2,8 +2,11 @@ package com.dotcms.filters.interceptor.saml;
 
 import javax.servlet.http.HttpSession;
 
-public class AutoLoginResult
-{
+/**
+ * Just a simple bean to return a couple values
+ * @author jsanca
+ */
+public class AutoLoginResult {
 	private final HttpSession session;
 	private final boolean autoLogin;
 

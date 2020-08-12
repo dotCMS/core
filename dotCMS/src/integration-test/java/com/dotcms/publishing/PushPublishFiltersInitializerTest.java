@@ -73,7 +73,7 @@ public class PushPublishFiltersInitializerTest {
      *
      */
     @Test
-    public void test_loadFilter_filterWithAnError_otherFiltersLoadSuccessfully() throws IOException, DotDataException {
+    public void test_loadFilter_YAMLFileEmpty_otherFiltersLoadSuccessfully() throws IOException, DotDataException {
         //YAML file without issues
         final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
@@ -91,6 +91,86 @@ public class PushPublishFiltersInitializerTest {
                 TestUserUtils.getAdminUser());
         Assert.assertFalse(filterDescriptorList.isEmpty());
         Assert.assertTrue(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));
+    }
+
+    /**
+     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Given Scenario: YAML file that one of required property (in this case Title) is null
+     * ExpectedResult: filter should not be added to map of filters
+     *
+     */
+    @Test
+    public void test_loadFilter_RequiredPropertyNull_filterIsNotAdded() throws IOException, DotDataException {
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterWithoutTitleProperty.yml",null,filtersMap,true,"Reviewer,dotcms.org.2789");
+        createFilterFile(filterDescriptor);
+
+        Files.list(path.toPath()).forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
+                TestUserUtils.getAdminUser());
+        Assert.assertFalse(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));
+    }
+
+    /**
+     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Given Scenario: YAML file with a boolean property set to any other value than true | false
+     * ExpectedResult: filter should not be added to map of filters
+     *
+     */
+    @Test
+    public void test_loadFilter_BooleanPropertyValueSetNumber_filterIsNotAdded() throws IOException, DotDataException {
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",888,"relationships",true,"excludeClasses","Host,Workflow");
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterWithBooleanPropertySetToAnyOtherString.yml","Filter Boolean Not Valid",filtersMap,true,"Reviewer,dotcms.org.2789");
+        createFilterFile(filterDescriptor);
+
+        Files.list(path.toPath()).forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
+                TestUserUtils.getAdminUser());
+        Assert.assertFalse(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));
+    }
+
+    /**
+     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Given Scenario: YAML file with a boolean property set to any other value than true | false
+     * ExpectedResult: filter should not be added to map of filters
+     *
+     */
+    @Test
+    public void test_loadFilter_BooleanPropertyValueSetToAnyOtherString_filterIsNotAdded() throws IOException, DotDataException {
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies","blablabla","relationships",true,"excludeClasses","Host,Workflow");
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterWithBooleanPropertySetToAnyOtherString.yml","Filter Boolean Not Valid",filtersMap,true,"Reviewer,dotcms.org.2789");
+        createFilterFile(filterDescriptor);
+
+        Files.list(path.toPath()).forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
+                TestUserUtils.getAdminUser());
+        Assert.assertFalse(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));
+    }
+
+    /**
+     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Given Scenario: YAML file with a property not expected, added a new filter in the filtersMap
+     * ExpectedResult: filter should not be added to map of filters
+     *
+     */
+    @Test
+    public void test_loadFilter_AddPropertyNotExpected_filterIsNotAdded() throws IOException, DotDataException {
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",false,"relationships",true,"excludeClasses","Host,Workflow", "newProperty","notExpected");
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterWithPropertyNotExpected.yml","Filter with added property",filtersMap,true,"Reviewer,dotcms.org.2789");
+        createFilterFile(filterDescriptor);
+
+        Files.list(path.toPath()).forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
+                TestUserUtils.getAdminUser());
+        Assert.assertFalse(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));
     }
 
 }
