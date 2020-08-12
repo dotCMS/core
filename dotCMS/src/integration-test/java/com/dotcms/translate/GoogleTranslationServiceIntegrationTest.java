@@ -3,6 +3,7 @@ package com.dotcms.translate;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -14,6 +15,9 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.dotmarketing.util.Config;
 import java.util.Collections;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,6 +36,11 @@ public class GoogleTranslationServiceIntegrationTest {
         translationService = new GoogleTranslationService();
     }
 
+    /**
+     * Method to test: {@link GoogleTranslationService#setServiceParameters(List, String)}
+     * Given Scenario: Setting the apiKey using the apps secret at the specific host level
+     * ExpectedResult: apiKey Value should be the sames as the secretValue
+     */
     @Test
     public void test_setServiceParameters_SecretExistAtHost_returnAPIKey()
             throws DotSecurityException, DotDataException {
@@ -58,6 +67,11 @@ public class GoogleTranslationServiceIntegrationTest {
         APILocator.getAppsAPI().deleteSecrets(GoogleTranslationService.GOOGLE_TRANSLATE_APP_CONFIG_KEY,host,admin);
     }
 
+    /**
+     * Method to test: {@link GoogleTranslationService#setServiceParameters(List, String)}
+     * Given Scenario: Setting the apiKey using the apps secret at the specific host level
+     * ExpectedResult: apiKey Value should be the sames as the secretValue
+     */
     @Test
     public void test_setServiceParameters_SecretExistAtSystemHost_returnAPIKey()
             throws DotSecurityException, DotDataException {
@@ -84,6 +98,11 @@ public class GoogleTranslationServiceIntegrationTest {
         APILocator.getAppsAPI().deleteSecrets(GoogleTranslationService.GOOGLE_TRANSLATE_APP_CONFIG_KEY,APILocator.systemHost(),admin);
     }
 
+    /**
+     * Method to test: {@link GoogleTranslationService#setServiceParameters(List, String)}
+     * Given Scenario: Setting the apiKey using the dotmarketing property
+     * ExpectedResult: apiKey Value should be the same as the value set at the property
+     */
     @Test
     public void test_setServiceParameters_APIKeySetPropertyFile_returnAPIKey(){
         final Host host = new SiteDataGen().name("GoogleTranslateKeyAtPropertyFile").nextPersisted();
