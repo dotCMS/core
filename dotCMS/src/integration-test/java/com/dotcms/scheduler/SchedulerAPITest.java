@@ -1,11 +1,11 @@
 package com.dotcms.scheduler;
 
-import java.time.Duration;
 import java.util.Random;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 
 public class SchedulerAPITest {
     @BeforeClass
@@ -13,6 +13,7 @@ public class SchedulerAPITest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
+        new DotConnect().setSQL("delete from scheduled_tasks").loadResult();
 
     }
 
@@ -30,6 +31,7 @@ public class SchedulerAPITest {
         TestSyncronizedTask task2 = new TestSyncronizedTask(rand2);
         TestSyncronizedTask task3 = new TestSyncronizedTask(rand3);
 
+        
         
         APILocator.getSchedulerAPI().scheduleOneTimeTask(task);
         APILocator.getSchedulerAPI().scheduleOneTimeTask(task2);

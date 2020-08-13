@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import com.github.kagkarlsson.scheduler.task.TaskInstance;
 
 public abstract class DotTask implements Serializable {
 
@@ -17,9 +16,11 @@ public abstract class DotTask implements Serializable {
 
     public final Map<String, Serializable> map = new HashMap<>();
 
-    TaskInstance<DotTask> task;
+    DotTask task;
+    String instanceId;
 
-    public void runTask(TaskInstance<DotTask> task) {
+    public void runTask(String instanceId, DotTask task) {
+        this.instanceId = instanceId;
         this.task = task;
         this.execute();
     }

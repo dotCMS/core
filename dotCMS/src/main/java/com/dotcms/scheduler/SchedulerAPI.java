@@ -41,9 +41,9 @@ public class SchedulerAPI {
     }
 
 
-    private OneTimeTask<DotTask> oneTime =
+    private final OneTimeTask<DotTask> oneTime =
                     Tasks.oneTime("one-time-task", DotTask.class).execute((inst, ctx) -> {
-                        inst.getData().runTask(inst);
+                        inst.getData().runTask(inst.getId(), inst.getData());
                     });
 
 
@@ -52,7 +52,10 @@ public class SchedulerAPI {
 
         this.scheduler = Scheduler.create(DbConnectionFactory.getDataSource(), oneTime)
                         .threads(Config.getIntProperty("SCHEDULER_NUMBER_OF_THREADS", 10))
-                        .schedulerName(schedulerName).deleteUnresolvedAfter(Duration.ofDays(1)).build();
+                        .schedulerName(schedulerName)
+                        .enableImmediateExecution()
+                        .deleteUnresolvedAfter(Duration.ofDays(1))
+                        .build();
 
         this.scheduler.start();
 
@@ -101,35 +104,9 @@ public class SchedulerAPI {
         getInstance().scheduler.reschedule(myTask, Instant.now().plusMillis(delay.toMillis()));
     }
 
-    public <T> void scheduleRecurringTask(final DotTask task, final String cronExpression) {
 
 
-        CronSchedule cron = new CronSchedule(cronExpression,
-                        APILocator.getCompanyAPI().getDefaultCompany().getTimeZone().toZoneId());
 
-
-        RecurringTask<DotTask> cronTask =
-                        Tasks.recurring(task.name(), cron, DotTask.class).execute((inst, ctx) -> {
-                            task.execute();
-                        });
-
-        getInstance().scheduler.schedule(cronTask.instance(task.name(), task),
-                        Instant.now().plusMillis(task.initialDelay().toMillis()));
-    }
-
-
-    public <T> void scheduleRecurringTask(final DotTask task, final Duration runEvery) {
-
-        final RecurringTask<DotTask> delayTask =
-                        Tasks.recurring(task.name(), FixedDelay.of(runEvery), DotTask.class)
-                                        .execute((inst, ctx) -> {
-                                            task.execute();
-                                        });
-
-        getInstance().scheduler.schedule(delayTask.instance(task.name(), task),
-                        Instant.now().plusMillis(task.initialDelay().toMillis()));
-
-    }
 
     @CloseDBIfOpened
     public boolean shouldIRun(String id, final DotTask task) {
