@@ -1,12 +1,10 @@
 package com.dotcms.rekognition.api;
 
-import com.dotmarketing.util.Config;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.amazonaws.auth.AWSCredentials;
@@ -19,101 +17,48 @@ import com.amazonaws.services.rekognition.model.DetectLabelsRequest;
 import com.amazonaws.services.rekognition.model.DetectLabelsResult;
 import com.amazonaws.services.rekognition.model.Image;
 import com.amazonaws.services.rekognition.model.Label;
-import com.dotmarketing.business.DotStateException;
+import java.util.stream.Collectors;
 
-public class RekognitionApi {
+public class RekognitionAPI {
 
 
   private final AWSCredentials awsCredentials;
   private final AmazonRekognition client;
-  private final float minConfidence;
-  private final int maxLabels;
 
-  public RekognitionApi() {
+  public RekognitionAPI(final String awsKey, final String awsSecret) {
 
-    this.awsCredentials = credentials();
+    this.awsCredentials = new BasicAWSCredentials(awsKey, awsSecret);
     
     this.client = AmazonRekognitionClientBuilder
                     .standard()
                     .withRegion(Regions.US_WEST_2)
                     .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
                     .build();
-    
-
-    this.maxLabels = Integer.parseInt(Config.getStringProperty("max.labels", "15"));
-    this.minConfidence = Float.parseFloat(Config.getStringProperty("min.confidence", "75"));
 
   }
 
-  public List<String> detectLabels(File file, int maxLabels, float minConfidence) {
-    try {
-      return _detectLabels(file, maxLabels, minConfidence);
-    } catch (Exception e) {
-      throw new DotStateException(e.getMessage(), e);
-    }
+  public List<String> generateTags(final File file, final int maxLabels, final float minConfidence) throws IOException {
 
-  }
+    try (final RandomAccessFile aFile = new RandomAccessFile(file.getAbsolutePath(), "r")) {
 
-
-  public List<String> detectLabels(File file) {
-    try {
-      return _detectLabels(file, maxLabels, minConfidence);
-    } catch (Exception e) {
-      throw new DotStateException(e.getMessage(), e);
-    }
-
-  }
-
-
-  private List<String> _detectLabels(File file, int maxLabels, float minConfidence) throws IOException {
-
-
-
-    try (RandomAccessFile aFile = new RandomAccessFile(file.getAbsolutePath(), "r")) {
-
-      FileChannel inChannel = aFile.getChannel();
-      MappedByteBuffer buffer = inChannel.map(FileChannel.MapMode.READ_ONLY, 0, inChannel.size());
+      final FileChannel inChannel = aFile.getChannel();
+      final MappedByteBuffer buffer = inChannel.map(FileChannel.MapMode.READ_ONLY, 0, inChannel.size());
       buffer.load();
-      Image image = new Image().withBytes(buffer);
+      final Image image = new Image().withBytes(buffer);
 
-      DetectLabelsRequest request =
+      final DetectLabelsRequest request =
           new DetectLabelsRequest()
           .withImage(image)
           .withMaxLabels(maxLabels)
           .withMinConfidence(minConfidence);
 
-      DetectLabelsResult result = client.detectLabels(request);
+      final DetectLabelsResult result = client.detectLabels(request);
       buffer.clear();
 
-
-      List<Label> awsLabels = result.getLabels();
-
-      List<String> labels = new ArrayList<>();
-
-      for (Label l : awsLabels) {
-
-        labels.add(l.getName());
-
-      }
-
-      return labels;
+      return result.getLabels().stream().map(Label::getName).collect(Collectors.toList());
     }
 
 
-  }
-
-
-
-  private AWSCredentials credentials() {
-
-    // todo: from secrets
-    String key = Config.getStringProperty("aws.key","");
-
-    String secret = Config.getStringProperty("aws.secret","");
-
-
-
-    return new BasicAWSCredentials(key, secret);
   }
 
 

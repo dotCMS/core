@@ -1,9 +1,10 @@
 package com.dotcms.rekognition.actionlet;
 
 
-import com.dotmarketing.util.Config;
+import com.dotcms.security.apps.AppSecrets;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.CacheLocator;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +13,7 @@ import java.util.Optional;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.rekognition.api.RekognitionApi;
+import com.dotcms.rekognition.api.RekognitionAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -35,16 +36,17 @@ public class RekognitionActionlet extends WorkFlowActionlet {
 
     private final static int IMAGE_MAX_LENGTH = 5242879;
     private final static String TAGGED_BY_AWS = "TAGGED_BY_AWS";
+    public static final String AMAZON_REKOGNITION_APP_CONFIG_KEY = "dotAmazonRekognition-config";
+    public static final String ACCESS_KEY_VAR = "accessKey";
+    public static final String SECRET_ACCESS_KEY_VAR = "secretAccessKey";
+    public static final String MAX_LABELS_VAR = "maxLabels";
+    public static final String MIN_CONFIDENCE_VAR = "minConfidence";
 
     private final TagAPI tagAPI = APILocator.getTagAPI();
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {
-        List<WorkflowActionletParameter> params = new ArrayList<WorkflowActionletParameter>();
-
-        params.add(new WorkflowActionletParameter("maxLabels", "Max Labels", Config.getStringProperty("max.labels", "15"), true));
-        params.add(new WorkflowActionletParameter("minConfidence", "Minimum Confidence (percent)", Config.getStringProperty("min.confidence", "75"), true));
-        return params;
+        return null;
     }
 
     @Override
@@ -54,7 +56,7 @@ public class RekognitionActionlet extends WorkFlowActionlet {
 
     @Override
     public String getHowTo() {
-        return "Max Labels is the maximum number of labels you are looking to return and Minimum Confidence is the minimum confidence level you will accept as valid tags";
+        return "This Actionlet will automatically tag images using Amazon's Rekognition AI engine";
     }
 
     @Override
@@ -64,24 +66,22 @@ public class RekognitionActionlet extends WorkFlowActionlet {
         final Contentlet contentlet = processor.getContentlet();
         Optional<Field> tagFieldOpt = null;
         Optional<File> imageOpt     = null;
-        Field tagField = null;
-        File image     = null;
-
+        Optional<AppSecrets> appSecrets = null;
+        File image;
         List<Field> fields;
         try {
 
             fields = APILocator.getContentTypeAPI(processor.getUser()).find(contentlet.getContentTypeId()).fields();
             tagFieldOpt = fields.stream().filter(TagField.class::isInstance).findFirst();
-
+            //Check if there is a Tag Field, if not there is nothing to do here
             if (!tagFieldOpt.isPresent()) {
-                return;
+                throw new Exception("There is no Tag Field in the Content Type");
             }
 
-            tagField = tagFieldOpt.get();
-
             final List<Tag> tags = tagAPI.getTagsByInode(contentlet.getInode());
+            //Check if there is already a Tag with the name TAGGED_BY_AWS, if there is Tags were already generated and nothing to do here
             if (tags.stream().anyMatch(tag -> TAGGED_BY_AWS.equalsIgnoreCase(tag.getTagName()))) {
-                return; // tags were already generated.
+                throw new Exception("Tags already generated");
             }
 
             imageOpt = fields.stream().filter(BinaryField.class::isInstance)
@@ -89,14 +89,25 @@ public class RekognitionActionlet extends WorkFlowActionlet {
                     .filter(img -> null != img && UtilMethods.isImage(img.getAbsolutePath()))
                     .findFirst();
 
+            //Check if there is a Binary Field and if there is an Image set in it, if not there is nothing to do here
             if (!imageOpt.isPresent()) {
-                return;
+                throw new Exception("There is no Binary Field or an Image is not set in it");
+            }
+            image = imageOpt.get();
+
+            //Get Values from Secrets
+            final Host host = Try.of(() -> APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(),false)).getOrElse(APILocator.systemHost());
+            appSecrets = APILocator.getAppsAPI().getSecrets(AMAZON_REKOGNITION_APP_CONFIG_KEY,true,host,APILocator.systemUser());
+
+            if(!appSecrets.isPresent()) {
+                throw new Exception("There is no config set, please set it via Apps Tool");
             }
 
-            // todo: Errick check the app secret
-            final float minConfidence  = Float.parseFloat(params.get("minConfidence").getValue());
-            // todo: Errick check the app secret
-            final int maxLabels        = Integer.parseInt(params.get("maxLabels").getValue());
+            final String accessKey = appSecrets.get().getSecrets().get(ACCESS_KEY_VAR).getString();
+            final String secretAccessKey = appSecrets.get().getSecrets().get(SECRET_ACCESS_KEY_VAR).getString();
+            final int maxLabels = Integer.parseInt(appSecrets.get().getSecrets().get(MAX_LABELS_VAR).getString());
+            final float minConfidence = Float.parseFloat(appSecrets.get().getSecrets().get(MIN_CONFIDENCE_VAR).getString());
+            //End Get Values from Secrets
 
             if (image.length() > IMAGE_MAX_LENGTH) {
 
@@ -105,26 +116,31 @@ public class RekognitionActionlet extends WorkFlowActionlet {
                 image = new ResizeImageFilter().runFilter(image, args);
             }
 
-            final List<String> awsTags = new RekognitionApi().detectLabels(image, maxLabels, minConfidence);
+            final List<String> awsTags = new RekognitionAPI(accessKey,secretAccessKey).generateTags(image, maxLabels, minConfidence);
+
+            Logger.info(this,"Tags generated by AWS: " + awsTags.toString());
 
             awsTags.add(TAGGED_BY_AWS);
-            for (String tag : awsTags) {
-                tagAPI.addContentletTagInode(tag, contentlet.getInode(), contentlet.getHost(), tagField.variable());
+            for (final String tag : awsTags) {
+                tagAPI.addContentletTagInode(tag, contentlet.getInode(), contentlet.getHost(), tagFieldOpt.get().variable());
             }
 
             HibernateUtil.addCommitListener(contentlet.getInode(),
                     ()->this.refresh(contentlet));
-        } catch (Exception e) {
 
+            CacheLocator.getContentletCache().remove(contentlet);
+        } catch (Exception e) {
             Logger.error(this, "Unable to autogenerate the rekognition tags: "
                     + e.getMessage(), e);
+        } finally {
+            if(UtilMethods.isSet(appSecrets) && appSecrets.isPresent()){
+                appSecrets.get().destroy();
+            }
         }
     }
 
     private void refresh (final Contentlet contentlet) {
-
         try {
-
             APILocator.getContentletAPI().refresh(contentlet);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
