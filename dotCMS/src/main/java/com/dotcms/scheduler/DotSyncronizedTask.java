@@ -14,7 +14,7 @@ public abstract class DotSyncronizedTask extends DotTask {
     private static final long serialVersionUID = 1L;
 
 
-    final int rescheduleDelay = Config.getIntProperty("DOTSYNCRONIZEDTASK_RESCHEDULE_DELAY_SEC", 20);
+    final int rescheduleDelay = Config.getIntProperty("DOTSYNCRONIZEDTASK_RESCHEDULE_DELAY_SEC", 15);
     
     
     public final void runTask(String instanceId, DotTask task) {

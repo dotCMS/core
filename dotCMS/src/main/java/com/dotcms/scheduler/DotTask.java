@@ -17,7 +17,7 @@ public abstract class DotTask implements Serializable {
     public final Map<String, Serializable> map = new HashMap<>();
 
     DotTask task;
-    String instanceId;
+    String instanceId=null;
 
     public void runTask(String instanceId, DotTask task) {
         this.instanceId = instanceId;
@@ -31,5 +31,13 @@ public abstract class DotTask implements Serializable {
         return Duration.ofMillis(0);
     }
 
+    
+    
+    @Override
+    public String toString() {
+        return   this.getClass().getSimpleName() + (instanceId!=null ? " instanceId:" + instanceId  :"");
+        
+        
+    }
 
 }

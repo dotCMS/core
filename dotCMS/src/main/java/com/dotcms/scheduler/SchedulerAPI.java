@@ -13,27 +13,15 @@ import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.SchedulerName;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
 import com.github.kagkarlsson.scheduler.task.helper.OneTimeTask;
-import com.github.kagkarlsson.scheduler.task.helper.RecurringTask;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
-import com.github.kagkarlsson.scheduler.task.schedule.CronSchedule;
-import com.github.kagkarlsson.scheduler.task.schedule.FixedDelay;
 
 public class SchedulerAPI {
 
     private static class SingletonHolder {
-
         private static final SchedulerAPI INSTANCE = new SchedulerAPI();
     }
 
     private final Scheduler scheduler;
-
-    private final SchedulerName schedulerName = new SchedulerName() {
-
-        @Override
-        public String getName() {
-            return APILocator.getServerAPI().readServerId();
-        }
-    };
 
 
     public static SchedulerAPI getInstance() {
@@ -52,7 +40,12 @@ public class SchedulerAPI {
 
         this.scheduler = Scheduler.create(DbConnectionFactory.getDataSource(), oneTime)
                         .threads(Config.getIntProperty("SCHEDULER_NUMBER_OF_THREADS", 10))
-                        .schedulerName(schedulerName)
+                        .schedulerName(new SchedulerName() {
+                            @Override
+                            public String getName() {
+                                return APILocator.getServerAPI().readServerId();
+                            }
+                        })
                         .enableImmediateExecution()
                         .deleteUnresolvedAfter(Duration.ofDays(1))
                         .build();
@@ -87,6 +80,10 @@ public class SchedulerAPI {
 
     public void scheduleOneTimeTask(final DotTask task, Duration duration) {
 
+        Logger.info(this.getClass(),
+                        "Scheduling Task: " + task + " in " + (duration.toMillis() / 1000) + "s");
+
+
         final TaskInstance<DotTask> myTask =
                         oneTime.instance(task.name() + "_" + UUIDGenerator.shorty(), task);
 
@@ -99,15 +96,19 @@ public class SchedulerAPI {
         scheduleOneTimeTask(task, task.initialDelay());
     }
 
-    
+
     public void rescheduleOneTimeTask(final TaskInstance<DotTask> myTask, Duration delay) {
         getInstance().scheduler.reschedule(myTask, Instant.now().plusMillis(delay.toMillis()));
     }
 
 
-
-
-
+    /**
+     * If the task that is passed in is a DotSyncronizedTask, then only one
+     * instance of its class should be allowed to run at any given time.
+     * @param id
+     * @param task
+     * @return
+     */
     @CloseDBIfOpened
     public boolean shouldIRun(String id, final DotTask task) {
 
@@ -118,11 +119,10 @@ public class SchedulerAPI {
         String clazz = task.getClass().getName();
         final String topTask = new DotConnect()
                         .setMaxRows(1)
-                        .setSQL(
-            "select task_instance as test from scheduled_tasks where task_instance like ? and picked=? order by task_instance")
-            .addParam(clazz + "%")
-            .addParam(true)
-            .getString("test");
+                        .setSQL("select task_instance as task_instance from scheduled_tasks where task_instance like ? and picked=? order by task_instance")
+                        .addParam(clazz + "%")
+                        .addParam(true)
+                        .getString("task_instance");
 
 
         return id.equals(topTask);
