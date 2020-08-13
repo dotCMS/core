@@ -18,6 +18,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.scheduler.DotSyncronizedTask;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
@@ -48,15 +49,24 @@ import org.quartz.SimpleTrigger;
  * Stateful job used to remove content type field references before its deletion
  * @author nollymar
  */
-public class CleanUpFieldReferencesJob extends DotStatefulJob {
+public class CleanUpFieldReferencesJob extends DotSyncronizedTask {
 
+    final User user;
+    final Field field;
+    final Date deletionDate;
+    
+    CleanUpFieldReferencesJob(User user, Field field){
+        this.user=user;
+        this.field=field;
+        this.deletionDate=new Date();
+        
+        
+    }
+    
+    
     @Override
     @WrapInTransaction
-    public void run(JobExecutionContext jobContext) throws JobExecutionException {
-
-        final User user = (User)jobContext.getJobDetail().getJobDataMap().get("user");
-        final Field field = (Field) jobContext.getJobDetail().getJobDataMap().get("field");
-        final Date deletionDate = (Date) jobContext.getJobDetail().getJobDataMap().get("deletionDate");
+    public void execute()  {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
@@ -107,28 +117,14 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
     
     public static void triggerCleanUpJob(final Field field, final User user) {
 
-        final JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put("field", field);
-        jobDataMap.put("deletionDate", Calendar.getInstance().getTime());
-        jobDataMap.put("user", user);
-
-        final String randomID = UUID.randomUUID().toString();
-
-        final JobDetail jd = new JobDetail("CleanUpFieldReferencesJob-" + randomID, "clean_up_field_reference_jobs",
-                        CleanUpFieldReferencesJob.class);
-        jd.setJobDataMap(jobDataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
-
-        long startTime = System.currentTimeMillis();
-        final SimpleTrigger trigger = new SimpleTrigger("deleteFieldStatefulTrigger-" + randomID,
-                        "clean_up_field_reference_job_triggers", new Date(startTime));
-
-        HibernateUtil.addCommitListenerNoThrow(Sneaky.sneaked(()-> {
-                Scheduler sched = QuartzUtils.getSequentialScheduler();
-                sched.scheduleJob(jd, trigger);
-            }
-        ));
+        CleanUpFieldReferencesJob task = new CleanUpFieldReferencesJob(user, field);
+        
+        APILocator.getSchedulerAPI().scheduleOneTimeTask(task);
+        
+        
+        
+        
+        
+        
     }
 }

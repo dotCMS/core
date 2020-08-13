@@ -119,7 +119,7 @@ public class SchedulerAPI {
         String clazz = task.getClass().getName();
         final String topTask = new DotConnect()
                         .setMaxRows(1)
-                        .setSQL("select task_instance as task_instance from scheduled_tasks where task_instance like ? and picked=? order by task_instance")
+                        .setSQL("select task_instance as task_instance from scheduled_tasks where task_instance like ? and picked=? order by execution_time, task_instance")
                         .addParam(clazz + "%")
                         .addParam(true)
                         .getString("task_instance");

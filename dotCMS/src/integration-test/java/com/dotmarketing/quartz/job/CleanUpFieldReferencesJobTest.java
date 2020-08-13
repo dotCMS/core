@@ -41,7 +41,6 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
 
-    final CleanUpFieldReferencesJob instance = new CleanUpFieldReferencesJob();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -114,12 +113,12 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             Contentlet contentlet = contentletDataGen.languageId(langId)
                     .setProperty(field.variable(), testCase.fieldValue).nextPersisted();
 
-            // Execute jobs to delete fields
-            TestJobExecutor.execute(instance,
-                    CollectionsUtils
-                            .map("deletionDate",
-                                    new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000),
-                                    "field", field, "user", systemUser));
+            
+            final CleanUpFieldReferencesJob instance = new CleanUpFieldReferencesJob(systemUser, field);
+
+            
+            
+
 
             // Make sure the field value is cleaned up
             contentlet = APILocator.getContentletAPI().find(contentlet.getInode(), systemUser, false);
