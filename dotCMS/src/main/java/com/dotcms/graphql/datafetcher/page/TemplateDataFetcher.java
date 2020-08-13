@@ -21,14 +21,10 @@ import java.io.CharArrayReader;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
-import javax.servlet.http.HttpServletRequest;
 
 /**
- * This DataFetcher returns a {@link HTMLPageAsset} given an URL. It also takes optional parameters
- * to find a specific version of the page: languageId and pageMode.
- *
- * The returned page includes extra properties set by a page transformer.
- *
+ * This DataFetcher returns a {@link Map} representing a {@link Template} associated to the originally
+ * requested {@link HTMLPageAsset}.
  */
 public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
     @Override
