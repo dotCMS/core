@@ -234,9 +234,10 @@ public class ReindexThread {
     private boolean switchOverIfNeeded() throws LanguageException, DotDataException, SQLException, InterruptedException {
         if (ESReindexationProcessStatus.inFullReindexation() && queueApi.recordsInQueue() == 0) {
             // The re-indexation process has finished successfully
-            indexAPI.reindexSwitchover(false);
-            // Generate and send an user notification
-            sendNotification("notification.reindexing.success", null, null, false);
+            if (indexAPI.reindexSwitchover(false)) {
+                // Generate and send an user notification
+                sendNotification("notification.reindexing.success", null, null, false);
+            }
             return true;
         }
         return false;
