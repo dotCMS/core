@@ -41,7 +41,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
         BASE_URL);
     private String apiKey;
     private List<ServiceParameter> params;
-    public static final String GOOGLE_TRANSLATE_APP_CONFIG_KEY = "googleTranslate-config";
+    public static final String GOOGLE_TRANSLATE_APP_CONFIG_KEY = "dotGoogleTranslate-config";
     public static final String API_KEY_VAR = "apiKey";
     public static final String GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY = "GOOGLE_TRANSLATE_SERVICE_API_KEY";
 
