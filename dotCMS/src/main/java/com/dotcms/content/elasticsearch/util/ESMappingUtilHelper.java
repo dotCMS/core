@@ -26,6 +26,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
@@ -294,23 +295,28 @@ public class ESMappingUtilHelper {
     private void addMappingForContentTypeIfNeeded(final ContentType contentType,
             final Set<String> mappedFields, final String... indexes) {
         final Map<String, JSONObject> contentTypeMapping = new HashMap();
-        contentType.fields().stream().forEach(field-> {
-                try {
-                    addMappingForFieldIfNeeded(contentType, field,
-                            mappedFields, contentTypeMapping);
-                    putContentTypeMapping(contentType, contentTypeMapping, indexes);
-                } catch (Exception e) {
-                    handleInvalidCustomMappingError(
-                            "notification.reindexing.content.type.mapping.error",
-                            contentType.name(), indexes);
-                    final String message =
-                            "Error updating index mapping for content type " + contentType.name()
-                                    + ". This custom mapping will be ignored for index(es) " +
-                                    Arrays.stream(indexes).collect(Collectors.joining(","));
-                    Logger.warn(ESMappingUtilHelper.class, message, e);
+        try {
+            contentType.fields().stream().forEach(field-> {
+                    try {
+                        addMappingForFieldIfNeeded(contentType, field,
+                                mappedFields, contentTypeMapping);
+                    } catch (JSONException e) {
+                        throw new DotRuntimeException(e);
+                    }
                 }
-            }
-        );
+            );
+
+            putContentTypeMapping(contentType, contentTypeMapping, indexes);
+        } catch (Exception e) {
+            handleInvalidCustomMappingError(
+                    "notification.reindexing.content.type.mapping.error",
+                    contentType.name(), indexes);
+            final String message =
+                    "Error updating index mapping for content type " + contentType.name()
+                            + ". This custom mapping will be ignored for index(es) " +
+                            Arrays.stream(indexes).collect(Collectors.joining(","));
+            Logger.warn(ESMappingUtilHelper.class, message, e);
+        }
     }
 
     /**
