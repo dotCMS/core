@@ -1,0 +1,36 @@
+name: "Amazon's Rekognition Configuration"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/ema-icon.png"
+allowExtraParameters: false
+description: "Configuration for using the RekognitionActionlet"
+params:
+  accessKey:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "AWS Access Key"
+    hint: "The AWS access key, used to identify the user interacting with AWS."
+    required: true
+  
+  secretAccessKey:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "AWS Secret Access Key"
+    hint: "The AWS secret access key, used to authenticate the user interacting with AWS."
+    required: true
+  
+  maxLabels:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Max Labels"
+    hint: "Maximum number of labels you want the service to return in the response. The service returns the specified number of highest confidence labels."
+    required: true
+  
+  minConfidence:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Min Confidence"
+    hint: "Specifies the minimum confidence level for the labels to return. Amazon Rekognition doesn't return any labels with confidence lower than this specified value."
+    required: true
