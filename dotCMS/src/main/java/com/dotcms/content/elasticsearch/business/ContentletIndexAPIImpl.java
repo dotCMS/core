@@ -145,14 +145,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public synchronized boolean createContentIndex(String indexName) throws ElasticsearchException, IOException {
-        boolean result;
-        try {
-            result = createContentIndex(indexName, 0);
-            HibernateUtil
-                    .addCommitListener(() -> ESMappingUtilHelper.getInstance().addCustomMapping(indexName));
-        } catch (DotHibernateException e) {
-            throw new ElasticsearchException(e);
-        }
+        boolean result = createContentIndex(indexName, 0);
+        ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
+
         return result;
     }
 
@@ -218,8 +213,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             APILocator.getIndiciesAPI().point(info);
 
-            HibernateUtil.addCommitListener(() -> ESMappingUtilHelper.getInstance()
-                    .addCustomMapping(info.getWorking(), info.getLive()));
+            ESMappingUtilHelper.getInstance()
+                    .addCustomMapping(info.getWorking(), info.getLive());
             return timeStamp;
         } catch (Exception e) {
             throw new ElasticsearchException(e.getMessage(), e);
@@ -309,8 +304,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
                 APILocator.getIndiciesAPI().point(info);
 
-                HibernateUtil.addCommitListener(() -> ESMappingUtilHelper.getInstance()
-                        .addCustomMapping(info.getReindexWorking(), info.getReindexLive()));
+                ESMappingUtilHelper.getInstance()
+                        .addCustomMapping(info.getReindexWorking(), info.getReindexLive());
 
                 return timeStamp;
             } catch (Exception e) {
@@ -342,7 +337,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
 
 
-        if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 15)*1000) {
+        if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30)*1000) {
           Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
           ThreadUtils.sleep(3000);
           return false;
