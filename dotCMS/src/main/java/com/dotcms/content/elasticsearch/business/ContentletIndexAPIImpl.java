@@ -61,7 +61,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -258,10 +257,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * @throws SQLException An error occurred when interacting with the database.
      * @throws DotDataException The process to switch to the new failed.
      * @throws InterruptedException The established pauses to switch to the new index failed.
+     * @return
      */
     @Override
     @CloseDBIfOpened
-    public void reindexSwitchover(boolean forceSwitch) throws DotDataException {
+    public boolean reindexSwitchover(boolean forceSwitch) throws DotDataException {
 
         // We double check again. Only one node will enter this critical
         // region, then others will enter just to see that the switchover is
@@ -270,10 +270,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (forceSwitch || queueApi.recordsInQueue() == 0) {
             Logger.info(this, "Running Reindex Switchover");
             // Wait a bit while all records gets flushed to index
-            this.fullReindexSwitchover(forceSwitch);
+            return this.fullReindexSwitchover(forceSwitch);
             // Wait a bit while elasticsearch flushes it state
         }
-
+        return false;
     }
 
     /**
