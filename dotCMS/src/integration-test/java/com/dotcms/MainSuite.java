@@ -28,6 +28,7 @@ import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
+import com.dotcms.scheduler.SchedulerAPITest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -44,6 +45,7 @@ import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDe
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
 import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
+import com.dotmarketing.startup.runonce.Task05360AddDBSchedulerTablesTest;
 import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
@@ -306,7 +308,9 @@ import org.junit.runners.Suite.SuiteClasses;
         ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
         IdentityProviderConfigurationFactoryTest.class,
-        EMAWebInterceptorTest.class
+        EMAWebInterceptorTest.class,
+        Task05360AddDBSchedulerTablesTest.class,
+        SchedulerAPITest.class
 })
 public class MainSuite {
 
