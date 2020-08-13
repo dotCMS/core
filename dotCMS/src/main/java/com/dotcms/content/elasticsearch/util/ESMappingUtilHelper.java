@@ -296,7 +296,7 @@ public class ESMappingUtilHelper {
             final Set<String> mappedFields, final String... indexes) {
         final Map<String, JSONObject> contentTypeMapping = new HashMap();
         try {
-            contentType.fields().stream().forEach(field-> {
+            contentType.fields().forEach(field-> {
                     try {
                         addMappingForFieldIfNeeded(contentType, field,
                                 mappedFields, contentTypeMapping);
