@@ -1,4 +1,13 @@
-import { Component, Output, EventEmitter, Input, HostBinding, ViewChild } from '@angular/core';
+import {
+    Component,
+    Output,
+    EventEmitter,
+    Input,
+    HostBinding,
+    ViewChild,
+    ElementRef,
+    HostListener
+} from '@angular/core';
 import { DotMenu, DotMenuItem } from '@models/navigation';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
@@ -23,10 +32,16 @@ export class DotNavItemComponent {
     collapsed: boolean;
 
     customStyles = {};
+    mainHeaderHeight = 60;
 
     private windowHeight = window.innerHeight;
 
-    constructor() {}
+    constructor(private hostElRef: ElementRef) {}
+
+    @HostListener('mouseleave', ['$event'])
+    menuUnhovered() {
+        this.resetSubMenuPosition();
+    }
 
     /**
      * Handle click on menu section title
@@ -56,12 +71,34 @@ export class DotNavItemComponent {
                 this.windowHeight = window.innerHeight;
             }
 
-            if (rects.bottom > this.windowHeight) {
+            if (
+                !this.isThereEnoughBottomSpace(rects.bottom) &&
+                !this.isThereEnoughTopSpace(rects.height)
+            ) {
                 this.customStyles = {
-                    top: 'auto',
-                    bottom: '0'
+                    'max-height': `${this.windowHeight - this.mainHeaderHeight}px`,
+                    overflow: 'auto',
+                    top: `-${rects.top - this.mainHeaderHeight - 16}px`
+                };
+            } else if (!this.isThereEnoughBottomSpace(rects.bottom)) {
+                this.customStyles = {
+                    bottom: '0',
+                    top: 'auto'
                 };
             }
+        }
+    }
+
+    /**
+     * Sets styles of the SubMenu with default properties
+     *
+     * @memberof DotNavItemComponent
+     */
+    resetSubMenuPosition(): void {
+        if (this.collapsed) {
+            this.customStyles = {
+                overflow: 'hidden'
+            };
         }
     }
 
@@ -73,5 +110,15 @@ export class DotNavItemComponent {
      */
     handleItemClick(event: { originalEvent: MouseEvent; data: DotMenuItem }) {
         this.itemClick.emit(event);
+    }
+
+    private isThereEnoughBottomSpace(subMenuBottomY: number): boolean {
+        return subMenuBottomY < window.innerHeight;
+    }
+
+    private isThereEnoughTopSpace(subMenuHeight: number): boolean {
+        const availableTopSpace =
+            this.hostElRef.nativeElement.getBoundingClientRect().bottom - this.mainHeaderHeight;
+        return availableTopSpace > subMenuHeight;
     }
 }

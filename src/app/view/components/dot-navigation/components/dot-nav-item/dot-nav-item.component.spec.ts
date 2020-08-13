@@ -1,4 +1,3 @@
-/* tslint:disable:no-unused-variable */
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement } from '@angular/core';
@@ -12,7 +11,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { dotMenuMock } from '../../services/dot-navigation.service.spec';
 import { DotMenu } from '@models/navigation';
 import { TooltipModule } from 'primeng/primeng';
-import { DOTTestBed } from '@tests/dot-test-bed';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -49,7 +47,7 @@ describe('DotNavItemComponent', () => {
     }));
 
     beforeEach(() => {
-        fixtureHost = DOTTestBed.createComponent(TestHostComponent);
+        fixtureHost = TestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-nav-item'));
@@ -89,7 +87,7 @@ describe('DotNavItemComponent', () => {
     });
 
     describe('dot-sub-nav', () => {
-        it('should set position correctly', () => {
+        it('should set position correctly if there is not enough space at the bottom', () => {
             deHost.componentInstance.collapsed = true;
 
             subNav.nativeElement.style.position = 'absolute';
@@ -100,19 +98,40 @@ describe('DotNavItemComponent', () => {
             navItem.triggerEventHandler('mouseenter', {});
             fixtureHost.detectChanges();
 
-            expect(subNav.styles).toEqual({
-                top: 'auto',
-                bottom: '0'
+            fixtureHost.whenStable().then(() => {
+                expect(subNav.styles).not.toEqual({});
+                spyOnProperty(window, 'innerHeight').and.returnValue(1760);
+                navItem.triggerEventHandler('mouseenter', {});
+                fixtureHost.detectChanges();
+                expect(subNav.styles).toBeDefined();
             });
+        });
 
-            spyOnProperty(window, 'innerHeight').and.returnValue(1760);
+        it('should set position correctly if there is enough space at the bottom', () => {
+            deHost.componentInstance.collapsed = true;
+
+            subNav.nativeElement.style.position = 'absolute';
+            subNav.nativeElement.style.top = '5000px'; // moving it out of the window
+            de.nativeElement.style.position = 'absolute';
+            de.nativeElement.style.top = '800px';
+
+            fixtureHost.detectChanges();
 
             navItem.triggerEventHandler('mouseenter', {});
             fixtureHost.detectChanges();
 
             expect(subNav.styles).toEqual({
-                top: null,
-                bottom: null
+                bottom: '0',
+                top: 'auto'
+            });
+        });
+
+        it('should reset menu position when mouseleave', () => {
+            component.collapsed = true;
+            de.triggerEventHandler('mouseleave', {});
+            fixtureHost.detectChanges();
+            expect(subNav.styles).toEqual({
+                overflow: 'hidden'
             });
         });
 
