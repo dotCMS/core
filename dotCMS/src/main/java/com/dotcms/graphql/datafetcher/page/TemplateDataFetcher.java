@@ -35,11 +35,7 @@ public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
     public Map<Object, Object> get(final DataFetchingEnvironment environment) throws Exception {
         try {
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
-            final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
-                    .getHttpServletRequest();
-
             final Contentlet contentlet = environment.getSource();
-
             final String pageModeAsString = environment.getArgument("pageMode")
                     != null ? environment.getArgument("pageMode") : PageMode.LIVE.name();
 
@@ -62,11 +58,11 @@ public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
             final User systemUser = APILocator.getUserAPI().getSystemUser();
 
             return mode.showLive ?
-                    (com.dotmarketing.portlets.templates.model.Template)
+                    (Template)
                             APILocator.getVersionableAPI()
                                     .findLiveVersion(templateId, systemUser, mode.respectAnonPerms)
                     :
-                    (com.dotmarketing.portlets.templates.model.Template)
+                    (Template)
                             APILocator.getVersionableAPI()
                                     .findWorkingVersion(templateId, systemUser, mode.respectAnonPerms);
         } catch (DotSecurityException e) {
