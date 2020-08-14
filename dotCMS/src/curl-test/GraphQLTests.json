@@ -161,7 +161,6 @@
 									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
 									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
 									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
-									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
 									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
 									"    pm.expect(page[\"titleImage\"].name).equal(\"costa-rica-tree-frog.jpg\");",
 									"    pm.expect(page[\"titleImage\"].versionPath).not.equal(null)",
@@ -2788,87 +2787,87 @@
 	],
 	"variable": [
 		{
-			"id": "d5c33cff-97c7-40b8-8300-cca422c3a715",
+			"id": "82dbe6dd-566a-4ad0-aed5-4bb4d76da0b7",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "09f2d94f-ecb6-4323-a498-43cafabd5069",
+			"id": "1b40d6fc-69ea-4139-ab11-e83c1eb37817",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "40cf7206-9108-40c0-a825-302d86168982",
+			"id": "1b2c1ee2-112f-463b-b8d7-0cdcf3306be2",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "5ef89c1e-b85d-4cd0-bac3-d4048bca8fb3",
+			"id": "41328a09-1352-4e6b-9a17-80834e772d30",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "588a76c4-374b-45ea-91cc-a01ecc0c82b6",
+			"id": "c44bdb0f-cd17-4170-ac4f-54d15e11f27e",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "eb39ebdb-ff1d-410e-9cc9-27e86fafdfba",
+			"id": "22d54a69-88a7-47b8-9511-279be03e2c60",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "75a1778a-92b9-4fd9-b30e-541d02d45b2a",
+			"id": "91b5acda-0ff1-4829-9650-1d54df816825",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "f547e7b2-f4f1-4e7a-8dfe-ea332147ecd4",
+			"id": "dd33574a-6d81-4f30-bf43-318019339bfb",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "dadf3644-32a7-47a6-a36f-224e9de34475",
+			"id": "a99879e5-832b-489f-a38f-8cc4c5f59a05",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "317e8858-60cd-4248-a676-d59e5c2e60f4",
+			"id": "b0bb557a-fe7f-4cbc-a393-dfa81138bf8f",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "2313cc03-fc1a-49c1-af42-95ab2ee92c71",
+			"id": "d69737f9-fea7-4c5f-9e0b-d7cc0dd156d5",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "e0914211-68b5-43e8-adf1-54465066aacf",
+			"id": "2ec93662-f209-45fd-8bbe-3600e8844874",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "aead791b-cbf0-42d8-965e-85f053a43089",
+			"id": "122210d1-4740-4596-9f09-3defcfda09e2",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "a2245940-d3c6-4815-8c0c-1c136984a2e1",
+			"id": "5c1a0ae4-7758-4cb1-b9f5-caea813b4ef1",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "dc15e44e-1b92-4d26-8fec-778df363b5b2",
+			"id": "d3416436-07a5-4b9e-8cda-9d68c55fbf58",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "83ae09f1-2525-4042-b281-69c29bc958f8",
+			"id": "4ea7030a-4e42-4420-9f37-25040c803842",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "aa877844-f03b-4d6e-8805-02ad4d5c260c",
+			"id": "1254d682-84b4-4925-b860-91b9ae93e191",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
