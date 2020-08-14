@@ -57,7 +57,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/role/users/id/654b0931-1027-41f7-ad4d-173115ed8ec1",
+					"raw": "{{serverURL}}/api/v1/roles/654b0931-1027-41f7-ad4d-173115ed8ec1/rolehierarchyanduserroles",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -124,7 +124,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/role/users/id/654b0931-1027-41f7-ad4d-173115ed8ec1?roleHierarchyForAssign=true",
+					"raw": "{{serverURL}}/api/v1/roles/654b0931-1027-41f7-ad4d-173115ed8ec1/rolehierarchyanduserroles?roleHierarchyForAssign=true",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -197,7 +197,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/role/users/id/654b0931-1027-41f7-ad4d-173115ed8ec1",
+					"raw": "{{serverURL}}/api/v1/roles/654b0931-1027-41f7-ad4d-173115ed8ec1/rolehierarchyanduserroles",
 					"host": [
 						"{{serverURL}}"
 					],
