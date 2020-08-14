@@ -63,10 +63,10 @@
 					],
 					"path": [
 						"api",
-						"role",
-						"users",
-						"id",
-						"654b0931-1027-41f7-ad4d-173115ed8ec1"
+						"v1",
+						"roles",
+						"654b0931-1027-41f7-ad4d-173115ed8ec1",
+						"rolehierarchyanduserroles"
 					]
 				},
 				"description": "load users and roles by role"
@@ -130,10 +130,10 @@
 					],
 					"path": [
 						"api",
-						"role",
-						"users",
-						"id",
-						"654b0931-1027-41f7-ad4d-173115ed8ec1"
+						"v1",
+						"roles",
+						"654b0931-1027-41f7-ad4d-173115ed8ec1",
+						"rolehierarchyanduserroles"
 					],
 					"query": [
 						{
@@ -203,10 +203,10 @@
 					],
 					"path": [
 						"api",
-						"role",
-						"users",
-						"id",
-						"654b0931-1027-41f7-ad4d-173115ed8ec1"
+						"v1",
+						"roles",
+						"654b0931-1027-41f7-ad4d-173115ed8ec1",
+						"rolehierarchyanduserroles"
 					]
 				},
 				"description": "load users and roles by role filtering by name"
