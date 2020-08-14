@@ -45,6 +45,7 @@ import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
 import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
 import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
+import com.dotmarketing.startup.runonce.Task05355AddAppsPortletToLayoutTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
@@ -306,7 +307,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
         IdentityProviderConfigurationFactoryTest.class,
-        EMAWebInterceptorTest.class
+        EMAWebInterceptorTest.class,
+        Task05355AddAppsPortletToLayoutTest.class
 })
 public class MainSuite {
 
