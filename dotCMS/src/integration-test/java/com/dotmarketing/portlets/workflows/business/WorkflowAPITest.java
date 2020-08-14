@@ -3866,6 +3866,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
         return Integer.parseInt(result.get(0).get("count"));
     }
 
+    /**
+     * Copy Properties: The idea is to check if the transient variables on the contentlet such as workflow attributes are being copied after save
+     * Given Scenario: Create a content, fires a save and checks if the new checkout still having the workflow attributes
+     * ExpectedResult: The workflow attributes still there after the save
+     *
+     */
     @Test
     public void fireWorkflowAction_checkPropertiesAreCopied_successfully()
             throws DotDataException, DotSecurityException, AlreadyExistException, ExecutionException, InterruptedException {
