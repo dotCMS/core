@@ -274,7 +274,7 @@ public class FieldAPIImpl implements FieldAPI {
             final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
             if (indiciesInfo != null){
                 if (UtilMethods.isSet(indiciesInfo.getLive())) {
-                    ESMappingUtilHelper.getInstance().addCustomMapping(indiciesInfo.getLive(), field);
+                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getLive());
                     Logger.info(this.getClass(), String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()
@@ -282,7 +282,7 @@ public class FieldAPIImpl implements FieldAPI {
                 }
 
                 if (UtilMethods.isSet(indiciesInfo.getWorking())) {
-                    ESMappingUtilHelper.getInstance().addCustomMapping(indiciesInfo.getWorking(), field);
+                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getWorking());
                     Logger.info(this.getClass(), String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()

@@ -2,10 +2,10 @@ package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
+import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.SamlAuthenticationService;
-import com.dotcms.saml.SamlException;
 import com.dotcms.saml.SamlName;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -39,6 +39,10 @@ import java.util.List;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
 
+/**
+ * SAML Helper for the Endpoints
+ * @author jsanca
+ */
 public class SAMLHelper {
 
     private final HostWebAPI hostWebAPI;
@@ -128,7 +132,7 @@ public class SAMLHelper {
 
             Logger.error(this, "Error updating user with email '" + attributesBean.getEmail() + "': " + e.getMessage()
                     , e);
-            throw new SamlException(e.getMessage());
+            throw new DotSamlException(e.getMessage(), e);
         }
 
         return user;
@@ -181,7 +185,7 @@ public class SAMLHelper {
             } catch (DotDataException e) {
 
                 Logger.error(this, "Error adding roles to user '" + user.getUserId() + "': " + e.getMessage(), e);
-                throw new SamlException(e.getMessage());
+                throw new DotSamlException(e.getMessage(), e);
             }
         } else {
 
@@ -217,7 +221,7 @@ public class SAMLHelper {
         }
     }
 
-    private boolean isValidRole(final String role, final String[] rolePatterns) {
+    private boolean isValidRole(final String role, final String... rolePatterns) {
 
         boolean isValidRole = false;
 
@@ -400,7 +404,7 @@ public class SAMLHelper {
             final String errorMsg = "Error creating user with NameID '" + this.samlAuthenticationService.getValue(attributesBean.getNameID()) + "': " +
                     "" + e.getMessage();
             Logger.error(this, errorMsg, e);
-            throw new SamlException(errorMsg, e);
+            throw new DotSamlException(errorMsg, e);
         }
 
         return user;
@@ -451,8 +455,8 @@ public class SAMLHelper {
             final String log = new Date() + ": SAML login request for Site '" + host.getHostname() + "' with IdP ID: "
                     + identityProviderConfiguration.getId() + " (" + env + ") from " + request.getRemoteAddr();
 
-            // “$TIMEDATE: SAML login request for $host (frontend|backend)from
-            // $REQUEST_ADDR”
+            // $TIMEDATE: SAML login request for $host (frontend|backend)from
+            // $REQUEST_ADDR
             SecurityLogger.logInfo(SecurityLogger.class, this.getClass() + " - " + log);
             Logger.debug(this, ()-> log);
         } catch (Exception e) {

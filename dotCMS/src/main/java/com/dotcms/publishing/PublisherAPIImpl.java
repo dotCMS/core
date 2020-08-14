@@ -201,26 +201,26 @@ public class PublisherAPIImpl implements PublisherAPI {
         final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
         final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
 
-        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl((Boolean)filterDescriptor.getFilters().getOrDefault("dependencies",true),
-                (Boolean)filterDescriptor.getFilters().getOrDefault("relationships",true));
+        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl((Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.DEPENDENCIES_KEY,true),
+                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY,true));
 
-        if(filterDescriptor.getFilters().containsKey("excludeClasses")){
-            List.class.cast(filterDescriptor.getFilters().get("excludeClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
+        if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_CLASSES_KEY)){
+            List.class.cast(filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_CLASSES_KEY)).stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
 
         }
 
-        if(filterDescriptor.getFilters().containsKey("excludeDependencyClasses")){
-            List.class.cast(filterDescriptor.getFilters().get("excludeDependencyClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type.toString()));
+        if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_DEPENDENCY_CLASSES_KEY)){
+            List.class.cast(filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_DEPENDENCY_CLASSES_KEY)).stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type.toString()));
         }
 
-        if(filterDescriptor.getFilters().containsKey("excludeQuery")){
-            final String query = filterDescriptor.getFilters().get("excludeQuery").toString();
+        if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_QUERY_KEY)){
+            final String query = filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_QUERY_KEY).toString();
             APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
                 .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
         }
 
-        if(filterDescriptor.getFilters().containsKey("excludeDependencyQuery")){
-            final String query = filterDescriptor.getFilters().get("excludeDependencyQuery").toString();
+        if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_DEPENDENCY_QUERY_KEY)){
+            final String query = filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_DEPENDENCY_QUERY_KEY).toString();
             APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
                 .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
         }
