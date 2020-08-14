@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "c6d3d71d-ccfc-4dcc-b067-5eec59333616",
+		"_postman_id": "43e23ab3-ea75-445c-b698-06692a360bc4",
 		"name": "RoleResource",
 		"description": "Contains test for role resources",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -12,7 +12,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "695fc765-1f91-4dce-a86b-eed8970dd485",
+						"id": "85655e20-caca-441e-b86b-8d72ee1ad549",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -57,7 +57,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/roles/654b0931-1027-41f7-ad4d-173115ed8ec1/rolehierarchyanduserroles",
+					"raw": "{{serverURL}}/api/role/users/id/654b0931-1027-41f7-ad4d-173115ed8ec1",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -79,7 +79,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "8d15fbcc-c47c-41b4-95dd-1d1ffba1d751",
+						"id": "1b50d117-2cfe-4b46-8a18-c8dd473ca629",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -124,7 +124,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/roles/654b0931-1027-41f7-ad4d-173115ed8ec1/rolehierarchyanduserroles?roleHierarchyForAssign=true",
+					"raw": "{{serverURL}}/api/role/users/id/654b0931-1027-41f7-ad4d-173115ed8ec1?roleHierarchyForAssign=true",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -152,7 +152,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "749390d4-55fa-4c93-83ae-80289b66f64a",
+						"id": "ad827023-fd9d-4f46-8f2e-367f9c1d8796",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -197,7 +197,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/roles/654b0931-1027-41f7-ad4d-173115ed8ec1/rolehierarchyanduserroles",
+					"raw": "{{serverURL}}/api/role/users/id/654b0931-1027-41f7-ad4d-173115ed8ec1",
 					"host": [
 						"{{serverURL}}"
 					],
