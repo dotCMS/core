@@ -1,0 +1,90 @@
+<form
+    *ngIf="pushActions && !eventData.customCode"
+    [formGroup]="form"
+    (ngSubmit)="emitValues()"
+    (keyup.enter)="emitValues()"
+    novalidate
+    #formEl="ngForm"
+>
+    <div class="form__group">
+        <label class="form__label"
+        >{{ 'contenttypes.content.push_publish.I_want_To' | dm }}:
+        </label>
+        <p-selectButton
+            class="push-publish-dialog__action-select"
+            [options]="pushActions"
+            formControlName="pushActionSelected">
+        </p-selectButton>
+    </div>
+
+    <div class="form__group">
+        <label class="form__label"
+        >{{ 'contenttypes.content.push_publish.filters' | dm }}:
+        </label>
+        <p-dropdown
+            [style]="{ width: '100%' }"
+            [options]="filterOptions"
+            formControlName="filterKey"
+            appendTo="body"
+        ></p-dropdown>
+    </div>
+
+    <div class="form__group form-group__two-cols">
+        <div class="form__group push-publish-dialog__publish-date">
+            <label class="form__label"
+            >{{ 'contenttypes.content.push_publish.publish_date' | dm }}:
+            </label>
+            <div class="push-publish-dialog__calendar">
+                <p-calendar
+                    appendTo="body"
+                    class="push-publish-dialog__calendar-date"
+                    formControlName="publishDate"
+                    dataType="string"
+                    dateFormat="yy-mm-dd"
+                    placeholder="yyyy-mm-dd hh:mm"
+                    showTime="true"
+                    [minDate]="dateFieldMinDate"
+                ></p-calendar>
+            </div>
+            <dot-field-validation-message
+                message="{{ 'contenttypes.content.push_publish.publish_date_errormsg' | dm }}"
+                [field]="form.get('publishDate')"
+            ></dot-field-validation-message>
+        </div>
+        <div class="form__group push-publish-dialog__expire-date">
+            <label class="form__label"
+            >{{ 'contenttypes.content.push_publish.expire_date' | dm }}:
+            </label>
+            <div class="push-publish-dialog__calendar">
+                <p-calendar
+                    appendTo="body"
+                    class="push-publish-dialog__calendar-date"
+                    formControlName="expireDate"
+                    dataType="string"
+                    dateFormat="yy-mm-dd"
+                    placeholder="yyyy-mm-dd hh:mm"
+                    showTime="true"
+                    [minDate]="dateFieldMinDate"
+                ></p-calendar>
+            </div>
+            <dot-field-validation-message
+                message="{{ 'contenttypes.content.push_publish.expire_date_errormsg' | dm}}"
+                [field]="form.get('expireDate')"
+            ></dot-field-validation-message>
+        </div>
+    </div>
+    <div class="form__group">
+        <label class="form__label"
+        >{{ 'contenttypes.content.push_publish.push_to' | dm }}:
+        </label>
+        <dot-push-publish-env-selector
+            [assetIdentifier]="assetIdentifier"
+            formControlName="environment"
+        ></dot-push-publish-env-selector>
+        <dot-field-validation-message
+            message="{{ 'contenttypes.content.push_publish.push_to_errormsg' | dm }}"
+            [field]="form.get('environment')"
+        ></dot-field-validation-message>
+    </div>
+</form>
+<div #customCode [ngClass]="{ hidden: !eventData.customCode }" class="custom-code"></div>

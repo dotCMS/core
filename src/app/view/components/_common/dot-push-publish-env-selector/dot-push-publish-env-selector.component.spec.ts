@@ -10,7 +10,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
-class PushPublishServiceMock {
+export class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];
 
     pushPublishContent(): Observable<any> {

@@ -40,6 +40,7 @@ import { DotMessageDisplayModule } from '@components/dot-message-display/dot-mes
 import { DotToolbarModule } from '@components/dot-toolbar/dot-toolbar.module';
 import { DotPushPublishDialogModule } from '@components/_common/dot-push-publish-dialog';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 
 export const CUSTOM_MODULES = [
     DotToolbarModule,
@@ -58,7 +59,8 @@ export const CUSTOM_MODULES = [
     DotSiteSelectorModule,
     DotLargeMessageDisplayModule,
     DotPushPublishDialogModule,
-    DotDownloadBundleDialogModule
+    DotDownloadBundleDialogModule,
+    DotWizardModule
 ];
 
 export const NGFACES_MODULES = [

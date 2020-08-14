@@ -40,5 +40,4 @@ export class MainComponentLegacyComponent implements OnInit {
     onCustomEvent($event: CustomEvent): void {
         this.dotCustomEventHandlerService.handle($event);
     }
-
 }

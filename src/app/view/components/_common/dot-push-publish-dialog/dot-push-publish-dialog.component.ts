@@ -1,20 +1,15 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { OnInit, OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { SelectItem } from 'primeng/primeng';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { LoggerService, DotPushPublishDialogService } from 'dotcms-js';
+import { DotPushPublishDialogService } from 'dotcms-js';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { takeUntil, map, take, catchError, filter } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
 import { Subject } from 'rxjs';
 import { DotPushPublishDialogData } from 'dotcms-models';
-import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
-import {
-    DotPushPublishFilter,
-    DotPushPublishFiltersService
-} from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
+import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
+import {AjaxActionResponseView} from '@models/ajax-action-response/ajax-action-response';
 
 @Component({
     selector: 'dot-push-publish-dialog',
@@ -22,49 +17,30 @@ import {
     templateUrl: 'dot-push-publish-dialog.component.html'
 })
 export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
-    dateFieldMinDate = new Date();
     dialogActions: DotDialogActions;
     dialogShow = false;
-    form: FormGroup;
-    pushActions: SelectItem[];
-    filterOptions: SelectItem[] = null;
-    eventData: DotPushPublishDialogData = { assetIdentifier: '', title: '' };
+    eventData: DotPushPublishDialogData;
+    formData: DotPushPublishData;
+    formValid = false;
+    errorMessage = null;
 
     @Input() assetIdentifier: string;
 
     @Output() cancel = new EventEmitter<boolean>();
 
-    @ViewChild('formEl') formEl: HTMLFormElement;
-    @ViewChild('customCode') customCodeContainer: ElementRef;
-
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private defaultFilterKey: string;
-    private _filterOptions: SelectItem[] = null;
 
     constructor(
         private pushPublishService: PushPublishService,
-        public fb: FormBuilder,
         private dotMessageService: DotMessageService,
-        public loggerService: LoggerService,
-        private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotParseHtmlService: DotParseHtmlService,
-        private dotPushPublishFiltersService: DotPushPublishFiltersService
+        private dotPushPublishDialogService: DotPushPublishDialogService
     ) {}
 
     ngOnInit() {
-        this.loadFilters();
         this.dotPushPublishDialogService.showDialog$
             .pipe(takeUntil(this.destroy$))
             .subscribe((data: DotPushPublishDialogData) => {
-                if (this.filterOptions) {
-                    this.loadData(data);
-                } else {
-                    this.loadFilters()
-                        .pipe(take(1))
-                        .subscribe(() => {
-                            this.loadData(data);
-                        });
-                }
+                this.showDialog(data);
             });
     }
 
@@ -74,193 +50,60 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Close the dialog and reset the form
-     * @memberof PushPublishContentTypesDialogComponent
+     * Close the dialog and clear the data.
+     * @memberof DotPushPublishDialogComponent
      */
     close(): void {
         this.cancel.emit(true);
         this.dialogShow = false;
+        this.eventData = null;
+        this.errorMessage = null;
     }
 
     /**
      * When form is submitted
-     * If form is valid then call pushPublishService with contentTypeId and form value params
-     * @param any $event
-     * @memberof PushPublishContentTypesDialogComponent
+     * If form is valid then call pushPublishService with the corresponding form values
+     * @memberof DotPushPublishDialogComponent
      */
-    submitPushAction(_event): void {
-        if (this.form.valid) {
+    submitPushAction(): void {
+        if (this.formValid) {
             this.pushPublishService
-                .pushPublishContent(
-                    this.assetIdentifier,
-                    this.form.value,
-                    !!this.eventData.isBundle
-                )
-                .subscribe((result: any) => {
+                .pushPublishContent(this.assetIdentifier, this.formData, !!this.eventData.isBundle)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe((result: AjaxActionResponseView) => {
                     if (!result.errors) {
                         this.close();
                     } else {
-                        this.loggerService.debug(result.errorMessages);
+                        this.errorMessage = result.errors;
                     }
                 });
-            this.form.reset();
         }
     }
 
     /**
-     * It submits the form from submit button
-     * @memberof PushPublishContentTypesDialogComponent
+     * Update dialog action and form validation flag.
+     * @param {boolean} valid
+     * @memberof DotPushPublishDialogComponent
      */
-    submitForm(): void {
-        this.formEl.ngSubmit.emit();
+    updateFormValid(valid: boolean): void {
+        this.dialogActions.accept.disabled = !valid;
+        this.formValid = valid;
     }
 
-    private loadData(data: DotPushPublishDialogData): void {
+    private showDialog(data: DotPushPublishDialogData): void {
         this.eventData = data;
-        if (this.eventData.customCode) {
-            this.loadCustomCode();
-        } else {
-            this.assetIdentifier = this.eventData.assetIdentifier;
-            this.pushActions = this.getPushPublishActions();
-            this.initForm({
-                filterKey: this.defaultFilterKey
-            });
-            this.setDialogConfig();
-        }
+        this.setDialogConfig();
         this.dialogShow = true;
-    }
-
-    private loadCustomCode(): void {
-        this.dotParseHtmlService.parse(
-            this.eventData.customCode,
-            this.customCodeContainer.nativeElement,
-            true
-        );
-    }
-
-    private loadFilters(): Observable<any> {
-        return this.dotPushPublishFiltersService.get().pipe(
-            map((filterOptions: DotPushPublishFilter[]) => {
-                this._filterOptions = filterOptions
-                    .map((filter: DotPushPublishFilter) => {
-                        return {
-                            label: filter.title,
-                            value: filter.key
-                        };
-                    })
-                    .sort((a: SelectItem, b: SelectItem) => {
-                        if (a.label > b.label) {
-                            return 1;
-                        }
-                        if (a.label < b.label) {
-                            return -1;
-                        }
-                        // a must be equal to b
-                        return 0;
-                    });
-
-                this.filterOptions = this._filterOptions;
-
-                this.defaultFilterKey = filterOptions
-                    .filter(({ defaultFilter }: DotPushPublishFilter) => defaultFilter)
-                    .map(({ key }: DotPushPublishFilter) => key)
-                    .join();
-            }),
-            catchError(() => of([]))
-        );
-    }
-
-    private initForm(params?: { [key: string]: any }): void {
-        this.form = this.fb.group({
-            ...params,
-            pushActionSelected: [this.pushActions[0].value, [Validators.required]],
-            publishdate: [new Date(), [Validators.required]],
-            expiredate: [{ value: new Date(), disabled: true }, [Validators.required]],
-            environment: ['', [Validators.required]],
-            forcePush: false
-        });
-
-        const publishDate = this.form.get('publishdate');
-        const expireDate = this.form.get('expiredate');
-        const ppFilter = this.form.get('filterKey');
-
-        const enableFilters = () => {
-            ppFilter.enable();
-            this.filterOptions = this._filterOptions;
-            ppFilter.setValue(this.defaultFilterKey);
-        };
-
-        this.form
-            .get('filterKey')
-            .valueChanges.pipe(takeUntil(this.destroy$))
-            .pipe(filter((value: string) => !!value))
-            .subscribe((filter: string) => {
-                this.defaultFilterKey = filter;
-            });
-
-        this.form
-            .get('pushActionSelected')
-            .valueChanges.pipe(takeUntil(this.destroy$))
-            .subscribe((pushActionSelected: string) => {
-                switch (pushActionSelected) {
-                    case 'publish': {
-                        publishDate.enable();
-                        expireDate.disable();
-                        enableFilters();
-                        break;
-                    }
-                    case 'expire': {
-                        publishDate.disable();
-                        expireDate.enable();
-                        ppFilter.disable();
-                        ppFilter.setValue('');
-                        this.filterOptions = [];
-                        break;
-                    }
-                    default: {
-                        publishDate.enable();
-                        expireDate.enable();
-                        enableFilters();
-                    }
-                }
-            });
-    }
-
-    private getPushPublishActions(): SelectItem[] {
-        return [
-            {
-                label: this.dotMessageService.get('contenttypes.content.push_publish.action.push'),
-                value: 'publish'
-            },
-            {
-                label: this.dotMessageService.get(
-                    'contenttypes.content.push_publish.action.remove'
-                ),
-                value: 'expire',
-                disabled: this.isRestrictedOrCategory()
-            },
-            {
-                label: this.dotMessageService.get(
-                    'contenttypes.content.push_publish.action.pushremove'
-                ),
-                value: 'publishexpire',
-                disabled: this.eventData.removeOnly || this.isRestrictedOrCategory()
-            }
-        ];
-    }
-
-    private isRestrictedOrCategory(): boolean {
-        return this.eventData.restricted || this.eventData.cats;
     }
 
     private setDialogConfig(): void {
         this.dialogActions = {
             accept: {
                 action: () => {
-                    this.submitForm();
+                    this.submitPushAction();
                 },
                 label: this.dotMessageService.get('contenttypes.content.push_publish.form.push'),
-                disabled: true
+                disabled: !this.formValid
             },
             cancel: {
                 action: () => {
@@ -269,15 +112,5 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
                 label: this.dotMessageService.get('contenttypes.content.push_publish.form.cancel')
             }
         };
-
-        this.form.valueChanges.subscribe(() => {
-            this.dialogActions = {
-                ...this.dialogActions,
-                accept: {
-                    ...this.dialogActions.accept,
-                    disabled: !this.form.valid
-                }
-            };
-        });
     }
 }

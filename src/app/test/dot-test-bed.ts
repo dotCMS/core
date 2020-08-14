@@ -37,11 +37,11 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
-class MockDotUiColorsService {
+export class MockDotUiColorsService {
     setColors() {}
 }
 
-const dotEventSocketURLFactory = () => {
+export const dotEventSocketURLFactory = () => {
     return new DotEventsSocketURL(
         `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
         window.location.protocol === 'https:'
@@ -50,7 +50,13 @@ const dotEventSocketURLFactory = () => {
 
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
-        imports: [...NGFACES_MODULES, CommonModule, FormsModule, ReactiveFormsModule, DotPipesModule],
+        imports: [
+            ...NGFACES_MODULES,
+            CommonModule,
+            FormsModule,
+            ReactiveFormsModule,
+            DotPipesModule
+        ],
         providers: [
             { provide: ConnectionBackend, useClass: MockBackend },
             { provide: RequestOptions, useClass: BaseRequestOptions },
@@ -90,8 +96,8 @@ export class DOTTestBed {
         for (const property in DOTTestBed.DEFAULT_CONFIG) {
             if (config[property]) {
                 DOTTestBed.DEFAULT_CONFIG[property]
-                    .filter((provider) => !config[property].includes(provider))
-                    .forEach((item) => config[property].unshift(item));
+                    .filter(provider => !config[property].includes(provider))
+                    .forEach(item => config[property].unshift(item));
             } else {
                 config[property] = DOTTestBed.DEFAULT_CONFIG[property];
             }
@@ -110,9 +116,9 @@ export class DOTTestBed {
     public static resolveAndCreate(providers: Provider[], parent?: Injector): ReflectiveInjector {
         const finalProviders = [];
 
-        DOTTestBed.DEFAULT_CONFIG.providers.forEach((provider) => finalProviders.push(provider));
+        DOTTestBed.DEFAULT_CONFIG.providers.forEach(provider => finalProviders.push(provider));
 
-        providers.forEach((provider) => finalProviders.push(provider));
+        providers.forEach(provider => finalProviders.push(provider));
 
         return ReflectiveInjector.resolveAndCreate(finalProviders, parent);
     }

@@ -133,7 +133,8 @@ describe('DotWorkflowActionsFireService', () => {
 
     it('should create and return a new Content', () => {
         let result;
-        this.dotWorkflowActionsFireService.fireTo('123', 'new').subscribe((res) => {
+        const data = {id: '123'};
+        this.dotWorkflowActionsFireService.fireTo('123', 'new', data).subscribe((res) => {
             result = res;
         });
 
@@ -159,5 +160,6 @@ describe('DotWorkflowActionsFireService', () => {
 
         expect(this.lastConnection.request.url).toContain('v1/workflow/actions/new/fire?inode=123');
         expect(this.lastConnection.request.method).toEqual(RequestMethod.Put);
+        expect(JSON.parse(this.lastConnection.request.getBody())).toEqual(data);
     });
 });

@@ -64,6 +64,7 @@ export class PushPublishService {
         pushPublishData: DotPushPublishData,
         isBundle: boolean
     ): Observable<AjaxActionResponseView> {
+        debugger;
         this._lastEnvironmentPushed = pushPublishData.environment;
         return this.coreWebService.request({
             body: this.getPublishEnvironmentData(assetIdentifier, pushPublishData),
@@ -78,25 +79,23 @@ export class PushPublishService {
     private getPublishEnvironmentData(
         assetIdentifier: string,
         {
-            publishdate,
-            expiredate,
+            publishDate,
+            expireDate,
             pushActionSelected,
             environment,
-            forcePush,
             filterKey
         }: DotPushPublishData
     ): string {
         let result = '';
         result += `assetIdentifier=${assetIdentifier}`;
-        result += `&remotePublishDate=${moment(new Date(publishdate)).format('YYYY-MM-DD')}`;
-        result += `&remotePublishTime=${moment(new Date(publishdate)).format('HH-mm')}`;
-        result += `&remotePublishExpireDate=${moment(new Date(expiredate)).format('YYYY-MM-DD')}`;
-        result += `&remotePublishExpireTime=${moment(new Date(expiredate)).format('HH-mm')}`;
+        result += `&remotePublishDate=${moment(new Date(publishDate)).format('YYYY-MM-DD')}`;
+        result += `&remotePublishTime=${moment(new Date(publishDate)).format('HH-mm')}`;
+        result += `&remotePublishExpireDate=${moment(new Date(expireDate)).format('YYYY-MM-DD')}`;
+        result += `&remotePublishExpireTime=${moment(new Date(expireDate)).format('HH-mm')}`;
         result += `&iWantTo=${pushActionSelected}`;
         result += `&whoToSend=${environment}`;
         result += '&bundleName=';
         result += '&bundleSelect=';
-        result += `&forcePush=${forcePush}`;
 
         if (filterKey) {
             result += `&filterKey=${filterKey}`;

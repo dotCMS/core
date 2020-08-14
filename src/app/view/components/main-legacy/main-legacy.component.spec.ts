@@ -1,9 +1,14 @@
-import { ComponentFixture, async } from '@angular/core/testing';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { ComponentFixture, async, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MainComponentLegacyComponent } from './main-legacy.component';
 import { RouterTestingModule } from '@angular/router/testing';
-import { LoginService } from 'dotcms-js';
+import {
+    CoreWebService, DotcmsConfigService,
+    DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL, LoggerService,
+    LoginService, StringUtils
+} from 'dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
@@ -11,7 +16,17 @@ import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentl
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import {DotDownloadBundleDialogModule} from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
+import { FormatDateService } from '@services/format-date-service';
+import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -62,15 +77,33 @@ describe('MainComponentLegacyComponent', () => {
 
     beforeEach(
         async(() => {
-            DOTTestBed.configureTestingModule({
-                imports: [RouterTestingModule, DotContentletEditorModule, DotDownloadBundleDialogModule],
+            TestBed.configureTestingModule({
+                imports: [
+                    RouterTestingModule,
+                    DotContentletEditorModule,
+                    DotDownloadBundleDialogModule,
+                    DotWizardModule
+                ],
                 providers: [
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
+                    { provide: LoginService, useClass: LoginServiceMock },
+                    { provide: DotRouterService, useClass: MockDotRouterService },
+                    { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    { provide: ConnectionBackend, useClass: MockBackend },
+                    { provide: RequestOptions, useClass: BaseRequestOptions },
+                    Http,
                     DotMenuService,
-                    DotCustomEventHandlerService
+                    DotCustomEventHandlerService,
+                    DotIframeService,
+                    FormatDateService,
+                    DotAlertConfirmService,
+                    ConfirmationService,
+                    DotcmsEventsService,
+                    DotEventsSocket,
+                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                    DotcmsConfigService,
+                    LoggerService,
+                    StringUtils
                 ],
                 declarations: [
                     MainComponentLegacyComponent,
@@ -86,7 +119,7 @@ describe('MainComponentLegacyComponent', () => {
     );
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(MainComponentLegacyComponent);
+        fixture = TestBed.createComponent(MainComponentLegacyComponent);
         de = fixture.debugElement;
         dotIframeService = de.injector.get(DotIframeService);
         dotRouterService = de.injector.get(DotRouterService);
@@ -102,6 +135,7 @@ describe('MainComponentLegacyComponent', () => {
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
         expect(de.query(By.css('dot-push-publish-dialog')) !== null).toBe(true);
         expect(de.query(By.css('dot-dot-download-bundle-dialog')) !== null).toBe(true);
+        expect(de.query(By.css('dot-wizard')) !== null).toBe(true);
     });
 
     it('should have messages components', () => {

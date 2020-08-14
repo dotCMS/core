@@ -1,14 +1,10 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { By } from '@angular/platform-browser';
-
-import { CheckboxModule, ToolbarModule, ButtonModule } from 'primeng/primeng';
-
+import {CheckboxModule, ToolbarModule, ButtonModule, ConfirmationService} from 'primeng/primeng';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { mockDotRenderedPageState } from '@tests/dot-rendered-page-state.mock';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -20,7 +16,14 @@ import { Observable, of } from 'rxjs';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
-import { SiteService, LoginService } from 'dotcms-js';
+import {
+    SiteService,
+    LoginService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    DotcmsEventsService,
+    DotcmsConfigService, CoreWebService, LoggerService, StringUtils, ApiRoot, UserModel
+} from 'dotcms-js';
 import { SiteServiceMock } from '@tests/site-service.mock';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { LoginServiceMock } from '@tests/login-service.mock';
@@ -29,6 +32,17 @@ import { mockDotPersona } from '@tests/dot-persona.mock';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
+import {CoreWebServiceMock} from '../../../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import {BaseRequestOptions, ConnectionBackend, Http, RequestOptions} from '@angular/http';
+import {MockBackend} from '@angular/http/testing';
+import {DotRouterService} from '@services/dot-router/dot-router.service';
+import {MockDotRouterService} from '@tests/dot-router-service.mock';
+import {DotHttpErrorManagerService} from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import {DotAlertConfirmService} from '@services/dot-alert-confirm';
+import {DotGlobalMessageService} from '@components/_common/dot-global-message/dot-global-message.service';
+import {DotWizardModule} from '@components/_common/dot-wizard/dot-wizard.module';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -57,50 +71,71 @@ describe('DotEditPageToolbarComponent', () => {
     let dotEventsService: DotEventsService;
     let dotMessageDisplayService: DotMessageDisplayService;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotEditPageToolbarComponent],
-            imports: [
-                ButtonModule,
-                CommonModule,
-                CheckboxModule,
-                DotSecondaryToolbarModule,
-                FormsModule,
-                ToolbarModule,
-                DotEditPageViewAsControllerModule,
-                DotEditPageStateControllerModule,
-                DotEditPageInfoModule,
-                DotEditPageWorkflowsActionsModule
-            ],
-            providers: [
-                { provide: DotLicenseService, useClass: MockDotLicenseService },
-                {
-                    provide: DotMessageService,
-                    useValue: new MockDotMessageService({
-                        'dot.common.whats.changed': 'Whats',
-                        'dot.common.cancel': 'Cancel'
-                    })
-                },
-                {
-                    provide: DotPageStateService,
-                    useValue: {}
-                },
-                {
-                    provide: SiteService,
-                    useClass: SiteServiceMock
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                DotMessageDisplayService,
-                DotEventsService
-            ]
-        });
-    }));
+    beforeEach(
+        async(() => {
+            TestBed.configureTestingModule({
+                declarations: [TestHostComponent, DotEditPageToolbarComponent],
+                imports: [
+                    ButtonModule,
+                    CommonModule,
+                    CheckboxModule,
+                    DotSecondaryToolbarModule,
+                    FormsModule,
+                    ToolbarModule,
+                    DotEditPageViewAsControllerModule,
+                    DotEditPageStateControllerModule,
+                    DotEditPageInfoModule,
+                    DotEditPageWorkflowsActionsModule,
+                    DotPipesModule,
+                    DotWizardModule
+                ],
+                providers: [
+                    { provide: DotLicenseService, useClass: MockDotLicenseService },
+                    {
+                        provide: DotMessageService,
+                        useValue: new MockDotMessageService({
+                            'dot.common.whats.changed': 'Whats',
+                            'dot.common.cancel': 'Cancel'
+                        })
+                    },
+                    {
+                        provide: DotPageStateService,
+                        useValue: {}
+                    },
+                    {
+                        provide: SiteService,
+                        useClass: SiteServiceMock
+                    },
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
+                    DotMessageDisplayService,
+                    DotEventsService,
+                    DotcmsEventsService,
+                    DotEventsSocket,
+                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                    DotcmsConfigService,
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    { provide: ConnectionBackend, useClass: MockBackend },
+                    { provide: RequestOptions, useClass: BaseRequestOptions },
+                    Http,
+                    LoggerService,
+                    StringUtils,
+                    { provide: DotRouterService, useClass: MockDotRouterService },
+                    DotHttpErrorManagerService,
+                    DotAlertConfirmService,
+                    ConfirmationService,
+                    DotGlobalMessageService,
+                    ApiRoot,
+                    UserModel
+                ]
+            });
+        })
+    );
 
     beforeEach(() => {
-        fixtureHost = DOTTestBed.createComponent(TestHostComponent);
+        fixtureHost = TestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
 

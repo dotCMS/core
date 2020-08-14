@@ -1,22 +1,41 @@
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
+import {
+    ConnectionBackend,
+    ResponseOptions,
+    Response,
+    RequestOptions,
+    BaseRequestOptions,
+    Http
+} from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 
 import { DotWorkflowsActionsService } from './dot-workflows-actions.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { TestBed } from '@angular/core/testing';
 import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
 import { DotCMSWorkflowAction } from 'dotcms-models';
 import { mockWorkflows } from '@tests/dot-workflow-service.mock';
+import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
+import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
+import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotWorkflowsActionsService', () => {
-    let TestBed;
     let dotWorkflowActionsService: DotWorkflowsActionsService;
     let backend;
     let lastConnection;
 
     beforeEach(() => {
-        TestBed = DOTTestBed.resolveAndCreate([DotWorkflowsActionsService]);
+        TestBed.configureTestingModule({
+            providers: [
+                DotWorkflowsActionsService,
+                { provide: ConnectionBackend, useClass: MockBackend },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: RequestOptions, useClass: BaseRequestOptions },
+                Http
+            ]
+        });
         dotWorkflowActionsService = TestBed.get(DotWorkflowsActionsService);
-        backend = TestBed.get(ConnectionBackend) as MockBackend;
+        backend = TestBed.get(ConnectionBackend);
         backend.connections.subscribe((connection: any) => {
             lastConnection = connection;
         });
@@ -56,7 +75,7 @@ describe('DotWorkflowsActionsService', () => {
     it('should get workflows by inode', () => {
         let result;
         const inode = 'cc2cdf9c-a20d-4862-9454-2a76c1132123';
-        dotWorkflowActionsService.getByInode(inode).subscribe((res) => {
+        dotWorkflowActionsService.getByInode(inode).subscribe(res => {
             result = res;
         });
 
@@ -105,5 +124,46 @@ describe('DotWorkflowsActionsService', () => {
             }
         ]);
         expect(lastConnection.request.url).toContain(`v1/workflow/contentlet/${inode}/actions`);
+    });
+
+    describe('wizard steps', () => {
+        const mockWorkflowActions: DotCMSWorkflowAction = {
+            ...mockWorkflowsActions[0]
+        };
+        let steps: DotWizardStep<any>[];
+
+        it('should merge comment and assign steps', () => {
+            const mockWizardSteps: DotWizardStep<any>[] = [
+                {
+                    component: DotCommentAndAssignFormComponent,
+                    data: {
+                        assignable: true,
+                        commentable: true,
+                        roleId: mockWorkflowsActions[0].nextAssign
+                    }
+                },
+                {
+                    component: DotPushPublishFormComponent,
+                    data: {}
+                }
+            ];
+            steps = dotWorkflowActionsService.setWizardSteps(mockWorkflowActions);
+
+            expect(steps).toEqual(mockWizardSteps);
+        });
+        it('should return only valid Components ', () => {
+            mockWorkflowActions.actionInputs = [
+                {
+                    body: {},
+                    id: 'invalidID'
+                },
+                {
+                    body: {},
+                    id: 'invalidID2'
+                }
+            ];
+            steps = dotWorkflowActionsService.setWizardSteps(mockWorkflowActions);
+            expect(steps).toEqual([]);
+        });
     });
 });

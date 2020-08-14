@@ -25,12 +25,14 @@ export class DotWorkflowActionsFireService {
      *
      * @param {string} inode
      * @param {string} actionId
+     * @param {{ [key: string]: string }} data
      * @returns Observable<any> // contentlet
      * @memberof DotWorkflowActionsFireService
      */
-    fireTo(inode: string, actionId: string): Observable<DotCMSContentlet> {
+    fireTo(inode: string, actionId: string, data?: { [key: string]: string }): Observable<DotCMSContentlet> {
         return this.coreWebService
             .requestView({
+                body: data,
                 method: RequestMethod.Put,
                 url: `v1/workflow/actions/${actionId}/fire?inode=${inode}`
             })

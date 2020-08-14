@@ -1,0 +1,26 @@
+@import "variables";
+
+form, .custom-code {
+    width: $form-width;
+}
+
+.custom-code {
+    margin-bottom: $basic-padding * 4;
+
+    &.hidden {
+        display: none;
+    }
+}
+
+.ui-inputtext {
+    width: 100%;
+}
+
+.push-publish-dialog__error-message {
+    color: $error;
+}
+
+.push-publish-dialog__action-select {
+    display: block;
+    border-bottom: solid 1px $gray-light;
+}

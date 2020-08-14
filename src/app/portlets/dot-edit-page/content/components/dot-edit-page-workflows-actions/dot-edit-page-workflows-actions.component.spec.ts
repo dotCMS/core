@@ -25,6 +25,11 @@ import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service'
 import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
+import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -48,7 +53,8 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
     let dotGlobalMessageService: DotGlobalMessageService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
     const messageServiceMock = new MockDotMessageService({
-        'editpage.actions.fire.confirmation': 'The action "{0}" was executed correctly'
+        'editpage.actions.fire.confirmation': 'The action "{0}" was executed correctly',
+        'editpage.actions.fire.error.add.environment': 'place holder text'
     });
 
     beforeEach(
@@ -70,16 +76,15 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                         useClass: LoginServiceMock
                     },
                     {
-                        provide: DotWorkflowsActionsService,
-                        useValue: {
-                            getByInode() {
-                                return of(mockWorkflowsActions);
-                            }
-                        }
+                        provide: PushPublishService,
+                        useClass: MockPushPublishService
                     },
+                    DotWorkflowsActionsService,
                     DotHttpErrorManagerService,
                     DotRouterService,
-                    DotWorkflowActionsFireService
+                    DotWorkflowActionsFireService,
+                    DotWizardService,
+                    DotMessageDisplayService
                 ]
             });
         })
@@ -98,7 +103,6 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         workflowActionDebugEl = de.query(By.css('dot-edit-page-workflows-actions'));
         workflowActionComponent = workflowActionDebugEl.componentInstance;
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
-
         button = workflowActionDebugEl.query(By.css('button'));
 
         dotWorkflowActionsFireService = workflowActionDebugEl.injector.get(
@@ -111,7 +115,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
     describe('button', () => {
         describe('enabled', () => {
             beforeEach(() => {
-                spyOn(dotWorkflowsActionsService, 'getByInode').and.callThrough();
+                spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
                 component.page = {
                     ...mockDotPage,
                     ...{
@@ -148,7 +152,9 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
                 beforeEach(() => {
                     const mainButton: DebugElement = de.query(By.css('button'));
-                    mainButton.triggerEventHandler('click', { currentTarget: mainButton.nativeElement });
+                    mainButton.triggerEventHandler('click', {
+                        currentTarget: mainButton.nativeElement
+                    });
                     fixture.detectChanges();
 
                     splitButtons = de.queryAll(By.css('.ui-menuitem-link'));
@@ -157,43 +163,104 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     thirdButton = splitButtons[2].nativeElement;
                 });
 
-                it('should fire actions on click in the menu items', () => {
-                    firstButton.click();
-                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
-                        component.page.workingInode,
-                        mockWorkflowsActions[0].id
-                    );
+                describe('with sub actions / action Inputs', () => {
+                    const mockData = {
+                        assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+                        comments: 'ds',
+                        environment: ['37fe23d5-588d-4c61-a9ea-70d01e913344'],
+                        expireDate: '2020-08-11 19:59',
+                        filterKey: 'Intelligent.yml',
+                        publishDate: '2020-08-05 17:59',
+                        pushActionSelected: 'publishexpire'
+                    };
 
+                    const mappedData = {
+                        assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+                        comments: 'ds',
+                        expireDate: '2020-08-11',
+                        expireTime: '19-59',
+                        filterKey: 'Intelligent.yml',
+                        iWantTo: 'publishexpire',
+                        publishDate: '2020-08-05',
+                        publishTime: '17-59',
+                        whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344'
+                    };
+
+                    let dotWizardService: DotWizardService;
+                    let pushPublishService: PushPublishService;
+                    let dotMessageDisplayService: DotMessageDisplayService;
+                    beforeEach(() => {
+                        dotWizardService = de.injector.get(DotWizardService);
+                        pushPublishService = de.injector.get(PushPublishService);
+                        dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
+                    });
+
+                    it('should fire actions after wizard data was collected', () => {
+                        spyOn(dotWorkflowsActionsService, 'setWizardSteps');
+                        firstButton.click();
+                        dotWizardService.output$(mockData);
+
+                        expect(dotWorkflowsActionsService.setWizardSteps).toHaveBeenCalledWith(
+                            mockWorkflowsActions[0]
+                        );
+
+                        expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
+                            component.page.workingInode,
+                            mockWorkflowsActions[0].id,
+                            mappedData
+                        );
+                    });
+
+                    it('should show and alert when there is no environments and push publish action', () => {
+                        spyOn(pushPublishService, 'getEnvironments').and.returnValue(of([]));
+                        spyOn(dotMessageDisplayService, 'push');
+
+                        firstButton.click();
+                        expect(dotWorkflowActionsFireService.fireTo).not.toHaveBeenCalled();
+                        expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
+                            life: 3000,
+                            message: messageServiceMock.get(
+                                'editpage.actions.fire.error.add.environment'
+                            ),
+                            severity: DotMessageSeverity.ERROR,
+                            type: DotMessageType.SIMPLE_MESSAGE
+                        });
+                    });
+                });
+
+                it('should fire actions on click in the menu items', () => {
                     secondButton.click();
                     expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
                         component.page.workingInode,
-                        mockWorkflowsActions[1].id
+                        mockWorkflowsActions[1].id,
+                        undefined
                     );
 
                     thirdButton.click();
                     expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
                         component.page.workingInode,
-                        mockWorkflowsActions[2].id
+                        mockWorkflowsActions[2].id,
+                        undefined
                     );
                 });
 
                 it('should show success message after fired action in the menu items', () => {
                     spyOn(dotGlobalMessageService, 'display');
-                    firstButton.click();
+                    secondButton.click();
                     fixture.detectChanges();
                     expect(dotGlobalMessageService.display).toHaveBeenCalledWith(
-                        `The action "${mockWorkflowsActions[0].name}" was executed correctly`
+                        `The action "${mockWorkflowsActions[1].name}" was executed correctly`
                     );
                 });
 
                 it('should refresh the action list after fire action', () => {
-                    firstButton.click();
+                    secondButton.click();
                     expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledTimes(1);
                 });
 
                 it('should emit event after action was fired', () => {
                     spyOn(workflowActionComponent.fired, 'emit');
-                    firstButton.click();
+                    secondButton.click();
                     fixture.detectChanges();
                     expect(
                         workflowActionDebugEl.componentInstance.fired.emit
@@ -218,6 +285,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         let menu: Menu;
 
         beforeEach(() => {
+            spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
             fixture.detectChanges();
             menu = de.query(By.css('p-menu')).componentInstance;
         });

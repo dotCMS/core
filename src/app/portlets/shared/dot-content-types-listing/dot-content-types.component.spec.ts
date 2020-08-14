@@ -49,7 +49,7 @@ class MockDotLicenseService {
 }
 
 @Injectable()
-class MockPushPublishService {
+export class MockPushPublishService {
     getEnvironments() {
         return observableOf([
             {

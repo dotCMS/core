@@ -1,6 +1,5 @@
 import { DotCMSWorkflowAction } from 'dotcms-models';
 
-
 export const mockWorkflowsActions: DotCMSWorkflowAction[] = [
     {
         assignable: true,
@@ -17,6 +16,20 @@ export const mockWorkflowsActions: DotCMSWorkflowAction[] = [
         roleHierarchyForAssign: true,
         schemeId: '85c1515c-c4f3-463c-bac2-860b8fcacc34',
         showOn: ['UNLOCKED', 'LOCKED'],
+        actionInputs: [
+            {
+                body: {},
+                id: 'assignable'
+            },
+            {
+                body: {},
+                id: 'commentable'
+            },
+            {
+                body: {},
+                id: 'pushPublish'
+            }
+        ]
     },
     {
         assignable: false,
@@ -33,6 +46,7 @@ export const mockWorkflowsActions: DotCMSWorkflowAction[] = [
         roleHierarchyForAssign: false,
         schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
         showOn: ['LOCKED'],
+        actionInputs: []
     },
     {
         assignable: false,
@@ -49,5 +63,6 @@ export const mockWorkflowsActions: DotCMSWorkflowAction[] = [
         roleHierarchyForAssign: false,
         schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
         showOn: ['LOCKED'],
+        actionInputs: []
     }
 ];

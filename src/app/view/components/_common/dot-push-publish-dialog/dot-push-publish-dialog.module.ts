@@ -7,13 +7,13 @@ import { DotFieldValidationMessageModule } from '../dot-field-validation-message
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPushPublishFiltersService } from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
 import { DotPushPublishDialogComponent } from '@components/_common/dot-push-publish-dialog/dot-push-publish-dialog.component';
-import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotPushPublishFormModule } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.module';
 
 @NgModule({
     declarations: [DotPushPublishDialogComponent],
     exports: [DotPushPublishDialogComponent],
-    providers: [DotPushPublishFiltersService, DotParseHtmlService],
+    providers: [DotPushPublishFiltersService],
     imports: [
         CommonModule,
         FormsModule,
@@ -24,7 +24,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DropdownModule,
         DotFieldValidationMessageModule,
         SelectButtonModule,
-        DotPipesModule
+        DotPipesModule,
+        DotPushPublishFormModule
     ]
 })
 export class DotPushPublishDialogModule {}

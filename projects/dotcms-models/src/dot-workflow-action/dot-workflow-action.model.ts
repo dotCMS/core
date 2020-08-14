@@ -15,6 +15,7 @@ export interface DotCMSWorkflowAction {
     roleHierarchyForAssign: boolean;
     schemeId: string;
     showOn: string[];
+    actionInputs: DotCMSWorkflowInput [];
 }
 
 export enum DotCMSSystemActionType {
@@ -39,4 +40,9 @@ export interface DotCMSSystemAction {
     owner: DotCMSContentType;
     ownerContentType: boolean;
     ownerScheme: boolean;
+}
+
+export interface DotCMSWorkflowInput {
+    id: string;
+    body: any;
 }

@@ -1,0 +1,15 @@
+@import "variables";
+
+.dot-wizard__step {
+    width: $form-width;
+    flex-shrink: 0;
+}
+.dot-wizard__view {
+    width: $form-width;
+    overflow: hidden;
+}
+
+.dot-wizard__container {
+    display: flex;
+    transition: transform $basic-speed ease-in;
+}

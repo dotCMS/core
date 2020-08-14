@@ -1,15 +1,17 @@
-import { of as observableOf, Observable } from 'rxjs';
-import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component } from '@angular/core';
+import { of as observableOf, Observable, of } from 'rxjs';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
+import { DotPushPublishDialogService } from 'dotcms-js';
+import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotPushPublishDialogData } from 'dotcms-models';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 class PushPublishServiceMock {
     pushPublishContent(): Observable<any> {
@@ -30,228 +32,204 @@ class TestHostComponent {
     pushPublishIdentifier: string;
 }
 
-xdescribe('DotPushPublishDialogComponent', () => {
+@Component({
+    selector: 'dot-push-publish-form',
+    template: ''
+})
+class TestDotPushPublishFormComponent {
+    @Input() data: DotPushPublishDialogData;
+    @Output() value = new EventEmitter<DotPushPublishData>();
+    @Output() valid = new EventEmitter<boolean>();
+}
+
+describe('DotPushPublishDialogComponent', () => {
     let comp: DotPushPublishDialogComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let pushPublishServiceMock: PushPublishServiceMock;
+    let dotPushPublishDialogService: DotPushPublishDialogService;
 
     const messageServiceMock = new MockDotMessageService({
-        'contenttypes.content.push_publish': 'Push Publish',
-        'contenttypes.content.push_publish.I_want_To': 'I want to',
-        'contenttypes.content.push_publish.force_push': 'Force push',
-        'contenttypes.content.push_publish.publish_date': 'Publish Date',
-        'contenttypes.content.push_publish.expire_date': 'Expire Date',
-        'contenttypes.content.push_publish.push_to': 'Push To',
-        'contenttypes.content.push_publish.push_to_errormsg': 'Must add at least one Environment',
         'contenttypes.content.push_publish.form.cancel': 'Cancel',
-        'contenttypes.content.push_publish.form.push': 'Push',
-        'contenttypes.content.push_publish.publish_date_errormsg': 'Publish Date is required',
-        'contenttypes.content.push_publish.expire_date_errormsg': 'Expire Date is required'
+        'contenttypes.content.push_publish.form.push': 'Push'
     });
+
+    const publishData: DotPushPublishDialogData = {
+        assetIdentifier: '123',
+        title: 'Push Publish Tittle'
+    };
+
+    const mockFormValue = {
+        pushActionSelected: 'test',
+        publishDate: 'test',
+        expireDate: 'test',
+        environment: ['test'],
+        filterKey: 'test'
+    };
 
     beforeEach(() => {
         pushPublishServiceMock = new PushPublishServiceMock();
 
-        DOTTestBed.configureTestingModule({
-            declarations: [DotPushPublishDialogComponent, TestHostComponent],
-            imports: [
-                PushPublishEnvSelectorModule,
-                BrowserAnimationsModule,
-                DotFieldValidationMessageModule
+        TestBed.configureTestingModule({
+            declarations: [
+                DotPushPublishDialogComponent,
+                TestHostComponent,
+                TestDotPushPublishFormComponent
             ],
+            imports: [BrowserAnimationsModule, DotDialogModule],
             providers: [
                 { provide: PushPublishService, useValue: pushPublishServiceMock },
-                { provide: DotMessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotPushPublishDialogService
             ]
         });
 
-        fixture = DOTTestBed.createComponent(TestHostComponent);
+        fixture = TestBed.createComponent(TestHostComponent);
         de = fixture.debugElement.query(By.css('dot-push-publish-dialog'));
         comp = de.componentInstance;
-    });
-
-    it('should have a dialog', () => {
-        const dialog: DebugElement = fixture.debugElement.query(By.css('p-dialog'));
-        expect(dialog).not.toBeNull();
-    });
-
-    it('should have a form', () => {
-        fixture.detectChanges();
-        const form: DebugElement = fixture.debugElement.query(By.css('form'));
-        expect(form).not.toBeNull();
-        expect(comp.form).toEqual(form.componentInstance.form);
-    });
-
-    it('should be invalid if no environment was selected', () => {
-        fixture.detectChanges();
-        expect(comp.form.valid).toEqual(false);
-    });
-
-    it('should be invalid if publish date is empty', () => {
-        fixture.detectChanges();
-        comp.form.get('environment').setValue('my environment');
-        comp.form.get('publishdate').setValue('');
-        expect(comp.form.valid).toEqual(false);
-    });
-
-    it('should be invalid if expire date is empty', () => {
-        fixture.detectChanges();
-        comp.form.get('environment').setValue('my environment');
-        comp.form.get('expiredate').setValue('');
-        expect(comp.form.valid).toEqual(false);
-    });
-
-    it('should be valid if all required fields are filled', () => {
-        fixture.detectChanges();
-        comp.form.get('publishdate').setValue(new Date());
-        comp.form.get('expiredate').setValue(new Date());
-        comp.form.get('environment').setValue('my environment');
-        expect(comp.form.valid).toEqual(true);
-    });
-
-    it('should call close() on cancel button click', () => {
-        fixture.detectChanges();
-        const cancelButton: DebugElement = fixture.debugElement.query(
-            By.css('.push-publish-dialog__form-cancel')
+        dotPushPublishDialogService = fixture.debugElement.injector.get(
+            DotPushPublishDialogService
         );
-        expect(cancelButton).toBeDefined();
-
-        spyOn(comp, 'close');
-
-        cancelButton.nativeElement.click();
-        expect(comp.close).toHaveBeenCalledTimes(1);
-
         fixture.detectChanges();
+        spyOn(comp.cancel, 'emit');
+    });
 
-        comp.cancel.subscribe(res => {
-            expect(res).toEqual(true);
+    describe('dot-dialog', () => {
+        let dialog: DotDialogComponent;
+        beforeEach(() => {
+            dialog = fixture.debugElement.query(By.css('dot-dialog')).componentInstance;
+        });
+
+        it('should set dialog params', () => {
+            dotPushPublishDialogService.open(publishData);
+            fixture.detectChanges();
+            expect(dialog.visible).toEqual(comp.dialogShow);
+            expect(dialog.actions).toEqual(comp.dialogActions);
+            expect(dialog.header).toEqual(publishData.title);
+            expect(dialog.hideButtons).toEqual(false);
+        });
+
+        it('should hide buttons if there is custom code', () => {
+            dotPushPublishDialogService.open({ customCode: '<h1>test</h1>', ...publishData });
+            fixture.detectChanges();
+            expect(dialog.hideButtons).toEqual(true);
+        });
+
+        it('should emit close, hide dialog and clear data on hide', () => {
+            dotPushPublishDialogService.open(publishData);
+            dialog.hide.emit();
+            expect(comp.cancel.emit).toHaveBeenCalled();
+            expect(comp.dialogShow).toEqual(false);
+            expect(comp.eventData).toEqual(null);
         });
     });
 
-    it('should reset the form value on cancel button click', () => {
-        fixture.detectChanges();
-        const cancelButton: DebugElement = fixture.debugElement.query(
-            By.css('.push-publish-dialog__form-cancel')
-        );
-
-        comp.form.get('environment').setValue('my environment');
-        comp.form.get('forcePush').setValue(true);
-
-        cancelButton.nativeElement.click();
-
-        expect(comp.form.get('environment').value).toEqual('');
-        expect(comp.form.get('forcePush').value).toBeFalsy();
-    });
-
-    it('should display publish date field if publish or publishexpire is selected', () => {
-        fixture.detectChanges();
-        const formEl: DebugElement = de.query(By.css('form'));
-
-        comp.form.get('pushActionSelected').setValue('publish');
-
-        fixture.detectChanges();
-
-        const publishDate: DebugElement = formEl.query(
-            By.css('.push-publish-dialog__publish-date')
-        );
-        const expireDate: DebugElement = formEl.query(By.css('.push-publish-dialog__expire-date'));
-
-        expect(publishDate).not.toBeNull();
-        expect(expireDate).toBeNull();
-    });
-
-    it('should display expire date field if expire or publishexpire is selected', () => {
-        fixture.detectChanges();
-        const formEl: DebugElement = de.query(By.css('form'));
-
-        comp.form.get('pushActionSelected').setValue('expire');
-
-        fixture.detectChanges();
-
-        const publishDate: DebugElement = formEl.query(
-            By.css('.push-publish-dialog__publish-date')
-        );
-        const expireDate: DebugElement = formEl.query(By.css('.push-publish-dialog__expire-date'));
-
-        expect(publishDate).toBeNull();
-        expect(expireDate).not.toBeNull();
-    });
-
-    it('should call submitPushAction() on submit event', () => {
-        spyOn(comp, 'submitPushAction');
-        fixture.detectChanges();
-
-        const form = fixture.debugElement.query(By.css('form'));
-        form.nativeElement.dispatchEvent(new Event('submit'));
-
-        expect(comp.submitPushAction).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not send data with invalid form', () => {
-        fixture.detectChanges();
-        spyOn(comp, 'submitPushAction').and.callThrough();
-        spyOn(pushPublishServiceMock, 'pushPublishContent');
-
-        const form = fixture.debugElement.query(By.css('form'));
-        form.nativeElement.dispatchEvent(new Event('submit'));
-
-        expect(comp.submitPushAction).toHaveBeenCalledTimes(1);
-        expect(comp.form.valid).toBeFalsy();
-        expect(pushPublishServiceMock.pushPublishContent).not.toHaveBeenCalled();
-    });
-
-    describe('pushPublishContent service method with the right params when the form is submitted and is valid', () => {
-        let newDate;
-        let form;
+    describe('push-publish-form', () => {
+        let pushPublishForm: TestDotPushPublishFormComponent;
 
         beforeEach(() => {
+            dotPushPublishDialogService.open(publishData);
             fixture.detectChanges();
-            spyOn(comp, 'submitPushAction').and.callThrough();
-            spyOn(pushPublishServiceMock, 'pushPublishContent');
-
-            newDate = new Date();
-            form = fixture.debugElement.query(By.css('form'));
-
-            comp.form.get('pushActionSelected').setValue('publishexpire');
-            comp.form.get('publishdate').setValue(newDate);
-            comp.form.get('expiredate').setValue(newDate);
-            comp.form.get('environment').setValue(['my environment, my second environment']);
-            comp.form.get('forcePush').setValue(true);
-
-            fixture.componentInstance.pushPublishIdentifier = '7ad979-89a-97ada9d9ad';
-            fixture.detectChanges();
+            pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
+                .componentInstance;
         });
 
-        it('should submit form correctly', () => {
-            form.nativeElement.dispatchEvent(new Event('submit'));
+        it('should set data', () => {
+            expect(pushPublishForm.data).toEqual(publishData);
+        });
 
-            expect(comp.submitPushAction).toHaveBeenCalledTimes(1);
-            expect(comp.form.valid).toBeTruthy();
-            expect(
-                pushPublishServiceMock.pushPublishContent
-            ).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
-                pushActionSelected: 'publishexpire',
-                publishdate: newDate,
-                expiredate: newDate,
-                environment: ['my environment, my second environment'],
-                forcePush: true
+        it('should update formData on value emit', () => {
+            pushPublishForm.value.emit(mockFormValue);
+            expect(comp.formData).toEqual(mockFormValue);
+        });
+
+        it('should enable dialog accept action and formValid on valid emit', () => {
+            pushPublishForm.valid.emit(true);
+            expect(comp.dialogActions.accept.disabled).toEqual(false);
+            expect(comp.formValid).toEqual(true);
+        });
+
+        it('should enable disable accept action and formValid on valid emit', () => {
+            pushPublishForm.valid.emit(false);
+            expect(comp.dialogActions.accept.disabled).toEqual(true);
+            expect(comp.formValid).toEqual(false);
+        });
+    });
+
+    describe('dialog Actions', () => {
+        let pushPublishForm: TestDotPushPublishFormComponent;
+        let acceptButton: DebugElement;
+        let closeButton: DebugElement;
+
+        beforeEach(() => {
+            dotPushPublishDialogService.open(publishData);
+            fixture.detectChanges();
+            pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
+                .componentInstance;
+            pushPublishForm.value.emit(mockFormValue);
+            acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
+            closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
+            pushPublishForm.valid.emit(true);
+        });
+
+        describe('on success pushPublishContent', () => {
+            beforeEach(() => {
+                spyOn(pushPublishServiceMock, 'pushPublishContent').and.returnValue(of({}));
+            });
+
+            it('should submit on accept and hide dialog', () => {
+                acceptButton.triggerEventHandler('click', null);
+
+                expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith(
+                    undefined,
+                    mockFormValue,
+                    false
+                );
+                expect(comp.cancel.emit).toHaveBeenCalled();
+                expect(comp.dialogShow).toEqual(false);
+                expect(comp.eventData).toEqual(null);
+            });
+
+            it('should submit on accept with assetIdentifier and bundle', () => {
+                comp.eventData.isBundle = true;
+                comp.assetIdentifier = '123';
+                acceptButton.triggerEventHandler('click', null);
+                expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith(
+                    '123',
+                    mockFormValue,
+                    true
+                );
+            });
+
+            it('should not submit if form is invalid', () => {
+                pushPublishForm.valid.emit(false);
+                acceptButton.triggerEventHandler('click', null);
+                expect(pushPublishServiceMock.pushPublishContent).not.toHaveBeenCalled();
+            });
+
+            it('should close the dialog', () => {
+                closeButton.triggerEventHandler('click', null);
+                expect(comp.cancel.emit).toHaveBeenCalled();
+                expect(comp.dialogShow).toEqual(false);
+                expect(comp.eventData).toEqual(null);
             });
         });
 
-        it('should submit form correctly on Enter', () => {
-            form.nativeElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+        describe('on error pushPublishContent', () => {
+            const errors = ['Error 1', 'Error 2'];
+            beforeEach(() => {
+                spyOn(pushPublishServiceMock, 'pushPublishContent').and.returnValue(
+                    of({ errors: errors })
+                );
+            });
 
-            expect(comp.submitPushAction).toHaveBeenCalledTimes(1);
-            expect(comp.form.valid).toBeTruthy();
-            expect(
-                pushPublishServiceMock.pushPublishContent
-            ).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
-                pushActionSelected: 'publishexpire',
-                publishdate: newDate,
-                expiredate: newDate,
-                environment: ['my environment, my second environment'],
-                forcePush: true
+            it('should show error', () => {
+                acceptButton.triggerEventHandler('click', null);
+                fixture.detectChanges();
+                const errorMessage = fixture.debugElement.query(
+                    By.css('.dot-push-publish-dialog__error')
+                );
+                expect(errorMessage.nativeElement.innerHTML).toEqual(errors.toString());
             });
         });
     });

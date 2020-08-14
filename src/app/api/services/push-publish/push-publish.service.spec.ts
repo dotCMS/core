@@ -16,10 +16,9 @@ const mockResponse = {
 
 const mockFormValue: DotPushPublishData = {
     pushActionSelected: 'publish',
-    publishdate: 'Wed Jul 08 2020 10:10:50',
-    expiredate: 'Wed Jul 15 2020 22:10:50',
+    publishDate: 'Wed Jul 08 2020 10:10:50',
+    expireDate: 'Wed Jul 15 2020 22:10:50',
     environment: ['env1'],
-    forcePush: true,
     filterKey: 'hol'
 };
 
@@ -90,7 +89,7 @@ describe('PushPublishService', () => {
         );
         expect(this.lastConnection.request.getBody()).toBe(
             // tslint:disable-next-line:max-line-length
-            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true&filterKey=hol'
+            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol'
         );
         expect(result).toEqual(mockResponse);
     }));
@@ -109,7 +108,7 @@ describe('PushPublishService', () => {
         tick();
         expect(this.lastConnection.request.getBody()).toBe(
             // tslint:disable-next-line:max-line-length
-            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true'
+            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect='
         );
     }));
 
@@ -133,7 +132,7 @@ describe('PushPublishService', () => {
         );
         expect(this.lastConnection.request.getBody()).toBe(
             // tslint:disable-next-line:max-line-length
-            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&forcePush=true&filterKey=hol'
+            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol'
         );
         expect(result).toEqual(mockResponse);
     }));
