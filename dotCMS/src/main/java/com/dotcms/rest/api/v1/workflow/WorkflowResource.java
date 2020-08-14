@@ -404,7 +404,8 @@ public class WorkflowResource {
 
             final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(),
                     LISTING.equalsIgnoreCase(renderMode)?WorkflowAPI.RenderMode.LISTING:WorkflowAPI.RenderMode.EDITING);
-            return Response.ok(new ResponseEntityView(actions)).build(); // 200
+            return Response.ok(new ResponseEntityView(actions.stream()
+                    .map(this::toWorkflowActionView).collect(Collectors.toList()))).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAvailableActions, contentlet inode: " + inode +
@@ -413,6 +414,52 @@ public class WorkflowResource {
         }
     } // findAvailableActions.
 
+    private WorkflowActionView toWorkflowActionView(final WorkflowAction workflowAction) {
+
+        final WorkflowActionView workflowActionView = new WorkflowActionView();
+
+        workflowActionView.setId(workflowAction.getId());
+        workflowActionView.setName(workflowAction.getName());
+        workflowActionView.setStepId(workflowAction.getSchemeId());
+        workflowActionView.setSchemeId(workflowAction.getSchemeId());
+        workflowActionView.setCondition(workflowAction.getCondition());
+        workflowActionView.setNextStep(workflowAction.getNextStep());
+        workflowActionView.setNextAssign(workflowAction.getNextAssign());
+        workflowActionView.setIcon(workflowAction.getIcon());
+        workflowActionView.setRoleHierarchyForAssign(workflowAction.isRoleHierarchyForAssign());
+        workflowActionView.setRequiresCheckout(workflowAction.isRoleHierarchyForAssign());
+        workflowActionView.setAssignable(workflowAction.isAssignable());
+        workflowActionView.setCommentable(workflowAction.isCommentable());
+        workflowActionView.setOrder(workflowAction.getOrder());
+        workflowActionView.setSaveActionlet(workflowAction.hasSaveActionlet());
+        workflowActionView.setPublishActionlet(workflowAction.hasPublishActionlet());
+        workflowActionView.setUnpublishActionlet(workflowAction.hasUnpublishActionlet());
+        workflowActionView.setArchiveActionlet(workflowAction.hasArchiveActionlet());
+        workflowActionView.setPushPublishActionlet(workflowAction.hasPushPublishActionlet());
+        workflowActionView.setUnarchiveActionlet(workflowAction.hasUnarchiveActionlet());
+        workflowActionView.setDeleteActionlet(workflowAction.hasDeleteActionlet());
+        workflowActionView.setDestroyActionlet(workflowAction.hasDestroyActionlet());
+        workflowActionView.setShowOn(workflowAction.getShowOn());
+
+        final List<ActionInputView> actionInputViews = new ArrayList<>();
+
+        if (workflowAction.isAssignable()) {
+
+            actionInputViews.add(new ActionInputView("assignable", Collections.emptyMap()));
+        }
+        if (workflowAction.isCommentable()) {
+
+            actionInputViews.add(new ActionInputView("commentable", Collections.emptyMap()));
+        }
+        if (workflowAction.hasPushPublishActionlet()) {
+
+            actionInputViews.add(new ActionInputView("pushPublish", Collections.emptyMap()));
+        }
+
+        workflowActionView.setActionInputs(actionInputViews);
+
+        return workflowActionView;
+    }
 
 
     /**

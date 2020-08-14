@@ -1090,6 +1090,7 @@ public class FieldAPITest extends IntegrationTestBase {
         final GraphQLFieldNameCompatibilityTestCase caseTitleImageCompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseTitleImageCompatible.fieldName = TITLE_IMAGE_KEY;
         caseTitleImageCompatible.fieldType = ImmutableBinaryField.class;
+        caseTitleImageCompatible.testCaseName = "caseTitleImageCompatible";
 
         final GraphQLFieldNameCompatibilityTestCase caseContentTypeCompatible = new GraphQLFieldNameCompatibilityTestCase();
         caseContentTypeCompatible.fieldName = CONTENT_TYPE;
