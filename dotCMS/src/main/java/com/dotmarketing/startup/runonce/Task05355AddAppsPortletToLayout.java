@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * Adds the apps portlet to all layouts which have maintenance portlet too, if it does not already exists.
  * @author jsanca
  */
-public class Task05355AddAppsPortletToLayout implements StartupTask {
+public class Task537000AddAppsPortletToLayout implements StartupTask {
 
 	@Override
 	public boolean forceRun() {
