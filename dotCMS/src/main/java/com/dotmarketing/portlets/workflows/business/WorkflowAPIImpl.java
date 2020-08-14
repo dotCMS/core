@@ -12,6 +12,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
@@ -212,7 +213,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				VelocityScriptActionlet.class,
 				LargeMessageActionlet.class,
 				SendFormEmailActionlet.class,
-				ResetApproversActionlet.class
+				ResetApproversActionlet.class,
+				RekognitionActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -2028,7 +2030,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					List<WorkFlowActionlet> actionletList = new ArrayList<WorkFlowActionlet>();
 
 					// get the dotmarketing-config.properties actionlet classes
-					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES);
+					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES, "");
 
 					StringTokenizer st = new StringTokenizer(customActionlets, ",");
 					while (st.hasMoreTokens()) {

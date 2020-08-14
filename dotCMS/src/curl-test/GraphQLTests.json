@@ -161,7 +161,6 @@
 									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
 									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
 									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
-									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
 									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
 									"    pm.expect(page[\"titleImage\"].name).equal(\"costa-rica-tree-frog.jpg\");",
 									"    pm.expect(page[\"titleImage\"].versionPath).not.equal(null)",
@@ -197,7 +196,200 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    __icon__\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    template\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
+								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    __icon__\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_SiteFieldContainsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "660cfe4e-65d2-4c3b-b08f-33d249785c41",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Site' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var host = jsonData.data.page.host;",
+									"",
+									"    pm.expect(host[\"hostName\"], 'FAILED:[hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(host[\"googleMap\"], 'FAILED:[googleMap]').equal(\"AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0\");",
+									"    pm.expect(host[\"modDate\"], 'FAILED:[modDate]').contains(\"2020-02-04\");",
+									"    pm.expect(host[\"aliases\"], 'FAILED:[aliases]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
+									"    pm.expect(host[\"keywords\"], 'FAILED:[keywords]').equal(\"CMS, Web Content Management, Open Source, Java, J2EE, DXP, NoCode, OSGI, Apache Velocity, Elasticsearch, RESTful Services, REST API, Workflows, Personalization, Multilingual, I18N, L10N, Internationalization, Localization, Docker CMS, Containerized CMS\");",
+									"    pm.expect(host[\"description\"], 'FAILED:[description]').equal(\"dotCMS starter site was designed to demonstrate what you can do with dotCMS.\");",
+									"    pm.expect(host[\"hostAliases\"], 'FAILED:[hostAliases]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
+									"    pm.expect(host[\"title\"], 'FAILED:[title]').equal(\"test.dotcms.com\\ntest2.dotcms.com\\nlocalhost\\n127.0.0.1\");",
+									"    pm.expect(host[\"baseType\"], 'FAILED:[baseType]').equal(\"CONTENT\");",
+									"    pm.expect(host[\"inode\"], 'FAILED:[inode]').equal(\"0c3418eb-4c27-4d71-937d-bf231399312a\");",
+									"    pm.expect(host[\"archived\"], 'FAILED:[archived]').equal(false);",
+									"    pm.expect(host[\"addThis\"], 'FAILED:[addThis]').equal(\"ra-4e02119211875e7b\");",
+									"    pm.expect(host[\"working\"], 'FAILED:[working]').equal(true);",
+									"    pm.expect(host[\"locked\"], 'FAILED:[locked]').equal(false);",
+									"    pm.expect(host[\"contentType\"], 'FAILED:[contentType]').equal(\"Host\");",
+									"    pm.expect(host[\"live\"], 'FAILED:[live]').equal(true);",
+									"    pm.expect(host[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(\"Admin\");",
+									"    ////",
+									"    pm.expect(host[\"identifier\"], 'FAILED:[identifier]').equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(host[\"hostThumbnail\"].name, 'FAILED:[hostThumbnail.name]').equal(null);",
+									"    pm.expect(host[\"runDashboard\"], 'FAILED:[runDashboard]').equal(false);",
+									"    pm.expect(host[\"conLanguage\"].languageCode, 'FAILED:[conLanguage.languageCode]').equal(\"en\");",
+									"    pm.expect(host[\"hostTagStorage\"], 'FAILED:[hostTagStorage]').equal(\"SYSTEM_HOST\");",
+									"    pm.expect(host[\"hostId\"], 'FAILED:[hostId]').equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(host[\"titleImage\"].name, 'FAILED:[titleImage.name]').equal(null);",
+									"    pm.expect(host[\"embeddedDashboard\"], 'FAILED:[embeddedDashboard]').equal(null);",
+									"    pm.expect(host[\"urlMap\"], 'FAILED:[urlMap]').equal(null);",
+									"    pm.expect(host[\"isDefault\"], 'FAILED:[isDefault]').equal(true)",
+									"    ///",
+									"    pm.expect(host[\"folder\"].folderName, 'FAILED:[folder.folderName]').equal(\"system folder\");",
+									"    pm.expect(host[\"googleAnalytics\"], 'FAILED:[googleAnalytics]').equal(\"UA-9877660-3\");",
+									"    pm.expect(host[\"tagStorage\"], 'FAILED:[tagStorage]').equal(\"SYSTEM_HOST\");",
+									"    pm.expect(host[\"modUser\"].firstName, 'FAILED:[modUser.firstName]').equal(\"Admin\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    host {\n      hostName\n      googleMap\n      modDate\n      aliases\n      keywords\n      description\n      hostAliases\n      title\n      baseType\n      inode\n      archived\n      addThis\n      working\n      locked\n      contentType\n      live\n      owner {\n        firstName\n      }\n      identifier\n      hostThumbnail {\n        name\n      }\n      runDashboard\n      conLanguage {\n        languageCode\n      }\n      hostTagStorage\n      hostId\n      titleImage {\n        name\n      }\n      embeddedDashboard\n      urlMap\n      isDefault\n      folder {\n        folderName\n      }\n      googleAnalytics\n      tagStorage\n      modUser {\n        firstName\n      }\n      \n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_TemplateFieldContainsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bd54b3e0-c765-4780-a7a8-4060d8789ba0",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Site' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var template = jsonData.data.page.template;",
+									"",
+									"    pm.expect(template[\"iDate\"], 'FAILED:[iDate]').equal(\"1578687702481\");",
+									"    pm.expect(template[\"type\"], 'FAILED:[type]').equal(\"template\");",
+									"    pm.expect(template[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(null);",
+									"    pm.expect(template[\"inode\"], 'FAILED:[inode]').equal(\"cfda9246-cce3-4313-8cc3-2080d1935cf9\");",
+									"    pm.expect(template[\"identifier\"], 'FAILED:[identifier]').equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(template[\"source\"], 'FAILED:[source]').equal(\"DB\");",
+									"    pm.expect(template[\"title\"], 'FAILED:[title]').equal(\"anonymous_layout_1579716181795\");",
+									"    pm.expect(template[\"friendlyName\"], 'FAILED:[friendlyName]').equal(\"\");",
+									"    pm.expect(template[\"modDate\"], 'FAILED:[modDate]').not.to.be.null;",
+									"    pm.expect(template[\"modUser\"].firstName, 'FAILED:[modUser.firstName]').equal(\"system user\");",
+									"    pm.expect(template[\"modUser\"].userId, 'FAILED:[modUser.userId]').equal(\"system\");",
+									"    pm.expect(template[\"sortOrder\"], 'FAILED:[sortOrder]').equal(0);",
+									"    pm.expect(template[\"showOnMenu\"], 'FAILED:[showOnMenu]').equal(false);",
+									"    pm.expect(template[\"image\"], 'FAILED:[image]').equal(\"\");",
+									"    pm.expect(template[\"drawed\"], 'FAILED:[drawed]').equal(true);",
+									"    pm.expect(template[\"drawedBody\"], 'FAILED:[drawedBody]').equal(\"{\\\"header\\\":true,\\\"footer\\\":true,\\\"body\\\":{\\\"rows\\\":[{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"5a07f889-4536-4956-aa6e-e7967969ec3f\\\",\\\"uuid\\\":\\\"1\\\"}],\\\"widthPercent\\\":100,\\\"leftOffset\\\":1,\\\"preview\\\":false,\\\"width\\\":12,\\\"left\\\":0}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"1\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":1,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":0},{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"2\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":7,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":6}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"3\\\"}],\\\"widthPercent\\\":100,\\\"leftOffset\\\":1,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":12,\\\"left\\\":0}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"4\\\"}],\\\"widthPercent\\\":83,\\\"leftOffset\\\":2,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":10,\\\"left\\\":1}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"5\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":1,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":0},{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"6\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":7,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":6}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"7\\\"}],\\\"widthPercent\\\":41,\\\"leftOffset\\\":1,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":5,\\\"left\\\":0},{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"8\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":7,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":6}]}]},\\\"sidebar\\\":{\\\"containers\\\":[],\\\"location\\\":\\\"\\\",\\\"width\\\":\\\"small\\\",\\\"widthPercent\\\":20,\\\"preview\\\":false}}\");",
+									"",
+									"    pm.expect(template[\"theme\"], 'FAILED:[theme]').equal(\"d7b0ebc2-37ca-4a5a-b769-e8a3ff187661\");",
+									"    pm.expect(template[\"anonymous\"], 'FAILED:[anonymous]').equal(true);",
+									"    pm.expect(template[\"template\"], 'FAILED:[template]').equal(false);",
+									"    pm.expect(template[\"versionId\"], 'FAILED:[versionId]').equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(template[\"versionType\"], 'FAILED:[versionType]').equal(\"template\");",
+									"    pm.expect(template[\"deleted\"], 'FAILED:[deleted]').equal(false);",
+									"    pm.expect(template[\"working\"], 'FAILED:[working]').equal(true);",
+									"    pm.expect(template[\"permissionId\"], 'FAILED:[permissionId]').equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(template[\"name\"], 'FAILED:[name]').equal(\"anonymous_layout_1579716181795\");",
+									"    pm.expect(template[\"live\"], 'FAILED:[live]').equal(true);",
+									"    pm.expect(template[\"archived\"], 'FAILED:[archived]').equal(false);",
+									"    pm.expect(template[\"locked\"], 'FAILED:[locked]').equal(false);",
+									"    pm.expect(template[\"permissionType\"], 'FAILED:[permissionType]').equal(\"com.dotmarketing.portlets.templates.model.Template\");",
+									"    pm.expect(template[\"categoryId\"], 'FAILED:[categoryId]').equal(\"cfda9246-cce3-4313-8cc3-2080d1935cf9\");",
+									"    pm.expect(template[\"new\"], 'FAILED:[new]').equal(false);",
+									"    pm.expect(template[\"idate\"], 'FAILED:[idate]').to.be.not.null;",
+									"    pm.expect(template[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    template {\n      iDate\n      type\n      owner {\n        firstName\n      }\n      inode\n      identifier\n      source\n      title\n      friendlyName\n      modDate\n      modUser {\n        firstName\n        lastName\n        userId\n      }\n      sortOrder\n      showOnMenu\n      image\n      drawed\n      drawedBody\n      theme\n      anonymous\n      template\n      versionId\n      versionType\n      deleted\n      working\n      permissionId\n      name\n      live\n      archived\n      locked\n      permissionType\n      categoryId\n      new\n      idate\n      canEdit\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -2352,91 +2544,330 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Metadata ",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithPersonas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2faf096d-b38b-4e9b-b109-b5b5cc7b4966",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"personas.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/personas.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports personas"
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithVanityUrl",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "940848d6-42bb-43d6-9f8b-23dcce7c5225",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"vanity.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/vanity.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Vanity URL"
+					},
+					"response": []
+				},
+				{
+					"name": "RequestCount_ShouldReturnProperCount",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "165bb850-5f6d-4f51-9e31-144d10b4bf09",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"'QueryMetadata' includes all fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var metadata = jsonData.data.QueryMetadata[0];",
+									"",
+									"    pm.expect(metadata[\"fieldName\"], 'FAILED:[fieldName]').equal(\"PersonaBaseTypeCollection\");",
+									"    pm.expect(metadata[\"totalCount\"]>0, 'FAILED:[totalCount]').to.be.true;",
+									"",
+									"    metadata = jsonData.data.QueryMetadata[1];",
+									"",
+									"    pm.expect(metadata[\"fieldName\"], 'FAILED:[fieldName]').equal(\"KeyValueBaseTypeCollection\");",
+									"    pm.expect(metadata[\"totalCount\"]>0, 'FAILED:[totalCount]').to.be.true;",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  PersonaBaseTypeCollection {\n    title\n  }\n\n  KeyValueBaseTypeCollection {\n    key\n    value\n  }\n\n  QueryMetadata {\n    fieldName\n    totalCount\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
 		{
-			"id": "b6cb519f-357e-4d62-9cac-7589cc64931a",
+			"id": "82dbe6dd-566a-4ad0-aed5-4bb4d76da0b7",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "59e0c339-fa3e-4854-8361-6a35b6d81450",
+			"id": "1b40d6fc-69ea-4139-ab11-e83c1eb37817",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "eaa31ee4-e96b-4505-b833-0c9dd9d57654",
+			"id": "1b2c1ee2-112f-463b-b8d7-0cdcf3306be2",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "73d05396-bcf1-4429-9a73-0636a96837f4",
+			"id": "41328a09-1352-4e6b-9a17-80834e772d30",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "7a581a83-9aad-49b1-b41b-a55464da7ffa",
+			"id": "c44bdb0f-cd17-4170-ac4f-54d15e11f27e",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "ba8efb65-7998-4d02-9de8-b313e1e49afa",
+			"id": "22d54a69-88a7-47b8-9511-279be03e2c60",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "ce86d0d6-5841-4a64-a5e2-1963e4dd1849",
+			"id": "91b5acda-0ff1-4829-9650-1d54df816825",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "79aa6a86-6e28-4f37-8fb8-8850c9c1dd03",
+			"id": "dd33574a-6d81-4f30-bf43-318019339bfb",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "dc49ed3c-14ac-46bc-913d-c7249c424b2a",
+			"id": "a99879e5-832b-489f-a38f-8cc4c5f59a05",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "2c123b07-9652-460e-b9f1-9bbb27c9df0c",
+			"id": "b0bb557a-fe7f-4cbc-a393-dfa81138bf8f",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "ed70c65e-934a-4314-8906-251c3b4e5e4b",
+			"id": "d69737f9-fea7-4c5f-9e0b-d7cc0dd156d5",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "8c783cbb-9682-490f-826d-e84ce686d303",
+			"id": "2ec93662-f209-45fd-8bbe-3600e8844874",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "391fcf23-7d13-4104-89ef-c54275ccdcc7",
+			"id": "122210d1-4740-4596-9f09-3defcfda09e2",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "ad958f66-5b0f-4798-87a2-1c5d8215a90c",
+			"id": "5c1a0ae4-7758-4cb1-b9f5-caea813b4ef1",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "bb583b27-2187-44b5-854d-1117da589ed4",
+			"id": "d3416436-07a5-4b9e-8cda-9d68c55fbf58",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "9cbaea9a-b866-4725-87b7-570a5387f857",
+			"id": "4ea7030a-4e42-4420-9f37-25040c803842",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "16e0587c-24fc-4fd0-9b38-e9a28decb83a",
+			"id": "1254d682-84b4-4925-b860-91b9ae93e191",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

@@ -200,7 +200,7 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
 
         if (samlName == null) {
 
-            throw new SamlException("The 'getDefaultIntegerParameter' property is null");
+            throw new DotSamlException("The 'getDefaultIntegerParameter' property is null");
         }
 
         if (this.defaultProperties.containsKey(samlName.getPropertyName())) {
@@ -208,7 +208,7 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
             return Integer.parseInt(this.defaultProperties.get(samlName.getPropertyName()));
         }
 
-        throw new SamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
+        throw new DotSamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
     }
 
     private String[] getDefaultArrayStringParameter(final SamlName samlName) {
@@ -218,14 +218,14 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
             return StringUtils.split(value, DotSamlConstants.ARRAY_SEPARATOR_CHAR);
         }
 
-        throw new SamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
+        throw new DotSamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
     }
 
     public String getDefaultStringParameter(final SamlName property) {
 
         if (property == null) {
 
-            throw new SamlException("The 'getDefaultStringParameter' property is null");
+            throw new DotSamlException("The 'getDefaultStringParameter' property is null");
         }
 
         if (this.defaultProperties.containsKey(property.getPropertyName())) {
@@ -234,14 +234,14 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
             return NULL == string? null : string;
         }
 
-        throw new SamlException(NOT_FOUND_ERROR + property.getPropertyName());
+        throw new DotSamlException(NOT_FOUND_ERROR + property.getPropertyName());
     }
 
     public  boolean getDefaultBooleanParameter(final SamlName samlName) {
 
         if (samlName == null) {
 
-            throw new SamlException("The 'getDefaultBooleanParameter' property is null");
+            throw new DotSamlException("The 'getDefaultBooleanParameter' property is null");
         }
 
         if (this.defaultProperties.containsKey(samlName.getPropertyName())) {
@@ -249,6 +249,6 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
             return Boolean.parseBoolean(this.defaultProperties.get(samlName.getPropertyName()));
         }
 
-        throw new SamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
+        throw new DotSamlException(NOT_FOUND_ERROR + samlName.getPropertyName());
     }
 }

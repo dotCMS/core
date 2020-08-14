@@ -3,6 +3,7 @@ package com.dotcms.publishing;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.util.YamlUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.io.IOException;
@@ -28,10 +29,9 @@ public class PushPublishFiltersInitializer implements DotInitializer {
                 basePath.mkdir();
                 //If the directory does not exists, copy the YAML files that are ship with
                 //dotcms to the created directory
-                final String systemFiltersDirectory = "com" + File.separator + "dotcms" +
-                        File.separator + "publishing-filters" + File.separator;
-                final String systemFiltersPathString = Thread.currentThread()
-                        .getContextClassLoader().getResource(systemFiltersDirectory).getPath();
+                final String systemFiltersDirectory = "publishing-filters" + File.separator;
+                final String systemFiltersPathString = Config.CONTEXT
+                        .getRealPath("/WEB-INF/" + systemFiltersDirectory);
                 final File systemFilters = new File(systemFiltersPathString);
                 Files.list(systemFilters.toPath()).forEach(filter -> {
                     try {
@@ -59,6 +59,7 @@ public class PushPublishFiltersInitializer implements DotInitializer {
             final FilterDescriptor filterDescriptor = YamlUtil.parse(path, FilterDescriptor.class);
             filterDescriptor.setKey(fileName);
             Logger.info(PushPublishFiltersInitializer.class, filterDescriptor.toString());
+            filterDescriptor.validate();
             APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
         }catch(Exception e) {
             Logger.warnAndDebug(this.getClass(), "unable to load PP filter:" + path.toString() + " cause: " + e.getMessage(), e);

@@ -6,6 +6,7 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.Collections;
@@ -22,10 +23,13 @@ public class UserDataFetcher implements DataFetcher<Map<String, String>> {
         String userId = null;
         try {
             final User apiUser = ((DotGraphQLContext) environment.getContext()).getUser();
-            final Contentlet contentlet = environment.getSource();
-            var = environment.getField().getName();
 
-            userId = contentlet.getStringProperty(var);
+            userId = getUserId(environment);
+
+            if(UtilMethods.isNotSet(userId)) {
+                return Collections.emptyMap();
+            }
+
             final User user = APILocator.getUserAPI().loadUserById(userId, apiUser, true);
 
             final Map<String, String> userMap = new HashMap<>();
@@ -45,5 +49,18 @@ public class UserDataFetcher implements DataFetcher<Map<String, String>> {
             Logger.error(this, e.getMessage(), e);
             throw e;
         }
+    }
+
+    private String getUserId(final DataFetchingEnvironment environment) {
+        String userId;
+        try {
+            final Contentlet contentlet = environment.getSource();
+            userId = contentlet.getStringProperty(environment.getField().getName());
+        } catch (ClassCastException e) {
+            final Map<Object, Object> map = environment.getSource();
+            userId = (String) map.get(environment.getField().getName());
+        }
+
+        return userId;
     }
 }
