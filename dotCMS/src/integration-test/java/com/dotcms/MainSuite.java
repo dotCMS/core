@@ -29,6 +29,7 @@ import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
@@ -308,6 +309,7 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleResourceTest.class,
         IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
+        GoogleTranslationServiceIntegrationTest.class,
         Task05355AddAppsPortletToLayoutTest.class
 })
 public class MainSuite {

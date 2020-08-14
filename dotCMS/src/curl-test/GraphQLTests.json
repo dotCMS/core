@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "54bff961-2640-46ea-b37d-0f5dd728393f",
+		"_postman_id": "8ebdc33c-110c-4f94-adf0-6d4844cc5ee1",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "aaf49741-c53a-44f9-bd14-746e4433d86c",
+								"id": "d7ce458d-7749-4ce1-9655-c3d9c0ae5cf0",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -103,7 +103,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "485cea4a-f6db-49b9-8a04-862b5852e2ad",
+								"id": "74c6a123-8fe9-4477-ae63-877b1183abb7",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -161,7 +161,6 @@
 									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
 									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
 									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
-									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
 									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
 									"    pm.expect(page[\"titleImage\"].name).equal(\"costa-rica-tree-frog.jpg\");",
 									"    pm.expect(page[\"titleImage\"].versionPath).not.equal(null)",
@@ -197,7 +196,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    __icon__\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    template\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
+								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    __icon__\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -216,12 +215,12 @@
 					"response": []
 				},
 				{
-					"name": "GivenRequestByURI_SiteElementContainsAllFields",
+					"name": "GivenRequestByURI_SiteFieldContainsAllFields",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "257738f3-2f07-4b45-b417-3f6af5649dd8",
+								"id": "660cfe4e-65d2-4c3b-b08f-33d249785c41",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -310,6 +309,103 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_TemplateFieldContainsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bd54b3e0-c765-4780-a7a8-4060d8789ba0",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Site' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var template = jsonData.data.page.template;",
+									"",
+									"    pm.expect(template[\"iDate\"], 'FAILED:[iDate]').equal(\"1578687702481\");",
+									"    pm.expect(template[\"type\"], 'FAILED:[type]').equal(\"template\");",
+									"    pm.expect(template[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(null);",
+									"    pm.expect(template[\"inode\"], 'FAILED:[inode]').equal(\"cfda9246-cce3-4313-8cc3-2080d1935cf9\");",
+									"    pm.expect(template[\"identifier\"], 'FAILED:[identifier]').equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(template[\"source\"], 'FAILED:[source]').equal(\"DB\");",
+									"    pm.expect(template[\"title\"], 'FAILED:[title]').equal(\"anonymous_layout_1579716181795\");",
+									"    pm.expect(template[\"friendlyName\"], 'FAILED:[friendlyName]').equal(\"\");",
+									"    pm.expect(template[\"modDate\"], 'FAILED:[modDate]').not.to.be.null;",
+									"    pm.expect(template[\"modUser\"].firstName, 'FAILED:[modUser.firstName]').equal(\"system user\");",
+									"    pm.expect(template[\"modUser\"].userId, 'FAILED:[modUser.userId]').equal(\"system\");",
+									"    pm.expect(template[\"sortOrder\"], 'FAILED:[sortOrder]').equal(0);",
+									"    pm.expect(template[\"showOnMenu\"], 'FAILED:[showOnMenu]').equal(false);",
+									"    pm.expect(template[\"image\"], 'FAILED:[image]').equal(\"\");",
+									"    pm.expect(template[\"drawed\"], 'FAILED:[drawed]').equal(true);",
+									"    pm.expect(template[\"drawedBody\"], 'FAILED:[drawedBody]').equal(\"{\\\"header\\\":true,\\\"footer\\\":true,\\\"body\\\":{\\\"rows\\\":[{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"5a07f889-4536-4956-aa6e-e7967969ec3f\\\",\\\"uuid\\\":\\\"1\\\"}],\\\"widthPercent\\\":100,\\\"leftOffset\\\":1,\\\"preview\\\":false,\\\"width\\\":12,\\\"left\\\":0}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"1\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":1,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":0},{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"2\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":7,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":6}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"3\\\"}],\\\"widthPercent\\\":100,\\\"leftOffset\\\":1,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":12,\\\"left\\\":0}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"4\\\"}],\\\"widthPercent\\\":83,\\\"leftOffset\\\":2,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":10,\\\"left\\\":1}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"5\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":1,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":0},{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"6\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":7,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":6}]},{\\\"columns\\\":[{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"7\\\"}],\\\"widthPercent\\\":41,\\\"leftOffset\\\":1,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":5,\\\"left\\\":0},{\\\"containers\\\":[{\\\"identifier\\\":\\\"/application/containers/default/\\\",\\\"uuid\\\":\\\"8\\\"}],\\\"widthPercent\\\":50,\\\"leftOffset\\\":7,\\\"styleClass\\\":\\\"\\\",\\\"preview\\\":false,\\\"width\\\":6,\\\"left\\\":6}]}]},\\\"sidebar\\\":{\\\"containers\\\":[],\\\"location\\\":\\\"\\\",\\\"width\\\":\\\"small\\\",\\\"widthPercent\\\":20,\\\"preview\\\":false}}\");",
+									"",
+									"    pm.expect(template[\"theme\"], 'FAILED:[theme]').equal(\"d7b0ebc2-37ca-4a5a-b769-e8a3ff187661\");",
+									"    pm.expect(template[\"anonymous\"], 'FAILED:[anonymous]').equal(true);",
+									"    pm.expect(template[\"template\"], 'FAILED:[template]').equal(false);",
+									"    pm.expect(template[\"versionId\"], 'FAILED:[versionId]').equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(template[\"versionType\"], 'FAILED:[versionType]').equal(\"template\");",
+									"    pm.expect(template[\"deleted\"], 'FAILED:[deleted]').equal(false);",
+									"    pm.expect(template[\"working\"], 'FAILED:[working]').equal(true);",
+									"    pm.expect(template[\"permissionId\"], 'FAILED:[permissionId]').equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(template[\"name\"], 'FAILED:[name]').equal(\"anonymous_layout_1579716181795\");",
+									"    pm.expect(template[\"live\"], 'FAILED:[live]').equal(true);",
+									"    pm.expect(template[\"archived\"], 'FAILED:[archived]').equal(false);",
+									"    pm.expect(template[\"locked\"], 'FAILED:[locked]').equal(false);",
+									"    pm.expect(template[\"permissionType\"], 'FAILED:[permissionType]').equal(\"com.dotmarketing.portlets.templates.model.Template\");",
+									"    pm.expect(template[\"categoryId\"], 'FAILED:[categoryId]').equal(\"cfda9246-cce3-4313-8cc3-2080d1935cf9\");",
+									"    pm.expect(template[\"new\"], 'FAILED:[new]').equal(false);",
+									"    pm.expect(template[\"idate\"], 'FAILED:[idate]').to.be.not.null;",
+									"    pm.expect(template[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    template {\n      iDate\n      type\n      owner {\n        firstName\n      }\n      inode\n      identifier\n      source\n      title\n      friendlyName\n      modDate\n      modUser {\n        firstName\n        lastName\n        userId\n      }\n      sortOrder\n      showOnMenu\n      image\n      drawed\n      drawedBody\n      theme\n      anonymous\n      template\n      versionId\n      versionType\n      deleted\n      working\n      permissionId\n      name\n      live\n      archived\n      locked\n      permissionType\n      categoryId\n      new\n      idate\n      canEdit\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -323,7 +419,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "421162a6-efe1-4f7e-8816-0417560212db",
+								"id": "9f53bc11-d480-4feb-a011-4e10b9cffd0e",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -412,7 +508,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e5fdb8a9-eb03-464a-8fab-82025675ae0a",
+								"id": "80116f04-0625-4544-a952-180cd5e78c3a",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -501,7 +597,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8ba17cfe-0bfb-49fb-9138-c479cf6ef022",
+								"id": "c12b9f4d-6f4c-4068-b38e-1ad8d2b64710",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -590,7 +686,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d6f98110-08e3-4892-9f37-ab74f5d416dc",
+								"id": "6b19625f-015c-40ef-8c6e-ae65895ba6aa",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -679,7 +775,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "56ff5106-44cd-4ebe-8c6a-e07636c49009",
+								"id": "d28d0656-61ee-41fe-b14a-95e0909c23b6",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -768,7 +864,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "040c22b2-b903-4799-bf27-8dccf4770e7a",
+								"id": "51028aad-acb6-4543-96a4-dc95881bb850",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -857,7 +953,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "64dba77c-7304-432c-8bd5-f4e03f61cdf4",
+								"id": "b1526eba-52b6-47f5-9b9b-c54a9d03245d",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -946,7 +1042,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bb78e26d-1ca9-4583-afa3-f81771567b4c",
+								"id": "6fff3e00-260e-4748-992c-e351ae010266",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1008,7 +1104,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "424491ba-53a8-40ec-9554-612827a02a89",
+								"id": "31904990-e291-44ae-9ade-478858cc2979",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1062,7 +1158,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "44c0b864-71d9-4544-ac83-602c8c7fd949",
+								"id": "e1cd8656-c620-48c2-8f18-4872da53526d",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1132,7 +1228,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2a31ae1a-7926-4d71-9804-a224fbb6e98d",
+								"id": "5bfea9fd-07c6-4449-8991-56451e38eb0a",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1181,7 +1277,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "af4454cc-7281-4eb4-900f-507052cdbd2a",
+								"id": "d47a71d5-c7dd-4cfd-a83c-45566f580cb5",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1230,7 +1326,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "14eeda91-563f-4f3a-8e7d-b71f2e7e3ec8",
+								"id": "a47cc911-35c1-403e-a4bf-f0a539ab8cc2",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1283,7 +1379,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "977ae396-d5d6-4670-93b4-2bcd38229c87",
+								"id": "435a011a-3dfe-4848-94fa-c303673badc5",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1337,7 +1433,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f09b7a80-f1a3-4915-882f-4bc307c589dd",
+								"id": "b0d7f45a-38fa-4230-9b5b-e370cad0a87a",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -1400,7 +1496,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "29293843-b5fa-45b7-a6d9-85f8c0318c56",
+								"id": "11cff9ca-b5d7-44d0-a36d-f4a1d9613a4c",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
@@ -1458,7 +1554,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "858f3038-0c0c-4691-83b2-4b1e8f3052ad",
+								"id": "d93b684a-c5a6-4794-8c5d-9d3faa57ea2d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -1517,7 +1613,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "adcc02b8-05b5-4723-b175-9b1ddf65dfd0",
+								"id": "f0ccfb65-eed7-4957-b0cf-509296b1cfbb",
 								"exec": [
 									"pm.test(\"Content in new Language should be retrieved\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -1567,7 +1663,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "11d2ca0d-7d0e-47e7-ae98-7adb7034e482",
+								"id": "88c92ddb-bd41-4abb-bd39-314c0c2d95dd",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"imageContentTypeVariable\", jsonData.entity[0].variable);"
@@ -1625,7 +1721,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "43eb5031-9ce3-4d66-b0e2-937286194924",
+								"id": "f2d75aa1-040b-4f5e-8e76-2858ce83563d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -1688,7 +1784,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bcaa3e27-5a58-4539-b434-5b418cf2db10",
+								"id": "59ef896e-c8d5-494d-aff9-973197df63ca",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
@@ -1699,7 +1795,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "c2a8d5c4-689f-4ca7-a4be-2384c1f3f648",
+								"id": "141f88b9-e401-4a7c-a477-96b173f13642",
 								"exec": [
 									""
 								],
@@ -1762,7 +1858,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "465551c0-09b6-4bf7-826a-59726be2f1e0",
+								"id": "974446be-0beb-4bed-af7a-db9195f0bc86",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
@@ -1826,7 +1922,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1b60789e-c716-4101-be67-89ca831f5c10",
+								"id": "8c9e38ef-0ed8-4b2b-a354-dfd2e823c32f",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -1879,7 +1975,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e87c5593-4f90-45ff-bc20-9f9a6b11c2c7",
+								"id": "2e6ec58b-9957-48c6-a96c-a7eb2efb7a04",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
@@ -1995,7 +2091,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ba0d68d5-76e8-4da4-a7fd-88e50ffb8636",
+								"id": "46e91aba-8d25-44d1-86c3-dbc8287ce600",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -2058,7 +2154,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fcd48de1-067a-4287-90b6-61fefd4ba02c",
+								"id": "33d07a12-5450-4f75-9b79-74cfdce51d40",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentTypeVariable\", jsonData.entity[0].variable);"
@@ -2116,7 +2212,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "84eaf26c-70c5-4acc-a37c-1813ed67c2c4",
+								"id": "efb2bbf5-73e3-4a3d-8a6f-a89df40bd3bd",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
@@ -2175,7 +2271,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6a47a880-9590-4b2c-ac2d-f0690aae3ec7",
+								"id": "55b8d053-9d63-4c0c-813c-4f26ec31f2a1",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentIdentifier\", jsonData.entity.identifier);"
@@ -2234,7 +2330,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "27adeb01-761f-4902-80c3-6e86de22fa72",
+								"id": "ab0baa96-788c-46ca-9974-a89af8227466",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentIdentifier\", jsonData.entity.identifier);"
@@ -2293,7 +2389,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b497ff1d-d4b4-46e9-a723-9a1add6be9ae",
+								"id": "9141c398-72ef-4683-b385-0159820a21a5",
 								"exec": [
 									"pm.test(\"Content parent and child content returned in requested language\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -2349,7 +2445,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5ca53978-b84a-4851-822a-77c2502dc73a",
+								"id": "3fbe595a-e5f3-4320-aa86-f2a23496ba64",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -2412,7 +2508,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c96342e9-41a5-41a1-a5a4-c07fbf28b574",
+								"id": "ba29446d-4c81-4e34-b7e5-a013783f8ed1",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2450,15 +2546,15 @@
 			"protocolProfileBehavior": {}
 		},
 		{
-			"name": "Metadata",
+			"name": "Metadata ",
 			"item": [
 				{
-					"name": "pre_ImportBundleWithContentTypeAndContents",
+					"name": "pre_ImportBundleWithPersonas",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "e9cc6319-b017-428e-b6d4-1b197c9f1142",
+								"id": "2faf096d-b38b-4e9b-b109-b5b5cc7b4966",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2466,7 +2562,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"content_type_bundle.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"personas.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
@@ -2509,7 +2605,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/GraphQL/content_type_bundle.tar.gz"
+									"src": "resources/GraphQL/personas.tar.gz"
 								}
 							],
 							"options": {
@@ -2542,12 +2638,101 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithVanityUrl",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "940848d6-42bb-43d6-9f8b-23dcce7c5225",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"vanity.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/vanity.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Vanity URL"
+					},
+					"response": []
+				},
+				{
 					"name": "RequestCount_ShouldReturnProperCount",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "3ba36da7-2916-4072-ac4e-4451b5765880",
+								"id": "165bb850-5f6d-4f51-9e31-144d10b4bf09",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2558,8 +2743,13 @@
 									"    var jsonData = pm.response.json();",
 									"    var metadata = jsonData.data.QueryMetadata[0];",
 									"",
-									"    pm.expect(metadata[\"fieldName\"], 'FAILED:[fieldName]').equal(\"ContentTestCollection\");",
-									"    pm.expect(metadata[\"totalCount\"], 'FAILED:[totalCount]').to.be.equal(2);",
+									"    pm.expect(metadata[\"fieldName\"], 'FAILED:[fieldName]').equal(\"PersonaBaseTypeCollection\");",
+									"    pm.expect(metadata[\"totalCount\"]>0, 'FAILED:[totalCount]').to.be.true;",
+									"",
+									"    metadata = jsonData.data.QueryMetadata[1];",
+									"",
+									"    pm.expect(metadata[\"fieldName\"], 'FAILED:[fieldName]').equal(\"KeyValueBaseTypeCollection\");",
+									"    pm.expect(metadata[\"totalCount\"]>0, 'FAILED:[totalCount]').to.be.true;",
 									"",
 									"});"
 								],
@@ -2573,7 +2763,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  ContentTestCollection {\n    textField\n  }\n\n  QueryMetadata {\n    fieldName\n    totalCount\n  }\n}",
+								"query": "{\n  PersonaBaseTypeCollection {\n    title\n  }\n\n  KeyValueBaseTypeCollection {\n    key\n    value\n  }\n\n  QueryMetadata {\n    fieldName\n    totalCount\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -2597,87 +2787,87 @@
 	],
 	"variable": [
 		{
-			"id": "0e76a0e7-e0b9-4c1d-968a-397b4562148d",
+			"id": "82dbe6dd-566a-4ad0-aed5-4bb4d76da0b7",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "b975460f-d2e6-4771-baee-4c189f1a56a8",
+			"id": "1b40d6fc-69ea-4139-ab11-e83c1eb37817",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "103e9947-007f-4f60-a8fe-8c3fef265820",
+			"id": "1b2c1ee2-112f-463b-b8d7-0cdcf3306be2",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "e3a3b619-2f1a-4ac7-bdb5-bd8c68859056",
+			"id": "41328a09-1352-4e6b-9a17-80834e772d30",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "9ff039a2-e516-4345-aee6-c6accd3a03ac",
+			"id": "c44bdb0f-cd17-4170-ac4f-54d15e11f27e",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "e7f32e36-adb4-49ab-b5b6-ef5f68a7c02e",
+			"id": "22d54a69-88a7-47b8-9511-279be03e2c60",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "a6591c3d-3a61-4523-a8e5-ffed727ba8ba",
+			"id": "91b5acda-0ff1-4829-9650-1d54df816825",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "a5bd32fd-a26d-46c4-ae6f-8ae50b49d948",
+			"id": "dd33574a-6d81-4f30-bf43-318019339bfb",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "431d66fc-8120-4ec8-9cb4-ce6baf9f081e",
+			"id": "a99879e5-832b-489f-a38f-8cc4c5f59a05",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "61e7df22-44cc-4b8a-93d2-3c796aba0d60",
+			"id": "b0bb557a-fe7f-4cbc-a393-dfa81138bf8f",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "a728fad1-07d0-4e35-b805-e35789363769",
+			"id": "d69737f9-fea7-4c5f-9e0b-d7cc0dd156d5",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "deef1905-923f-4cc3-8eee-b51e0dd67374",
+			"id": "2ec93662-f209-45fd-8bbe-3600e8844874",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "6d0b9afb-0fbd-4417-85e2-68fac1784dda",
+			"id": "122210d1-4740-4596-9f09-3defcfda09e2",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "04203425-fc41-406e-8cf7-a8aa20369f2a",
+			"id": "5c1a0ae4-7758-4cb1-b9f5-caea813b4ef1",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "1781d65b-9a0d-4423-8d31-42cf4ef55ac9",
+			"id": "d3416436-07a5-4b9e-8cda-9d68c55fbf58",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "4d2932de-e0f2-43b5-8002-bdd2036f2ae9",
+			"id": "4ea7030a-4e42-4420-9f37-25040c803842",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "3d223cb3-e9e4-45fe-96f7-4f2748b4a2d8",
+			"id": "1254d682-84b4-4925-b860-91b9ae93e191",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
