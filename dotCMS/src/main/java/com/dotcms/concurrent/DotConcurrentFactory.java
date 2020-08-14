@@ -2,6 +2,8 @@ package com.dotcms.concurrent;
 
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
+import com.dotcms.concurrent.scheduler.DotScheduler;
+import com.dotcms.concurrent.scheduler.DotSchedulerImpl;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.util.Config;
@@ -106,6 +108,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     private final IdentifierStripedLock identifierStripedLock =
            new IdentifierStripedLock(DotKeyLockManagerBuilder.newLockManager(LOCK_MANAGER));
+
+    private final DotScheduler scheduler = new DotSchedulerImpl();
 
     private final ThreadFactory getDefaultThreadFactory () {
 
@@ -342,6 +346,14 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
        return this.identifierStripedLock;
     }
 
+    /**
+     * Returns the Scheduler
+     * @return DotScheduler
+     */
+    public DotScheduler getScheduler () {
+
+        return scheduler;
+    }
     //// DelayQueueConsumer
 
     /**
