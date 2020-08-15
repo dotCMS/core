@@ -3,11 +3,10 @@ import { CoreWebService } from 'dotcms-js';
 import { pluck } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
-import { DotCMSWorkflowAction, DotCMSWorkflow } from 'dotcms-models';
+import { DotCMSWorkflowAction, DotCMSWorkflow, DotCMSWorkflowInput } from 'dotcms-models';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
-import { DotCMSWorkflowInput } from '../../../../../projects/dotcms-models/src/dot-workflow-action';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',

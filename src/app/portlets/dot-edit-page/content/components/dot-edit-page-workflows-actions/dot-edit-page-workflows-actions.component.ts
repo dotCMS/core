@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { Component, Input, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
-import { DotCMSWorkflowAction } from 'dotcms-models';
+import { DotCMSWorkflowAction, DotCMSWorkflowInput } from 'dotcms-models';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
@@ -12,7 +12,6 @@ import * as moment from 'moment';
 import { tap, map, mergeMap, catchError, pluck, take } from 'rxjs/operators';
 import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
 import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { DotCMSWorkflowInput } from '../../../../../../../projects/dotcms-models/src/dot-workflow-action';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
