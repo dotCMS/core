@@ -724,7 +724,7 @@ var cmsfile=null;
 		var ext = file.extension;
 		var ident = file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
-
+		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
 		if (fileExt == "<%= extension %>" || ext == "page") {
 			assetURI = file.pageURI;
 		} else if (file.baseType === "FILEASSET") {
