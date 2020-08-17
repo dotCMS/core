@@ -8776,6 +8776,11 @@ a.category_higlighted, a.tag_higlighted {
 .edit-mode__side-nav .dijitTab {
   padding: 0 16px; }
 
+.file-selector-tree {
+    /* TinyMCE z-index link and edit image dialog is 65536 */
+    z-index: 68000 !important;
+}
+
 .file-selector-tree .selectableFile {
   align-items: center;
   cursor: pointer; }
