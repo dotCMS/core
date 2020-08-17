@@ -6,17 +6,24 @@ import static graphql.Scalars.GraphQLString;
 
 import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.InterfaceType;
+import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
+import com.dotcms.graphql.datafetcher.page.PageModeDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
+import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
+import com.dotcms.graphql.datafetcher.page.VisitorDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
+import com.dotmarketing.util.PageMode;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
+import graphql.schema.PropertyDataFetcher;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Singleton class that provides all the {@link GraphQLType}s needed for the Page API
@@ -75,6 +82,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("wfNeverExpire", new TypeFetcher(GraphQLString));
         pageFields.put("wfPublishDate", new TypeFetcher(GraphQLString));
         pageFields.put("wfPublishTime", new TypeFetcher(GraphQLString));
+        pageFields.put("viewAs", new TypeFetcher(GraphQLTypeReference.typeRef("ViewAs")
+                , new ViewAsDataFetcher()));
 
         typeMap.put("Page", TypeUtil.createObjectType("Page", pageFields));
 
@@ -114,7 +123,28 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         typeMap.put("Template", TypeUtil.createObjectType("Template", templateFields));
 
+        final Map<String, TypeFetcher> viewAsFields = new HashMap<>();
+        viewAsFields.put("visitor", new TypeFetcher(GraphQLTypeReference.typeRef("Visitor"),
+                new VisitorDataFetcher()));
+        viewAsFields.put("language", new TypeFetcher(GraphQLTypeReference.typeRef("Language"),
+                new LanguageDataFetcher()));
+        viewAsFields.put("mode", new TypeFetcher(GraphQLString, new PageModeDataFetcher()));
+
+        typeMap.put("ViewAs", TypeUtil.createObjectType("ViewAs", viewAsFields));
+
+        final Map<String, TypeFetcher> visitorFields = new HashMap<>();
+        visitorFields.put("tags", new TypeFetcher(GraphQLBoolean, new VisitorDataFetcher()));
+        visitorFields.put("device", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<String>("device")));
+        visitorFields.put("isNew", new TypeFetcher(GraphQLBoolean,
+                new PropertyDataFetcher<Boolean>("newVisitor")));
+        visitorFields.put("mode", new TypeFetcher(GraphQLString, new PageModeDataFetcher()));
+
+        typeMap.put("visitor", TypeUtil.createObjectType("Visitor", visitorFields));
+
+
         return typeMap.values();
+
     }
 
     Map<String, GraphQLOutputType> getTypesMap() {
