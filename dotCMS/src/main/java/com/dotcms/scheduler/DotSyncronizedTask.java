@@ -16,7 +16,7 @@ public abstract class DotSyncronizedTask extends DotTask {
 
     final int rescheduleDelay = Config.getIntProperty("DOTSYNCRONIZEDTASK_RESCHEDULE_DELAY_SEC", 15);
     
-    
+    @Override
     public final void runTask(String instanceId, DotTask task) {
 
 

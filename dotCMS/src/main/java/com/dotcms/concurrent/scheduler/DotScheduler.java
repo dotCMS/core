@@ -8,8 +8,20 @@ import java.time.Duration;
  */
 public interface DotScheduler {
 
+    /**
+     * Thread size for the stateless scheduler, 10 threads by defaults
+     */
+    String SCHEDULER_COREPOOLSIZE      = "SCHEDULER_CORE_POOL_SIZE";
 
-    String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
+    /**
+     * Number of thead for the stateful scheduler, 10 threads by defaults
+     */
+    String SCHEDULER_NUMBER_OF_THREADS = "SCHEDULER_NUMBER_OF_THREADS";
+
+    /**
+     * Seconds to way when the task is actually running, 15 seconds by default
+     */
+    String DOTSYNCRONIZEDTASK_RESCHEDULE_DELAY_SEC = "DOTSYNCRONIZEDTASK_RESCHEDULE_DELAY_SECONDS";
 
     /**
      * Register a single task that can be fire by demand, use {@link #fire(String)}
@@ -65,6 +77,8 @@ public interface DotScheduler {
      */
     void        fire(final String instanceId, final Duration delay);
 
+    // todo: check if when re-fire is needed with a delay, instead of the sending the instanceId, we need the actual instance (the DotTask)
+
     /**
      * Cancels a task,  if the task does not exists an NotTaskFoundException will be throw
      * @param instanceId {@link String} identifier of the task instance
@@ -95,7 +109,7 @@ public interface DotScheduler {
      * Status for a task
      */
     enum TaskStatus {
-        STOPPED, RUNNING, FAILED, CANCELED, NOT_FOUND
+        STOPPED, RUNNING, FAILED, CANCELED, UNKNOWN
     }
 
     /**

@@ -13,12 +13,13 @@ public class DotTaskRecurring<T extends Runnable & Serializable>  extends DotTas
 
     private final String cronExpression;
 
-    public DotTaskRecurring(T runnable, String instanceId, final String cronExpression) {
+    public DotTaskRecurring(final T runnable, final String instanceId, final String cronExpression) {
         super(runnable, instanceId);
         this.cronExpression = cronExpression;
     }
 
-    public DotTaskRecurring(T runnable, String instanceId, final String cronExpression, Duration initialDelay) {
+    public DotTaskRecurring(T runnable, String instanceId, final String cronExpression,
+                            final Duration initialDelay) {
         super(runnable, instanceId, initialDelay);
         this.cronExpression = cronExpression;
     }

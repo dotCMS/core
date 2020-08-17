@@ -21,7 +21,7 @@ public class DotTask<T extends Runnable & Serializable> implements Serializable 
     public DotTask(final T runnable, final String instanceId) {
 
         this(runnable, instanceId, Duration.ofMillis(
-                Config.getIntProperty("DOTSCHEDULER__DELAY_SECONDS", 15)));
+                Config.getIntProperty("DOTSCHEDULER_DELAY_SECONDS", 15)));
     }
 
     public DotTask(final T runnable, final String instanceId, final Duration initialDelay) {
