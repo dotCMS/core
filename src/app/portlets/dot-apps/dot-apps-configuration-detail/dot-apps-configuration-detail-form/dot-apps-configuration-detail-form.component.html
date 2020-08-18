@@ -26,43 +26,23 @@
             [ngSwitch]="field.type"
         >
             <ng-container *ngSwitchCase="'STRING'">
-                <div *ngIf="field.hidden; then password; else textarea"></div>
-                <ng-template #password>
-                    <ng-container
-                        *ngTemplateOutlet="labelField; context: { field: field }"
-                    ></ng-container>
-                    <ng-container
-                        *ngTemplateOutlet="warningIcon; context: { field: field }"
-                    ></ng-container>
-                    <input
-                        pInputText
-                        type="password"
-                        (click)="$event.target.select()"
-                        [id]="field.name"
-                        [formControlName]="field.name"
-                    />
-                    <span class="form__group-hint"
-                        ><ngx-md>{{ field.hint }}</ngx-md></span
-                    >
-                </ng-template>
-                <ng-template #textarea>
-                    <ng-container
-                        *ngTemplateOutlet="labelField; context: { field: field }"
-                    ></ng-container>
-                    <ng-container
-                        *ngTemplateOutlet="warningIcon; context: { field: field }"
-                    ></ng-container>
-                    <textarea
-                        #inputTextarea
-                        pInputTextarea
-                        autoResize="autoResize"
-                        [id]="field.name"
-                        [formControlName]="field.name"
-                    ></textarea>
-                    <span class="form__group-hint"
-                        ><ngx-md>{{ field.hint }}</ngx-md></span
-                    >
-                </ng-template>
+                <ng-container
+                    *ngTemplateOutlet="labelField; context: { field: field }"
+                ></ng-container>
+                <ng-container
+                    *ngTemplateOutlet="warningIcon; context: { field: field }"
+                ></ng-container>
+                <textarea
+                    #inputTextarea
+                    pInputTextarea
+                    autoResize="autoResize"
+                    (click)="field.hidden ? $event.target.select() : null"
+                    [id]="field.name"
+                    [formControlName]="field.name"
+                ></textarea>
+                <span class="form__group-hint"
+                    ><ngx-md>{{ field.hint }}</ngx-md></span
+                >
             </ng-container>
             <ng-container *ngSwitchCase="'BOOL'">
                 <p-checkbox

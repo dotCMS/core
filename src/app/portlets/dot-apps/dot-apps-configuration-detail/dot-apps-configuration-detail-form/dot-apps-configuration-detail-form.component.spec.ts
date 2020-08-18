@@ -1,12 +1,12 @@
-import { async, ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 import {
     CheckboxModule,
     InputTextareaModule,
     InputTextModule,
-    TooltipModule
+    TooltipModule,
+    DropdownModule
 } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -78,10 +78,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     let fixture: ComponentFixture<DotAppsConfigurationDetailFormComponent>;
 
     beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             imports: [
                 CommonModule,
                 CheckboxModule,
+                DropdownModule,
                 DotIconModule,
                 InputTextareaModule,
                 InputTextModule,
@@ -95,7 +96,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     }));
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotAppsConfigurationDetailFormComponent);
+        fixture = TestBed.createComponent(DotAppsConfigurationDetailFormComponent);
         component = fixture.debugElement.componentInstance;
         component.formFields = secrets;
     });
@@ -148,28 +149,6 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(row.query(By.css('textarea')).nativeElement.value).toBe(secrets[0].value);
             expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
                 secrets[0].hint
-            );
-        });
-
-        it('should load Label, Password & Hint with right attributes', () => {
-            const row = fixture.debugElement.queryAll(
-                By.css('.dot-apps-configuration-detail__form-row')
-            )[1];
-            expect(row.query(By.css('ngx-md'))).toBeTruthy();
-            expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[1].label);
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('form__label')
-            ).toBeTruthy();
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('required')
-            ).toBeTruthy();
-            expect(row.query(By.css('input')).nativeElement.attributes.id.value).toBe(
-                secrets[1].name
-            );
-            expect(row.query(By.css('input')).nativeElement.type).toBe('password');
-            expect(row.query(By.css('input')).nativeElement.value).toBe(secrets[1].value);
-            expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
-                secrets[1].hint
             );
         });
 

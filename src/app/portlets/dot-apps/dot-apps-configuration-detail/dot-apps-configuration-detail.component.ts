@@ -18,7 +18,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
 
     dynamicVariables: DotKeyValue[];
     formData: { [key: string]: string };
-    formFields: any[];
+    formFields: DotAppsSecrets[];
     formValid = false;
 
     constructor(
@@ -28,15 +28,13 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.route.data
-            .pipe(pluck('data'), take(1))
-            .subscribe(( app: DotApps) => {
-                this.apps = app;
-                this.formFields = this.getSecrets(app.sites[0].secrets);
-                this.dynamicVariables = this.transformSecretsToKeyValue(
-                    this.getSecrets(app.sites[0].secrets, true)
-                );
-            });
+        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApps) => {
+            this.apps = app;
+            this.formFields = this.getSecrets(app.sites[0].secrets);
+            this.dynamicVariables = this.transformSecretsToKeyValue(
+                this.getSecrets(app.sites[0].secrets, true)
+            );
+        });
     }
 
     /**
@@ -98,10 +96,9 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
 
     private getTransformedFormData(): DotAppsSaveData {
         const params = {};
-
         for (const key of Object.keys(this.formData)) {
             params[key] = {
-                hidden: this.formData[`${key}Hidden`] || false,
+                hidden: this.formFields.filter((item) => item.name === key)[0].hidden,
                 value: this.formData[key].toString()
             };
         }

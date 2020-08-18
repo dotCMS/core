@@ -244,7 +244,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                     value: 'John'
                 },
                 password: {
-                    hidden: false,
+                    hidden: true,
                     value: '****'
                 },
                 enabled: {
@@ -321,7 +321,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                     value: 'John'
                 },
                 password: {
-                    hidden: false,
+                    hidden: true,
                     value: '****'
                 },
                 enabled: {
