@@ -127,8 +127,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 disabled: true
             },
             cancel: {
-                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel'),
-                action: () => {}
+                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
             }
         };
 

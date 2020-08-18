@@ -17,7 +17,8 @@ import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 
 describe('DotWorkflowsActionsService', () => {
     let dotWorkflowActionsService: DotWorkflowsActionsService;
@@ -130,7 +131,7 @@ describe('DotWorkflowsActionsService', () => {
         const mockWorkflowActions: DotCMSWorkflowAction = {
             ...mockWorkflowsActions[0]
         };
-        let steps: DotWizardStep<any>[];
+        let wizardInput: DotWizardInput;
 
         it('should merge comment and assign steps', () => {
             const mockWizardSteps: DotWizardStep<any>[] = [
@@ -139,7 +140,8 @@ describe('DotWorkflowsActionsService', () => {
                     data: {
                         assignable: true,
                         commentable: true,
-                        roleId: mockWorkflowsActions[0].nextAssign
+                        roleId: mockWorkflowsActions[0].nextAssign,
+                        roleHierarchy: mockWorkflowsActions[0].roleHierarchyForAssign
                     }
                 },
                 {
@@ -147,9 +149,18 @@ describe('DotWorkflowsActionsService', () => {
                     data: {}
                 }
             ];
-            steps = dotWorkflowActionsService.setWizardSteps(mockWorkflowActions);
 
-            expect(steps).toEqual(mockWizardSteps);
+            const mockWizardInput: DotWizardInput = {
+                title: 'Title Test',
+                steps: mockWizardSteps
+            };
+
+            wizardInput = dotWorkflowActionsService.setWizardInput(
+                mockWorkflowActions,
+                'Title Test'
+            );
+
+            expect(wizardInput).toEqual(mockWizardInput);
         });
         it('should return only valid Components ', () => {
             mockWorkflowActions.actionInputs = [
@@ -162,8 +173,11 @@ describe('DotWorkflowsActionsService', () => {
                     id: 'invalidID2'
                 }
             ];
-            steps = dotWorkflowActionsService.setWizardSteps(mockWorkflowActions);
-            expect(steps).toEqual([]);
+            wizardInput = dotWorkflowActionsService.setWizardInput(
+                mockWorkflowActions,
+                'Title Test'
+            );
+            expect(wizardInput).toEqual(null);
         });
     });
 });

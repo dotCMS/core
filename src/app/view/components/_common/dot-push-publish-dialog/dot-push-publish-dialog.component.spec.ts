@@ -25,12 +25,9 @@ class PushPublishServiceMock {
 
 @Component({
     selector: 'dot-test-host-component',
-    template:
-        '<dot-push-publish-dialog [assetIdentifier]="pushPublishIdentifier"></dot-push-publish-dialog>'
+    template: '<dot-push-publish-dialog></dot-push-publish-dialog>'
 })
-class TestHostComponent {
-    pushPublishIdentifier: string;
-}
+class TestHostComponent {}
 
 @Component({
     selector: 'dot-push-publish-form',
@@ -181,7 +178,7 @@ describe('DotPushPublishDialogComponent', () => {
                 acceptButton.triggerEventHandler('click', null);
 
                 expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith(
-                    undefined,
+                    publishData.assetIdentifier,
                     mockFormValue,
                     false
                 );
@@ -192,10 +189,9 @@ describe('DotPushPublishDialogComponent', () => {
 
             it('should submit on accept with assetIdentifier and bundle', () => {
                 comp.eventData.isBundle = true;
-                comp.assetIdentifier = '123';
                 acceptButton.triggerEventHandler('click', null);
                 expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith(
-                    '123',
+                    publishData.assetIdentifier,
                     mockFormValue,
                     true
                 );

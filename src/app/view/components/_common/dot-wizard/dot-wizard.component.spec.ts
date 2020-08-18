@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
 import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
 import { By } from '@angular/platform-browser';
+import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 
 const messageServiceMock = new MockDotMessageService({
     send: 'Send',
@@ -39,10 +40,21 @@ class FormTwoComponent {
     @Output() valid = new EventEmitter<boolean>();
 }
 
-const steps: DotWizardStep<any>[] = [
+const mockSteps: DotWizardStep<any>[] = [
     { component: FormOneComponent, data: { id: 'numberOne' } },
     { component: FormTwoComponent, data: { id: 'numberTwo' } }
 ];
+
+const wizardInput: DotWizardInput = {
+    title: 'Test Title',
+    steps: mockSteps
+};
+
+const stopImmediatePropagation = jasmine.createSpy('');
+
+const enterEvent = {
+    stopImmediatePropagation: stopImmediatePropagation
+};
 
 describe('DotWizardComponent', () => {
     let component: DotWizardComponent;
@@ -83,10 +95,10 @@ describe('DotWizardComponent', () => {
             component = fixture.componentInstance;
             fixture.detectChanges();
             dotWizardService = fixture.debugElement.injector.get(DotWizardService);
-            dotWizardService.open(steps);
+            dotWizardService.open(wizardInput);
             fixture.detectChanges();
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            dotWizardService.open(steps);
+            dotWizardService.open(wizardInput);
             fixture.detectChanges();
             tick(201); // interval time to focus first element.
             fixture.detectChanges();
@@ -166,17 +178,17 @@ describe('DotWizardComponent', () => {
     });
 
     it('should change step on enter if form is valid', () => {
-        spyOn(component.dialogActions.accept, 'action');
+        spyOn(component.dialog, 'acceptAction');
         form1.valid.emit(true);
-        formsContainer.triggerEventHandler('keydown.enter', {});
-
-        expect(component.dialogActions.accept.action).toHaveBeenCalled();
+        formsContainer.triggerEventHandler('keydown.enter', enterEvent);
+        expect(stopImmediatePropagation).toHaveBeenCalled();
+        expect(component.dialog.acceptAction).toHaveBeenCalled();
     });
 
     it('should NOT change step on enter if form is invalid', () => {
         spyOn(component.dialogActions.accept, 'action');
         form1.valid.emit(false);
-        formsContainer.triggerEventHandler('keydown.enter', {});
+        formsContainer.triggerEventHandler('keydown.enter', enterEvent);
 
         expect(component.dialogActions.accept.action).not.toHaveBeenCalled();
     });

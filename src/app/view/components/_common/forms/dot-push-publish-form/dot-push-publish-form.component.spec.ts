@@ -24,7 +24,7 @@ import {
     DotPushPublishFiltersService
 } from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
 import { CoreWebService, LoginService } from 'dotcms-js';
-import { CoreWebServiceMock } from '../../../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';

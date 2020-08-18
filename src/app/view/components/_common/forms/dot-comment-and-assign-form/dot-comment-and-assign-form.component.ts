@@ -32,7 +32,7 @@ export class DotCommentAndAssignFormComponent
         if (this.data) {
             if (this.data[DotActionInputs.ASSIGNABLE]) {
                 this.dotRolesService
-                    .get(this.data.roleId)
+                    .get(this.data.roleId, this.data.roleHierarchy)
                     .pipe(take(1))
                     .subscribe((items: DotRole[]) => {
                         this.dotRoles = items.map(role => {

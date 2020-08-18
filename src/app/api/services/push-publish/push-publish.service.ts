@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { AjaxActionResponseView } from '@models/ajax-action-response/ajax-action-response';
+import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
 import * as moment from 'moment';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
@@ -56,15 +56,14 @@ export class PushPublishService {
      * Push publish asset to specified environment.
      * @param string contentTypeId
      * @param * formValue
-     * @returns Observable<AjaxActionResponseView>
+     * @returns Observable<DotAjaxActionResponseView>
      * @memberof PushPublishService
      */
     pushPublishContent(
         assetIdentifier: string,
         pushPublishData: DotPushPublishData,
         isBundle: boolean
-    ): Observable<AjaxActionResponseView> {
-        debugger;
+    ): Observable<DotAjaxActionResponseView> {
         this._lastEnvironmentPushed = pushPublishData.environment;
         return this.coreWebService.request({
             body: this.getPublishEnvironmentData(assetIdentifier, pushPublishData),

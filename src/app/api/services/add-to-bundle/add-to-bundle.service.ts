@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
 import { DotBundle } from '@models/dot-bundle/dot-bundle';
-import { AjaxActionResponseView } from '@models/ajax-action-response/ajax-action-response';
+import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
 @Injectable()
@@ -47,13 +47,13 @@ export class AddToBundleService {
      * Add to bundle asset with specified name and id
      * @param string ruleId
      * @param DotBundle bundleData
-     * @returns Observable<AjaxActionResponseView>
+     * @returns Observable<DotAjaxActionResponseView>
      * @memberof AddToBundleService
      */
     addToBundle(
         assetIdentifier: string,
         bundleData: DotBundle
-    ): Observable<AjaxActionResponseView> {
+    ): Observable<DotAjaxActionResponseView> {
         return this.coreWebService.request({
             body: `assetIdentifier=${assetIdentifier}&bundleName=${bundleData.name}&bundleSelect=${
                 bundleData.id

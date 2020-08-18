@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
 import { OnInit, OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -9,7 +9,7 @@ import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { DotPushPublishDialogData } from 'dotcms-models';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
-import {AjaxActionResponseView} from '@models/ajax-action-response/ajax-action-response';
+import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
 
 @Component({
     selector: 'dot-push-publish-dialog',
@@ -23,8 +23,6 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     formData: DotPushPublishData;
     formValid = false;
     errorMessage = null;
-
-    @Input() assetIdentifier: string;
 
     @Output() cancel = new EventEmitter<boolean>();
 
@@ -68,9 +66,13 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     submitPushAction(): void {
         if (this.formValid) {
             this.pushPublishService
-                .pushPublishContent(this.assetIdentifier, this.formData, !!this.eventData.isBundle)
+                .pushPublishContent(
+                    this.eventData.assetIdentifier,
+                    this.formData,
+                    !!this.eventData.isBundle
+                )
                 .pipe(takeUntil(this.destroy$))
-                .subscribe((result: AjaxActionResponseView) => {
+                .subscribe((result: DotAjaxActionResponseView) => {
                     if (!result.errors) {
                         this.close();
                     } else {
