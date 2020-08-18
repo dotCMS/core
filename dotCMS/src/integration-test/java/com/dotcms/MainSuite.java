@@ -26,8 +26,10 @@ import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
-import com.dotcms.saml.TestSamlConfigurationService;
+import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
+import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
@@ -44,6 +46,7 @@ import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
 import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
 import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
+import com.dotmarketing.startup.runonce.Task53700AddAppsPortletToLayoutTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
@@ -299,12 +302,15 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05350AddDotSaltClusterColumnTest.class,
         DotParseTest.class,
         TestWorkflowAction.class,
-        TestSamlConfigurationService.class,
+        SamlConfigurationServiceTest.class,
         HostAPITest.class,
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
-        EMAWebInterceptorTest.class
+        IdentityProviderConfigurationFactoryTest.class,
+        EMAWebInterceptorTest.class,
+        GoogleTranslationServiceIntegrationTest.class,
+        Task53700AddAppsPortletToLayoutTest.class
 })
 public class MainSuite {
 

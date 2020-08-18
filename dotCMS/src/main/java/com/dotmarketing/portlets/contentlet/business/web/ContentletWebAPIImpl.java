@@ -58,7 +58,6 @@ import java.util.*;
 
 import static com.dotmarketing.portlets.contentlet.util.ActionletUtil.hasPushPublishActionlet;
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.getEnvironmentsToSendTo;
 
 /*
@@ -320,7 +319,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 		final Map<String, Object> oldContentletMap = currentContentlet.getMap();
 		//Form doesn't always contain this value upfront. And since populateContentlet sets 0 we better set it upfront
-		contentletFormData.put("identifier", currentContentlet.getIdentifier());
+		contentletFormData.put(Contentlet.IDENTIFIER_KEY, currentContentlet.getIdentifier());
 		final boolean isNew = !InodeUtils.isSet(currentContentlet.getInode());
 
 		if (!isNew && Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
@@ -330,20 +329,21 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		/***
 		 * Workflow
 		 */
-		currentContentlet.setStringProperty("wfActionId", (String) contentletFormData.get("wfActionId"));
-		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
-		currentContentlet.setStringProperty("wfActionAssign", (String) contentletFormData.get("wfActionAssign"));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, (String) contentletFormData.get(Contentlet.WORKFLOW_ACTION_KEY));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, (String) contentletFormData.get(Contentlet.WORKFLOW_COMMENTS_KEY));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, (String) contentletFormData.get(Contentlet.WORKFLOW_ASSIGN_KEY));
 
 		/**
 		 * Push Publishing Actionlet
 		 */
-		currentContentlet.setStringProperty("wfPublishDate", (String) contentletFormData.get("wfPublishDate"));
-		currentContentlet.setStringProperty("wfPublishTime", (String) contentletFormData.get("wfPublishTime"));
-		currentContentlet.setStringProperty("wfExpireDate", (String) contentletFormData.get("wfExpireDate"));
-		currentContentlet.setStringProperty("wfExpireTime", (String) contentletFormData.get("wfExpireTime"));
-		currentContentlet.setStringProperty("wfNeverExpire", (String) contentletFormData.get("wfNeverExpire"));
-		currentContentlet.setStringProperty("whereToSend", (String) contentletFormData.get("whereToSend"));
-		currentContentlet.setStringProperty("forcePush", (String) contentletFormData.get("forcePush"));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, (String) contentletFormData.get(Contentlet.WORKFLOW_PUBLISH_DATE));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, (String) contentletFormData.get(Contentlet.WORKFLOW_PUBLISH_TIME));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, (String) contentletFormData.get(Contentlet.WORKFLOW_EXPIRE_DATE));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, (String) contentletFormData.get(Contentlet.WORKFLOW_EXPIRE_TIME));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, (String) contentletFormData.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
+		currentContentlet.setStringProperty(Contentlet.WHERE_TO_SEND, (String) contentletFormData.get(Contentlet.WHERE_TO_SEND));
+		currentContentlet.setStringProperty(Contentlet.FILTER_KEY, (String) contentletFormData.get(Contentlet.FILTER_KEY));
+		currentContentlet.setStringProperty(Contentlet.I_WANT_TO, (String) contentletFormData.get(Contentlet.I_WANT_TO));
 
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
@@ -498,7 +498,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								.generateSystemEvent(generateSystemEvent).build());
 
 				if (hasPushPublishActionlet(APILocator.getWorkflowAPI().findAction((String) contentletFormData.get("wfActionId"), user))) {
-					final String whoToSendTmp = (String)currentContentlet.get(WHERE_TO_SEND);
+					final String whoToSendTmp = (String)currentContentlet.get(Contentlet.WHERE_TO_SEND);
 					final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
 					request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + user.getUserId(), envsToSendTo );
 				}
