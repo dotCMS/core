@@ -134,7 +134,7 @@ describe('MainComponentLegacyComponent', () => {
         expect(de.query(By.css('dot-main-nav')) !== null).toBe(true);
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
         expect(de.query(By.css('dot-push-publish-dialog')) !== null).toBe(true);
-        expect(de.query(By.css('dot-dot-download-bundle-dialog')) !== null).toBe(true);
+        expect(de.query(By.css('dot-download-bundle-dialog')) !== null).toBe(true);
         expect(de.query(By.css('dot-wizard')) !== null).toBe(true);
     });
 

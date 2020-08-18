@@ -1,7 +1,11 @@
 import { of as observableOf } from 'rxjs';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotWorkflowTaskDetailService } from './dot-workflow-task-detail.service';
 import { DotMenuService } from '@services/dot-menu.service';
+import { TestBed } from '@angular/core/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { ConnectionBackend, RequestOptions, BaseRequestOptions, Http } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
 
 describe('DotWorkflowTaskDetailService', () => {
     let service: DotWorkflowTaskDetailService;
@@ -9,8 +13,15 @@ describe('DotWorkflowTaskDetailService', () => {
     let injector;
 
     beforeEach(() => {
-        injector = DOTTestBed.configureTestingModule({
-            providers: [DotWorkflowTaskDetailService, DotMenuService]
+        injector = TestBed.configureTestingModule({
+            providers: [
+                DotMenuService,
+                DotWorkflowTaskDetailService,
+                Http,
+                { provide: ConnectionBackend, useClass: MockBackend },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: RequestOptions, useClass: BaseRequestOptions }
+            ]
         });
 
         service = injector.get(DotWorkflowTaskDetailService);
@@ -19,6 +30,10 @@ describe('DotWorkflowTaskDetailService', () => {
     });
 
     it('should set data to view', (done) => {
+        service.view({
+            header: 'This is a header for view',
+            id: '999'
+        });
         service.viewUrl$.subscribe((url: string) => {
             expect(url).toEqual(
                 [
@@ -40,11 +55,6 @@ describe('DotWorkflowTaskDetailService', () => {
 
         service.header$.subscribe((header: string) => {
             expect(header).toEqual('This is a header for view');
-        });
-
-        service.view({
-            header: 'This is a header for view',
-            id: '999'
         });
     });
 
