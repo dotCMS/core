@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -183,11 +186,24 @@ public class TemplateLayout implements Serializable {
         }
     }
 
-    public boolean existsContainer(final String identifier, final String uuid){
-        return this.getContainers().stream()
-                .anyMatch(containerUUID ->
-                        containerUUID.getIdentifier().equals(identifier) && isTheSameUUID(containerUUID.getUUID(), uuid)
-                );
+    public boolean existsContainer(final Container container, final String uuid){
+        if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
+            final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
+            final String containerFullPath = FileAssetContainerUtil.getInstance().getFullPath(fileAssetContainer);
+
+            return this.getContainers().stream()
+                    .anyMatch(containerUUID -> containerUUID.getIdentifier().equals(containerFullPath)
+                                    && isTheSameUUID(containerUUID.getUUID(), uuid)
+                    );
+        } else {
+            return this.getContainers().stream()
+                    .anyMatch(containerUUID ->
+                            containerUUID.getIdentifier().equals(container.getIdentifier())
+                                    && isTheSameUUID(containerUUID.getUUID(), uuid)
+                    );
+        }
+
+
     }
 
     @JsonIgnore

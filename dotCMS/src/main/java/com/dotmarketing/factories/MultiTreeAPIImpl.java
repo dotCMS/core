@@ -940,9 +940,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 Container container = null;
                 try {
-                    // this read path or id.
-                    container = liveMode ? this.getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template):
-                            this.getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template);
+
+                    final Optional<Container> optionalContainer =
+                            APILocator.getContainerAPI().findContainer(containerUUID.getIdentifier(), APILocator.systemUser(), liveMode, false);
+
+                    container = optionalContainer.isPresent() ? optionalContainer.get() : null;
 
                     if (container == null && !liveMode) {
                         continue;
@@ -976,7 +978,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final ContainerUUID containerUUID,
             final Container container) {
 
-        if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
+
+         if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
             return true;
         } else if(pageContents.contains(container.getIdentifier(), ParseContainer.PARSE_CONTAINER_UUID_PREFIX + containerUUID.getUUID())) {
             return true;
@@ -991,34 +994,5 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         } else {
             return false;
         }
-    }
-
-    private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container getWorkingContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container geContainerById(final String containerIdOrPath, final User user, final Template template,
-                                      final Optional<ContainerFinderByIdOrPathStrategy> strategy,
-                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException  {
-
-        final Supplier<Host> resourceHostSupplier = Sneaky.sneaked(()->APILocator.getTemplateAPI().getTemplateHost(template));
-
-        return strategy.isPresent()?
-                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
-                defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
     }
 }

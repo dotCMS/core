@@ -67,6 +67,9 @@ public interface ContainerFactory {
 	 */
 	List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
+	Container getContainerByFolderPath(String path, Host host, User user, boolean live,
+									   boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+
 	/**
 	 * Get a container based on a folder (non-db)
 	 * A Folder could be consider as a container if:

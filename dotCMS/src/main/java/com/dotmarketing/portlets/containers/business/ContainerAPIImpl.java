@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.containers.business;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
@@ -10,6 +12,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -32,9 +35,13 @@ import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.jetbrains.annotations.NotNull;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Supplier;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Implementation class of the {@link ContainerAPI}.
@@ -45,7 +52,6 @@ import java.util.function.Supplier;
  *
  */
 public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
-
 	protected PermissionAPI    permissionAPI;
 	protected ContainerFactory containerFactory;
 	protected HostAPI          hostAPI;
@@ -126,6 +132,27 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		new ContainerLoader().invalidate(newContainer);
 
 		return newContainer;
+	}
+
+	@Override
+	public Optional<Container> findContainer(final String idOrPath, final User user, final boolean live,
+								   final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		final Container container;
+
+		if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(idOrPath)) {
+
+			final ResolvedPath hostAndRelativeFromPath = resolvePath(idOrPath, user, live, respectFrontendRoles);
+			container = hostAndRelativeFromPath.container;
+		} else {
+			if (live) {
+				container = this.getLiveContainerById(idOrPath, user, respectFrontendRoles);
+			} else {
+				container = this.getWorkingContainerById(idOrPath, user, respectFrontendRoles);
+			}
+		}
+
+		return container != null ? Optional.of(container) : Optional.empty();
 	}
 
 	/**
@@ -767,5 +794,81 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@WrapInTransaction
 	public void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException{
 		containerFactory.updateUserReferences(userId, replacementUserId);
+	}
+
+	private  ResolvedPath resolvePath(final String inputPath,
+									  final User user,
+									  final boolean live,
+									  final boolean respectFrontEndEndRoles) throws DotSecurityException, DotDataException {
+
+
+		final FileAssetContainerUtil fileAssetContainerUtil = FileAssetContainerUtil.getInstance();
+		final String relativePath;
+
+		final Map<String, Host> hostsToFound = new HashMap<>();
+
+		if (fileAssetContainerUtil.isFullPath(inputPath)) {
+			final String hostName = fileAssetContainerUtil.getHostName(inputPath);
+			relativePath = fileAssetContainerUtil.getPathFromFullPath(hostName, inputPath);
+			final Host host = APILocator.getHostAPI().findByName(hostName, user, respectFrontEndEndRoles);
+
+			if (host != null) {
+				hostsToFound.put(host.getInode(), host);
+			}
+		} else {
+			relativePath = inputPath;
+		}
+
+		try {
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+			if (request != null) {
+				final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(request, user);
+				hostsToFound.put(currentHost.getInode(), currentHost);
+			}
+		} catch(DotSecurityException e) {
+
+		}
+
+		final Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, respectFrontEndEndRoles);
+		hostsToFound.put(defaultHost.getInode(), defaultHost);
+
+		return find(relativePath, hostsToFound, user, live, respectFrontEndEndRoles);
+	}
+
+	@NotNull
+	private ResolvedPath find(
+			final String relativePath,
+			final Map<String, Host> hostsToFound,
+			final User user,
+			boolean live,
+			boolean respectFrontEndEndRoles) throws DotSecurityException, DotDataException {
+
+		Container container;
+		for (final Host host : hostsToFound.values()) {
+			try {
+				container = containerFactory.getContainerByFolderPath(relativePath, host, user, live, respectFrontEndEndRoles);
+
+				if (container != null) {
+					return  new ResolvedPath(host, relativePath, container);
+				}
+			} catch (NotFoundInDbException e) {
+				continue;
+			}
+		}
+
+		throw new NotFoundInDbException(String.format("File Container %s not found", relativePath));
+	}
+
+	private static class ResolvedPath {
+		Host host;
+		String relativePath;
+		Container container;
+
+		public ResolvedPath(Host host, String relativePath, Container container) {
+			this.host = host;
+			this.relativePath = relativePath;
+			this.container = container;
+		}
 	}
 }
