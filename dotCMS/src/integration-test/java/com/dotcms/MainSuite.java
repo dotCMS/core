@@ -48,6 +48,7 @@ import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
 import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
 import com.dotmarketing.startup.runonce.Task53700AddAppsPortletToLayoutTest;
 import com.dotmarketing.util.TestConfig;
+import com.dotmarketing.util.ConfigTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -270,6 +271,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
         TestConfig.class,
+        ConfigTest.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
