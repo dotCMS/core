@@ -148,7 +148,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         final Map<String, Object> returnMap = new HashMap<>();
-        returnMap.put("total", contentlets.getTotalResults() + countItems.getValue());
+        returnMap.put("total", returnList.size() + countItems.getValue());
         returnMap.put("list",  offset > returnList.size()? Collections.emptyList(): returnList.subList(offset, offset + maxResults));
         return returnMap;
     }
