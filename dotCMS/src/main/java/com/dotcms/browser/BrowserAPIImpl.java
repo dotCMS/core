@@ -95,6 +95,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         final PaginatedArrayList<Contentlet> contentlets = (PaginatedArrayList)APILocator.getContentletAPI().search(luceneQuery,
                 browserQuery.maxResults + browserQuery.offset, 0, esSortBy, browserQuery.user, true);
 
+        final long totalCount = APILocator.getContentletAPI().indexCount(luceneQuery, browserQuery.user, true);
+
         for (final Contentlet contentlet : contentlets) {
 
             Map<String, Object> contentMap = null;
@@ -148,7 +150,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         final Map<String, Object> returnMap = new HashMap<>();
-        returnMap.put("total", returnList.size() + countItems.getValue());
+        returnMap.put("total", totalCount + countItems.getValue());
         returnMap.put("list",  offset > returnList.size()? Collections.emptyList(): returnList.subList(offset, offset + maxResults));
         return returnMap;
     }
