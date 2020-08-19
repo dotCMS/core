@@ -459,7 +459,8 @@ public class BrowserAjax {
 
 		// Examine only the pages with more than 1 assigned language
 		for (Map<String, Object> content : results) {
-			if ((boolean) content.get("isContentlet")) {
+		    
+			if(Try.of(()->(boolean) content.get("isContentlet")).getOrElse(false)) {
 				String ident = (String) content.get("identifier");
 				if (contentLangCounter.containsKey(ident)) {
 					int counter = contentLangCounter.get(ident);

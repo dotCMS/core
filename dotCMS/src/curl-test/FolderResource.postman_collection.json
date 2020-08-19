@@ -97,17 +97,8 @@
 						}
 					]
 				},
-				"method": "POST",
+				"method": "GET",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "[\"/folder1\",\"/folder2/subfolder1\"]\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
 					"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/folder2/subfolder1",
 					"host": [

@@ -172,13 +172,18 @@
         dojo.style(dialog.domNode, 'top', '80px');
     }
 
+
     /**
-     * Downloads a selected bundle id. This selected bundle is an Unpushed Bundle
-     * @param bundleId
-     * @param operation publish/unpublish
-     */
-    var downloadUnpushedBundle = function (bundleId, operation) {
-        window.location = '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadUnpushedBundle/bundleId/' + bundleId + '/operation/' + operation;
+    * Fire the event to show the download bundle dialog in Angular.
+    * @param bundleId
+    */
+    function openDownloadBundleDialog(bundleId) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "download-bundle",
+            data: bundleId
+        });
+        document.dispatchEvent(customEvent);
     };
 
     dojo.require("dotcms.dojo.push.PushHandler");

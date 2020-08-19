@@ -204,7 +204,12 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 			this.initializeTree();
 		}
 
-		this.dialog.show();
+        this.dialog.show();
+        this.tree.set('path', ['root', 'SYSTEM_HOST'])
+        this._selectFolder({
+            id: "SYSTEM_HOST",
+            identifier: "SYSTEM_HOST"
+        })
 	},
 
 	uninitialize : function (event) {

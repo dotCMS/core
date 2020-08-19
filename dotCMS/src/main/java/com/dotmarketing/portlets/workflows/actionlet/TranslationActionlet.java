@@ -34,7 +34,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-import javax.ws.rs.HEAD;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,7 +75,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
 
         final List<ServiceParameter> serviceParams = translationService.getServiceParameters();
         for (final ServiceParameter param : serviceParams) {
-            params.add(new WorkflowActionletParameter(param.getKey(), param.getName(), param.getValue(), true));
+            params.add(new WorkflowActionletParameter(param.getKey(), param.getName(), param.getValue(), false));
         }
 
         return params;
@@ -130,7 +129,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
             ? Arrays.asList(ignoreFieldsStr.split("\\s*(,|\\s)\\s*"))
             : new ArrayList<>();
 
-        setServiceParameters(params);
+        setServiceParameters(params, processor.getContentlet());
 
         final User user = processor.getUser();
         final Contentlet sourceContentlet = processor.getContentlet();
@@ -301,7 +300,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
         return savedTranslatedContent;
     }
 
-    private void setServiceParameters(final Map<String, WorkflowActionClassParameter> actionParams) {
+    private void setServiceParameters(final Map<String, WorkflowActionClassParameter> actionParams, final Contentlet contentlet) {
 
         if(translationService!=null) {
 
@@ -316,7 +315,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
                     }
                 }
 
-                translationService.setServiceParameters(serviceParams);
+                translationService.setServiceParameters(serviceParams, contentlet.getHost());
             }
         }
     }
