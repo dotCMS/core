@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilHTML;
@@ -49,7 +50,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
  */
 public class BrowserAPIImpl implements BrowserAPI {
 
-    private static final int MAX_FETCH_PER_REQUEST = 300;
+    private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
     private final UserWebAPI userAPI       = WebAPILocator.getUserWebAPI();
     private final FolderAPI folderAPI     = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
