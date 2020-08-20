@@ -225,8 +225,6 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         geoFields.put("ipAddress", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<Geolocation>("ipAddress")));
 
-
-
         typeMap.put("Geolocation", TypeUtil.createObjectType("Geolocation",
                 geoFields));
 

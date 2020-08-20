@@ -678,6 +678,8 @@
 								"id": "9d090461-f727-4f42-b182-729576504571",
 								"exec": [
 									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
@@ -704,11 +706,12 @@
 									"    pm.expect(persona[\"description\"], 'FAILED:[persona.description]').equal(\"People who are passionate about winter sports.\");",
 									"    pm.expect(persona[\"photo\"].idPath, 'FAILED:[persona.photo.idPath]').equal(\"/dA/792c7c9f6b/photo/mountain-persona.jpg?language_id=1\");",
 									"    pm.expect(persona[\"keyTag\"], 'FAILED:[persona.keyTag]').equal(\"WinterEnthusiast\");",
-									"    pm.expect(JSON.stringify(persona[\"tags\"])==JSON.stringify([",
+									"    let expectedPersonTags = [",
 									"                        \"skiing\",",
 									"                        \"snowboarding\",",
 									"                        \"snowmobile\"",
-									"                    ]), 'FAILED:[persona.tags]').equal(true);",
+									"                    ];",
+									"    pm.expect(checker(expectedPersonTags, persona[\"tags\"]), 'FAILED:[persona.tags]').equal(true);",
 									"",
 									"    // visitor ",
 									"    pm.expect(visitor[\"device\"], 'FAILED:[visitor.device]').equal(\"COMPUTER\");",
@@ -721,11 +724,13 @@
 									"    pm.expect(visitorPersona[\"description\"], 'FAILED:[visitorPersona.description]').equal(\"People who are passionate about winter sports.\");",
 									"    pm.expect(visitorPersona[\"photo\"].idPath, 'FAILED:[visitorPersona.photo.idPath]').equal(\"/dA/792c7c9f6b/photo/mountain-persona.jpg?language_id=1\");",
 									"    pm.expect(visitorPersona[\"keyTag\"], 'FAILED:[visitorPersona.keyTag]').equal(\"WinterEnthusiast\");",
-									"    pm.expect(JSON.stringify(visitorPersona[\"tags\"])==JSON.stringify([",
+									"",
+									"    let expectedVisitorPersonaTags = [",
 									"                        \"skiing\",",
 									"                        \"snowboarding\",",
 									"                        \"snowmobile\"",
-									"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
+									"                    ];",
+									"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitorPersona.tags]').equal(true);",
 									"",
 									"    // visitor's tags",
 									"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
@@ -767,17 +772,7 @@
 									"",
 									"",
 									"});",
-									"",
-									"function hasProperty(metaData, name, value) {",
-									"        var hasProperty = false;",
-									"        metaData.forEach(function (item) {",
-									"            if(item.key==name && item.value.trim()==value) {",
-									"                hasProperty = true;",
-									"            }",
-									"        });",
-									"",
-									"        return hasProperty;",
-									"    }"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -3219,87 +3214,87 @@
 	],
 	"variable": [
 		{
-			"id": "103a8c34-9d84-40fb-92de-a56adad0f7c1",
+			"id": "d85f968c-666e-4367-a04c-90a9cf33bacb",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "e0128de8-6f97-43a7-aaeb-40fbc6b3ae97",
+			"id": "64f9a14e-f4d3-4928-9dda-9c7891938c2a",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "489f8b10-3a5e-42e5-845e-0b6d479348e0",
+			"id": "1316c295-2ed4-4fbf-98c5-6db575138001",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "d8437fcd-6479-4169-b726-68fe3a3bde43",
+			"id": "2628c3a1-ab0b-4754-bed4-b193c9f82376",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "09eeb398-9604-4cf1-b3b4-57155d026462",
+			"id": "99f73a37-1915-4758-89ab-4873b545c2bc",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "bd5ce149-f9a5-4c6f-9ef8-f19b01e20847",
+			"id": "9865a4c6-0dc3-4cdd-a7de-8629a209ce61",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "378a13c8-59a5-438b-8357-61d61713ccbe",
+			"id": "f0878b76-2cc6-4c39-897c-279787f9f7a6",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "f8f5ad6c-b1e0-4452-a816-7d4bca55382a",
+			"id": "153bf079-cf32-4924-92ea-4c389eb65635",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "28a1dff9-1ad3-4431-91a6-32c88d906ce1",
+			"id": "4d2464c5-b3ea-41c6-b358-91a9aac20a9a",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "f90a9ab6-f6f1-4bd3-b293-e491e1bfed04",
+			"id": "91775355-a560-4de3-a6da-ab93ad03534d",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "413b1466-c658-457f-9c40-7c34a1bd023c",
+			"id": "2346eba2-943b-41a1-99bb-748ae7075e5f",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "1ea5f742-e24e-4279-87c2-da360a8a7d6b",
+			"id": "75327511-36b3-49ef-a846-acdf8bd3666c",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "e6efdcff-a477-45ca-9afc-eef16d88d4ae",
+			"id": "72c68e90-998d-4bb2-a539-3482559b273d",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "97b2d00a-fec9-4fac-8ac2-0f98be4e0fe7",
+			"id": "d97ba6d6-76f9-4968-b926-27e0a0365b35",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "cdcf7edc-b881-45ae-abb0-894649b8e4d0",
+			"id": "d0c7b16d-c57d-48d0-a6b9-aac71ed1a358",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "918bf6bd-02b9-4286-a749-19ccdb46b29a",
+			"id": "10b73553-f180-41fb-88d0-15b028298c47",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "06c9f7b0-4318-410f-875a-568f8e9c76bc",
+			"id": "1cf17ac8-1c04-4caa-9bcf-464a8f623e55",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
