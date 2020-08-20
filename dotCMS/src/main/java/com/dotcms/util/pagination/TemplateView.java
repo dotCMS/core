@@ -234,7 +234,7 @@ public class TemplateView {
         }
 
         public Builder  image (final String image) {
-            this.selectedimage = selectedimage;
+            this.image = image;
             return this;
         }
 
