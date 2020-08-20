@@ -151,7 +151,6 @@ public class ContainerResource implements Serializable {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
-
         final Optional<String> checkedHostId = this.checkHost(httpRequest, hostId, user);
 
         try {
@@ -165,7 +164,6 @@ public class ContainerResource implements Serializable {
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-
         }
     }
 
