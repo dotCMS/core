@@ -513,4 +513,7 @@ dependencies {
         exclude(group: 'com.fasterxml.jackson.datatype')
     }
 
+    compile (group: 'com.github.kagkarlsson', name:'db-scheduler',version:'7.2'){
+        exclude(group: 'com.fasterxml.jackson.datatype')
+    }
 }

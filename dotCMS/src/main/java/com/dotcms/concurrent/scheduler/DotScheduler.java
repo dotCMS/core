@@ -1,5 +1,8 @@
 package com.dotcms.concurrent.scheduler;
 
+import com.github.kagkarlsson.scheduler.task.ExecutionContext;
+import com.github.kagkarlsson.scheduler.task.TaskInstance;
+
 import java.time.Duration;
 
 /**
@@ -21,30 +24,30 @@ public interface DotScheduler {
     /**
      * Seconds to way when the task is actually running, 15 seconds by default
      */
-    String DOTSYNCRONIZEDTASK_RESCHEDULE_DELAY_SEC = "DOTSYNCRONIZEDTASK_RESCHEDULE_DELAY_SECONDS";
+    String DOT_SYNCHRONIZED_TASK_RESCHEDULE_DELAY_SEC = "DOT_SYNCHRONIZED_TASK_RESCHEDULE_DELAY_SECONDS";
 
     /**
-     * Register a single task that can be fire by demand, use {@link #fire(String)}
+     * Register a single task that can be fire by demand, use {@link #fire(DotTask)}
      *
-     * @param dotTasks {@link DotTask} array
+     * @param tasks {@link DotTask} array
      * @return DotScheduler
      */
-    DotScheduler registerStatefulTask           (final DotTask... dotTasks);
+    DotScheduler registerStatefulTask           (final DotTask... tasks);
 
     /**
-     * Register a recurring task for stateful (only one execution per cluster), it will be executed based on the cron expression on the {@link DotTaskRecurring}
-     * @param dotTaskRecurrings {@link DotTaskRecurring} array
+     * Register a recurring task for stateful (only one execution per cluster), it will be executed based on the cron expression on the {@link DotRecurringTask}
+     * @param recurringTasks {@link DotRecurringTask} array
      * @return DotScheduler
      */
-    DotScheduler registerStatefulRecurringTask  (final DotTaskRecurring... dotTaskRecurrings);
+    DotScheduler registerStatefulRecurringTask  (final DotRecurringTask... recurringTasks);
 
     /**
      * Register a recurring task for stateless (recurring execution on each node in a server),
-     * it will be executed based on the cron expression on the {@link DotTaskRecurring}
-     * @param dotTaskRecurrings
+     * it will be executed based on the cron expression on the {@link DotRecurringTask}
+     * @param recurringTasks
      * @return DotScheduler
      */
-    DotScheduler registerStatelessRecurringTask (final DotTaskRecurring... dotTaskRecurrings);
+    DotScheduler registerStatelessRecurringTask (final DotRecurringTask... recurringTasks);
 
     /**
      * Unregister a task
@@ -64,18 +67,29 @@ public interface DotScheduler {
      */
     void        restart ();
 
+    void executeOnce(final TaskInstance<DotTask> taskInstance, final ExecutionContext executionContext);
+
+    boolean isDotTaskRunning(final String instanceId);
+
     /**
-     * Fires Task, if the task does not exists an NotTaskFoundException will be throwed
-     * @param instanceId {@link String} identifier of the task instance
+     * Fires Task, if the task does not exists an NotTaskFoundException will be thrown
+     * @param dotTask {@link DotTask} dot task
      */
-    void        fire(final String instanceId);
+    void        fire(final DotTask dotTask);
 
     /**
      * Fires Task, if the task does not exists an NotTaskFoundException will be throw
-     * @param instanceId {@link String} identifier of the task instance
+     * @param dotTask {@link DotTask} dot task
      * @param delay {@link Duration} delay to wait for the task execution
      */
-    void        fire(final String instanceId, final Duration delay);
+    void        fire(final DotTask dotTask, final Duration delay);
+
+    /**
+     * Fires Task (again), if the task does not exists an NotTaskFoundException will be throw
+     * @param dotTask {@link DotTask} dot task
+     * @param delay {@link Duration} delay to wait for the task execution
+     */
+    void        fireAgain(final DotTask dotTask, final Duration delay);
 
     // todo: check if when re-fire is needed with a delay, instead of the sending the instanceId, we need the actual instance (the DotTask)
 
@@ -96,7 +110,7 @@ public interface DotScheduler {
      * @param instanceId {@link String} identifier of the task instance
      * @return TaskStatus
      */
-    TaskStatus      status(final String instanceId);
+    TaskStatus taskStatus(final String instanceId);
 
     /**
      * Status for the Scheduler

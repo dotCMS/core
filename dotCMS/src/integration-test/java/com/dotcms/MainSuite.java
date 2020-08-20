@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.concurrent.scheduler.DotSchedulerImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
@@ -310,7 +311,8 @@ import org.junit.runners.Suite.SuiteClasses;
         IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
         Task05360AddDBSchedulerTablesTest.class,
-        SchedulerAPITest.class
+        SchedulerAPITest.class,
+        DotSchedulerImplTest.class
 })
 public class MainSuite {
 

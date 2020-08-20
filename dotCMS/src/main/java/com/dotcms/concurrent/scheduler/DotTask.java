@@ -1,6 +1,7 @@
 package com.dotcms.concurrent.scheduler;
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UUIDGenerator;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -17,17 +18,22 @@ public class DotTask<T extends Runnable & Serializable> implements Serializable 
     private final T        runnable;
     private final String   instanceId;
     private final Duration initialDelay;
+    private final String   suffix;
 
     public DotTask(final T runnable, final String instanceId) {
-
-        this(runnable, instanceId, Duration.ofMillis(
-                Config.getIntProperty("DOTSCHEDULER_DELAY_SECONDS", 15)));
+        this(
+                runnable,
+                instanceId,
+                Duration.ofMillis(
+                        Config.getIntProperty(
+                                "DOTSCHEDULER_DELAY_SECONDS",
+                                15)));
     }
 
     public DotTask(final T runnable, final String instanceId, final Duration initialDelay) {
-
         this.runnable = runnable;
         this.instanceId = instanceId;
+        this.suffix = UUIDGenerator.shorty();
         this.initialDelay = initialDelay;
     }
 
@@ -42,4 +48,13 @@ public class DotTask<T extends Runnable & Serializable> implements Serializable 
     public Duration getInitialDelay() {
         return initialDelay;
     }
+
+    public String getSuffix() {
+        return suffix;
+    }
+
+    public String getFullInstanceId() {
+        return instanceId + "_" + suffix;
+    }
+
 }
