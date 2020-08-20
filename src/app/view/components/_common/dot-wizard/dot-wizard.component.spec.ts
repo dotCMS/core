@@ -12,6 +12,7 @@ import { DotContainerReferenceModule } from '@directives/dot-container-reference
 import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
 import { By } from '@angular/platform-browser';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
 const messageServiceMock = new MockDotMessageService({
     send: 'Send',
@@ -98,8 +99,6 @@ describe('DotWizardComponent', () => {
             dotWizardService.open(wizardInput);
             fixture.detectChanges();
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            dotWizardService.open(wizardInput);
-            fixture.detectChanges();
             tick(201); // interval time to focus first element.
             fixture.detectChanges();
             acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
@@ -109,6 +108,15 @@ describe('DotWizardComponent', () => {
             formsContainer = fixture.debugElement.query(By.css('.dot-wizard__container'));
         })
     );
+
+    it('should set dialog params', () => {
+        const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
+            .componentInstance;
+
+        expect(dotDialog.bindEvents).toEqual(false);
+        expect(dotDialog.header).toEqual(wizardInput.title);
+        expect(dotDialog.visible).toEqual(true);
+    });
 
     it('should load steps and focus fist form element', () => {
         const firstField = fixture.debugElement.query(By.css('.formOneFirst'));

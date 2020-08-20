@@ -30,7 +30,8 @@ const dispatchKeydownEvent = (key: string) => {
             [(visible)]="show"
             [closeable]="closeable"
             [appendToBody]="appendToBody"
-            [hideButtons]="hideButtons">
+            [hideButtons]="hideButtons"
+            [bindEvents]="bindEvents">
             <b>Dialog content</b>
         </dot-dialog>
     `
@@ -43,6 +44,7 @@ class TestHostComponent {
     actions: DotDialogActions;
     hideButtons = false;
     appendToBody = false;
+    bindEvents = true;
 }
 
 @Component({
@@ -67,6 +69,8 @@ describe('DotDialogComponent', () => {
         let hostComponent: TestHostComponent;
         let hostDe: DebugElement;
         let hostFixture: ComponentFixture<TestHostComponent>;
+        let accceptAction: jasmine.Spy;
+        let cancelAction: jasmine.Spy;
 
         beforeEach(
             async(() => {
@@ -82,6 +86,8 @@ describe('DotDialogComponent', () => {
             hostFixture = TestBed.createComponent(TestHostComponent);
             hostDe = hostFixture.debugElement;
             hostComponent = hostFixture.componentInstance;
+            accceptAction = jasmine.createSpy('ok');
+            cancelAction = jasmine.createSpy('cancel');
         });
 
         describe('default', () => {
@@ -111,13 +117,7 @@ describe('DotDialogComponent', () => {
         });
 
         describe('show', () => {
-            let accceptAction: jasmine.Spy;
-            let cancelAction: jasmine.Spy;
-
             beforeEach(() => {
-                accceptAction = jasmine.createSpy('ok');
-                cancelAction = jasmine.createSpy('cancel');
-
                 hostComponent.closeable = true;
                 hostComponent.header = 'Hello World';
                 hostComponent.actions = {
@@ -133,7 +133,6 @@ describe('DotDialogComponent', () => {
                     }
                 };
                 hostComponent.show = true;
-
                 hostFixture.detectChanges();
                 de = hostDe.query(By.css('dot-dialog'));
                 component = de.componentInstance;
@@ -399,6 +398,36 @@ describe('DotDialogComponent', () => {
 
                 expect(hostDe.query(By.css('.dialog__button-cancel')).styles.display).toBe('none');
                 expect(hostDe.query(By.css('.dialog__button-accept')).styles.display).toBe('none');
+            });
+        });
+
+        describe('show with no bindEvents', () => {
+            beforeEach(() => {
+                hostComponent.bindEvents = false;
+                hostComponent.actions = {
+                    accept: {
+                        label: 'Accept',
+                        action: accceptAction
+                    },
+                    cancel: {
+                        label: 'Cancel',
+                        action: cancelAction
+                    }
+                };
+                hostComponent.show = true;
+                hostFixture.detectChanges();
+                de = hostDe.query(By.css('dot-dialog'));
+                component = de.componentInstance;
+            });
+
+            it('should not bind keyboard events', () => {
+                hostFixture.whenStable().then(() => {
+                    dispatchKeydownEvent('Escape');
+                    dispatchKeydownEvent('Enter');
+                    hostFixture.detectChanges();
+                    expect(accceptAction).not.toHaveBeenCalled();
+                    expect(cancelAction).not.toHaveBeenCalled();
+                });
             });
         });
     });

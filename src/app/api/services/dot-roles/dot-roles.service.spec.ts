@@ -23,7 +23,7 @@ const mockRoles: DotRole[] = [
         roleKey: 'CMS Anonymous'
     },
     { id: '2', name: 'Test Name', user: true, roleKey: 'anonymous' },
-    { id: '2', name: 'Some Role ', user: true, roleKey: 'roleKey1' }
+    { id: '2', name: 'Some Role', user: true, roleKey: 'roleKey1' }
 ];
 
 export const mockProcessedRoles: DotRole[] = [
@@ -33,11 +33,12 @@ export const mockProcessedRoles: DotRole[] = [
         user: false,
         roleKey: 'CMS Anonymous'
     },
-    { id: '2', name: 'Some Role ', user: true, roleKey: 'roleKey1' }
+    { id: '2', name: 'Some Role (User)', user: true, roleKey: 'roleKey1' }
 ];
 
 const messageServiceMock = new MockDotMessageService({
-    'current-user': 'Current User'
+    'current-user': 'Current User',
+    'user': 'User'
 });
 
 describe('DotRolesService', () => {

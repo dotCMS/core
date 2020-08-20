@@ -1,6 +1,7 @@
 <dot-dialog
     #dialog
-    [visible]="data"
+    [visible]="!!data"
+    [bindEvents]="false"
     [actions]="dialogActions"
     [header]="data?.title"
     (hide)="close()"

@@ -30,12 +30,16 @@ export class DotRolesService {
             .pipe(
                 pluck('entity'),
                 map((roles: DotRole[]) =>
-                    roles.filter((role: DotRole) => role.roleKey !== 'anonymous').map((role: DotRole) => {
-                        if (role.roleKey === CURRENT_USER_KEY) {
-                            role.name = this.dotMessageService.get('current-user');
-                        }
-                        return role;
-                    })
+                    roles
+                        .filter((role: DotRole) => role.roleKey !== 'anonymous')
+                        .map((role: DotRole) => {
+                            if (role.roleKey === CURRENT_USER_KEY) {
+                                role.name = this.dotMessageService.get('current-user');
+                            } else if (role.user) {
+                                role.name = `${role.name} (${this.dotMessageService.get('user')})`;
+                            }
+                            return role;
+                        })
                 )
             );
     }
