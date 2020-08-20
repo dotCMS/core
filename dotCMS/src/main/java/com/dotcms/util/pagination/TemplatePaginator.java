@@ -29,16 +29,15 @@ public class TemplatePaginator implements PaginatorOrdered<Template> {
     public static final String HOST_PARAMETER_ID = "host";
 
     private final TemplateAPI templateAPI;
-    private final HostWebAPI hostWebAPI;
 
     public TemplatePaginator() {
-        this(APILocator.getTemplateAPI(), WebAPILocator.getHostWebAPI());
+        this(APILocator.getTemplateAPI());
     }
 
     @VisibleForTesting
-    public TemplatePaginator(final TemplateAPI templateAPI, final HostWebAPI hostWebAPI) {
+    public TemplatePaginator(final TemplateAPI templateAPI) {
+        
         this.templateAPI = templateAPI;
-        this.hostWebAPI  = hostWebAPI;
     }
 
     @Override
