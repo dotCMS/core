@@ -49,6 +49,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
  */
 public class BrowserAPIImpl implements BrowserAPI {
 
+    private static final int MAX_FETCH_PER_REQUEST = 300;
     private final UserWebAPI userAPI       = WebAPILocator.getUserWebAPI();
     private final FolderAPI folderAPI     = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -92,8 +93,9 @@ public class BrowserAPIImpl implements BrowserAPI {
         final String esSortBy    = ("name".equals(browserQuery.sortBy) ? "title" : browserQuery.sortBy)
                 + (browserQuery.sortByDesc ? " desc" : StringPool.BLANK);
 
+        final int limit = this.hasFilters(browserQuery)? browserQuery.maxResults + browserQuery.offset + MAX_FETCH_PER_REQUEST : browserQuery.maxResults + browserQuery.offset;
         final PaginatedArrayList<Contentlet> contentlets = (PaginatedArrayList)APILocator.getContentletAPI().search(luceneQuery,
-                browserQuery.maxResults + browserQuery.offset, 0, esSortBy, browserQuery.user, true);
+                limit, 0, esSortBy, browserQuery.user, true);
 
         final long totalCount = APILocator.getContentletAPI().indexCount(luceneQuery, browserQuery.user, true);
 
@@ -118,14 +120,15 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
 
             final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(contentlet, roles, browserQuery.user);
-            final WfData wfdata             = new WfData(contentlet, permissions, browserQuery.user, browserQuery.showArchived);
+            final WfData wfdata = new WfData(contentlet, permissions, browserQuery.user, browserQuery.showArchived);
             contentMap.put("wfActionMapList", wfdata.wfActionMapList);
             contentMap.put("contentEditable", wfdata.contentEditable);
-            contentMap.put("permissions",     permissions);
+            contentMap.put("permissions", permissions);
             returnList.add(contentMap);
         }
 
         // Filtering
+        final int sizeBeforeFiltering = returnList.size();
         returnList = this.filterReturnList(browserQuery, returnList);
 
         // Sorting
@@ -149,11 +152,26 @@ public class BrowserAPIImpl implements BrowserAPI {
             maxResults = returnList.size() - offset;
         }
 
+        long finalTotalCount = totalCount + countItems.getValue();
+
+        // if the result were filtered
+        if (returnList.size() != sizeBeforeFiltering) {
+
+            finalTotalCount -= sizeBeforeFiltering - returnList.size();
+        }
+
         final Map<String, Object> returnMap = new HashMap<>();
-        returnMap.put("total", totalCount + countItems.getValue());
+        returnMap.put("total", finalTotalCount);
         returnMap.put("list",  offset > returnList.size()? Collections.emptyList(): returnList.subList(offset, offset + maxResults));
         return returnMap;
     }
+
+    private boolean hasFilters (final BrowserQuery browserQuery) {
+
+        return (browserQuery.mimeTypes != null && browserQuery.mimeTypes.size() > 0) ||
+                (browserQuery.extensions != null && browserQuery.extensions.size() > 0);
+    }
+
 
     private List<Map<String, Object>> filterReturnList(final BrowserQuery browserQuery, final List<Map<String, Object>> returnList) {
 
