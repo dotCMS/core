@@ -6,11 +6,9 @@ import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLList.list;
 
 import com.dotcms.graphql.ContentFields;
-import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
-import com.dotcms.graphql.datafetcher.page.PageModeDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
@@ -133,7 +131,9 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<ViewAsPageStatus>("visitor")));
         viewAsFields.put("language", new TypeFetcher(GraphQLTypeReference.typeRef("Language"),
                 new LanguageDataFetcher()));
-        viewAsFields.put("mode", new TypeFetcher(GraphQLString, new PageModeDataFetcher()));
+        viewAsFields.put("mode", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ViewAsPageStatus, String>)
+                        (viewAs)->viewAs.getPageMode().name())));
         viewAsFields.put("persona", new TypeFetcher(GraphQLTypeReference.typeRef("PersonaBaseType"),
                 new PropertyDataFetcher<ViewAsPageStatus>("persona")));
 
@@ -146,7 +146,6 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<String>("device")));
         visitorFields.put("isNew", new TypeFetcher(GraphQLBoolean,
                 new PropertyDataFetcher<Boolean>("newVisitor")));
-        visitorFields.put("mode", new TypeFetcher(GraphQLString, new PageModeDataFetcher()));
         visitorFields.put("userAgent", new TypeFetcher(GraphQLTypeReference.typeRef("UserAgent"),
                 new PropertyDataFetcher<String>("userAgent")));
         visitorFields.put("personas",
