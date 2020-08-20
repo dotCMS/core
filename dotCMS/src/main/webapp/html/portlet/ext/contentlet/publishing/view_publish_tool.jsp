@@ -206,9 +206,6 @@
 
  		refreshAuditList();
         var tab = dijit.byId("mainTabContainer");
-
-        console.log(tab)
-
         dojo.connect(tab, 'selectChild',
                 function (evt) {
                     selectedTab = tab.selectedChildWidget;
