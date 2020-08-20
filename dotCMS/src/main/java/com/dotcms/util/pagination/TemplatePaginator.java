@@ -14,9 +14,11 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
 import java.util.Comparator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -24,7 +26,7 @@ import static com.dotcms.util.CollectionsUtils.map;
  * Handle {@link com.dotmarketing.portlets.templates.model.Template} pagination
  * @author jsanca
  */
-public class TemplatePaginator implements PaginatorOrdered<Template> {
+public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
     public static final String HOST_PARAMETER_ID = "host";
 
@@ -36,12 +38,12 @@ public class TemplatePaginator implements PaginatorOrdered<Template> {
 
     @VisibleForTesting
     public TemplatePaginator(final TemplateAPI templateAPI) {
-        
+
         this.templateAPI = templateAPI;
     }
 
     @Override
-    public PaginatedArrayList<Template> getItems(final User user, final String filter, final int limit, final int offset,
+    public PaginatedArrayList<TemplateView> getItems(final User user, final String filter, final int limit, final int offset,
                                                   final String orderby, final OrderDirection direction,
                                                   final Map<String, Object> extraParams) {
         String hostId = null;
@@ -71,12 +73,51 @@ public class TemplatePaginator implements PaginatorOrdered<Template> {
                                 Comparator.comparing(this::hostname).reversed());
             }
 
-            return allTemplates;
+            final PaginatedArrayList<TemplateView> templates =
+                    new PaginatedArrayList<>();
+            templates.addAll(allTemplates.stream().map(this::toTemplateView).collect(Collectors.toList()));
+            templates.setQuery(allTemplates.getQuery());
+            templates.setTotalResults(allTemplates.getTotalResults());
+
+            return templates;
         } catch (DotSecurityException | DotDataException e) {
 
             Logger.error(this, e.getMessage(), e);
             throw new PaginationException(e);
         }
+    }
+
+    private TemplateView toTemplateView(final Template template) {
+
+        return new TemplateView.Builder().body(template.getBody())
+                .categoryId(template.getCategoryId())
+                .countAddContainer(template.getCountAddContainer())
+                .countContainers(template.getCountContainers())
+                .deleted(Try.of(()->template.isDeleted()).getOrElse(false))
+                .drawed(template.isDrawed())
+                .drawedBody(template.getDrawedBody())
+                .footer(template.getFooter())
+                .friendlyName(template.getFriendlyName())
+                .headCode(template.getHeadCode())
+                .header(template.getHeader())
+                .identifier(template.getIdentifier())
+                .image(template.getImage())
+                .inode(template.getInode())
+                .isNew(template.isNew())
+                .live(Try.of(()->template.isLive()).getOrElse(false))
+                .locked(Try.of(()->template.isLocked()).getOrElse(false))
+                .modDate(template.getModDate())
+                .modUser(template.getModUser())
+                .name(template.getName())
+                .owner(template.getOwner())
+                .selectedimage(template.getSelectedimage())
+                .showOnMenu(template.isShowOnMenu())
+                .sortOrder(template.getSortOrder())
+                .theme(template.getTheme())
+                .themeName(template.getThemeName())
+                .title(template.getTitle())
+                .working(Try.of(()->template.isWorking()).getOrElse(false))
+                .build();
     }
 
     private String hostname (final Template template) {
