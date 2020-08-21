@@ -509,9 +509,11 @@ var cmsfile=null;
 
 		if (meta.filetype=="image") {
             dojo.query('.mce-window .mce-close')[0].click();
+            cmsFileBrowserImage.show();
+        } else {
+            cmsFileBrowserFile.show()
         }
 
-        cmsFileBrowserImage.show();
 	}
 
 	//Glossary terms search
