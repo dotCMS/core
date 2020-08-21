@@ -2,21 +2,21 @@ package com.dotcms.rest.api.v1.template;
 
 import com.beust.jcommander.internal.Maps;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TemplatePaginator;
-import com.dotcms.util.pagination.TemplateView;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -28,33 +28,37 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
-import com.dotmarketing.portal.struts.DotPortletAction;
+import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.business.TemplateConstants;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.struts.ActionException;
+import com.liferay.util.servlet.SessionDialogMessage;
 import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -72,6 +76,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
@@ -93,6 +99,8 @@ public class TemplateResource {
     private final HostWebAPI     hostWebAPI;
     private final PermissionAPI  permissionAPI;
     private final RoleAPI        roleAPI;
+    private final HTMLPageAssetAPI htmlPageAssetAPI;
+
 
     public TemplateResource() {
         this(new WebResource(),
@@ -106,7 +114,8 @@ public class TemplateResource {
                 APILocator.getFolderAPI(),
                 APILocator.getPermissionAPI(),
                 WebAPILocator.getHostWebAPI(),
-                APILocator.getRoleAPI());
+                APILocator.getRoleAPI(),
+                APILocator.getHTMLPageAssetAPI());
     }
 
     @VisibleForTesting
@@ -121,7 +130,8 @@ public class TemplateResource {
                              final FolderAPI      folderAPI,
                              final PermissionAPI  permissionAPI,
                              final HostWebAPI     hostWebAPI,
-                             final RoleAPI        roleAPI) {
+                             final RoleAPI        roleAPI,
+                             final HTMLPageAssetAPI htmlPageAssetAPI) {
 
         this.webResource    = webResource;
         this.paginationUtil = paginationUtil;
@@ -135,6 +145,7 @@ public class TemplateResource {
         this.permissionAPI  = permissionAPI;
         this.hostWebAPI     = hostWebAPI;
         this.roleAPI        = roleAPI;
+        this.htmlPageAssetAPI = htmlPageAssetAPI;
     }
 
     /**
@@ -195,7 +206,7 @@ public class TemplateResource {
      * @return Response
      */
     @GET
-    @Path("/inode/{templateInode}")
+    @Path("/{templateInode}")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
@@ -221,12 +232,12 @@ public class TemplateResource {
     }
 
     /**
-     * Return a live {@link com.dotmarketing.portlets.templates.model.Template} based on the id
+     * Return a live version {@link com.dotmarketing.portlets.templates.model.Template} based on the id
      *
      * @return Response
      */
     @GET
-    @Path("/live/{templateId}")
+    @Path("/{templateId}/live")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
@@ -252,12 +263,12 @@ public class TemplateResource {
     }
 
     /**
-     * Return a live {@link com.dotmarketing.portlets.templates.model.Template} based on the id
+     * Return a working version {@link com.dotmarketing.portlets.templates.model.Template} based on the id
      *
      * @return Response
      */
     @GET
-    @Path("/working/{templateId}")
+    @Path("/{templateId}/working")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
@@ -306,6 +317,15 @@ public class TemplateResource {
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, new Template()), user))).build();
     }
 
+    /**
+     * Save a single template
+     * @param request       {@link HttpServletRequest}
+     * @param response      {@link HttpServletResponse}
+     * @param templateForm  {@link TemplateForm}
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @PUT
     @JSONP
     @NoCache
@@ -327,31 +347,29 @@ public class TemplateResource {
             throw new DoesNotExistException("The working template inode: " + templateForm.getInode() + " does not exists");
         }
 
-        if (this.permissionAPI.doesUserHavePermission(currentTemplate,  PERMISSION_WRITE, user)) {
-
-            final Role    cmsOwner   = this.roleAPI.loadCMSOwnerRole();
-            final boolean isCMSOwner = this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1)
-                                           .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()))
-                                    || this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1)
-                                           .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()));
-
-            if(!isCMSOwner) {
-
-                throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-            }
-        }
+        this.checkPermission(user, currentTemplate, PERMISSION_WRITE);
 
         return Response.ok(new ResponseEntityView(TemplatePaginator.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, currentTemplate), user))).build();
     }
 
+    /**
+     * Publish a list of template inodes
+     * Return the list of a success published and failed
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param templatesToPublish {@link List} list of template inodes to publish
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @PUT
     @Path("/publish")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @WrapInTransaction
-    public final Response save(@Context final HttpServletRequest  request,
+    public final Response publish(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
                                final List<String> templatesToPublish) throws DotDataException, DotSecurityException {
 
@@ -359,29 +377,34 @@ public class TemplateResource {
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
         final List<String> publishedInodes = new ArrayList<>();
         final List<String> failedInodes    = new ArrayList<>();
 
-        for (int i = 0; i<templatesToPublish.size(); ++i) {
+        for (final String templateInode : templatesToPublish) {
 
-            final Template template = (Template) InodeFactory.getInode(templatesToPublish.get(i), Template.class);
+            final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
 
-            if (InodeUtils.isSet(template.getInode())) {
+            if (null != template && InodeUtils.isSet(template.getInode())) {
 
                 try {
                     // calls the asset factory edit
-                    PublishFactory.publishAsset(template, request);
-                    ActivityLogger.logInfo(this.getClass(), "Publish Template action", "User " +
-                            user.getPrimaryKey() + " publishing template" + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
-                    publishedInodes.add(templatesToPublish.get(i));
+                    if (PublishFactory.publishAsset(template, user, pageMode.respectAnonPerms)) {
+
+                        ActivityLogger.logInfo(this.getClass(), "Publish Template action", "User " +
+                                user.getPrimaryKey() + " publishing template" + template.getTitle(), host.getTitle() != null ? host.getTitle() : "default");
+                        publishedInodes.add(templateInode);
+                    } else {
+                        failedInodes.add(templateInode);
+                    }
                 } catch(WebAssetException wax) {
 
                     Logger.error(this, wax.getMessage(), wax);
-                    failedInodes.add(templatesToPublish.get(i));
+                    failedInodes.add(templateInode);
                 }
             } else {
 
-                failedInodes.add(templatesToPublish.get(i));
+                failedInodes.add(templateInode);
             }
         }
 
@@ -390,6 +413,281 @@ public class TemplateResource {
                 "publishedInodes", publishedInodes,
                 "failedInodes",   failedInodes
                 ))).build();
+    }
+
+    /**
+     * Unpublish a list of template inodes
+     * Return the list of a success unpublished and failed
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param templatesToUnpublish {@link List} list of template inodes to unpublish
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/unpublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @WrapInTransaction
+    public final Response unpublish(@Context final HttpServletRequest  request,
+                                  @Context final HttpServletResponse response,
+                                  final List<String> templatesToUnpublish) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+        final List<String> publishedInodes = new ArrayList<>();
+        final List<String> failedInodes    = new ArrayList<>();
+
+        for (final String templateInode : templatesToUnpublish) {
+
+            final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+
+            if (null != template && InodeUtils.isSet(template.getInode())) {
+
+                try {
+
+                    final Folder parent = APILocator.getFolderAPI().findParentFolder(template, user, pageMode.respectAnonPerms);
+                    // calls the asset factory edit
+                    if (WebAssetFactory.unPublishAsset(template, user.getUserId(), parent)) {
+
+                        ActivityLogger.logInfo(this.getClass(), "UnPublish Template action", "User " +
+                                user.getPrimaryKey() + " unpublishing template" + template.getTitle(), host.getTitle() != null ? host.getTitle() : "default");
+                        publishedInodes.add(templateInode);
+                    } else {
+                        failedInodes.add(templateInode);
+                    }
+                } catch(Exception wax) {
+
+                    Logger.error(this, wax.getMessage(), wax);
+                    failedInodes.add(templateInode);
+                }
+            } else {
+
+                failedInodes.add(templateInode);
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                CollectionsUtils.map(
+                        "unpublishedInodes", publishedInodes,
+                        "failedInodes",   failedInodes
+                ))).build();
+    }
+
+    /**
+     * Copy a template
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param templateInode      {@link String} template inode to copy
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/copy/{templateInode}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @WrapInTransaction
+    public final Response copy(@Context final HttpServletRequest  request,
+                               @Context final HttpServletResponse response,
+                               @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+
+        Logger.debug(this, ()->"Copying the Template: " + templateInode);
+
+        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+
+        if (null == template || !InodeUtils.isSet(template.getInode())) {
+
+            throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
+        }
+
+        this.checkPermission(user, template, PERMISSION_WRITE);
+        final Response responseRest = Response.ok(new ResponseEntityView(this.templateAPI.copy(template, user))).build();
+
+        ActivityLogger.logInfo(this.getClass(), "Copied Template", "User " +
+                user.getPrimaryKey() + " copied template" + template.getTitle(), host.getTitle() != null ? host.getTitle() : "default");
+
+        return responseRest;
+    }
+
+    /**
+     * Unlock a template
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param templateInode      {@link String} template inode to unlock
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/unlock/{templateInode}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @WrapInTransaction
+    public final Response unlock(@Context final HttpServletRequest  request,
+                               @Context final HttpServletResponse response,
+                               @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        Logger.debug(this, ()->"Unlocking the Template: " + templateInode);
+
+        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+
+        if (null == template || !InodeUtils.isSet(template.getInode())) {
+
+            throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
+        }
+
+        this.checkPermission(user, template, PERMISSION_READ);
+        WebAssetFactory.unLockAsset(template);
+
+        Logger.debug(this, "Unlocked template: " + templateInode);
+        return Response.ok(new ResponseEntityView(true)).build();
+    }
+
+    /**
+     * Archive a template
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param templateInode      {@link String} template inode to unlock
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/archive/{templateInode}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @WrapInTransaction
+    public final Response archive(@Context final HttpServletRequest  request,
+                                 @Context final HttpServletResponse response,
+                                 @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        Logger.debug(this, ()->"Doing archive of the Template: " + templateInode);
+
+        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+
+        if (null == template || !InodeUtils.isSet(template.getInode())) {
+
+            throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
+        }
+
+        this.checkPermission(user, template, PERMISSION_WRITE);
+        final boolean result = WebAssetFactory.archiveAsset(template, user.getUserId());
+
+        Logger.debug(this, "Archive done template: " + templateInode);
+        return Response.ok(new ResponseEntityView(result)).build();
+    }
+
+    /**
+     * Unarchive a template
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param templateInode      {@link String} template inode to unlock
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/unarchive/{templateInode}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @WrapInTransaction
+    public final Response unarchive(@Context final HttpServletRequest  request,
+                                  @Context final HttpServletResponse response,
+                                  @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        Logger.debug(this, ()->"Doing unarchive of the Template: " + templateInode);
+
+        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+
+        if (null == template || !InodeUtils.isSet(template.getInode())) {
+
+            throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
+        }
+
+        this.checkPermission(user, template, PERMISSION_WRITE);
+        WebAssetFactory.unArchiveAsset(template);
+
+        Logger.debug(this, "Unarchive done template: " + templateInode);
+        return Response.ok(new ResponseEntityView(true)).build();
+    }
+
+    /**
+     * Deletes a template
+     * Pre: template must not has dependencies
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param templateInode      {@link String} template inode to look for the template and then, delete it
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @DELETE
+    @Path("/{templateInode}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @WrapInTransaction
+    public final Response delete(@Context final HttpServletRequest  request,
+                                    @Context final HttpServletResponse response,
+                                    @PathParam("templateInode") final String templateInode) throws Exception {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        Logger.debug(this, ()->"Deleting the Template: " + templateInode);
+
+        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+
+        if (null == template || !InodeUtils.isSet(template.getInode())) {
+
+            throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
+        }
+
+        final SessionDialogMessage error = new SessionDialogMessage(
+                LanguageUtil.get(user, "Delete-Template"),
+                LanguageUtil.get(user, TemplateConstants.TEMPLATE_DELETE_ERROR),
+                LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
+                        "<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
+                        "<br>+baseType:" + BaseContentType.HTMLPAGE.getType() +
+                                " +catchall:" + template.getIdentifier()
+                ));
+
+        return this.canTemplateBeDeleted(template, user, error)?
+             Response.ok(new ResponseEntityView(WebAssetFactory.deleteAsset(template,user))).build():
+             Response.status(Response.Status.BAD_REQUEST).entity(map("message", error)).build();
     }
 
     @WrapInTransaction
@@ -444,5 +742,53 @@ public class TemplateResource {
                 + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
 
         return template;
+    }
+
+    private void checkPermission(final User user, final Template currentTemplate, final int permissionType) throws DotDataException, DotSecurityException {
+
+        if (!this.permissionAPI.doesUserHavePermission(currentTemplate,  PERMISSION_WRITE, user)) {
+
+            final Role cmsOwner      = this.roleAPI.loadCMSOwnerRole();
+            final boolean isCMSOwner = this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1)
+                    .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()))
+                    || this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1)
+                    .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()));
+
+            if(!isCMSOwner) {
+
+                throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+            }
+        }
+    }
+
+    /**
+     * Returns true if a template is not being used by any html pages and can be deleted, false otherwise
+     * @param template
+     * @param user
+     * @return true if template can be deleted
+     * @throws LanguageException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private boolean canTemplateBeDeleted (final Template template, final User user, final SessionDialogMessage errorMessage)
+            throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> pages = this.htmlPageAssetAPI.findPagesByTemplate(template, user, false,
+                TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
+
+        if (pages!= null && !pages.isEmpty()) {
+
+            for (final Contentlet page : pages) {
+
+                final HTMLPageAsset pageAsset = this.htmlPageAssetAPI.fromContentlet(page);
+                final Host host               = this.hostWebAPI.find(pageAsset.getHost(), user, false);
+
+                errorMessage.addMessage(template.getName(),host.getHostname() + ":" + pageAsset.getURI());
+            }
+
+            return false;
+        }
+
+        return true;
     }
 }
