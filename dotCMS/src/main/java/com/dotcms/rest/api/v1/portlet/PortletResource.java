@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -120,4 +121,26 @@ public class PortletResource implements Serializable {
     }
 
   }
+
+    @GET
+    @JSONP
+    @Path("/permissions/{portletId}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response doesUserHaveAccessToPortlet(@Context final HttpServletRequest request,
+            @PathParam("portletId") final String portletId) {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        try {
+            return Response.ok(new ResponseEntityView(map("response", APILocator.getLayoutAPI()
+                    .doesUserHaveAccessToPortlet(portletId, initData.getUser())))).build();
+
+        } catch (Exception e) {
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
 }
