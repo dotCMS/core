@@ -196,7 +196,7 @@ export class DotDialogComponent implements OnChanges {
     }
 }
 
-interface DialogButton {
+export interface DialogButton {
     action?: (dialog?: any) => void;
     disabled?: boolean;
     label: string;

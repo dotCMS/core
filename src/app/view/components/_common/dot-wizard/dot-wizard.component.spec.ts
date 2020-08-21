@@ -17,7 +17,8 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 const messageServiceMock = new MockDotMessageService({
     send: 'Send',
     next: 'Next',
-    previous: 'Previous'
+    previous: 'Previous',
+    cancel: 'cancel'
 });
 
 @Component({
@@ -90,130 +91,164 @@ describe('DotWizardComponent', () => {
         })
     );
 
-    beforeEach(
-        fakeAsync(() => {
-            fixture = TestBed.createComponent(DotWizardComponent);
-            component = fixture.componentInstance;
+    describe('multiple steps', () => {
+        beforeEach(
+            fakeAsync(() => {
+                fixture = TestBed.createComponent(DotWizardComponent);
+                component = fixture.componentInstance;
+                fixture.detectChanges();
+                dotWizardService = fixture.debugElement.injector.get(DotWizardService);
+                dotWizardService.open(wizardInput);
+                fixture.detectChanges();
+                stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
+                tick(201); // interval time to focus first element.
+                fixture.detectChanges();
+                acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
+                closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
+                form1 = fixture.debugElement.query(By.css('dot-form-one')).componentInstance;
+                form2 = fixture.debugElement.query(By.css('dot-form-two')).componentInstance;
+                formsContainer = fixture.debugElement.query(By.css('.dot-wizard__container'));
+            })
+        );
+
+        it('should set dialog params', () => {
+            const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
+                .componentInstance;
+
+            expect(dotDialog.bindEvents).toEqual(false);
+            expect(dotDialog.header).toEqual(wizardInput.title);
+            expect(dotDialog.visible).toEqual(true);
+        });
+
+        it('should set cancel button correctly', () => {
+            expect(component.dialogActions.cancel.label).toEqual('Previous');
+            expect(component.dialogActions.cancel.disabled).toEqual(true);
+        });
+
+        it('should load steps and focus fist form element', () => {
+            const firstField = fixture.debugElement.query(By.css('.formOneFirst'));
+
+            expect(component.formHosts.length).toEqual(2);
+            expect(stepContainers.length).toEqual(2);
+            expect(firstField.nativeElement).toEqual(document.activeElement);
+        });
+
+        it('should load buttons', () => {
+            expect(acceptButton.nativeElement.innerText).toEqual('NEXT');
+            expect(closeButton.nativeElement.innerText).toEqual('PREVIOUS');
+            expect(closeButton.nativeElement.disabled).toEqual(true);
+            expect(acceptButton.nativeElement.disabled).toEqual(true);
+        });
+
+        it('should enable next button if form is valid', () => {
+            form1.valid.emit(true);
             fixture.detectChanges();
-            dotWizardService = fixture.debugElement.injector.get(DotWizardService);
-            dotWizardService.open(wizardInput);
-            fixture.detectChanges();
-            stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            tick(201); // interval time to focus first element.
-            fixture.detectChanges();
-            acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
-            closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
-            form1 = fixture.debugElement.query(By.css('dot-form-one')).componentInstance;
-            form2 = fixture.debugElement.query(By.css('dot-form-two')).componentInstance;
-            formsContainer = fixture.debugElement.query(By.css('.dot-wizard__container'));
-        })
-    );
-
-    it('should set dialog params', () => {
-        const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
-            .componentInstance;
-
-        expect(dotDialog.bindEvents).toEqual(false);
-        expect(dotDialog.header).toEqual(wizardInput.title);
-        expect(dotDialog.visible).toEqual(true);
-    });
-
-    it('should load steps and focus fist form element', () => {
-        const firstField = fixture.debugElement.query(By.css('.formOneFirst'));
-
-        expect(component.formHosts.length).toEqual(2);
-        expect(stepContainers.length).toEqual(2);
-        expect(firstField.nativeElement).toEqual(document.activeElement);
-    });
-
-    it('should load buttons', () => {
-        expect(acceptButton.nativeElement.innerText).toEqual('NEXT');
-        expect(closeButton.nativeElement.innerText).toEqual('PREVIOUS');
-        expect(closeButton.nativeElement.disabled).toEqual(true);
-        expect(acceptButton.nativeElement.disabled).toEqual(true);
-    });
-
-    it('should enable next button if form is valid', () => {
-        form1.valid.emit(true);
-        fixture.detectChanges();
-        expect(acceptButton.nativeElement.disabled).toEqual(false);
-    });
-    it('should focus next/send action, after tab in the last item of the form', () => {
-        const preventDefaultSpy = jasmine.createSpy('spy');
-        const mockEvent = {
-            target: 'match',
-            composedPath: () => [
-                { nodeName: 'x' },
-                {
-                    nodeName: 'FORM',
-                    elements: {
-                        item: () => {
-                            return 'match';
-                        },
-                        length: 1
+            expect(acceptButton.nativeElement.disabled).toEqual(false);
+        });
+        it('should focus next/send action, after tab in the last item of the form', () => {
+            const preventDefaultSpy = jasmine.createSpy('spy');
+            const mockEvent = {
+                target: 'match',
+                composedPath: () => [
+                    { nodeName: 'x' },
+                    {
+                        nodeName: 'FORM',
+                        elements: {
+                            item: () => {
+                                return 'match';
+                            },
+                            length: 1
+                        }
                     }
-                }
-            ],
-            preventDefault: preventDefaultSpy
-        };
-        spyOn(acceptButton.nativeElement, 'focus');
-        formsContainer.triggerEventHandler('keydown.tab', { ...mockEvent });
-        expect(preventDefaultSpy).toHaveBeenCalled();
-        expect(acceptButton.nativeElement.focus).toHaveBeenCalled();
+                ],
+                preventDefault: preventDefaultSpy
+            };
+            spyOn(acceptButton.nativeElement, 'focus');
+            formsContainer.triggerEventHandler('keydown.tab', { ...mockEvent });
+            expect(preventDefaultSpy).toHaveBeenCalled();
+            expect(acceptButton.nativeElement.focus).toHaveBeenCalled();
+        });
+
+        it('should set label to send if is in last step', () => {
+            form1.valid.emit(true);
+            form2.valid.emit(true);
+            acceptButton.triggerEventHandler('click', {});
+            fixture.detectChanges();
+            expect(acceptButton.nativeElement.innerText).toEqual('SEND');
+            expect(acceptButton.nativeElement.disabled).toEqual(false);
+        });
+        it('should consolidate forms values and send them on send ', () => {
+            spyOn(dotWizardService, 'output$');
+
+            const formValue1 = { id: '123' };
+            const formValue2 = { name: 'Jose' };
+            form1.valid.emit(true);
+            form2.valid.emit(true);
+            form1.value.emit(formValue1);
+            form2.value.emit(formValue2);
+            acceptButton.triggerEventHandler('click', {});
+            acceptButton.triggerEventHandler('click', {});
+
+            expect(dotWizardService.output$).toHaveBeenCalledWith({ ...formValue1, ...formValue2 });
+        });
+
+        it('should change step on enter if form is valid', () => {
+            spyOn(component.dialog, 'acceptAction');
+            form1.valid.emit(true);
+            formsContainer.triggerEventHandler('keydown.enter', enterEvent);
+            expect(stopImmediatePropagation).toHaveBeenCalled();
+            expect(component.dialog.acceptAction).toHaveBeenCalled();
+        });
+
+        it('should NOT change step on enter if form is invalid', () => {
+            spyOn(component.dialogActions.accept, 'action');
+            form1.valid.emit(false);
+            formsContainer.triggerEventHandler('keydown.enter', enterEvent);
+
+            expect(component.dialogActions.accept.action).not.toHaveBeenCalled();
+        });
+
+        it('should update transform property on next', () => {
+            form1.valid.emit(true);
+            form2.valid.emit(true);
+            acceptButton.triggerEventHandler('click', {});
+            fixture.detectChanges();
+            expect(formsContainer.nativeElement.style['transform']).toEqual('translateX(-400px)');
+        });
+        it('should update transform property on previous', () => {
+            form1.valid.emit(true);
+            form2.valid.emit(true);
+            acceptButton.triggerEventHandler('click', {});
+            closeButton.triggerEventHandler('click', {});
+            fixture.detectChanges();
+            expect(formsContainer.nativeElement.style['transform']).toEqual('translateX(0px)');
+        });
     });
 
-    it('should set label to send if is in last step', () => {
-        form1.valid.emit(true);
-        form2.valid.emit(true);
-        acceptButton.triggerEventHandler('click', {});
-        fixture.detectChanges();
-        expect(acceptButton.nativeElement.innerText).toEqual('SEND');
-        expect(acceptButton.nativeElement.disabled).toEqual(false);
-    });
-    it('should consolidate forms values and send them on send ', () => {
-        spyOn(dotWizardService, 'output$');
+    describe('single step', () => {
+        beforeEach(
+            fakeAsync(() => {
+                fixture = TestBed.createComponent(DotWizardComponent);
+                component = fixture.componentInstance;
+                fixture.detectChanges();
+                dotWizardService = fixture.debugElement.injector.get(DotWizardService);
+                dotWizardService.open({ steps: [wizardInput.steps[0]], title: '' });
+                fixture.detectChanges();
+                stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
+                tick(201); // interval time to focus first element.
+                fixture.detectChanges();
+                closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
+            })
+        );
 
-        const formValue1 = { id: '123' };
-        const formValue2 = { name: 'Jose' };
-        form1.valid.emit(true);
-        form2.valid.emit(true);
-        form1.value.emit(formValue1);
-        form2.value.emit(formValue2);
-        acceptButton.triggerEventHandler('click', {});
-        acceptButton.triggerEventHandler('click', {});
-
-        expect(dotWizardService.output$).toHaveBeenCalledWith({ ...formValue1, ...formValue2 });
-    });
-
-    it('should change step on enter if form is valid', () => {
-        spyOn(component.dialog, 'acceptAction');
-        form1.valid.emit(true);
-        formsContainer.triggerEventHandler('keydown.enter', enterEvent);
-        expect(stopImmediatePropagation).toHaveBeenCalled();
-        expect(component.dialog.acceptAction).toHaveBeenCalled();
-    });
-
-    it('should NOT change step on enter if form is invalid', () => {
-        spyOn(component.dialogActions.accept, 'action');
-        form1.valid.emit(false);
-        formsContainer.triggerEventHandler('keydown.enter', enterEvent);
-
-        expect(component.dialogActions.accept.action).not.toHaveBeenCalled();
-    });
-
-    it('should update transform property on next', () => {
-        form1.valid.emit(true);
-        form2.valid.emit(true);
-        acceptButton.triggerEventHandler('click', {});
-        fixture.detectChanges();
-        expect(formsContainer.nativeElement.style['transform']).toEqual('translateX(-400px)');
-    });
-    it('should update transform property on previous', () => {
-        form1.valid.emit(true);
-        form2.valid.emit(true);
-        acceptButton.triggerEventHandler('click', {});
-        closeButton.triggerEventHandler('click', {});
-        fixture.detectChanges();
-        expect(formsContainer.nativeElement.style['transform']).toEqual('translateX(0px)');
+        it('should set cancel button correctly', () => {
+            const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
+                .componentInstance;
+            spyOn(component, 'close');
+            dotDialog.actions.cancel.action();
+            expect(component.dialogActions.cancel.label).toEqual('cancel');
+            expect(component.close).toHaveBeenCalled();
+            expect(component.dialogActions.cancel.disabled).toEqual(false);
+        });
     });
 });

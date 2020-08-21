@@ -8,7 +8,11 @@ import {
     ViewChildren
 } from '@angular/core';
 import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import {
+    DialogButton,
+    DotDialogActions,
+    DotDialogComponent
+} from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ComponentRef } from '@angular/core/src/linker/component_factory';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
@@ -139,13 +143,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
                     : this.dotMessageService.get('next'),
                 disabled: true
             },
-            cancel: {
-                action: () => {
-                    this.loadNextStep(-1);
-                },
-                label: this.dotMessageService.get('previous'),
-                disabled: true
-            }
+            cancel: this.setCancelButton()
         };
     }
 
@@ -209,5 +207,20 @@ export class DotWizardComponent implements OnInit, OnDestroy {
             }
             count++;
         }, 200);
+    }
+
+    private setCancelButton(): DialogButton {
+        if (this.componentsHost.length === 1) {
+            return {
+                action: () => this.close(),
+                label: this.dotMessageService.get('cancel'),
+                disabled: false
+            };
+        }
+        return {
+            action: () => this.loadNextStep(-1),
+            label: this.dotMessageService.get('previous'),
+            disabled: true
+        };
     }
 }
