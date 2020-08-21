@@ -293,9 +293,6 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this._removeRows(this.detailsTableBody);
         this._removeRows(this.thumbnailsTable);
 
-        console.log({
-            _currentFilter: this._currentFilter, mimeTypes: this.mimeTypes
-        })
 
 		BrowserAjax.getFolderContentWithDotAssets(this._norm(this.currentFolder.id), this._currentOffset, this._maxNumberOfAssets, this._currentFilter, this.mimeTypes,
 			this.fileExtensions, false, true, this.onlyFiles, this.sortBy, this.sortByDesc, true, this.includeDotAssets, dojo.hitch(this, this._selectFolderCallback));
@@ -303,7 +300,6 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	},
 
 	_selectFolderCallback: function(assetsInfo) {
-        console.log(assetsInfo);
 
 		var assets = assetsInfo.list;
 		this._totalResults = assetsInfo.total;
