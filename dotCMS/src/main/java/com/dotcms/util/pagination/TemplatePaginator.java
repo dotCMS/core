@@ -2,7 +2,9 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -16,7 +18,9 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -75,7 +79,7 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
             final PaginatedArrayList<TemplateView> templates =
                     new PaginatedArrayList<>();
-            templates.addAll(allTemplates.stream().map(this::toTemplateView).collect(Collectors.toList()));
+            templates.addAll(allTemplates.stream().map(template -> TemplatePaginator.toTemplateView(template, user)).collect(Collectors.toList()));
             templates.setQuery(allTemplates.getQuery());
             templates.setTotalResults(allTemplates.getTotalResults());
 
@@ -87,36 +91,45 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
         }
     }
 
-    private TemplateView toTemplateView(final Template template) {
+    public static TemplateView toTemplateView(final Template template, final User user) {
 
-        return new TemplateView.Builder().body(template.getBody())
-                .categoryId(template.getCategoryId())
-                .countAddContainer(template.getCountAddContainer())
-                .countContainers(template.getCountContainers())
-                .deleted(Try.of(()->template.isDeleted()).getOrElse(false))
+        return new TemplateView.Builder()
+                .name(template.getName())
+                .friendlyName(template.getFriendlyName())
+                .title(template.getTitle())
+                .identifier(template.getIdentifier())
+                .image(template.getImage())
+                .selectedimage(template.getSelectedimage())
+                .inode(template.getInode())
+
+                .theme(template.getTheme())
+                .themeName(template.getThemeName())
+                .headCode(template.getHeadCode())
+                .header(template.getHeader())
+                .body(template.getBody())
                 .drawed(template.isDrawed())
                 .drawedBody(template.getDrawedBody())
                 .footer(template.getFooter())
-                .friendlyName(template.getFriendlyName())
-                .headCode(template.getHeadCode())
-                .header(template.getHeader())
-                .identifier(template.getIdentifier())
-                .image(template.getImage())
-                .inode(template.getInode())
+
                 .isNew(template.isNew())
+                .hasLiveVersion(Try.of(()->template.hasLiveVersion()).getOrElse(false))
+                .deleted(Try.of(()->template.isDeleted()).getOrElse(false))
                 .live(Try.of(()->template.isLive()).getOrElse(false))
                 .locked(Try.of(()->template.isLocked()).getOrElse(false))
+                .working(Try.of(()->template.isWorking()).getOrElse(false))
+
+                .canRead(Try.of(()->APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user)).getOrElse(false))
+                .canWrite(Try.of(()->APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT, user)).getOrElse(false))
+                .canPublish(Try.of(()->APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_PUBLISH, user)).getOrElse(false))
+
+                .categoryId(template.getCategoryId())
+                .countAddContainer(template.getCountAddContainer())
+                .countContainers(template.getCountContainers())
                 .modDate(template.getModDate())
                 .modUser(template.getModUser())
-                .name(template.getName())
                 .owner(template.getOwner())
-                .selectedimage(template.getSelectedimage())
                 .showOnMenu(template.isShowOnMenu())
                 .sortOrder(template.getSortOrder())
-                .theme(template.getTheme())
-                .themeName(template.getThemeName())
-                .title(template.getTitle())
-                .working(Try.of(()->template.isWorking()).getOrElse(false))
                 .build();
     }
 

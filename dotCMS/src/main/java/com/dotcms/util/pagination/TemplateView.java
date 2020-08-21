@@ -1,5 +1,6 @@
 package com.dotcms.util.pagination;
 
+import java.io.File;
 import java.util.Date;
 
 public class TemplateView {
@@ -16,6 +17,7 @@ public class TemplateView {
     private final boolean locked;
     private final boolean working;
     private final boolean isNew;
+    private final boolean hasLiveVersion;
     private final boolean showOnMenu;
     private final String  drawedBody;
     private final int     countAddContainer;
@@ -32,6 +34,9 @@ public class TemplateView {
     private final String  name;
     private final String  title;
     private final int     sortOrder;
+    private final boolean canRead;
+    private final boolean canWrite;
+    private final boolean canPublish;
 
     private TemplateView(final Builder builder) {
 
@@ -47,6 +52,7 @@ public class TemplateView {
         this.locked = builder.locked;
         this.working = builder.working;
         this.isNew = builder.isNew;
+        this.hasLiveVersion = builder.hasLiveVersion;
         this.showOnMenu = builder.showOnMenu;
         this.drawedBody = builder.drawedBody;
         this.countAddContainer = builder.countAddContainer;
@@ -63,6 +69,9 @@ public class TemplateView {
         this.name = builder.name;
         this.title = builder.title;
         this.sortOrder = builder.sortOrder;
+        this.canRead = builder.canRead;
+        this.canWrite = builder.canWrite;
+        this.canPublish = builder.canPublish;
     }
 
     public String getIdentifier() {
@@ -111,6 +120,10 @@ public class TemplateView {
 
     public boolean isNew() {
         return isNew;
+    }
+
+    public boolean isHasLiveVersion() {
+        return hasLiveVersion;
     }
 
     public boolean isShowOnMenu() {
@@ -177,6 +190,18 @@ public class TemplateView {
         return sortOrder;
     }
 
+    public boolean isCanRead() {
+        return canRead;
+    }
+
+    public boolean isCanWrite() {
+        return canWrite;
+    }
+
+    public boolean isCanPublish() {
+        return canPublish;
+    }
+
     public static final class Builder {
         private  String identifier;
         private  String inode;
@@ -190,6 +215,7 @@ public class TemplateView {
         private  boolean locked;
         private  boolean working;
         private  boolean isNew;
+        private  boolean hasLiveVersion;
         private  boolean showOnMenu;
         private  String drawedBody;
         private  int countAddContainer;
@@ -206,6 +232,9 @@ public class TemplateView {
         private  String name;
         private  String title;
         private  int sortOrder;
+        private  boolean canRead;
+        private  boolean canWrite;
+        private  boolean canPublish;
 
         public Builder identifier (final String identifier) {
 
@@ -351,6 +380,27 @@ public class TemplateView {
             this.sortOrder = sortOrder;
             return this;
         }
+
+        public Builder hasLiveVersion(final boolean hasLiveVersion) {
+            this.hasLiveVersion = hasLiveVersion;
+            return this;
+        }
+
+        public Builder canRead(final boolean canRead) {
+            this.canRead = canRead;
+            return this;
+        }
+
+        public Builder canWrite(final boolean canWrite) {
+            this.canWrite = canWrite;
+            return this;
+        }
+
+        public Builder canPublish(final boolean canPublish) {
+            this.canPublish = canPublish;
+            return this;
+        }
+
 
         public TemplateView build() {
 

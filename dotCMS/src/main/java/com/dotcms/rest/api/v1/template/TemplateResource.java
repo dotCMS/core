@@ -4,6 +4,7 @@ import com.beust.jcommander.internal.Maps;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -14,10 +15,16 @@ import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
@@ -28,6 +35,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -127,17 +135,104 @@ public class TemplateResource {
         final Optional<String> checkedHostId = Optional.ofNullable(Try.of(()-> APILocator.getHostAPI()
                 .find(hostId, user, false).getIdentifier()).getOrNull());
 
-        try {
+        Logger.debug(this, ()-> "Getting the List of templates");
 
-            final Map<String, Object> extraParams = Maps.newHashMap();
-            checkedHostId.ifPresent(checkedHostIdentifier -> extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostIdentifier));
-            return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
-                    extraParams);
-        } catch (Exception e) {
+        final Map<String, Object> extraParams = Maps.newHashMap();
+        checkedHostId.ifPresent(checkedHostIdentifier -> extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostIdentifier));
+        return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
+                extraParams);
+    }
 
-            Logger.error(this, e.getMessage(), e);
-            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+    /**
+     * Return a {@link com.dotmarketing.portlets.templates.model.Template} based on the inode
+     *
+     * @return Response
+     */
+    @GET
+    @Path("/inode/{templateInode}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getByInode(@Context final HttpServletRequest  httpRequest,
+                               @Context final HttpServletResponse httpResponse,
+                               @PathParam("templateInode") final String templateInode) throws DotSecurityException, DotDataException {
 
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        final PageMode mode = PageMode.get(httpRequest);
+        Logger.debug(this, ()-> "Getting the template by inode: " + templateInode);
+
+        final Template template = this.templateAPI.find(templateInode, user, mode.respectAnonPerms);
+
+        if (null == template || UtilMethods.isNotSet(template.getIdentifier())) {
+
+            throw new DoesNotExistException("The template inode: " + templateInode + " does not exists");
         }
+
+        return Response.ok(new ResponseEntityView(TemplatePaginator.toTemplateView(template, user))).build();
+    }
+
+    /**
+     * Return a live {@link com.dotmarketing.portlets.templates.model.Template} based on the id
+     *
+     * @return Response
+     */
+    @GET
+    @Path("/live/{templateId}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
+                               @Context final HttpServletResponse httpResponse,
+                               @PathParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        final PageMode mode = PageMode.get(httpRequest);
+        Logger.debug(this, ()-> "Getting the live template by id: " + templateId);
+
+        final Template template = this.templateAPI.findLiveTemplate(templateId, user, mode.respectAnonPerms);
+
+        if (null == template || UtilMethods.isNotSet(template.getIdentifier())) {
+
+            throw new DoesNotExistException("The live template id: " + templateId + " does not exists");
+        }
+
+        return Response.ok(new ResponseEntityView(TemplatePaginator.toTemplateView(template, user))).build();
+    }
+
+    /**
+     * Return a live {@link com.dotmarketing.portlets.templates.model.Template} based on the id
+     *
+     * @return Response
+     */
+    @GET
+    @Path("/working/{templateId}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getWorkingById(@Context final HttpServletRequest  httpRequest,
+                                      @Context final HttpServletResponse httpResponse,
+                                      @PathParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        final PageMode mode = PageMode.get(httpRequest);
+        Logger.debug(this, ()-> "Getting the working template by id: " + templateId);
+
+        final Template template = this.templateAPI.findWorkingTemplate(templateId, user, mode.respectAnonPerms);
+
+        if (null == template || UtilMethods.isNotSet(template.getIdentifier())) {
+
+            throw new DoesNotExistException("The working template id: " + templateId + " does not exists");
+        }
+
+        return Response.ok(new ResponseEntityView(TemplatePaginator.toTemplateView(template, user))).build();
     }
 }
