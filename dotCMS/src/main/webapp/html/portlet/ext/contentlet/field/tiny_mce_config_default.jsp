@@ -66,7 +66,6 @@ var tinyMCEProps = {
     image_advtab: true,
     image_caption: true,
     file_picker_callback: function(callback, value, meta) {
-        console.log('here');
         cmsFileBrowser(callback, value, meta);
     }
 };
