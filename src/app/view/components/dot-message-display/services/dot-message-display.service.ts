@@ -4,6 +4,7 @@ import { DotcmsEventsService } from 'dotcms-js';
 import { DotMessage } from '../model/dot-message.model';
 import { takeUntil, filter } from 'rxjs/operators';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotMessageSeverity } from '../model';
 
 /**
  * Handle message send by the Backend, this message are sended as Event through the {@link DotcmsEventsService}
@@ -45,7 +46,14 @@ export class DotMessageDisplayService {
      * @memberof DotMessageDisplayService
      */
     push(message: DotMessage): void {
-        this.localMessage$.next(message);
+        /*
+            We don't want to show a toast for a loading message for now, we have to come up to a
+            better way to show the loading state in our UI.
+            https://github.com/dotCMS/core/issues/19107
+        */
+        if (message.severity !== DotMessageSeverity.LOADING) {
+            this.localMessage$.next(message);
+        }
     }
 
     /**
