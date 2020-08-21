@@ -1,22 +1,17 @@
-package com.dotcms.util.pagination;
+package com.dotcms.rest.api.v1.template;
 
-import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-public class TemplateView {
+@JsonDeserialize(builder = TemplateForm.Builder.class)
+public class TemplateForm {
 
     private final String  identifier;
     private final String  inode;
-    private final String  categoryId;
     private final String  body;
     private final String  selectedimage;
     private final String  image;
     private final boolean drawed;
-    private final boolean deleted;
-    private final boolean live;
-    private final boolean locked;
-    private final boolean working;
-    private final boolean isNew;
-    private final boolean hasLiveVersion;
     private final boolean showOnMenu;
     private final String  drawedBody;
     private final int     countAddContainer;
@@ -27,31 +22,20 @@ public class TemplateView {
     private final String  footer;
     private final String  friendlyName;
     private final String  header;
-    private final Date    modDate;
-    private final String  modUser;
-    private final String  owner;
     private final String  name;
     private final String  title;
     private final int     sortOrder;
-    private final boolean canRead;
-    private final boolean canWrite;
-    private final boolean canPublish;
+    private final boolean headerCheck;
+    private final boolean footerCheck;
 
-    private TemplateView(final Builder builder) {
+    private TemplateForm(final Builder builder) {
 
         this.identifier = builder.identifier;
         this.inode = builder.inode;
-        this.categoryId = builder.categoryId;
         this.body = builder.body;
         this.selectedimage = builder.selectedimage;
         this.image = builder.image;
         this.drawed = builder.drawed;
-        this.deleted = builder.deleted;
-        this.live = builder.live;
-        this.locked = builder.locked;
-        this.working = builder.working;
-        this.isNew = builder.isNew;
-        this.hasLiveVersion = builder.hasLiveVersion;
         this.showOnMenu = builder.showOnMenu;
         this.drawedBody = builder.drawedBody;
         this.countAddContainer = builder.countAddContainer;
@@ -62,15 +46,11 @@ public class TemplateView {
         this.footer = builder.footer;
         this.friendlyName = builder.friendlyName;
         this.header = builder.header;
-        this.modDate = builder.modDate;
-        this.modUser = builder.modUser;
-        this.owner = builder.owner;
         this.name = builder.name;
         this.title = builder.title;
         this.sortOrder = builder.sortOrder;
-        this.canRead = builder.canRead;
-        this.canWrite = builder.canWrite;
-        this.canPublish = builder.canPublish;
+        this.headerCheck = builder.headerCheck;
+        this.footerCheck = builder.footerCheck;
     }
 
     public String getIdentifier() {
@@ -79,10 +59,6 @@ public class TemplateView {
 
     public String getInode() {
         return inode;
-    }
-
-    public String getCategoryId() {
-        return categoryId;
     }
 
     public String getBody() {
@@ -99,30 +75,6 @@ public class TemplateView {
 
     public boolean isDrawed() {
         return drawed;
-    }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public boolean isLive() {
-        return live;
-    }
-
-    public boolean isLocked() {
-        return locked;
-    }
-
-    public boolean isWorking() {
-        return working;
-    }
-
-    public boolean isNew() {
-        return isNew;
-    }
-
-    public boolean isHasLiveVersion() {
-        return hasLiveVersion;
     }
 
     public boolean isShowOnMenu() {
@@ -165,18 +117,6 @@ public class TemplateView {
         return header;
     }
 
-    public Date getModDate() {
-        return modDate;
-    }
-
-    public String getModUser() {
-        return modUser;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
     public String getName() {
         return name;
     }
@@ -189,52 +129,58 @@ public class TemplateView {
         return sortOrder;
     }
 
-    public boolean isCanRead() {
-        return canRead;
+    public boolean isHeaderCheck() {
+        return headerCheck;
     }
 
-    public boolean isCanWrite() {
-        return canWrite;
-    }
-
-    public boolean isCanPublish() {
-        return canPublish;
+    public boolean isFooterCheck() {
+        return footerCheck;
     }
 
     public static final class Builder {
 
+        @JsonProperty
         private  String identifier;
+        @JsonProperty
         private  String inode;
-        private  String categoryId;
+        @JsonProperty
         private  String body;
+        @JsonProperty
         private  String selectedimage;
+        @JsonProperty
         private  String image;
+        @JsonProperty
         private  boolean drawed;
-        private  boolean deleted;
-        private  boolean live;
-        private  boolean locked;
-        private  boolean working;
-        private  boolean isNew;
-        private  boolean hasLiveVersion;
+        @JsonProperty
         private  boolean showOnMenu;
+        @JsonProperty
         private  String drawedBody;
+        @JsonProperty
         private  int countAddContainer;
+        @JsonProperty
         private  int countContainers;
+        @JsonProperty
         private  String headCode;
+        @JsonProperty
         private  String theme;
+        @JsonProperty
         private  String themeName;
+        @JsonProperty
         private  String footer;
+        @JsonProperty
         private  String friendlyName;
+        @JsonProperty
         private  String header;
-        private  Date modDate;
-        private  String modUser;
-        private  String owner;
+        @JsonProperty
         private  String name;
+        @JsonProperty
         private  String title;
+        @JsonProperty
         private  int sortOrder;
-        private  boolean canRead;
-        private  boolean canWrite;
-        private  boolean canPublish;
+        @JsonProperty
+        private  boolean headerCheck;
+        @JsonProperty
+        private  boolean footerCheck;
 
         public Builder identifier (final String identifier) {
 
@@ -247,8 +193,13 @@ public class TemplateView {
             return this;
         }
 
-        public Builder  categoryId (final String categoryId) {
-            this.categoryId = categoryId;
+        public Builder  headerCheck  (final boolean headerCheck) {
+            this.headerCheck = headerCheck;
+            return this;
+        }
+
+        public Builder  footerCheck  (final boolean footerCheck) {
+            this.footerCheck = footerCheck;
             return this;
         }
 
@@ -270,32 +221,6 @@ public class TemplateView {
 
         public Builder  drawed (final boolean drawed) {
             this.drawed = drawed;
-            return this;
-        }
-
-        public Builder  deleted (final boolean deleted) {
-            this.deleted = deleted;
-            return this;
-        }
-
-        public Builder  live (final boolean live) {
-            this.live = live;
-            return this;
-        }
-
-        public Builder  locked (final boolean locked) {
-            this.locked = locked;
-            return this;
-        }
-
-
-        public Builder  working (final boolean working) {
-            this.working = working;
-            return this;
-        }
-
-        public Builder  isNew (final boolean isNew) {
-            this.isNew = isNew;
             return this;
         }
 
@@ -351,21 +276,6 @@ public class TemplateView {
             return this;
         }
 
-        public Builder  modDate (final Date modDate) {
-            this.modDate = modDate;
-            return this;
-        }
-
-        public Builder  modUser (final String modUser) {
-            this.modUser = modUser;
-            return this;
-        }
-
-        public Builder  owner (final String owner) {
-            this.owner = owner;
-            return this;
-        }
-
         public Builder  name (final String name) {
             this.name = name;
             return this;
@@ -381,30 +291,9 @@ public class TemplateView {
             return this;
         }
 
-        public Builder hasLiveVersion(final boolean hasLiveVersion) {
-            this.hasLiveVersion = hasLiveVersion;
-            return this;
-        }
+        public TemplateForm build() {
 
-        public Builder canRead(final boolean canRead) {
-            this.canRead = canRead;
-            return this;
-        }
-
-        public Builder canWrite(final boolean canWrite) {
-            this.canWrite = canWrite;
-            return this;
-        }
-
-        public Builder canPublish(final boolean canPublish) {
-            this.canPublish = canPublish;
-            return this;
-        }
-
-
-        public TemplateView build() {
-
-            return new TemplateView(this);
+            return new TemplateForm(this);
         }
     }
 }
