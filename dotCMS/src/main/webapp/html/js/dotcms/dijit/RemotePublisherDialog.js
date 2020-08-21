@@ -151,8 +151,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         if (this._hasWorkflow()) {
             this._getWorkFLow(this.workflow.actionId).then((action) => {
                 if ( action.assignable || action.commentable || isBulk){
-                    dia.set(url);
-                    dia.show();
+                    this._dispatchAngularWorkflowEvent(action);
                 } else {
                     this._dispatchAngularDialogEvent();
                 }
@@ -249,13 +248,23 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         if (this.workflow && this.workflow.actionId) {
             this.container.evaluateCondition(this.workflow.actionId, this.title, eventData);
         } else {
-            var customEvent = document.createEvent("CustomEvent");
+            const customEvent = document.createEvent("CustomEvent");
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "push-publish",
                 data: eventData
             });
             document.dispatchEvent(customEvent);
         }
+    },
+
+    _dispatchAngularWorkflowEvent: function (workflow) {
+        const customEvent = document.createEvent("CustomEvent");
+        debugger;
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "workflow-wizard",
+            data: { workflow: workflow, callback: 'reloadContent', inode: this.workflow.inode }
+        });
+        document.dispatchEvent(customEvent);
     }
 
 
