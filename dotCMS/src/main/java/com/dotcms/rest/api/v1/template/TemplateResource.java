@@ -3,8 +3,6 @@ package com.dotcms.rest.api.v1.template;
 import com.beust.jcommander.internal.Maps;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -14,9 +12,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TemplatePaginator;
-import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -30,11 +26,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -47,11 +41,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionDialogMessage;
-import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -89,12 +83,8 @@ public class TemplateResource {
 
     private final PaginationUtil paginationUtil;
     private final WebResource    webResource;
-    private final FormAPI        formAPI;
     private final TemplateAPI    templateAPI;
     private final VersionableAPI versionableAPI;
-    private final VelocityUtil   velocityUtil;
-    private final ShortyIdAPI    shortyAPI;
-    private final ContentletAPI  contentletAPI;
     private final FolderAPI      folderAPI;
     private final HostWebAPI     hostWebAPI;
     private final PermissionAPI  permissionAPI;
@@ -105,12 +95,8 @@ public class TemplateResource {
     public TemplateResource() {
         this(new WebResource(),
                 new PaginationUtil(new TemplatePaginator()),
-                APILocator.getFormAPI(),
                 APILocator.getTemplateAPI(),
                 APILocator.getVersionableAPI(),
-                VelocityUtil.getInstance(),
-                APILocator.getShortyAPI(),
-                APILocator.getContentletAPI(),
                 APILocator.getFolderAPI(),
                 APILocator.getPermissionAPI(),
                 WebAPILocator.getHostWebAPI(),
@@ -121,12 +107,8 @@ public class TemplateResource {
     @VisibleForTesting
     public TemplateResource(final WebResource    webResource,
                              final PaginationUtil paginationUtil,
-                             final FormAPI        formAPI,
                              final TemplateAPI   templateAPI,
                              final VersionableAPI versionableAPI,
-                             final VelocityUtil   velocityUtil,
-                             final ShortyIdAPI    shortyAPI,
-                             final ContentletAPI  contentletAPI,
                              final FolderAPI      folderAPI,
                              final PermissionAPI  permissionAPI,
                              final HostWebAPI     hostWebAPI,
@@ -135,12 +117,8 @@ public class TemplateResource {
 
         this.webResource    = webResource;
         this.paginationUtil = paginationUtil;
-        this.formAPI        = formAPI;
         this.templateAPI    = templateAPI;
         this.versionableAPI = versionableAPI;
-        this.velocityUtil   = velocityUtil;
-        this.shortyAPI      = shortyAPI;
-        this.contentletAPI  = contentletAPI;
         this.folderAPI      = folderAPI;
         this.permissionAPI  = permissionAPI;
         this.hostWebAPI     = hostWebAPI;
@@ -368,7 +346,6 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @WrapInTransaction
     public final Response publish(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
                                final List<String> templatesToPublish) throws DotDataException, DotSecurityException {
@@ -388,18 +365,19 @@ public class TemplateResource {
             if (null != template && InodeUtils.isSet(template.getInode())) {
 
                 try {
-                    // calls the asset factory edit
-                    if (PublishFactory.publishAsset(template, user, pageMode.respectAnonPerms)) {
+
+                    if (this.templateAPI.publishTemplate(template, user, pageMode.respectAnonPerms)) {
 
                         ActivityLogger.logInfo(this.getClass(), "Publish Template action", "User " +
                                 user.getPrimaryKey() + " publishing template" + template.getTitle(), host.getTitle() != null ? host.getTitle() : "default");
                         publishedInodes.add(templateInode);
                     } else {
+
                         failedInodes.add(templateInode);
                     }
-                } catch(WebAssetException wax) {
+                } catch(Exception e) {
 
-                    Logger.error(this, wax.getMessage(), wax);
+                    Logger.error(this, e.getMessage(), e);
                     failedInodes.add(templateInode);
                 }
             } else {
@@ -430,7 +408,6 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @WrapInTransaction
     public final Response unpublish(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
                                   final List<String> templatesToUnpublish) throws DotDataException, DotSecurityException {
@@ -451,9 +428,7 @@ public class TemplateResource {
 
                 try {
 
-                    final Folder parent = APILocator.getFolderAPI().findParentFolder(template, user, pageMode.respectAnonPerms);
-                    // calls the asset factory edit
-                    if (WebAssetFactory.unPublishAsset(template, user.getUserId(), parent)) {
+                    if (this.templateAPI.unpublishTemplate(template, user, pageMode.respectAnonPerms)) {
 
                         ActivityLogger.logInfo(this.getClass(), "UnPublish Template action", "User " +
                                 user.getPrimaryKey() + " unpublishing template" + template.getTitle(), host.getTitle() != null ? host.getTitle() : "default");
@@ -493,7 +468,6 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @WrapInTransaction
     public final Response copy(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
                                @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {

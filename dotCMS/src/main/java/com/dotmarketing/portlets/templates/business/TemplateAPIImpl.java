@@ -15,11 +15,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
 import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.*;
@@ -30,6 +33,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -66,6 +70,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		FactoryLocator.getTemplateFactory().delete(template);
 	}
 
+	@WrapInTransaction
 	@Override
 	public Template copy(final Template sourceTemplate, final User user) throws DotDataException, DotSecurityException {
 
@@ -133,7 +138,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return newTemplate;
 	}
 
-	// todo: should be on a transaction???
+	@WrapInTransaction
 	public Template copy(Template sourceTemplate, Host destination, boolean forceOverwrite,
 			boolean copySourceContainers, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
@@ -173,6 +178,22 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		save((Template) webAsset);
 	}
 
+	@WrapInTransaction
+	public boolean publishTemplate(final Template template, final User user, final boolean respectFrontendRoles) {
+
+		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
+		return Try.of(()->PublishFactory.publishAsset(template, user, respectFrontendRoles)).getOrElseThrow(e -> new RuntimeException(e));
+	}
+
+	@WrapInTransaction
+	public boolean unpublishTemplate(final Template template, final User user, final boolean respectFrontendRoles) {
+
+		Logger.debug(this, ()-> "Unpublishing the template: " + template.getIdentifier());
+		final Folder parent = Try.of(()->APILocator.getFolderAPI()
+				.findParentFolder(template, user, respectFrontendRoles)).getOrElseThrow(e -> new RuntimeException(e));
+		return Try.of(()->WebAssetFactory.unPublishAsset(template, user.getUserId(), parent))
+				.getOrElseThrow(e -> new RuntimeException(e));
+	}
 
 	@WrapInTransaction
 	public Template saveTemplate(final Template template, final Host destination, final User user, final boolean respectFrontendRoles)

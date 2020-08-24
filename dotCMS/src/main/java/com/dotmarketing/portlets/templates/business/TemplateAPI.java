@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -146,6 +147,24 @@ public interface TemplateAPI {
 	 * @throws DotSecurityException
 	 */
 	public Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Publish a template if has the appropiate permissions
+	 * @param template {@link Template} to publish (valid template)
+	 * @param user     {@link User} user to check the permissions
+	 * @param respectFrontendRoles {@link Boolean}
+	 * @return boolean true if publish
+	 */
+	boolean publishTemplate(Template template, User user, boolean respectFrontendRoles);
+
+	/**
+	 * Unpublish a template if has the appropiate permissions
+	 * @param template {@link Template} to unpublish (valid template)
+	 * @param user     {@link User} user to check the permissions
+	 * @param respectFrontendRoles {@link Boolean}
+	 * @return boolean true if publish
+	 */
+	boolean unpublishTemplate(Template template, User user, boolean respectFrontendRoles);
 
 	/**
 	 * Delete the specified template

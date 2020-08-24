@@ -3,6 +3,10 @@ package com.dotcms.rest.api.v1.template;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+/**
+ * Template Input Form
+ * @author jsanca
+ */
 @JsonDeserialize(builder = TemplateForm.Builder.class)
 public class TemplateForm {
 
