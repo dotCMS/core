@@ -49,6 +49,7 @@ public class OSGIResource  {
             "slf4j.api",
             "jcl.over.slf4j",
             "com.dotcms.tika",
+            "com.dotcms.samlbundle",
             "org.apache.felix.http.api",
             "org.apache.felix.configadmin"
     );

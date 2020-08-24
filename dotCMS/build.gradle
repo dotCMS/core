@@ -1,6 +1,6 @@
 buildscript {
     repositories {
-        
+
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
         jcenter()
     }
@@ -161,10 +161,12 @@ dependencies {
     felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.17') {
         transitive = false
     }
+
     felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
     felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
     felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
 
+    felix group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '5.3.6'
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
@@ -172,7 +174,7 @@ dependencies {
     //Uncomment this line if you want to download the starter that comes with data
     //starter group: 'com.dotcms', name: 'starter', version: '20200512', ext: 'zip'
     testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20200512', ext: 'zip'
-    
+
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-osx', version: '0.13.1'
@@ -204,7 +206,6 @@ if (enterpriseSrcFolder.exists()){
     	}
 	}
 }
-
 
 ant.lifecycleLogLevel = "INFO"
 
@@ -304,7 +305,7 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'deployPlugins','extractDotCmsArtifacts'
+war.dependsOn 'deployPlugins', 'extractDotCmsArtifacts'
 
 war {
 
@@ -617,8 +618,8 @@ javadoc {
      */
     options.addStringOption('subpackages', 'com.dotmarketing:com.dotcms')
 
-    title       = "dotCMS API"
-    maxMemory   = "1024m"
+    title = "dotCMS API"
+    maxMemory = "1024m"
     failOnError = false
     options.noQualifiers 'all'
     options.author(true)
@@ -1020,10 +1021,12 @@ class NpmArtifactExtractTask extends DefaultTask {
                 : version
         String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
         println "Downloading from $versionUrl"
-        "wget -O $artifactFolder/${artifact}.tgz $versionUrl".execute().text
+        String downloadArtifact = "$artifactFolder/${artifact}.tgz"
+        def downloadFile = new File(downloadArtifact)
+        new URL(versionUrl).withInputStream { i -> downloadFile.withOutputStream { it << i } }
 
         project.copy {
-            from project.tarTree(project.file("$artifactFolder/${artifact}.tgz"))
+            from project.tarTree(project.file(downloadArtifact))
             into dest
         }
     }
@@ -1037,6 +1040,9 @@ task cleanDotCmsUi {
 task cleanDotCmsWebComponents {
     delete './tmp/dotcms-webcomponents.tgz'
     delete './src/main/webapp/dotcms-webcomponents/package'
+    delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.js'
+    delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.esm.js'
+    delete './src/main/webapp/dotcms-webcomponents/index.esm.js'
 }
 
 task copyDotCmsUi(type: Copy) {
@@ -1044,7 +1050,13 @@ task copyDotCmsUi(type: Copy) {
     into("./src/main/webapp/$angularFolder")
 }
 
-task deleteDotCmsUiPackage(type: Delete) {
+task copyDotCmsWebComponents(type: Copy) {
+    from "./src/main/webapp/dotcms-webcomponents/package/dist/"
+    into "./src/main/webapp/"
+    include 'dotcms-webcomponents/*'
+}
+
+task deleteDotCmsUi(type: Delete) {
     delete "./src/main/webapp/$angularFolder/package"
 }
 
@@ -1053,7 +1065,7 @@ task extractDotCmsUi(type: NpmArtifactExtractTask) {
     version = coreWebReleaseVersion
     dest = "./src/main/webapp/$angularFolder"
     dependsOn 'cleanDotCmsUi'
-    finalizedBy 'copyDotCmsUi', 'deleteDotCmsUiPackage'
+    finalizedBy 'copyDotCmsUi', 'deleteDotCmsUi'
 }
 extractDotCmsUi.group = 'extract dotcms-ui'
 extractDotCmsUi.description = 'Extracts package from dotcms-ui artifact to dotAdmin'
@@ -1063,6 +1075,7 @@ task extractDotCmsWebComponents(type: NpmArtifactExtractTask) {
     version = webComponentsReleaseVersion
     dest = './src/main/webapp/dotcms-webcomponents'
     dependsOn 'cleanDotCmsWebComponents'
+    finalizedBy 'copyDotCmsWebComponents'
 }
 extractDotCmsWebComponents.group = 'extract dotcms-webcomponents'
 extractDotCmsWebComponents.description = 'Extracts package from dotcms-webcomponents to dotcms-webcomponents'
@@ -1073,7 +1086,7 @@ task cleanTmp(type: Delete) {
 
 task extractDotCmsArtifacts {
     dependsOn 'extractDotCmsUi', 'extractDotCmsWebComponents'
-    finalizedBy'cleanTmp'
+    finalizedBy 'cleanTmp'
 }
 
 task downloadDependencies(type: Exec) {
@@ -1117,7 +1130,7 @@ task upgradeTask << {
 
     javaexec {
         main = "com.dotcms.upgrade.Upgrade"
-        classpath = files("../libs/plugins/plugin-com.dotcms.upgradetask.jar") + files(sourceSets.main.output.classesDir) +  files(sourceSets.main.output.resourcesDir) + files(configurations.compile.files)
+        classpath = files("../libs/plugins/plugin-com.dotcms.upgradetask.jar") + files(sourceSets.main.output.classesDir) + files(sourceSets.main.output.resourcesDir) + files(configurations.compile.files)
         args("$task")
     }
 }

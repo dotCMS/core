@@ -9,6 +9,8 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -77,6 +79,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.*;
 
@@ -244,6 +247,10 @@ public class FieldAPIImpl implements FieldAPI {
                   String.format("User %s/%s modified field %s to %s Structure.", user.getUserId(), user.getFirstName(),
                           field.name(), structure.getName()));
       } else {
+          //If saving a new indexed field, it should try to set an ES mapping for the field
+          if (result.indexed()) {
+              addESMappingForField(structure, result);
+          }
           ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
                   String.format("User %s/%s added field %s to %s Structure.", user.getUserId(), user.getFirstName(), field.name(),
                           structure.getName()));
@@ -256,6 +263,39 @@ public class FieldAPIImpl implements FieldAPI {
 
       return result;
   }
+
+    /**
+     * This method tries to set an ES mapping for the field.
+     * In case of failure, we just log a warning and continue with the transaction
+     * @param field
+     */
+    private void addESMappingForField(final Structure structure, final Field field) {
+        try {
+            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            if (indiciesInfo != null){
+                if (UtilMethods.isSet(indiciesInfo.getLive())) {
+                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getLive());
+                    Logger.info(this.getClass(), String.format(
+                            "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
+                            field.name(), structure.getName(), APILocator.getESIndexAPI()
+                                    .removeClusterIdFromName(indiciesInfo.getLive())));
+                }
+
+                if (UtilMethods.isSet(indiciesInfo.getWorking())) {
+                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getWorking());
+                    Logger.info(this.getClass(), String.format(
+                            "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
+                            field.name(), structure.getName(), APILocator.getESIndexAPI()
+                                    .removeClusterIdFromName(indiciesInfo.getWorking())));
+                }
+            }
+
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(), String.format(
+                    "Error trying to set Elasticsearch mapping for Field: %s. Content type: %s",
+                    field.name(), structure.getName()), e);
+        }
+    }
 
     /**
      * Validates that properties n a relationship field are set correctly

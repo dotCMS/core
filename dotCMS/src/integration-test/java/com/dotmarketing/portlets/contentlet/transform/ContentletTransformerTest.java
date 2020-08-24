@@ -26,11 +26,13 @@ import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
@@ -88,6 +90,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     static String serializePath;
     static long langId;
     static File directory;
+    static Host site;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -98,11 +101,15 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
         final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
 
+        site = new SiteDataGen().nextPersisted();
+
         // Creating the contentlets for they will be pulled-out from the index
         for (int i = 0; i <= 10; i++) {
-            TestDataUtils.getEmployeeContent(true, 1, employeeLikeContentType.id());
-            TestDataUtils.getBannerLikeContent(true, 1, bannerLikeContentType.id(), null);
-            TestDataUtils.getNewsContent(true, 1, newsLikeContentType.id());
+            TestDataUtils.getEmployeeContent(true, 1, employeeLikeContentType.id(),
+                    site);
+            TestDataUtils.getBannerLikeContent(true, 1, bannerLikeContentType.id(),
+                    site);
+            TestDataUtils.getNewsContent(true, 1, newsLikeContentType.id(), site);
         }
 
         serializePath = Files.createTempDir().getCanonicalPath();
@@ -114,9 +121,10 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     }
 
     @Test
-    public void Transformer_Simple_Test() throws DotDataException {
+    public void Transformer_Simple_Test() throws DotDataException, DotSecurityException {
 
-        List<Contentlet> list = APILocator.getContentletAPI().findAllContent(0,20);
+        List<Contentlet> list = APILocator.getContentletAPI().findContentletsByHost(site,
+                APILocator.systemUser(), false);
         list = list.stream().filter(Objects::nonNull).collect(Collectors.toList());
         assertFalse("I was expecting at least 20 contentlets returned from the index",list.isEmpty());
         final List<Map<String, Object>> transformedList = new DotTransformerBuilder().defaultOptions().content(list).build().toMaps();
@@ -309,6 +317,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     @DataProvider
     public static Object[] listTestCases() throws Exception {
+        IntegrationTestInitService.getInstance().init();
         final User user = APILocator.systemUser();
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final int limit = 300;
@@ -662,6 +671,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     @DataProvider
     public static Object[] listSerializeTestCases() throws Exception {
+
+        IntegrationTestInitService.getInstance().init();
 
         final FileAssetAPI assetAPI = APILocator.getFileAssetAPI();
         final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
