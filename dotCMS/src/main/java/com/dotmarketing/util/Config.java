@@ -300,17 +300,13 @@ public class Config {
 
 
 	private final static String ENV_PREFIX="DOT_";
-	
-    private static void readEnvironmentVariables() {
-        
-        
-        System.getenv().entrySet().stream().filter(e->e.getKey().startsWith(ENV_PREFIX)).forEach(e->
-            props.addProperty(e.getKey(), e.getValue())
-        );
-        
 
-
-    }
+	private static void readEnvironmentVariables() {
+		synchronized (Config.class) {
+			System.getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
+					.forEach(e -> props.setProperty(e.getKey(), e.getValue()));
+		}
+	}
 	
 	
 	private static String envKey(final String theKey) {
