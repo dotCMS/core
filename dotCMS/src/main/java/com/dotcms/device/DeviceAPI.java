@@ -6,7 +6,7 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * API for Device-related operations
+ * API for Device-related operations 
  */
 public interface DeviceAPI {
 
