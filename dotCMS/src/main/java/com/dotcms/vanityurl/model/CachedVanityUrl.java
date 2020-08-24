@@ -1,10 +1,5 @@
 package com.dotcms.vanityurl.model;
 
-import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
-import java.io.Serializable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletResponse;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.vanityurl.util.VanityUrlUtil;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -14,15 +9,22 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.Serializable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
+
 /**
  * This class construct a reduced version of the {@link VanityUrl}
  * object to be saved on cache
  *
- * @author oswaldogallango
- * @version 4.2.0
- * @since June 22, 2017
+ * @author Will Ezell
+ * @version 5.3.3
+ * @since Jun 18, 2020
  */
-public class CachedVanityUrl implements Serializable {
+public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl> {
 
     static final long serialVersionUID = 1L;
     final public Pattern pattern;
@@ -41,10 +43,10 @@ public class CachedVanityUrl implements Serializable {
      */
 
     public CachedVanityUrl(final VanityUrl vanityUrl) {
-        this(vanityUrl.getIdentifier(),vanityUrl.getURI(),vanityUrl.getLanguageId(),vanityUrl.getSite(),vanityUrl.getForwardTo(),vanityUrl.getAction());
+        this(vanityUrl.getIdentifier(),vanityUrl.getURI(),vanityUrl.getLanguageId(),vanityUrl.getSite(),vanityUrl.getForwardTo(),vanityUrl.getAction(), vanityUrl.getOrder());
     }
 
-    public CachedVanityUrl(final String vanityUrlId, final String url, final long languageId, final String siteId, final String forwardTo, final int response) {
+    public CachedVanityUrl(final String vanityUrlId, final String url, final long languageId, final String siteId, final String forwardTo, final int response, final int order) {
         final String regex = normalize(url);
         this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         this.vanityUrlId = vanityUrlId;
@@ -53,7 +55,7 @@ public class CachedVanityUrl implements Serializable {
         this.siteId = siteId;
         this.forwardTo = forwardTo;
         this.response = response;
-        this.order    = 0;
+        this.order    = order;
     }
     
     /**
@@ -82,8 +84,6 @@ public class CachedVanityUrl implements Serializable {
       }
       return Tuple.of(newForward, queryString);
     }
-    
-    
 
     /**
      * This comes as fix for https://github.com/dotCMS/core/issues/16433
@@ -110,8 +110,20 @@ public class CachedVanityUrl implements Serializable {
         final String uriRegEx = addOptionalForwardSlashSupport(uri);
         return VanityUrlUtil.isValidRegex(uriRegEx) ? uriRegEx : StringPool.BLANK;
     }
-    
-    
+
+    /**
+     * Determines the behavior of the Vanity URL based on the selected action. There are three possible values:
+     * <ul>
+     *   <li>200 - Forward</li>
+     *   <li>301 - Permanent Redirect</li>
+     *   <li>302 - Temporary Redirect</li>
+     * </ul>
+     *
+     * @param uriIn    Incoming URL in the request.
+     * @param response The {@link HttpServletResponse} object.
+     *
+     * @return The appropriate result based on the selected action for the incoming URL.
+     */
     public VanityUrlResult handle(final String uriIn,
                     final HttpServletResponse response) {
         
@@ -137,12 +149,7 @@ public class CachedVanityUrl implements Serializable {
         }
 
         return new VanityUrlResult(rewrite, queryString, false);
-        
-        
     }
-    
-    
-
 
     @Override
     public int hashCode() {
@@ -155,8 +162,6 @@ public class CachedVanityUrl implements Serializable {
         result = prime * result + ((url == null) ? 0 : url.hashCode());
         return result;
     }
-
-
 
     @Override
     public boolean equals(Object obj) {
@@ -189,8 +194,6 @@ public class CachedVanityUrl implements Serializable {
         return true;
     }
 
-
-
     @Override
     public String toString() {
         return "CachedVanityUrl{" +
@@ -204,6 +207,10 @@ public class CachedVanityUrl implements Serializable {
                 ", order=" + order +
                 '}';
     }
-    
-    
+
+    @Override
+    public int compareTo(final CachedVanityUrl cachedVanityUrl) {
+        return this.order - cachedVanityUrl.order;
+    }
+
 }
