@@ -71,8 +71,9 @@ public class ConfigTest {
     }
 
     /**
-     * Small test to demo that the internal method addProperty generates an array list
-     * There's a huge difference between addProperty and setProperty
+     * Method to rest: {@link org.apache.commons.configuration.PropertiesConfiguration#addProperty(String, Object)}
+     * Given Scenario: We add several properties under the same key to demo that the internal method addProperty generates an array list
+     * Expected result: The property now holds an array.
      */
     @Test
     public void Test_Multiple_Calls_To_AddProperty_On_The_Same_Key() {
@@ -94,6 +95,11 @@ public class ConfigTest {
         assertTrue(equals2);
     }
 
+    /**
+     * Method to rest: {@link Config#getStringProperty(String)}
+     * Given Scenario: We set an environment prop that starts with DOT_ and certain value. Lets say X then we test getting that value through the property name that does not stat with such prefix.
+     * Expected result: We should get the values set to the env variable since it overrides the original property.
+     */
     @Test
     public void Test_Add_Env_Prop_Then_Test_Read_Value() {
         final String propertyName = "fictional_property";
