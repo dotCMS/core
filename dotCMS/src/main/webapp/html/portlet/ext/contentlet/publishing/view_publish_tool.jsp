@@ -204,20 +204,19 @@
 
     dojo.ready(function () {
 
-        //loadUnpushedBundles();
- 		doQueueFilter();
+ 		refreshAuditList();
         var tab = dijit.byId("mainTabContainer");
         dojo.connect(tab, 'selectChild',
                 function (evt) {
                     selectedTab = tab.selectedChildWidget;
-                    if (selectedTab.id == "queue") {
+                    if (selectedTab.id == "audit") {
+                        refreshAuditList("");
+                    }
+                    else if (selectedTab.id == "queue") {
                         doQueueFilter();
                     }
                     else if (selectedTab.id == "unpushedBundles") {
                         loadUnpushedBundles();
-                    }
-                    else if (selectedTab.id == "audit") {
-                        refreshAuditList("");
                     }
                 });
 
@@ -287,6 +286,27 @@
 
 <div class="portlet-main">
     <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+        
+        <div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
+            <div class="portlet-toolbar">
+				<div class="portlet-toolbar__actions-primary"></div>
+				<div class="portlet-toolbar__actions-secondary">
+                    <button  dojoType="dijit.form.Button" onClick="retryBundles();" iconClass="repeatIcon">
+                        <%= LanguageUtil.get(pageContext, "publisher_retry_bundles") %>
+                    </button>
+                    <button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
+                        <%= LanguageUtil.get(pageContext, "publisher_upload") %>
+                    </button>
+                    <button dojoType="dijit.form.Button" onClick="deleteBundlesOptions();" id="deleteAuditsBtn" iconClass="actionIcon" class="dijitButtonDanger">
+                        <%= LanguageUtil.get(pageContext, "Delete") %>
+                    </button>
+                    <button  dojoType="dijit.form.Button" onClick="doAuditFilter();" class="dijitButtonFlat">
+                        <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
+                    </button>
+                </div>
+            </div>
+            <div id="audit_results"></div>
+        </div>
 
         <div id="queue" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Queue") %>" >
             <div class="portlet-toolbar">
@@ -307,33 +327,7 @@
             </div>
             <div id="queue_results"></div>
         </div>
-
-
-        <div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
-            <div class="portlet-toolbar">
-				<div class="portlet-toolbar__actions-primary">
-                    
-                </div>
-
-				<div class="portlet-toolbar__actions-secondary">
-                    <button  dojoType="dijit.form.Button" onClick="retryBundles();" iconClass="repeatIcon">
-                        <%= LanguageUtil.get(pageContext, "publisher_retry_bundles") %>
-                    </button>
-                    <button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
-                        <%= LanguageUtil.get(pageContext, "publisher_upload") %>
-                    </button>
-                    <button dojoType="dijit.form.Button" onClick="deleteBundlesOptions();" id="deleteAuditsBtn" iconClass="actionIcon" class="dijitButtonDanger">
-                        <%= LanguageUtil.get(pageContext, "Delete") %>
-                    </button>
-                    <button  dojoType="dijit.form.Button" onClick="doAuditFilter();" class="dijitButtonFlat">
-                        <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
-                    </button>
-                </div>
-            </div>
-            <div id="audit_results"></div>
-        </div>
         
-
         <div id="unpushedBundles" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %>" >
             <div id="unpushedBundlesDiv"></div>
         </div>
