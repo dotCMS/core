@@ -964,4 +964,61 @@ public class AppsAPIImplTest {
         assertEquals("system-app", impl.getDescription());
     }
 
+    /**
+     * Given scenario: We have two files almost identical. one under user-apps-folder and another under system-app-folder,
+     * with the same file name but one in lower case and the other in upper case.
+     * Expected: The file name case must be ignored and the file placed under system-app-folder must take precedence.
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws URISyntaxException
+     * @throws AlreadyExistException
+     */
+    @Test
+    public void Test_File_Comparison_Is_Case_Sensitive()
+            throws DotDataException, DotSecurityException, IOException, URISyntaxException, AlreadyExistException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final AppsCache appsCache = CacheLocator.getAppsCache();
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .withName("system-app-example")
+                .withDescription("system-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+
+        //Move the file to the system folder and save it in upper case
+        final Path systemAppsDescriptorDirectory = AppsAPIImpl.getSystemAppsDescriptorDirectory();
+        final boolean result = file.renameTo(new File(
+                systemAppsDescriptorDirectory.toString() + File.separator + file.getName()
+                        .toUpperCase().replace("YML", "yml")));
+        assertTrue(result);
+        //Even though we just moved the file under apps-system-folder this should recreate the file again.
+        //But before that.. lets make a small change so we can tell the difference between the two files.
+        dataGen.withDescription("user-app");
+        final File newFile = dataGen.nextPersistedDescriptor();
+        api.createAppDescriptor(newFile, admin);
+
+        //Invalidate cache so the new descriptors get picked
+        appsCache.invalidateDescriptorsCache();
+        final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
+
+        //Verify the file we just submitted is recognized as a system-app-file
+        assertEquals(1, appDescriptors.stream()
+                .filter(appDescriptor -> dataGen.getKey().equalsIgnoreCase(appDescriptor.getKey())).count());
+        final Optional<AppDescriptor> optional = appDescriptors.stream()
+                .filter(appDescriptor -> dataGen.getKey().equalsIgnoreCase(appDescriptor.getKey())).findFirst();
+        assertTrue(optional.isPresent());
+        //
+        final AppDescriptor descriptor = optional.get();
+        final AppDescriptorImpl impl = (AppDescriptorImpl)descriptor;
+        assertTrue(impl.isSystemApp());
+        //This proves that even though we had two files named the same. 1 in the user apps folder and another 1 in the system-apps folder.
+        //The one from the system-folder takes precedence.
+        assertEquals("system-app", impl.getDescription());
+    }
 }

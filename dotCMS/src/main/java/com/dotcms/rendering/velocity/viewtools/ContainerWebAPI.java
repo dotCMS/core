@@ -32,7 +32,6 @@ import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.jetbrains.annotations.Nullable;
 
 public class ContainerWebAPI implements ViewTool {
 

@@ -201,8 +201,9 @@ public class Task05200WorkflowTaskUniqueKeyTest {
         task.executeUpgrade();
 
         //verify the first task and its dependencies have been deleted
-        final WorkflowTask result = workflowAPI.findTaskById(dupeWorkflowTask.getId());
-        assertNull(result.getId());
+        final WorkflowTask WTResult = workflowAPI.findTaskById(workflowTask.getId());
+        final WorkflowTask dupeWTResult = workflowAPI.findTaskById(dupeWorkflowTask.getId());
+        assertTrue(WTResult.getId()==null || dupeWTResult.getId()==null);
 
         assertFalse(UtilMethods.isSet(workflowAPI.findWorkFlowComments(dupeWorkflowTask)));
         assertFalse(UtilMethods.isSet(workflowAPI.findWorkflowHistory(dupeWorkflowTask)));

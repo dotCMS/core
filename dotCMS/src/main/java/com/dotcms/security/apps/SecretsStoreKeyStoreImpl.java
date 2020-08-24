@@ -129,7 +129,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             return keyStore;
 
         } catch (Exception e) {
-            Logger.error(this.getClass(), "unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
+            Logger.debug(this.getClass(), "unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
         }
 
@@ -167,7 +167,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         try {
             return getKeysFromCache().contains(variableKey);
         } catch (Exception e) {
-            Logger.error(SecretsStoreKeyStoreImpl.class,e);
+            Logger.debug(this,e.getMessage());
             throw new DotRuntimeException(e);
         }
     }
