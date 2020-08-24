@@ -1,6 +1,7 @@
 package com.dotcms.util.pagination;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.template.TemplateHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -35,15 +36,18 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
     public static final String HOST_PARAMETER_ID = "host";
 
     private final TemplateAPI templateAPI;
+    private final TemplateHelper templateHelper;
 
     public TemplatePaginator() {
-        this(APILocator.getTemplateAPI());
+        this(APILocator.getTemplateAPI(),
+                new TemplateHelper(APILocator.getPermissionAPI(), APILocator.getRoleAPI()));
     }
 
     @VisibleForTesting
-    public TemplatePaginator(final TemplateAPI templateAPI) {
+    public TemplatePaginator(final TemplateAPI templateAPI, final TemplateHelper templateHelper) {
 
-        this.templateAPI = templateAPI;
+        this.templateAPI    = templateAPI;
+        this.templateHelper = templateHelper;
     }
 
     @Override
@@ -79,7 +83,7 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
             final PaginatedArrayList<TemplateView> templates =
                     new PaginatedArrayList<>();
-            templates.addAll(allTemplates.stream().map(template -> TemplatePaginator.toTemplateView(template, user)).collect(Collectors.toList()));
+            templates.addAll(allTemplates.stream().map(template -> this.templateHelper.toTemplateView(template, user)).collect(Collectors.toList()));
             templates.setQuery(allTemplates.getQuery());
             templates.setTotalResults(allTemplates.getTotalResults());
 
@@ -89,48 +93,6 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
             Logger.error(this, e.getMessage(), e);
             throw new PaginationException(e);
         }
-    }
-
-    public static TemplateView toTemplateView(final Template template, final User user) {
-
-        return new TemplateView.Builder()
-                .name(template.getName())
-                .friendlyName(template.getFriendlyName())
-                .title(template.getTitle())
-                .identifier(template.getIdentifier())
-                .image(template.getImage())
-                .selectedimage(template.getSelectedimage())
-                .inode(template.getInode())
-
-                .theme(template.getTheme())
-                .themeName(template.getThemeName())
-                .headCode(template.getHeadCode())
-                .header(template.getHeader())
-                .body(template.getBody())
-                .drawed(template.isDrawed())
-                .drawedBody(template.getDrawedBody())
-                .footer(template.getFooter())
-
-                .isNew(template.isNew())
-                .hasLiveVersion(Try.of(()->template.hasLiveVersion()).getOrElse(false))
-                .deleted(Try.of(()->template.isDeleted()).getOrElse(false))
-                .live(Try.of(()->template.isLive()).getOrElse(false))
-                .locked(Try.of(()->template.isLocked()).getOrElse(false))
-                .working(Try.of(()->template.isWorking()).getOrElse(false))
-
-                .canRead(Try.of(()->APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user)).getOrElse(false))
-                .canWrite(Try.of(()->APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT, user)).getOrElse(false))
-                .canPublish(Try.of(()->APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_PUBLISH, user)).getOrElse(false))
-
-                .categoryId(template.getCategoryId())
-                .countAddContainer(template.getCountAddContainer())
-                .countContainers(template.getCountContainers())
-                .modDate(template.getModDate())
-                .modUser(template.getModUser())
-                .owner(template.getOwner())
-                .showOnMenu(template.isShowOnMenu())
-                .sortOrder(template.getSortOrder())
-                .build();
     }
 
     private String hostname (final Template template) {

@@ -15,7 +15,6 @@ import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -23,12 +22,9 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -90,11 +86,14 @@ public class TemplateResource {
     private final PermissionAPI  permissionAPI;
     private final RoleAPI        roleAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
+    private final TemplateHelper templateHelper;
 
 
     public TemplateResource() {
+
         this(new WebResource(),
-                new PaginationUtil(new TemplatePaginator()),
+                new PaginationUtil(new TemplatePaginator(APILocator.getTemplateAPI(),
+                        new TemplateHelper(APILocator.getPermissionAPI(), APILocator.getRoleAPI()))),
                 APILocator.getTemplateAPI(),
                 APILocator.getVersionableAPI(),
                 APILocator.getFolderAPI(),
@@ -105,9 +104,9 @@ public class TemplateResource {
     }
 
     @VisibleForTesting
-    public TemplateResource(final WebResource    webResource,
-                             final PaginationUtil paginationUtil,
-                             final TemplateAPI   templateAPI,
+    public TemplateResource(final WebResource     webResource,
+                             final PaginationUtil templatePaginator,
+                             final TemplateAPI    templateAPI,
                              final VersionableAPI versionableAPI,
                              final FolderAPI      folderAPI,
                              final PermissionAPI  permissionAPI,
@@ -116,7 +115,6 @@ public class TemplateResource {
                              final HTMLPageAssetAPI htmlPageAssetAPI) {
 
         this.webResource    = webResource;
-        this.paginationUtil = paginationUtil;
         this.templateAPI    = templateAPI;
         this.versionableAPI = versionableAPI;
         this.folderAPI      = folderAPI;
@@ -124,6 +122,8 @@ public class TemplateResource {
         this.hostWebAPI     = hostWebAPI;
         this.roleAPI        = roleAPI;
         this.htmlPageAssetAPI = htmlPageAssetAPI;
+        this.templateHelper = new TemplateHelper(permissionAPI, roleAPI);
+        this.paginationUtil = templatePaginator;
     }
 
     /**
@@ -206,7 +206,7 @@ public class TemplateResource {
             throw new DoesNotExistException("The template inode: " + templateInode + " does not exists");
         }
 
-        return Response.ok(new ResponseEntityView(TemplatePaginator.toTemplateView(template, user))).build();
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
     }
 
     /**
@@ -237,7 +237,7 @@ public class TemplateResource {
             throw new DoesNotExistException("The live template id: " + templateId + " does not exists");
         }
 
-        return Response.ok(new ResponseEntityView(TemplatePaginator.toTemplateView(template, user))).build();
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
     }
 
     /**
@@ -268,7 +268,7 @@ public class TemplateResource {
             throw new DoesNotExistException("The working template id: " + templateId + " does not exists");
         }
 
-        return Response.ok(new ResponseEntityView(TemplatePaginator.toTemplateView(template, user))).build();
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
     }
 
     @POST
@@ -291,7 +291,7 @@ public class TemplateResource {
             throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
         }
 
-        return Response.ok(new ResponseEntityView(TemplatePaginator.toTemplateView(
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, new Template()), user))).build();
     }
 
@@ -325,9 +325,9 @@ public class TemplateResource {
             throw new DoesNotExistException("The working template inode: " + templateForm.getInode() + " does not exists");
         }
 
-        this.checkPermission(user, currentTemplate, PERMISSION_WRITE);
+        this.templateHelper.checkPermission(user, currentTemplate, PERMISSION_WRITE);
 
-        return Response.ok(new ResponseEntityView(TemplatePaginator.toTemplateView(
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, currentTemplate), user))).build();
     }
 
@@ -357,6 +357,12 @@ public class TemplateResource {
         final PageMode pageMode = PageMode.get(request);
         final List<String> publishedInodes = new ArrayList<>();
         final List<String> failedInodes    = new ArrayList<>();
+
+        if (!UtilMethods.isSet(templatesToPublish)) {
+
+            throw new IllegalArgumentException("The body must send a collection of template inodes such as: " +
+                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+        }
 
         for (final String templateInode : templatesToPublish) {
 
@@ -419,6 +425,12 @@ public class TemplateResource {
         final PageMode pageMode = PageMode.get(request);
         final List<String> publishedInodes = new ArrayList<>();
         final List<String> failedInodes    = new ArrayList<>();
+
+        if (!UtilMethods.isSet(templatesToUnpublish)) {
+
+            throw new IllegalArgumentException("The body must send a collection of template inodes such as: " +
+                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+        }
 
         for (final String templateInode : templatesToUnpublish) {
 
@@ -487,8 +499,9 @@ public class TemplateResource {
             throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
         }
 
-        this.checkPermission(user, template, PERMISSION_WRITE);
-        final Response responseRest = Response.ok(new ResponseEntityView(this.templateAPI.copy(template, user))).build();
+        this.templateHelper.checkPermission(user, template, PERMISSION_WRITE);
+        final Response responseRest = Response.ok(new ResponseEntityView(
+                this.templateHelper.toTemplateView(this.templateAPI.copy(template, user), user))).build();
 
         ActivityLogger.logInfo(this.getClass(), "Copied Template", "User " +
                 user.getPrimaryKey() + " copied template" + template.getTitle(), host.getTitle() != null ? host.getTitle() : "default");
@@ -510,7 +523,6 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @WrapInTransaction
     public final Response unlock(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
                                @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
@@ -529,8 +541,8 @@ public class TemplateResource {
             throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
         }
 
-        this.checkPermission(user, template, PERMISSION_READ);
-        WebAssetFactory.unLockAsset(template);
+        this.templateHelper.checkPermission(user, template, PERMISSION_READ);
+        this.templateAPI.unlock(template, user);
 
         Logger.debug(this, "Unlocked template: " + templateInode);
         return Response.ok(new ResponseEntityView(true)).build();
@@ -550,7 +562,6 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @WrapInTransaction
     public final Response archive(@Context final HttpServletRequest  request,
                                  @Context final HttpServletResponse response,
                                  @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
@@ -569,8 +580,8 @@ public class TemplateResource {
             throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
         }
 
-        this.checkPermission(user, template, PERMISSION_WRITE);
-        final boolean result = WebAssetFactory.archiveAsset(template, user.getUserId());
+        this.templateHelper.checkPermission(user, template, PERMISSION_WRITE);
+        final boolean result = this.templateAPI.archive(template, user, pageMode.respectAnonPerms);
 
         Logger.debug(this, "Archive done template: " + templateInode);
         return Response.ok(new ResponseEntityView(result)).build();
@@ -590,7 +601,6 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @WrapInTransaction
     public final Response unarchive(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
                                   @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
@@ -609,8 +619,8 @@ public class TemplateResource {
             throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
         }
 
-        this.checkPermission(user, template, PERMISSION_WRITE);
-        WebAssetFactory.unArchiveAsset(template);
+        this.templateHelper.checkPermission(user, template, PERMISSION_WRITE);
+        this.templateAPI.unarchive(template);
 
         Logger.debug(this, "Unarchive done template: " + templateInode);
         return Response.ok(new ResponseEntityView(true)).build();
@@ -631,7 +641,6 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @WrapInTransaction
     public final Response delete(@Context final HttpServletRequest  request,
                                     @Context final HttpServletResponse response,
                                     @PathParam("templateInode") final String templateInode) throws Exception {
@@ -660,7 +669,7 @@ public class TemplateResource {
                 ));
 
         return this.canTemplateBeDeleted(template, user, error)?
-             Response.ok(new ResponseEntityView(WebAssetFactory.deleteAsset(template,user))).build():
+             Response.ok(new ResponseEntityView(this.templateAPI.delete(template,user, pageMode.respectAnonPerms))).build():
              Response.status(Response.Status.BAD_REQUEST).entity(map("message", error)).build();
     }
 
@@ -718,46 +727,21 @@ public class TemplateResource {
         return template;
     }
 
-    private void checkPermission(final User user, final Template currentTemplate, final int permissionType) throws DotDataException, DotSecurityException {
-
-        if (!this.permissionAPI.doesUserHavePermission(currentTemplate,  PERMISSION_WRITE, user)) {
-
-            final Role cmsOwner      = this.roleAPI.loadCMSOwnerRole();
-            final boolean isCMSOwner = this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1)
-                    .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()))
-                    || this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1)
-                    .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()));
-
-            if(!isCMSOwner) {
-
-                throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-            }
-        }
-    }
-
     /**
      * Returns true if a template is not being used by any html pages and can be deleted, false otherwise
      * @param template
      * @param user
      * @return true if template can be deleted
-     * @throws LanguageException
-     * @throws DotDataException
-     * @throws DotSecurityException
      */
-    private boolean canTemplateBeDeleted (final Template template, final User user, final SessionDialogMessage errorMessage)
-            throws DotDataException, DotSecurityException {
+    private boolean canTemplateBeDeleted (final Template template, final User user, final SessionDialogMessage errorMessage) {
 
-        final List<Contentlet> pages = this.htmlPageAssetAPI.findPagesByTemplate(template, user, false,
-                TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
+        final Map<String, String> resultMap = this.templateAPI.checkPageDependencies(template, user, false);
 
-        if (pages!= null && !pages.isEmpty()) {
+        if (resultMap != null && !resultMap.isEmpty()) {
 
-            for (final Contentlet page : pages) {
+            for (final Map.Entry<String, String> entry: resultMap.entrySet()) {
 
-                final HTMLPageAsset pageAsset = this.htmlPageAssetAPI.fromContentlet(page);
-                final Host host               = this.hostWebAPI.find(pageAsset.getHost(), user, false);
-
-                errorMessage.addMessage(template.getName(),host.getHostname() + ":" + pageAsset.getURI());
+                errorMessage.addMessage(entry.getKey(),entry.getValue());
             }
 
             return false;
