@@ -736,15 +736,15 @@
 									"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
 									"                        {",
 									"                            \"tag\": \"snowmobile\",",
-									"                            \"count\": 25",
+									"                            \"count\": 26",
 									"                        },",
 									"                        {",
 									"                            \"tag\": \"skiing\",",
-									"                            \"count\": 25",
+									"                            \"count\": 26",
 									"                        },",
 									"                        {",
 									"                            \"tag\": \"snowboarding\",",
-									"                            \"count\": 25",
+									"                            \"count\": 26",
 									"                        },",
 									"                        {",
 									"                            \"tag\": \"diving\",",
@@ -3214,87 +3214,87 @@
 	],
 	"variable": [
 		{
-			"id": "d85f968c-666e-4367-a04c-90a9cf33bacb",
+			"id": "d4011b81-72c2-4299-b79f-098765c2ecc7",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "64f9a14e-f4d3-4928-9dda-9c7891938c2a",
+			"id": "976268d7-c4bd-4428-a3da-cf09d1f18561",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "1316c295-2ed4-4fbf-98c5-6db575138001",
+			"id": "c988d98b-8e04-4038-ba5d-c0cb90cc4ab6",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "2628c3a1-ab0b-4754-bed4-b193c9f82376",
+			"id": "92648abd-680b-4aa4-b898-8ba4d5cdc1f9",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "99f73a37-1915-4758-89ab-4873b545c2bc",
+			"id": "1cf46c63-8279-47f4-b4a7-4a4077e3d3a6",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "9865a4c6-0dc3-4cdd-a7de-8629a209ce61",
+			"id": "22acb5b8-1576-43e3-a52e-45eb8849c2f1",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "f0878b76-2cc6-4c39-897c-279787f9f7a6",
+			"id": "aff05297-ef42-4c64-97d8-4cd9472d3ad0",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "153bf079-cf32-4924-92ea-4c389eb65635",
+			"id": "c1037b0d-5432-4e3a-8871-984860ed0dd6",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "4d2464c5-b3ea-41c6-b358-91a9aac20a9a",
+			"id": "a47cd244-05ae-4c67-a6fe-b90ce73e565e",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "91775355-a560-4de3-a6da-ab93ad03534d",
+			"id": "637597da-75a6-4ab9-840e-b64671a78d7f",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "2346eba2-943b-41a1-99bb-748ae7075e5f",
+			"id": "d95140b4-84fb-4a71-bf11-ba6c4e921e25",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "75327511-36b3-49ef-a846-acdf8bd3666c",
+			"id": "1f7e27f4-01b0-42a0-9435-410e9ba35404",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "72c68e90-998d-4bb2-a539-3482559b273d",
+			"id": "b47b6cad-9295-4f4d-b5ed-890718815836",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "d97ba6d6-76f9-4968-b926-27e0a0365b35",
+			"id": "5431e2e2-963b-4a1f-a6f1-1bccc004619a",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "d0c7b16d-c57d-48d0-a6b9-aac71ed1a358",
+			"id": "eec78fab-2efb-4db3-bb6b-fb54a4b03788",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "10b73553-f180-41fb-88d0-15b028298c47",
+			"id": "a9580f33-713e-4d3e-a75f-fb2b861ec54b",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "1cf17ac8-1c04-4caa-9bcf-464a8f623e55",
+			"id": "58127104-1282-4121-8f89-78068e316070",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
