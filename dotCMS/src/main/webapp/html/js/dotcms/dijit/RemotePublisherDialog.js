@@ -259,10 +259,9 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
     _dispatchAngularWorkflowEvent: function (workflow) {
         const customEvent = document.createEvent("CustomEvent");
-        debugger;
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "workflow-wizard",
-            data: { workflow: workflow, callback: 'reloadContent', inode: this.workflow.inode }
+            data: { workflow: workflow, callback: 'angularWorkflowEventCallback', inode: this.workflow.inode }
         });
         document.dispatchEvent(customEvent);
     }
