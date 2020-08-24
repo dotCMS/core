@@ -7,23 +7,24 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 
 public class DeviceAPIImpl implements DeviceAPI {
 
     @Override
-    public Contentlet getCurrentDevice(final HttpServletRequest request, final User user)
+    public Optional<Contentlet> getCurrentDevice(final HttpServletRequest request, final User user)
             throws DotDataException {
         final String currentDeviceId = (String) request.getSession().
                 getAttribute(WebKeys.CURRENT_DEVICE);
-        Contentlet currentDevice = null;
+        Optional<Contentlet> currentDevice = Optional.empty();
 
         try {
             if (currentDeviceId != null) {
-                currentDevice = APILocator.getContentletAPI().find(currentDeviceId, user,
-                        false);
+                currentDevice = Optional.ofNullable(APILocator.getContentletAPI().find(currentDeviceId, user,
+                        false));
 
-                if (currentDevice == null) {
+                if (!currentDevice.isPresent()) {
                     request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
                 }
             }

@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
@@ -244,11 +245,13 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .getPersonalizationsForPage(htmlpage);
         final IPersona persona     = this.getCurrentPersona(request);
         final boolean personalized = this.isPersonalized(persona, pagePersonalizationSet);
+        final Contentlet device = APILocator.getDeviceAPI().getCurrentDevice(request, user)
+                .orElse(null);
 
         return new ViewAsPageStatus(
                 getVisitor(request),
                 WebAPILocator.getLanguageWebAPI().getLanguage(request),
-                APILocator.getDeviceAPI().getCurrentDevice(request, user),
+                device,
                 pageMode,
                 personalized );
     }
