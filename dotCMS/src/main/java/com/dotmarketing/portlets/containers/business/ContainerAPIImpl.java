@@ -317,7 +317,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	private Tuple2<String, Host> getContainerPathHost(final String containerIdOrPath, final User user,
                                                       final Supplier<Host> resourceHost) throws DotSecurityException, DotDataException {
 
-		return HostUtil.splitPathHost(containerIdOrPath, user, Constants.CONTAINER_FOLDER_PATH, resourceHost);
+		final ResolvedPath resolvedPath = this.resolvePath(containerIdOrPath, user, false, false);
+		return Tuple.of(resolvedPath.relativePath, resolvedPath.host);
 	}
 
     @CloseDBIfOpened
@@ -805,7 +806,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		final FileAssetContainerUtil fileAssetContainerUtil = FileAssetContainerUtil.getInstance();
 		final String relativePath;
 
-		final Map<String, Host> hostsToFound = new HashMap<>();
+		final Map<String, Host> hostsToFound = new LinkedHashMap<>();
 
 		if (fileAssetContainerUtil.isFullPath(inputPath)) {
 			final String hostName = fileAssetContainerUtil.getHostName(inputPath);

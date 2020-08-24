@@ -1,15 +1,18 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.model.Template;
 import org.junit.BeforeClass;
@@ -139,11 +142,51 @@ public class Task05370ChangeContainerPathToAbsoluteTest {
 
     /**
      * Method to Test: {@link Task05370ChangeContainerPathToAbsolute#executeUpgrade()}
+     * When: Exists A TemplateLayout with not filecontainer
+     * Should: Should not change
+     */
+    @Test
+    public void whenTemplateLayoutHasNotFileCOntainer() throws IOException, DotDataException, DotSecurityException {
+        final Container container = new ContainerDataGen().nextPersisted();
+
+        final String layout = String.format(jsonDrawBody, container.getIdentifier())
+                .replaceAll("/application/containers/default/", "");
+
+        final String testBody = String.format(body, "");
+        final Host host = new SiteDataGen().nextPersisted();
+
+        checkTemplateLayout(layout);
+        final Contentlet theme = new ThemeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .title("template_test_" + System.currentTimeMillis())
+                .theme(theme)
+                .drawedBody(layout)
+                .body(testBody)
+                .host(host)
+                .nextPersisted();
+
+
+        final Task05370ChangeContainerPathToAbsolute task05370ChangeContainerPathToAbsolute =
+                new Task05370ChangeContainerPathToAbsolute();
+
+        task05370ChangeContainerPathToAbsolute.executeUpgrade();
+
+        final ArrayList templates = getTemplateFromDataBase(template);
+
+        final HashMap templateMap = (HashMap) templates.get(0);
+        assertEquals(1, templates.size());
+
+        final String drawedBody = templateMap.get("drawed_body").toString();
+        assertEquals(layout, drawedBody);
+    }
+
+    /**
+     * Method to Test: {@link Task05370ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A TemplateLayout with relative path container in the drawed_body fields and the body field is null
      * Should: Should turn it into a Absolute Path, using the template's host
      */
     @Test
-    public void whenTemplateLayoutHasRelativePathButBodyIsNullShouldTurnIntoAAbsolutePath() throws IOException, DotDataException, DotSecurityException {
+    public void whenTemplateLayoutHasRelativePathButBodyIsNullShouldTurnIntoAAbsolutePath() throws IOException, DotDataException {
 
         final String layout = String.format(jsonDrawBody, "");
         final Host host = new SiteDataGen().nextPersisted();
@@ -154,7 +197,7 @@ public class Task05370ChangeContainerPathToAbsoluteTest {
                 .title("template_test_" + System.currentTimeMillis())
                 .theme(theme)
                 .drawedBody(layout)
-                .body(null)
+                .setBodyAsNull()
                 .host(host)
                 .nextPersisted();
 
@@ -176,7 +219,7 @@ public class Task05370ChangeContainerPathToAbsoluteTest {
         final String drawedBody = templateMap.get("drawed_body").toString();
         assertTrue(drawedBody.contains(String.format("//%s/application/containers/default/", host.getHostname())));
 
-        if (templateMap.get("body") != null) {
+        if (!Strings.isNullOrEmpty(templateMap.get("body").toString())) {
             final String body = templateMap.get("body").toString();
             assertTrue(body.contains(String.format("//%s/application/containers/default/", host.getHostname())));
         }
@@ -226,7 +269,7 @@ public class Task05370ChangeContainerPathToAbsoluteTest {
     @Test
     public void whenLegacyTemplateLayoutHasRelativePathShouldTurnIntoAbsolutePath() throws DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
-        final String layout = String.format(legacyHTMLLayout, "//" + host.getHostname());
+        final String layout = String.format(legacyHTMLLayout, "");
 
         final Contentlet theme = new ThemeDataGen().nextPersisted();
         final Template template = new TemplateDataGen()
@@ -255,14 +298,14 @@ public class Task05370ChangeContainerPathToAbsoluteTest {
     @Test
     public void whenLegacyTemplateLayoutHasAbsolutePath() throws DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
-        final String layout = String.format(legacyHTMLLayout, "");
+        final String layout = String.format(legacyHTMLLayout, "//" + host.getHostname());
 
         final Contentlet theme = new ThemeDataGen().nextPersisted();
         final Template template = new TemplateDataGen()
                 .title("template_test_" + System.currentTimeMillis())
                 .theme(theme)
                 .drawedBody(layout)
-                .body(String.format(body, ""))
+                .body(String.format(body, "//" + host.getHostname()))
                 .host(host)
                 .nextPersisted();
 
@@ -346,6 +389,71 @@ public class Task05370ChangeContainerPathToAbsoluteTest {
 
         final String templateBody = templateMap.get("body").toString();
         assertEquals(templateBody, body);
+    }
+
+    /**
+     * Method to Test: {@link Task05370ChangeContainerPathToAbsolute#executeUpgrade()}
+     * When: Exists A TemplateLayout with absolute path container from another site
+     * Should: Should not change anything
+     */
+    @Test
+    public void whenTemplateLayoutHasAbsolutePathToAnotherSite() throws IOException, DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Host anotherHost = new SiteDataGen().nextPersisted();
+
+        final String layout = String.format(jsonDrawBody, "//" + anotherHost.getHostname());
+        final String testBody = String.format(body, "//" + anotherHost.getHostname());
+
+        checkTemplateLayout(layout);
+        final Contentlet theme = new ThemeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .title("template_test_" + System.currentTimeMillis())
+                .theme(theme)
+                .drawedBody(layout)
+                .body(testBody)
+                .host(host)
+                .nextPersisted();
+
+
+        final Task05370ChangeContainerPathToAbsolute task05370ChangeContainerPathToAbsolute =
+                new Task05370ChangeContainerPathToAbsolute();
+
+        task05370ChangeContainerPathToAbsolute.executeUpgrade();
+
+        checkTemplateFromDataBase(anotherHost, template);
+    }
+
+    /**
+     * Method to Test: {@link Task05370ChangeContainerPathToAbsolute#executeUpgrade()}
+     * When: Exists A legacy TemplateLayout with absolute path container from another site
+     * Should: Should does not anything
+     */
+    @Test
+    public void whenLegacyTemplateLayoutHasAbsolutePathToAnotherSite() throws IOException, DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Host anotherHost = new SiteDataGen().nextPersisted();
+
+        final String layout = String.format(legacyHTMLLayout, "//" + anotherHost.getHostname());
+        final String testBody = String.format(body, "//" + anotherHost.getHostname());
+
+        final Contentlet theme = new ThemeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .title("template_test_" + System.currentTimeMillis())
+                .theme(theme)
+                .drawedBody(layout)
+                .body(testBody)
+                .host(host)
+                .nextPersisted();
+
+
+        final Task05370ChangeContainerPathToAbsolute task05370ChangeContainerPathToAbsolute =
+                new Task05370ChangeContainerPathToAbsolute();
+
+        task05370ChangeContainerPathToAbsolute.executeUpgrade();
+
+        checkTemplateFromDataBase(anotherHost, template);
     }
 
     private void checkTemplateLayout(final String layout) throws IOException {

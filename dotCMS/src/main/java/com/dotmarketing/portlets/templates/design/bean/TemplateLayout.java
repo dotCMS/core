@@ -187,13 +187,20 @@ public class TemplateLayout implements Serializable {
     }
 
     public boolean existsContainer(final Container container, final String uuid){
-        if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
+        final FileAssetContainerUtil instance = FileAssetContainerUtil.getInstance();
+        if (instance.isFileAssetContainer(container)) {
             final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
-            final String containerFullPath = FileAssetContainerUtil.getInstance().getFullPath(fileAssetContainer);
+            final String containerPath = fileAssetContainer.getPath();
 
             return this.getContainers().stream()
-                    .anyMatch(containerUUID -> containerUUID.getIdentifier().equals(containerFullPath)
-                                    && isTheSameUUID(containerUUID.getUUID(), uuid)
+                    .anyMatch((ContainerUUID containerUUID) -> {
+                        final String relativePath = instance.isFullPath(containerUUID.getIdentifier()) ?
+                                instance.getRelativePath(containerUUID.getIdentifier()) :
+                                containerUUID.getIdentifier();
+
+                        return relativePath.equals(containerPath)
+                                    && isTheSameUUID(containerUUID.getUUID(), uuid);
+                    }
                     );
         } else {
             return this.getContainers().stream()
@@ -225,6 +232,24 @@ public class TemplateLayout implements Serializable {
         }
 
         return containersIdOrPath;
+    }
+
+    @JsonIgnore
+    @NotNull
+    public Set<ContainerUUID> getContainersUUID() {
+
+        final Set<ContainerUUID> uuids = this.getBody()
+                .getRows()
+                .stream()
+                .flatMap(row -> row.getColumns().stream())
+                .flatMap(column -> column.getContainers().stream())
+                .collect(Collectors.toSet());
+
+        if (null != layout && null != this.getSidebar()) {
+            uuids.addAll(this.getSidebar().getContainers());
+        }
+
+        return uuids;
     }
 
     private boolean isTheSameUUID(final String uuid1, final String uuid2) {

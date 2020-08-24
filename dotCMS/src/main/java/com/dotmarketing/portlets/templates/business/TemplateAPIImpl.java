@@ -271,27 +271,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 				for (final String containerIdOrPath : containersId) {
 
-					final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-							WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-					final Optional<ContainerFinderByIdOrPathStrategy> strategy              = strategyResolver.get(containerIdOrPath);
-					final Supplier<Host> resourceHostSupplier								= Sneaky.sneaked(()->getTemplateHost(template));
-					Container container = null;
+					final Optional<Container> optionalContainer = APILocator.getContainerAPI().findContainer(containerIdOrPath, user, false, false);
 
-					try {
-
-						container = strategy.isPresent()?
-							strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
-							strategyResolver.getDefaultStrategy().apply(containerIdOrPath, user, false, resourceHostSupplier);
-					} catch (NotFoundInDbException | DotRuntimeException e) {
-
-						container = null;
-					}
-
-					if (container == null) {
+					if (!optionalContainer.isPresent()) {
 						continue;
 					}
 
-					containers.add(container);
+					containers.add(optionalContainer.get());
 				}
 			}
         }

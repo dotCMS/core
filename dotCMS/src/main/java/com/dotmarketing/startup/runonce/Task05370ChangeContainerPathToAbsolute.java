@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.startup.StartupTask;
 import com.liferay.util.StringPool;
+import graphql.schema.PropertyDataFetcher;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
  */
 public class Task05370ChangeContainerPathToAbsolute implements StartupTask {
 
-    final String GET_TEMPLATES_QUERY = "SELECT contentlet.title as host_name, template.inode, template.drawed_body, template.body " +
+    final String GET_TEMPLATES_QUERY = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.drawed_body, template.body " +
             "FROM ((identifier " +
                 "INNER JOIN template ON identifier.id = template.identifier) " +
                 "INNER JOIN contentlet ON contentlet.identifier = identifier.host_inode) " +
@@ -99,17 +100,9 @@ public class Task05370ChangeContainerPathToAbsolute implements StartupTask {
 
         return templateLayoutFromJSON.getContainersIdentifierOrPath()
                 .stream()
-                .filter((String idOrPath) -> idOrPath.contains(StringPool.FORWARD_SLASH))
-                .map((String path) -> getPathFromFullPath(path))
+                .filter((String idOrPath) -> FileAssetContainerUtil.getInstance().isFolderAssetContainerId(idOrPath))
+                .filter((String idOrPath) -> !FileAssetContainerUtil.getInstance().isFullPath(idOrPath))
                 .collect(Collectors.toList());
-    }
-
-    private String getPathFromFullPath(final String fullPath) {
-
-        DotPreconditions.checkArgument(fullPath.contains(StringPool.FORWARD_SLASH), "Should be a path");
-
-        final int indexOf = fullPath.indexOf(StringPool.FORWARD_SLASH, 3);
-        return fullPath.substring(indexOf);
     }
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {

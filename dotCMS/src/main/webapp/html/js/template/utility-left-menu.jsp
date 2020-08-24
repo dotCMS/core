@@ -16,7 +16,8 @@ var countContainersAdded;
 var containersAdded = [];
 var containersUUID = {};
 
-function drawDefault(overrideBody, addContainer, removeContainer,containersStr,containersLen){
+function drawDefault(overrideBody, addContainer, removeContainer,containersStr,containersLen, maxUUID){
+    containersUUID = maxUUID;
 	addContainerMSG = addContainer;
 	removeContainerMSG = removeContainer;
 	countAddContainerLinks = document.getElementById("countAddContainerLinks");
@@ -411,8 +412,7 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
     const currentHost = '<%=currentHostName%>';
 
 	if (container.source == "<%=Source.FILE%>") {
-        const path = currentHost === container.hostName ? container.path : `//${container.hostName}${container.path}`;
-        containerDivHidden.innerHTML='#parseContainer(\'' + path + '\',\''+uuid+'\')\n';
+        containerDivHidden.innerHTML='#parseContainer(\'' + container.path + '\',\''+uuid+'\')\n';
     } else {
         containerDivHidden.innerHTML='#parseContainer(\'' + value + '\',\''+uuid+'\')\n';
     }

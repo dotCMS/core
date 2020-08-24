@@ -47,6 +47,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     private static final TemplateAPI templateAPI = APILocator.getTemplateAPI();
     private static final String type = "template";
+    private boolean setBodyAsNull = false;
 
     /**
      * Sets body property to the TemplateDataGen instance. This will be used when a new {@link
@@ -267,7 +268,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     @Override
     public Template persist(Template template) {
 
-        if (Strings.isNullOrEmpty(body)) {
+        if (Strings.isNullOrEmpty(body) && !setBodyAsNull) {
 
             if (containers.isEmpty()) {
                 withContainer(new ContainerDataGen().nextPersisted().getIdentifier());
@@ -321,5 +322,10 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
             throws DotSecurityException, WebAssetException, DotDataException {
         PublishFactory.publishAsset(template, APILocator.systemUser(),
                 false, false);
+    }
+
+    public TemplateDataGen setBodyAsNull() {
+        this.setBodyAsNull = true;
+        return this;
     }
 }

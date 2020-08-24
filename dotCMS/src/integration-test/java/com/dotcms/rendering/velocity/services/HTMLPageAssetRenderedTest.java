@@ -1277,7 +1277,7 @@ public class HTMLPageAssetRenderedTest {
     }
 
 
-    @DataProvider
+    @DataProvider(format = "%m page Host: %p[0] Template Host: %p[1] Container Host: %p[2]")
     public static Object[][] fileContainerCases() throws Exception {
         if (systemUser == null) {
             prepareGlobalData();
@@ -1310,6 +1310,12 @@ public class HTMLPageAssetRenderedTest {
                 { currentHost, currentHost, defaultHost, absolutePath, advanceTemplate, true},
                 { currentHost, anotherHost, defaultHost, absolutePath, advanceTemplate, true},
 
+                { currentHost, currentHost, currentHost, relativePath, drawedTemplate, true},
+                { currentHost, currentHost, anotherHost, relativePath, drawedTemplate, false},
+                { currentHost, anotherHost, anotherHost, relativePath, drawedTemplate, false},
+                { currentHost, currentHost, defaultHost, relativePath, drawedTemplate, true},
+                { currentHost, anotherHost, defaultHost, relativePath, drawedTemplate, true},
+
                 { currentHost, currentHost, currentHost, absolutePath, drawedTemplate, true},
                 { currentHost, currentHost, anotherHost, absolutePath, drawedTemplate, true},
                 { currentHost, anotherHost, anotherHost, absolutePath, drawedTemplate, true},
@@ -1340,14 +1346,16 @@ public class HTMLPageAssetRenderedTest {
             throws Exception {
 
         final FileAssetContainer container = createFileContainer(containerHost);
-        final Template template = templateCreator.apply(templateHost, pathConverter.apply(container, containerHost));
+        final String path = pathConverter.apply(container, containerHost);
+        final Template template = templateCreator.apply(templateHost, path);
         PublishFactory.publishAsset(template, systemUser, false, false);
 
         final String pageName = "testPage-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(pageHost, template, pageName, 1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(),
-                template.isDrawed() ? "1" : ParseContainer.getDotParserContainerUUID("1"));
+                template.isDrawed() ? ContainerUUID.UUID_START_VALUE :
+                        ParseContainer.getDotParserContainerUUID(ContainerUUID.UUID_START_VALUE));
 
         final HttpServletRequest mockRequest = createHttpServletRequest(pageEnglishVersion);
         Mockito.when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE.toString());
@@ -1366,9 +1374,15 @@ public class HTMLPageAssetRenderedTest {
                 mockRequest, mockResponse);
 
         if (shouldWork) {
-            Assert.assertTrue(html, html.contains("content1") && html.contains("content2"));
+            Assert.assertTrue(
+                    String.format("Should has content: using %s path and %s Template", path, template.isDrawed() ? "Drawed" : "Advanced"),
+                     html.contains("content1") && html.contains("content2")
+            );
         } else {
-            Assert.assertFalse(html, html.contains("content1") && html.contains("content2"));
+            Assert.assertFalse(
+                    String.format("Should has content: using %s path and %s Template", path, template.isDrawed() ? "Drawed" : "Advanced"),
+                    html.contains("content1") && html.contains("content2")
+            );
         }
     }
 
@@ -1378,7 +1392,7 @@ public class HTMLPageAssetRenderedTest {
 
         return new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
                     .host(templateHost)
-                    .withContainer(containerPath, UUID)
+                    .withContainer(containerPath, ContainerUUID.UUID_START_VALUE)
                     .nextPersisted();
     }
 
