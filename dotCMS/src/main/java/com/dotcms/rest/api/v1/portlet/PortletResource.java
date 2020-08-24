@@ -125,7 +125,7 @@ public class PortletResource implements Serializable {
 
     @GET
     @JSONP
-    @Path("/permissions/{portletId}")
+    @Path("/{portletId}/_doesuserhaveaccess")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response doesUserHaveAccessToPortlet(@Context final HttpServletRequest request,

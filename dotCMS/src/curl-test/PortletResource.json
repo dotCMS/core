@@ -48,7 +48,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{serverURL}}/api/v1/portlet/permissions/permissions",
+          "raw": "{{serverURL}}/api/v1/portlet/permissions/_doesuserhaveaccess",
           "host": [
             "{{serverURL}}"
           ],
@@ -57,7 +57,7 @@
             "v1",
             "portlet",
             "permissions",
-            "permissions"
+            "_doesuserhaveaccess"
           ]
         },
         "description": "Returns boolean indicating if a user has permissions to access a portlet given the portlet id"
