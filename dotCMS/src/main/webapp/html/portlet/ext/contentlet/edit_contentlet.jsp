@@ -182,7 +182,7 @@
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
             && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
     
-    boolean canSeePermissions = layoutAPI.doesUserHaveAccessToPortlet("permissions", user)
+    boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
             && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user);
 
@@ -530,7 +530,7 @@
 
 
     <!-- Permissions -->
-    <% if (canSeePermissions) { %>
+    <% if (hasViewPermision) { %>
 		<div id="permissionsTab" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab()">
 			<div id="permissionsTabDiv">
                 <%-- This loads the edit_permission_tab_inc_wrapper.jsp passing in the contentletId as a request parameter --%>
