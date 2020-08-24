@@ -833,6 +833,91 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_PageContainsRenderField",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bde8aed5-7a1b-46b6-b091-a5f74a4a43be",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var render = jsonData.data.page.render;",
+									"",
+									"    // mode",
+									"    pm.expect(render, 'FAILED:[rendered]').equal(\"<!doctype html>\\n<html lang=\\\"en\\\">\\n\\n    <head>\\n\\n        \\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, height=device-height, initial-scale=1.0, maximum-scale=5.0, user-scalable=1\\\">\\n<meta http-equiv=\\\"X-UA-Compatible\\\" content=\\\"IE=edge\\\">\\n<meta charset=\\\"utf-8\\\">\\n<link rel=\\\"icon\\\" href=\\\"/application/themes/travel/images/favicon.ico\\\" type=\\\"image/x-icon\\\">\\n<title>Costa Rica Rain Forest</title>\\n<meta name=\\\"description\\\" content=\\\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\\\">\\n<meta name=\\\"language\\\" content=\\\"english\\\">\\n<meta name=\\\"author\\\" content=\\\"dotCMS\\\">\\n<meta name=\\\"copyright\\\" content=\\\"dotCMS LLC, Miami Florida, US\\\">\\n<meta property=\\\"og:title\\\" content=\\\"Costa Rica Rain Forest\\\">\\n<meta property=\\\"og:url\\\" content=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n<meta property=\\\"og:image\\\" content=\\\"/images/default.png\\\">\\n<link rel=\\\"canonical\\\" href=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n\\n<!-- CSS -->\\n<link rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"//fonts.googleapis.com/css?family=Oswald:500,600,700%7CRoboto:300,300i,700%7CCondiment%7CDella+Respira\\\">\\n<link rel=\\\"stylesheet\\\" href=\\\"/application/themes/travel/css/styles.dotsass\\\">\\n\\n</head>\\n\\n<body id=\\\"costa-rica-rain-forest\\\" >\\n\\n            <header>\\n\\n  <!-- RD Navbar-->\\n  <div class=\\\"rd-navbar-wrap\\\">\\n    <nav class=\\\"rd-navbar rd-navbar-static rd-navbar-classic\\\" data-layout=\\\"rd-navbar-fixed\\\" data-sm-layout=\\\"rd-navbar-fixed\\\" data-md-layout=\\\"rd-navbar-fixed\\\" data-md-device-layout=\\\"rd-navbar-fixed\\\" data-lg-layout=\\\"rd-navbar-static\\\" data-lg-device-layout=\\\"rd-navbar-static\\\" data-xl-layout=\\\"rd-navbar-static\\\" data-xl-device-layout=\\\"rd-navbar-static\\\" data-lg-stick-up-offset=\\\"78px\\\" data-xl-stick-up-offset=\\\"98px\\\" data-xxl-stick-up-offset=\\\"118px\\\" data-lg-stick-up=\\\"true\\\" data-xl-stick-up=\\\"true\\\" data-xxl-stick-up=\\\"true\\\">\\n      <div class=\\\"rd-navbar-collapse-toggle rd-navbar-fixed-element-1\\\" data-rd-navbar-toggle=\\\".rd-navbar-collapse\\\"><span></span></div>\\n      \\n      <div class=\\\"rd-navbar-aside-outer rd-navbar-collapse bg-default\\\">\\n        <div class=\\\"rd-navbar-aside\\\">\\n\\n          <!-- CONTACT INFO -->\\n          <ul class=\\\"list-inline list-inline-xxl\\\">\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-map-marker\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"#\\\">3059 Grand Avenue, Suite 300 Miami, FL, 33133 USA</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-cellphone-android\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"tel:+1-888-404-6185\\\">+1-888-404-6185</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-email-outline\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"mailto: info@dotcms.com\\\">info@dotcms.com</a></div>\\n              </div>\\n            </li>\\n          </ul>\\n\\n          <div>\\n            <!-- CART -->\\n            <a class=\\\"basket\\\" href=\\\"/store/cart\\\"><span class=\\\"icon mdi mdi-cart-outline\\\"></span><span class=\\\"basket-count\\\">3</span></a>\\n\\n            <!-- My Account -->\\n            <a href=\\\"/login/profile\\\" class=\\\"ml-3\\\">\\n                                <img src=\\\"/html/images/persona/default-persona.png\\\"  style=\\\"width:42px;\\\" alt=\\\"Default Persona\\\" class=\\\"img-circles border\\\">\\n                          </a>\\n          </div>\\n        </div>\\n      </div>\\n\\n      <div class=\\\"rd-navbar-main-outer\\\">\\n        <div class=\\\"rd-navbar-main\\\">\\n\\n          <div class=\\\"rd-navbar-panel\\\">\\n            <button class=\\\"rd-navbar-toggle\\\" data-rd-navbar-toggle=\\\".rd-navbar-nav-wrap\\\" aria-label=\\\"Toggle Menu\\\"><span></span></button>\\n            <div class=\\\"rd-navbar-brand\\\"><a class=\\\"brand\\\" href=\\\"/\\\" aria-label=\\\"TravelLux Home\\\"><img class=\\\"brand-logo-dark\\\" src=\\\"/application/themes/travel/images/logo.png\\\" width=\\\"195\\\" height=\\\"40\\\" alt=\\\"TravelLux Home\\\"></a></div>\\n          </div>\\n\\n          <!-- NAV BAR -->\\n\\n          <div class=\\\"rd-navbar-main-element\\\">\\n\\n            <div class=\\\"rd-navbar-nav-wrap\\\">\\n            \\n                        \\n              <ul class=\\\"rd-navbar-nav\\\">\\n                <li class=\\\"rd-nav-item  \\\"><a class=\\\"rd-nav-link\\\" href='/'>Home</a></li>\\n                                                                      <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/blog' target='_self'>Travel Blog</a></li>\\n                                                                        <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/destinations' target='_self'>Destinations</a></li>\\n                                                </ul>\\n            </div>\\n\\n            <!-- RD Navbar Search-->\\n            <div class=\\\"rd-navbar-search\\\">\\n              <button class=\\\"rd-navbar-search-toggle rd-navbar-fixed-element-2\\\" data-rd-navbar-toggle=\\\".rd-navbar-search\\\" aria-label=\\\"Search Box Toggle\\\"><span></span></button>\\n              <form class=\\\"rd-search\\\" action=\\\"/search/\\\" method=\\\"GET\\\">\\n                <div class=\\\"form-wrap\\\">\\n                  <label class=\\\"form-label search-label\\\" for=\\\"site-search\\\">Search...</label>\\n                  <input class=\\\"rd-navbar-search-form-input form-input site-search\\\" type=\\\"text\\\" name=\\\"q\\\" autocomplete=\\\"off\\\">\\n                </div>\\n                <button class=\\\"rd-search-form-submit fa-search\\\" type=\\\"submit\\\" aria-label=\\\"Submit\\\"></button>\\n              </form>\\n            </div>\\n            \\n          </div>\\n        </div>\\n      </div>\\n    </nav>\\n  </div>\\n\\n</header>\\n    \\n    <div class=\\\"body-wrapper\\\">\\n    \\n            \\n            \\n                \\n                        \\n    \\n                                                            \\n                                                \\n                                                                                                                        \\n                        <section id=\\\"section-1\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n<!-- Container Code: /application/containers/defualt/banner.vtl -->\\n\\n    <div class=\\\"banner bg-image-full bg-overlay-30 context-dark\\\" style=\\\"background-image: url('/dA/d4ed1990-b151-42ca-9bca-0725b07260de/image/1200w/50q/scenic-view-of-the-mountains-733092.jpg');\\\">\\n        <div class=\\\"container\\\">\\n            <div class=\\\"row justify-content-lg-center\\\">\\n                <div class=\\\"col-lg-9 text-center\\\">\\n                    <p class=\\\"banner-title\\\">Costa Rica</p>\\n                    <h2 class=\\\"text-decoration-lines-2\\\">\\n                        <span>\\n                            Sanctuary For The Senses\\n                            <span class=\\\"text-decoration-line text-decoration-line-left\\\"></span>\\n                            <span class=\\\"text-decoration-line text-decoration-line-right\\\"></span>\\n                        </span>\\n                    </h2>\\n                    \\n                                    </div>\\n            </div>\\n        </div>\\n    </div>\\n\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-2\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<h2>Custom Packages</h2>\\n<p>Are you looking for the ultimate in Costa Rica vacations? Our team oat TravelLux will design your custom vacation package. We do not sell cookie-cutter trips. Instead, we take the time to get to know your unique &ldquo;travel personality&rdquo;. Then we match you with a hand-picked selection of housing, tours &amp; transportation options. The result is a tailor-made Costa Rica journey that will fit you like a glove.</p>\\n<p>We email you a detailed travel itinerary filled with info, pictures and videos. Your TravelLux agent will work with you to adjust your vacation package until you are 100% satisfied. This makes for a seamless, worry-free experience that allows you to relax &amp; enjoy the voyage.</p>\\n<p><a href=\\\"/contact-us/\\\" class=\\\"btn btn-primary\\\">Book Now</a></p>\\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/2400w/50q/ski_holidays.png 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/600w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433//1200w/50q/ski_holidays.png 2x\\\">\\n            <img src=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/480w/50q/ski_holidays.png\\\" alt=\\\"With over 400\\\" of snow fall a year we have the longest season in the Continental US\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Over 400\\\" of snow a year</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">With over 400\\\" of snow fall a year we have the longest season in the Continental US</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/1200w/50q/ski_holidays.png\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<!-- Container Code: /application/containers/video.vtl -->\\n\\n<a class=\\\"video-cover bg-overlay-30 mb-5\\\" data-lightbox=\\\"iframe\\\" href=\\\"https://www.youtube.com/watch?v=1qw4ayRc1t8\\\">\\n  <div class=\\\"video-img\\\" style=\\\"background-image: url(https://i.ytimg.com/vi/1qw4ayRc1t8/hqdefault.jpg);\\\"></div>\\n  <span class=\\\"icon mdi mdi-play video-cover-icon\\\"></span>\\n</a><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-3\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n\\r\\n<h1 class=\\\"text-center\\\">Featured Activities</h1>\\n<div class=\\\"row justify-content-center\\\">\\n            <div class=\\\"col-lg-3 col-md-4 col-sm-6 col-xs-6 mb-3\\\">\\n            <a class=\\\"box-info\\\" href=\\\"/activities/hiking\\\">\\n                <img class=\\\"box-info-img\\\" src=\\\"/dA/6bbead53-3908-471c-966d-9e76c5dd9eba/image/270w/50q/hiking.jpg\\\" alt=\\\"Hiking\\\" width=\\\"270\\\" height=\\\"270\\\">\\n                <div class=\\\"box-info-body\\\">\\n                    <h4 class=\\\"box-info-title\\\">\\n                        Hiking\\n                    </h4>\\n                    <p class=\\\"box-info-text\\\">Guided hiking tours where our guides use their training as naturalists to point out animals, unique plants and nature ...</p>\\n                </div>\\n                                    </a>\\n        </div>\\n            <div class=\\\"col-lg-3 col-md-4 col-sm-6 col-xs-6 mb-3\\\">\\n            <a class=\\\"box-info\\\" href=\\\"/activities/zip-lining\\\">\\n                <img class=\\\"box-info-img\\\" src=\\\"/dA/50757fb4-75df-4e2c-8335-35d36bdb944b/image/270w/50q/zip-line.jpg\\\" alt=\\\"Zip-Lining\\\" width=\\\"270\\\" height=\\\"270\\\">\\n                <div class=\\\"box-info-body\\\">\\n                    <h4 class=\\\"box-info-title\\\">\\n                        Zip-Lining\\n                    </h4>\\n                    <p class=\\\"box-info-text\\\">Ever wondered what it is like to fly through the forest canopy? Zip-lining ais the best way to explore the forest canopy...</p>\\n                </div>\\n                                    </a>\\n        </div>\\n            <div class=\\\"col-lg-3 col-md-4 col-sm-6 col-xs-6 mb-3\\\">\\n            <a class=\\\"box-info\\\" href=\\\"/activities/white-water-rafting\\\">\\n                <img class=\\\"box-info-img\\\" src=\\\"/dA/0e9340f8-08d2-46e3-ae25-be0137c575d0/image/270w/50q/white-water-raft-2.jpg\\\" alt=\\\"White Water Rafting\\\" width=\\\"270\\\" height=\\\"270\\\">\\n                <div class=\\\"box-info-body\\\">\\n                    <h4 class=\\\"box-info-title\\\">\\n                        White Water Rafting\\n                    </h4>\\n                    <p class=\\\"box-info-text\\\">For those looking for a thrill, we offer some of the worlds bets white water rafting. Class II - IV rivers.</p>\\n                </div>\\n                                    </a>\\n        </div>\\n    </div>\\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-4\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-10 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<h2>Costa Rica Family Adventure</h2>\\n<p>Tropical rainforests, zip lines, monkey sightings and waterfall swims make for the most unforgettable vacation&mdash;and photos.</p>\\n<p>Abundance abounds in Costa Rica: beautiful beaches, friendly people and endless adventures to embark upon. We dabble in it all with a family-friendly itinerary that will get everyone&rsquo;s heart pumping. Jump right in to adventure life in Costa Rica at Arenal Volcano where we zip along the treetops, get a glimpse of rural Tico life on a local farm, rappel down a canyon waterfall that lies deep in the tropical rainforest, and soak in thermal hot springs.</p>\\n<p>Journey south, crossing Lake Arenal by boat, and dive deep into the Monteverde cloud forest. Your hotel is located in the reserve, home to eight different biological zones and thousands of plants and animals. Keep your eyes peeled for monkeys and quetzals during the day and embark on night walks with your guide to experience a whole different world after dark. Spend a unique day exploring the forest giants from the ground up&mdash;climbing up specially outfitted trees and then exploring the forest on foot with your naturalist guide.</p><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-5\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<h3>Adventure travel done right</h3>\\n<p>Wherever you want to go, whatever you want to get into, we&rsquo;ve got a trip that&rsquo;ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that&rsquo;s more your thing).<strong><br /></strong></p><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<h3>Experience the world with us</h3>\\n<p>We practice Leave No Trace principles on all our trips and work with local people and businesses as often as possible.Our expert guides don&rsquo;t just know these places&mdash;they call them home. Their local knowledge unveils worlds few get to see. Hike, bike, swim and paddle with like-minded travelers who share your passion for adventure and the outdoors.</p><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-6\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-5  \\\"><!-- Column -->\\n                                                                                \\n\\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/2400w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/600w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca//1200w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <img src=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/480w/50q/waterfall-costa-rica.jpg\\\" alt=\\\"From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Fall into Costa Rica</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/1200w/50q/waterfall-costa-rica.jpg\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                            \\n                                                    </div><!-- /body-wrapper -->\\n\\n            <!-- Page Footer-->\\n\\n\\n\\n\\n<footer class=\\\"footer-classic bg-footer bg-overlay-80 context-dark\\\" style=\\\"background-image: url('/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/WebP/1200w/footer-image.jpg')\\\" >\\n  <div class=\\\"section-xxl\\\">\\n    <div class=\\\"container\\\">\\n      <div class=\\\"row row-50 justify-content-center\\\">\\n        <div class=\\\"col-lg-4\\\">\\n          <h2>About us</h2>\\n          <p class=\\\"max-width-xl-90 text-gray-400\\\">We are TravelLux, a community of dedicated travel experts, journalists, and bloggers. Our aim is to offer you the best insight on where to go for your travel as well as to give you amazing opportunities with free benefits and bonuses for registered clients.</p>\\n          <a class=\\\"footer-brand\\\" href=\\\"./\\\"><img src=\\\"/application/themes/travel/images/logo-inverse.png\\\" alt=\\\"TravelLux Home\\\" height=\\\"40\\\"/></a>\\n        </div>\\n\\n\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Latest blog posts</h2>\\n          \\n          <!-- Latest Blogs -->\\n                    \\n        </div>\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Get in touch</h2>\\n          <form class=\\\"rd-form form-sm rd-mailform\\\" data-form-output=\\\"form-output-global\\\" data-form-type=\\\"contact\\\" method=\\\"post\\\" action=\\\"\\\">\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-name\\\" type=\\\"text\\\" name=\\\"name\\\" data-constraints=\\\"@Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-name\\\">Name</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-email\\\" type=\\\"email\\\" name=\\\"email\\\" data-constraints=\\\"@Email @Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-email\\\">E-mail</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-message\\\">Message</label>\\n              <textarea class=\\\"form-input\\\" id=\\\"footer-form-message\\\" name=\\\"message\\\" data-constraints=\\\"@Required\\\"></textarea>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <button class=\\\"button button-md button-primary\\\" type=\\\"submit\\\">Send</button>\\n            </div>\\n          </form>\\n        </div>\\n      </div>\\n    </div>\\n  </div>\\n  <div class=\\\"container\\\">\\n    <!-- Rights-->\\n    <p class=\\\"rights mb-0\\\"><span>&copy;2012 - 2020 All Rights Reserved</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Terms of Use</a> <span>and</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Privacy Policy</a></p>\\n  </div>\\n</footer>\\n\\n<!-- Javascript-->\\n<script src=\\\"/application/themes/travel/js/core.min.js\\\"></script>\\n<script src=\\\"/application/themes/travel/js/script.js\\\"></script>\\n\\n    \\n</body>\\n</html>\");",
+									"",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     render\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -3214,87 +3299,87 @@
 	],
 	"variable": [
 		{
-			"id": "d4011b81-72c2-4299-b79f-098765c2ecc7",
+			"id": "1ec68154-4d68-4b1e-97c2-593e884fd859",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "976268d7-c4bd-4428-a3da-cf09d1f18561",
+			"id": "4f865bac-a411-430c-be24-93dc06bdf610",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "c988d98b-8e04-4038-ba5d-c0cb90cc4ab6",
+			"id": "af60b26d-342b-4b06-a6c2-012ddedc5d1c",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "92648abd-680b-4aa4-b898-8ba4d5cdc1f9",
+			"id": "5a56f979-6e00-4750-9a5d-aebabbaf0b78",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "1cf46c63-8279-47f4-b4a7-4a4077e3d3a6",
+			"id": "6ded2f00-d62e-41bd-9dc1-fba13a7614d7",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "22acb5b8-1576-43e3-a52e-45eb8849c2f1",
+			"id": "98ed9218-95c7-4874-a4d1-ef4cc77281a0",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "aff05297-ef42-4c64-97d8-4cd9472d3ad0",
+			"id": "e000a9da-23ff-4a8f-a0ab-d500fd10cbc8",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "c1037b0d-5432-4e3a-8871-984860ed0dd6",
+			"id": "5d25c081-549d-4a1f-98f2-13ecb1a67166",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "a47cd244-05ae-4c67-a6fe-b90ce73e565e",
+			"id": "f14bffda-22fc-495e-a57f-7fa1b29f103a",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "637597da-75a6-4ab9-840e-b64671a78d7f",
+			"id": "f726e748-adc0-4b17-be31-dee7626e0386",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "d95140b4-84fb-4a71-bf11-ba6c4e921e25",
+			"id": "7732aa64-ff5c-4b16-b6ed-43261dc09941",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "1f7e27f4-01b0-42a0-9435-410e9ba35404",
+			"id": "1a65ebb3-22b7-4522-b833-0e35d5158be7",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "b47b6cad-9295-4f4d-b5ed-890718815836",
+			"id": "6c2a596f-1895-4bc0-83d4-6c6576b2f657",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "5431e2e2-963b-4a1f-a6f1-1bccc004619a",
+			"id": "5ae9d1b1-cf38-4b78-b00e-274dda39236d",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "eec78fab-2efb-4db3-bb6b-fb54a4b03788",
+			"id": "1cb8cad1-fb19-4673-b0d0-915e80c92138",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "a9580f33-713e-4d3e-a75f-fb2b861ec54b",
+			"id": "8d03f5ea-b0dd-4747-803b-158fd5cab14f",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "58127104-1282-4121-8f89-78068e316070",
+			"id": "79397d9c-ba42-4a09-8a51-7b38142bafa2",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
