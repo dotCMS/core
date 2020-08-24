@@ -98,6 +98,235 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithPersonas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "314ca4fc-bb50-4e0f-9677-05899558558b",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"personas.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/personas.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports personas"
+					},
+					"response": []
+				},
+				{
+					"name": "RenderDestinationsCostaRicaPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "267edb03-3cc8-492e-a452-df2b90115cb3",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"rendered\");",
+									"});",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"uuid\");",
+									"});",
+									"",
+									"pm.test(\"'page' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData[\"entity\"][\"page\"];",
+									"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
+									"    pm.expect(page[\"archived\"], 'FAILED:[archived]').equal(false);",
+									"    pm.expect(page[\"baseType\"]).equal(\"HTMLPAGE\");",
+									"    pm.expect(page[\"cachettl\"]).equal(\"0\");",
+									"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
+									"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
+									"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+									"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
+									"    pm.expect(page[\"description\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"extension\"]).equal(\"page\");",
+									"    pm.expect(page[\"folder\"]).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
+									"    pm.expect(page[\"friendlyName\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"hasLiveVersion\"], 'FAILED:[hasLiveVersion]').equal(true);",
+									"    pm.expect(page[\"hasTitleImage\"], 'FAILED:[hasTitleImage]').equal(true);",
+									"    pm.expect(page[\"host\"]).equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(page[\"hostName\"]).equal(\"demo.dotcms.com\");",
+									"    ////",
+									"    pm.expect(page[\"httpsRequired\"], 'FAILED:[httpsRequired]').equal(false);",
+									"    pm.expect(page[\"identifier\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0\");",
+									"    pm.expect(page[\"image\"]).equal(\"/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/costa-rica-tree-frog.jpg\");",
+									"    pm.expect(page[\"imageContentAsset\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0/image\");",
+									"    pm.expect(page[\"inode\"]).not.equal(null)",
+									"    pm.expect(page[\"isContentlet\"], 'FAILED:[isContentlet]').equal(true);",
+									"    pm.expect(page[\"languageId\"]).equal(1);",
+									"    pm.expect(page[\"live\"], 'FAILED:[live]').equal(true);",
+									"    pm.expect(page[\"liveInode\"]).not.equal(null)",
+									"    pm.expect(page[\"locked\"], 'FAILED:[locked]').equal(false);",
+									"    pm.expect(page[\"mimeType\"]).equal(\"application/dotpage\");",
+									"    pm.expect(page[\"modDate\"]).not.equal(null)",
+									"    ///",
+									"    pm.expect(page[\"modUser\"]).equal(\"system\");",
+									"    pm.expect(page[\"modUserName\"]).equal(\"system user system user\");",
+									"    pm.expect(page[\"name\"]).equal(\"costa-rica\");",
+									"    pm.expect(page[\"owner\"]).equal(\"dotcms.org.1\");",
+									"    pm.expect(page[\"pageURI\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"pageUrl\"]).equal(\"costa-rica\");",
+									"    pm.expect(page[\"path\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"publishDate\"]).not.equal(null)",
+									"    pm.expect(page[\"seoTitle\"]).equal(\"Costa Rica Travel Destinations\");",
+									"    pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
+									"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
+									"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
+									"    //",
+									"    pm.expect(page[\"shortyWorking\"]).not.equal(null)",
+									"    pm.expect(page[\"sortOrder\"]).equal(0);",
+									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
+									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
+									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
+									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"titleImage\"]).equal(\"image\");",
+									"    pm.expect(page[\"type\"]).equal(\"htmlpage\");",
+									"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
+									"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/destinations/costa-rica?com.dotmarketing.persona.id=792c7c9f-6b6f-427b-80ff-1643376c9999",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"destinations",
+								"costa-rica"
+							],
+							"query": [
+								{
+									"key": "com.dotmarketing.persona.id",
+									"value": "792c7c9f-6b6f-427b-80ff-1643376c9999"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "GivenRequestByURI_ShouldReturnExpectedPage",
 					"event": [
 						{
@@ -175,6 +404,11 @@
 							}
 						}
 					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
 					"request": {
 						"auth": {
 							"type": "basic",
@@ -192,7 +426,13 @@
 							]
 						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+								"type": "text"
+							}
+						],
 						"body": {
 							"mode": "graphql",
 							"graphql": {
@@ -271,6 +511,11 @@
 							}
 						}
 					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
 					"request": {
 						"auth": {
 							"type": "basic",
@@ -288,7 +533,13 @@
 							]
 						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+								"type": "text"
+							}
+						],
 						"body": {
 							"mode": "graphql",
 							"graphql": {
@@ -368,6 +619,11 @@
 							}
 						}
 					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
 					"request": {
 						"auth": {
 							"type": "basic",
@@ -385,11 +641,182 @@
 							]
 						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+								"type": "text"
+							}
+						],
 						"body": {
 							"mode": "graphql",
 							"graphql": {
 								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    template {\n      iDate\n      type\n      owner {\n        firstName\n      }\n      inode\n      identifier\n      source\n      title\n      friendlyName\n      modDate\n      modUser {\n        firstName\n        lastName\n        userId\n      }\n      sortOrder\n      showOnMenu\n      image\n      drawed\n      drawedBody\n      theme\n      anonymous\n      template\n      versionId\n      versionType\n      deleted\n      working\n      permissionId\n      name\n      live\n      archived\n      locked\n      permissionType\n      categoryId\n      new\n      idate\n      canEdit\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ViewAsFieldContainsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9d090461-f727-4f42-b182-729576504571",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'ViewAs' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var viewas = jsonData.data.page.viewAs;",
+									"    var visitor = viewas.visitor;",
+									"    var language = viewas.language;",
+									"    var persona = viewas.persona;",
+									"",
+									"    // mode",
+									"    pm.expect(viewas[\"mode\"], 'FAILED:[mode]').equal(\"LIVE\");",
+									"    ",
+									"    // language",
+									"    pm.expect(language[\"id\"], 'FAILED:[language.id]').equal(1);",
+									"    pm.expect(language[\"country\"], 'FAILED:[language.country]').equal(\"United States\");",
+									"    pm.expect(language[\"countryCode\"], 'FAILED:[language.countryCode]').equal(\"US\");",
+									"    pm.expect(language[\"language\"], 'FAILED:[language.language]').equal(\"English\");",
+									"    pm.expect(language[\"languageCode\"], 'FAILED:[language.languageCode]').equal(\"en\");",
+									"",
+									"    // persona",
+									"    pm.expect(persona[\"name\"], 'FAILED:[persona.name]').equal(\"Winter Enthusiast\");",
+									"    pm.expect(persona[\"description\"], 'FAILED:[persona.description]').equal(\"People who are passionate about winter sports.\");",
+									"    pm.expect(persona[\"photo\"].idPath, 'FAILED:[persona.photo.idPath]').equal(\"/dA/792c7c9f6b/photo/mountain-persona.jpg?language_id=1\");",
+									"    pm.expect(persona[\"keyTag\"], 'FAILED:[persona.keyTag]').equal(\"WinterEnthusiast\");",
+									"    let expectedPersonTags = [",
+									"                        \"skiing\",",
+									"                        \"snowboarding\",",
+									"                        \"snowmobile\"",
+									"                    ];",
+									"    pm.expect(checker(expectedPersonTags, persona[\"tags\"]), 'FAILED:[persona.tags]').equal(true);",
+									"",
+									"    // visitor ",
+									"    pm.expect(visitor[\"device\"], 'FAILED:[visitor.device]').equal(\"COMPUTER\");",
+									"    pm.expect(visitor[\"isNew\"], 'FAILED:[visitor.isNew]').equal(true);",
+									"    pm.expect(visitor[\"device\"], 'FAILED:[visitor.device]').equal(\"COMPUTER\");",
+									"",
+									"    var visitorPersona = visitor.persona;",
+									"    // visitor's persona",
+									"    pm.expect(visitorPersona[\"name\"], 'FAILED:[visitorPersona.name]').equal(\"Winter Enthusiast\");",
+									"    pm.expect(visitorPersona[\"description\"], 'FAILED:[visitorPersona.description]').equal(\"People who are passionate about winter sports.\");",
+									"    pm.expect(visitorPersona[\"photo\"].idPath, 'FAILED:[visitorPersona.photo.idPath]').equal(\"/dA/792c7c9f6b/photo/mountain-persona.jpg?language_id=1\");",
+									"    pm.expect(visitorPersona[\"keyTag\"], 'FAILED:[visitorPersona.keyTag]').equal(\"WinterEnthusiast\");",
+									"",
+									"    let expectedVisitorPersonaTags = [",
+									"                        \"skiing\",",
+									"                        \"snowboarding\",",
+									"                        \"snowmobile\"",
+									"                    ];",
+									"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitorPersona.tags]').equal(true);",
+									"",
+									"    // visitor's tags",
+									"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
+									"                        {",
+									"                            \"tag\": \"snowmobile\",",
+									"                            \"count\": 26",
+									"                        },",
+									"                        {",
+									"                            \"tag\": \"skiing\",",
+									"                            \"count\": 26",
+									"                        },",
+									"                        {",
+									"                            \"tag\": \"snowboarding\",",
+									"                            \"count\": 26",
+									"                        },",
+									"                        {",
+									"                            \"tag\": \"diving\",",
+									"                            \"count\": 1",
+									"                        }",
+									"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
+									"",
+									"    var userAgent = visitor.userAgent;                ",
+									"    pm.expect(userAgent[\"operatingSystem\"], 'FAILED:[userAgent.operatingSystem]').equal(\"MAC_OS_X\");",
+									"    pm.expect(userAgent[\"browser\"], 'FAILED:[userAgent.browser]').equal(\"CHROME8\");",
+									"    pm.expect(userAgent[\"id\"], 'FAILED:[userAgent.id]').equal(50990853);",
+									"",
+									"    var browserVersion = userAgent.browserVersion;",
+									"    pm.expect(browserVersion[\"version\"], 'FAILED:[browserVersion.version]').equal(\"84.0.4147.125\");",
+									"    pm.expect(browserVersion[\"majorVersion\"], 'FAILED:[browserVersion.majorVersion]').equal(\"84\");",
+									"    pm.expect(browserVersion[\"minorVersion\"], 'FAILED:[browserVersion.minorVersion]').equal(\"0\");",
+									"",
+									"    pm.expect(JSON.stringify(visitor[\"personas\"])==JSON.stringify([",
+									"                        {",
+									"                            \"persona\": \"WinterEnthusiast\",",
+									"                            \"count\": 1",
+									"                        }",
+									"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
+									"",
+									"",
+									"",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     viewAs {\n      persona {\n        name\n        description\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name\n          description\n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -2787,87 +3214,87 @@
 	],
 	"variable": [
 		{
-			"id": "82dbe6dd-566a-4ad0-aed5-4bb4d76da0b7",
+			"id": "d4011b81-72c2-4299-b79f-098765c2ecc7",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "1b40d6fc-69ea-4139-ab11-e83c1eb37817",
+			"id": "976268d7-c4bd-4428-a3da-cf09d1f18561",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "1b2c1ee2-112f-463b-b8d7-0cdcf3306be2",
+			"id": "c988d98b-8e04-4038-ba5d-c0cb90cc4ab6",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "41328a09-1352-4e6b-9a17-80834e772d30",
+			"id": "92648abd-680b-4aa4-b898-8ba4d5cdc1f9",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "c44bdb0f-cd17-4170-ac4f-54d15e11f27e",
+			"id": "1cf46c63-8279-47f4-b4a7-4a4077e3d3a6",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "22d54a69-88a7-47b8-9511-279be03e2c60",
+			"id": "22acb5b8-1576-43e3-a52e-45eb8849c2f1",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "91b5acda-0ff1-4829-9650-1d54df816825",
+			"id": "aff05297-ef42-4c64-97d8-4cd9472d3ad0",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "dd33574a-6d81-4f30-bf43-318019339bfb",
+			"id": "c1037b0d-5432-4e3a-8871-984860ed0dd6",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "a99879e5-832b-489f-a38f-8cc4c5f59a05",
+			"id": "a47cd244-05ae-4c67-a6fe-b90ce73e565e",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "b0bb557a-fe7f-4cbc-a393-dfa81138bf8f",
+			"id": "637597da-75a6-4ab9-840e-b64671a78d7f",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "d69737f9-fea7-4c5f-9e0b-d7cc0dd156d5",
+			"id": "d95140b4-84fb-4a71-bf11-ba6c4e921e25",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "2ec93662-f209-45fd-8bbe-3600e8844874",
+			"id": "1f7e27f4-01b0-42a0-9435-410e9ba35404",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "122210d1-4740-4596-9f09-3defcfda09e2",
+			"id": "b47b6cad-9295-4f4d-b5ed-890718815836",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "5c1a0ae4-7758-4cb1-b9f5-caea813b4ef1",
+			"id": "5431e2e2-963b-4a1f-a6f1-1bccc004619a",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "d3416436-07a5-4b9e-8cda-9d68c55fbf58",
+			"id": "eec78fab-2efb-4db3-bb6b-fb54a4b03788",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "4ea7030a-4e42-4420-9f37-25040c803842",
+			"id": "a9580f33-713e-4d3e-a75f-fb2b861ec54b",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "1254d682-84b4-4925-b860-91b9ae93e191",
+			"id": "58127104-1282-4121-8f89-78068e316070",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
