@@ -918,6 +918,93 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_PageContainsUrlMappedContentField",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3946c1d0-2052-473e-9a2c-07661f8f1606",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var urlmappedContent = jsonData.data.page.urlmappedContent;",
+									"",
+									"    // mode",
+									"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Ecotourism in Costa Rica\");",
+									"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"57ee7cd3-66fc-4f01-9b7e-11e53553c220\");",
+									"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/blog/post/ecotourism-in-costa-rica\");",
+									"",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/blog/post/ecotourism-in-costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     urlmappedContent {\n        title\n        identifier\n        urlMap\n        contentType\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -3299,87 +3386,87 @@
 	],
 	"variable": [
 		{
-			"id": "0d813943-1262-45ff-8633-79e9389586b0",
+			"id": "a8ddc414-4f50-4283-8e46-e7c3fc7785e8",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "28d05b34-03c2-4ad1-bf2d-29e7142260b5",
+			"id": "2ab91afe-b304-4817-b6a5-865bc34d1fcc",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "c972fb41-2b98-4e6c-b62e-1ea91eb82ede",
+			"id": "13b0bd05-5f74-448b-96c6-24a0af765c04",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "74ab1d38-f1b3-4421-962e-0b1d6838f930",
+			"id": "d7bb25ea-22eb-469a-9074-b883fe16d5d5",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "4a21557f-b0a5-44a6-bc44-3055e85fb77b",
+			"id": "7a848121-6c00-4bda-87ba-7832b2ca9f49",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "13dcc77c-7d3e-46f5-8933-3b9aa862693e",
+			"id": "3c2b955b-f5d3-49c0-be0b-484c90d0433a",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "2a228302-c1a1-4bdb-9b2d-dd4785d786a2",
+			"id": "34927a5b-b9e6-412e-a05c-9f89e91867ee",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "a3f2517b-53a8-4961-acdf-d842bff1c4fa",
+			"id": "b1ef6fed-62e1-4f5f-af3a-4e5f4cbe355d",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "443923d7-30ce-44e2-8fcd-cd176f89bcdd",
+			"id": "cda3cbf7-f1b3-4313-8d08-ac31c12a7279",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "036f5015-5467-4fab-9532-ef2e083e8db5",
+			"id": "0fb26fde-e958-4f6d-b01c-1708775e471b",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "035a10f6-485b-4fba-9c8a-8e9f44ba1ef5",
+			"id": "db65b590-5036-4472-9677-93c0aa094706",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "2a78d192-ec93-4a9d-88c2-07ef4dd0cd69",
+			"id": "dadf81a8-23d8-441d-a37a-5ecc31157ddb",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "b4c95cb1-4db0-4a19-830e-bb504b5d2d8a",
+			"id": "ba359706-8b57-4bf8-a942-f14d1e2dee1d",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "375d90d7-e0ba-483f-985a-45d0b4eda502",
+			"id": "e00a2247-d295-4dba-9290-d4b494c3b970",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "b7868f7c-5606-4cc6-a6b3-d8f4a709132e",
+			"id": "e5703310-de12-414f-865d-c70f3c6a46a6",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "897876a8-a717-4140-8e2c-d74da8cbff1a",
+			"id": "2a550e4d-7842-4757-918b-28efc21715d2",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "bb90f451-fbf2-4b3c-9d59-dfe988ada17b",
+			"id": "4a60798a-98bf-497f-a394-62a7914c2fd4",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

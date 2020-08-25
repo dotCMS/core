@@ -1,5 +1,6 @@
 package com.dotmarketing.cms.urlmap;
 
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -246,7 +247,8 @@ public class URLMapAPIImpl implements URLMapAPI {
             checkContentPermission(context, contentlet);
         }
 
-        return contentlet;
+       return new DotTransformerBuilder().
+               defaultOptions().content(contentlet).build().hydrate().get(0);
     }
 
     private void checkContentPermission(final UrlMapContext context, final Contentlet contentlet)
