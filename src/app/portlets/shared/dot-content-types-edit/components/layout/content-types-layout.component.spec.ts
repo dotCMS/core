@@ -1,9 +1,8 @@
-import { of as observableOf, Observable } from 'rxjs';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { of as observableOf, Observable, of } from 'rxjs';
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable, Output, EventEmitter } from '@angular/core';
-import { MenuItem, TabViewModule } from 'primeng/primeng';
+import { MenuItem, TabViewModule, SplitButtonModule } from 'primeng/primeng';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
@@ -17,6 +16,12 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
+import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { Http, ConnectionBackend, RequestOptions, BaseRequestOptions } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -93,7 +98,7 @@ describe('ContentTypesLayoutComponent', () => {
             'contenttypes.content.row': 'Row'
         });
 
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [
                 ContentTypesLayoutComponent,
                 TestContentTypeFieldsListComponent,
@@ -108,16 +113,24 @@ describe('ContentTypesLayoutComponent', () => {
                 DotSecondaryToolbarModule,
                 RouterTestingModule,
                 DotApiLinkModule,
-                DotCopyButtonModule
+                DotCopyButtonModule,
+                DotPipesModule,
+                SplitButtonModule
             ],
             providers: [
+                { provide: ConnectionBackend, useClass: MockBackend },
+                { provide: RequestOptions, useClass: BaseRequestOptions },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotMenuService, useClass: MockDotMenuService },
-                { provide: FieldDragDropService, useClass: FieldDragDropServiceMock }
+                { provide: FieldDragDropService, useClass: FieldDragDropServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotCurrentUserService,
+                DotEventsService,
+                Http
             ]
         });
 
-        fixture = DOTTestBed.createComponent(TestHostComponent);
+        fixture = TestBed.createComponent(TestHostComponent);
         de = fixture.debugElement.query(By.css('dot-content-type-layout'));
     });
 
@@ -130,6 +143,11 @@ describe('ContentTypesLayoutComponent', () => {
     it('should have just one tab', () => {
         const pTabPanels = fixture.debugElement.queryAll(By.css('p-tabPanel'));
         expect(pTabPanels.length).toBe(1);
+    });
+
+    it('should not have a Permissions tab', () => {
+        this.pTabPanel = de.query(By.css('.content-type__permissions'));
+        expect(this.pTabPanel).toBeFalsy();
     });
 
     it('should set the field and row bag options', () => {
@@ -182,9 +200,13 @@ describe('ContentTypesLayoutComponent', () => {
 
     describe('Tabs', () => {
         let iframe: DebugElement;
+        let dotCurrentUserService: DotCurrentUserService;
 
         beforeEach(() => {
             fixture.componentInstance.contentType = fakeContentType;
+            dotCurrentUserService = fixture.debugElement.injector.get(DotCurrentUserService);
+            spyOn(dotCurrentUserService, 'hasAccessToPortlet').and.returnValue(of(true));
+
             fixture.detectChanges();
         });
 

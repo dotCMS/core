@@ -1,44 +1,81 @@
 import { DotCurrentUserService } from './dot-current-user.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
+import {
+    ConnectionBackend,
+    ResponseOptions,
+    Response,
+    Http,
+    RequestOptions,
+    BaseRequestOptions
+} from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
-import { fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotCurrentUserService', () => {
-    beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotCurrentUserService]);
+    let dotCurrentUserService: DotCurrentUserService;
+    let backend;
+    let lastConnection;
 
-        this.dotCurrentUserService = this.injector.get(DotCurrentUserService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                DotCurrentUserService,
+                Http,
+                { provide: ConnectionBackend, useClass: MockBackend },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: RequestOptions, useClass: BaseRequestOptions }
+            ]
+        });
+
+        dotCurrentUserService = TestBed.get(DotCurrentUserService);
+        backend = TestBed.get(ConnectionBackend);
+        backend.connections.subscribe((connection: any) => (lastConnection = connection));
     });
 
-    it(
-        'should get logged user',
-        fakeAsync(() => {
-            const mockCurrentUserResponse = {
-                email: 'admin@dotcms.com',
-                givenName: 'TEST',
-                roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
-                surnaname: 'User',
-                userId: 'testId'
-            };
-            let currentUser: any;
-            this.dotCurrentUserService.getCurrentUser().subscribe((user) => {
-                currentUser = user._body;
-            });
+    it('should get logged user', () => {
+        const mockCurrentUserResponse = {
+            email: 'admin@dotcms.com',
+            givenName: 'TEST',
+            roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
+            surnaname: 'User',
+            userId: 'testId'
+        };
+        let currentUser: any;
+        dotCurrentUserService.getCurrentUser().subscribe((user: any) => {
+            currentUser = user._body;
+        });
 
-            this.lastConnection.mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: mockCurrentUserResponse
-                    })
-                )
-            );
+        lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: mockCurrentUserResponse
+                })
+            )
+        );
+        expect(lastConnection.request.url).toContain('v1/users/current');
+        expect(currentUser).toEqual(mockCurrentUserResponse);
+    });
 
-            tick();
-            expect(this.lastConnection.request.url).toContain('v1/users/current');
-            expect(currentUser).toEqual(mockCurrentUserResponse);
-        })
-    );
+    it('should get user has access to specific Portlet', () => {
+        let userHasAccess: boolean;
+        dotCurrentUserService.hasAccessToPortlet('test').subscribe((hasAccess: boolean) => {
+            userHasAccess = hasAccess;
+        });
+
+        lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: {
+                            response: true
+                        }
+                    }
+                })
+            )
+        );
+        expect(lastConnection.request.method).toBe(0); // 0 is GET method
+        expect(lastConnection.request.url).toContain('v1/portlet/test/_doesuserhaveaccess');
+        expect(userHasAccess).toEqual(true);
+    });
 });

@@ -3,13 +3,16 @@
         <div class="content-type__title">
             <header>
                 <h4>{{ contentType.name }}</h4>
-                <dot-api-link href="api/v1/contenttype/id/{{contentType.id}}"></dot-api-link>
+                <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
             </header>
         </div>
 
-        <div class="content-type__info" >
+        <div class="content-type__info">
             {{ 'contenttypes.content.variable' | dm }}:
-            <dot-copy-button [copy]="contentType.variable" [label]="contentType.variable"></dot-copy-button>
+            <dot-copy-button
+                [copy]="contentType.variable"
+                [label]="contentType.variable"
+            ></dot-copy-button>
             <span class="content-type__dot-separator">•</span>
             {{ 'contenttypes.form.identifier' | dm }}: {{ contentType.id }}
         </div>
@@ -22,12 +25,15 @@
             label="{{ 'contenttypes.action.edit' | dm }}"
             (click)="openEditDialog.next()"
             icon="fa fa-edit"
-            id="form-edit-button">
-        </button>
+            id="form-edit-button"
+        ></button>
     </div>
 </dot-secondary-toolbar>
 <p-tabView>
-    <p-tabPanel class="content-type__properties" header="{{ 'contenttypes.tab.fields.header' | dm }}">
+    <p-tabPanel
+        class="content-type__properties"
+        header="{{ 'contenttypes.tab.fields.header' | dm }}"
+    >
         <div class="content-type__fields-layout" id="content-type-form-layout">
             <div class="content-type__fields-main" id="content-type-form-main">
                 <ng-content></ng-content>
@@ -36,24 +42,42 @@
                 <p-splitButton
                     icon="pi pi-plus"
                     label="{{ 'contenttypes.content.row' | dm }}"
-                    (onClick)="fireAddRowEvent();"
-                    [model]="actions">
+                    (onClick)="fireAddRowEvent()"
+                    [model]="actions"
+                >
                 </p-splitButton>
-                <dot-content-types-fields-list [baseType]="contentType.baseType"></dot-content-types-fields-list>
+                <dot-content-types-fields-list
+                    [baseType]="contentType.baseType"
+                ></dot-content-types-fields-list>
             </div>
         </div>
     </p-tabPanel>
-    <p-tabPanel class="content-type__relationships" header="{{ 'contenttypes.tab.relationship.header' | dm }}" *ngIf="contentType" [cache]="false">
+    <p-tabPanel
+        class="content-type__relationships"
+        header="{{ 'contenttypes.tab.relationship.header' | dm }}"
+        *ngIf="contentType"
+        [cache]="false"
+    >
         <ng-template pTemplate="content">
             <dot-iframe [src]="relationshipURL"></dot-iframe>
         </ng-template>
     </p-tabPanel>
-    <p-tabPanel class="content-type__permissions" header="{{ 'contenttypes.tab.permissions.header' | dm }}" *ngIf="contentType" [cache]="false">
+    <p-tabPanel
+        class="content-type__permissions"
+        header="{{ 'contenttypes.tab.permissions.header' | dm }}"
+        *ngIf="contentType && showPermissionsTab | async"
+        [cache]="false"
+    >
         <ng-template pTemplate="content">
             <dot-iframe [src]="permissionURL"></dot-iframe>
         </ng-template>
     </p-tabPanel>
-    <p-tabPanel class="content-type__push_history" header="{{ 'contenttypes.tab.publisher.push.history.header' | dm }}" *ngIf="contentType" [cache]="false">
+    <p-tabPanel
+        class="content-type__push_history"
+        header="{{ 'contenttypes.tab.publisher.push.history.header' | dm }}"
+        *ngIf="contentType"
+        [cache]="false"
+    >
         <ng-template pTemplate="content">
             <dot-iframe [src]="pushHistoryURL"></dot-iframe>
         </ng-template>
