@@ -35,13 +35,11 @@ import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Implementation class of the {@link ContainerAPI}.
@@ -842,7 +840,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return find(relativePath, hostsToFound, user, live, respectFrontEndEndRoles);
 	}
 
-	@NotNull
 	private ResolvedPath find(
 			final String relativePath,
 			final Map<String, Host> hostsToFound,

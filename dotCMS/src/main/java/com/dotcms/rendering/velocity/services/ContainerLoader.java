@@ -26,7 +26,6 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.time.Period;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;

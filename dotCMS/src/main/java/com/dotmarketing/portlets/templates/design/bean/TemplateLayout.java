@@ -27,7 +27,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Class that represents the javascript parameter for edit the drawed template.
@@ -214,7 +213,6 @@ public class TemplateLayout implements Serializable {
     }
 
     @JsonIgnore
-    @NotNull
     public Set<String> getContainersIdentifierOrPath() {
 
         final Set<String> containersIdOrPath = this.getBody()
@@ -235,7 +233,6 @@ public class TemplateLayout implements Serializable {
     }
 
     @JsonIgnore
-    @NotNull
     public Set<ContainerUUID> getContainersUUID() {
 
         final Set<ContainerUUID> uuids = this.getBody()

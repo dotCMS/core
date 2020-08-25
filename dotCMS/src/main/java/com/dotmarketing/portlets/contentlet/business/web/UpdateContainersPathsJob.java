@@ -18,7 +18,6 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.quartz.*;
 
 import java.util.*;
@@ -140,7 +139,6 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
 
     }
 
-    @NotNull
     private List<Params> getParameters(
             final List<Map<String, Object>> templates,
             final String oldHostName,

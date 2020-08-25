@@ -8,7 +8,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.startup.StartupTask;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +46,6 @@ public class Task05370ChangeContainerPathToAbsolute implements StartupTask {
         }
     }
 
-    @NotNull
     private List<Params> getParameters(final List<Map<String, Object>> templates) {
         final List<Params> params = new ArrayList<>();
 
@@ -89,7 +87,6 @@ public class Task05370ChangeContainerPathToAbsolute implements StartupTask {
         return newString;
     }
 
-    @NotNull
     private List<String> getRelativePaths(final String drawedBody) {
         final TemplateLayout templateLayoutFromJSON = DotTemplateTool.getTemplateLayout(drawedBody);
 
