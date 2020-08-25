@@ -119,7 +119,7 @@ public class WfTaskAjax extends WfBaseAction {
 					continue;
 				}
 
-				final Identifier id = APILocator.getIdentifierAPI().find(token);
+				final Identifier id = APILocator.getIdentifierAPI().findFromInode(token);
 				Contentlet contentlet = null;
 
 				try {
