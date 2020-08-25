@@ -7,6 +7,7 @@ import com.liferay.portal.model.User;
 import graphql.kickstart.execution.context.DefaultGraphQLContext;
 import graphql.kickstart.servlet.context.GraphQLServletContext;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,6 +28,7 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
     private final HttpServletResponse httpServletResponse;
     private final User user;
     private final List<Map<String, Object>> fieldCountMaps;
+    private final Map<String, Object> params;
 
     private DotGraphQLContext(DataLoaderRegistry dataLoaderRegistry, Subject subject, HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse, User user) {
@@ -35,6 +37,7 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
         this.httpServletResponse = httpServletResponse;
         this.user = user;
         this.fieldCountMaps = new ArrayList<>();
+        this.params = new HashMap<>();
     }
 
     @Override
@@ -87,6 +90,14 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
 
     public static Builder createServletContext() {
         return new Builder(new DataLoaderRegistry(), null);
+    }
+
+    public void addParam(final String key, final Object value) {
+        params.put(key, value);
+    }
+
+    public Object getParam(final String key) {
+        return params.get(key);
     }
 
     public static class Builder {

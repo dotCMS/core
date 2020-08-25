@@ -9,6 +9,7 @@ import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
+import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
@@ -87,6 +88,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("wfPublishTime", new TypeFetcher(GraphQLString));
         pageFields.put("viewAs", new TypeFetcher(GraphQLTypeReference.typeRef("ViewAs")
                 , new ViewAsDataFetcher()));
+        pageFields.put("render", new TypeFetcher(GraphQLString, new PageRenderDataFetcher()));
 
         typeMap.put("Page", TypeUtil.createObjectType("Page", pageFields));
 
