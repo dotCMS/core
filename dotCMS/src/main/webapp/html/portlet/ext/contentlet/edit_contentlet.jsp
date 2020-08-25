@@ -179,7 +179,7 @@
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
-            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, false)
                && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
 
 	Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
