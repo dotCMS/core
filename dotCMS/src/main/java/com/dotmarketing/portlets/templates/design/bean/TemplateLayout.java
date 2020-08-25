@@ -185,6 +185,13 @@ public class TemplateLayout implements Serializable {
         }
     }
 
+    /**
+     * Return true if the container exists into the TemplateLayout
+     *
+     * @param container container
+     * @param uuid Container uuid into the TemplateLayout
+     * @return
+     */
     public boolean existsContainer(final Container container, final String uuid){
         final FileAssetContainerUtil instance = FileAssetContainerUtil.getInstance();
         if (instance.isFileAssetContainer(container)) {

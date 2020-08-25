@@ -96,7 +96,6 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
                     );
                 }
 
-//                StringBuffer containerCode = new StringBuffer( cont.getCode() );
                 final List<ContainerStructure> containerStructureList = APILocator.getContainerAPI().getContainerStructures(container);
                 boolean checkContainerCode = false;
 
