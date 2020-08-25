@@ -1,6 +1,9 @@
 package com.dotcms.util.pagination;
 
+import com.dotcms.rest.api.v1.template.TemplateHelper;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -23,6 +26,12 @@ import static org.mockito.Mockito.when;
  */
 public class TemplatePaginatorTest {
 
+    /**
+     * Method to test: getItems
+     * Given Scenario: Just recovery an empty list of elements
+     * ExpectedResult: Perform ok, just with zero results
+     *
+     */
     @Test
     public void testGetEmptyTemplateList() throws DotDataException, DotSecurityException {
 
@@ -41,12 +50,14 @@ public class TemplatePaginatorTest {
         final PaginatedArrayList<Template> templatesExpected = new PaginatedArrayList<>();
         templatesExpected.setTotalResults(totalRecords);
 
-        final TemplateAPI templateAPI = mock(TemplateAPI.class);
+        final TemplateAPI templateAPI     = mock(TemplateAPI.class);
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+        final RoleAPI       roleAPI       = mock(RoleAPI.class);
 
         when(templateAPI.findTemplates(user, false, params, hostId,
                 null, null, null, offset, limit, "title asc")).thenReturn(templatesExpected);
 
-        final TemplatePaginator templatePaginator = new TemplatePaginator(templateAPI);
+        final TemplatePaginator templatePaginator = new TemplatePaginator(templateAPI, new TemplateHelper(permissionAPI, roleAPI));
 
         final PaginatedArrayList<TemplateView> templateViews = templatePaginator.getItems(user, filter, limit, offset, orderby,
                 OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, hostId));
@@ -54,6 +65,12 @@ public class TemplatePaginatorTest {
         assertEquals(templateViews.getTotalResults(), totalRecords);
     }
 
+    /**
+     * Method to test: getItems
+     * Given Scenario: Just recovery an empty list of elements
+     * ExpectedResult: Perform ok, just with zero results
+     *
+     */
     @Test
     public void testGetTemplateList() throws DotDataException, DotSecurityException {
 
@@ -75,12 +92,14 @@ public class TemplatePaginatorTest {
         templatesExpected.add(newTemplate(3));
         templatesExpected.setTotalResults(totalRecords);
 
-        final TemplateAPI templateAPI = mock(TemplateAPI.class);
+        final TemplateAPI templateAPI     = mock(TemplateAPI.class);
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+        final RoleAPI       roleAPI       = mock(RoleAPI.class);
 
         when(templateAPI.findTemplates(user, false, params, hostId,
                 null, null, null, offset, limit, "title asc")).thenReturn(templatesExpected);
 
-        final TemplatePaginator templatePaginator = new TemplatePaginator(templateAPI);
+        final TemplatePaginator templatePaginator = new TemplatePaginator(templateAPI, new TemplateHelper(permissionAPI, roleAPI));
 
         final PaginatedArrayList<TemplateView> templateViews = templatePaginator.getItems(user, filter, limit, offset, orderby,
                 OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, hostId));
