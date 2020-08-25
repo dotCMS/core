@@ -109,7 +109,7 @@
 							"    var containers = columns[0].containers;",
 							"    pm.expect(containers.length).to.eql(1);",
 							"",
-							"    pm.expect(containers[0].identifier).to.eql(\"//demo.dotcms.com/application/containers/default/\");",
+							"    pm.expect(containers[0].identifier).to.eql(\"/application/containers/default/\");",
 							"});"
 						],
 						"type": "text/javascript"
@@ -144,12 +144,10 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/api/v1/page/24ca92bb-c71a-4d85-9a9c-a2719df9b05b/layout",
-					"protocol": "http",
+					"raw": "{{serverURL}}/api/v1/page/24ca92bb-c71a-4d85-9a9c-a2719df9b05b/layout",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",

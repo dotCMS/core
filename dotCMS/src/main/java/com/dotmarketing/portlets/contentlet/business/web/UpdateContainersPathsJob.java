@@ -112,16 +112,16 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
 
         final String randomID = UUID.randomUUID().toString();
 
-        final JobDetail jd = new JobDetail(
+        final JobDetail jobDetail = new JobDetail(
                 "updateContainersPathsJob-" + randomID,
                 "update_containers_paths_job",
                 UpdateContainersPathsJob.class
         );
 
-        jd.setJobDataMap(jobDataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
+        jobDetail.setJobDataMap(jobDataMap);
+        jobDetail.setDurability(false);
+        jobDetail.setVolatility(false);
+        jobDetail.setRequestsRecovery(true);
 
         long startTime = System.currentTimeMillis();
         final SimpleTrigger trigger = new SimpleTrigger(
@@ -132,7 +132,7 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
 
         try {
             Scheduler scheduler = QuartzUtils.getSequentialScheduler();
-            scheduler.scheduleJob(jd, trigger);
+            scheduler.scheduleJob(jobDetail, trigger);
         } catch (SchedulerException e) {
             throw new DotRuntimeException(e);
         }

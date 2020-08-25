@@ -138,21 +138,26 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public Optional<Container> findContainer(final String idOrPath, final User user, final boolean live,
 								   final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		final Container container;
+		try {
+			final Container container;
 
-		if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(idOrPath)) {
+			if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(idOrPath)) {
 
-			final ResolvedPath hostAndRelativeFromPath = resolvePath(idOrPath, user, live, respectFrontendRoles);
-			container = hostAndRelativeFromPath.container;
-		} else {
-			if (live) {
-				container = this.getLiveContainerById(idOrPath, user, respectFrontendRoles);
+				final ResolvedPath hostAndRelativeFromPath = resolvePath(idOrPath, user, live, respectFrontendRoles);
+				container = hostAndRelativeFromPath.container;
 			} else {
-				container = this.getWorkingContainerById(idOrPath, user, respectFrontendRoles);
+				if (live) {
+					container = this.getLiveContainerById(idOrPath, user, respectFrontendRoles);
+				} else {
+					container = this.getWorkingContainerById(idOrPath, user, respectFrontendRoles);
+				}
 			}
+
+			return container != null ? Optional.of(container) : Optional.empty();
+		} catch (NotFoundInDbException e) {
+			return Optional.empty();
 		}
 
-		return container != null ? Optional.of(container) : Optional.empty();
 	}
 
 	/**

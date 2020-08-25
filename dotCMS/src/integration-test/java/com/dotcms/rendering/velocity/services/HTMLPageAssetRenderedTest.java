@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -193,7 +194,7 @@ public class HTMLPageAssetRenderedTest {
         persona = new PersonaDataGen().keyTag("persona"+System.currentTimeMillis()).hostFolder(host.getIdentifier()).nextPersisted();
 
         visitor = mock(Visitor.class);
-        Mockito.when(visitor.getPersona()).thenReturn(persona);
+        when(visitor.getPersona()).thenReturn(persona);
     }
 
     private static void createTestPage() throws Exception{
@@ -389,7 +390,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -449,7 +450,7 @@ public class HTMLPageAssetRenderedTest {
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
         final HttpSession httpSession = mockRequest.getSession();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         httpSession.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
@@ -542,7 +543,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -558,7 +559,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
@@ -611,7 +612,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
 
@@ -652,7 +653,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -722,7 +723,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -738,7 +739,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
@@ -789,7 +790,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -805,7 +806,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
@@ -842,7 +843,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -931,7 +932,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
-            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+            when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -957,7 +958,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
-            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+            when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             html = APILocator.getHTMLPageAssetRenderedAPI()
@@ -1002,7 +1003,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
-            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+            when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -1024,7 +1025,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
-            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+            when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             html = APILocator.getHTMLPageAssetRenderedAPI()
@@ -1045,7 +1046,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
-            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+            when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             html = APILocator.getHTMLPageAssetRenderedAPI()
@@ -1083,16 +1084,16 @@ public class HTMLPageAssetRenderedTest {
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        Mockito.when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
-        Mockito.when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
+        when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
 
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
 
         final HttpSession session = createHttpSession(mockRequest);
-        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(visitor);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(visitor);
 
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -1103,7 +1104,7 @@ public class HTMLPageAssetRenderedTest {
                 mockRequest, mockResponse);
         Assert.assertTrue(html , html.contains("content4"));
 
-        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -1118,9 +1119,9 @@ public class HTMLPageAssetRenderedTest {
 
     private HttpSession createHttpSession(final HttpServletRequest mockRequest) {
         final HttpSession session = mock(HttpSession.class);
-        Mockito.when(mockRequest.getSession()).thenReturn(session);
-        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
-        Mockito.when(mockRequest.getSession(true)).thenReturn(session);
+        when(mockRequest.getSession()).thenReturn(session);
+        when(mockRequest.getSession(false)).thenReturn(session);
+        when(mockRequest.getSession(true)).thenReturn(session);
         return session;
     }
 
@@ -1157,16 +1158,16 @@ public class HTMLPageAssetRenderedTest {
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        Mockito.when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
-        Mockito.when(mockRequest.getRequestURI()).thenReturn(page.getURI());
+        when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(mockRequest.getRequestURI()).thenReturn(page.getURI());
 
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
 
         final HttpSession session = createHttpSession(mockRequest);
-        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -1210,16 +1211,16 @@ public class HTMLPageAssetRenderedTest {
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        Mockito.when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
-        Mockito.when(mockRequest.getRequestURI()).thenReturn(page.getURI());
+        when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(mockRequest.getRequestURI()).thenReturn(page.getURI());
 
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
 
         final HttpSession session = createHttpSession(mockRequest);
-        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -1254,7 +1255,7 @@ public class HTMLPageAssetRenderedTest {
 
         final HttpSession session = createHttpSession(mockRequest);
 
-        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
         systemUser.isBackendUser();
 
@@ -1296,6 +1297,10 @@ public class HTMLPageAssetRenderedTest {
         final Host anotherHost = new SiteDataGen().nextPersisted();
         final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), true);
         final Host currentHost = site;
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(currentHost);
 
         return new Object[][] {
                 { currentHost, currentHost, currentHost, relativePath, advanceTemplate, true},
@@ -1358,12 +1363,12 @@ public class HTMLPageAssetRenderedTest {
                         ParseContainer.getDotParserContainerUUID(ContainerUUID.UUID_START_VALUE));
 
         final HttpServletRequest mockRequest = createHttpServletRequest(pageEnglishVersion);
-        Mockito.when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE.toString());
+        when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE.toString());
 
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         final HttpSession session = createHttpSession(mockRequest);
-        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
-        Mockito.when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(systemUser);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+        when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(systemUser);
 
         final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -1463,8 +1468,8 @@ public class HTMLPageAssetRenderedTest {
         final HttpServletRequest mockRequest = createHttpServletRequest(page);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         final HttpSession session = createHttpSession(mockRequest);
-        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
-        Mockito.when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(systemUser);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+        when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(systemUser);
         final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
                         .setUser(systemUser)
@@ -1480,13 +1485,13 @@ public class HTMLPageAssetRenderedTest {
     @NotNull
     private HttpServletRequest createHttpServletRequest(HTMLPageAsset pageEnglishVersion) throws DotDataException {
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        Mockito.when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
-        Mockito.when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
-        Mockito.when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE.toString());
-        Mockito.when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
+        when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE.toString());
+        when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
         return mockRequest;
     }
 
@@ -1533,7 +1538,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -1586,7 +1591,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);

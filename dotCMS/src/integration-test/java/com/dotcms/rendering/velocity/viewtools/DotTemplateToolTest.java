@@ -5,12 +5,9 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

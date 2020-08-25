@@ -12,8 +12,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.*;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -27,25 +25,15 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.liferay.portal.model.User;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
 import java.util.*;
 
-import org.apache.felix.framework.OSGIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -645,7 +633,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
      * When: Find a {@link Container} by Id and it exists but the not have permission
      * Should: throw a {@link DotSecurityException}
      */
-    @Test
+    @Test(expected = DotSecurityException.class)
     public void whenFindContainerByIdAndUserNotHasPermission() throws DotDataException, DotSecurityException {
         final User user = new UserDataGen().nextPersisted();
         final Host host = new SiteDataGen().nextPersisted();
@@ -653,13 +641,9 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                 .host(host)
                 .nextPersisted();
 
-        try {
-            APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), user,
-                    false, false);
-            throw new AssertionError("DotSecurityException expected");
-        } catch(DotSecurityException e) {
-
-        }
+        APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), user,
+                false, false);
+        throw new AssertionError("DotSecurityException expected");
     }
 
     /**

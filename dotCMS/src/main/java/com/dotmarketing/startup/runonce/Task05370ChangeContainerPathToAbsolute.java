@@ -1,8 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
@@ -10,11 +8,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.startup.StartupTask;
-import com.liferay.util.StringPool;
-import graphql.schema.PropertyDataFetcher;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -170,7 +170,6 @@ public class ContentletWebAPIImplIntegrationTest {
         final Host host = new SiteDataGen().nextPersisted();
         final Contentlet theme = new ThemeDataGen().nextPersisted();
 
-        Container container = createContainer(user, host);
         final Template template = new TemplateDataGen()
                 .drawedBody(String.format(drawedBodyHTML, host.getHostname()))
                 .body(String.format(body, host.getHostname()))
