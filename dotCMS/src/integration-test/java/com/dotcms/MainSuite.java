@@ -309,7 +309,7 @@ import org.junit.runners.Suite.SuiteClasses;
         EMAWebInterceptorTest.class,
         GoogleTranslationServiceIntegrationTest.class,
         Task53700AddAppsPortletToLayoutTest.class,
-        Task53800ChangeContainerPathToAbsolute.class,
+        Task05380ChangeContainerPathToAbsolute.class,
         DotTemplateToolTest.class,
         ContentletWebAPIImplIntegrationTest.class,
         FolderFactoryImplTest.class
