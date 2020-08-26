@@ -28,7 +28,7 @@
 							"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"temporalInode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"temporaryInode\", jsonData.entity.inode);",
 							""
 						],
 						"type": "text/javascript"
@@ -109,7 +109,7 @@
 							"    pm.expect(jsonData.entity.title).to.eql('PostMan Test Changed');",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"temporalInode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"temporaryInode\", jsonData.entity.inode);",
 							""
 						],
 						"type": "text/javascript"
@@ -145,7 +145,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"inode\":\"{{temporalInode}}\",\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+					"raw": "{\n    \"inode\":\"{{temporaryInode}}\",\n    \"title\":\"PostMan Test Changed\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -243,6 +243,21 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"body check\", function () {",
+							"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+							"});",
+							"",
+							"pm.test(\"friendlyName check\", function () {",
+							"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+							"});",
+							"",
+							"pm.test(\"Is not live\", function () {",
+							"    pm.expect(jsonData.entity.live).to.eql(false);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"temporaryIdentifier\", jsonData.entity.identifier);",
 							"",
 							"",
 							""
@@ -279,7 +294,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}",
 					"host": [
 						"localhost"
 					],
@@ -287,7 +302,8 @@
 					"path": [
 						"api",
 						"v1",
-						"templates"
+						"templates",
+						"{{temporaryInode}}"
 					]
 				},
 				"description": "Get a since template"
@@ -342,7 +358,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporalIdentifier}}/working",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/working",
 					"host": [
 						"localhost"
 					],
@@ -351,7 +367,7 @@
 						"api",
 						"v1",
 						"templates",
-						"{{temporalIdentifier}}",
+						"{{temporaryIdentifier}}",
 						"working"
 					]
 				},
@@ -407,7 +423,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporalIdentifier}}/live",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/live",
 					"host": [
 						"localhost"
 					],
@@ -416,7 +432,7 @@
 						"api",
 						"v1",
 						"templates",
-						"{{temporalIdentifier}}",
+						"{{temporaryIdentifier}}",
 						"live"
 					]
 				},
@@ -472,7 +488,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\"{{temporalInode}}\"]\n",
+					"raw": "[\"{{temporaryInode}}\"]\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -480,7 +496,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/publish",
+					"raw": "localhost:8080/api/v1/templates/_publish",
 					"host": [
 						"localhost"
 					],
@@ -489,7 +505,7 @@
 						"api",
 						"v1",
 						"templates",
-						"publish"
+						"_publish"
 					]
 				},
 				"description": "Publish the template"
@@ -514,7 +530,7 @@
 							"    pm.expect(jsonData.entity.live).to.eql(true);",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"temporalInode\", jsonData.entity.inode);"
+							"pm.collectionVariables.set(\"temporaryInode\", jsonData.entity.inode);"
 						],
 						"type": "text/javascript"
 					}
@@ -548,7 +564,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporalIdentifier}}/live",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/live",
 					"host": [
 						"localhost"
 					],
@@ -557,7 +573,7 @@
 						"api",
 						"v1",
 						"templates",
-						"{{temporalIdentifier}}",
+						"{{temporaryIdentifier}}",
 						"live"
 					]
 				},
@@ -611,7 +627,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\"{{temporalInode}}\"]\n",
+					"raw": "[\"{{temporaryInode}}\"]\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -619,7 +635,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/unpublish",
+					"raw": "localhost:8080/api/v1/templates/_unpublish",
 					"host": [
 						"localhost"
 					],
@@ -628,7 +644,7 @@
 						"api",
 						"v1",
 						"templates",
-						"unpublish"
+						"_unpublish"
 					]
 				},
 				"description": "UNPublish the template"
@@ -683,7 +699,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporalIdentifier}}/live",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/live",
 					"host": [
 						"localhost"
 					],
@@ -692,7 +708,7 @@
 						"api",
 						"v1",
 						"templates",
-						"{{temporalIdentifier}}",
+						"{{temporaryIdentifier}}",
 						"live"
 					]
 				},
@@ -746,7 +762,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\"{{temporalInode}}\"]\n",
+					"raw": "[\"{{temporaryInode}}\"]\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -754,7 +770,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/copy/{{temporalInode}}",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_copy",
 					"host": [
 						"localhost"
 					],
@@ -763,8 +779,8 @@
 						"api",
 						"v1",
 						"templates",
-						"copy",
-						"{{temporalInode}}"
+						"{{temporaryInode}}",
+						"_copy"
 					]
 				},
 				"description": "Copies the template"
@@ -817,7 +833,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\"{{temporalInode}}\"]\n",
+					"raw": "",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -825,7 +841,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/archive/{{temporalInode}}",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_archive",
 					"host": [
 						"localhost"
 					],
@@ -834,8 +850,8 @@
 						"api",
 						"v1",
 						"templates",
-						"archive",
-						"{{temporalInode}}"
+						"{{temporaryInode}}",
+						"_archive"
 					]
 				},
 				"description": "Copies the template"
@@ -888,7 +904,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\"{{temporalInode}}\"]\n",
+					"raw": "",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -896,7 +912,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/unlock/{{temporalInode}}",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_unlock",
 					"host": [
 						"localhost"
 					],
@@ -905,8 +921,8 @@
 						"api",
 						"v1",
 						"templates",
-						"unlock",
-						"{{temporalInode}}"
+						"{{temporaryInode}}",
+						"_unlock"
 					]
 				},
 				"description": "Copies the template"
@@ -959,7 +975,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\"{{temporalInode}}\"]\n",
+					"raw": "",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -967,7 +983,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/archive/{{temporalInode}}",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_unarchive",
 					"host": [
 						"localhost"
 					],
@@ -976,8 +992,8 @@
 						"api",
 						"v1",
 						"templates",
-						"archive",
-						"{{temporalInode}}"
+						"{{temporaryInode}}",
+						"_unarchive"
 					]
 				},
 				"description": "Copies the template"
@@ -1030,7 +1046,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\"{{temporalInode}}\"]\n",
+					"raw": "",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1038,7 +1054,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/archive/{{temporalInode}}",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_archive",
 					"host": [
 						"localhost"
 					],
@@ -1047,8 +1063,8 @@
 						"api",
 						"v1",
 						"templates",
-						"archive",
-						"{{temporalInode}}"
+						"{{temporaryInode}}",
+						"_archive"
 					]
 				},
 				"description": "Copies the template"
@@ -1101,7 +1117,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\"{{temporalInode}}\"]\n",
+					"raw": "",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1109,7 +1125,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporalInode}}",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}",
 					"host": [
 						"localhost"
 					],
@@ -1118,7 +1134,7 @@
 						"api",
 						"v1",
 						"templates",
-						"{{temporalInode}}"
+						"{{temporaryInode}}"
 					]
 				},
 				"description": "Copies the template"
@@ -1173,7 +1189,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporalIdentifier}}/working",
+					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/working",
 					"host": [
 						"localhost"
 					],
@@ -1182,7 +1198,7 @@
 						"api",
 						"v1",
 						"templates",
-						"{{temporalIdentifier}}",
+						"{{temporaryIdentifier}}",
 						"working"
 					]
 				},
@@ -1193,14 +1209,24 @@
 	],
 	"variable": [
 		{
-			"id": "40e31408-454e-4c56-9502-29ddbb238ed3",
+			"id": "3a69f95d-f0c8-4067-99a1-55131c3491f2",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "810f705f-ce34-43aa-b3d9-8acc0cc33da2",
+			"id": "29c620b8-79bf-481f-a356-d6510b4c28d5",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
+		},
+		{
+			"id": "fd59c35b-0eb6-488f-836c-16dd3cc6edfe",
+			"key": "temporaryInode",
+			"value": "637f52a2-b949-401c-8c33-41e251230511"
+		},
+		{
+			"id": "58a54b83-d6a4-4c7b-a2cc-81299273adc1",
+			"key": "temporaryIdentifier",
+			"value": "bfcf64dd-c551-436e-85a9-6b4b318e89a9"
 		}
 	],
 	"protocolProfileBehavior": {}

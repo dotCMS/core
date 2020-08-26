@@ -342,7 +342,7 @@ public class TemplateResource {
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/publish")
+    @Path("/_publish")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -410,7 +410,7 @@ public class TemplateResource {
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/unpublish")
+    @Path("/_unpublish")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -476,7 +476,7 @@ public class TemplateResource {
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/copy/{templateInode}")
+    @Path("/{templateInode}/_copy")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -519,7 +519,7 @@ public class TemplateResource {
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/unlock/{templateInode}")
+    @Path("/{templateInode}/_unlock")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -558,7 +558,7 @@ public class TemplateResource {
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/archive/{templateInode}")
+    @Path("/{templateInode}/_archive")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -597,7 +597,7 @@ public class TemplateResource {
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/unarchive/{templateInode}")
+    @Path("/{templateInode}/_unarchive")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
