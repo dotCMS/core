@@ -40,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
+import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -310,7 +311,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task53700AddAppsPortletToLayoutTest.class,
         Task53800ChangeContainerPathToAbsolute.class,
         DotTemplateToolTest.class,
-        ContentletWebAPIImplIntegrationTest.class
+        ContentletWebAPIImplIntegrationTest.class,
+        FolderFactoryImplTest.class
 })
 public class MainSuite {
 

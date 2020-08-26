@@ -26,6 +26,8 @@ import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.business.DotAssetAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.device.DeviceAPI;
+import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -983,6 +985,15 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link com.dotcms.device.DeviceAPI} class.
+	 *
+	 * @return The {@link com.dotcms.device.DeviceAPI} class.
+	 */
+	public static DeviceAPI getDeviceAPI(){
+		return (DeviceAPI) getInstance(APIIndex.DEVICE_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1123,7 +1134,8 @@ enum APIIndex
 	PUBLISH_AUDIT_API,
 	APPS_API,
 	DOT_ASSET_API,
-	BROWSER_API;
+	BROWSER_API,
+	DEVICE_API;
 
 
 
@@ -1205,6 +1217,7 @@ enum APIIndex
 			case APPS_API: return AppsAPI.INSTANCE.get();
 			case DOT_ASSET_API: return new DotAssetAPIImpl();
 			case BROWSER_API: return new BrowserAPIImpl();
+			case DEVICE_API: return new DeviceAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
