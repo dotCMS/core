@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * Change all the relative path into the template by absolute path, resolving them with the template's host
  * @since 5.3.7
  */
-public class Task5375ChangeContainerPathToAbsolute implements StartupTask {
+public class Task53705ChangeContainerPathToAbsolute implements StartupTask {
 
     final String GET_TEMPLATES_QUERY = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.drawed_body, template.body " +
             "FROM ((identifier " +
