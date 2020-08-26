@@ -336,10 +336,12 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     @Test
     public void test_trying_with_bad_sorts() {
         final SearchHits descendingHits = instance.indexSearch("*", 20, 0, "desc");
+        // we should have hits, as we are ignoring the invalid sort
         assert (descendingHits.getHits().length > 0);
 
 
         final SearchHits ascendingHits = instance.indexSearch("*", 20, 0, "asc");
+     // we should have hits, as we are ignoring the invalid sort
         assert (ascendingHits.getHits().length > 0);
 
     }
