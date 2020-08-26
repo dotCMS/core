@@ -344,6 +344,15 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
      // we should have hits, as we are ignoring the invalid sort
         assert (ascendingHits.getHits().length > 0);
 
+        final SearchHits descendingHitsUpper = instance.indexSearch("*", 20, 0, "DESC");
+        // we should have hits, as we are ignoring the invalid sort
+        assert (descendingHitsUpper.getHits().length > 0);
+        
+        final SearchHits ascHitsUpper = instance.indexSearch("*", 20, 0, "DESC");
+        // we should have hits, as we are ignoring the invalid sort
+        assert (ascHitsUpper.getHits().length > 0);        
+        
+        
     }
 
     
