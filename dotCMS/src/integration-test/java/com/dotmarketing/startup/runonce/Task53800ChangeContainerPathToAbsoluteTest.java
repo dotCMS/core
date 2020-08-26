@@ -25,7 +25,7 @@ import java.util.HashMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class Task53705ChangeContainerPathToAbsoluteTest {
+public class Task53800ChangeContainerPathToAbsoluteTest {
     final String body =
         "<html>" +
             "<head>" +
@@ -110,7 +110,7 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A TemplateLayout with relative path container
      * Should: Should turn it into a Absolute Path, using the template's host
      */
@@ -132,16 +132,16 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .nextPersisted();
 
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
 
         checkTemplateFromDataBase(host, template);
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A TemplateLayout with not filecontainer
      * Should: Should not change
      */
@@ -166,10 +166,10 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .nextPersisted();
 
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
 
         final ArrayList templates = getTemplateFromDataBase(template);
 
@@ -181,7 +181,7 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A TemplateLayout with relative path container in the drawed_body fields and the body field is null
      * Should: Should turn it into a Absolute Path, using the template's host
      */
@@ -202,10 +202,10 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .nextPersisted();
 
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
 
         checkTemplateFromDataBase(host, template);
     }
@@ -232,7 +232,7 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A TemplateLayout with absolute path container
      * Should: Should does not anything
      */
@@ -253,16 +253,16 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .nextPersisted();
 
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
 
         checkTemplateFromDataBase(host, template);
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A legacy HTML TemplateLayout with relative path container
      * Should: Should change the relative path by absolute path
      */
@@ -281,17 +281,17 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .nextPersisted();
 
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
         CacheLocator.getTemplateCache().remove(template.getInode());
 
         checkTemplateFromDataBase(host, template);
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A legacy HTML TemplateLayout with absolute path container
      * Should: Should keep the absolute path
      */
@@ -310,17 +310,17 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .nextPersisted();
 
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
         CacheLocator.getTemplateCache().remove(template.getInode());
 
         checkTemplateFromDataBase(host, template);
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists More than one template with relative path
      * Should: Should change the relative path by absolute path
      */
@@ -348,17 +348,17 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .host(host)
                 .nextPersisted();
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
 
         checkTemplateFromDataBase(host, template);
         checkTemplateFromDataBase(host, template2);
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A advance template with relative path container
      * Should: Should not change anything
      */
@@ -377,10 +377,10 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .nextPersisted();
 
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
 
         final ArrayList templates = getTemplateFromDataBase(template);
 
@@ -392,7 +392,7 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A TemplateLayout with absolute path container from another site
      * Should: Should not change anything
      */
@@ -416,16 +416,16 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .nextPersisted();
 
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
 
         checkTemplateFromDataBase(anotherHost, template);
     }
 
     /**
-     * Method to Test: {@link Task53705ChangeContainerPathToAbsolute#executeUpgrade()}
+     * Method to Test: {@link Task53800ChangeContainerPathToAbsolute#executeUpgrade()}
      * When: Exists A legacy TemplateLayout with absolute path container from another site
      * Should: Should does not anything
      */
@@ -448,10 +448,10 @@ public class Task53705ChangeContainerPathToAbsoluteTest {
                 .nextPersisted();
 
 
-        final Task53705ChangeContainerPathToAbsolute task53705ChangeContainerPathToAbsolute =
-                new Task53705ChangeContainerPathToAbsolute();
+        final Task53800ChangeContainerPathToAbsolute task53800ChangeContainerPathToAbsolute =
+                new Task53800ChangeContainerPathToAbsolute();
 
-        task53705ChangeContainerPathToAbsolute.executeUpgrade();
+        task53800ChangeContainerPathToAbsolute.executeUpgrade();
 
         checkTemplateFromDataBase(anotherHost, template);
     }
