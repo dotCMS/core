@@ -57,7 +57,7 @@
 							"key": "file",
 							"contentType": "application/tar+gzip ",
 							"type": "file",
-							"src": "/build/src/core/dotCMS/src/curl-test/resources/relationship_push_publish/page_test_bundle-01EEZJ5H186WF88K28VHB3P9A6.tar.gz"
+							"src": "/build/src/core/dotCMS/src/curl-test/resources/resolve_relative_path_in_layout_end_point/page_test_bundle-01EEZJ5H186WF88K28VHB3P9A6.tar.gz"
 						}
 					],
 					"options": {
