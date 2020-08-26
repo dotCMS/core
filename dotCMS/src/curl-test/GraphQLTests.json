@@ -920,6 +920,88 @@
 					"response": []
 				},
 				{
+					"name": "publishUrlMappedContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f389f7b1-13d3-4629-8a2f-0cf8d5e7dc2a",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Ecotourism\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/8968555814/fire?identifier=57ee7cd3-66fc-4f01-9b7e-11e53553c220",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"8968555814",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "57ee7cd3-66fc-4f01-9b7e-11e53553c220"
+								}
+							]
+						},
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
 					"name": "GivenRequestByURI_PageContainsUrlMappedContentField",
 					"event": [
 						{
@@ -936,7 +1018,7 @@
 									"",
 									"pm.test(\"'Page' includes all properties\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    var urlmappedContent = jsonData.data.page.urlmappedContent;",
+									"    var urlmappedContent = jsonData.data.page.urlContentMap;",
 									"",
 									"    // mode",
 									"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Ecotourism in Costa Rica\");",
@@ -988,7 +1070,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/blog/post/ecotourism-in-costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     urlmappedContent {\n        title\n        identifier\n        urlMap\n        contentType\n    }\n  }\n}",
+								"query": "{\n  page(url:\"/blog/post/ecotourism-in-costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     urlContentMap {\n        title\n        identifier\n        urlMap\n        contentType\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -3386,87 +3468,87 @@
 	],
 	"variable": [
 		{
-			"id": "a8ddc414-4f50-4283-8e46-e7c3fc7785e8",
+			"id": "0b709698-6e0c-43b3-afa3-914c2c7ddfce",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "2ab91afe-b304-4817-b6a5-865bc34d1fcc",
+			"id": "2b52b7c6-67ad-47e3-9271-f7646f7f9f7e",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "13b0bd05-5f74-448b-96c6-24a0af765c04",
+			"id": "b78b736e-de15-4c90-9241-eec5f2b9d8f1",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "d7bb25ea-22eb-469a-9074-b883fe16d5d5",
+			"id": "9154b4dd-ab17-4fcd-b519-85ee321894b8",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "7a848121-6c00-4bda-87ba-7832b2ca9f49",
+			"id": "27779d7c-07fc-45b0-b635-2bb12105ce25",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "3c2b955b-f5d3-49c0-be0b-484c90d0433a",
+			"id": "a84fdbe3-a36f-46b0-a20f-b8167e2660e4",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "34927a5b-b9e6-412e-a05c-9f89e91867ee",
+			"id": "6e999be3-29fa-4eec-9a3f-78e4363dd408",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "b1ef6fed-62e1-4f5f-af3a-4e5f4cbe355d",
+			"id": "83105f98-ac13-4b5b-a17b-d27954e55841",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "cda3cbf7-f1b3-4313-8d08-ac31c12a7279",
+			"id": "cfd5f90c-2019-442b-b1b0-8ed0f036e4a4",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "0fb26fde-e958-4f6d-b01c-1708775e471b",
+			"id": "7154b44b-ccb1-4ea9-9263-6d9493f0fae2",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "db65b590-5036-4472-9677-93c0aa094706",
+			"id": "12038b65-ed7c-47ff-a0ba-6eab7b537155",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "dadf81a8-23d8-441d-a37a-5ecc31157ddb",
+			"id": "c6faf3a9-09d0-468a-9866-7559adef93c9",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "ba359706-8b57-4bf8-a942-f14d1e2dee1d",
+			"id": "34cd2c86-9518-4897-8c57-21de10e5145b",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "e00a2247-d295-4dba-9290-d4b494c3b970",
+			"id": "df88abf6-4359-4acb-9c1c-ba307412b2fc",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "e5703310-de12-414f-865d-c70f3c6a46a6",
+			"id": "f76d9892-30b8-4340-8b5a-7a08deffa597",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "2a550e4d-7842-4757-918b-28efc21715d2",
+			"id": "ece0a0d8-f107-462f-819d-7e9350a19685",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "4a60798a-98bf-497f-a394-62a7914c2fd4",
+			"id": "82e0b916-be50-4222-9b23-2cfcb10035e7",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

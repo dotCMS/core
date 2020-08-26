@@ -92,7 +92,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("viewAs", new TypeFetcher(GraphQLTypeReference.typeRef("ViewAs")
                 , new ViewAsDataFetcher()));
         pageFields.put("render", new TypeFetcher(GraphQLString, new PageRenderDataFetcher()));
-        pageFields.put("urlmappedContent",new TypeFetcher(GraphQLTypeReference.typeRef("Contentlet"),
+        pageFields.put("urlContentMap",new TypeFetcher(GraphQLTypeReference.typeRef("Contentlet"),
                 PropertyDataFetcher.fetching(
                         (Function<Contentlet, Contentlet>) (contentlet)->
                                Try.of(()->((URLMapInfo) contentlet.get("URLMapContent"))
