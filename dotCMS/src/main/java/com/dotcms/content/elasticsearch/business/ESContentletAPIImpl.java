@@ -5285,9 +5285,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         );
     }
 
+    /**
+     * Updates the Template of the specified Contentlet - in case it's an HTML Page - in all of its existing language
+     * versions, only if its value is different from the current one. This update operation can be overridden by setting
+     * the configuration parameter {@code DO_NOT_UPDATE_TEMPLATES} as {@code true}.
+     *
+     * @param contentlet The {@link Contentlet} whose Template will be updated, if necessary
+     * @param user       The {@link User} performing this action.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified user does not have the required permissions to perform this action.
+     */
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
             throws DotDataException, DotSecurityException{
-        
+        final boolean DONT_RESPECT_FRONTEND_ROLES = Boolean.FALSE;
         final String DO_NOT_UPDATE_TEMPLATES= "DO_NOT_UPDATE_TEMPLATES";
         
         if(contentlet.getBoolProperty(DO_NOT_UPDATE_TEMPLATES)){
@@ -5298,20 +5309,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .getFieldVar(HTMLPageAssetAPI.TEMPLATE_FIELD);
             final String identifier = contentlet.getIdentifier();
             final String newTemplate = contentlet.get(HTMLPageAssetAPI.TEMPLATE_FIELD).toString();
-            final String existingTemplate = loadField(
-                    findContentletByIdentifierAnyLanguage(contentlet.getIdentifier())
-                            .getInode(), fieldVar).toString();
+            final Contentlet contentInAnyLang = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
+            if (null == contentInAnyLang || !UtilMethods.isSet(contentInAnyLang.getIdentifier())) {
+                throw new DotDataException(String.format("Contentlet with ID '%s' has not been found, or is currently" +
+                        " marked as 'Archived'.", contentlet.getIdentifier()));
+            }
+            final String existingTemplate = loadField(contentInAnyLang.getInode(), fieldVar).toString();
             if (!existingTemplate.equals(newTemplate)){
-                List<ContentletVersionInfo> vers = APILocator.getVersionableAPI().findContentletVersionInfos(identifier);
+                final List<ContentletVersionInfo> contentletVersions = APILocator.getVersionableAPI().findContentletVersionInfos(identifier);
                 
-                for(ContentletVersionInfo ver : vers) {
-                    Contentlet c = find(ver.getWorkingInode(), user, false);
-                    if(contentlet.getInode().equals(c.getInode())) {
+                for (final ContentletVersionInfo version : contentletVersions) {
+                    final Contentlet contentVersion = find(version.getWorkingInode(), user, DONT_RESPECT_FRONTEND_ROLES);
+                    if (contentlet.getInode().equals(contentVersion.getInode())) {
                         continue;
                     }
 
                     //Create a new working version with the template when the page version is live and working
-                    Contentlet newPageVersion = checkout(c.getInode(), user, false);
+                    final Contentlet newPageVersion = checkout(contentVersion.getInode(), user, DONT_RESPECT_FRONTEND_ROLES);
                     newPageVersion.setBoolProperty(DO_NOT_UPDATE_TEMPLATES, true);
                     newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
                     newPageVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
@@ -5323,7 +5337,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         newPageVersion.getMap().put(Contentlet.WORKFLOW_IN_PROGRESS, contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
                     }
 
-                    checkin(newPageVersion,  user, false);
+                    checkin(newPageVersion,  user, DONT_RESPECT_FRONTEND_ROLES);
                 }
             }
         }

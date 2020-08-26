@@ -5,12 +5,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl.HTMLPageUrl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-
+import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * Provides utility methods to render a {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}
@@ -166,4 +167,16 @@ public interface HTMLPageAssetRenderedAPI {
              final HttpServletRequest request,
              final String pageUri
      );
+
+    /**
+     * Returns the {@link ViewAsPageStatus} for the given {@link HTMLPageAsset} and {@link PageMode}
+     *
+     * @param pageMode
+     * @param htmlpage
+     * @return
+     */
+
+     ViewAsPageStatus getViewAsStatus(final HttpServletRequest request,
+             final PageMode pageMode, final HTMLPageAsset htmlpage, final User user)
+             throws DotDataException;
 }

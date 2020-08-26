@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
+import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -312,7 +313,8 @@ import org.junit.runners.Suite.SuiteClasses;
         IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
         GoogleTranslationServiceIntegrationTest.class,
-        Task05370AddAppsPortletToLayoutTest.class
+        Task05370AddAppsPortletToLayoutTest.class,
+        FolderFactoryImplTest.class
 })
 public class MainSuite {
 

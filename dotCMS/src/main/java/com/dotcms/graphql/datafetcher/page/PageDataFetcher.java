@@ -29,7 +29,8 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
     @Override
     public Contentlet get(final DataFetchingEnvironment environment) throws Exception {
         try {
-            final User user = ((DotGraphQLContext) environment.getContext()).getUser();
+            final DotGraphQLContext context = environment.getContext();
+            final User user = context.getUser();
             final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
                     .getHttpServletRequest();
 
@@ -37,6 +38,10 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final String languageId = environment.getArgument("languageId");
             final String pageModeAsString = environment.getArgument("pageMode")
                     != null ? environment.getArgument("pageMode") : PageMode.LIVE.name();
+
+            context.addParam("url", url);
+            context.addParam("languageId", languageId);
+            context.addParam("pageMode", pageModeAsString);
 
             final PageMode mode = PageMode.get(pageModeAsString);
 
