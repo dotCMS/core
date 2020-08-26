@@ -31,7 +31,6 @@ import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
 import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
 import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
-import com.dotmarketing.startup.runalways.Task00030ClusterInitialize;
 import com.dotmarketing.startup.runalways.Task00040CheckAnonymousUser;
 import com.dotmarketing.startup.runonce.*;
 
@@ -283,6 +282,7 @@ public class TaskLocatorUtil {
         .add(Task05300UpdateIndexNameLength.class)
         .add(Task05305AddPushPublishFilterColumn.class)
 		.add(Task05350AddDotSaltClusterColumn.class)
+		.add(Task53700AddAppsPortletToLayout.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
@@ -315,7 +315,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00006CreateSystemLayout.class);
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
 		ret.add(Task00002LoadClusterLicenses.class);
-		ret.add(Task00030ClusterInitialize.class);
+		//ret.add(Task00030ClusterInitialize.class);
 		ret.add(Task00040CheckAnonymousUser.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}

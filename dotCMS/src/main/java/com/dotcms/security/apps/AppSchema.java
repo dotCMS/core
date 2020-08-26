@@ -110,7 +110,7 @@ public class AppSchema {
         return new LinkedHashMap<>(params);
     }
 
-    public void addParam(final String name, final String value, final boolean hidden,
+    public void addParam(final String name, final Object value, final boolean hidden,
             final Type type, final String label, final String hint, final boolean required) {
         params.put(name, ParamDescriptor.newParam(value, hidden, type, label, hint, required));
     }

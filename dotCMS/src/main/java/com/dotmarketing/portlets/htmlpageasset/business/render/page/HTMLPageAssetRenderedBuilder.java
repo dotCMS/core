@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 
 import com.dotmarketing.util.UtilMethods;
@@ -61,6 +62,7 @@ public class HTMLPageAssetRenderedBuilder {
     private final LayoutAPI      layoutAPI;
     private final VersionableAPI versionableAPI;
     private final MultiTreeAPI   multiTreeAPI;
+    private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
     private String pageUrlMapper;
     private boolean live;
 
@@ -72,6 +74,7 @@ public class HTMLPageAssetRenderedBuilder {
         this.layoutAPI      = APILocator.getLayoutAPI();
         this.versionableAPI = APILocator.getVersionableAPI();
         this.multiTreeAPI   = APILocator.getMultiTreeAPI();
+        this.htmlPageAssetRenderedAPI   = APILocator.getHTMLPageAssetRenderedAPI();
     }
 
     public HTMLPageAssetRenderedBuilder setLive(final boolean live) {
@@ -111,7 +114,6 @@ public class HTMLPageAssetRenderedBuilder {
 
     @CloseDBIfOpened
     public PageView build(final boolean rendered, final PageMode mode) throws DotDataException, DotSecurityException {
-        final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset);
         final Template template = getTemplate(mode);
         if(!UtilMethods.isSet(template) && mode.equals(PageMode.ADMIN_MODE)){
             throw new DotStateException(
@@ -141,7 +143,9 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             final PageView.Builder pageViewBuilder = new PageView.Builder().site(site).template(template).containers(containers)
                     .page(this.htmlPageAsset).layout(layout).canCreateTemplate(canCreateTemplates)
-                    .canEditTemplate(canEditTemplate).viewAs(this.getViewAsStatus(mode, pagePersonalizationSet))
+                    .canEditTemplate(canEditTemplate).viewAs(
+                            this.htmlPageAssetRenderedAPI.getViewAsStatus(request,
+                                    mode, this.htmlPageAsset, user))
                     .pageUrlMapper(pageUrlMapper).live(live);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
 
@@ -157,7 +161,9 @@ public class HTMLPageAssetRenderedBuilder {
             final HTMLPageAssetRendered.RenderedBuilder pageViewBuilder = new HTMLPageAssetRendered.RenderedBuilder().html(pageHTML);
             pageViewBuilder.site(site).template(template).containers(containers)
                     .page(this.htmlPageAsset).layout(layout).canCreateTemplate(canCreateTemplates)
-                    .canEditTemplate(canEditTemplate).viewAs(this.getViewAsStatus(mode, pagePersonalizationSet))
+                    .canEditTemplate(canEditTemplate).viewAs(
+                    this.htmlPageAssetRenderedAPI.getViewAsStatus(request,
+                            mode, this.htmlPageAsset, user))
                     .pageUrlMapper(pageUrlMapper).live(live);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
 
@@ -209,59 +215,5 @@ public class HTMLPageAssetRenderedBuilder {
         } catch (DotSecurityException e) {
             return null;
         }
-    }
-
-    private ViewAsPageStatus getViewAsStatus(final PageMode pageMode, final Set<String> pagePersonalizationSet)
-            throws DotDataException {
-
-        final IPersona persona     = this.getCurrentPersona();
-        final boolean personalized = this.isPersonalized(persona, pagePersonalizationSet);
-
-        return new ViewAsPageStatus(
-            getVisitor(),
-            WebAPILocator.getLanguageWebAPI().getLanguage(request),
-            this.getCurrentDevice(),
-            pageMode,
-            personalized );
-    }
-
-    private boolean isPersonalized (final IPersona persona, final Set<String> pagePersonalizationSet) {
-
-        return null != persona && pagePersonalizationSet.contains
-                (Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag());
-    }
-
-    
-    private Visitor getVisitor() {
-      final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
-      return visitor.orElse(null);
-    }
-    
-    
-    
-    private IPersona getCurrentPersona() {
-        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
-        return visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
-    }
-
-    private Contentlet getCurrentDevice() throws DotDataException {
-        final String currentDeviceId = (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE);
-        Contentlet currentDevice = null;
-
-        try {
-
-            if (currentDeviceId != null) {
-                currentDevice = contentletAPI.find(currentDeviceId, user, false);
-
-                if (currentDevice == null) {
-                    request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
-                }
-            }
-        } catch (DotSecurityException e) {
-            Logger.debug(this.getClass(),
-                    "Exception on createViewAsMap exception message: " + e.getMessage(), e);
-        }
-
-        return currentDevice;
     }
 }

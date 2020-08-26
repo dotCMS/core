@@ -506,13 +506,12 @@ var cmsfile=null;
 
 	function cmsFileBrowser(callback, value, meta) {
 		tinyMCEFilePickerCallback=callback;
-		if(meta.filetype=="image"){
-			cmsFileBrowserImage.show();
-		}
-		else{
-			cmsFileBrowserFile.show();
-		}
-		dojo.query('.mce-window .mce-close')[0].click();
+
+		if (meta.filetype=="image") {
+            dojo.query('.mce-window .mce-close')[0].click();
+        }
+
+        cmsFileBrowserImage.show();
 	}
 
 	//Glossary terms search

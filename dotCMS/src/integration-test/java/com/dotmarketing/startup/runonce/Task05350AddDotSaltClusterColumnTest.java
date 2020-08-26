@@ -23,7 +23,7 @@ public class Task05350AddDotSaltClusterColumnTest {
         IntegrationTestInitService.getInstance().init();
     }
 
-    private void dropColumn(final DotConnect dotConnect) throws SQLException {
+    private void dropColumn(final DotConnect dotConnect) {
         try {
             final String dropColumnSQL = "ALTER TABLE dot_cluster DROP COLUMN cluster_salt";
             dotConnect.executeStatement(dropColumnSQL);
@@ -33,7 +33,7 @@ public class Task05350AddDotSaltClusterColumnTest {
     }
 
     @Test
-    public void test_upgradeTask_success() throws SQLException, DotDataException {
+    public void test_upgradeTask_success() throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
         dropColumn(dotConnect);
         final Task05350AddDotSaltClusterColumn task = new Task05350AddDotSaltClusterColumn();

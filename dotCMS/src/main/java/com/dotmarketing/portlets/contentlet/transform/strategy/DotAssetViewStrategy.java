@@ -61,7 +61,7 @@ public class DotAssetViewStrategy extends WebAssetStrategy<Contentlet> {
             Logger.warn(DotAssetViewStrategy.class, "dotAsset does not have a binary ", e);
         }
         map.put(MIMETYPE_FIELD, toolBox.fileAssetAPI.getMimeType(fileName));
-
+        map.put("isContentlet", true);
         map.put(TITLE_FIELD, fileName);
         map.put("type", "dotasset");
         map.put("path", ResourceLink.getPath(dotAsset));

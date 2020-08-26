@@ -1,7 +1,6 @@
 package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.business.DotAssetAPIImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -19,7 +18,6 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.ConfigTestHelper;
-import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
@@ -28,12 +26,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -948,22 +942,41 @@ public class TestDataUtils {
 
             //Test file
             final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
-            final File originalTestImage = new File(
-                    ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-            final File testImage = new File(Files.createTempDir(),
-                    "test_image1" + System.currentTimeMillis() + ".jpg");
-            FileUtil.copyFile(originalTestImage, testImage);
-
-            ContentletDataGen fileAssetDataGen = new FileAssetDataGen(folder, testImage)
-                    .languageId(languageId);
-
-            if (persist) {
-                return ContentletDataGen.publish(fileAssetDataGen.nextPersisted());
-            } else {
-                return fileAssetDataGen.next();
-            }
+            return createFileAsset(testImagePath, folder, languageId, persist);
         } catch (Exception e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    public static Contentlet getFileAssetSVGContent(Boolean persist, long languageId) {
+
+        try {
+            final Folder folder = new FolderDataGen().nextPersisted();
+
+            //Test file
+            final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image.svg";
+            return createFileAsset(testImagePath, folder, languageId, persist);
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private static Contentlet createFileAsset(final String testImagePath, final Folder folder, final long languageId, final boolean persist) throws Exception{
+        //Test file
+        final String extension = UtilMethods.getFileExtension(testImagePath);
+        final File originalTestImage = new File(
+                ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
+        final File testImage = new File(Files.createTempDir(),
+                "test_image1" + System.currentTimeMillis() + "." + extension);
+        FileUtil.copyFile(originalTestImage, testImage);
+
+        ContentletDataGen fileAssetDataGen = new FileAssetDataGen(folder, testImage)
+                .languageId(languageId);
+
+        if (persist) {
+            return ContentletDataGen.publish(fileAssetDataGen.nextPersisted());
+        } else {
+            return fileAssetDataGen.next();
         }
     }
 

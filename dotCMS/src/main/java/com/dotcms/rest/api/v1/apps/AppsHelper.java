@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.apps;
 
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
@@ -193,7 +195,7 @@ class AppsHelper {
         if (appDescriptorOptional.isPresent()) {
             final AppDescriptor appDescriptor = appDescriptorOptional.get();
             final Host host = hostAPI.find(siteId, user, false);
-            if (null == host) {
+            if (null == host || host.isArchived()) {
                 throw new DoesNotExistException(
                       String.format(" Couldn't find any host with identifier `%s` ", siteId)
                 );
@@ -499,8 +501,7 @@ class AppsHelper {
                 .entrySet()) {
             final String describedParamName = appDescriptorParam.getKey();
             final Input input = params.get(describedParamName);
-            if (appDescriptorParam.getValue().isRequired() && (input == null || UtilMethods
-                    .isNotSet(input.getValue()))) {
+            if (appDescriptorParam.getValue().isRequired() && (input == null || isNotSet(input.getValue()))) {
                 throw new IllegalArgumentException(
                         String.format(
                                 "Param `%s` is marked required in the descriptor but does not come with a value.",
@@ -528,6 +529,23 @@ class AppsHelper {
                             )
                     );
                 }
+            }
+
+            if (Type.SELECT.equals(appDescriptorParam.getValue().getType()) && UtilMethods
+                    .isSet(input.getValue())) {
+                final List<Map> list = appDescriptorParam.getValue().getList();
+                final Set<String> values = list.stream().filter(map -> null != map.get("value"))
+                        .map(map -> map.get("value").toString()).collect(Collectors.toSet());
+                 final String asString = new String(input.getValue());
+                 if(!values.contains(asString)){
+                     throw new IllegalArgumentException(
+                             String.format(
+                                     "Can not find value `%s` in the list of permitted values `%s`.",
+                                     asString, describedParamName
+                             )
+                     );
+                 }
+
             }
         }
 
@@ -574,7 +592,7 @@ class AppsHelper {
                         paramName));
             } else {
                 if (null != paramDescriptor && paramDescriptor.isRequired() && null != entry
-                        .getValue() && UtilMethods.isNotSet(entry.getValue().getValue())) {
+                        .getValue() && isNotSet(entry.getValue().getValue())) {
                     throw new IllegalArgumentException(
                             String.format(
                                     "Param `%s` is marked required in the descriptor but does not come with a value.",
@@ -671,6 +689,9 @@ class AppsHelper {
      * @return
      */
     private boolean isAllFilledWithAsters(final char [] chars){
+         if(isNotSet(chars)){
+           return false;
+         }
          for(final char chr: chars){
             if(chr != '*'){
                return false;

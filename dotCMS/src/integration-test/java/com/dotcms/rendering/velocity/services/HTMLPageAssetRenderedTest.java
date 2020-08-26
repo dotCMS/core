@@ -368,7 +368,7 @@ public class HTMLPageAssetRenderedTest {
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
-        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getContainerMultiTrees(container.getIdentifier());
+        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageEnglishVersion, container);
         Assert.assertNotNull(multiTrees);
         Assert.assertEquals(4, multiTrees.size());
 
@@ -426,7 +426,7 @@ public class HTMLPageAssetRenderedTest {
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
-        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getContainerMultiTrees(container.getIdentifier());
+        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageEnglishVersion, container);
         Assert.assertNotNull(multiTrees);
         Assert.assertEquals(4, multiTrees.size());
 

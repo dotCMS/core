@@ -547,7 +547,7 @@ public class ContentResource {
             return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
         } catch (Exception e) {
             if (idPassed) {
-                Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id, e);
+                Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id + " " + e.getMessage(), e);
             } else if (queryPassed || UtilMethods.isSet(related)) {
                 Logger.warn(this, "Error searching Content : " + e.getMessage());
             } else if (inodePassed) {

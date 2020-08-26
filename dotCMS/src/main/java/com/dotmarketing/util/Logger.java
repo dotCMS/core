@@ -7,12 +7,18 @@ package com.dotmarketing.util;
 
 import com.dotcms.business.expiring.ExpiringMap;
 import com.dotcms.business.expiring.ExpiringMapBuilder;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.loggers.Log4jUtil;
 import com.google.common.base.Objects;
 import com.google.common.hash.HashCode;
+import io.vavr.Lazy;
 import java.io.File;
+import java.util.List;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.velocity.servlet.VelocityServlet;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -34,7 +40,6 @@ public class Logger{
     public static org.apache.logging.log4j.Logger clearLogger ( Class clazz ) {
         return map.remove( clazz );
 	}
-	
 
 	/**
 	 * This class is syncrozned.  It shouldn't be called. It is exposed so that 
@@ -80,6 +85,12 @@ public class Logger{
 	public static void debug(final Object ob, final Supplier<String> message) {
 		if (isDebugEnabled(ob.getClass())) {
 			debug(ob.getClass(), message.get());
+		}
+	}
+
+	public static void debug(final Object ob, final Throwable throwable, final Supplier<String> message) {
+		if (isDebugEnabled(ob.getClass())) {
+			debug(ob.getClass(), message.get(), throwable);
 		}
 	}
 
@@ -158,7 +169,7 @@ public class Logger{
     /**
      * a map with a 5 minute max lifespan
      */
-    static ExpiringMap<Long, Long> logMap = new ExpiringMapBuilder().ttl(600*1000).size(2000).build();
+    static Lazy<ExpiringMap<Long, Long>> logMap = Lazy.of(()->new ExpiringMapBuilder().ttl(600*1000).size(2000).build());
 
 	/**
 	 * this method will print the message at WARN level every millis set
@@ -176,10 +187,10 @@ public class Logger{
         final StackTraceElement ste = ex.getStackTrace()[0];
 
         final Long hash=new Long(Objects.hashCode(ste,message.substring(0, Math.min(message.length(), 10)),cl));
-        final Long expireWhen = logMap.get(hash);
+        final Long expireWhen = logMap.get().get(hash);
         
         if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis );
             logger.warn(message + " (every "+warnEveryMillis + " millis)");
             
         }
@@ -200,10 +211,10 @@ public class Logger{
 
 
         final Long hash=new Long(Objects.hashCode(cl.getName(),message.substring(0, Math.min(message.length(), 10)),cl));
-        final Long expireWhen = logMap.get(hash);
+        final Long expireWhen = logMap.get().get(hash);
         
         if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis );
             logger.info(message + " (every "+warnEveryMillis + " millis)");
             
         }
@@ -232,6 +243,14 @@ public class Logger{
         }
         try{
             logger.warn(message);
+            //we don't want to eat the real message - EVER
+            logger.warn(ex.getMessage());
+            try {
+                logger.warn(ex.getStackTrace()[0]);
+            }
+            catch(Throwable t) {
+                logger.debug(()-> t);
+            }
             logger.debug(()-> message, ex);
         }
         catch(java.lang.IllegalStateException e){
@@ -484,4 +503,46 @@ public class Logger{
     	return ret;
 
     }
+
+	/**
+	 * Set the Level of the logger; if the logger does not exists or can not set, return null
+	 * @param loggerName {@link String} logger name
+	 * @param level      {@link String} logger level
+	 * @return Object
+	 */
+	public static Object setLevel(final String loggerName, final String level) {
+
+    	final Class loggerClass = ReflectionUtils.getClassFor(loggerName);
+    	if (null != loggerClass) {
+
+			final org.apache.logging.log4j.Logger logger = getLogger(loggerClass);
+			if (logger instanceof org.apache.logging.log4j.core.Logger) {
+
+				final Level logLevel = Level.getLevel(level);
+				org.apache.logging.log4j.core.Logger.class.cast(logger).setLevel(logLevel);
+				return logger;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Determinate if the level is a valid one
+	 * @param level {@link String}
+	 * @return boolean
+	 */
+	public static boolean isValidLevel(final String level) {
+
+		return null != Level.getLevel(level);
+	}
+
+	/**
+	 * Get the list of current collection on cache app
+	 * @return List
+	 */
+	public static List<Object> getCurrentLoggers() {
+
+		return map.values().stream().collect(Collectors.toList());
+	}
 }
