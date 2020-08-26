@@ -1,9 +1,6 @@
 package com.dotcms.rest.api.v1.folder;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonRootName;
-
+import com.dotmarketing.portlets.folders.model.Folder;
 import java.util.Date;
 import java.util.List;
 
@@ -11,12 +8,9 @@ import java.util.List;
  * This class holds a view with all attributes of com.dotmarketing.portlets.folders.model.Folder
  * plus a list to hold the children of a folder
  *
- * @author Luis Bacca
  *
  */
-@JsonPropertyOrder({ "path", "customFolders" })
-@JsonRootName("folder")
-public class CustomFolderView {
+public class FolderView {
 
     private final String path;
     private final String defaultFileType;
@@ -31,24 +25,23 @@ public class CustomFolderView {
     private final Integer sortOrder;
     private final String title;
     private final String type;
-    private List<CustomFolderView> customFolders;
+    private List<FolderView> subFolders;
 
-    public CustomFolderView(String path, String defaultFileType, String filesMasks, Date iDate,
-                            String hostId, String identifier, String inode, Date modDate, String name,
-                            Boolean showOnMenu, Integer sortOrder, String title, String type){
-        this.path = path;
-        this.defaultFileType = defaultFileType;
-        this.filesMasks = filesMasks;
-        this.iDate = iDate;
-        this.hostId = hostId;
-        this.identifier = identifier;
-        this.inode = inode;
-        this.modDate = modDate;
-        this.name = name;
-        this.showOnMenu = showOnMenu;
-        this.sortOrder = sortOrder;
-        this.title = title;
-        this.type = type;
+    public FolderView(final Folder folder, final List<FolderView> subFolders){
+        this.name = folder.getName();
+        this.defaultFileType = folder.getDefaultFileType();
+        this.iDate = folder.getIDate();
+        this.hostId = folder.getHostId();
+        this.identifier = folder.getIdentifier();
+        this.inode = folder.getInode();
+        this.modDate = folder.getModDate();
+        this.showOnMenu = folder.isShowOnMenu();
+        this.sortOrder = folder.getSortOrder();
+        this.title = folder.getTitle();
+        this.type = folder.getType();
+        this.filesMasks = folder.getFilesMasks();
+        this.path = folder.getPath();
+        this.subFolders = subFolders;
     }
 
     public String getDefaultFileType() {
@@ -103,12 +96,7 @@ public class CustomFolderView {
         return path;
     }
 
-    @JsonProperty("children")
-    public List<CustomFolderView> getCustomFolders() {
-        return customFolders;
-    }
-
-    public void setCustomFolders(List<CustomFolderView> customFolders) {
-        this.customFolders = customFolders;
+    public List<FolderView> getSubFolders() {
+        return subFolders;
     }
 }
