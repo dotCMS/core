@@ -2,13 +2,20 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { DebugElement, Component, Input } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
-import { async, ComponentFixture } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { of } from 'rxjs';
-import { MenuModule, Menu } from 'primeng/primeng';
-import { LoginService } from 'dotcms-js';
-
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { MenuModule, Menu, ConfirmationService } from 'primeng/primeng';
+import {
+    CoreWebService,
+    DotcmsConfigService,
+    DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    LoggerService,
+    LoginService,
+    StringUtils
+} from 'dotcms-js';
 import { DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -30,6 +37,12 @@ import { PushPublishService } from '@services/push-publish/push-publish.service'
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -54,12 +67,13 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
     const messageServiceMock = new MockDotMessageService({
         'editpage.actions.fire.confirmation': 'The action "{0}" was executed correctly',
-        'editpage.actions.fire.error.add.environment': 'place holder text'
+        'editpage.actions.fire.error.add.environment': 'place holder text',
+        'Workflow-Action': 'Workflow Action'
     });
 
     beforeEach(
         async(() => {
-            testbed = DOTTestBed.configureTestingModule({
+            testbed = TestBed.configureTestingModule({
                 imports: [RouterTestingModule, BrowserAnimationsModule, MenuModule],
                 declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
                 providers: [
@@ -79,12 +93,26 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                         provide: PushPublishService,
                         useClass: MockPushPublishService
                     },
+                    { provide: ConnectionBackend, useClass: MockBackend },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    { provide: RequestOptions, useClass: BaseRequestOptions },
+                    Http,
                     DotWorkflowsActionsService,
                     DotHttpErrorManagerService,
                     DotRouterService,
                     DotWorkflowActionsFireService,
                     DotWizardService,
-                    DotMessageDisplayService
+                    DotMessageDisplayService,
+                    DotAlertConfirmService,
+                    ConfirmationService,
+                    DotGlobalMessageService,
+                    DotEventsService,
+                    DotcmsEventsService,
+                    DotEventsSocket,
+                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                    DotcmsConfigService,
+                    LoggerService,
+                    StringUtils
                 ]
             });
         })
@@ -115,7 +143,9 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
     describe('button', () => {
         describe('enabled', () => {
             beforeEach(() => {
-                spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
+                spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(
+                    of(mockWorkflowsActions)
+                );
                 component.page = {
                     ...mockDotPage,
                     ...{
@@ -196,12 +226,13 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     });
 
                     it('should fire actions after wizard data was collected', () => {
-                        spyOn(dotWorkflowsActionsService, 'setWizardSteps');
+                        spyOn(dotWorkflowsActionsService, 'setWizardInput');
                         firstButton.click();
                         dotWizardService.output$(mockData);
 
-                        expect(dotWorkflowsActionsService.setWizardSteps).toHaveBeenCalledWith(
-                            mockWorkflowsActions[0]
+                        expect(dotWorkflowsActionsService.setWizardInput).toHaveBeenCalledWith(
+                            mockWorkflowsActions[0],
+                            'Workflow Action'
                         );
 
                         expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
@@ -285,7 +316,9 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         let menu: Menu;
 
         beforeEach(() => {
-            spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
+            spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(
+                of(mockWorkflowsActions)
+            );
             fixture.detectChanges();
             menu = de.query(By.css('p-menu')).componentInstance;
         });

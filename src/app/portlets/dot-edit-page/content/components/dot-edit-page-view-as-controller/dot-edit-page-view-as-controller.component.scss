@@ -30,25 +30,27 @@
             }
         }
     }
-}
 
-::ng-deep {
-    .ui-dropdown {
-        &:not(.ui-state-disabled) {
-            .ui-dropdown-label,
-            .ui-dropdown-trigger {
-                color: $gray;
+    ::ng-deep {
+        .ui-dropdown {
+            &:not(.ui-state-disabled) {
+                .ui-dropdown-label,
+                .ui-dropdown-trigger {
+                    color: $gray;
+                }
             }
         }
-    }
 
-    .ui-chkbox:not(.ui-state-disabled) {
-        .ui-chkbox-box.ui-state-default {
-            border-color: $gray;
+        .ui-chkbox:not(.ui-state-disabled) {
+            .ui-chkbox-box.ui-state-default {
+                border-color: $gray;
+            }
+        }
+
+        .ui-chkbox-label {
+            color: $gray;
         }
     }
-
-    .ui-chkbox-label {
-        color: $gray;
-    }
 }
+
+

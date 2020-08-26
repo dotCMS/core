@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { DotUnlicensedPortlet } from './resolvers/dot-form-resolver.service';
 
 @Component({
-    selector: 'dot-dot-form-builder',
+    selector: 'dot-form-builder',
     templateUrl: './dot-form-builder.component.html',
     styleUrls: ['./dot-form-builder.component.scss']
 })

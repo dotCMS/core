@@ -11,9 +11,9 @@ import { MockBackend } from '@angular/http/testing';
 import { DotRole } from '@models/dot-role/dot-role.model';
 import { TestBed } from '@angular/core/testing';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 const mockRoles: DotRole[] = [
     {
@@ -22,8 +22,8 @@ const mockRoles: DotRole[] = [
         user: false,
         roleKey: 'CMS Anonymous'
     },
-    { id: '2', name: 'Test Name', user: true, roleKey: 'Test' },
-    { id: '2', name: 'Some Role ', user: false, roleKey: 'roleKey1' }
+    { id: '2', name: 'Test Name', user: true, roleKey: 'anonymous' },
+    { id: '2', name: 'Some Role', user: true, roleKey: 'roleKey1' }
 ];
 
 export const mockProcessedRoles: DotRole[] = [
@@ -33,11 +33,12 @@ export const mockProcessedRoles: DotRole[] = [
         user: false,
         roleKey: 'CMS Anonymous'
     },
-    { id: '2', name: 'Some Role ', user: false, roleKey: 'roleKey1' }
+    { id: '2', name: 'Some Role (User)', user: true, roleKey: 'roleKey1' }
 ];
 
 const messageServiceMock = new MockDotMessageService({
     'current-user': 'Current User',
+    'user': 'User'
 });
 
 describe('DotRolesService', () => {
@@ -63,9 +64,9 @@ describe('DotRolesService', () => {
 
     it('should get Roles', () => {
         let result;
-        const url = '/api/v1/roles/123/rolehierarchyanduserroles';
+        const url = '/api/v1/roles/123/rolehierarchyanduserroles?roleHierarchyForAssign=false';
 
-        service.get('123').subscribe(res => {
+        service.get('123', false).subscribe(res => {
             result = res;
         });
 

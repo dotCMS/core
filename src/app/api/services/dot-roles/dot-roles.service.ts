@@ -21,21 +21,25 @@ export class DotRolesService {
      * @returns Observable<DotRole[]>
      * @memberof DotRolesService
      */
-    get(roleId: string): Observable<DotRole[]> {
+    get(roleId: string, roleHierarchy: boolean): Observable<DotRole[]> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `/api/v1/roles/${roleId}/rolehierarchyanduserroles`
+                url: `/api/v1/roles/${roleId}/rolehierarchyanduserroles?roleHierarchyForAssign=${roleHierarchy}`
             })
             .pipe(
                 pluck('entity'),
                 map((roles: DotRole[]) =>
-                    roles.filter(role => role.user === false).map((role: DotRole) => {
-                        if (role.roleKey === CURRENT_USER_KEY) {
-                            role.name = this.dotMessageService.get('current-user');
-                        }
-                        return role;
-                    })
+                    roles
+                        .filter((role: DotRole) => role.roleKey !== 'anonymous')
+                        .map((role: DotRole) => {
+                            if (role.roleKey === CURRENT_USER_KEY) {
+                                role.name = this.dotMessageService.get('current-user');
+                            } else if (role.user) {
+                                role.name = `${role.name} (${this.dotMessageService.get('user')})`;
+                            }
+                            return role;
+                        })
                 )
             );
     }

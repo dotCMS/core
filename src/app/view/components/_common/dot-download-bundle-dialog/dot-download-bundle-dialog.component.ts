@@ -22,7 +22,7 @@ const DOWNLOAD_URL =
     '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadUnpushedBundle/bundleId/';
 
 @Component({
-    selector: 'dot-dot-download-bundle-dialog',
+    selector: 'dot-download-bundle-dialog',
     templateUrl: './dot-download-bundle-dialog.component.html',
     styleUrls: ['./dot-download-bundle-dialog.component.scss']
 })

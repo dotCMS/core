@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
-    selector: 'dot-dot-portlet-detail',
+    selector: 'dot-portlet-detail',
     templateUrl: './dot-portlet-detail.component.html',
     styleUrls: ['./dot-portlet-detail.component.scss']
 })

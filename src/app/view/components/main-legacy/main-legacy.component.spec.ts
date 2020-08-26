@@ -22,7 +22,7 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
 import { FormatDateService } from '@services/format-date-service';
-import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -134,7 +134,7 @@ describe('MainComponentLegacyComponent', () => {
         expect(de.query(By.css('dot-main-nav')) !== null).toBe(true);
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
         expect(de.query(By.css('dot-push-publish-dialog')) !== null).toBe(true);
-        expect(de.query(By.css('dot-dot-download-bundle-dialog')) !== null).toBe(true);
+        expect(de.query(By.css('dot-download-bundle-dialog')) !== null).toBe(true);
         expect(de.query(By.css('dot-wizard')) !== null).toBe(true);
     });
 

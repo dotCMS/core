@@ -50,6 +50,8 @@ export class DotDialogComponent implements OnChanges {
 
     @Input() appendToBody = false;
 
+    @Input() bindEvents = true;
+
     @Output() hide: EventEmitter<any> = new EventEmitter();
 
     @Output()
@@ -66,8 +68,10 @@ export class DotDialogComponent implements OnChanges {
     constructor(private el: ElementRef) {}
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.visible && changes.visible.currentValue) {
-            this.bindEvents();
+        if (this.isVisible(changes)) {
+            if (this.bindEvents) {
+                this.bindKeydown();
+            }
             this.appendContainer();
         }
     }
@@ -135,7 +139,7 @@ export class DotDialogComponent implements OnChanges {
         this.isContentScrolled = event.target.scrollTop > 0;
     }
 
-    private bindEvents(): void {
+    private bindKeydown(): void {
         this.subscription.push(
             fromEvent(document, 'keydown').subscribe(this.handleKeyboardEvents.bind(this))
         );
@@ -186,9 +190,13 @@ export class DotDialogComponent implements OnChanges {
             document.body.appendChild(this.el.nativeElement);
         }
     }
+
+    private isVisible(changes: SimpleChanges): boolean {
+        return changes.visible && changes.visible.currentValue;
+    }
 }
 
-interface DialogButton {
+export interface DialogButton {
     action?: (dialog?: any) => void;
     disabled?: boolean;
     label: string;

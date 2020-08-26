@@ -7,6 +7,7 @@ import { DotCMSWorkflowAction, DotCMSWorkflow, DotCMSWorkflowInput } from 'dotcm
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
+import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',
@@ -59,13 +60,14 @@ export class DotWorkflowsActionsService {
     }
 
     /**
-     * Returns the steps needed to collect information of the Workflow inputs.
+     * Returns the input needed to collect information of the Workflow inputs.
      *
      * @param {DotCMSWorkflowAction} workflow
-     * @returns DotWizardStep[]
+     * @param {string} title
+     * @returns DotWizardInput
      * @memberof DotWorkflowsActionsService
      */
-    setWizardSteps(workflow: DotCMSWorkflowAction): DotWizardStep<any>[] {
+    setWizardInput(workflow: DotCMSWorkflowAction, title: string): DotWizardInput {
         const steps: DotWizardStep<any>[] = [];
         this.mergeCommentAndAssign(workflow).forEach((input: DotCMSWorkflowInput) => {
             if (this.workflowStepMap[input.id]) {
@@ -75,7 +77,12 @@ export class DotWorkflowsActionsService {
                 });
             }
         });
-        return steps;
+        return steps.length
+            ? {
+                  title: title,
+                  steps: steps
+              }
+            : null;
     }
 
     private mergeCommentAndAssign(workflow: DotCMSWorkflowAction): DotCMSWorkflowInput[] {
@@ -106,7 +113,7 @@ export class DotWorkflowsActionsService {
         return workflow && workflow.id;
     }
 
-    private getAssignableData(workflow: DotCMSWorkflowAction): { [key: string]: string } {
-        return { roleId: workflow.nextAssign };
+    private getAssignableData(workflow: DotCMSWorkflowAction): { [key: string]: any } {
+        return { roleId: workflow.nextAssign, roleHierarchy: workflow.roleHierarchyForAssign };
     }
 }

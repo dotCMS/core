@@ -8,15 +8,19 @@ import {
     ViewChildren
 } from '@angular/core';
 import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import {
+    DialogButton,
+    DotDialogActions,
+    DotDialogComponent
+} from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ComponentRef } from '@angular/core/src/linker/component_factory';
-import { Dialog } from 'primeng/dialog';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
 import { OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 
 @Component({
     selector: 'dot-wizard',
@@ -28,10 +32,10 @@ export class DotWizardComponent implements OnInit, OnDestroy {
     dialogActions: DotDialogActions;
     transform = '';
 
-    @Input() steps: DotWizardStep<any>[] = [];
+    @Input() data: DotWizardInput;
     @ViewChildren(DotContainerReferenceDirective)
     formHosts: QueryList<DotContainerReferenceDirective>;
-    @ViewChild('dialog') dialog: Dialog;
+    @ViewChild('dialog') dialog: DotDialogComponent;
 
     private currentStep = 0;
     private componentsHost: DotContainerReferenceDirective[];
@@ -46,7 +50,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.dotWizardService.showDialog$.pipe(takeUntil(this.destroy$)).subscribe(data => {
-            this.steps = data;
+            this.data = data;
             // need to wait to render the dotContainerReference.
             setTimeout(() => {
                 this.loadComponents();
@@ -67,7 +71,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
      */
     close(): void {
         this.dialog.visible = false;
-        this.steps = [];
+        this.data = null;
         this.currentStep = 0;
         this.updateTransform();
     }
@@ -97,16 +101,17 @@ export class DotWizardComponent implements OnInit, OnDestroy {
      * handle the enter event, if the form is valid move to the next step
      * @memberof DotWizardComponent
      */
-    handleEnter(): void {
+    handleEnter(event: KeyboardEvent): void {
+        event.stopImmediatePropagation();
         if (this.stepsValidation[this.currentStep]) {
-            this.dialogActions.accept.action();
+            this.dialog.acceptAction();
         }
     }
 
     private loadComponents(): void {
         this.componentsHost = this.formHosts.toArray();
         this.stepsValidation = [];
-        this.steps.forEach((step: DotWizardStep<any>, index: number) => {
+        this.data.steps.forEach((step: DotWizardStep<any>, index: number) => {
             const comp = this.componentFactoryResolver.resolveComponentFactory(step.component);
             const viewContainerRef = this.componentsHost[index].viewContainerRef;
             viewContainerRef.clear();
@@ -138,13 +143,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
                     : this.dotMessageService.get('next'),
                 disabled: true
             },
-            cancel: {
-                action: () => {
-                    this.loadNextStep(-1);
-                },
-                label: this.dotMessageService.get('previous'),
-                disabled: true
-            }
+            cancel: this.setCancelButton()
         };
     }
 
@@ -203,10 +202,25 @@ export class DotWizardComponent implements OnInit, OnDestroy {
                 'form'
             )[0];
             if (form || count === 10) {
-                (form.elements[0] as HTMLElement).focus();
                 clearInterval(interval);
+                (form.elements[0] as HTMLElement).focus();
             }
             count++;
         }, 200);
+    }
+
+    private setCancelButton(): DialogButton {
+        if (this.componentsHost.length === 1) {
+            return {
+                action: () => this.close(),
+                label: this.dotMessageService.get('cancel'),
+                disabled: false
+            };
+        }
+        return {
+            action: () => this.loadNextStep(-1),
+            label: this.dotMessageService.get('previous'),
+            disabled: true
+        };
     }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Subject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { mergeMap, map } from 'rxjs/operators';
 import { DotMenuService } from '@services/dot-menu.service';
 
@@ -16,8 +16,8 @@ export interface DotTaskAction {
  */
 @Injectable()
 export class DotWorkflowTaskDetailService {
-    private data: Subject<DotTaskAction> = new Subject();
-    private _header: Subject<string> = new Subject();
+    private data: BehaviorSubject<DotTaskAction> = new BehaviorSubject(null);
+    private _header: BehaviorSubject<string> = new BehaviorSubject('');
 
     constructor(private dotMenuService: DotMenuService) {}
 
