@@ -325,6 +325,31 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         assertFalse(UtilMethods.isSet(searchHits.getHits()));
     }
 
+    
+    
+    
+    /**
+     * this method tests that if we are passing in asc or desc as a sort order (both invalid without a
+     * specified field) then we do not blow up.
+     */
+
+    @Test
+    public void test_trying_with_bad_sorts() {
+        final SearchHits descendingHits = instance.indexSearch("*", 20, 0, "desc");
+        assert (descendingHits.getHits().length > 0);
+
+
+        final SearchHits ascendingHits = instance.indexSearch("*", 20, 0, "asc");
+        assert (ascendingHits.getHits().length > 0);
+
+    }
+
+    
+    
+    
+    
+    
+    
     private float getMaxScore(SearchHit[] hits) {
         float maxScore = java.lang.Float.MIN_VALUE;
 
