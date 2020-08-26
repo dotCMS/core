@@ -6,7 +6,6 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
@@ -14,6 +13,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.List;
@@ -32,14 +32,6 @@ import javax.ws.rs.core.Response;
 
 import com.liferay.util.StringPool;
 import org.glassfish.jersey.server.JSONP;
-
-import org.springframework.beans.BeanUtils;
-
-import java.util.LinkedList;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DoesNotExistException;
-
 
 /**
  * Created by jasontesser on 9/28/16.
@@ -114,94 +106,39 @@ public class FolderResource implements Serializable {
         return response;
     }
 
-    /**
-     * <p>
-     * This endpoint returns a folder structure with their children recursively
-     * </p>
-     * @param siteName (site or host) and folder (name of the folder)
-     * @return a folder structure with their children recursively
-     * @see <a href="https://github.com/dotCMS/core/issues/18964">Please check the github issue!</a>
+
+    /***
+     * This endpoint returns the requested folder and all the subFolders of it. Respecting the user
+     * permissions.
+     *
+     * @param hostId hostId where the folder lives
+     * @param folder parent folder to find
+     * @return FolderView with the info of the folder requested and the subFolders
+     * @throws DotDataException
+     * @throws DotSecurityException
      */
     @GET
-    @Path ("/sitename/{siteName}/folder/{folder : .+}")
+    @Path ("/hostId/{hostId}/folder/{folder : .+}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response loadFolderChildrenByURIPath(@Context final HttpServletRequest httpServletRequest,
+    @Produces({MediaType.APPLICATION_JSON})
+    public final Response loadFolderAndSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
                                                       @Context final HttpServletResponse httpServletResponse,
-                                                      @PathParam("siteName") final String siteName,
-                                                      @PathParam("folder") final String uri) throws DotDataException, DotSecurityException, DotDataException, DotSecurityException   {
-        Response response = null;
-        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+                                                      @PathParam("hostId") final String hostId,
+                                                      @PathParam("folder") final String folder) throws  DotDataException, DotSecurityException   {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(httpServletRequest, httpServletResponse)
+                        .init();
         final User user = initData.getUser();
-        final String uriParam = !uri.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(uri) : uri;
-        final Host host = APILocator.getHostAPI().findByName(siteName, user, false);
-        //final Folder folder = folderHelper.loadFolderByURI(siteName,user,uriParam);
-        final Folder folder = APILocator.getFolderAPI().findFolderByPath(uriParam, host, user, false);
-        if(host==null || folder==null) {
-            throw new DoesNotExistException("No folder found for "+uri+" on site "+siteName);
-        }
-        CustomFolderView root = getFolderStructure(folder, user);
-        response = Response.ok( new ResponseEntityView(root) ).build();
-        return response;
+
+        return Response.ok(new ResponseEntityView(folderHelper.loadFolderAndSubFoldersByPath(hostId,folder, user))).build(); // 200
     }
 
-    /**
-     * <p>
-     * This method returns a folder structure with their children recursively based on
-     * the folder returned by findFolderByPath
-     * </p>
-     * @param Folder (folder from findFolderByPath) and User (logged in user)
-     * @return CustomFolderView a folder structure with their children recursively
-     */
-    private final CustomFolderView getFolderStructure(Folder folder, User user){
 
-        CustomFolderView customFolder = convertFrom(folder);
-
-        List<CustomFolderView> foldersChildCustoms = new LinkedList<>();
-        List<Folder> children = null;
-        try {
-            children = APILocator.getFolderAPI().findSubFolders(folder, user, false);
-        } catch (Exception e) {
-            Logger.error(this, "Error getting findSubFolders for folder "+folder.getPath(), e);
-        }
-
-        if(children != null && children.size() != 0){
-            for(final Folder child : children){
-                CustomFolderView recursiveFolder = getFolderStructure(child, user);
-                foldersChildCustoms.add(recursiveFolder);
-            }
-        }
-
-        customFolder.setCustomFolders(foldersChildCustoms);
-
-        return customFolder;
-    }
-
-    /**
-     * <p>
-     * This method maps a Folder to a CustomFolderView
-     * </p>
-     * @param Folder
-     * @return CustomFolderView
-     */
-    private CustomFolderView convertFrom(Folder folder){
-        CustomFolderView customFolder = new CustomFolderView(
-                folder.getPath(),
-                folder.getDefaultFileType(),
-                folder.getFilesMasks(),
-                folder.getIDate(),
-                folder.getHostId(),
-                folder.getIdentifier(),
-                folder.getInode(),
-                folder.getModDate(),
-                folder.getName(),
-                folder.isShowOnMenu(),
-                folder.getSortOrder(),
-                folder.getTitle(),
-                folder.getType()
-        );
-        return customFolder;
-    }
 
 }

@@ -11,9 +11,11 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -96,6 +98,58 @@ public class FolderHelper {
             ret = folderAPI.findFolderByPath(uri,host,user,true);
         }
         return ret;
+    }
+
+    /**
+     *
+     * @param hostId hostId where the folder lives
+     * @param folder parent folder to find
+     * @param user user making the request
+     * @return FolderView with the info of the folder requested and the subFolders
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public FolderView loadFolderAndSubFoldersByPath(final String hostId, final String folder, final User user)
+            throws DotSecurityException, DotDataException {
+        final String uriParam = !folder.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folder) : folder;
+        final Host host = APILocator.getHostAPI().find(hostId,user,false);
+        final Folder folderByPath = APILocator.getFolderAPI().findFolderByPath(uriParam, host, user, false);
+        if(!UtilMethods.isSet(host)) {
+            throw new IllegalArgumentException(String.format(" Couldn't find any host with id `%s` ",hostId));
+        }
+        if(!UtilMethods.isSet(folderByPath) || !UtilMethods.isSet(folderByPath.getInode())) {
+            throw new IllegalArgumentException(String.format(" Couldn't find any folder with name `%s` in the host `%s`",folder,hostId));
+        }
+
+        return getFolders(folderByPath,user);
+    }
+
+    /**
+     * This method returns a folder structure with their children recursively based on
+     * the folder returned by findFolderByPath
+     *
+     * @param folder  parent folder to  find
+     * @param user user
+     * @return FolderView a folder structure with their children recursively
+     */
+    private final FolderView getFolders(final Folder folder, final User user){
+
+        final List<FolderView> foldersChildCustoms = new LinkedList<>();
+        List<Folder> children = null;
+        try {
+            children = APILocator.getFolderAPI().findSubFolders(folder, user, false);
+        } catch (Exception e) {
+            Logger.error(this, "Error getting findSubFolders for folder "+folder.getPath(), e);
+        }
+
+        if(children != null && children.size() != 0){
+            for(final Folder child : children){
+                final FolderView recursiveFolder = getFolders(child, user);
+                foldersChildCustoms.add(recursiveFolder);
+            }
+        }
+
+        return new FolderView(folder,foldersChildCustoms);
     }
 
 }
