@@ -66,7 +66,7 @@ params:
     required: true
   privateKey:
     value: ""
-    hidden: false
+    hidden: true
     type: "STRING"
     label: "Private Key"
     hint: "Cut and paste your Private Key here"
