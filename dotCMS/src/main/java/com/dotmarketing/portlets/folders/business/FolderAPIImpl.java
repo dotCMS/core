@@ -113,6 +113,11 @@ public class FolderAPIImpl implements FolderAPI  {
 				}
 			}
 
+			//If the user does not have permissions over the folder throw exception
+			if(!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+				throw new DotSecurityException("User " + (user.getUserId() != null ? user.getUserId() : BLANK) + " does not have permission to read folder " + folder.getPath());
+			}
+
 		}
 
 		return folder;
