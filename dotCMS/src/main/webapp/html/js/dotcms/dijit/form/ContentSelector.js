@@ -537,6 +537,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_doSearch: function (page, sortBy) {
+        if (sortBy && sortBy[0] === '.') {
+            sortBy = sortBy.slice(1)
+        }
+
 
         var fieldsValues = new Array ();
 

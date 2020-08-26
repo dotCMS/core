@@ -421,8 +421,7 @@
 			publishTime:pushPusblishFormData.publishTime,
 			expireDate:pushPusblishFormData.expireDate,
 			expireTime:pushPusblishFormData.expireTime,
-			neverExpire:pushPusblishFormData.neverExpire,
-			forcePush:pushPusblishFormData.forcePush
+			neverExpire:pushPusblishFormData.neverExpire
 		};
 
 		let data = {

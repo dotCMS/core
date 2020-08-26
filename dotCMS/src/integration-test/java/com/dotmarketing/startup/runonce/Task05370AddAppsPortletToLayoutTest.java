@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
  * Test adding the APPS portlet to the layout
  * @author jsanca
  */
-public class Task53700AddAppsPortletToLayoutTest {
+public class Task05370AddAppsPortletToLayoutTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -27,7 +27,7 @@ public class Task53700AddAppsPortletToLayoutTest {
             final String dropAppPortletSQL = "delete from cms_layouts_portlets where portlet_id = 'apps'";
             dotConnect.executeStatement(dropAppPortletSQL);
         } catch (Exception e) {
-            Logger.info(Task53700AddAppsPortletToLayoutTest.class, () -> "Failed deleting the portlet_id apps");
+            Logger.info(Task05370AddAppsPortletToLayoutTest.class, () -> "Failed deleting the portlet_id apps");
         }
     }
 
@@ -43,7 +43,7 @@ public class Task53700AddAppsPortletToLayoutTest {
     public void test_upgradeTask_success() throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
         dropAppPortlet(dotConnect);
-        final Task53700AddAppsPortletToLayout task = new Task53700AddAppsPortletToLayout();
+        final Task05370AddAppsPortletToLayout task = new Task05370AddAppsPortletToLayout();
         assertTrue(task.forceRun());//True because the apps does not exists
         task.executeUpgrade();
         assertFalse(task.forceRun());//False because the apps exists
