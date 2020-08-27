@@ -25,7 +25,7 @@ public class FolderView {
     private final Integer sortOrder;
     private final String title;
     private final String type;
-    private List<FolderView> subFolders;
+    private final List<FolderView> subFolders;
 
     public FolderView(final Folder folder, final List<FolderView> subFolders){
         this.name = folder.getName();

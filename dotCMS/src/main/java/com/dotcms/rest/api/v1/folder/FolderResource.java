@@ -13,7 +13,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.List;
@@ -108,7 +107,8 @@ public class FolderResource implements Serializable {
 
 
     /***
-     * This endpoint returns the requested folder and all the subFolders of it. Respecting the user
+     * This endpoint finds a folder by the given path and
+     * returns the requested folder and all the subFolders of it, respecting the user
      * permissions.
      *
      * @param hostId hostId where the folder lives

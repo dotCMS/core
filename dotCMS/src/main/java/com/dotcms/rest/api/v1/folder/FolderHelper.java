@@ -142,7 +142,7 @@ public class FolderHelper {
             Logger.error(this, "Error getting findSubFolders for folder "+folder.getPath(), e);
         }
 
-        if(children != null && children.size() != 0){
+        if(children != null && !children.isEmpty()){
             for(final Folder child : children){
                 final FolderView recursiveFolder = getFolders(child, user);
                 foldersChildCustoms.add(recursiveFolder);
