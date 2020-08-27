@@ -112,20 +112,20 @@ public class FolderResource implements Serializable {
      * permissions.
      *
      * @param hostId hostId where the folder lives
-     * @param folder parent folder to find
+     * @param path path of the folder to find
      * @return FolderView with the info of the folder requested and the subFolders
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @GET
-    @Path ("/hostId/{hostId}/folder/{folder : .+}")
+    @Path ("/hostId/{hostId}/path/{path : .+}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     public final Response loadFolderAndSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
                                                       @Context final HttpServletResponse httpServletResponse,
                                                       @PathParam("hostId") final String hostId,
-                                                      @PathParam("folder") final String folder) throws  DotDataException, DotSecurityException   {
+                                                      @PathParam("path") final String path) throws  DotDataException, DotSecurityException   {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)
@@ -136,7 +136,7 @@ public class FolderResource implements Serializable {
                         .init();
         final User user = initData.getUser();
 
-        return Response.ok(new ResponseEntityView(folderHelper.loadFolderAndSubFoldersByPath(hostId,folder, user))).build(); // 200
+        return Response.ok(new ResponseEntityView(folderHelper.loadFolderAndSubFoldersByPath(hostId,path, user))).build(); // 200
     }
 
 

@@ -102,7 +102,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			final User user, final boolean respectFrontEndPermissions) throws DotStateException,
 			DotDataException, DotSecurityException {
 		final Folder folder = folderFactory.findFolderByPath(path, host);
-		if (folder == null || UtilMethods.isEmpty(folder.getInode()) || permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)){
+		if (folder == null || UtilMethods.isEmpty(folder.getInode()) ||
+				permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ||
+						(path.equals("/") && permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)))){
 			return folder;
 		}
 		if(FolderAPI.SYSTEM_FOLDER.equals(folder.getInode()) && !permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)){

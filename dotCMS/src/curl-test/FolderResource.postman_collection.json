@@ -271,7 +271,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/48190c8c-42c4-46af-8d1a-0cd5db894797/folder/folder/not/exists",
+					"raw": "{{serverURL}}/api/v1/folder/hostId/48190c8c-42c4-46af-8d1a-0cd5db894797/path/folder/not/exists",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -281,7 +281,7 @@
 						"folder",
 						"hostId",
 						"48190c8c-42c4-46af-8d1a-0cd5db894797",
-						"folder",
+						"path",
 						"folder",
 						"not",
 						"exists"
@@ -325,7 +325,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/host-id-not-exists/folder/folder1",
+					"raw": "{{serverURL}}/api/v1/folder/hostId/host-id-not-exists/path/folder1",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -335,7 +335,7 @@
 						"folder",
 						"hostId",
 						"host-id-not-exists",
-						"folder",
+						"path",
 						"folder1"
 					]
 				}
@@ -381,7 +381,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/48190c8c-42c4-46af-8d1a-0cd5db894797/folder/folder2",
+					"raw": "{{serverURL}}/api/v1/folder/hostId/48190c8c-42c4-46af-8d1a-0cd5db894797/path/folder2",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -391,7 +391,7 @@
 						"folder",
 						"hostId",
 						"48190c8c-42c4-46af-8d1a-0cd5db894797",
-						"folder",
+						"path",
 						"folder2"
 					]
 				},
@@ -434,7 +434,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/48190c8c-42c4-46af-8d1a-0cd5db894797/folder/folder2",
+					"raw": "{{serverURL}}/api/v1/folder/hostId/48190c8c-42c4-46af-8d1a-0cd5db894797/path/folder2",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -444,7 +444,7 @@
 						"folder",
 						"hostId",
 						"48190c8c-42c4-46af-8d1a-0cd5db894797",
-						"folder",
+						"path",
 						"folder2"
 					]
 				},
