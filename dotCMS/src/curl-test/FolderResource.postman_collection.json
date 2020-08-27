@@ -271,7 +271,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder/not/exists",
+					"raw": "{{serverURL}}/api/v1/folder/siteId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder/not/exists",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -279,7 +279,7 @@
 						"api",
 						"v1",
 						"folder",
-						"hostId",
+						"siteId",
 						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 						"path",
 						"folder",
@@ -291,7 +291,7 @@
 			"response": []
 		},
 		{
-			"name": "loadFolderAndSubFoldersByPath BadRequest with Unexisting HostId",
+			"name": "loadFolderAndSubFoldersByPath BadRequest with Unexisting siteId",
 			"event": [
 				{
 					"listen": "test",
@@ -325,7 +325,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/host-id-not-exists/path/folder1",
+					"raw": "{{serverURL}}/api/v1/folder/siteId/host-id-not-exists/path/folder1",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -333,7 +333,7 @@
 						"api",
 						"v1",
 						"folder",
-						"hostId",
+						"siteId",
 						"host-id-not-exists",
 						"path",
 						"folder1"
@@ -381,7 +381,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder2",
+					"raw": "{{serverURL}}/api/v1/folder/siteId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder2",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -389,7 +389,7 @@
 						"api",
 						"v1",
 						"folder",
-						"hostId",
+						"siteId",
 						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 						"path",
 						"folder2"
@@ -434,7 +434,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder2",
+					"raw": "{{serverURL}}/api/v1/folder/siteId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder2",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -442,7 +442,7 @@
 						"api",
 						"v1",
 						"folder",
-						"hostId",
+						"siteId",
 						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 						"path",
 						"folder2"
