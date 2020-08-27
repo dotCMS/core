@@ -1087,6 +1087,221 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "importDestinationsCostaRicaWithSidebar",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "104ea22a-a663-4ef4-9308-a724b82242b7",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-sidebar.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/costa-rica-sidebar.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_LayoutFieldContainsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f8a0d0cc-61ee-426d-9351-69fe76628b7a",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var layout = jsonData.data.page.layout;",
+									"",
+									"    // layout fields",
+									"    // pm.expect(layout.footer, 'FAILED:[layout.footer]').equal(true);",
+									"    pm.expect(layout.width, 'FAILED:[layout.width]').equal(null);",
+									"    // pm.expect(layout.header, 'FAILED:[layout.header]').equal(true);",
+									"    pm.expect(layout.title, 'FAILED:[layout.title]').equal(\"anonymouslayout1598564677000\");",
+									"",
+									"    // rows fields",
+									"    var rows = layout.body.rows;",
+									"    pm.expect(rows.length, 'FAILED:[rows.length]').equal(6);",
+									"",
+									"    var row1 = rows[0];",
+									"    pm.expect(row1.styleClass, 'FAILED:[row1.styleClass]').equal(null);",
+									"",
+									"    var row1Columns = row1.columns;",
+									"    pm.expect(row1Columns.length, 'FAILED:[row1Columns.length]').equal(1);",
+									"",
+									"    var column1 = row1Columns[0];",
+									"    pm.expect(column1.preview, 'FAILED:[column1.preview]').equal(false);",
+									"    pm.expect(column1.width, 'FAILED:[column1.width]').equal(12);",
+									"    pm.expect(column1.widthPercent, 'FAILED:[column1.widthPercent]').equal(100);",
+									"    pm.expect(column1.left, 'FAILED:[column1.left]').equal(0);",
+									"    pm.expect(column1.leftOffset, 'FAILED:[column1.leftOffset]').equal(1);",
+									"    pm.expect(column1.styleClass, 'FAILED:[column1.styleClass]').equal(null);",
+									"",
+									"    var containers = column1.containers;",
+									"    pm.expect(containers.length, 'FAILED:[containers.length]').equal(1);",
+									"",
+									"    var container1 = containers[0];",
+									"    pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"5a07f889-4536-4956-aa6e-e7967969ec3f\");",
+									"    pm.expect(container1.uuid, 'FAILED:[container1.uuid]').equal(\"2\");",
+									"",
+									"    // sidebar",
+									"    var sidebar = layout.sidebar;",
+									"    pm.expect(sidebar.preview, 'FAILED:[sidebar.preview]').equal(false);",
+									"    pm.expect(sidebar.width, 'FAILED:[sidebar.width]').equal(\"small\");",
+									"    pm.expect(sidebar.widthPercent, 'FAILED:[sidebar.widthPercent]').equal(20);",
+									"    pm.expect(sidebar.location, 'FAILED:[sidebar.location]').equal(\"left\");",
+									"",
+									"    var sidebarContainers = sidebar.containers;",
+									"    pm.expect(sidebarContainers.length, 'FAILED:[sidebarContainers.length]').equal(2);",
+									"",
+									"    var sidebarContainer1 = sidebarContainers[0];",
+									"    pm.expect(sidebarContainer1.identifier, 'FAILED:[sidebarContainer1.identifier]').equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"    pm.expect(sidebarContainer1.uuid, 'FAILED:[sidebarContainers.uuid]').equal(\"1\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     layout {\n      footer\n      width\n      header\n      title\n      body {\n        rows {\n          styleClass\n          columns {\n            preview\n            width\n            widthPercent\n            left\n            leftOffset\n            styleClass\n            containers {\n              identifier\n              uuid\n            } \n          }\n        } \n      }\n      sidebar {\n        preview\n        width\n        widthPercent\n        location\n        containers {\n            identifier\n            uuid\n          } \n      }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -3468,87 +3683,87 @@
 	],
 	"variable": [
 		{
-			"id": "7afd204b-a336-46a0-9132-ee3b70836d55",
+			"id": "16acbba9-2597-4be2-9efb-a49ef05e684f",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "d4b59ea1-c947-4a19-a79e-07062f3aa588",
+			"id": "de1be12b-269e-44b7-bb23-ac4bca9ea7db",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "1c5f4244-e1b2-4c4c-bf12-82e3d8519986",
+			"id": "abe08a03-a2a2-4058-baca-4543dbefb483",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "d8634058-ab53-4b30-973b-795f4f4d178c",
+			"id": "c402b9c9-9f3b-40a6-9af7-8f1e7f5d2d9f",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "55691463-21a7-48c6-93a4-3cba85fab54f",
+			"id": "d9ca3e29-84c9-4501-8103-816a79960c6d",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "9163a6d6-f391-4095-891b-a1dd4015cbd6",
+			"id": "0f938161-d161-45f2-b9a7-85e6944eec44",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "2594b43c-5023-458e-966b-cb06e577a8f7",
+			"id": "a21e0513-bd8f-4020-bb18-8243717aab3e",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "62277b74-0d26-4ab3-8408-ecd8c9e39b5b",
+			"id": "d7e52160-e900-495c-ac20-5034dd3c7cdd",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "fb42027b-4dfc-4e9a-94d9-b5ecbcc8c4dc",
+			"id": "7b22de2c-86d8-4c12-8294-0c96fd3042df",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "928580df-a826-4b75-8605-358be843f832",
+			"id": "ea2d16b6-194e-438e-b950-38ecfe6215b6",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "fa847887-b428-427c-bcf7-8a776a0bda9a",
+			"id": "5e930148-2643-4514-98de-bf8af2fa4e34",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "1cde95e2-5877-4c5c-83b0-3e51cf279bcb",
+			"id": "d22b5bbd-c0a8-4096-8fc2-9a838976a333",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "9f98fb72-b102-4882-a546-ef35d098760f",
+			"id": "3939ec8e-09ce-4eb8-8b4d-0bb7f8749a5b",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "e427bceb-1e1d-4cd2-8289-9cf2121bced4",
+			"id": "9beb1284-309b-4056-b9af-ea9be8169335",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "582478cc-290f-4683-a0c7-1f954b4f453f",
+			"id": "6c71d02c-7323-40f6-b1c0-c4ce25c556f1",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "28bf59e9-22e7-4983-a506-1cc6916cf639",
+			"id": "cc50683e-f7d7-448f-ad7f-91ae133f3242",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "c1cb2743-4597-4965-82c8-c9827d18d0b3",
+			"id": "b6c592b4-b3e8-42b0-afd1-648fc8ad7b2a",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
