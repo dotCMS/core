@@ -271,7 +271,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/48190c8c-42c4-46af-8d1a-0cd5db894797/path/folder/not/exists",
+					"raw": "{{serverURL}}/api/v1/folder/hostId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder/not/exists",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -280,7 +280,7 @@
 						"v1",
 						"folder",
 						"hostId",
-						"48190c8c-42c4-46af-8d1a-0cd5db894797",
+						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 						"path",
 						"folder",
 						"not",
@@ -381,7 +381,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/48190c8c-42c4-46af-8d1a-0cd5db894797/path/folder2",
+					"raw": "{{serverURL}}/api/v1/folder/hostId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder2",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -390,7 +390,7 @@
 						"v1",
 						"folder",
 						"hostId",
-						"48190c8c-42c4-46af-8d1a-0cd5db894797",
+						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 						"path",
 						"folder2"
 					]
@@ -434,7 +434,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/hostId/48190c8c-42c4-46af-8d1a-0cd5db894797/path/folder2",
+					"raw": "{{serverURL}}/api/v1/folder/hostId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder2",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -443,7 +443,7 @@
 						"v1",
 						"folder",
 						"hostId",
-						"48190c8c-42c4-46af-8d1a-0cd5db894797",
+						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 						"path",
 						"folder2"
 					]
