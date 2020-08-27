@@ -84,16 +84,17 @@ public class FolderAPIImpl implements FolderAPI  {
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 	/**
-	 * Will get a folder for you on a given path for a particular host.
+	 * Will get a folder on a given path for a particular host.
 	 *
 	 * If the folder does not exists will return a folder with null values.
 	 * If the user does not have permissions over the folder a DotSecurityException will be thrown.
 	 *
 	 * @param path path of the requested folder
-	 * @param hostId host id where the folder should live
+	 * @param host host where the folder should live
 	 * @return the requested folder if the user has permissions, if not an exception.
-	 * @throws DotHibernateException
+	 * @throws DotSecurityException
 	 */
+
 	private final FolderFactory folderFactory = FactoryLocator.getFolderFactory();
 	private final PermissionAPI permissionAPI = getPermissionAPI();
 

@@ -1249,8 +1249,8 @@ public class FolderAPITest {//24 contentlets
 	/**
 	 * Method to test: findFolderByPath in the FolderAPI
 	 * Given Scenario: Create a folder using the admin user, now using a limited user try to get
-	 * the created folder by path, but the user does not have permissions over the folder
-	 * ExpectedResult: DotSecurityException.class, since the user does not have permissions over the folder
+	 * the created folder by path, user has permissions over the folder and the host
+	 * ExpectedResult: the requested folder
 	 *
 	 */
 	@Test
