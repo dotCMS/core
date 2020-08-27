@@ -398,59 +398,6 @@
 				"description": "Get folder2 and all the subFolders"
 			},
 			"response": []
-		},
-		{
-			"name": "loadFolderAndSubFoldersByPath Forbidden User with No Folder Permissions",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "95d9dfd6-5642-49df-b18e-2323b85490a7",
-						"exec": [
-							"pm.test(\"Status code should be 403\", function () {",
-							"    pm.response.to.have.status(403);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "chris",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "chris@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/siteId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder2",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"folder",
-						"siteId",
-						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
-						"path",
-						"folder2"
-					]
-				},
-				"description": "The user does not have read permissions to the requested folder"
-			},
-			"response": []
 		}
 	],
 	"protocolProfileBehavior": {}
