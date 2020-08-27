@@ -107,13 +107,16 @@ public class FolderAPIImpl implements FolderAPI  {
 						(path.equals("/") && permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)))){
 			return folder;
 		}
+		final String errorMsg = "User " + (user.getUserId() != null ? user.getUserId() : BLANK) + " does not have permission to read folder " + folder.getPath()+ " on host " + host.getHostname();
 		if(FolderAPI.SYSTEM_FOLDER.equals(folder.getInode()) && !permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)){
+			Logger.error(FolderAPIImpl.class,errorMsg);
 			throw new DotSecurityException("User " + (user.getUserId() != null ? user.getUserId() : BLANK) + " does not have permission to read folder " + folder.getPath() + " on host " + host.getHostname());
 		}
 		if(host.isSystemHost()) {
 			return findSystemFolder();
 		}
-		throw new DotSecurityException("User " + (user.getUserId() != null ? user.getUserId() : BLANK) + " does not have permission to read folder " + folder.getPath()+ " on host " + host.getHostname());
+		Logger.error(FolderAPIImpl.class,errorMsg);
+		throw new DotSecurityException(errorMsg);
 	}
 
 
