@@ -103,8 +103,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			DotDataException, DotSecurityException {
 		final Folder folder = folderFactory.findFolderByPath(path, host);
 		if (folder == null || UtilMethods.isEmpty(folder.getInode()) ||
-				permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ||
-						(path.equals("/") && permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)))){
+				permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions )){
 			return folder;
 		}
 		final String errorMsg = "User " + (user.getUserId() != null ? user.getUserId() : BLANK) + " does not have permission to read folder " + folder.getPath()+ " on host " + host.getHostname();

@@ -9,14 +9,17 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FolderCache;
@@ -116,24 +119,7 @@ public class FolderAPITest {//24 contentlets
 	@Rule
 	public TemporaryFolder testFolder = new TemporaryFolder();
 
-	// pull request #16967
-	@Test
-	public void test_get_by_path_does_not_throw_NPE() throws Exception {
 
-		String testFolder = "/folderMoveSourceTest" + System.currentTimeMillis();
-		//create folders and assets
-		final Folder test = folderAPI
-				.createFolders(testFolder, host, user, false);
-
-		final Folder foundFolder = folderAPI.findFolderByPath(testFolder, host, user, false);
-		Assert.assertEquals(test.getIdentifier(), foundFolder.getIdentifier());
-		Assert.assertEquals(test.getInode(), foundFolder.getInode());
-		Assert.assertEquals(test.getPath(), foundFolder.getPath());
-
-		Assert.assertNull(folderAPI.findFolderByPath(null, host, user, false));
-
-		Assert.assertNull(folderAPI.findFolderByPath(testFolder, (String) null, user, false));
-	}
 
 	@Test
 	public void renameFolder() throws Exception {
@@ -844,7 +830,15 @@ public class FolderAPITest {//24 contentlets
 
 	@Test
 	public void testFindSubFoldersByHost() throws DotDataException, DotSecurityException {
-		final List<Folder> folders = folderAPI.findSubFolders(host, false);
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final String folderPath = "/folder"+System.currentTimeMillis();
+
+		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
+		folder.setOwner("folder's owner");
+
+		folderAPI.save(folder, user, false);
+
+		final List<Folder> folders = folderAPI.findSubFolders(newHost, false);
 
 		Assert.assertNotNull(folders);
 		Assert.assertFalse(folders.isEmpty());
@@ -852,7 +846,15 @@ public class FolderAPITest {//24 contentlets
 
 	@Test
 	public void testFindFoldersByHost() throws DotDataException, DotSecurityException {
-		final List<Folder> folders = folderAPI.findFoldersByHost(host, user, false);
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final String folderPath = "/folder"+System.currentTimeMillis();
+
+		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
+		folder.setOwner("folder's owner");
+
+		folderAPI.save(folder, user, false);
+
+		final List<Folder> folders = folderAPI.findFoldersByHost(newHost, user, false);
 
 		Assert.assertNotNull(folders);
 		Assert.assertFalse(folders.isEmpty());
@@ -869,36 +871,6 @@ public class FolderAPITest {//24 contentlets
 
 		Assert.assertNotNull(folders);
 		Assert.assertFalse(folders.isEmpty());
-	}
-
-	@Test
-	public void testFindFolderByPath() throws DotDataException, DotSecurityException {
-		String folderPath;
-		Folder folder;
-
-		folder     = null;
-		folderPath = "/folder"+System.currentTimeMillis();
-
-		try{
-			folder = folderAPI.createFolders(folderPath, host, user, false);
-			folder.setOwner("folder's owner");
-
-			folderAPI.save(folder, user, false);
-
-			fc.removeFolder(folder, identifierAPI.find(folder));
-			Folder result = folderAPI.findFolderByPath(folderPath, host, user,false);
-
-			Assert.assertNotNull(result);
-			Assert.assertEquals(folder.getInode(), result.getInode());
-
-			Assert.assertTrue(
-					result.getOwner() != null && result.getOwner().equals(folder.getOwner()));
-		}finally{
-
-			if (folder != null){
-				folderAPI.delete(folder, user, false);
-			}
-		}
 	}
 
 	@Test
@@ -1168,6 +1140,150 @@ public class FolderAPITest {//24 contentlets
 				APILocator.getFolderAPI().delete(folder, APILocator.systemUser(), false);
 			}
 		}
+	}
+
+	/**
+	 * Method to test: findFolderByPath in the FolderAPI
+	 * Given Scenario: Create a folder and get the folder using the path and the admin user.
+	 * ExpectedResult: The folder created.
+	 *
+	 */
+	@Test
+	public void test_findFolderByPath_Admin_success() throws DotDataException, DotSecurityException {
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final String folderPath = "/folder"+System.currentTimeMillis();
+
+		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
+		folder.setOwner("folder's owner");
+
+		folderAPI.save(folder, user, false);
+
+		fc.removeFolder(folder, identifierAPI.find(folder));
+		final Folder folderByPath = folderAPI.findFolderByPath(folderPath, newHost, user,false);
+
+		Assert.assertNotNull(folderByPath);
+		Assert.assertEquals(folder.getInode(), folderByPath.getInode());
+		Assert.assertEquals(folder.getOwner(), folderByPath.getOwner());
+	}
+
+	/**
+	 * Method to test: findFolderByPath in the FolderAPI
+	 * Given Scenario: call the findFolderByPath but the host is null
+	 * ExpectedResult: null
+	 *
+	 */
+	@Test
+	public void test_findFolderByPath_Admin_HostisNull_returnNullFolder() throws DotDataException, DotSecurityException {
+
+		final Folder folderByPath = folderAPI.findFolderByPath("/", (String) null, user,false);
+
+		Assert.assertNull(folderByPath);
+	}
+
+	/**
+	 * Method to test: findFolderByPath in the FolderAPI
+	 * Given Scenario: call the findFolderByPath but the path is null
+	 * ExpectedResult: null
+	 *
+	 */
+	@Test
+	public void test_findFolderByPath_Admin_PathisNull_returnNullFolder() throws DotDataException, DotSecurityException {
+
+		final Folder folderByPath = folderAPI.findFolderByPath(null, host, user,false);
+
+		Assert.assertNull(folderByPath);
+	}
+
+	/**
+	 * Method to test: findFolderByPath in the FolderAPI
+	 * Given Scenario: Create a folder using the admin user, now using a limited user try to get
+	 * the created folder by path, but the user does not have permissions over the host
+	 * ExpectedResult: DotSecurityException.class, since the user does not have permissions over the host
+	 *
+	 */
+	@Test (expected = DotSecurityException.class)
+	public void test_findFolderByPath_UserNoPermissionsOverHost_returnDotSecurityException() throws DotDataException, DotSecurityException {
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final String folderPath = "/folder"+System.currentTimeMillis();
+
+		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
+		folder.setOwner("folder's owner");
+
+		folderAPI.save(folder, user, false);
+		fc.removeFolder(folder, identifierAPI.find(folder));
+
+		final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
+		folderAPI.findFolderByPath(folderPath, newHost, chrisUser,false);
+	}
+
+	/**
+	 * Method to test: findFolderByPath in the FolderAPI
+	 * Given Scenario: Create a folder using the admin user, now using a limited user try to get
+	 * the created folder by path, but the user does not have permissions over the folder
+	 * ExpectedResult: DotSecurityException.class, since the user does not have permissions over the folder
+	 *
+	 */
+	@Test (expected = DotSecurityException.class)
+	public void test_findFolderByPath_UserNoPermissionsOverFolder_returnDotSecurityException() throws DotDataException, DotSecurityException {
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final String folderPath = "/folder"+System.currentTimeMillis();
+
+		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
+		folder.setOwner("folder's owner");
+
+		folderAPI.save(folder, user, false);
+		fc.removeFolder(folder, identifierAPI.find(folder));
+
+		final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
+
+		//Give Permissions Over the Host
+		final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+				newHost.getPermissionId(),
+				TestUserUtils.getOrCreatePublisherRole(newHost).getId(),
+				PermissionAPI.PERMISSION_READ, true);
+		APILocator.getPermissionAPI().save(permissions, newHost, user, false);
+
+		folderAPI.findFolderByPath(folderPath, newHost, chrisUser,false);
+	}
+
+	/**
+	 * Method to test: findFolderByPath in the FolderAPI
+	 * Given Scenario: Create a folder using the admin user, now using a limited user try to get
+	 * the created folder by path, but the user does not have permissions over the folder
+	 * ExpectedResult: DotSecurityException.class, since the user does not have permissions over the folder
+	 *
+	 */
+	@Test
+	public void test_findFolderByPath_UserWithPermissionsOverFolderAndHost_success() throws DotDataException, DotSecurityException {
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final String folderPath = "/folder"+System.currentTimeMillis();
+
+		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
+		folder.setOwner("folder's owner");
+
+		folderAPI.save(folder, user, false);
+		fc.removeFolder(folder, identifierAPI.find(folder));
+
+		final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
+
+		//Give Permissions Over the Host
+		Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+				newHost.getPermissionId(),
+				TestUserUtils.getOrCreatePublisherRole(newHost).getId(),
+				PermissionAPI.PERMISSION_READ, true);
+		APILocator.getPermissionAPI().save(permissions, newHost, user, false);
+		//Give Permissions Over the Folder
+		permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+				folder.getPermissionId(),
+				TestUserUtils.getOrCreatePublisherRole(newHost).getId(),
+				PermissionAPI.PERMISSION_READ, true);
+		APILocator.getPermissionAPI().save(permissions, folder, user, false);
+
+		final Folder folderByPath = folderAPI.findFolderByPath(folderPath, newHost, chrisUser,false);
+
+		Assert.assertNotNull(folderByPath);
+		Assert.assertEquals(folder.getInode(), folderByPath.getInode());
+		Assert.assertEquals(folder.getOwner(), folderByPath.getOwner());
 	}
 
 }
