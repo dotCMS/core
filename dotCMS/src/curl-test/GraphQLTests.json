@@ -833,6 +833,91 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_PageContainsRenderField",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bde8aed5-7a1b-46b6-b091-a5f74a4a43be",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var render = jsonData.data.page.render;",
+									"",
+									"    // mode",
+									"    pm.expect(render, 'FAILED:[rendered]').equal(\"<!doctype html>\\n<html lang=\\\"en\\\">\\n\\n    <head>\\n\\n        \\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, height=device-height, initial-scale=1.0, maximum-scale=5.0, user-scalable=1\\\">\\n<meta http-equiv=\\\"X-UA-Compatible\\\" content=\\\"IE=edge\\\">\\n<meta charset=\\\"utf-8\\\">\\n<link rel=\\\"icon\\\" href=\\\"/application/themes/travel/images/favicon.ico\\\" type=\\\"image/x-icon\\\">\\n<title>Costa Rica Rain Forest</title>\\n<meta name=\\\"description\\\" content=\\\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\\\">\\n<meta name=\\\"language\\\" content=\\\"english\\\">\\n<meta name=\\\"author\\\" content=\\\"dotCMS\\\">\\n<meta name=\\\"copyright\\\" content=\\\"dotCMS LLC, Miami Florida, US\\\">\\n<meta property=\\\"og:title\\\" content=\\\"Costa Rica Rain Forest\\\">\\n<meta property=\\\"og:url\\\" content=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n<meta property=\\\"og:image\\\" content=\\\"/images/default.png\\\">\\n<link rel=\\\"canonical\\\" href=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n\\n<!-- CSS -->\\n<link rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"//fonts.googleapis.com/css?family=Oswald:500,600,700%7CRoboto:300,300i,700%7CCondiment%7CDella+Respira\\\">\\n<link rel=\\\"stylesheet\\\" href=\\\"/application/themes/travel/css/styles.dotsass\\\">\\n\\n</head>\\n\\n<body id=\\\"costa-rica-rain-forest\\\" >\\n\\n            <header>\\n\\n  <!-- RD Navbar-->\\n  <div class=\\\"rd-navbar-wrap\\\">\\n    <nav class=\\\"rd-navbar rd-navbar-static rd-navbar-classic\\\" data-layout=\\\"rd-navbar-fixed\\\" data-sm-layout=\\\"rd-navbar-fixed\\\" data-md-layout=\\\"rd-navbar-fixed\\\" data-md-device-layout=\\\"rd-navbar-fixed\\\" data-lg-layout=\\\"rd-navbar-static\\\" data-lg-device-layout=\\\"rd-navbar-static\\\" data-xl-layout=\\\"rd-navbar-static\\\" data-xl-device-layout=\\\"rd-navbar-static\\\" data-lg-stick-up-offset=\\\"78px\\\" data-xl-stick-up-offset=\\\"98px\\\" data-xxl-stick-up-offset=\\\"118px\\\" data-lg-stick-up=\\\"true\\\" data-xl-stick-up=\\\"true\\\" data-xxl-stick-up=\\\"true\\\">\\n      <div class=\\\"rd-navbar-collapse-toggle rd-navbar-fixed-element-1\\\" data-rd-navbar-toggle=\\\".rd-navbar-collapse\\\"><span></span></div>\\n      \\n      <div class=\\\"rd-navbar-aside-outer rd-navbar-collapse bg-default\\\">\\n        <div class=\\\"rd-navbar-aside\\\">\\n\\n          <!-- CONTACT INFO -->\\n          <ul class=\\\"list-inline list-inline-xxl\\\">\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-map-marker\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"#\\\">3059 Grand Avenue, Suite 300 Miami, FL, 33133 USA</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-cellphone-android\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"tel:+1-888-404-6185\\\">+1-888-404-6185</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-email-outline\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"mailto: info@dotcms.com\\\">info@dotcms.com</a></div>\\n              </div>\\n            </li>\\n          </ul>\\n\\n          <div>\\n            <!-- CART -->\\n            <a class=\\\"basket\\\" href=\\\"/store/cart\\\"><span class=\\\"icon mdi mdi-cart-outline\\\"></span><span class=\\\"basket-count\\\">3</span></a>\\n\\n            <!-- My Account -->\\n            <a href=\\\"/login/profile\\\" class=\\\"ml-3\\\">\\n                                <img src=\\\"/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/42w/50q/mountain-persona.jpg\\\" alt=\\\"Winter Enthusiast Persona\\\" class=\\\"img-circles border\\\">\\n                          </a>\\n          </div>\\n        </div>\\n      </div>\\n\\n      <div class=\\\"rd-navbar-main-outer\\\">\\n        <div class=\\\"rd-navbar-main\\\">\\n\\n          <div class=\\\"rd-navbar-panel\\\">\\n            <button class=\\\"rd-navbar-toggle\\\" data-rd-navbar-toggle=\\\".rd-navbar-nav-wrap\\\" aria-label=\\\"Toggle Menu\\\"><span></span></button>\\n            <div class=\\\"rd-navbar-brand\\\"><a class=\\\"brand\\\" href=\\\"/\\\" aria-label=\\\"TravelLux Home\\\"><img class=\\\"brand-logo-dark\\\" src=\\\"/application/themes/travel/images/logo.png\\\" width=\\\"195\\\" height=\\\"40\\\" alt=\\\"TravelLux Home\\\"></a></div>\\n          </div>\\n\\n          <!-- NAV BAR -->\\n\\n          <div class=\\\"rd-navbar-main-element\\\">\\n\\n            <div class=\\\"rd-navbar-nav-wrap\\\">\\n            \\n                        \\n              <ul class=\\\"rd-navbar-nav\\\">\\n                <li class=\\\"rd-nav-item  \\\"><a class=\\\"rd-nav-link\\\" href='/'>Home</a></li>\\n                                                                      <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/blog' target='_self'>Travel Blog</a></li>\\n                                                                        <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/destinations' target='_self'>Destinations</a></li>\\n                                                </ul>\\n            </div>\\n\\n            <!-- RD Navbar Search-->\\n            <div class=\\\"rd-navbar-search\\\">\\n              <button class=\\\"rd-navbar-search-toggle rd-navbar-fixed-element-2\\\" data-rd-navbar-toggle=\\\".rd-navbar-search\\\" aria-label=\\\"Search Box Toggle\\\"><span></span></button>\\n              <form class=\\\"rd-search\\\" action=\\\"/search/\\\" method=\\\"GET\\\">\\n                <div class=\\\"form-wrap\\\">\\n                  <label class=\\\"form-label search-label\\\" for=\\\"site-search\\\">Search...</label>\\n                  <input class=\\\"rd-navbar-search-form-input form-input site-search\\\" type=\\\"text\\\" name=\\\"q\\\" autocomplete=\\\"off\\\">\\n                </div>\\n                <button class=\\\"rd-search-form-submit fa-search\\\" type=\\\"submit\\\" aria-label=\\\"Submit\\\"></button>\\n              </form>\\n            </div>\\n            \\n          </div>\\n        </div>\\n      </div>\\n    </nav>\\n  </div>\\n\\n</header>\\n    \\n    <div class=\\\"body-wrapper\\\">\\n    \\n            \\n            \\n                \\n                        \\n    \\n                                                            \\n                                                \\n                                                                                                                        \\n                        <section id=\\\"section-1\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-2\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-3\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-4\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-10 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-5\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-6\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-5  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                            \\n                                                    </div><!-- /body-wrapper -->\\n\\n            <!-- Page Footer-->\\n\\n\\n\\n\\n<footer class=\\\"footer-classic bg-footer bg-overlay-80 context-dark\\\" style=\\\"background-image: url('/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/WebP/1200w/footer-image.jpg')\\\" >\\n  <div class=\\\"section-xxl\\\">\\n    <div class=\\\"container\\\">\\n      <div class=\\\"row row-50 justify-content-center\\\">\\n        <div class=\\\"col-lg-4\\\">\\n          <h2>About us</h2>\\n          <p class=\\\"max-width-xl-90 text-gray-400\\\">We are TravelLux, a community of dedicated travel experts, journalists, and bloggers. Our aim is to offer you the best insight on where to go for your travel as well as to give you amazing opportunities with free benefits and bonuses for registered clients.</p>\\n          <a class=\\\"footer-brand\\\" href=\\\"./\\\"><img src=\\\"/application/themes/travel/images/logo-inverse.png\\\" alt=\\\"TravelLux Home\\\" height=\\\"40\\\"/></a>\\n        </div>\\n\\n\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Latest blog posts</h2>\\n          \\n          <!-- Latest Blogs -->\\n                    \\n        </div>\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Get in touch</h2>\\n          <form class=\\\"rd-form form-sm rd-mailform\\\" data-form-output=\\\"form-output-global\\\" data-form-type=\\\"contact\\\" method=\\\"post\\\" action=\\\"\\\">\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-name\\\" type=\\\"text\\\" name=\\\"name\\\" data-constraints=\\\"@Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-name\\\">Name</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-email\\\" type=\\\"email\\\" name=\\\"email\\\" data-constraints=\\\"@Email @Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-email\\\">E-mail</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-message\\\">Message</label>\\n              <textarea class=\\\"form-input\\\" id=\\\"footer-form-message\\\" name=\\\"message\\\" data-constraints=\\\"@Required\\\"></textarea>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <button class=\\\"button button-md button-primary\\\" type=\\\"submit\\\">Send</button>\\n            </div>\\n          </form>\\n        </div>\\n      </div>\\n    </div>\\n  </div>\\n  <div class=\\\"container\\\">\\n    <!-- Rights-->\\n    <p class=\\\"rights mb-0\\\"><span>&copy;2012 - 2020 All Rights Reserved</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Terms of Use</a> <span>and</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Privacy Policy</a></p>\\n  </div>\\n</footer>\\n\\n<!-- Javascript-->\\n<script src=\\\"/application/themes/travel/js/core.min.js\\\"></script>\\n<script src=\\\"/application/themes/travel/js/script.js\\\"></script>\\n\\n    \\n</body>\\n</html>\");",
+									"",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     render\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -3214,87 +3299,87 @@
 	],
 	"variable": [
 		{
-			"id": "d4011b81-72c2-4299-b79f-098765c2ecc7",
+			"id": "0d813943-1262-45ff-8633-79e9389586b0",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "976268d7-c4bd-4428-a3da-cf09d1f18561",
+			"id": "28d05b34-03c2-4ad1-bf2d-29e7142260b5",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "c988d98b-8e04-4038-ba5d-c0cb90cc4ab6",
+			"id": "c972fb41-2b98-4e6c-b62e-1ea91eb82ede",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "92648abd-680b-4aa4-b898-8ba4d5cdc1f9",
+			"id": "74ab1d38-f1b3-4421-962e-0b1d6838f930",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "1cf46c63-8279-47f4-b4a7-4a4077e3d3a6",
+			"id": "4a21557f-b0a5-44a6-bc44-3055e85fb77b",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "22acb5b8-1576-43e3-a52e-45eb8849c2f1",
+			"id": "13dcc77c-7d3e-46f5-8933-3b9aa862693e",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "aff05297-ef42-4c64-97d8-4cd9472d3ad0",
+			"id": "2a228302-c1a1-4bdb-9b2d-dd4785d786a2",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "c1037b0d-5432-4e3a-8871-984860ed0dd6",
+			"id": "a3f2517b-53a8-4961-acdf-d842bff1c4fa",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "a47cd244-05ae-4c67-a6fe-b90ce73e565e",
+			"id": "443923d7-30ce-44e2-8fcd-cd176f89bcdd",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "637597da-75a6-4ab9-840e-b64671a78d7f",
+			"id": "036f5015-5467-4fab-9532-ef2e083e8db5",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "d95140b4-84fb-4a71-bf11-ba6c4e921e25",
+			"id": "035a10f6-485b-4fba-9c8a-8e9f44ba1ef5",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "1f7e27f4-01b0-42a0-9435-410e9ba35404",
+			"id": "2a78d192-ec93-4a9d-88c2-07ef4dd0cd69",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "b47b6cad-9295-4f4d-b5ed-890718815836",
+			"id": "b4c95cb1-4db0-4a19-830e-bb504b5d2d8a",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "5431e2e2-963b-4a1f-a6f1-1bccc004619a",
+			"id": "375d90d7-e0ba-483f-985a-45d0b4eda502",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "eec78fab-2efb-4db3-bb6b-fb54a4b03788",
+			"id": "b7868f7c-5606-4cc6-a6b3-d8f4a709132e",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "a9580f33-713e-4d3e-a75f-fb2b861ec54b",
+			"id": "897876a8-a717-4140-8e2c-d74da8cbff1a",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "58127104-1282-4121-8f89-78068e316070",
+			"id": "bb90f451-fbf2-4b3c-9d59-dfe988ada17b",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

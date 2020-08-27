@@ -1,7 +1,9 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
+<%@page import="com.dotmarketing.business.LayoutAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
@@ -11,11 +13,16 @@
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
 <%
+    PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 	boolean enterprise = LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
-	boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
+    boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
+    
+    final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+
+    boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user);
 %>
 
 <%  String dojoPath = Config.getStringProperty("path.to.dojo"); %>
@@ -1003,7 +1010,8 @@
 			</div>
 			<!-- END Properties Tab -->
 
-			<!-- START Permission Tab -->
+            <!-- START Permission Tab -->
+            <% if (hasViewPermision) { %>
 			<div id="TabThree" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "permissions")%>" >
 				<div id="permissionNA" style="height: 300px; text-align: center;  position:relative">
 					<span style="position:absolute; top:50%; left: 50%; height:10em; margin-top:-2em; margin-left:-10em"><%= LanguageUtil.get(pageContext, "message.category.toplevel.na") %></span>
@@ -1011,9 +1019,10 @@
 				<div id="permissionDiv" style="display: none">
 					<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc_ajax.jsp" %>
 				</div>
-				<!-- END Permission Tab -->
+            </div>
+            <% } %>
+			<!-- END Permission Tab -->
 
-			</div>
 		</div>
 		<!-- END Tabs -->
 	</div>
