@@ -9,6 +9,7 @@ import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
+import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
@@ -20,6 +21,11 @@ import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
+import com.dotmarketing.portlets.templates.design.bean.ContainerHolder;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import eu.bitwalker.useragentutils.Browser;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -97,6 +103,9 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                         (Function<Contentlet, Contentlet>) (contentlet)->
                                Try.of(()->((URLMapInfo) contentlet.get("URLMapContent"))
                                        .getContentlet()).getOrNull())));
+
+        pageFields.put("layout", new TypeFetcher(GraphQLTypeReference.typeRef("Layout"),
+                new LayoutDataFetcher()));
 
         typeMap.put("Page", TypeUtil.createObjectType("Page", pageFields));
 
@@ -237,7 +246,64 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         typeMap.put("Geolocation", TypeUtil.createObjectType("Geolocation",
                 geoFields));
 
+        final Map<String, TypeFetcher> layoutFields = new HashMap<>();
+        layoutFields.put("width", new TypeFetcher(GraphQLLong,
+                new PropertyDataFetcher<TemplateLayout>("width")));
+        layoutFields.put("title", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<TemplateLayout>("title")));
+        layoutFields.put("header", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<TemplateLayout>("header")));
+        layoutFields.put("footer", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<TemplateLayout>("footer")));
+        layoutFields.put("body", new TypeFetcher(GraphQLTypeReference.typeRef("Body"),
+                new PropertyDataFetcher<TemplateLayout>("body")));
 
+        typeMap.put("Layout", TypeUtil.createObjectType("Layout",
+                layoutFields));
+
+        final Map<String, TypeFetcher> bodyFields = new HashMap<>();
+        bodyFields.put("rows", new TypeFetcher(list(GraphQLTypeReference.typeRef("LayoutRow")),
+                new PropertyDataFetcher<TemplateLayout>("rows")));
+
+        typeMap.put("Body", TypeUtil.createObjectType("Body",
+                bodyFields));
+
+        final Map<String, TypeFetcher> rowFields = new HashMap<>();
+        rowFields.put("columns", new TypeFetcher(list(GraphQLTypeReference.typeRef("LayoutColumn")),
+                new PropertyDataFetcher<TemplateLayoutRow>("columns")));
+        rowFields.put("styleClass", new TypeFetcher((GraphQLString),
+                new PropertyDataFetcher<TemplateLayoutRow>("styleClass")));
+
+        typeMap.put("LayoutRow", TypeUtil.createObjectType("LayoutRow",
+                rowFields));
+
+        final Map<String, TypeFetcher> columnFields = new HashMap<>();
+        columnFields.put("widthPercent", new TypeFetcher(GraphQLLong,
+                new PropertyDataFetcher<TemplateLayoutColumn>("widthPercent")));
+        columnFields.put("width", new TypeFetcher(GraphQLLong,
+                new PropertyDataFetcher<TemplateLayoutColumn>("width")));
+        columnFields.put("leftOffset", new TypeFetcher((GraphQLLong),
+                new PropertyDataFetcher<TemplateLayoutColumn>("leftOffset")));
+        columnFields.put("left", new TypeFetcher((GraphQLLong),
+                new PropertyDataFetcher<TemplateLayoutColumn>("left")));
+        columnFields.put("styleClass", new TypeFetcher((GraphQLString),
+                new PropertyDataFetcher<TemplateLayoutColumn>("styleClass")));
+        columnFields.put("preview", new TypeFetcher((GraphQLBoolean),
+                new PropertyDataFetcher<TemplateLayoutColumn>("preview")));
+        columnFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef("ContainerUUID")),
+                new PropertyDataFetcher<ContainerHolder>("containers")));
+
+        typeMap.put("LayoutColumn", TypeUtil.createObjectType("LayoutColumn",
+                columnFields));
+
+        final Map<String, TypeFetcher> containerUUIDFields = new HashMap<>();
+        containerUUIDFields.put("identifier", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<ContainerUUID>("identifier")));
+        containerUUIDFields.put("uuid", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<ContainerUUID>("uuid")));
+
+        typeMap.put("ContainerUUID", TypeUtil.createObjectType("ContainerUUID",
+                containerUUIDFields));
 
         return typeMap.values();
 
