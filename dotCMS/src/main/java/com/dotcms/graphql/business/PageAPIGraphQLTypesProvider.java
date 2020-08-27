@@ -17,12 +17,15 @@ import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import com.dotcms.visitor.domain.Geolocation;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
+import com.dotmarketing.cms.urlmap.URLMapInfo;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
 import eu.bitwalker.useragentutils.Browser;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.PropertyDataFetcher;
+import io.vavr.control.Try;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -89,6 +92,11 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("viewAs", new TypeFetcher(GraphQLTypeReference.typeRef("ViewAs")
                 , new ViewAsDataFetcher()));
         pageFields.put("render", new TypeFetcher(GraphQLString, new PageRenderDataFetcher()));
+        pageFields.put("urlContentMap",new TypeFetcher(GraphQLTypeReference.typeRef("Contentlet"),
+                PropertyDataFetcher.fetching(
+                        (Function<Contentlet, Contentlet>) (contentlet)->
+                               Try.of(()->((URLMapInfo) contentlet.get("URLMapContent"))
+                                       .getContentlet()).getOrNull())));
 
         typeMap.put("Page", TypeUtil.createObjectType("Page", pageFields));
 
