@@ -9,6 +9,7 @@ import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
+import com.dotcms.graphql.datafetcher.page.ContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
@@ -20,6 +21,7 @@ import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
 import com.dotmarketing.portlets.templates.design.bean.ContainerHolder;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
@@ -108,6 +110,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         pageFields.put("layout", new TypeFetcher(GraphQLTypeReference.typeRef("Layout"),
                 new LayoutDataFetcher()));
+        pageFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef("Container")),
+                new ContainersDataFetcher()));
 
         typeMap.put("Page", TypeUtil.createObjectType("Page", pageFields));
 
@@ -337,6 +341,15 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         typeMap.put("ContainerUUID", TypeUtil.createObjectType("ContainerUUID",
                 containerUUIDFields));
+
+        // Container type
+        final Map<String, TypeFetcher> containerFields = new HashMap<>();
+        containerFields.put("identifier", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getIdentifier())));
+
+        typeMap.put("Container", TypeUtil.createObjectType("Container",
+                containerFields));
 
         return typeMap.values();
 
