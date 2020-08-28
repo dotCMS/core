@@ -4,13 +4,19 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.*;
 
@@ -23,7 +29,7 @@ import java.util.function.Supplier;
  * Deletes the unused persona tags on the multi tree.
  * @author jsanca
  */
-public class DeleteMultiTreeUsedPersonaTagJob implements StatefulJob {
+public class DeleteMultiTreeUsedPersonaTagJob extends DotStatefulJob {
 
     private final MultiTreeAPI multiTreeAPI;
     private final PersonaAPI   personaAPI;
@@ -39,31 +45,17 @@ public class DeleteMultiTreeUsedPersonaTagJob implements StatefulJob {
      * @param user {@link User} user that triggers the job
      * @param respectFrontEndRoles {@link Boolean}
      */
-    public static void triggerDeleteMultiTreeUsedPersonaTagJob(final User user,
-                                            final boolean respectFrontEndRoles) {
-
-        final String randomID    = UUID.randomUUID().toString();
-        final JobDataMap dataMap = new JobDataMap();
-
-        dataMap.put("user", user);
-        dataMap.put("respectFrontEndRoles", respectFrontEndRoles);
-
-        final JobDetail jobDetail = new JobDetail("DeleteMultiTreeUsedPersonaTagJob-" + randomID,
-                "delete_multitree_unusedpersonatag_jobs", DeleteMultiTreeUsedPersonaTagJob.class);
-        jobDetail.setJobDataMap(dataMap);
-        jobDetail.setDurability(false);
-        jobDetail.setVolatility(false);
-        jobDetail.setRequestsRecovery(true);
-
-        final long startTime = System.currentTimeMillis();
-        final SimpleTrigger trigger = new SimpleTrigger("deleteMultitreeUnusedPersonasTrigger-" + randomID,
-                "delete_multitree_unusedpersonatag_triggers",
-                new Date(startTime));
+    static void triggerDeleteMultiTreeUsedPersonaTagJob(final User user,
+            final boolean respectFrontEndRoles) {
 
         try {
 
-            final Scheduler scheduler = QuartzUtils.getSequentialScheduler();
-            scheduler.scheduleJob(jobDetail, trigger);
+            final Map<String, Serializable> nextExecutionData = ImmutableMap
+                    .of(
+                            "respectFrontEndRoles", respectFrontEndRoles,
+                            "user", user);
+            DotStatefulJob.enqueueTrigger(nextExecutionData,DeleteMultiTreeUsedPersonaTagJob.class);
+
         } catch (Exception e) {
 
             Logger.error(DeleteMultiTreeUsedPersonaTagJob.class, "Error scheduling DeleteMultiTreeUsedPersonaTagJob", e);
@@ -74,12 +66,19 @@ public class DeleteMultiTreeUsedPersonaTagJob implements StatefulJob {
                 String.format("Deleting UnUsed Persona Tag on MultiTree table"));
     }
 
+    /**
+     * Entry point
+     * @param jobContext
+     * @throws JobExecutionException
+     */
     @Override
-    public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
+    public void run(final JobExecutionContext jobContext) throws JobExecutionException {
 
-        final JobDataMap map  = jobExecutionContext.getJobDetail().getJobDataMap();
-        final User       user = (User) map.get("user");
-        final boolean    respectFrontEndRoles = (Boolean)map.get("respectFrontEndRoles");
+        final Trigger trigger = jobContext.getTrigger();
+        final Map<String, Serializable> executionData = getExecutionData(trigger, DeleteMultiTreeUsedPersonaTagJob.class);
+
+        final User       user = (User) executionData.get("user");
+        final boolean    respectFrontEndRoles = (Boolean)executionData.get("respectFrontEndRoles");
 
         this.execute(user, respectFrontEndRoles);
     }
@@ -90,7 +89,7 @@ public class DeleteMultiTreeUsedPersonaTagJob implements StatefulJob {
      * @param respectFrontEndRoles {@link Boolean}
      * @throws JobExecutionException
      */
-    public void execute(final User user, final boolean respectFrontEndRoles) throws JobExecutionException {
+     void execute(final User user, final boolean respectFrontEndRoles) throws JobExecutionException {
 
         try {
 

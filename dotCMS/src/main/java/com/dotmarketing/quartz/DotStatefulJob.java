@@ -14,10 +14,12 @@ import org.quartz.JobDetail;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 import org.quartz.StatefulJob;
+import org.quartz.Trigger;
 
 public abstract class DotStatefulJob extends DotJob implements StatefulJob {
 
-     static final String TRIGGER_JOB_DETAIL = "trigger_job_detail";
+     public static final String TRIGGER_JOB_DETAIL = "trigger_job_detail";
+     public static final String EXECUTION_DATA = "execution_data";
 
     /**
      * This is meant simplify the generation of a Job-name
@@ -94,12 +96,35 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
     }
 
     /**
-     *
+     * This will get you the map that stores all the data written into the job detail organized by trigger name.
      * @param jobClass
      * @return
      */
     protected static Optional<Map<String, Object>> getTriggerJobDetail(final Class<? extends StatefulJob> jobClass) {
        return getTriggerJobDetail(getJobName(jobClass), getJobGroupName(jobClass));
+    }
+
+    /**
+     * This extracts the execution data associated with a particular trigger if it isn't found an exception will be thrown
+     * @param trigger
+     * @param jobClass
+     * @return
+     */
+    protected Map<String, Serializable> getExecutionData(final Trigger trigger, final Class<? extends StatefulJob> jobClass){
+
+        final Optional<Map<String, Object>> triggerJobDetailOptional = getTriggerJobDetail(jobClass);
+        if(!triggerJobDetailOptional.isPresent()){
+            throw new IllegalArgumentException(
+                    String.format("Unable to get job detail data `%s`. ", trigger.getName()));
+        }
+        final Map<String, Object> triggerJobDetail = triggerJobDetailOptional.get();
+        @SuppressWarnings("unchecked")
+        final Map<String, Serializable> executionData = (Map<String, Serializable>) triggerJobDetail.get(trigger.getName());
+        if(null == executionData) {
+            throw new IllegalArgumentException(
+                    String.format("Unable to get trigger execution data for trigger `%s`. ", trigger.getName()));
+        }
+        return executionData;
     }
 
     /**
@@ -143,7 +168,7 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
             task.setDurability(true); //must be durable to preserve the detail across triggers.
 
             QuartzUtils.scheduleTask(task);
-            Logger.info(DotStatefulJob.class, String.format("New Task `%s` scheduled.", task));
+            Logger.info(DotStatefulJob.class, String.format("New Task for job `%s` scheduled for execution `%s`.", jobName, cronString));
 
         }
     }

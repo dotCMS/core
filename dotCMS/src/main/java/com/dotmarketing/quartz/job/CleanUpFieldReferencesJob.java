@@ -26,7 +26,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.quartz.DotStatefulJob;
-import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -36,6 +35,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
+import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
@@ -49,27 +49,24 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
     @Override
     @WrapInTransaction
     public void run(final JobExecutionContext jobContext) throws JobExecutionException {
+        final Map<String, Serializable> executionData;
+        final JobDataMap jobDataMap = jobContext.getJobDetail().getJobDataMap();
 
-        final Trigger trigger = jobContext.getTrigger();
-        final Optional<Map<String, Object>> triggerJobDetailOptional = getTriggerJobDetail(CleanUpFieldReferencesJob.class);
-        if(!triggerJobDetailOptional.isPresent()){
-            throw new IllegalArgumentException(
-                    String.format("Unable to get job detail data %s ", trigger.getName()));
+        if (jobDataMap.containsKey(EXECUTION_DATA)) {
+          //This bit is here to continue to support the integration-tests
+            executionData = (Map<String, Serializable>) jobDataMap.get(EXECUTION_DATA);
+        } else {
+          //But the `executionData` must be grabbed frm the persisted job detail. Through the trigger name.
+            final Trigger trigger = jobContext.getTrigger();
+            executionData = getExecutionData(trigger, CleanUpFieldReferencesJob.class);
         }
-            final Map<String, Object> triggerJobDetail = triggerJobDetailOptional.get();
-            @SuppressWarnings("unchecked")
-            final Map<String, Serializable> executionData = (Map<String, Serializable>) triggerJobDetail.get(trigger.getName());
-            if(null == executionData) {
-                throw new IllegalArgumentException(
-                        String.format("Unable to get trigger execution data for trigger `%s` ", trigger.getName()));
-            }
 
-        final User user = (User)executionData.get("user");
+        final User user = (User) executionData.get("user");
         final Field field = (Field) executionData.get("field");
         final Date deletionDate = (Date) executionData.get("deletionDate");
 
-        System.out.println(":::Job-Started::Thread:" + Thread.currentThread().getName() +"::"+field.name());
-/*
+        Logger.info(CleanUpFieldReferencesJob.class,String.format("CleanUpFieldReferencesJob ::: started for field `%s`.",field.variable()));
+
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -113,14 +110,8 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
             Logger.error(CleanUpFieldReferencesJob.class,
                     "Error cleaning up field references. Field velocity var: " + field.variable(), e);
         }
-*/
+        Logger.info(CleanUpFieldReferencesJob.class,String.format("CleanUpFieldReferencesJob ::: finished for field `%s`.",field.variable()));
 
-        try {
-            Thread.sleep(25000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println("::: done!");
     }
 
     public static void triggerCleanUpJob(final Field field, final User user) {
