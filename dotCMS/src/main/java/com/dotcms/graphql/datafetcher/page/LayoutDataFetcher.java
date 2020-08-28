@@ -15,8 +15,7 @@ import graphql.schema.DataFetchingEnvironment;
 import java.util.Map;
 
 /**
- * This DataFetcher returns a {@link Map} representing a {@link Template} associated to the originally
- * requested {@link HTMLPageAsset}.
+ * This DataFetcher returns the {@link TemplateLayout} associated to the requested {@link HTMLPageAsset}.
  */
 public class LayoutDataFetcher implements DataFetcher<TemplateLayout> {
     @Override
