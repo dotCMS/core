@@ -469,7 +469,7 @@ dependencies {
     compile 'org.immutables:gson:2.3.3'
 
     compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
-    compile group: 'io.bit3', name: 'jsass', version: '5.7.1'
+    compile group: 'io.bit3', name: 'jsass', version: '5.10.3'
 
     //XML Tool dependency
     compile group: 'jaxen', name: 'jaxen', version: '1.1.6'
