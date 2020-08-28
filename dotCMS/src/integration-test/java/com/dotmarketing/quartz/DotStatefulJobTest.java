@@ -18,7 +18,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.JobDetail;
@@ -101,7 +100,7 @@ public class DotStatefulJobTest extends IntegrationTestBase {
     private Optional<JobExecutionContext> getJobExecutionContext(){
         final String jobName = DotStatefulJob.getJobName(MyStatefulJob.class);
         try {
-            final Scheduler sequentialScheduler = QuartzUtils.getSequentialScheduler();
+            final Scheduler sequentialScheduler = getSequentialScheduler();
             @SuppressWarnings("unchecked")
             final List<JobExecutionContext> executingJobs = sequentialScheduler.getCurrentlyExecutingJobs();
             return executingJobs.stream().filter(jobExecutionContext -> {
@@ -137,11 +136,11 @@ public class DotStatefulJobTest extends IntegrationTestBase {
                     || isBetween(this.to, other.from, other.to);
         }
 
-        private static boolean isBetween(final LocalTime t, final LocalTime from, final LocalTime to) {
+        private static boolean isBetween(final LocalTime time, final LocalTime from, final LocalTime to) {
             if (from.isBefore(to)) { // same day
-                return from.isBefore(t) && t.isBefore(to);
+                return from.isBefore(time) && time.isBefore(to);
             } else { // spans to the next day.
-                return from.isBefore(t) || t.isBefore(to);
+                return from.isBefore(time) || time.isBefore(to);
             }
         }
 
