@@ -10,6 +10,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -48,6 +49,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -1204,7 +1206,8 @@ public class FolderAPITest {//24 contentlets
 	@Test (expected = DotSecurityException.class)
 	public void test_findFolderByPath_UserNoPermissionsOverHost_returnDotSecurityException() throws DotDataException, DotSecurityException {
 		final Host newHost = new SiteDataGen().nextPersisted();
-		final String folderPath = "/folder"+System.currentTimeMillis();
+		final long currentTime = System.currentTimeMillis();
+		final String folderPath = "/folder"+currentTime;
 
 		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
 		folder.setOwner("folder's owner");
@@ -1212,8 +1215,9 @@ public class FolderAPITest {//24 contentlets
 		folderAPI.save(folder, user, false);
 		fc.removeFolder(folder, identifierAPI.find(folder));
 
-		final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
-		folderAPI.findFolderByPath(folderPath, newHost, chrisUser,false);
+		final User limitedUser = new UserDataGen().nextPersisted();
+
+		folderAPI.findFolderByPath(folderPath, newHost, limitedUser,false);
 	}
 
 	/**
@@ -1226,7 +1230,8 @@ public class FolderAPITest {//24 contentlets
 	@Test (expected = DotSecurityException.class)
 	public void test_findFolderByPath_UserNoPermissionsOverFolder_returnDotSecurityException() throws DotDataException, DotSecurityException {
 		final Host newHost = new SiteDataGen().nextPersisted();
-		final String folderPath = "/folder"+System.currentTimeMillis();
+		final long currentTime = System.currentTimeMillis();
+		final String folderPath = "/folder"+currentTime;
 
 		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
 		folder.setOwner("folder's owner");
@@ -1234,16 +1239,16 @@ public class FolderAPITest {//24 contentlets
 		folderAPI.save(folder, user, false);
 		fc.removeFolder(folder, identifierAPI.find(folder));
 
-		final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
+		final User limitedUser = new UserDataGen().nextPersisted();
 
 		//Give Permissions Over the Host
 		final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
 				newHost.getPermissionId(),
-				TestUserUtils.getOrCreatePublisherRole(newHost).getId(),
+				APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
 				PermissionAPI.PERMISSION_READ, true);
 		APILocator.getPermissionAPI().save(permissions, newHost, user, false);
 
-		folderAPI.findFolderByPath(folderPath, newHost, chrisUser,false);
+		folderAPI.findFolderByPath(folderPath, newHost, limitedUser,false);
 	}
 
 	/**
@@ -1256,7 +1261,8 @@ public class FolderAPITest {//24 contentlets
 	@Test
 	public void test_findFolderByPath_UserWithPermissionsOverFolderAndHost_success() throws DotDataException, DotSecurityException {
 		final Host newHost = new SiteDataGen().nextPersisted();
-		final String folderPath = "/folder"+System.currentTimeMillis();
+		final long currentTime = System.currentTimeMillis();
+		final String folderPath = "/folder"+currentTime;
 
 		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
 		folder.setOwner("folder's owner");
@@ -1264,22 +1270,22 @@ public class FolderAPITest {//24 contentlets
 		folderAPI.save(folder, user, false);
 		fc.removeFolder(folder, identifierAPI.find(folder));
 
-		final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
+		final User limitedUser = new UserDataGen().nextPersisted();
 
 		//Give Permissions Over the Host
 		Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
 				newHost.getPermissionId(),
-				TestUserUtils.getOrCreatePublisherRole(newHost).getId(),
+				APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
 				PermissionAPI.PERMISSION_READ, true);
 		APILocator.getPermissionAPI().save(permissions, newHost, user, false);
 		//Give Permissions Over the Folder
 		permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
 				folder.getPermissionId(),
-				TestUserUtils.getOrCreatePublisherRole(newHost).getId(),
+				APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
 				PermissionAPI.PERMISSION_READ, true);
 		APILocator.getPermissionAPI().save(permissions, folder, user, false);
 
-		final Folder folderByPath = folderAPI.findFolderByPath(folderPath, newHost, chrisUser,false);
+		final Folder folderByPath = folderAPI.findFolderByPath(folderPath, newHost, limitedUser,false);
 
 		Assert.assertNotNull(folderByPath);
 		Assert.assertEquals(folder.getInode(), folderByPath.getInode());
