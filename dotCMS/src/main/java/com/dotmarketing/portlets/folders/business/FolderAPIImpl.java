@@ -104,17 +104,21 @@ public class FolderAPIImpl implements FolderAPI  {
 			DotDataException, DotSecurityException {
 		final Folder folder = folderFactory.findFolderByPath(path, host);
 		if (folder == null || UtilMethods.isEmpty(folder.getInode()) ||
-				permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ||
-						(path.equals("/") && permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)))){
+				permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)){
 			return folder;
 		}
 		final String errorMsg = "User " + (user.getUserId() != null ? user.getUserId() : BLANK) + " does not have permission to read folder " + folder.getPath()+ " on host " + host.getHostname();
-		if(FolderAPI.SYSTEM_FOLDER.equals(folder.getInode()) && !permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)){
-			Logger.error(FolderAPIImpl.class,errorMsg);
-			throw new DotSecurityException("User " + (user.getUserId() != null ? user.getUserId() : BLANK) + " does not have permission to read folder " + folder.getPath() + " on host " + host.getHostname());
-		}
-		if(host.isSystemHost()) {
-			return findSystemFolder();
+		if(FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())){
+				if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+					Logger.error(FolderAPIImpl.class, errorMsg);
+					throw new DotSecurityException(
+							"User " + (user.getUserId() != null ? user.getUserId() : BLANK)
+									+ " does not have permission to read folder " + folder.getPath()
+									+ " on host " + host.getHostname());
+				}
+				if(permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions) || host.isSystemHost()){
+					return findSystemFolder();
+				}
 		}
 		Logger.error(FolderAPIImpl.class,errorMsg);
 		throw new DotSecurityException(errorMsg);
