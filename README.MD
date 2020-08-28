@@ -71,8 +71,6 @@ A collection of Angular Services to connect our FE with the DotCMS APIs. [Full d
 
 A collection of DotCMS interfaces and types to be reused in all our libraries and main app. [Full docs](https://dotcms.github.io/core-web/docs/dotcms-models/globals.html)
 
-### [dotcms-field-elements](https://github.com/dotCMS/core-web/tree/master/projects/dotcms-field-elements)
-
 A [StencilJS](https://stenciljs.com/) Web Elements library of DotCMS form fields.
 
 ### [dot-layout-grid](https://github.com/dotCMS/core-web/tree/master/projects/dot-layout-grid)

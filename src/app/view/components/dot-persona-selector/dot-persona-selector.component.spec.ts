@@ -141,8 +141,8 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call toggle when selected dot-persona-selected-item', () => {
-        spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
         hostFixture.whenStable().then(() => {
+            spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
             const selectedItem = hostFixture.debugElement.query(
                 By.css('dot-persona-selected-item')
             );

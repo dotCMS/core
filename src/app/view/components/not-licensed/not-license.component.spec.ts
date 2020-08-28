@@ -10,7 +10,7 @@ import { NotLicensedComponent } from './not-licensed.component';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotLicenseService, DotUnlicensedPortletData } from '@services/dot-license/dot-license.service';
 
 const messageServiceMock = new MockDotMessageService({
     'portlet.title': 'Enterprise Portlet',
@@ -20,7 +20,7 @@ const messageServiceMock = new MockDotMessageService({
     'only-available-in-enterprise': 'Only in Enterprise'
 });
 
-const portletData = {
+const portletData: DotUnlicensedPortletData = {
     icon: 'update',
     titleKey: 'portlet.title',
     url: '/rules'
@@ -47,7 +47,6 @@ describe('NotLicensedComponent', () => {
         fixture = DOTTestBed.createComponent(NotLicensedComponent);
         de = fixture.debugElement;
         dotLicenseService = de.injector.get(DotLicenseService);
-        spyOn(dotLicenseService, 'unlicenseData');
         dotLicenseService.unlicenseData.next(portletData);
         fixture.detectChanges();
     });
