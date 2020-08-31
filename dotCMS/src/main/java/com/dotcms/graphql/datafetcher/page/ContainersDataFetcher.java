@@ -1,7 +1,9 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -27,6 +29,7 @@ public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
             final User user = context.getUser();
             final Contentlet page = environment.getSource();
             final String pageModeAsString = (String) context.getParam("pageMode");
+            final String languageId = (String) context.getParam("languageId");
 
             final PageMode mode = PageMode.get(pageModeAsString);
             final HttpServletRequest request = context.getHttpServletRequest();
@@ -34,8 +37,10 @@ public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(page);
 
-            return APILocator.getHTMLPageAssetRenderedAPI()
-                    .getPageContainers(request, pageAsset, mode, user);
+            final Host site = APILocator.getHostAPI().find(page.getHost(), user, false);
+            PageRenderUtil pageRenderUtil = new PageRenderUtil(pageAsset, user, mode,
+                    Long.parseLong(languageId), site);
+            return pageRenderUtil.getContainersRaw();
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;

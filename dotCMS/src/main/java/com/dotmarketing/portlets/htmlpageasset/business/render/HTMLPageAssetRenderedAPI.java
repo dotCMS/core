@@ -1,35 +1,15 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.rendering.velocity.directive.ParseContainer;
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.PersonalizedContentlet;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl.HTMLPageUrl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -63,7 +43,7 @@ public interface HTMLPageAssetRenderedAPI {
             final User user,
             final String uri,
             final PageMode mode)
-                throws DotSecurityException, DotDataException;
+            throws DotSecurityException, DotDataException;
 
     /**
      * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in
@@ -79,11 +59,11 @@ public interface HTMLPageAssetRenderedAPI {
      * @throws DotDataException     An error occurred when accessing the data source.
      * @throws IOException
      */
-     PageView getPageMetadata(
+    PageView getPageMetadata(
             final PageContext context,
             final HttpServletRequest request,
             final HttpServletResponse response)
-                throws DotSecurityException, DotDataException;
+            throws DotSecurityException, DotDataException;
 
     /**
      * Returns a {@link HTMLPageUrl} given a {@link PageContext}
@@ -123,7 +103,7 @@ public interface HTMLPageAssetRenderedAPI {
             final User user,
             final String pageUri,
             final PageMode pageMode)
-                throws DotDataException, DotSecurityException;
+            throws DotDataException, DotSecurityException;
     /***
      * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in
      * the browser.
@@ -140,7 +120,7 @@ public interface HTMLPageAssetRenderedAPI {
             final PageContext context,
             final HttpServletRequest request,
             final HttpServletResponse response)
-                throws DotDataException, DotSecurityException;
+            throws DotDataException, DotSecurityException;
 
     /**
      * Return the Page's html string
@@ -156,7 +136,7 @@ public interface HTMLPageAssetRenderedAPI {
      * @deprecated deprecated since 5.1, use {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)} instead
      */
     public String getPageHtml(final HttpServletRequest request, final HttpServletResponse response, final User user,
-                              final String uri, final PageMode mode) throws DotSecurityException, DotDataException;
+            final String uri, final PageMode mode) throws DotSecurityException, DotDataException;
 
     /**
      * Return the Page's html string
@@ -182,11 +162,11 @@ public interface HTMLPageAssetRenderedAPI {
      * @param pageUri
      * @return
      */
-     PageMode getDefaultEditPageMode(
-             final User user,
-             final HttpServletRequest request,
-             final String pageUri
-     );
+    PageMode getDefaultEditPageMode(
+            final User user,
+            final HttpServletRequest request,
+            final String pageUri
+    );
 
     /**
      * Returns the {@link ViewAsPageStatus} for the given {@link HTMLPageAsset} and {@link PageMode}
@@ -196,18 +176,7 @@ public interface HTMLPageAssetRenderedAPI {
      * @return
      */
 
-     ViewAsPageStatus getViewAsStatus(final HttpServletRequest request,
-             final PageMode pageMode, final HTMLPageAsset htmlpage, final User user)
-             throws DotDataException;
-
-    /**
-     *  TODO add javadoc
-     * @param request
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-     List<ContainerRaw> getPageContainers(final HttpServletRequest request,
-             final HTMLPageAsset htmlPage, final PageMode mode, final User user)
-             throws DotDataException, DotSecurityException;
+    ViewAsPageStatus getViewAsStatus(final HttpServletRequest request,
+            final PageMode pageMode, final HTMLPageAsset htmlpage, final User user)
+            throws DotDataException;
 }
