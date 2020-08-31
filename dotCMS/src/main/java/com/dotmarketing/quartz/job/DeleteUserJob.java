@@ -25,6 +25,7 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 
 /**
  * Created by nollymar on 7/19/16.
@@ -96,7 +97,8 @@ public class DeleteUserJob extends DotStatefulJob {
     @Override
     public void run(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
-        JobDataMap map = jobExecutionContext.getJobDetail().getJobDataMap();
+        final Trigger trigger = jobExecutionContext.getTrigger();
+        final Map<String, Serializable> map = getExecutionData(trigger, DeleteUserJob.class);
         User userToDelete = (User) map.get("userToDelete");
         User replacementUser = (User) map.get("replacementUser");
         User user = (User) map.get("user");
