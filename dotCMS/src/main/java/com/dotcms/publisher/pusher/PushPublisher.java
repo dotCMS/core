@@ -348,7 +348,7 @@ public class PushPublisher extends Publisher {
 			final Response response) throws DotDataException, LanguageException {
 
 		final Map<String, String> wwwAuthenticateHeader = ResourceResponse.getWWWAuthenticateHeader(response);
-		final String errorKey = wwwAuthenticateHeader.get("error_key");
+		final String errorKey = wwwAuthenticateHeader.get("error_key").replaceAll("\"", "");
 
 		markAsInValidToken(environment, endpoint, detail, errorKey);
 	}

@@ -7,8 +7,11 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
+import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.repackage.com.google.common.cache.Cache;
@@ -22,10 +25,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -429,9 +429,7 @@ public class IntegrityResource {
                 addThreadToSession( session, integrityDataRequestChecker, endpointId,   integrityDataRequestID );
 
             } else if ( response.getStatus() == HttpStatus.SC_UNAUTHORIZED ) {
-                setStatus( session, endpointId, ProcessStatus.ERROR, null );
-                Logger.error( this.getClass(), "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: " + endpointId );
-                return response( "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id:" + endpointId, true );
+                return handleInvalidTokenResponse(endpoint, response, session);
             } else {
                 setStatus( session, endpointId, ProcessStatus.ERROR, null );
                 Logger.error( this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: " + endpointId );
@@ -464,6 +462,23 @@ public class IntegrityResource {
 
         return response( jsonResponse.toString(), false );
 
+    }
+
+    private Response handleInvalidTokenResponse(
+            final PublishingEndPoint endpoint,
+            final Response response,
+            final HttpSession session) throws LanguageException {
+
+        final Map<String, String> wwwAuthenticateHeader = ResourceResponse.getWWWAuthenticateHeader(response);
+        final String errorKey = wwwAuthenticateHeader.get("error_key").replaceAll("\"", "");
+
+        final String message = LanguageUtil.get(String.format("push_publish.end_point.%s_message", errorKey));
+        PushPublishLogger.log(this.getClass(), message);
+
+        setStatus( session, endpoint.getId(), ProcessStatus.ERROR, null );
+        Logger.error( this.getClass(), message);
+
+        return response( String.format("%s. Please check Auth Token. Endpoint Id:", message, endpoint.getId()), true );
     }
 
     @NotNull

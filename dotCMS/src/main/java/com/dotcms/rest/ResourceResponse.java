@@ -163,7 +163,7 @@ public class ResourceResponse {
                 null,
                 status,
                 map("WWW-Authenticate",
-                        String.format("error=\"%s\",error_key=\"%s\"", errorCode, errorKey)
+                        String.format("Bearer realm=\"example\",error=\"%s\",error_key=\"%s\",error_description=\"\"", errorCode, errorKey)
                 )
         );
     }

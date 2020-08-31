@@ -2,6 +2,8 @@ package com.dotcms.publisher.endpoint.bean;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
+import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 
 /**
@@ -154,34 +156,32 @@ public abstract class PublishingEndPoint implements Serializable {
     public boolean hasAuthKey() {
         final StringBuilder authKey = getAuthKey();
 
-        if (authKey == null || authKey.length() == 0) {
+        if (UtilMethods.isEmpty(authKey.toString())) {
             return false;
         }
 
-        final String authKeyString = authKey.toString();
-        return !authKeyString.equals(JsonWebTokenAuthCredentialProcessor.EXPIRED_TOKEN_ERROR_KEY) &&
-                !authKeyString.equals(JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
+        return !isTokenExpired() && !isTokenInvalid();
     }
 
     public boolean isTokenExpired() {
         final StringBuilder authKey = getAuthKey();
 
-        if (authKey == null || authKey.length() == 0) {
+        if (UtilMethods.isEmpty(authKey.toString())) {
             return false;
         }
 
         final String authKeyString = authKey.toString();
-        return !authKeyString.equals(JsonWebTokenAuthCredentialProcessor.EXPIRED_TOKEN_ERROR_KEY);
+        return authKeyString.equals(JsonWebTokenAuthCredentialProcessor.EXPIRED_TOKEN_ERROR_KEY);
     }
 
     public boolean isTokenInvalid() {
         final StringBuilder authKey = getAuthKey();
 
-        if (authKey == null || authKey.length() == 0) {
+        if (UtilMethods.isEmpty(authKey.toString())) {
             return false;
         }
 
         final String authKeyString = authKey.toString();
-        return !authKeyString.equals(JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
+        return authKeyString.equals(JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
     }
 }
