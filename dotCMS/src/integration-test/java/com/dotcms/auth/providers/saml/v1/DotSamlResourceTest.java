@@ -10,6 +10,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -18,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DotSamlResourceTest extends IntegrationTestBase {
 
@@ -45,6 +47,7 @@ public class DotSamlResourceTest extends IntegrationTestBase {
         final WebResource webResource = new WebResource();
         final HttpServletRequest httpServletRequest   = mock(HttpServletRequest.class);
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
+        when(httpServletRequest.getAttribute(WebKeys.USER)).thenReturn(limitedUser);
 
         new DotSamlResource(samlConfigurationService, samlHelper, samlAuthenticationService, identityProviderConfigurationFactory, webResource)
                 .metadata("123456", httpServletRequest, httpServletResponse);
