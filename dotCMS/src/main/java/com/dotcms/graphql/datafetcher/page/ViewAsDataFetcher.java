@@ -22,10 +22,11 @@ public class ViewAsDataFetcher implements DataFetcher<ViewAsPageStatus> {
     @Override
     public ViewAsPageStatus get(final DataFetchingEnvironment environment) throws Exception {
         try {
-            final User user = ((DotGraphQLContext) environment.getContext()).getUser();
+            final DotGraphQLContext context = environment.getContext();
+            final User user = context.getUser();
             final Contentlet contentlet = environment.getSource();
-            final String pageModeAsString = environment.getArgument("pageMode")
-                    != null ? environment.getArgument("pageMode") : PageMode.LIVE.name();
+
+            final String pageModeAsString = (String) context.getParam("pageMode");
 
             final PageMode mode = PageMode.get(pageModeAsString);
 

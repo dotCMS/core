@@ -239,6 +239,8 @@ public class URLMapAPIImplTest {
         final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
         assertEquals(newsTestContent.getStringProperty("title"),
                 urlMapInfo.getContentlet().getName());
+        assertEquals(newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"),
+                urlMapInfo.getContentlet().getStringProperty("urlMap"));
         assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
     }
 

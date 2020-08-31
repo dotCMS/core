@@ -187,7 +187,7 @@
 		<tr class="alternate_1">
 			<td>
 
-				<input <%if(!singleStep){ %>disabled="true"<%} %> type="checkbox" dojoType="dijit.form.CheckBox" id="<%=task.getWebasset() %>" class="taskCheckBox" value="<%=task.getId() %>"  data-action-inode="<%=contentlet.getInode()%>" />
+				<input <%if(!singleStep){ %>disabled="true"<%} %> type="checkbox" dojoType="dijit.form.CheckBox" id="<%=contentlet.getInode() %>" class="taskCheckBox" value="<%=task.getId() %>"  data-action-inode="<%=contentlet.getInode()%>" />
 
 
 			</td>

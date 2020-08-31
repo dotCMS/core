@@ -26,7 +26,6 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishQueueElement;
-import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.BundlerUtil;
@@ -208,9 +207,9 @@ public class BundlePublisher extends Publisher {
             try {
                 HibernateUtil.rollbackTransaction();
             } catch (DotHibernateException e1) {
-                Logger.error(PublisherAPIImpl.class, e.getMessage(), e1);
+                Logger.error(BundlePublisher.class, e.getMessage(), e1);
             }
-            Logger.error(PublisherAPIImpl.class, "Error publishing bundle with ID '" + bundleName + "': " + e.getMessage(), e);
+            Logger.error(BundlePublisher.class, "Error publishing bundle with ID '" + bundleName + "': " + e.getMessage(), e);
 
             //Update audit
             try {

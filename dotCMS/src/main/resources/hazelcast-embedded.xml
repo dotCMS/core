@@ -30,7 +30,7 @@
         <password>dev-pass</password>
     </group>
     <properties>
-        <property name="hazelcast.discovery.enabled">true</property>
+        <property name="hazelcast.discovery.enabled">false</property>
         <property name="hazelcast.shutdownhook.enabled">false</property>
     </properties>
     <management-center enabled="false">http://localhost:8081/mancenter</management-center>
