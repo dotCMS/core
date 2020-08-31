@@ -44,8 +44,14 @@ import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
-import com.dotmarketing.startup.runonce.*;
+import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
+import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
+import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
+import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
+import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
+import com.dotmarketing.startup.runonce.Task05370AddAppsPortletToLayoutTest;
 import com.dotmarketing.util.TestConfig;
+import com.dotmarketing.util.ConfigTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -268,6 +274,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
         TestConfig.class,
+        ConfigTest.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
@@ -312,6 +319,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
         ContentletWebAPIImplIntegrationTest.class,
+        Task05370AddAppsPortletToLayoutTest.class,
         FolderFactoryImplTest.class
 })
 public class MainSuite {

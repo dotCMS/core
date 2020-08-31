@@ -1657,9 +1657,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if(offset>0) {
             searchSourceBuilder.from(offset);
         }
-        if(UtilMethods.isSet(sortBy) ) {
+        if(UtilMethods.isSet(sortBy)) {
             sortBy = sortBy.toLowerCase();
 
+            
             if(sortBy.startsWith("score")){
                 String[] sortByCriteria = sortBy.split("[,|\\s+]");
                 String defaultSecondarySort = "moddate";
@@ -1678,7 +1679,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                 searchSourceBuilder.sort("_score", SortOrder.DESC);
                 searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
-            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
+            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")  && !sortBy.equals(SortOrder.ASC.toString())  && !sortBy.equals(SortOrder.DESC.toString())) {
                 addBuilderSort(sortBy, searchSourceBuilder);
             }
         }else{
