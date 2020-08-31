@@ -296,11 +296,11 @@ public class TemplateAPITest extends IntegrationTestBase {
     /**
      * Method to test: archive
      * Given Scenario: Create a template, archive
-     * ExpectedResult: Template should be archive true and locked
+     * ExpectedResult: Template should be archive true
      *
      */
     @Test
-    public void archiveTemplate_expects_archive_and_lock_true() throws Exception {
+    public void archiveTemplate_expects_archive_true() throws Exception {
 
         final Host host    = hostAPI.findDefaultHost(user, false);
         final String body  = "<html><body> I'm mostly empty </body></html>";
@@ -317,7 +317,6 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         assertTrue(templateAPI.archive(templateSaved, user, false));
         assertTrue(templateSaved.isArchived());
-        assertTrue(templateSaved.isLocked());
     }
 
     /**
