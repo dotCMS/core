@@ -324,6 +324,11 @@ public class ImportStarterUtil {
         for (File file : contains("com.dotmarketing.beans.ContainerStructure_")) {
             doXMLFileImport(file);
         }
+
+        // need Categories before Tree so it imports all the tree values
+        for (File file : contains("com.dotmarketing.portlets.categories.model.Category_")) {
+            doXMLFileImport(file);
+        }
         
         for (File file : contains("com.dotmarketing.beans.Tree_")) {
             doXMLFileImport(file);
@@ -365,7 +370,7 @@ public class ImportStarterUtil {
         for (File file : contains("com.dotmarketing.tag.model.Tag_")) {
             doXMLFileImport(file);
         }
-        // Image, Portlet, Multitree, category
+        // Image, Portlet, Multitree
         for (File file : endsWith(".xml")) {
             doXMLFileImport(file);
         }
