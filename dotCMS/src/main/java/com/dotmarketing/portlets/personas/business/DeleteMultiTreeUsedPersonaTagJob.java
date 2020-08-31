@@ -5,7 +5,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.quartz.DotStatefulJob;
-import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -14,16 +13,13 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.Serializable;
-import java.util.Calendar;
 import java.util.Map;
-import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
-import org.quartz.*;
-
-import java.util.Date;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.StringUtils;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.Trigger;
 
 /**
  * Deletes the unused persona tags on the multi tree.

@@ -171,7 +171,7 @@ public class DeleteFieldJob extends DotStatefulJob {
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
 
         final Trigger trigger = jobContext.getTrigger();
-        final Map<String, Serializable> map = getExecutionData(trigger, CleanUpFieldReferencesJob.class);
+        final Map<String, Serializable> map = getExecutionData(trigger, DeleteFieldJob.class);
 
 		Structure contentType = null;
 		if (map.get(JOB_DATA_MAP_CONTENT_TYPE) instanceof Structure) {

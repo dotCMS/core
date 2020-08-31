@@ -1,10 +1,8 @@
 package com.dotmarketing.quartz.job;
 
 import static com.dotmarketing.quartz.DotStatefulJob.EXECUTION_DATA;
-import static com.dotmarketing.quartz.DotStatefulJob.TRIGGER_JOB_DETAIL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -17,17 +15,14 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.quartz.DotStatefulJob;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -122,7 +117,6 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
                     .setProperty(field.variable(), testCase.fieldValue).nextPersisted();
 
             final Map<String, Object> jobProperties = new HashMap<>();
-            final Map<String, Object> triggersData = new HashMap<>();
             // Execute jobs to delete fields
             final ImmutableMap<String, Serializable> nextExecutionData = ImmutableMap
                     .of("deletionDate", new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000),
