@@ -68,7 +68,7 @@ public class DeleteUserJob extends DotStatefulJob {
                     }catch (ParseException | SchedulerException | ClassNotFoundException e){
                         Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
                         throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
-                    };
+                    }
                 } else {
                     notAPI.info(deleteInProgress, user.getUserId());
                 }
