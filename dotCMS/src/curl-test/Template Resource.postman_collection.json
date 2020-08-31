@@ -72,11 +72,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates",
+					"raw": "{{serverURL}}/api/v1/templates",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -153,18 +152,17 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates",
+					"raw": "{{serverURL}}/api/v1/templates",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
 						"templates"
 					]
 				},
-				"description": "Creates a new template"
+				"description": "Edit template"
 			},
 			"response": []
 		},
@@ -216,11 +214,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates",
+					"raw": "{{serverURL}}/api/v1/templates",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -294,11 +291,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -358,11 +354,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/working",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/working",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -371,7 +366,7 @@
 						"working"
 					]
 				},
-				"description": "Get a since template"
+				"description": "Get a single template"
 			},
 			"response": []
 		},
@@ -423,11 +418,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/live",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/live",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -496,11 +490,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/_publish",
+					"raw": "{{serverURL}}/api/v1/templates/_publish",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -564,11 +557,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/live",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/live",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -577,7 +569,7 @@
 						"live"
 					]
 				},
-				"description": "The template was created but not published yet, so 404 will retrieve"
+				"description": "Get published template"
 			},
 			"response": []
 		},
@@ -635,11 +627,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/_unpublish",
+					"raw": "{{serverURL}}/api/v1/templates/_unpublish",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -699,11 +690,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/live",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/live",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -770,11 +760,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_copy",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_copy",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -841,11 +830,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_archive",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_archive",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -854,7 +842,7 @@
 						"_archive"
 					]
 				},
-				"description": "Copies the template"
+				"description": "Archive the template"
 			},
 			"response": []
 		},
@@ -912,11 +900,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_unlock",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_unlock",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -925,7 +912,7 @@
 						"_unlock"
 					]
 				},
-				"description": "Copies the template"
+				"description": "unlock the template"
 			},
 			"response": []
 		},
@@ -983,11 +970,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_unarchive",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_unarchive",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -996,7 +982,7 @@
 						"_unarchive"
 					]
 				},
-				"description": "Copies the template"
+				"description": "unarchive the template"
 			},
 			"response": []
 		},
@@ -1054,11 +1040,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}/_archive",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_archive",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -1067,7 +1052,7 @@
 						"_archive"
 					]
 				},
-				"description": "Copies the template"
+				"description": "archive the template 2"
 			},
 			"response": []
 		},
@@ -1125,11 +1110,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryInode}}",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -1137,7 +1121,7 @@
 						"{{temporaryInode}}"
 					]
 				},
-				"description": "Copies the template"
+				"description": "deletes the template"
 			},
 			"response": []
 		},
@@ -1189,11 +1173,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/templates/{{temporaryIdentifier}}/working",
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/working",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -1202,31 +1185,31 @@
 						"working"
 					]
 				},
-				"description": "Get a since template"
+				"description": "Get a single template"
 			},
 			"response": []
 		}
 	],
 	"variable": [
 		{
-			"id": "3a69f95d-f0c8-4067-99a1-55131c3491f2",
+			"id": "0bec4b5f-2e72-49bd-b2e3-588ce89c48c5",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "29c620b8-79bf-481f-a356-d6510b4c28d5",
+			"id": "5c09bfc2-b34d-4a6c-bf62-79c17c7bb83f",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "fd59c35b-0eb6-488f-836c-16dd3cc6edfe",
+			"id": "d4edf47f-6119-4de9-8580-a6f4deac5957",
 			"key": "temporaryInode",
-			"value": "637f52a2-b949-401c-8c33-41e251230511"
+			"value": "91e12d76-17f0-4c3e-b956-e5f7c9d7db37"
 		},
 		{
-			"id": "58a54b83-d6a4-4c7b-a2cc-81299273adc1",
+			"id": "00eeb466-3181-4d4b-9e73-dfce92fff944",
 			"key": "temporaryIdentifier",
-			"value": "bfcf64dd-c551-436e-85a9-6b4b318e89a9"
+			"value": "909162a8-1776-40e9-ac4c-6d927b718fe3"
 		}
 	],
 	"protocolProfileBehavior": {}
