@@ -79,11 +79,11 @@ public class DotSamlResource implements Serializable {
 							final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
 							final WebResource						   webResource) {
 
-		this.samlConfigurationService			  = DotSamlProxyFactory.getInstance().samlConfigurationService();
-		this.samlAuthenticationService            = DotSamlProxyFactory.getInstance().samlAuthenticationService();
-		this.identityProviderConfigurationFactory = DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory();
-		this.samlHelper                           = new SAMLHelper(this.samlAuthenticationService);
-		this.webResource						  = new WebResource();
+		this.samlConfigurationService			  = samlConfigurationService;
+		this.samlAuthenticationService            = samlAuthenticationService;
+		this.identityProviderConfigurationFactory = identityProviderConfigurationFactory;
+		this.samlHelper                           = samlHelper;
+		this.webResource						  = webResource;
 	}
 
 	/**
