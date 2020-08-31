@@ -169,10 +169,15 @@ public class DeleteFieldJob extends DotStatefulJob {
 	 */
 	@Override
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
-
-        final Trigger trigger = jobContext.getTrigger();
-        final Map<String, Serializable> map = getExecutionData(trigger, DeleteFieldJob.class);
-
+        final JobDataMap jobDataMap = jobContext.getJobDetail().getJobDataMap();
+        final Map<String, Serializable> map;
+        if (jobDataMap.containsKey(EXECUTION_DATA)) {
+            //This bit is here to continue to support the integration-tests
+            map = (Map<String, Serializable>) jobDataMap.get(EXECUTION_DATA);
+        } else {
+            final Trigger trigger = jobContext.getTrigger();
+            map = getExecutionData(trigger, DeleteFieldJob.class);
+        }
 		Structure contentType = null;
 		if (map.get(JOB_DATA_MAP_CONTENT_TYPE) instanceof Structure) {
 			contentType = Structure.class.cast(map.get(JOB_DATA_MAP_CONTENT_TYPE));
