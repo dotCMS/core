@@ -700,10 +700,11 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 							DeleteFieldJob.JOB_DATA_MAP_USER, user))
 			);
 
-			TestJobExecutor.execute(deleteFieldJob,
+			TestJobExecutor.execute(deleteFieldJob,ImmutableMap.of(EXECUTION_DATA,
 					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
 							DeleteFieldJob.JOB_DATA_MAP_FIELD, fileField,
-							DeleteFieldJob.JOB_DATA_MAP_USER, user));
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
 			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
 					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
