@@ -1,0 +1,4 @@
+dot-input-calendar {
+  display: flex; }
+  dot-input-calendar input {
+    flex-grow: 1; }

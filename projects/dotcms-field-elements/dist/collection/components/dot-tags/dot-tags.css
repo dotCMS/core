@@ -1,0 +1,16 @@
+dot-tags .dot-tags__container {
+  display: flex;
+  align-items: flex-start;
+  border: solid 1px lightgray; }
+  dot-tags .dot-tags__container dot-autocomplete {
+    margin: 0.5rem 1rem 0.5rem 0.5rem; }
+  dot-tags .dot-tags__container .dot-tags__chips {
+    margin: 0.5rem 1rem 0 0; }
+  dot-tags .dot-tags__container dot-chip {
+    border: solid 1px #ccc;
+    display: inline-block;
+    margin: 0 .5rem .5rem 0;
+    padding: 0.2rem; }
+
+dot-tags button {
+  border: 0; }

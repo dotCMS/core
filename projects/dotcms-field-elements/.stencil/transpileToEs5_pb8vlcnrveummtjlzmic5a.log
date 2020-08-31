@@ -1,0 +1,332 @@
+import * as tslib_1 from "tslib";
+import { h } from '../dotcmsfields.core.js';
+import { a as Fragment } from './chunk-1d89c98b.js';
+import { a as getOriginalStatus, f as updateStatus, c as getClassNames } from './chunk-62cd3eff.js';
+import { d as getErrorMessage, e as getFieldsFromLayout, f as fieldCustomProcess } from './chunk-4205a04e.js';
+var DotUploadService = /** @class */ (function () {
+    function DotUploadService() {
+    }
+    DotUploadService.prototype.uploadFile = function (file, maxSize) {
+        if (typeof file === 'string') {
+            return this.uploadFileByURL(file);
+        }
+        else {
+            return this.uploadBinaryFile(file, maxSize);
+        }
+    };
+    DotUploadService.prototype.uploadFileByURL = function (url) {
+        var _this = this;
+        var UPLOAD_FILE_FROM_URL = '/api/v1/temp/byUrl';
+        return fetch(UPLOAD_FILE_FROM_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Origin: window.location.hostname
+            },
+            body: JSON.stringify({
+                remoteUrl: url
+            })
+        }).then(function (response) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+            var error, _a;
+            return tslib_1.__generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (!(response.status === 200)) return [3 /*break*/, 2];
+                        return [4 /*yield*/, response.json()];
+                    case 1: return [2 /*return*/, (_b.sent()).tempFiles[0]];
+                    case 2:
+                        _a = {};
+                        return [4 /*yield*/, response.json()];
+                    case 3:
+                        error = (_a.message = (_b.sent()).message,
+                            _a.status = response.status,
+                            _a);
+                        throw error;
+                }
+            });
+        }); });
+    };
+    DotUploadService.prototype.uploadBinaryFile = function (file, maxSize) {
+        var _this = this;
+        var path = "/api/v1/temp";
+        path += maxSize ? "?maxFileLength=" + maxSize : '';
+        var formData = new FormData();
+        formData.append('file', file);
+        return fetch(path, {
+            method: 'POST',
+            headers: {
+                Origin: window.location.hostname
+            },
+            body: formData
+        }).then(function (response) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+            var error, _a;
+            return tslib_1.__generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (!(response.status === 200)) return [3 /*break*/, 2];
+                        return [4 /*yield*/, response.json()];
+                    case 1: return [2 /*return*/, (_b.sent()).tempFiles[0]];
+                    case 2:
+                        _a = {};
+                        return [4 /*yield*/, response.json()];
+                    case 3:
+                        error = (_a.message = (_b.sent()).message,
+                            _a.status = response.status,
+                            _a);
+                        throw error;
+                }
+            });
+        }); });
+    };
+    return DotUploadService;
+}());
+var SUBMIT_FORM_API_URL = '/api/v1/workflow/actions/default/fire/NEW';
+var fallbackErrorMessages = {
+    500: '500 Internal Server Error',
+    400: '400 Bad Request',
+    401: '401 Unauthorized Error'
+};
+var DotFormComponent = /** @class */ (function () {
+    function DotFormComponent() {
+        this.resetLabel = 'Reset';
+        this.submitLabel = 'Submit';
+        this.layout = [];
+        this.variable = '';
+        this.status = getOriginalStatus();
+        this.errorMessage = '';
+        this.uploadFileInProgress = false;
+        this.fieldsStatus = {};
+        this.value = {};
+    }
+    DotFormComponent.prototype.onValueChange = function (event) {
+        var _this = this;
+        var tagName = event.target.tagName;
+        var _a = event.detail, name = _a.name, value = _a.value;
+        var process = fieldCustomProcess[tagName];
+        if (tagName === 'DOT-BINARY-FILE' && value) {
+            this.uploadFile(event).then(function (tempFile) {
+                _this.value[name] = tempFile && tempFile.id;
+            });
+        }
+        else {
+            this.value[name] = process ? process(value) : value;
+        }
+    };
+    DotFormComponent.prototype.onStatusChange = function (_a) {
+        var detail = _a.detail;
+        this.fieldsStatus[detail.name] = detail.status;
+        this.status = updateStatus(this.status, {
+            dotTouched: this.getTouched(),
+            dotPristine: this.getStatusValueByName('dotPristine'),
+            dotValid: this.getStatusValueByName('dotValid')
+        });
+    };
+    DotFormComponent.prototype.layoutWatch = function () {
+        this.value = this.getUpdateValue();
+    };
+    DotFormComponent.prototype.fieldsToShowWatch = function () {
+        this.value = this.getUpdateValue();
+    };
+    DotFormComponent.prototype.hostData = function () {
+        return {
+            class: getClassNames(this.status, this.status.dotValid)
+        };
+    };
+    DotFormComponent.prototype.componentWillLoad = function () {
+        this.value = this.getUpdateValue();
+    };
+    DotFormComponent.prototype.render = function () {
+        var _this = this;
+        return (h(Fragment, null, h("form", { onSubmit: this.handleSubmit.bind(this) }, this.layout.map(function (row) { return (h("dot-form-row", { row: row, "fields-to-show": _this.fieldsToShow })); }), h("div", { class: "dot-form__buttons" }, h("button", { type: "reset", onClick: function () { return _this.resetForm(); } }, this.resetLabel), h("button", { type: "submit", disabled: !this.status.dotValid || this.uploadFileInProgress }, this.submitLabel))), h("dot-error-message", null, this.errorMessage)));
+    };
+    DotFormComponent.prototype.getStatusValueByName = function (name) {
+        return Object.values(this.fieldsStatus)
+            .map(function (field) { return field[name]; })
+            .every(function (item) { return item === true; });
+    };
+    DotFormComponent.prototype.getTouched = function () {
+        return Object.values(this.fieldsStatus)
+            .map(function (field) { return field.dotTouched; })
+            .includes(true);
+    };
+    DotFormComponent.prototype.handleSubmit = function (event) {
+        var _this = this;
+        event.preventDefault();
+        fetch(SUBMIT_FORM_API_URL, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contentlet: Object.assign({ contentType: this.variable }, this.value)
+            })
+        })
+            .then(function (response) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+            var error, _a;
+            return tslib_1.__generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (!(response.status !== 200)) return [3 /*break*/, 2];
+                        _a = {};
+                        return [4 /*yield*/, response.text()];
+                    case 1:
+                        error = (_a.message = _b.sent(),
+                            _a.status = response.status,
+                            _a);
+                        throw error;
+                    case 2: return [2 /*return*/, response.json()];
+                }
+            });
+        }); })
+            .then(function (jsonResponse) {
+            var contentlet = jsonResponse.entity;
+            _this.runSuccessCallback(contentlet);
+        })
+            .catch(function (_a) {
+            var message = _a.message, status = _a.status;
+            _this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
+        });
+    };
+    DotFormComponent.prototype.runSuccessCallback = function (contentlet) {
+        var successCallback = this.getSuccessCallback();
+        if (successCallback) {
+            return function () {
+                return eval(successCallback);
+            }.call({ contentlet: contentlet });
+        }
+    };
+    DotFormComponent.prototype.getSuccessCallback = function () {
+        var successCallback = getFieldsFromLayout(this.layout).filter(function (field) { return field.variable === 'formSuccessCallback'; })[0];
+        return successCallback.values;
+    };
+    DotFormComponent.prototype.resetForm = function () {
+        var elements = Array.from(this.el.querySelectorAll('form dot-form-column > *'));
+        elements.forEach(function (element) {
+            try {
+                element.reset();
+            }
+            catch (error) {
+                console.warn("" + element.tagName, error);
+            }
+        });
+    };
+    DotFormComponent.prototype.getUpdateValue = function () {
+        return getFieldsFromLayout(this.layout)
+            .filter(function (field) { return field.fixed === false; })
+            .reduce(function (acc, _a) {
+            var variable = _a.variable, defaultValue = _a.defaultValue, dataType = _a.dataType, values = _a.values;
+            var _b;
+            return Object.assign({}, acc, (_b = {}, _b[variable] = defaultValue || (dataType !== 'TEXT' ? values : null), _b));
+        }, {});
+    };
+    DotFormComponent.prototype.getMaxSize = function (event) {
+        var attributes = event.target.attributes.slice();
+        var maxSize = attributes.filter(function (item) {
+            return item.name === 'max-file-length';
+        })[0];
+        return maxSize && maxSize.value;
+    };
+    DotFormComponent.prototype.uploadFile = function (event) {
+        var _this = this;
+        var uploadService = new DotUploadService();
+        var file = event.detail.value;
+        var maxSize = this.getMaxSize(event);
+        var binary = event.target;
+        if (!maxSize || file.size <= maxSize) {
+            this.uploadFileInProgress = true;
+            binary.errorMessage = '';
+            return uploadService
+                .uploadFile(file, maxSize)
+                .then(function (tempFile) {
+                _this.errorMessage = '';
+                binary.previewImageUrl = tempFile.thumbnailUrl;
+                binary.previewImageName = tempFile.fileName;
+                _this.uploadFileInProgress = false;
+                return tempFile;
+            })
+                .catch(function (_a) {
+                var message = _a.message, status = _a.status;
+                binary.clearValue();
+                _this.uploadFileInProgress = false;
+                _this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
+                return null;
+            });
+        }
+        else {
+            binary.reset();
+            binary.errorMessage = "File size larger than allowed " + maxSize + " bytes";
+            return Promise.resolve(null);
+        }
+    };
+    Object.defineProperty(DotFormComponent, "is", {
+        get: function () { return "dot-form"; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotFormComponent, "properties", {
+        get: function () {
+            return {
+                "el": {
+                    "elementRef": true
+                },
+                "errorMessage": {
+                    "state": true
+                },
+                "fieldsToShow": {
+                    "type": String,
+                    "attr": "fields-to-show",
+                    "watchCallbacks": ["fieldsToShowWatch"]
+                },
+                "layout": {
+                    "type": "Any",
+                    "attr": "layout",
+                    "reflectToAttr": true,
+                    "watchCallbacks": ["layoutWatch"]
+                },
+                "resetLabel": {
+                    "type": String,
+                    "attr": "reset-label",
+                    "reflectToAttr": true
+                },
+                "status": {
+                    "state": true
+                },
+                "submitLabel": {
+                    "type": String,
+                    "attr": "submit-label",
+                    "reflectToAttr": true
+                },
+                "uploadFileInProgress": {
+                    "state": true
+                },
+                "variable": {
+                    "type": String,
+                    "attr": "variable",
+                    "reflectToAttr": true
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotFormComponent, "listeners", {
+        get: function () {
+            return [{
+                    "name": "valueChange",
+                    "method": "onValueChange"
+                }, {
+                    "name": "statusChange",
+                    "method": "onStatusChange"
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotFormComponent, "style", {
+        get: function () { return "/**style-placeholder:dot-form:**/"; },
+        enumerable: true,
+        configurable: true
+    });
+    return DotFormComponent;
+}());
+export { DotFormComponent as DotForm };

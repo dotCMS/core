@@ -1,0 +1,86 @@
+dotcmsFields.loadBundle('/**:bundle-id:**/', ['exports', './chunk-42b2163a.js', './chunk-01704cfd.js'], function (exports, __chunk_2, __chunk_3) {
+    var h = window.dotcmsFields.h;
+    var DotFormColumnComponent = /** @class */ (function () {
+        function DotFormColumnComponent() {
+        }
+        DotFormColumnComponent.prototype.render = function () {
+            var _this = this;
+            return this.column.fields.map(function (field) { return _this.getField(field); });
+        };
+        DotFormColumnComponent.prototype.getField = function (field) {
+            return __chunk_3.shouldShowField(field, this.fieldsToShow) ? this.getFieldTag(field) : '';
+        };
+        DotFormColumnComponent.prototype.getFieldTag = function (field) {
+            return __chunk_3.fieldMap[field.fieldType] ? __chunk_3.fieldMap[field.fieldType](field) : '';
+        };
+        Object.defineProperty(DotFormColumnComponent, "is", {
+            get: function () { return "dot-form-column"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotFormColumnComponent, "properties", {
+            get: function () {
+                return {
+                    "column": {
+                        "type": "Any",
+                        "attr": "column"
+                    },
+                    "fieldsToShow": {
+                        "type": String,
+                        "attr": "fields-to-show",
+                        "reflectToAttr": true
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotFormColumnComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-form-column:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotFormColumnComponent;
+    }());
+    var DotFormRowComponent = /** @class */ (function () {
+        function DotFormRowComponent() {
+        }
+        DotFormRowComponent.prototype.render = function () {
+            var _this = this;
+            return this.row.columns.map(function (fieldColumn) {
+                return h("dot-form-column", { column: fieldColumn, "fields-to-show": _this.fieldsToShow });
+            });
+        };
+        Object.defineProperty(DotFormRowComponent, "is", {
+            get: function () { return "dot-form-row"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotFormRowComponent, "properties", {
+            get: function () {
+                return {
+                    "fieldsToShow": {
+                        "type": String,
+                        "attr": "fields-to-show",
+                        "reflectToAttr": true
+                    },
+                    "row": {
+                        "type": "Any",
+                        "attr": "row"
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotFormRowComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-form-row:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotFormRowComponent;
+    }());
+    exports.DotFormColumn = DotFormColumnComponent;
+    exports.DotFormRow = DotFormRowComponent;
+    Object.defineProperty(exports, '__esModule', { value: true });
+});

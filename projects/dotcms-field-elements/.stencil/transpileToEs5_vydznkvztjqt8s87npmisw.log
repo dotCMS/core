@@ -1,0 +1,23 @@
+dotcmsFields.loadBundle('/**:bundle-id:**/', ['exports'], function (exports) {
+    var h = window.dotcmsFields.h;
+    var DotErrorMessageComponent = /** @class */ (function () {
+        function DotErrorMessageComponent() {
+        }
+        DotErrorMessageComponent.prototype.render = function () {
+            return h("slot", null);
+        };
+        Object.defineProperty(DotErrorMessageComponent, "is", {
+            get: function () { return "dot-error-message"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotErrorMessageComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-error-message:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotErrorMessageComponent;
+    }());
+    exports.DotErrorMessage = DotErrorMessageComponent;
+    Object.defineProperty(exports, '__esModule', { value: true });
+});

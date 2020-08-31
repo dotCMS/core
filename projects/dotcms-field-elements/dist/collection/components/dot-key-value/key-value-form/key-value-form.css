@@ -1,0 +1,13 @@
+key-value-form form {
+  display: flex;
+  align-items: center; }
+  key-value-form form button {
+    margin: 0; }
+  key-value-form form input {
+    margin: 0 1rem 0 0.5rem; }
+  key-value-form form label {
+    align-items: center;
+    display: flex;
+    flex-grow: 1; }
+    key-value-form form label input {
+      flex-grow: 1; }

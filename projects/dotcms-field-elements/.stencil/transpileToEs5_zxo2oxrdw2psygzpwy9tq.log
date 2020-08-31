@@ -1,0 +1,309 @@
+import { h } from '../dotcmsfields.core.js';
+import { a as Fragment } from './chunk-1d89c98b.js';
+import { b as checkProp, o as dotParseDate, c as getClassNames, h as getHintId, d as getTagHint, e as getTagError } from './chunk-62cd3eff.js';
+import { c as DOT_ATTR_PREFIX, a as getDotAttributesFromElement, b as setDotAttributesToElement } from './chunk-4205a04e.js';
+var DATE_SUFFIX = '-date';
+var TIME_SUFFIX = '-time';
+var DotDateTimeComponent = /** @class */ (function () {
+    function DotDateTimeComponent() {
+        this.value = '';
+        this.name = '';
+        this.label = '';
+        this.hint = '';
+        this.required = false;
+        this.requiredMessage = 'This field is required';
+        this.validationMessage = "The field doesn't comply with the specified format";
+        this.disabled = false;
+        this.min = '';
+        this.max = '';
+        this.step = '1,1';
+        this.dateLabel = 'Date';
+        this.timeLabel = 'Time';
+        this._step = {
+            date: null,
+            time: null
+        };
+        this._status = {
+            date: null,
+            time: null
+        };
+    }
+    DotDateTimeComponent.prototype.reset = function () {
+        this._status.date = null;
+        this._status.time = null;
+        var inputs = this.el.querySelectorAll('dot-input-calendar');
+        inputs.forEach(function (input) {
+            input.reset();
+        });
+        this.valueChange.emit({ name: this.name, value: '' });
+    };
+    DotDateTimeComponent.prototype.componentWillLoad = function () {
+        this.validateProps();
+    };
+    DotDateTimeComponent.prototype.valueWatch = function () {
+        this.value = checkProp(this, 'value', 'dateTime');
+        this._value = dotParseDate(this.value);
+    };
+    DotDateTimeComponent.prototype.minWatch = function () {
+        this.min = checkProp(this, 'min', 'dateTime');
+        this._minDateTime = dotParseDate(this.min);
+    };
+    DotDateTimeComponent.prototype.maxWatch = function () {
+        this.max = checkProp(this, 'max', 'dateTime');
+        this._maxDateTime = dotParseDate(this.max);
+    };
+    DotDateTimeComponent.prototype.stepWatch = function () {
+        var _a;
+        this.step = checkProp(this, 'step') || '1,1';
+        _a = this.step.split(','), this._step.date = _a[0], this._step.time = _a[1];
+    };
+    DotDateTimeComponent.prototype.emitValueChange = function (event) {
+        var valueEvent = event.detail;
+        event.stopImmediatePropagation();
+        this.formatValue(valueEvent);
+        if (this.isValueComplete()) {
+            this.value = this.getValue();
+            this.valueChange.emit({ name: this.name, value: this.value });
+        }
+    };
+    DotDateTimeComponent.prototype.emitStatusChange = function (event) {
+        var inputCalendarStatus = event.detail;
+        var status;
+        event.stopImmediatePropagation();
+        this.setStatus(inputCalendarStatus);
+        this.setErrorMessageElement(inputCalendarStatus);
+        if (this.isStatusComplete()) {
+            status = this.statusHandler();
+            this.classNames = getClassNames(status, status.dotValid, this.required);
+            this.statusChange.emit({ name: this.name, status: status });
+        }
+    };
+    DotDateTimeComponent.prototype.hostData = function () {
+        return {
+            class: this.classNames
+        };
+    };
+    DotDateTimeComponent.prototype.componentDidLoad = function () {
+        this.setDotAttributes();
+    };
+    DotDateTimeComponent.prototype.render = function () {
+        return (h(Fragment, null, h("dot-label", { label: this.label, required: this.required, name: this.name }, h("div", { class: "dot-date-time__body", "aria-describedby": getHintId(this.hint), tabIndex: this.hint ? 0 : null }, h("label", null, this.dateLabel, h("dot-input-calendar", { disabled: this.disabled, type: "date", name: this.name + DATE_SUFFIX, value: this._value.date, required: this.required, min: this._minDateTime.date, max: this._maxDateTime.date, step: this._step.date })), h("label", null, this.timeLabel, h("dot-input-calendar", { disabled: this.disabled, type: "time", name: this.name + TIME_SUFFIX, value: this._value.time, required: this.required, min: this._minDateTime.time, max: this._maxDateTime.time, step: this._step.time })))), getTagHint(this.hint), this.errorMessageElement));
+    };
+    DotDateTimeComponent.prototype.setDotAttributes = function () {
+        var _this = this;
+        var htmlDateElement = this.el.querySelector('input[type="date"]');
+        var htmlTimeElement = this.el.querySelector('input[type="time"]');
+        var attrException = ['dottype', 'dotstep', 'dotmin', 'dotmax', 'dotvalue'];
+        setTimeout(function () {
+            var attrs = Array.from(_this.el.attributes);
+            attrs.forEach(function (_a) {
+                var name = _a.name, value = _a.value;
+                var attr = name.replace(DOT_ATTR_PREFIX, '');
+                if (_this[attr]) {
+                    _this[attr] = value;
+                }
+            });
+            attrs = getDotAttributesFromElement(Array.from(_this.el.attributes), attrException);
+            setDotAttributesToElement(htmlDateElement, attrs);
+            setDotAttributesToElement(htmlTimeElement, attrs);
+        }, 0);
+    };
+    DotDateTimeComponent.prototype.validateProps = function () {
+        this.minWatch();
+        this.maxWatch();
+        this.stepWatch();
+        this.valueWatch();
+    };
+    DotDateTimeComponent.prototype.statusHandler = function () {
+        return {
+            dotTouched: this._status.date.dotTouched || this._status.time.dotTouched,
+            dotValid: this._status.date.dotValid && this._status.time.dotValid,
+            dotPristine: this._status.date.dotPristine && this._status.time.dotPristine
+        };
+    };
+    DotDateTimeComponent.prototype.formatValue = function (event) {
+        if (event.name.indexOf(DATE_SUFFIX) >= 0) {
+            this._value.date = event.value;
+        }
+        else {
+            this._value.time = event.value;
+        }
+    };
+    DotDateTimeComponent.prototype.getValue = function () {
+        return !!this._value.date && !!this._value.time
+            ? this._value.date + " " + this._value.time
+            : '';
+    };
+    DotDateTimeComponent.prototype.setStatus = function (event) {
+        if (event.name.indexOf(DATE_SUFFIX) >= 0) {
+            this._status.date = event.status;
+        }
+        else {
+            this._status.time = event.status;
+        }
+    };
+    DotDateTimeComponent.prototype.isValueComplete = function () {
+        return !!this._value.time && !!this._value.date;
+    };
+    DotDateTimeComponent.prototype.isStatusComplete = function () {
+        return this._status.date && this._status.time;
+    };
+    DotDateTimeComponent.prototype.isValid = function () {
+        return this.isStatusComplete() ? (this.isStatusInRange() ? true : false) : true;
+    };
+    DotDateTimeComponent.prototype.isStatusInRange = function () {
+        return this._status.time.isValidRange && this._status.date.isValidRange;
+    };
+    DotDateTimeComponent.prototype.setErrorMessageElement = function (statusEvent) {
+        if (this.isStatusComplete()) {
+            this.errorMessageElement = getTagError(!this.statusHandler().dotValid && !this.statusHandler().dotPristine, this.getErrorMessage());
+        }
+        else {
+            this.errorMessageElement = getTagError(!statusEvent.status.dotPristine, this.getErrorMessage());
+        }
+    };
+    DotDateTimeComponent.prototype.getErrorMessage = function () {
+        return !!this.getValue()
+            ? this.isValid()
+                ? ''
+                : this.validationMessage
+            : this.requiredMessage;
+    };
+    Object.defineProperty(DotDateTimeComponent, "is", {
+        get: function () { return "dot-date-time"; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotDateTimeComponent, "properties", {
+        get: function () {
+            return {
+                "classNames": {
+                    "state": true
+                },
+                "dateLabel": {
+                    "type": String,
+                    "attr": "date-label",
+                    "reflectToAttr": true
+                },
+                "disabled": {
+                    "type": Boolean,
+                    "attr": "disabled",
+                    "reflectToAttr": true
+                },
+                "el": {
+                    "elementRef": true
+                },
+                "errorMessageElement": {
+                    "state": true
+                },
+                "hint": {
+                    "type": String,
+                    "attr": "hint",
+                    "reflectToAttr": true
+                },
+                "label": {
+                    "type": String,
+                    "attr": "label",
+                    "reflectToAttr": true
+                },
+                "max": {
+                    "type": String,
+                    "attr": "max",
+                    "reflectToAttr": true,
+                    "mutable": true,
+                    "watchCallbacks": ["maxWatch"]
+                },
+                "min": {
+                    "type": String,
+                    "attr": "min",
+                    "reflectToAttr": true,
+                    "mutable": true,
+                    "watchCallbacks": ["minWatch"]
+                },
+                "name": {
+                    "type": String,
+                    "attr": "name",
+                    "reflectToAttr": true
+                },
+                "required": {
+                    "type": Boolean,
+                    "attr": "required",
+                    "reflectToAttr": true
+                },
+                "requiredMessage": {
+                    "type": String,
+                    "attr": "required-message",
+                    "reflectToAttr": true
+                },
+                "reset": {
+                    "method": true
+                },
+                "step": {
+                    "type": String,
+                    "attr": "step",
+                    "reflectToAttr": true,
+                    "mutable": true,
+                    "watchCallbacks": ["stepWatch"]
+                },
+                "timeLabel": {
+                    "type": String,
+                    "attr": "time-label",
+                    "reflectToAttr": true
+                },
+                "validationMessage": {
+                    "type": String,
+                    "attr": "validation-message",
+                    "reflectToAttr": true
+                },
+                "value": {
+                    "type": String,
+                    "attr": "value",
+                    "reflectToAttr": true,
+                    "mutable": true,
+                    "watchCallbacks": ["valueWatch"]
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotDateTimeComponent, "events", {
+        get: function () {
+            return [{
+                    "name": "valueChange",
+                    "method": "valueChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }, {
+                    "name": "statusChange",
+                    "method": "statusChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotDateTimeComponent, "listeners", {
+        get: function () {
+            return [{
+                    "name": "_valueChange",
+                    "method": "emitValueChange"
+                }, {
+                    "name": "_statusChange",
+                    "method": "emitStatusChange"
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotDateTimeComponent, "style", {
+        get: function () { return "/**style-placeholder:dot-date-time:**/"; },
+        enumerable: true,
+        configurable: true
+    });
+    return DotDateTimeComponent;
+}());
+export { DotDateTimeComponent as DotDateTime };

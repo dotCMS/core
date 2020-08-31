@@ -1,0 +1,12 @@
+.dot-date-time__body {
+  display: flex; }
+  .dot-date-time__body label {
+    align-items: center;
+    display: flex;
+    flex-grow: 1;
+    margin-right: 1rem; }
+    .dot-date-time__body label:last-child {
+      margin-right: 0; }
+    .dot-date-time__body label dot-input-calendar {
+      flex-grow: 1;
+      margin-left: 0.5rem; }

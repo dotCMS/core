@@ -1,0 +1,1 @@
+.dot-checkbox__items{display:-ms-flexbox;display:flex;-ms-flex-direction:column;flex-direction:column}.dot-checkbox__items label{display:-ms-flexbox;display:flex;-ms-flex-align:center;align-items:center}.dot-checkbox__items input{margin:0 .25rem 0 0}

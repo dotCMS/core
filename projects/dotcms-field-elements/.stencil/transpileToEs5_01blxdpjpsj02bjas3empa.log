@@ -1,0 +1,183 @@
+import { h } from '../dotcmsfields.core.js';
+import { a as Fragment } from './chunk-1d89c98b.js';
+import { a as getOriginalStatus, b as checkProp, n as getDotOptionsFromFieldValue, c as getClassNames, h as getHintId, i as getErrorClass, k as getId, d as getTagHint, e as getTagError, f as updateStatus } from './chunk-62cd3eff.js';
+import { a as getDotAttributesFromElement, b as setDotAttributesToElement } from './chunk-4205a04e.js';
+var DotSelectComponent = /** @class */ (function () {
+    function DotSelectComponent() {
+        this.disabled = false;
+        this.name = '';
+        this.label = '';
+        this.hint = '';
+        this.options = '';
+        this.required = false;
+        this.requiredMessage = "This field is required";
+        this.value = '';
+        this._dotTouched = false;
+        this._dotPristine = true;
+    }
+    DotSelectComponent.prototype.componentWillLoad = function () {
+        this.validateProps();
+        this.emitInitialValue();
+        this.status = getOriginalStatus(this.isValid());
+        this.emitStatusChange();
+    };
+    DotSelectComponent.prototype.optionsWatch = function () {
+        var validOptions = checkProp(this, 'options');
+        this._options = getDotOptionsFromFieldValue(validOptions);
+    };
+    DotSelectComponent.prototype.hostData = function () {
+        return {
+            class: getClassNames(this.status, this.isValid(), this.required)
+        };
+    };
+    DotSelectComponent.prototype.reset = function () {
+        this.value = '';
+        this.status = getOriginalStatus(this.isValid());
+        this.emitInitialValue();
+        this.emitStatusChange();
+    };
+    DotSelectComponent.prototype.componentDidLoad = function () {
+        var _this = this;
+        var htmlElement = this.el.querySelector('select');
+        setTimeout(function () {
+            var attrs = getDotAttributesFromElement(Array.from(_this.el.attributes), []);
+            setDotAttributesToElement(htmlElement, attrs);
+        }, 0);
+    };
+    DotSelectComponent.prototype.render = function () {
+        var _this = this;
+        return (h(Fragment, null, h("dot-label", { label: this.label, required: this.required, name: this.name }, h("select", { "aria-describedby": getHintId(this.hint), class: getErrorClass(this.status.dotValid), id: getId(this.name), disabled: this.shouldBeDisabled(), onChange: function (event) { return _this.setValue(event); } }, this._options.map(function (item) {
+            return (h("option", { selected: _this.value === item.value ? true : null, value: item.value }, item.label));
+        }))), getTagHint(this.hint), getTagError(!this.isValid(), this.requiredMessage)));
+    };
+    DotSelectComponent.prototype.validateProps = function () {
+        this.optionsWatch();
+    };
+    DotSelectComponent.prototype.shouldBeDisabled = function () {
+        return this.disabled ? true : null;
+    };
+    DotSelectComponent.prototype.setValue = function (event) {
+        this.value = event.target.value;
+        this.status = updateStatus(this.status, {
+            dotTouched: true,
+            dotPristine: false,
+            dotValid: this.isValid()
+        });
+        this.emitValueChange();
+        this.emitStatusChange();
+    };
+    DotSelectComponent.prototype.emitInitialValue = function () {
+        if (!this.value) {
+            this.value = this._options.length ? this._options[0].value : '';
+            this.emitValueChange();
+        }
+    };
+    DotSelectComponent.prototype.emitStatusChange = function () {
+        this.statusChange.emit({
+            name: this.name,
+            status: this.status
+        });
+    };
+    DotSelectComponent.prototype.isValid = function () {
+        return this.required ? !!this.value : true;
+    };
+    DotSelectComponent.prototype.emitValueChange = function () {
+        this.valueChange.emit({
+            name: this.name,
+            value: this.value
+        });
+    };
+    Object.defineProperty(DotSelectComponent, "is", {
+        get: function () { return "dot-select"; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotSelectComponent, "properties", {
+        get: function () {
+            return {
+                "_options": {
+                    "state": true
+                },
+                "disabled": {
+                    "type": Boolean,
+                    "attr": "disabled",
+                    "reflectToAttr": true
+                },
+                "el": {
+                    "elementRef": true
+                },
+                "hint": {
+                    "type": String,
+                    "attr": "hint",
+                    "reflectToAttr": true
+                },
+                "label": {
+                    "type": String,
+                    "attr": "label",
+                    "reflectToAttr": true
+                },
+                "name": {
+                    "type": String,
+                    "attr": "name",
+                    "reflectToAttr": true
+                },
+                "options": {
+                    "type": String,
+                    "attr": "options",
+                    "reflectToAttr": true,
+                    "watchCallbacks": ["optionsWatch"]
+                },
+                "required": {
+                    "type": Boolean,
+                    "attr": "required",
+                    "reflectToAttr": true
+                },
+                "requiredMessage": {
+                    "type": String,
+                    "attr": "required-message",
+                    "reflectToAttr": true
+                },
+                "reset": {
+                    "method": true
+                },
+                "status": {
+                    "state": true
+                },
+                "value": {
+                    "type": String,
+                    "attr": "value",
+                    "reflectToAttr": true,
+                    "mutable": true
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotSelectComponent, "events", {
+        get: function () {
+            return [{
+                    "name": "valueChange",
+                    "method": "valueChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }, {
+                    "name": "statusChange",
+                    "method": "statusChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotSelectComponent, "style", {
+        get: function () { return "/**style-placeholder:dot-select:**/"; },
+        enumerable: true,
+        configurable: true
+    });
+    return DotSelectComponent;
+}());
+export { DotSelectComponent as DotSelect };

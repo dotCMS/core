@@ -1,0 +1,20 @@
+import { h } from '../dotcmsfields.core.js';
+var DotErrorMessageComponent = /** @class */ (function () {
+    function DotErrorMessageComponent() {
+    }
+    DotErrorMessageComponent.prototype.render = function () {
+        return h("slot", null);
+    };
+    Object.defineProperty(DotErrorMessageComponent, "is", {
+        get: function () { return "dot-error-message"; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotErrorMessageComponent, "style", {
+        get: function () { return "/**style-placeholder:dot-error-message:**/"; },
+        enumerable: true,
+        configurable: true
+    });
+    return DotErrorMessageComponent;
+}());
+export { DotErrorMessageComponent as DotErrorMessage };

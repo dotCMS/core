@@ -1,0 +1,139 @@
+{
+  "namespace": "dotcmsFields",
+  "fsNamespace": "dotcmsfields",
+  "loader": "../dotcmsfields.js",
+  "core": "dotcmsfields.09acoq3b.js",
+  "corePolyfilled": "dotcmsfields.1ha6w4bc.js",
+  "components": {
+    "dot-autocomplete": {
+      "bundleIds": {
+        "$": "qjvtqexh"
+      }
+    },
+    "dot-binary-file": {
+      "bundleIds": {
+        "$": "ngrwojct"
+      }
+    },
+    "dot-binary-file-preview": {
+      "bundleIds": {
+        "$": "ngrwojct"
+      }
+    },
+    "dot-binary-text-field": {
+      "bundleIds": {
+        "$": "ngrwojct"
+      }
+    },
+    "dot-binary-upload-button": {
+      "bundleIds": {
+        "$": "ngrwojct"
+      }
+    },
+    "dot-checkbox": {
+      "bundleIds": {
+        "$": "4snslmwa"
+      }
+    },
+    "dot-chip": {
+      "bundleIds": {
+        "$": "qjvtqexh"
+      }
+    },
+    "dot-date": {
+      "bundleIds": {
+        "$": "lcsi9b5c"
+      }
+    },
+    "dot-date-range": {
+      "bundleIds": {
+        "$": "nknjiuxv"
+      }
+    },
+    "dot-date-time": {
+      "bundleIds": {
+        "$": "y8w8ibqo"
+      }
+    },
+    "dot-error-message": {
+      "bundleIds": {
+        "$": "xmckop8f"
+      }
+    },
+    "dot-form": {
+      "bundleIds": {
+        "$": "xkwixfg2"
+      }
+    },
+    "dot-form-column": {
+      "bundleIds": {
+        "$": "lmqkll80"
+      }
+    },
+    "dot-form-row": {
+      "bundleIds": {
+        "$": "lmqkll80"
+      }
+    },
+    "dot-input-calendar": {
+      "bundleIds": {
+        "$": "opuwpdew"
+      }
+    },
+    "dot-key-value": {
+      "bundleIds": {
+        "$": "vpcoxfr0"
+      }
+    },
+    "dot-label": {
+      "bundleIds": {
+        "$": "opuwpdew"
+      }
+    },
+    "dot-multi-select": {
+      "bundleIds": {
+        "$": "uxsobccc"
+      }
+    },
+    "dot-radio": {
+      "bundleIds": {
+        "$": "bob09cbr"
+      }
+    },
+    "dot-select": {
+      "bundleIds": {
+        "$": "7zo8sqlb"
+      }
+    },
+    "dot-tags": {
+      "bundleIds": {
+        "$": "qjvtqexh"
+      }
+    },
+    "dot-textarea": {
+      "bundleIds": {
+        "$": "s7ud5syi"
+      }
+    },
+    "dot-textfield": {
+      "bundleIds": {
+        "$": "bwzdvyp5"
+      }
+    },
+    "dot-time": {
+      "bundleIds": {
+        "$": "iqdriiqw"
+      }
+    },
+    "key-value-form": {
+      "bundleIds": {
+        "$": "vpcoxfr0"
+      }
+    },
+    "key-value-table": {
+      "bundleIds": {
+        "$": "vpcoxfr0"
+      }
+    }
+  }
+}

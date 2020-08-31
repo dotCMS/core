@@ -1,0 +1,187 @@
+dotcmsFields.loadBundle('/**:bundle-id:**/', ['exports', './chunk-35cb6fec.js', './chunk-42b2163a.js', './chunk-01704cfd.js'], function (exports, __chunk_1, __chunk_2, __chunk_3) {
+    var h = window.dotcmsFields.h;
+    var DotRadioComponent = /** @class */ (function () {
+        function DotRadioComponent() {
+            this.value = '';
+            this.name = '';
+            this.label = '';
+            this.hint = '';
+            this.required = false;
+            this.disabled = false;
+            this.requiredMessage = '';
+            this.options = '';
+        }
+        DotRadioComponent.prototype.reset = function () {
+            this.value = '';
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.emitStatusChange();
+            this.emitValueChange();
+        };
+        DotRadioComponent.prototype.componentWillLoad = function () {
+            this.value = this.value || '';
+            this.validateProps();
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.emitStatusChange();
+        };
+        DotRadioComponent.prototype.componentDidLoad = function () {
+            var _this = this;
+            var attrException = ['dottype'];
+            var htmlElements = this.el.querySelectorAll('input[type="radio"]');
+            setTimeout(function () {
+                var attrs = __chunk_3.getDotAttributesFromElement(Array.from(_this.el.attributes), attrException);
+                htmlElements.forEach(function (htmlElement) {
+                    __chunk_3.setDotAttributesToElement(htmlElement, attrs);
+                });
+            }, 0);
+        };
+        DotRadioComponent.prototype.optionsWatch = function () {
+            var validOptions = __chunk_2.checkProp(this, 'options');
+            this._options = __chunk_2.getDotOptionsFromFieldValue(validOptions);
+        };
+        DotRadioComponent.prototype.valueWatch = function () {
+            this.value = this.value || '';
+        };
+        DotRadioComponent.prototype.hostData = function () {
+            return {
+                class: __chunk_2.getClassNames(this.status, this.isValid(), this.required)
+            };
+        };
+        DotRadioComponent.prototype.render = function () {
+            var _this = this;
+            return (h(__chunk_1.Fragment, null, h("dot-label", { label: this.label, required: this.required, name: this.name }, h("div", { class: "dot-radio__items", "aria-describedby": __chunk_2.getHintId(this.hint), tabIndex: this.hint ? 0 : null, role: "radiogroup" }, this._options.map(function (item) {
+                item.value = item.value.trim();
+                return (h("label", null, h("input", { checked: _this.value.indexOf(item.value) >= 0 || null, class: __chunk_2.getErrorClass(_this.isValid()), name: __chunk_2.getId(_this.name), disabled: _this.disabled || null, onInput: function (event) { return _this.setValue(event); }, type: "radio", value: item.value }), item.label));
+            }))), __chunk_2.getTagHint(this.hint), __chunk_2.getTagError(this.showErrorMessage(), this.getErrorMessage())));
+        };
+        DotRadioComponent.prototype.validateProps = function () {
+            this.optionsWatch();
+        };
+        DotRadioComponent.prototype.isValid = function () {
+            return this.required ? !!this.value : true;
+        };
+        DotRadioComponent.prototype.showErrorMessage = function () {
+            return this.getErrorMessage() && !this.status.dotPristine;
+        };
+        DotRadioComponent.prototype.getErrorMessage = function () {
+            return this.isValid() ? '' : this.requiredMessage;
+        };
+        DotRadioComponent.prototype.setValue = function (event) {
+            this.value = event.target.value.trim();
+            this.status = __chunk_2.updateStatus(this.status, {
+                dotTouched: true,
+                dotPristine: false,
+                dotValid: this.isValid()
+            });
+            this.emitValueChange();
+            this.emitStatusChange();
+        };
+        DotRadioComponent.prototype.emitStatusChange = function () {
+            this.statusChange.emit({
+                name: this.name,
+                status: this.status
+            });
+        };
+        DotRadioComponent.prototype.emitValueChange = function () {
+            this.valueChange.emit({
+                name: this.name,
+                value: this.value
+            });
+        };
+        Object.defineProperty(DotRadioComponent, "is", {
+            get: function () { return "dot-radio"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotRadioComponent, "properties", {
+            get: function () {
+                return {
+                    "_options": {
+                        "state": true
+                    },
+                    "disabled": {
+                        "type": Boolean,
+                        "attr": "disabled",
+                        "reflectToAttr": true,
+                        "mutable": true
+                    },
+                    "el": {
+                        "elementRef": true
+                    },
+                    "hint": {
+                        "type": String,
+                        "attr": "hint",
+                        "reflectToAttr": true
+                    },
+                    "label": {
+                        "type": String,
+                        "attr": "label",
+                        "reflectToAttr": true
+                    },
+                    "name": {
+                        "type": String,
+                        "attr": "name",
+                        "reflectToAttr": true
+                    },
+                    "options": {
+                        "type": String,
+                        "attr": "options",
+                        "reflectToAttr": true,
+                        "watchCallbacks": ["optionsWatch"]
+                    },
+                    "required": {
+                        "type": Boolean,
+                        "attr": "required",
+                        "reflectToAttr": true
+                    },
+                    "requiredMessage": {
+                        "type": String,
+                        "attr": "required-message",
+                        "reflectToAttr": true
+                    },
+                    "reset": {
+                        "method": true
+                    },
+                    "status": {
+                        "state": true
+                    },
+                    "value": {
+                        "type": String,
+                        "attr": "value",
+                        "reflectToAttr": true,
+                        "mutable": true,
+                        "watchCallbacks": ["valueWatch"]
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotRadioComponent, "events", {
+            get: function () {
+                return [{
+                        "name": "valueChange",
+                        "method": "valueChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }, {
+                        "name": "statusChange",
+                        "method": "statusChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }];
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotRadioComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-radio:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotRadioComponent;
+    }());
+    exports.DotRadio = DotRadioComponent;
+    Object.defineProperty(exports, '__esModule', { value: true });
+});

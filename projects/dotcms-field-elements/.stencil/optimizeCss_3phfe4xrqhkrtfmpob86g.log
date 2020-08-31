@@ -1,0 +1,1 @@
+key-value-form form{display:-ms-flexbox;display:flex;-ms-flex-align:center;align-items:center}key-value-form form button{margin:0}key-value-form form input{margin:0 1rem 0 .5rem}key-value-form form label{-ms-flex-align:center;align-items:center;display:-ms-flexbox;display:flex}key-value-form form label,key-value-form form label input{-ms-flex-positive:1;flex-grow:1}

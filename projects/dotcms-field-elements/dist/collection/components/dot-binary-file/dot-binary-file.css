@@ -1,0 +1,19 @@
+dot-binary-file.dot-dragover input {
+  background-color: #f1f1f1; }
+
+dot-binary-file .dot-binary__container input,
+dot-binary-file .dot-binary__container button {
+  display: inline-flex;
+  border: 1px solid lightgray;
+  padding: 15px;
+  border-radius: 0; }
+
+dot-binary-file .dot-binary__container input[type="file"] {
+  display: none; }
+
+dot-binary-file .dot-binary__container input {
+  min-width: 245px;
+  text-overflow: ellipsis; }
+
+dot-binary-file .dot-binary__container button {
+  background-color: lightgray; }

@@ -1,0 +1,1084 @@
+{
+  "tags": [
+    {
+      "label": "dot-binary-file-preview",
+      "description": "Represent a dotcms text field for the binary file preview.",
+      "attributes": [
+        {
+          "label": "delete-label",
+          "description": "(optional) Delete button's label",
+          "required": false
+        },
+        {
+          "label": "file-name",
+          "description": "file name to be displayed",
+          "required": false
+        },
+        {
+          "label": "preview-url",
+          "description": "(optional) file URL to be displayed",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-binary-file",
+      "description": "Represent a dotcms binary file control.",
+      "attributes": [
+        {
+          "label": "u-r-l-validation-message",
+          "description": "(optional) Text that be shown when the URL is not valid",
+          "required": false
+        },
+        {
+          "label": "accept",
+          "description": "(optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg",
+          "required": false
+        },
+        {
+          "label": "button-label",
+          "description": "(optional) Text that be shown in the browse file button",
+          "required": false
+        },
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "error-message",
+          "description": "(optional) Text that be shown in the browse file button",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "max-file-length",
+          "description": "(optional) Set the max file size limit",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "placeholder",
+          "description": "(optional) Placeholder specifies a short hint that describes the expected value of the input field",
+          "required": false
+        },
+        {
+          "label": "preview-image-name",
+          "description": "(optional) Name of the file uploaded",
+          "required": false
+        },
+        {
+          "label": "preview-image-url",
+          "description": "(optional) URL of the file uploaded",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that be shown when required is set and condition not met",
+          "required": false
+        },
+        {
+          "label": "validation-message",
+          "description": "(optional) Text that be shown when the Regular Expression condition not met",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-binary-text-field",
+      "description": "Represent a dotcms text field for the binary file element.",
+      "attributes": [
+        {
+          "label": "accept",
+          "description": "(optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg",
+          "required": false
+        },
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "placeholder",
+          "description": "(optional) Placeholder specifies a short hint that describes the expected value of the input field",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value specifies the value of the <input> element",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-binary-upload-button",
+      "description": "Represent a dotcms text field for the binary file element.",
+      "attributes": [
+        {
+          "label": "accept",
+          "description": "(optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg",
+          "required": false
+        },
+        {
+          "label": "button-label",
+          "description": "(optional) Text that be shown in the browse file button",
+          "required": false
+        },
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-checkbox",
+      "description": "",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "options",
+          "description": "Value/Label checkbox options separated by comma, to be formatted as: Value|Label",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that will be shown when required is set and condition is not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value set from the checkbox option",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-date-range",
+      "description": "",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "display-format",
+          "description": "(optional) Date format used by the field when displayed",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "max",
+          "description": "(optional) Max value that the field will allow to set",
+          "required": false
+        },
+        {
+          "label": "min",
+          "description": "(optional) Min value that the field will allow to set",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "preset-label",
+          "description": "(optional) Text to be rendered next to presets field",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is needed",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that be shown when required is set and condition not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "(optional) Value formatted with start and end date splitted with a comma",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-date-time",
+      "description": "",
+      "attributes": [
+        {
+          "label": "date-label",
+          "description": "(optional) The string to use in the date label field",
+          "required": false
+        },
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "max",
+          "description": "(optional) Max, maximum value that the field will allow to set. Format should be yyyy-mm-dd hh:mm:ss | yyyy-mm-dd | hh:mm:ss",
+          "required": false
+        },
+        {
+          "label": "min",
+          "description": "(optional) Min, minimum value that the field will allow to set. Format should be yyyy-mm-dd hh:mm:ss | yyyy-mm-dd | hh:mm:ss",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that be shown when required is set and condition not met",
+          "required": false
+        },
+        {
+          "label": "step",
+          "description": "(optional) Step specifies the legal number intervals for the input fields date && time e.g., 2,10",
+          "required": false
+        },
+        {
+          "label": "time-label",
+          "description": "(optional) The string to use in the time label field",
+          "required": false
+        },
+        {
+          "label": "validation-message",
+          "description": "(optional) Text that be shown when min or max are set and condition not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value format yyyy-mm-dd hh:mm:ss e.g., 2005-12-01 15:22:00",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-date",
+      "description": "",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "max",
+          "description": "(optional) Max, maximum value that the field will allow to set. Format should be yyyy-mm-dd",
+          "required": false
+        },
+        {
+          "label": "min",
+          "description": "(optional) Min, minimum value that the field will allow to set. Format should be yyyy-mm-dd",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that be shown when required is set and condition not met",
+          "required": false
+        },
+        {
+          "label": "step",
+          "description": "(optional) Step specifies the legal number intervals for the input field",
+          "required": false
+        },
+        {
+          "label": "validation-message",
+          "description": "(optional) Text that be shown when min or max are set and condition not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value format yyyy-mm-dd  e.g., 2005-12-01",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-error-message",
+      "description": "",
+      "attributes": []
+    },
+    {
+      "label": "dot-form-column",
+      "description": "",
+      "attributes": [
+        {
+          "label": "fields-to-show",
+          "description": "(optional) List of fields (variableName) separated by comma, to be shown",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-form-row",
+      "description": "",
+      "attributes": [
+        {
+          "label": "fields-to-show",
+          "description": "(optional) List of fields (variableName) separated by comma, to be shown",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-form",
+      "description": "",
+      "attributes": [
+        {
+          "label": "fields-to-show",
+          "description": "(optional) List of fields (variableName) separated by comma, to be shown",
+          "required": false
+        },
+        {
+          "label": "reset-label",
+          "description": "(optional) Text to be rendered on Reset button",
+          "required": false
+        },
+        {
+          "label": "submit-label",
+          "description": "(optional) Text to be rendered on Submit button",
+          "required": false
+        },
+        {
+          "label": "variable",
+          "description": "Content type variable name",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-input-calendar",
+      "description": "",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "max",
+          "description": "(optional) Max, maximum value that the field will allow to set, expect a Date Format",
+          "required": false
+        },
+        {
+          "label": "min",
+          "description": "(optional) Min, minimum value that the field will allow to set, expect a Date Format.",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "step",
+          "description": "(optional) Step specifies the legal number intervals for the input field",
+          "required": false
+        },
+        {
+          "label": "type",
+          "description": "type specifies the type of <input> element to display",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value specifies the value of the <input> element",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-key-value",
+      "description": "",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "form-add-button-label",
+          "description": "(optional) Label for the add button in the <key-value-form>",
+          "required": false
+        },
+        {
+          "label": "form-key-label",
+          "description": "(optional) The string to use in the key label in the <key-value-form>",
+          "required": false
+        },
+        {
+          "label": "form-key-placeholder",
+          "description": "(optional) Placeholder for the key input text in the <key-value-form>",
+          "required": false
+        },
+        {
+          "label": "form-value-label",
+          "description": "(optional) The string to use in the value label in the <key-value-form>",
+          "required": false
+        },
+        {
+          "label": "form-value-placeholder",
+          "description": "(optional) Placeholder for the value input text in the <key-value-form>",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "list-delete-label",
+          "description": "(optional) The string to use in the delete button of a key/value item",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that will be shown when required is set and condition is not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value of the field",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "key-value-form",
+      "description": "",
+      "attributes": [
+        {
+          "label": "add-button-label",
+          "description": "(optional) Label for the add item button",
+          "required": false
+        },
+        {
+          "label": "disabled",
+          "description": "(optional) Disables all form interaction",
+          "required": false
+        },
+        {
+          "label": "key-label",
+          "description": "(optional) The string to use in the key input label",
+          "required": false
+        },
+        {
+          "label": "key-placeholder",
+          "description": "(optional) Placeholder for the key input text",
+          "required": false
+        },
+        {
+          "label": "value-label",
+          "description": "(optional) The string to use in the value input label",
+          "required": false
+        },
+        {
+          "label": "value-placeholder",
+          "description": "(optional) Placeholder for the value input text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "key-value-table",
+      "description": "",
+      "attributes": [
+        {
+          "label": "button-label",
+          "description": "(optional) Label for the delete button in each item list",
+          "required": false
+        },
+        {
+          "label": "disabled",
+          "description": "(optional) Disables all form interaction",
+          "required": false
+        },
+        {
+          "label": "empty-message",
+          "description": "(optional) Message to show when the list of items is empty",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-label",
+      "description": "Represent a dotcms label control.",
+      "attributes": [
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "(optional) Field name",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-multi-select",
+      "description": "Represent a dotcms multi select control.",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "options",
+          "description": "Value/Label dropdown options separated by comma, to be formatted as: Value|Label",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that will be shown when required is set and condition is not met",
+          "required": false
+        },
+        {
+          "label": "size",
+          "description": "(optional) Size number of the multi-select dropdown (default=3)",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value set from the dropdown option",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-radio",
+      "description": "Represent a dotcms radio control.",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "options",
+          "description": "Value/Label ratio options separated by comma, to be formatted as: Value|Label",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that will be shown when required is set and condition is not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value set from the ratio option",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-select",
+      "description": "Represent a dotcms select control.",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "options",
+          "description": "Value/Label dropdown options separated by comma, to be formatted as: Value|Label",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that will be shown when required is set and condition is not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value set from the dropdown option",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-autocomplete",
+      "description": "",
+      "attributes": [
+        {
+          "label": "debounce",
+          "description": "(optional) Duraction in ms to start search into the autocomplete",
+          "required": false
+        },
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "max-results",
+          "description": "(optional)  Max results to show after a autocomplete search",
+          "required": false
+        },
+        {
+          "label": "placeholder",
+          "description": "(optional) text to show when no value is set",
+          "required": false
+        },
+        {
+          "label": "threshold",
+          "description": "(optional)  Min characters to start search in the autocomplete input",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-chip",
+      "description": "",
+      "attributes": [
+        {
+          "label": "delete-label",
+          "description": "(optional) Delete button's label",
+          "required": false
+        },
+        {
+          "label": "disabled",
+          "description": "(optional) If is true disabled the delete button",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "Chip's label",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-tags",
+      "description": "",
+      "attributes": [
+        {
+          "label": "debounce",
+          "description": "Duraction in ms to start search into the autocomplete",
+          "required": false
+        },
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "placeholder",
+          "description": "(optional) text to show when no value is set",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that be shown when required is set and value is not set",
+          "required": false
+        },
+        {
+          "label": "threshold",
+          "description": "Min characters to start search in the autocomplete input",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value formatted splitted with a comma, for example: tag-1,tag-2",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-textarea",
+      "description": "Represent a dotcms textarea control.",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to <textarea> element",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "regex-check",
+          "description": "(optional) Regular expresion that is checked against the value to determine if is valid",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that be shown when required is set and condition not met",
+          "required": false
+        },
+        {
+          "label": "validation-message",
+          "description": "(optional) Text that be shown when the Regular Expression condition not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value specifies the value of the <textarea> element",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-textfield",
+      "description": "Represent a dotcms input control.",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "placeholder",
+          "description": "(optional) Placeholder specifies a short hint that describes the expected value of the input field",
+          "required": false
+        },
+        {
+          "label": "regex-check",
+          "description": "(optional) Regular expresion that is checked against the value to determine if is valid",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that be shown when required is set and condition not met",
+          "required": false
+        },
+        {
+          "label": "type",
+          "description": "type specifies the type of <input> element to display",
+          "required": false
+        },
+        {
+          "label": "validation-message",
+          "description": "(optional) Text that be shown when the Regular Expression condition not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value specifies the value of the <input> element",
+          "required": false
+        }
+      ]
+    },
+    {
+      "label": "dot-time",
+      "description": "",
+      "attributes": [
+        {
+          "label": "disabled",
+          "description": "(optional) Disables field's interaction",
+          "required": false
+        },
+        {
+          "label": "hint",
+          "description": "(optional) Hint text that suggest a clue of the field",
+          "required": false
+        },
+        {
+          "label": "label",
+          "description": "(optional) Text to be rendered next to input field",
+          "required": false
+        },
+        {
+          "label": "max",
+          "description": "(optional) Max, maximum value that the field will allow to set. Format should be  hh:mm:ss",
+          "required": false
+        },
+        {
+          "label": "min",
+          "description": "(optional) Min, minimum value that the field will allow to set. Format should be hh:mm:ss",
+          "required": false
+        },
+        {
+          "label": "name",
+          "description": "Name that will be used as ID",
+          "required": false
+        },
+        {
+          "label": "required",
+          "description": "(optional) Determine if it is mandatory",
+          "required": false
+        },
+        {
+          "label": "required-message",
+          "description": "(optional) Text that be shown when required is set and condition not met",
+          "required": false
+        },
+        {
+          "label": "step",
+          "description": "(optional) Step specifies the legal number intervals for the input field",
+          "required": false
+        },
+        {
+          "label": "validation-message",
+          "description": "(optional) Text that be shown when min or max are set and condition not met",
+          "required": false
+        },
+        {
+          "label": "value",
+          "description": "Value format hh:mm:ss e.g., 15:22:00",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

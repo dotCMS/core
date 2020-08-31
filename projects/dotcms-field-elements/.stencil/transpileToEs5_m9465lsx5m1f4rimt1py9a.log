@@ -1,0 +1,840 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+dotcmsFields.loadBundle('/**:bundle-id:**/', ['exports', './chunk-35cb6fec.js', './chunk-42b2163a.js', './chunk-3873b584.js'], function (exports, __chunk_1, __chunk_2, __chunk_4) {
+    var h = window.dotcmsFields.h;
+    var autoComplete = __chunk_4.createCommonjsModule(function (module, exports) {
+        (function (global, factory) {
+            module.exports = factory();
+        }(__chunk_4.commonjsGlobal, (function () {
+            function _classCallCheck(instance, Constructor) {
+                if (!(instance instanceof Constructor)) {
+                    throw new TypeError("Cannot call a class as a function");
+                }
+            }
+            function _defineProperties(target, props) {
+                for (var i = 0; i < props.length; i++) {
+                    var descriptor = props[i];
+                    descriptor.enumerable = descriptor.enumerable || false;
+                    descriptor.configurable = true;
+                    if ("value" in descriptor)
+                        descriptor.writable = true;
+                    Object.defineProperty(target, descriptor.key, descriptor);
+                }
+            }
+            function _createClass(Constructor, protoProps, staticProps) {
+                if (protoProps)
+                    _defineProperties(Constructor.prototype, protoProps);
+                if (staticProps)
+                    _defineProperties(Constructor, staticProps);
+                return Constructor;
+            }
+            var dataAttribute = "data-result";
+            var select = {
+                resultsList: "autoComplete_results_list",
+                result: "autoComplete_result",
+                highlight: "autoComplete_highlighted"
+            };
+            var getInput = function getInput(selector) {
+                return typeof selector === "string" ? document.querySelector(selector) : selector();
+            };
+            var createResultsList = function createResultsList(renderResults) {
+                var resultsList = document.createElement("ul");
+                if (renderResults.container) {
+                    select.resultsList = renderResults.container(resultsList) || select.resultsList;
+                }
+                resultsList.setAttribute("id", select.resultsList);
+                renderResults.destination.insertAdjacentElement(renderResults.position, resultsList);
+                return resultsList;
+            };
+            var highlight = function highlight(value) {
+                return "<span class=".concat(select.highlight, ">").concat(value, "</span>");
+            };
+            var addResultsToList = function addResultsToList(resultsList, dataSrc, dataKey, callback) {
+                dataSrc.forEach(function (event, record) {
+                    var result = document.createElement("li");
+                    var resultValue = dataSrc[record].value[event.key] || dataSrc[record].value;
+                    result.setAttribute(dataAttribute, resultValue);
+                    result.setAttribute("class", select.result);
+                    result.setAttribute("tabindex", "1");
+                    result.innerHTML = callback ? callback(event, result) : event.match || event;
+                    resultsList.appendChild(result);
+                });
+            };
+            var navigation = function navigation(selector, resultsList) {
+                var input = getInput(selector);
+                var first = resultsList.firstChild;
+                document.onkeydown = function (event) {
+                    var active = document.activeElement;
+                    switch (event.keyCode) {
+                        case 38:
+                            if (active !== first && active !== input) {
+                                active.previousSibling.focus();
+                            }
+                            else if (active === first) {
+                                input.focus();
+                            }
+                            break;
+                        case 40:
+                            if (active === input && resultsList.childNodes.length > 0) {
+                                first.focus();
+                            }
+                            else if (active !== resultsList.lastChild) {
+                                active.nextSibling.focus();
+                            }
+                            break;
+                    }
+                };
+            };
+            var clearResults = function clearResults(resultsList) {
+                return resultsList.innerHTML = "";
+            };
+            var getSelection = function getSelection(field, resultsList, callback, resultsValues) {
+                var results = resultsList.querySelectorAll(".".concat(select.result));
+                Object.keys(results).forEach(function (selection) {
+                    ["mousedown", "keydown"].forEach(function (eventType) {
+                        results[selection].addEventListener(eventType, function (event) {
+                            if (eventType === "mousedown" || event.keyCode === 13 || event.keyCode === 39) {
+                                callback({
+                                    event: event,
+                                    query: getInput(field).value,
+                                    matches: resultsValues.matches,
+                                    results: resultsValues.list.map(function (record) {
+                                        return record.value;
+                                    }),
+                                    selection: resultsValues.list.find(function (value) {
+                                        var resValue = value.value[value.key] || value.value;
+                                        return resValue === event.target.closest(".".concat(select.result)).getAttribute(dataAttribute);
+                                    })
+                                });
+                                clearResults(resultsList);
+                            }
+                        });
+                    });
+                });
+            };
+            var autoCompleteView = {
+                getInput: getInput,
+                createResultsList: createResultsList,
+                highlight: highlight,
+                addResultsToList: addResultsToList,
+                navigation: navigation,
+                clearResults: clearResults,
+                getSelection: getSelection
+            };
+            var autoComplete = function () {
+                function autoComplete(config) {
+                    _classCallCheck(this, autoComplete);
+                    this.selector = config.selector || "#autoComplete";
+                    this.data = {
+                        src: function src() {
+                            return typeof config.data.src === "function" ? config.data.src() : config.data.src;
+                        },
+                        key: config.data.key
+                    };
+                    this.searchEngine = config.searchEngine === "loose" ? "loose" : "strict";
+                    this.threshold = config.threshold || 0;
+                    this.resultsList = autoCompleteView.createResultsList({
+                        container: config.resultsList && config.resultsList.container ? config.resultsList.container : false,
+                        destination: config.resultsList && config.resultsList.destination ? config.resultsList.destination : autoCompleteView.getInput(this.selector),
+                        position: config.resultsList && config.resultsList.position ? config.resultsList.position : "afterend"
+                    });
+                    this.sort = config.sort || false;
+                    this.placeHolder = config.placeHolder;
+                    this.maxResults = config.maxResults || 5;
+                    this.resultItem = config.resultItem;
+                    this.highlight = config.highlight || false;
+                    this.onSelection = config.onSelection;
+                    this.init();
+                }
+                _createClass(autoComplete, [{
+                        key: "search",
+                        value: function search(query, record) {
+                            var highlight = this.highlight;
+                            var recordLowerCase = record.toLowerCase();
+                            if (this.searchEngine === "loose") {
+                                query = query.replace(/ /g, "");
+                                var match = [];
+                                var searchPosition = 0;
+                                for (var number = 0; number < recordLowerCase.length; number++) {
+                                    var recordChar = record[number];
+                                    if (searchPosition < query.length && recordLowerCase[number] === query[searchPosition]) {
+                                        recordChar = highlight ? autoCompleteView.highlight(recordChar) : recordChar;
+                                        searchPosition++;
+                                    }
+                                    match.push(recordChar);
+                                }
+                                if (searchPosition !== query.length) {
+                                    return false;
+                                }
+                                return match.join("");
+                            }
+                            else {
+                                if (recordLowerCase.includes(query)) {
+                                    var pattern = new RegExp("".concat(query), "i");
+                                    query = pattern.exec(record);
+                                    return highlight ? record.replace(query, autoCompleteView.highlight(query)) : record;
+                                }
+                            }
+                        }
+                    }, {
+                        key: "listMatchedResults",
+                        value: function listMatchedResults(data) {
+                            var _this = this;
+                            var resList = [];
+                            var inputValue = autoCompleteView.getInput(this.selector).value.toLowerCase();
+                            data.filter(function (record, index) {
+                                var search = function search(key) {
+                                    var match = _this.search(inputValue, record[key] || record);
+                                    if (match && key) {
+                                        resList.push({
+                                            key: key,
+                                            index: index,
+                                            match: match,
+                                            value: record
+                                        });
+                                    }
+                                    else if (match && !key) {
+                                        resList.push({
+                                            index: index,
+                                            match: match,
+                                            value: record
+                                        });
+                                    }
+                                };
+                                if (_this.data.key) {
+                                    var _iteratorNormalCompletion = true;
+                                    var _didIteratorError = false;
+                                    var _iteratorError = undefined;
+                                    try {
+                                        for (var _iterator = _this.data.key[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                                            var key = _step.value;
+                                            search(key);
+                                        }
+                                    }
+                                    catch (err) {
+                                        _didIteratorError = true;
+                                        _iteratorError = err;
+                                    }
+                                    finally {
+                                        try {
+                                            if (!_iteratorNormalCompletion && _iterator.return != null) {
+                                                _iterator.return();
+                                            }
+                                        }
+                                        finally {
+                                            if (_didIteratorError) {
+                                                throw _iteratorError;
+                                            }
+                                        }
+                                    }
+                                }
+                                else {
+                                    search();
+                                }
+                            });
+                            var list = this.sort ? resList.sort(this.sort).slice(0, this.maxResults) : resList.slice(0, this.maxResults);
+                            autoCompleteView.addResultsToList(this.resultsList, list, this.data.key, this.resultItem);
+                            autoCompleteView.navigation(this.selector, this.resultsList);
+                            return {
+                                matches: resList.length,
+                                list: list
+                            };
+                        }
+                    }, {
+                        key: "ignite",
+                        value: function ignite(data) {
+                            var _this2 = this;
+                            var selector = this.selector;
+                            var input = autoCompleteView.getInput(selector);
+                            var placeHolder = this.placeHolder;
+                            var onSelection = this.onSelection;
+                            if (placeHolder) {
+                                input.setAttribute("placeholder", placeHolder);
+                            }
+                            input.onkeyup = function (event) {
+                                var resultsList = _this2.resultsList;
+                                var clearResults = autoCompleteView.clearResults(resultsList);
+                                if (input.value.length > _this2.threshold && input.value.replace(/ /g, "").length) {
+                                    var list = _this2.listMatchedResults(data);
+                                    input.dispatchEvent(new CustomEvent("type", {
+                                        bubbles: true,
+                                        detail: {
+                                            event: event,
+                                            query: input.value,
+                                            matches: list.matches,
+                                            results: list.list
+                                        },
+                                        cancelable: true
+                                    }));
+                                    if (onSelection) {
+                                        autoCompleteView.getSelection(selector, resultsList, onSelection, list);
+                                    }
+                                }
+                            };
+                        }
+                    }, {
+                        key: "init",
+                        value: function init() {
+                            var _this3 = this;
+                            var dataSrc = this.data.src();
+                            if (dataSrc instanceof Promise) {
+                                dataSrc.then(function (data) {
+                                    return _this3.ignite(data);
+                                });
+                            }
+                            else {
+                                this.ignite(dataSrc);
+                            }
+                        }
+                    }]);
+                return autoComplete;
+            }();
+            return autoComplete;
+        })));
+    });
+    var DotAutocompleteComponent = /** @class */ (function () {
+        function DotAutocompleteComponent() {
+            this.disabled = false;
+            this.placeholder = '';
+            this.threshold = 0;
+            this.maxResults = 0;
+            this.debounce = 300;
+            this.data = null;
+            this.id = "autoComplete" + new Date().getTime();
+            this.keyEvent = {
+                Enter: this.emitEnter.bind(this),
+                Escape: this.clean.bind(this)
+            };
+        }
+        DotAutocompleteComponent.prototype.componentDidLoad = function () {
+            if (this.data) {
+                this.initAutocomplete();
+            }
+        };
+        DotAutocompleteComponent.prototype.render = function () {
+            var _this_1 = this;
+            return (h("input", { autoComplete: "off", disabled: this.disabled || null, id: this.id, onBlur: function (event) { return _this_1.handleBlur(event); }, onKeyDown: function (event) { return _this_1.handleKeyDown(event); }, placeholder: this.placeholder || null }));
+        };
+        DotAutocompleteComponent.prototype.watchThreshold = function () {
+            this.initAutocomplete();
+        };
+        DotAutocompleteComponent.prototype.watchData = function () {
+            this.initAutocomplete();
+        };
+        DotAutocompleteComponent.prototype.watchMaxResults = function () {
+            this.initAutocomplete();
+        };
+        DotAutocompleteComponent.prototype.handleKeyDown = function (event) {
+            var value = this.getInputElement().value;
+            if (value && this.keyEvent[event.key]) {
+                event.preventDefault();
+                this.keyEvent[event.key](value);
+            }
+        };
+        DotAutocompleteComponent.prototype.handleBlur = function (event) {
+            var _this_1 = this;
+            event.preventDefault();
+            setTimeout(function () {
+                if (document.activeElement.parentElement !== _this_1.getResultList()) {
+                    _this_1.clean();
+                    _this_1.lostFocus.emit(event);
+                }
+            }, 0);
+        };
+        DotAutocompleteComponent.prototype.clean = function () {
+            this.getInputElement().value = '';
+            this.cleanOptions();
+        };
+        DotAutocompleteComponent.prototype.cleanOptions = function () {
+            this.getResultList().innerHTML = '';
+        };
+        DotAutocompleteComponent.prototype.emitselect = function (select) {
+            this.clean();
+            this.selection.emit(select);
+        };
+        DotAutocompleteComponent.prototype.emitEnter = function (select) {
+            if (select) {
+                this.clean();
+                this.enter.emit(select);
+            }
+        };
+        DotAutocompleteComponent.prototype.getInputElement = function () {
+            return this.el.querySelector("#" + this.id);
+        };
+        DotAutocompleteComponent.prototype.initAutocomplete = function () {
+            var _this_1 = this;
+            this.clearList();
+            new autoComplete({
+                data: {
+                    src: function () { return __awaiter(_this_1, void 0, void 0, function () { return __generator(this, function (_a) {
+                        return [2 /*return*/, this.getData()];
+                    }); }); }
+                },
+                sort: function (a, b) {
+                    if (a.match < b.match) {
+                        return -1;
+                    }
+                    if (a.match > b.match) {
+                        return 1;
+                    }
+                    return 0;
+                },
+                placeHolder: this.placeholder,
+                selector: "#" + this.id,
+                threshold: this.threshold,
+                searchEngine: 'strict',
+                highlight: true,
+                maxResults: this.maxResults,
+                debounce: this.debounce,
+                resultsList: {
+                    container: function () { return _this_1.getResultListId(); },
+                    destination: this.getInputElement(),
+                    position: 'afterend'
+                },
+                resultItem: function (_a) {
+                    var match = _a.match;
+                    return match;
+                },
+                onSelection: function (_a) {
+                    var event = _a.event, selection = _a.selection;
+                    event.preventDefault();
+                    _this_1.focusOnInput();
+                    _this_1.emitselect(selection.value);
+                }
+            });
+        };
+        DotAutocompleteComponent.prototype.clearList = function () {
+            var list = this.getResultList();
+            if (list) {
+                list.remove();
+            }
+        };
+        DotAutocompleteComponent.prototype.focusOnInput = function () {
+            this.getInputElement().focus();
+        };
+        DotAutocompleteComponent.prototype.getResultList = function () {
+            return this.el.querySelector("#" + this.getResultListId());
+        };
+        DotAutocompleteComponent.prototype.getResultListId = function () {
+            return this.id + "_results_list";
+        };
+        DotAutocompleteComponent.prototype.getData = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var autocomplete, data, _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            autocomplete = this.getInputElement();
+                            autocomplete.setAttribute('placeholder', 'Loading...');
+                            if (!(typeof this.data === 'function')) return [3 /*break*/, 2];
+                            return [4 /*yield*/, this.data()];
+                        case 1:
+                            _a = _b.sent();
+                            return [3 /*break*/, 3];
+                        case 2:
+                            _a = [];
+                            _b.label = 3;
+                        case 3:
+                            data = _a;
+                            autocomplete.setAttribute('placeholder', this.placeholder || '');
+                            return [2 /*return*/, data];
+                    }
+                });
+            });
+        };
+        Object.defineProperty(DotAutocompleteComponent, "is", {
+            get: function () { return "dot-autocomplete"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotAutocompleteComponent, "properties", {
+            get: function () {
+                return {
+                    "data": {
+                        "type": "Any",
+                        "attr": "data",
+                        "watchCallbacks": ["watchData"]
+                    },
+                    "debounce": {
+                        "type": Number,
+                        "attr": "debounce",
+                        "reflectToAttr": true
+                    },
+                    "disabled": {
+                        "type": Boolean,
+                        "attr": "disabled",
+                        "reflectToAttr": true
+                    },
+                    "el": {
+                        "elementRef": true
+                    },
+                    "maxResults": {
+                        "type": Number,
+                        "attr": "max-results",
+                        "reflectToAttr": true,
+                        "watchCallbacks": ["watchMaxResults"]
+                    },
+                    "placeholder": {
+                        "type": String,
+                        "attr": "placeholder",
+                        "reflectToAttr": true
+                    },
+                    "threshold": {
+                        "type": Number,
+                        "attr": "threshold",
+                        "reflectToAttr": true,
+                        "watchCallbacks": ["watchThreshold"]
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotAutocompleteComponent, "events", {
+            get: function () {
+                return [{
+                        "name": "selection",
+                        "method": "selection",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }, {
+                        "name": "enter",
+                        "method": "enter",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }, {
+                        "name": "lostFocus",
+                        "method": "lostFocus",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }];
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotAutocompleteComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-autocomplete:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotAutocompleteComponent;
+    }());
+    var DotChipComponent = /** @class */ (function () {
+        function DotChipComponent() {
+            this.label = '';
+            this.deleteLabel = 'Delete';
+            this.disabled = false;
+        }
+        DotChipComponent.prototype.render = function () {
+            var _this_1 = this;
+            var label = this.label ? this.deleteLabel + " " + this.label : null;
+            return (h(__chunk_1.Fragment, null, h("span", null, this.label), h("button", { type: "button", "aria-label": label, disabled: this.disabled, onClick: function () { return _this_1.remove.emit(_this_1.label); } }, this.deleteLabel)));
+        };
+        Object.defineProperty(DotChipComponent, "is", {
+            get: function () { return "dot-chip"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotChipComponent, "properties", {
+            get: function () {
+                return {
+                    "deleteLabel": {
+                        "type": String,
+                        "attr": "delete-label",
+                        "reflectToAttr": true
+                    },
+                    "disabled": {
+                        "type": Boolean,
+                        "attr": "disabled",
+                        "reflectToAttr": true
+                    },
+                    "el": {
+                        "elementRef": true
+                    },
+                    "label": {
+                        "type": String,
+                        "attr": "label",
+                        "reflectToAttr": true
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotChipComponent, "events", {
+            get: function () {
+                return [{
+                        "name": "remove",
+                        "method": "remove",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }];
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotChipComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-chip:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotChipComponent;
+    }());
+    var DotTagsComponent = /** @class */ (function () {
+        function DotTagsComponent() {
+            this.value = '';
+            this.data = null;
+            this.name = '';
+            this.label = '';
+            this.hint = '';
+            this.placeholder = '';
+            this.required = false;
+            this.requiredMessage = 'This field is required';
+            this.disabled = false;
+            this.threshold = 0;
+            this.debounce = 300;
+        }
+        DotTagsComponent.prototype.reset = function () {
+            this.value = '';
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.emitChanges();
+        };
+        DotTagsComponent.prototype.valueWatch = function () {
+            this.value = __chunk_2.checkProp(this, 'value', 'string');
+        };
+        DotTagsComponent.prototype.componentWillLoad = function () {
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.validateProps();
+            this.emitStatusChange();
+        };
+        DotTagsComponent.prototype.hostData = function () {
+            return {
+                class: __chunk_2.getClassNames(this.status, this.isValid(), this.required)
+            };
+        };
+        DotTagsComponent.prototype.render = function () {
+            var _this_1 = this;
+            return (h(__chunk_1.Fragment, null, h("dot-label", { label: this.label, required: this.required, name: this.name }, h("div", { "aria-describedby": __chunk_2.getHintId(this.hint), tabIndex: this.hint ? 0 : null, class: "dot-tags__container" }, h("dot-autocomplete", { class: __chunk_2.getErrorClass(this.status.dotValid), data: this.data, debounce: this.debounce, disabled: this.isDisabled(), onEnter: this.onEnterHandler.bind(this), onLostFocus: this.blurHandler.bind(this), onSelection: this.onSelectHandler.bind(this), placeholder: this.placeholder || null, threshold: this.threshold }), h("div", { class: "dot-tags__chips" }, this.getValues().map(function (tagLab) { return (h("dot-chip", { disabled: _this_1.isDisabled(), label: tagLab, onRemove: _this_1.removeTag.bind(_this_1) })); })))), __chunk_2.getTagHint(this.hint), __chunk_2.getTagError(this.showErrorMessage(), this.getErrorMessage())));
+        };
+        DotTagsComponent.prototype.addTag = function (label) {
+            var values = this.getValues();
+            if (!values.includes(label)) {
+                values.push(label);
+                this.value = values.join(',');
+                this.updateStatus();
+                this.emitChanges();
+            }
+        };
+        DotTagsComponent.prototype.blurHandler = function () {
+            if (!this.status.dotTouched) {
+                this.status = __chunk_2.updateStatus(this.status, {
+                    dotTouched: true
+                });
+                this.emitStatusChange();
+            }
+        };
+        DotTagsComponent.prototype.emitChanges = function () {
+            this.emitStatusChange();
+            this.emitValueChange();
+        };
+        DotTagsComponent.prototype.emitStatusChange = function () {
+            this.statusChange.emit({
+                name: this.name,
+                status: this.status
+            });
+        };
+        DotTagsComponent.prototype.emitValueChange = function () {
+            this.valueChange.emit({
+                name: this.name,
+                value: this.value
+            });
+        };
+        DotTagsComponent.prototype.getErrorMessage = function () {
+            return this.isValid() ? '' : this.requiredMessage;
+        };
+        DotTagsComponent.prototype.getValues = function () {
+            return __chunk_2.isStringType(this.value) ? this.value.split(',') : [];
+        };
+        DotTagsComponent.prototype.isDisabled = function () {
+            return this.disabled || null;
+        };
+        DotTagsComponent.prototype.isValid = function () {
+            return !this.required || (this.required && !!this.value);
+        };
+        DotTagsComponent.prototype.onEnterHandler = function (_a) {
+            var _this_1 = this;
+            var _b = _a.detail, detail = _b === void 0 ? '' : _b;
+            detail.split(',').forEach(function (label) {
+                _this_1.addTag(label.trim());
+            });
+        };
+        DotTagsComponent.prototype.onSelectHandler = function (_a) {
+            var _b = _a.detail, detail = _b === void 0 ? '' : _b;
+            var value = detail.replace(',', ' ').replace(/\s+/g, ' ');
+            this.addTag(value);
+        };
+        DotTagsComponent.prototype.removeTag = function (event) {
+            var values = this.getValues().filter(function (item) { return item !== event.detail; });
+            this.value = values.join(',');
+            this.updateStatus();
+            this.emitChanges();
+        };
+        DotTagsComponent.prototype.showErrorMessage = function () {
+            return this.getErrorMessage() && !this.status.dotPristine;
+        };
+        DotTagsComponent.prototype.updateStatus = function () {
+            this.status = __chunk_2.updateStatus(this.status, {
+                dotTouched: true,
+                dotPristine: false,
+                dotValid: this.isValid()
+            });
+        };
+        DotTagsComponent.prototype.validateProps = function () {
+            this.valueWatch();
+        };
+        Object.defineProperty(DotTagsComponent, "is", {
+            get: function () { return "dot-tags"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotTagsComponent, "properties", {
+            get: function () {
+                return {
+                    "data": {
+                        "type": "Any",
+                        "attr": "data"
+                    },
+                    "debounce": {
+                        "type": Number,
+                        "attr": "debounce",
+                        "reflectToAttr": true
+                    },
+                    "disabled": {
+                        "type": Boolean,
+                        "attr": "disabled",
+                        "reflectToAttr": true
+                    },
+                    "el": {
+                        "elementRef": true
+                    },
+                    "hint": {
+                        "type": String,
+                        "attr": "hint",
+                        "reflectToAttr": true
+                    },
+                    "label": {
+                        "type": String,
+                        "attr": "label",
+                        "reflectToAttr": true
+                    },
+                    "name": {
+                        "type": String,
+                        "attr": "name",
+                        "reflectToAttr": true
+                    },
+                    "placeholder": {
+                        "type": String,
+                        "attr": "placeholder",
+                        "reflectToAttr": true
+                    },
+                    "required": {
+                        "type": Boolean,
+                        "attr": "required",
+                        "reflectToAttr": true
+                    },
+                    "requiredMessage": {
+                        "type": String,
+                        "attr": "required-message",
+                        "reflectToAttr": true
+                    },
+                    "reset": {
+                        "method": true
+                    },
+                    "status": {
+                        "state": true
+                    },
+                    "threshold": {
+                        "type": Number,
+                        "attr": "threshold",
+                        "reflectToAttr": true
+                    },
+                    "value": {
+                        "type": String,
+                        "attr": "value",
+                        "reflectToAttr": true,
+                        "mutable": true,
+                        "watchCallbacks": ["valueWatch"]
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotTagsComponent, "events", {
+            get: function () {
+                return [{
+                        "name": "valueChange",
+                        "method": "valueChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }, {
+                        "name": "statusChange",
+                        "method": "statusChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }];
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotTagsComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-tags:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotTagsComponent;
+    }());
+    exports.DotAutocomplete = DotAutocompleteComponent;
+    exports.DotChip = DotChipComponent;
+    exports.DotTags = DotTagsComponent;
+    Object.defineProperty(exports, '__esModule', { value: true });
+});

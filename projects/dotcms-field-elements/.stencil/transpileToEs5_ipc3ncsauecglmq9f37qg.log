@@ -1,0 +1,2 @@
+var Fragment = function (props, children) { return children.slice(); };
+export { Fragment as a };

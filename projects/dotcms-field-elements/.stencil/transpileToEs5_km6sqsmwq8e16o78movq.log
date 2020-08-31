@@ -1,0 +1,9 @@
+dotcmsFields.loadBundle('/**:bundle-id:**/', ['exports'], function (exports) {
+    var h = window.dotcmsFields.h;
+    var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+    function createCommonjsModule(fn, module) {
+        return module = { exports: {} }, fn(module, module.exports), module.exports;
+    }
+    exports.createCommonjsModule = createCommonjsModule;
+    exports.commonjsGlobal = commonjsGlobal;
+});

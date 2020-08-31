@@ -1,0 +1,217 @@
+dotcmsFields.loadBundle('/**:bundle-id:**/', ['exports', './chunk-35cb6fec.js', './chunk-42b2163a.js', './chunk-01704cfd.js'], function (exports, __chunk_1, __chunk_2, __chunk_3) {
+    var h = window.dotcmsFields.h;
+    var DotTextfieldComponent = /** @class */ (function () {
+        function DotTextfieldComponent() {
+            this.value = '';
+            this.name = '';
+            this.label = '';
+            this.placeholder = '';
+            this.hint = '';
+            this.required = false;
+            this.requiredMessage = 'This field is required';
+            this.validationMessage = "The field doesn't comply with the specified format";
+            this.disabled = false;
+            this.regexCheck = '';
+            this.type = 'text';
+        }
+        DotTextfieldComponent.prototype.reset = function () {
+            this.value = '';
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.emitStatusChange();
+            this.emitValueChange();
+        };
+        DotTextfieldComponent.prototype.componentWillLoad = function () {
+            this.validateProps();
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.emitStatusChange();
+        };
+        DotTextfieldComponent.prototype.componentDidLoad = function () {
+            var _this = this;
+            var htmlElement = this.el.querySelector('input');
+            setTimeout(function () {
+                var attrs = __chunk_3.getDotAttributesFromElement(Array.from(_this.el.attributes), []);
+                __chunk_3.setDotAttributesToElement(htmlElement, attrs);
+            }, 0);
+        };
+        DotTextfieldComponent.prototype.regexCheckWatch = function () {
+            this.regexCheck = __chunk_2.checkProp(this, 'regexCheck');
+        };
+        DotTextfieldComponent.prototype.typeWatch = function () {
+            this.type = __chunk_2.checkProp(this, 'type');
+        };
+        DotTextfieldComponent.prototype.hostData = function () {
+            return {
+                class: __chunk_2.getClassNames(this.status, this.isValid(), this.required)
+            };
+        };
+        DotTextfieldComponent.prototype.render = function () {
+            var _this = this;
+            return (h(__chunk_1.Fragment, null, h("dot-label", { label: this.label, required: this.required, name: this.name }, h("input", { "aria-describedby": __chunk_2.getHintId(this.hint), class: __chunk_2.getErrorClass(this.status.dotValid), disabled: this.disabled || null, id: __chunk_2.getId(this.name), onBlur: function () { return _this.blurHandler(); }, onInput: function (event) { return _this.setValue(event); }, placeholder: this.placeholder, required: this.required || null, type: this.type, value: this.value })), __chunk_2.getTagHint(this.hint), __chunk_2.getTagError(this.shouldShowErrorMessage(), this.getErrorMessage())));
+        };
+        DotTextfieldComponent.prototype.validateProps = function () {
+            this.regexCheckWatch();
+            this.typeWatch();
+        };
+        DotTextfieldComponent.prototype.isValid = function () {
+            return !this.isValueRequired() && this.isRegexValid();
+        };
+        DotTextfieldComponent.prototype.isValueRequired = function () {
+            return this.required && !this.value;
+        };
+        DotTextfieldComponent.prototype.isRegexValid = function () {
+            if (this.regexCheck && this.value) {
+                var regex = new RegExp(this.regexCheck);
+                return regex.test(this.value);
+            }
+            return true;
+        };
+        DotTextfieldComponent.prototype.shouldShowErrorMessage = function () {
+            return this.getErrorMessage() && !this.status.dotPristine;
+        };
+        DotTextfieldComponent.prototype.getErrorMessage = function () {
+            return this.isRegexValid()
+                ? this.isValid()
+                    ? ''
+                    : this.requiredMessage
+                : this.validationMessage;
+        };
+        DotTextfieldComponent.prototype.blurHandler = function () {
+            if (!this.status.dotTouched) {
+                this.status = __chunk_2.updateStatus(this.status, {
+                    dotTouched: true
+                });
+                this.emitStatusChange();
+            }
+        };
+        DotTextfieldComponent.prototype.setValue = function (event) {
+            this.value = event.target.value.toString();
+            this.status = __chunk_2.updateStatus(this.status, {
+                dotTouched: true,
+                dotPristine: false,
+                dotValid: this.isValid()
+            });
+            this.emitValueChange();
+            this.emitStatusChange();
+        };
+        DotTextfieldComponent.prototype.emitStatusChange = function () {
+            this.statusChange.emit({
+                name: this.name,
+                status: this.status
+            });
+        };
+        DotTextfieldComponent.prototype.emitValueChange = function () {
+            this.valueChange.emit({
+                name: this.name,
+                value: this.value
+            });
+        };
+        Object.defineProperty(DotTextfieldComponent, "is", {
+            get: function () { return "dot-textfield"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotTextfieldComponent, "properties", {
+            get: function () {
+                return {
+                    "disabled": {
+                        "type": Boolean,
+                        "attr": "disabled",
+                        "reflectToAttr": true,
+                        "mutable": true
+                    },
+                    "el": {
+                        "elementRef": true
+                    },
+                    "hint": {
+                        "type": String,
+                        "attr": "hint",
+                        "reflectToAttr": true
+                    },
+                    "label": {
+                        "type": String,
+                        "attr": "label",
+                        "reflectToAttr": true
+                    },
+                    "name": {
+                        "type": String,
+                        "attr": "name"
+                    },
+                    "placeholder": {
+                        "type": String,
+                        "attr": "placeholder",
+                        "reflectToAttr": true,
+                        "mutable": true
+                    },
+                    "regexCheck": {
+                        "type": String,
+                        "attr": "regex-check",
+                        "reflectToAttr": true,
+                        "mutable": true,
+                        "watchCallbacks": ["regexCheckWatch"]
+                    },
+                    "required": {
+                        "type": Boolean,
+                        "attr": "required",
+                        "reflectToAttr": true,
+                        "mutable": true
+                    },
+                    "requiredMessage": {
+                        "type": String,
+                        "attr": "required-message"
+                    },
+                    "reset": {
+                        "method": true
+                    },
+                    "status": {
+                        "state": true
+                    },
+                    "type": {
+                        "type": String,
+                        "attr": "type",
+                        "reflectToAttr": true,
+                        "mutable": true,
+                        "watchCallbacks": ["typeWatch"]
+                    },
+                    "validationMessage": {
+                        "type": String,
+                        "attr": "validation-message"
+                    },
+                    "value": {
+                        "type": String,
+                        "attr": "value",
+                        "mutable": true
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotTextfieldComponent, "events", {
+            get: function () {
+                return [{
+                        "name": "valueChange",
+                        "method": "valueChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }, {
+                        "name": "statusChange",
+                        "method": "statusChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }];
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotTextfieldComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-textfield:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotTextfieldComponent;
+    }());
+    exports.DotTextfield = DotTextfieldComponent;
+    Object.defineProperty(exports, '__esModule', { value: true });
+});

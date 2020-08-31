@@ -1,0 +1,2215 @@
+{
+  "components": [
+    {
+      "tag": "dot-autocomplete",
+      "dependencies": [],
+      "componentClass": "DotAutocompleteComponent",
+      "componentPath": "components/dot-tags/components/dot-autocomplete/dot-autocomplete.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-tags/components/dot-autocomplete/dot-autocomplete.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "data",
+          "attr": "data",
+          "watch": [
+            "watchData"
+          ]
+        },
+        {
+          "name": "debounce",
+          "type": "Number",
+          "reflectToAttr": true,
+          "attr": "debounce"
+        },
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "maxResults",
+          "type": "Number",
+          "reflectToAttr": true,
+          "attr": "max-results",
+          "watch": [
+            "watchMaxResults"
+          ]
+        },
+        {
+          "name": "placeholder",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "placeholder"
+        },
+        {
+          "name": "threshold",
+          "type": "Number",
+          "reflectToAttr": true,
+          "attr": "threshold",
+          "watch": [
+            "watchThreshold"
+          ]
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "enter"
+        },
+        {
+          "event": "lostFocus"
+        },
+        {
+          "event": "selection"
+        }
+      ]
+    },
+    {
+      "tag": "dot-binary-file",
+      "dependencies": [
+        "dot-binary-file-preview",
+        "dot-binary-text-field",
+        "dot-binary-upload-button",
+        "dot-error-message",
+        "dot-label"
+      ],
+      "componentClass": "DotBinaryFileComponent",
+      "componentPath": "components/dot-binary-file/dot-binary-file.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-binary-file/dot-binary-file.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "accept",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "accept",
+          "watch": [
+            "optionsWatch"
+          ]
+        },
+        {
+          "name": "buttonLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "button-label"
+        },
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "errorMessage",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "error-message"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "maxFileLength",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "max-file-length"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "placeholder",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "placeholder"
+        },
+        {
+          "name": "previewImageName",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "preview-image-name"
+        },
+        {
+          "name": "previewImageUrl",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "preview-image-url"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "attr": "required-message",
+          "watch": [
+            "requiredMessageWatch"
+          ]
+        },
+        {
+          "name": "URLValidationMessage",
+          "type": "String",
+          "attr": "u-r-l-validation-message",
+          "watch": [
+            "URLValidationMessageWatch"
+          ]
+        },
+        {
+          "name": "validationMessage",
+          "type": "String",
+          "attr": "validation-message",
+          "watch": [
+            "validationMessageWatch"
+          ]
+        }
+      ],
+      "states": [
+        {
+          "name": "status"
+        }
+      ],
+      "listeners": [
+        {
+          "event": "delete",
+          "method": "handleDelete",
+          "passive": false,
+          "capture": false
+        },
+        {
+          "event": "dragleave",
+          "method": "HandleDragleave",
+          "passive": false,
+          "capture": false
+        },
+        {
+          "event": "dragover",
+          "method": "HandleDragover",
+          "passive": false,
+          "capture": false
+        },
+        {
+          "event": "drop",
+          "method": "HandleDrop",
+          "passive": false,
+          "capture": false
+        },
+        {
+          "event": "fileChange",
+          "method": "fileChangeHandler",
+          "passive": false,
+          "capture": false
+        }
+      ],
+      "methods": [
+        {
+          "name": "clearValue"
+        },
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-binary-file-preview",
+      "dependencies": [],
+      "componentClass": "DotBinaryFilePreviewComponent",
+      "componentPath": "components/dot-binary-file-preview/dot-binary-file-preview.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-binary-file-preview/dot-binary-file-preview.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "deleteLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "delete-label"
+        },
+        {
+          "name": "fileName",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "file-name"
+        },
+        {
+          "name": "previewUrl",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "preview-url"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "delete"
+        }
+      ]
+    },
+    {
+      "tag": "dot-binary-text-field",
+      "dependencies": [],
+      "componentClass": "DotBinaryTextFieldComponent",
+      "componentPath": "components/dot-binary-file/dot-binary-text-field/dot-binary-text-field.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-binary-file/dot-binary-text-field/dot-binary-text-field.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "accept",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "accept"
+        },
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "placeholder",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "placeholder"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "value",
+          "type": "Any",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value"
+        }
+      ],
+      "states": [
+        {
+          "name": "status"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "fileChange"
+        },
+        {
+          "event": "lostFocus"
+        }
+      ]
+    },
+    {
+      "tag": "dot-binary-upload-button",
+      "dependencies": [],
+      "componentClass": "DotBinaryUploadButtonComponent",
+      "componentPath": "components/dot-binary-file/dot-binary-upload-button/dot-binary-upload-button.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-binary-file/dot-binary-upload-button/dot-binary-upload-button.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "accept",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "accept"
+        },
+        {
+          "name": "buttonLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "button-label"
+        },
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "fileChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-checkbox",
+      "dependencies": [
+        "dot-label"
+      ],
+      "componentClass": "DotCheckboxComponent",
+      "componentPath": "components/dot-checkbox/dot-checkbox.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-checkbox/dot-checkbox.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "options",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "options",
+          "watch": [
+            "optionsWatch"
+          ]
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value",
+          "watch": [
+            "valueWatch"
+          ]
+        }
+      ],
+      "states": [
+        {
+          "name": "_options"
+        },
+        {
+          "name": "status"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-chip",
+      "dependencies": [],
+      "componentClass": "DotChipComponent",
+      "componentPath": "components/dot-tags/components/dot-chip/dot-chip.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-tags/components/dot-chip/dot-chip.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "deleteLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "delete-label"
+        },
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "remove"
+        }
+      ]
+    },
+    {
+      "tag": "dot-date",
+      "dependencies": [
+        "dot-input-calendar",
+        "dot-label"
+      ],
+      "componentClass": "DotDateComponent",
+      "componentPath": "components/dot-date/dot-date.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-date/dot-date.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "max",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "max",
+          "watch": [
+            "maxWatch"
+          ]
+        },
+        {
+          "name": "min",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "min",
+          "watch": [
+            "minWatch"
+          ]
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "step",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "step"
+        },
+        {
+          "name": "validationMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "validation-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value"
+        }
+      ],
+      "states": [
+        {
+          "name": "classNames"
+        },
+        {
+          "name": "errorMessageElement"
+        }
+      ],
+      "listeners": [
+        {
+          "event": "_statusChange",
+          "method": "emitStatusChange",
+          "passive": false,
+          "capture": false
+        },
+        {
+          "event": "_valueChange",
+          "method": "emitValueChange",
+          "passive": false,
+          "capture": false
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-date-range",
+      "dependencies": [
+        "dot-label"
+      ],
+      "componentClass": "DotDateRangeComponent",
+      "componentPath": "components/dot-date-range/dot-date-range.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-date-range/dot-date-range.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "displayFormat",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "display-format"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "max",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "max"
+        },
+        {
+          "name": "min",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "min"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "presetLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "preset-label"
+        },
+        {
+          "name": "presets",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "presets",
+          "watch": [
+            "presetsWatch"
+          ]
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value",
+          "watch": [
+            "valueWatch"
+          ]
+        }
+      ],
+      "states": [
+        {
+          "name": "status"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-date-time",
+      "dependencies": [
+        "dot-input-calendar",
+        "dot-label"
+      ],
+      "componentClass": "DotDateTimeComponent",
+      "componentPath": "components/dot-date-time/dot-date-time.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-date-time/dot-date-time.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "dateLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "date-label"
+        },
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "max",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "max",
+          "watch": [
+            "maxWatch"
+          ]
+        },
+        {
+          "name": "min",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "min",
+          "watch": [
+            "minWatch"
+          ]
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "step",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "step",
+          "watch": [
+            "stepWatch"
+          ]
+        },
+        {
+          "name": "timeLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "time-label"
+        },
+        {
+          "name": "validationMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "validation-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value",
+          "watch": [
+            "valueWatch"
+          ]
+        }
+      ],
+      "states": [
+        {
+          "name": "classNames"
+        },
+        {
+          "name": "errorMessageElement"
+        }
+      ],
+      "listeners": [
+        {
+          "event": "_statusChange",
+          "method": "emitStatusChange",
+          "passive": false,
+          "capture": false
+        },
+        {
+          "event": "_valueChange",
+          "method": "emitValueChange",
+          "passive": false,
+          "capture": false
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-error-message",
+      "dependencies": [],
+      "componentClass": "DotErrorMessageComponent",
+      "componentPath": "components/dot-error-message/dot-error-message.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-error-message/dot-error-message.scss"
+          ]
+        }
+      }
+    },
+    {
+      "tag": "dot-form",
+      "dependencies": [
+        "dot-error-message",
+        "dot-form-row"
+      ],
+      "componentClass": "DotFormComponent",
+      "componentPath": "components/dot-form/dot-form.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-form/dot-form.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "fieldsToShow",
+          "type": "String",
+          "attr": "fields-to-show",
+          "watch": [
+            "fieldsToShowWatch"
+          ]
+        },
+        {
+          "name": "layout",
+          "reflectToAttr": true,
+          "attr": "layout",
+          "watch": [
+            "layoutWatch"
+          ]
+        },
+        {
+          "name": "resetLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "reset-label"
+        },
+        {
+          "name": "submitLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "submit-label"
+        },
+        {
+          "name": "variable",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "variable"
+        }
+      ],
+      "states": [
+        {
+          "name": "errorMessage"
+        },
+        {
+          "name": "status"
+        },
+        {
+          "name": "uploadFileInProgress"
+        }
+      ],
+      "listeners": [
+        {
+          "event": "statusChange",
+          "method": "onStatusChange",
+          "passive": false,
+          "capture": false
+        },
+        {
+          "event": "valueChange",
+          "method": "onValueChange",
+          "passive": false,
+          "capture": false
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      }
+    },
+    {
+      "tag": "dot-form-column",
+      "dependencies": [],
+      "componentClass": "DotFormColumnComponent",
+      "componentPath": "components/dot-form/dot-form-column/dot-form-column.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-form/dot-form-column/dot-form-column.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "column",
+          "attr": "column"
+        },
+        {
+          "name": "fieldsToShow",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "fields-to-show"
+        }
+      ]
+    },
+    {
+      "tag": "dot-form-row",
+      "dependencies": [
+        "dot-form-column"
+      ],
+      "componentClass": "DotFormRowComponent",
+      "componentPath": "components/dot-form/dot-form-row/dot-form-row.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-form/dot-form-row/dot-form-row.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "fieldsToShow",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "fields-to-show"
+        },
+        {
+          "name": "row",
+          "attr": "row"
+        }
+      ]
+    },
+    {
+      "tag": "dot-input-calendar",
+      "dependencies": [],
+      "componentClass": "DotInputCalendarComponent",
+      "componentPath": "components/dot-input-calendar/dot-input-calendar.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-input-calendar/dot-input-calendar.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "max",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "max"
+        },
+        {
+          "name": "min",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "min"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "step",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "step"
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "type"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value"
+        }
+      ],
+      "states": [
+        {
+          "name": "status"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "_statusChange"
+        },
+        {
+          "event": "_valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-key-value",
+      "dependencies": [
+        "dot-label",
+        "key-value-form",
+        "key-value-table"
+      ],
+      "componentClass": "DotKeyValueComponent",
+      "componentPath": "components/dot-key-value/dot-key-value.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-key-value/dot-key-value.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "formAddButtonLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "form-add-button-label"
+        },
+        {
+          "name": "formKeyLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "form-key-label"
+        },
+        {
+          "name": "formKeyPlaceholder",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "form-key-placeholder"
+        },
+        {
+          "name": "formValueLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "form-value-label"
+        },
+        {
+          "name": "formValuePlaceholder",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "form-value-placeholder"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "listDeleteLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "list-delete-label"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value",
+          "watch": [
+            "valueWatch"
+          ]
+        }
+      ],
+      "states": [
+        {
+          "name": "items"
+        },
+        {
+          "name": "status"
+        }
+      ],
+      "listeners": [
+        {
+          "event": "add",
+          "method": "addItemHandler",
+          "passive": false,
+          "capture": false
+        },
+        {
+          "event": "delete",
+          "method": "deleteItemHandler",
+          "passive": false,
+          "capture": false
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-label",
+      "dependencies": [],
+      "componentClass": "DotLabelComponent",
+      "componentPath": "components/dot-label/dot-label.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-label/dot-label.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        }
+      ]
+    },
+    {
+      "tag": "dot-multi-select",
+      "dependencies": [
+        "dot-label"
+      ],
+      "componentClass": "DotMultiSelectComponent",
+      "componentPath": "components/dot-multi-select/dot-multi-select.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-multi-select/dot-multi-select.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "options",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "options",
+          "watch": [
+            "optionsWatch"
+          ]
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "size",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "size"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value"
+        }
+      ],
+      "states": [
+        {
+          "name": "_options"
+        },
+        {
+          "name": "status"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-radio",
+      "dependencies": [
+        "dot-label"
+      ],
+      "componentClass": "DotRadioComponent",
+      "componentPath": "components/dot-radio/dot-radio.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-radio/dot-radio.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "options",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "options",
+          "watch": [
+            "optionsWatch"
+          ]
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value",
+          "watch": [
+            "valueWatch"
+          ]
+        }
+      ],
+      "states": [
+        {
+          "name": "_options"
+        },
+        {
+          "name": "status"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-select",
+      "dependencies": [
+        "dot-label"
+      ],
+      "componentClass": "DotSelectComponent",
+      "componentPath": "components/dot-select/dot-select.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-select/dot-select.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "options",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "options",
+          "watch": [
+            "optionsWatch"
+          ]
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value"
+        }
+      ],
+      "states": [
+        {
+          "name": "_options"
+        },
+        {
+          "name": "status"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-tags",
+      "dependencies": [
+        "dot-autocomplete",
+        "dot-chip",
+        "dot-label"
+      ],
+      "componentClass": "DotTagsComponent",
+      "componentPath": "components/dot-tags/dot-tags.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-tags/dot-tags.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "data",
+          "attr": "data"
+        },
+        {
+          "name": "debounce",
+          "type": "Number",
+          "reflectToAttr": true,
+          "attr": "debounce"
+        },
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "placeholder",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "placeholder"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "threshold",
+          "type": "Number",
+          "reflectToAttr": true,
+          "attr": "threshold"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value",
+          "watch": [
+            "valueWatch"
+          ]
+        }
+      ],
+      "states": [
+        {
+          "name": "status"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-textarea",
+      "dependencies": [
+        "dot-label"
+      ],
+      "componentClass": "DotTextareaComponent",
+      "componentPath": "components/dot-textarea/dot-textarea.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-textarea/dot-textarea.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "regexCheck",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "regex-check",
+          "watch": [
+            "regexCheckWatch"
+          ]
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "validationMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "validation-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value",
+          "watch": [
+            "valueWatch"
+          ]
+        }
+      ],
+      "states": [
+        {
+          "name": "status"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-textfield",
+      "dependencies": [
+        "dot-label"
+      ],
+      "componentClass": "DotTextfieldComponent",
+      "componentPath": "components/dot-textfield/dot-textfield.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-textfield/dot-textfield.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "attr": "name"
+        },
+        {
+          "name": "placeholder",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "placeholder"
+        },
+        {
+          "name": "regexCheck",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "regex-check",
+          "watch": [
+            "regexCheckWatch"
+          ]
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "attr": "required-message"
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "type",
+          "watch": [
+            "typeWatch"
+          ]
+        },
+        {
+          "name": "validationMessage",
+          "type": "String",
+          "attr": "validation-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "attr": "value"
+        }
+      ],
+      "states": [
+        {
+          "name": "status"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "dot-time",
+      "dependencies": [
+        "dot-input-calendar",
+        "dot-label"
+      ],
+      "componentClass": "DotTimeComponent",
+      "componentPath": "components/dot-time/dot-time.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-time/dot-time.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "hint",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "hint"
+        },
+        {
+          "name": "label",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "label"
+        },
+        {
+          "name": "max",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "max",
+          "watch": [
+            "maxWatch"
+          ]
+        },
+        {
+          "name": "min",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "min",
+          "watch": [
+            "minWatch"
+          ]
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "name"
+        },
+        {
+          "name": "required",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "required"
+        },
+        {
+          "name": "requiredMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "required-message"
+        },
+        {
+          "name": "step",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "step"
+        },
+        {
+          "name": "validationMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "validation-message"
+        },
+        {
+          "name": "value",
+          "type": "String",
+          "mutable": true,
+          "reflectToAttr": true,
+          "attr": "value"
+        }
+      ],
+      "states": [
+        {
+          "name": "classNames"
+        },
+        {
+          "name": "errorMessageElement"
+        }
+      ],
+      "listeners": [
+        {
+          "event": "_statusChange",
+          "method": "emitStatusChange",
+          "passive": false,
+          "capture": false
+        },
+        {
+          "event": "_valueChange",
+          "method": "emitValueChange",
+          "passive": false,
+          "capture": false
+        }
+      ],
+      "methods": [
+        {
+          "name": "reset"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "statusChange"
+        },
+        {
+          "event": "valueChange"
+        }
+      ]
+    },
+    {
+      "tag": "key-value-form",
+      "dependencies": [],
+      "componentClass": "DotKeyValueComponent",
+      "componentPath": "components/dot-key-value/key-value-form/key-value-form.js",
+      "styles": {
+        "$": {
+          "stylePaths": [
+            "components/dot-key-value/key-value-form/key-value-form.scss"
+          ]
+        }
+      },
+      "props": [
+        {
+          "name": "addButtonLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "add-button-label"
+        },
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "keyLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "key-label"
+        },
+        {
+          "name": "keyPlaceholder",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "key-placeholder"
+        },
+        {
+          "name": "valueLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "value-label"
+        },
+        {
+          "name": "valuePlaceholder",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "value-placeholder"
+        }
+      ],
+      "states": [
+        {
+          "name": "inputs"
+        }
+      ],
+      "hostElement": {
+        "name": "el"
+      },
+      "events": [
+        {
+          "event": "add"
+        },
+        {
+          "event": "lostFocus"
+        }
+      ]
+    },
+    {
+      "tag": "key-value-table",
+      "dependencies": [],
+      "componentClass": "KeyValueTableComponent",
+      "componentPath": "components/dot-key-value/key-value-table/key-value-table.js",
+      "styles": {},
+      "props": [
+        {
+          "name": "buttonLabel",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "button-label"
+        },
+        {
+          "name": "disabled",
+          "type": "Boolean",
+          "reflectToAttr": true,
+          "attr": "disabled"
+        },
+        {
+          "name": "emptyMessage",
+          "type": "String",
+          "reflectToAttr": true,
+          "attr": "empty-message"
+        },
+        {
+          "name": "items",
+          "attr": "items"
+        }
+      ],
+      "events": [
+        {
+          "event": "delete"
+        }
+      ]
+    }
+  ],
+  "collections": [],
+  "compiler": {
+    "name": "@stencil/core",
+    "version": "0.16.4",
+    "typescriptVersion": "3.2.2"
+  },
+  "bundles": []
+}

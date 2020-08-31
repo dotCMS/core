@@ -1,0 +1,5 @@
+dotcmsFields.loadBundle('/**:bundle-id:**/', ['exports'], function (exports) {
+    var h = window.dotcmsFields.h;
+    var Fragment = function (props, children) { return children.slice(); };
+    exports.Fragment = Fragment;
+});

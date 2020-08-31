@@ -1,0 +1,8 @@
+.dot-radio__items {
+  display: flex;
+  flex-direction: column; }
+  .dot-radio__items label {
+    align-items: center;
+    display: flex; }
+  .dot-radio__items input {
+    margin: 0 0.25rem 0 0; }

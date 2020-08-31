@@ -1,0 +1,1 @@
+{"moduleFile":{"sourceFilePath":"/Users/fmontes/development/core-web/projects/dotcms-field-elements/src/models/index.ts","localImports":[],"externalImports":[],"potentialCmpRefs":[],"hasSlot":false,"hasSvg":false,"jsFilePath":"/Users/fmontes/development/core-web/projects/dotcms-field-elements/src/models/index.js"},"jsText":"export * from './dot-binary-message-error.model';\r\n"}

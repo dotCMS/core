@@ -1,0 +1,193 @@
+dotcmsFields.loadBundle('/**:bundle-id:**/', ['exports', './chunk-35cb6fec.js', './chunk-42b2163a.js', './chunk-01704cfd.js'], function (exports, __chunk_1, __chunk_2, __chunk_3) {
+    var h = window.dotcmsFields.h;
+    var DotCheckboxComponent = /** @class */ (function () {
+        function DotCheckboxComponent() {
+            this.disabled = false;
+            this.name = '';
+            this.label = '';
+            this.hint = '';
+            this.options = '';
+            this.required = false;
+            this.requiredMessage = "This field is required";
+            this.value = '';
+        }
+        DotCheckboxComponent.prototype.componentWillLoad = function () {
+            this.value = this.value || '';
+            this.validateProps();
+            this.emitValueChange();
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.emitStatusChange();
+        };
+        DotCheckboxComponent.prototype.componentDidLoad = function () {
+            var _this = this;
+            var attrException = ['dottype'];
+            var htmlElements = this.el.querySelectorAll('input[type="checkbox"]');
+            setTimeout(function () {
+                var attrs = __chunk_3.getDotAttributesFromElement(Array.from(_this.el.attributes), attrException);
+                htmlElements.forEach(function (htmlElement) {
+                    __chunk_3.setDotAttributesToElement(htmlElement, attrs);
+                });
+            }, 0);
+        };
+        DotCheckboxComponent.prototype.optionsWatch = function () {
+            var validOptions = __chunk_2.checkProp(this, 'options');
+            this._options = __chunk_2.getDotOptionsFromFieldValue(validOptions);
+        };
+        DotCheckboxComponent.prototype.valueWatch = function () {
+            this.value = this.value || '';
+        };
+        DotCheckboxComponent.prototype.hostData = function () {
+            return {
+                class: __chunk_2.getClassNames(this.status, this.isValid(), this.required)
+            };
+        };
+        DotCheckboxComponent.prototype.reset = function () {
+            this.value = '';
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.emitValueChange();
+            this.emitStatusChange();
+        };
+        DotCheckboxComponent.prototype.render = function () {
+            var _this = this;
+            return (h(__chunk_1.Fragment, null, h("dot-label", { label: this.label, required: this.required, name: this.name }, h("div", { "aria-describedby": __chunk_2.getHintId(this.hint), tabIndex: this.hint ? 0 : null, class: "dot-checkbox__items" }, this._options.map(function (item) {
+                var trimmedValue = item.value.trim();
+                return (h("label", null, h("input", { class: __chunk_2.getErrorClass(_this.isValid()), name: __chunk_2.getId(_this.name), type: "checkbox", disabled: _this.disabled || null, checked: _this.value.indexOf(trimmedValue) >= 0 || null, onInput: function (event) { return _this.setValue(event); }, value: trimmedValue }), item.label));
+            }))), __chunk_2.getTagHint(this.hint), __chunk_2.getTagError(!this.isValid(), this.requiredMessage)));
+        };
+        DotCheckboxComponent.prototype.validateProps = function () {
+            this.optionsWatch();
+        };
+        DotCheckboxComponent.prototype.setValue = function (event) {
+            this.value = this.getValueFromCheckInputs(event.target.value.trim(), event.target.checked);
+            this.status = __chunk_2.updateStatus(this.status, {
+                dotTouched: true,
+                dotPristine: false,
+                dotValid: this.isValid()
+            });
+            this.emitValueChange();
+            this.emitStatusChange();
+        };
+        DotCheckboxComponent.prototype.getValueFromCheckInputs = function (value, checked) {
+            var valueArray = this.value.trim().length ? this.value.split(',') : [];
+            var valuesSet = new Set(valueArray);
+            if (checked) {
+                valuesSet.add(value);
+            }
+            else {
+                valuesSet.delete(value);
+            }
+            return Array.from(valuesSet).join(',');
+        };
+        DotCheckboxComponent.prototype.emitStatusChange = function () {
+            this.statusChange.emit({
+                name: this.name,
+                status: this.status
+            });
+        };
+        DotCheckboxComponent.prototype.isValid = function () {
+            return this.required ? !!this.value : true;
+        };
+        DotCheckboxComponent.prototype.emitValueChange = function () {
+            this.valueChange.emit({
+                name: this.name,
+                value: this.value
+            });
+        };
+        Object.defineProperty(DotCheckboxComponent, "is", {
+            get: function () { return "dot-checkbox"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotCheckboxComponent, "properties", {
+            get: function () {
+                return {
+                    "_options": {
+                        "state": true
+                    },
+                    "disabled": {
+                        "type": Boolean,
+                        "attr": "disabled",
+                        "reflectToAttr": true,
+                        "mutable": true
+                    },
+                    "el": {
+                        "elementRef": true
+                    },
+                    "hint": {
+                        "type": String,
+                        "attr": "hint",
+                        "reflectToAttr": true
+                    },
+                    "label": {
+                        "type": String,
+                        "attr": "label",
+                        "reflectToAttr": true
+                    },
+                    "name": {
+                        "type": String,
+                        "attr": "name",
+                        "reflectToAttr": true
+                    },
+                    "options": {
+                        "type": String,
+                        "attr": "options",
+                        "reflectToAttr": true,
+                        "watchCallbacks": ["optionsWatch"]
+                    },
+                    "required": {
+                        "type": Boolean,
+                        "attr": "required",
+                        "reflectToAttr": true
+                    },
+                    "requiredMessage": {
+                        "type": String,
+                        "attr": "required-message",
+                        "reflectToAttr": true
+                    },
+                    "reset": {
+                        "method": true
+                    },
+                    "status": {
+                        "state": true
+                    },
+                    "value": {
+                        "type": String,
+                        "attr": "value",
+                        "reflectToAttr": true,
+                        "mutable": true,
+                        "watchCallbacks": ["valueWatch"]
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotCheckboxComponent, "events", {
+            get: function () {
+                return [{
+                        "name": "valueChange",
+                        "method": "valueChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }, {
+                        "name": "statusChange",
+                        "method": "statusChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }];
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotCheckboxComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-checkbox:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotCheckboxComponent;
+    }());
+    exports.DotCheckbox = DotCheckboxComponent;
+    Object.defineProperty(exports, '__esModule', { value: true });
+});

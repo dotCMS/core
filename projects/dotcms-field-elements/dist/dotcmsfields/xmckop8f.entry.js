@@ -1,0 +1,1 @@
+const e=window.dotcmsFields.h;class r{render(){return e("slot",null)}static get is(){return"dot-error-message"}static get style(){return"dot-error-message:not(:empty){border:1px solid;color:#cd5c5c;display:block;padding:.5rem .75rem}"}}export{r as DotErrorMessage};

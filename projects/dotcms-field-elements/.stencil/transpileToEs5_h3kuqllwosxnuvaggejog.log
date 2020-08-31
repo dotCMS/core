@@ -1,0 +1,671 @@
+import { h } from '../dotcmsfields.core.js';
+import { a as Fragment } from './chunk-1d89c98b.js';
+import { a as getOriginalStatus, b as checkProp, c as getClassNames, d as getTagHint, e as getTagError, f as updateStatus, g as isFileAllowed, h as getHintId, i as getErrorClass, j as isValidURL, k as getId } from './chunk-62cd3eff.js';
+import { a as getDotAttributesFromElement, b as setDotAttributesToElement } from './chunk-4205a04e.js';
+var DotBinaryMessageError;
+(function (DotBinaryMessageError) {
+    DotBinaryMessageError[DotBinaryMessageError["REQUIRED"] = 0] = "REQUIRED";
+    DotBinaryMessageError[DotBinaryMessageError["INVALID"] = 1] = "INVALID";
+    DotBinaryMessageError[DotBinaryMessageError["URLINVALID"] = 2] = "URLINVALID";
+})(DotBinaryMessageError || (DotBinaryMessageError = {}));
+var DotBinaryFileComponent = /** @class */ (function () {
+    function DotBinaryFileComponent() {
+        this.name = '';
+        this.label = '';
+        this.placeholder = 'Drop or paste a file or url';
+        this.hint = '';
+        this.required = false;
+        this.requiredMessage = 'This field is required';
+        this.validationMessage = "The field doesn't comply with the specified format";
+        this.URLValidationMessage = 'The specified URL is not valid';
+        this.disabled = false;
+        this.accept = '';
+        this.maxFileLength = '';
+        this.buttonLabel = 'Browse';
+        this.errorMessage = '';
+        this.previewImageName = '';
+        this.previewImageUrl = '';
+        this.file = null;
+        this.allowedFileTypes = [];
+        this.errorMessageMap = new Map();
+    }
+    DotBinaryFileComponent.prototype.reset = function () {
+        this.file = '';
+        this.binaryTextField.value = '';
+        this.errorMessage = '';
+        this.clearPreviewData();
+        this.status = getOriginalStatus(this.isValid());
+        this.emitStatusChange();
+        this.emitValueChange();
+    };
+    DotBinaryFileComponent.prototype.clearValue = function () {
+        this.binaryTextField.value = '';
+        this.errorType = this.required ? DotBinaryMessageError.REQUIRED : null;
+        this.setValue('');
+        this.clearPreviewData();
+    };
+    DotBinaryFileComponent.prototype.componentWillLoad = function () {
+        this.setErrorMessageMap();
+        this.validateProps();
+        this.status = getOriginalStatus(this.isValid());
+        this.emitStatusChange();
+    };
+    DotBinaryFileComponent.prototype.componentDidLoad = function () {
+        var _this = this;
+        this.binaryTextField = this.el.querySelector('dot-binary-text-field');
+        var attrException = ['dottype'];
+        var uploadButtonElement = this.el.querySelector('input[type="file"]');
+        setTimeout(function () {
+            var attrs = getDotAttributesFromElement(Array.from(_this.el.attributes), attrException);
+            setDotAttributesToElement(uploadButtonElement, attrs);
+        }, 0);
+    };
+    DotBinaryFileComponent.prototype.requiredMessageWatch = function () {
+        this.errorMessageMap.set(DotBinaryMessageError.REQUIRED, this.requiredMessage);
+    };
+    DotBinaryFileComponent.prototype.validationMessageWatch = function () {
+        this.errorMessageMap.set(DotBinaryMessageError.INVALID, this.validationMessage);
+    };
+    DotBinaryFileComponent.prototype.URLValidationMessageWatch = function () {
+        this.errorMessageMap.set(DotBinaryMessageError.URLINVALID, this.URLValidationMessage);
+    };
+    DotBinaryFileComponent.prototype.optionsWatch = function () {
+        this.accept = checkProp(this, 'accept');
+        this.allowedFileTypes = !!this.accept ? this.accept.split(',') : [];
+        this.allowedFileTypes = this.allowedFileTypes.map(function (fileType) { return fileType.trim(); });
+    };
+    DotBinaryFileComponent.prototype.fileChangeHandler = function (event) {
+        event.stopImmediatePropagation();
+        var fileEvent = event.detail;
+        this.errorType = fileEvent.errorType;
+        this.setValue(fileEvent.file);
+        if (this.isBinaryUploadButtonEvent(event.target) && fileEvent.file) {
+            this.binaryTextField.value = fileEvent.file.name;
+        }
+    };
+    DotBinaryFileComponent.prototype.HandleDragover = function (evt) {
+        evt.preventDefault();
+        if (!this.disabled) {
+            this.el.classList.add('dot-dragover');
+            this.el.classList.remove('dot-dropped');
+        }
+    };
+    DotBinaryFileComponent.prototype.HandleDragleave = function (evt) {
+        evt.preventDefault();
+        this.el.classList.remove('dot-dragover');
+        this.el.classList.remove('dot-dropped');
+    };
+    DotBinaryFileComponent.prototype.HandleDrop = function (evt) {
+        evt.preventDefault();
+        this.el.classList.remove('dot-dragover');
+        if (!this.disabled && !this.previewImageName) {
+            this.el.classList.add('dot-dropped');
+            this.errorType = null;
+            var droppedFile = evt.dataTransfer.files[0];
+            this.handleDroppedFile(droppedFile);
+        }
+    };
+    DotBinaryFileComponent.prototype.handleDelete = function (evt) {
+        evt.preventDefault();
+        this.setValue('');
+        this.clearPreviewData();
+    };
+    DotBinaryFileComponent.prototype.hostData = function () {
+        return {
+            class: getClassNames(this.status, this.isValid(), this.required)
+        };
+    };
+    DotBinaryFileComponent.prototype.render = function () {
+        return (h(Fragment, null, h("dot-label", { label: this.label, required: this.required, name: this.name, tabindex: "0" }, this.previewImageName ? (h("dot-binary-file-preview", { onClick: function (e) {
+                e.preventDefault();
+            }, fileName: this.previewImageName, previewUrl: this.previewImageUrl })) : (h("div", { class: "dot-binary__container" }, h("dot-binary-text-field", { placeholder: this.placeholder, required: this.required, disabled: this.disabled, accept: this.allowedFileTypes.join(','), hint: this.hint, onLostFocus: this.lostFocusEventHandler.bind(this) }), h("dot-binary-upload-button", { name: this.name, accept: this.allowedFileTypes.join(','), disabled: this.disabled, required: this.required, buttonLabel: this.buttonLabel })))), getTagHint(this.hint), getTagError(this.shouldShowErrorMessage(), this.getErrorMessage()), h("dot-error-message", null, this.errorMessage)));
+    };
+    DotBinaryFileComponent.prototype.lostFocusEventHandler = function () {
+        if (!this.status.dotTouched) {
+            this.status = updateStatus(this.status, {
+                dotTouched: true
+            });
+            this.emitStatusChange();
+        }
+    };
+    DotBinaryFileComponent.prototype.isBinaryUploadButtonEvent = function (element) {
+        return element.localName === 'dot-binary-upload-button';
+    };
+    DotBinaryFileComponent.prototype.validateProps = function () {
+        this.optionsWatch();
+        this.setPlaceHolder();
+    };
+    DotBinaryFileComponent.prototype.shouldShowErrorMessage = function () {
+        return this.getErrorMessage() && !this.status.dotPristine;
+    };
+    DotBinaryFileComponent.prototype.getErrorMessage = function () {
+        return this.errorMessageMap.get(this.errorType);
+    };
+    DotBinaryFileComponent.prototype.isValid = function () {
+        return !(this.required && !this.file);
+    };
+    DotBinaryFileComponent.prototype.setErrorMessageMap = function () {
+        this.requiredMessageWatch();
+        this.validationMessageWatch();
+        this.URLValidationMessageWatch();
+    };
+    DotBinaryFileComponent.prototype.setValue = function (data) {
+        this.file = data;
+        this.status = updateStatus(this.status, {
+            dotTouched: true,
+            dotPristine: false,
+            dotValid: this.isValid()
+        });
+        this.binaryTextField.value = data === null ? '' : this.binaryTextField.value;
+        this.emitValueChange();
+        this.emitStatusChange();
+    };
+    DotBinaryFileComponent.prototype.emitStatusChange = function () {
+        this.statusChange.emit({
+            name: this.name,
+            status: this.status
+        });
+    };
+    DotBinaryFileComponent.prototype.emitValueChange = function () {
+        this.valueChange.emit({
+            name: this.name,
+            value: this.file
+        });
+    };
+    DotBinaryFileComponent.prototype.handleDroppedFile = function (file) {
+        if (isFileAllowed(file.name, this.allowedFileTypes.join(','))) {
+            this.setValue(file);
+            this.binaryTextField.value = file.name;
+        }
+        else {
+            this.errorType = DotBinaryMessageError.INVALID;
+            this.setValue(null);
+        }
+    };
+    DotBinaryFileComponent.prototype.setPlaceHolder = function () {
+        var DEFAULT_WINDOWS = 'Drop a file or url';
+        this.placeholder = this.isWindowsOS() ? DEFAULT_WINDOWS : this.placeholder;
+    };
+    DotBinaryFileComponent.prototype.isWindowsOS = function () {
+        return window.navigator.platform.includes('Win');
+    };
+    DotBinaryFileComponent.prototype.clearPreviewData = function () {
+        this.previewImageUrl = '';
+        this.previewImageName = '';
+    };
+    Object.defineProperty(DotBinaryFileComponent, "is", {
+        get: function () { return "dot-binary-file"; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryFileComponent, "properties", {
+        get: function () {
+            return {
+                "accept": {
+                    "type": String,
+                    "attr": "accept",
+                    "reflectToAttr": true,
+                    "mutable": true,
+                    "watchCallbacks": ["optionsWatch"]
+                },
+                "buttonLabel": {
+                    "type": String,
+                    "attr": "button-label",
+                    "reflectToAttr": true
+                },
+                "clearValue": {
+                    "method": true
+                },
+                "disabled": {
+                    "type": Boolean,
+                    "attr": "disabled",
+                    "reflectToAttr": true
+                },
+                "el": {
+                    "elementRef": true
+                },
+                "errorMessage": {
+                    "type": String,
+                    "attr": "error-message",
+                    "reflectToAttr": true,
+                    "mutable": true
+                },
+                "hint": {
+                    "type": String,
+                    "attr": "hint",
+                    "reflectToAttr": true
+                },
+                "label": {
+                    "type": String,
+                    "attr": "label",
+                    "reflectToAttr": true
+                },
+                "maxFileLength": {
+                    "type": String,
+                    "attr": "max-file-length",
+                    "reflectToAttr": true,
+                    "mutable": true
+                },
+                "name": {
+                    "type": String,
+                    "attr": "name",
+                    "reflectToAttr": true
+                },
+                "placeholder": {
+                    "type": String,
+                    "attr": "placeholder",
+                    "reflectToAttr": true,
+                    "mutable": true
+                },
+                "previewImageName": {
+                    "type": String,
+                    "attr": "preview-image-name",
+                    "reflectToAttr": true,
+                    "mutable": true
+                },
+                "previewImageUrl": {
+                    "type": String,
+                    "attr": "preview-image-url",
+                    "reflectToAttr": true,
+                    "mutable": true
+                },
+                "required": {
+                    "type": Boolean,
+                    "attr": "required",
+                    "reflectToAttr": true
+                },
+                "requiredMessage": {
+                    "type": String,
+                    "attr": "required-message",
+                    "watchCallbacks": ["requiredMessageWatch"]
+                },
+                "reset": {
+                    "method": true
+                },
+                "status": {
+                    "state": true
+                },
+                "URLValidationMessage": {
+                    "type": String,
+                    "attr": "u-r-l-validation-message",
+                    "watchCallbacks": ["URLValidationMessageWatch"]
+                },
+                "validationMessage": {
+                    "type": String,
+                    "attr": "validation-message",
+                    "watchCallbacks": ["validationMessageWatch"]
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryFileComponent, "events", {
+        get: function () {
+            return [{
+                    "name": "valueChange",
+                    "method": "valueChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }, {
+                    "name": "statusChange",
+                    "method": "statusChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryFileComponent, "listeners", {
+        get: function () {
+            return [{
+                    "name": "fileChange",
+                    "method": "fileChangeHandler"
+                }, {
+                    "name": "dragover",
+                    "method": "HandleDragover"
+                }, {
+                    "name": "dragleave",
+                    "method": "HandleDragleave"
+                }, {
+                    "name": "drop",
+                    "method": "HandleDrop"
+                }, {
+                    "name": "delete",
+                    "method": "handleDelete"
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryFileComponent, "style", {
+        get: function () { return "/**style-placeholder:dot-binary-file:**/"; },
+        enumerable: true,
+        configurable: true
+    });
+    return DotBinaryFileComponent;
+}());
+var DotBinaryFilePreviewComponent = /** @class */ (function () {
+    function DotBinaryFilePreviewComponent() {
+        this.fileName = '';
+        this.previewUrl = '';
+        this.deleteLabel = 'Delete';
+    }
+    DotBinaryFilePreviewComponent.prototype.render = function () {
+        var _this = this;
+        return this.fileName ? (h(Fragment, null, this.getPreviewElement(), h("div", { class: "dot-file-preview__info" }, h("span", { class: "dot-file-preview__name" }, this.fileName), h("button", { type: "button", onClick: function () { return _this.clearFile(); } }, this.deleteLabel)))) : null;
+    };
+    DotBinaryFilePreviewComponent.prototype.clearFile = function () {
+        this.delete.emit();
+        this.fileName = null;
+        this.previewUrl = null;
+    };
+    DotBinaryFilePreviewComponent.prototype.getPreviewElement = function () {
+        return this.previewUrl ? (h("img", { alt: this.fileName, src: this.previewUrl })) : (h("div", { class: "dot-file-preview__extension" }, h("span", null, this.getExtention())));
+    };
+    DotBinaryFilePreviewComponent.prototype.getExtention = function () {
+        return this.fileName.substr(this.fileName.lastIndexOf('.'));
+    };
+    Object.defineProperty(DotBinaryFilePreviewComponent, "is", {
+        get: function () { return "dot-binary-file-preview"; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryFilePreviewComponent, "properties", {
+        get: function () {
+            return {
+                "deleteLabel": {
+                    "type": String,
+                    "attr": "delete-label",
+                    "reflectToAttr": true
+                },
+                "el": {
+                    "elementRef": true
+                },
+                "fileName": {
+                    "type": String,
+                    "attr": "file-name",
+                    "reflectToAttr": true,
+                    "mutable": true
+                },
+                "previewUrl": {
+                    "type": String,
+                    "attr": "preview-url",
+                    "reflectToAttr": true,
+                    "mutable": true
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryFilePreviewComponent, "events", {
+        get: function () {
+            return [{
+                    "name": "delete",
+                    "method": "delete",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryFilePreviewComponent, "style", {
+        get: function () { return "/**style-placeholder:dot-binary-file-preview:**/"; },
+        enumerable: true,
+        configurable: true
+    });
+    return DotBinaryFilePreviewComponent;
+}());
+var DotBinaryTextFieldComponent = /** @class */ (function () {
+    function DotBinaryTextFieldComponent() {
+        this.value = null;
+        this.hint = '';
+        this.placeholder = '';
+        this.required = false;
+        this.disabled = false;
+    }
+    DotBinaryTextFieldComponent.prototype.render = function () {
+        var _this = this;
+        return (h(Fragment, null, h("input", { type: "text", "aria-describedby": getHintId(this.hint), class: getErrorClass(this.isValid()), disabled: this.disabled, placeholder: this.placeholder, value: this.value, onBlur: function () { return _this.lostFocus.emit(); }, onKeyDown: function (event) { return _this.keyDownHandler(event); }, onPaste: function (event) { return _this.pasteHandler(event); } })));
+    };
+    DotBinaryTextFieldComponent.prototype.keyDownHandler = function (evt) {
+        if (evt.key === 'Backspace') {
+            this.handleBackspace();
+        }
+        else if (this.shouldPreventEvent(evt)) {
+            evt.preventDefault();
+        }
+    };
+    DotBinaryTextFieldComponent.prototype.shouldPreventEvent = function (evt) {
+        return !(evt.ctrlKey || evt.metaKey);
+    };
+    DotBinaryTextFieldComponent.prototype.handleBackspace = function () {
+        this.value = '';
+        this.emitFile(null, this.required ? DotBinaryMessageError.REQUIRED : null);
+    };
+    DotBinaryTextFieldComponent.prototype.pasteHandler = function (event) {
+        event.preventDefault();
+        this.value = '';
+        var clipboardData = event.clipboardData;
+        if (clipboardData.items.length) {
+            if (this.isPastingFile(clipboardData)) {
+                this.handleFilePaste(clipboardData.items);
+            }
+            else {
+                var clipBoardFileName = clipboardData.items[0];
+                this.handleURLPaste(clipBoardFileName);
+            }
+        }
+    };
+    DotBinaryTextFieldComponent.prototype.handleFilePaste = function (items) {
+        var _this = this;
+        var clipBoardFileName = items[0];
+        var clipBoardFile = items[1].getAsFile();
+        clipBoardFileName.getAsString(function (fileName) {
+            if (isFileAllowed(fileName, _this.accept)) {
+                _this.value = fileName;
+                _this.emitFile(clipBoardFile);
+            }
+            else {
+                _this.emitFile(null, DotBinaryMessageError.INVALID);
+            }
+        });
+    };
+    DotBinaryTextFieldComponent.prototype.handleURLPaste = function (clipBoardFileName) {
+        var _this = this;
+        clipBoardFileName.getAsString(function (fileURL) {
+            if (isValidURL(fileURL)) {
+                _this.value = fileURL;
+                _this.emitFile(fileURL);
+            }
+            else {
+                _this.emitFile(null, DotBinaryMessageError.URLINVALID);
+            }
+        });
+    };
+    DotBinaryTextFieldComponent.prototype.isPastingFile = function (data) {
+        return !!data.files.length;
+    };
+    DotBinaryTextFieldComponent.prototype.isValid = function () {
+        return !(this.required && !!this.value);
+    };
+    DotBinaryTextFieldComponent.prototype.emitFile = function (file, errorType) {
+        this.fileChange.emit({
+            file: file,
+            errorType: errorType
+        });
+    };
+    Object.defineProperty(DotBinaryTextFieldComponent, "is", {
+        get: function () { return "dot-binary-text-field"; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryTextFieldComponent, "properties", {
+        get: function () {
+            return {
+                "accept": {
+                    "type": String,
+                    "attr": "accept",
+                    "reflectToAttr": true
+                },
+                "disabled": {
+                    "type": Boolean,
+                    "attr": "disabled",
+                    "reflectToAttr": true
+                },
+                "el": {
+                    "elementRef": true
+                },
+                "hint": {
+                    "type": String,
+                    "attr": "hint",
+                    "reflectToAttr": true
+                },
+                "placeholder": {
+                    "type": String,
+                    "attr": "placeholder",
+                    "reflectToAttr": true
+                },
+                "required": {
+                    "type": Boolean,
+                    "attr": "required",
+                    "reflectToAttr": true
+                },
+                "status": {
+                    "state": true
+                },
+                "value": {
+                    "type": "Any",
+                    "attr": "value",
+                    "reflectToAttr": true,
+                    "mutable": true
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryTextFieldComponent, "events", {
+        get: function () {
+            return [{
+                    "name": "fileChange",
+                    "method": "fileChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }, {
+                    "name": "lostFocus",
+                    "method": "lostFocus",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryTextFieldComponent, "style", {
+        get: function () { return "/**style-placeholder:dot-binary-text-field:**/"; },
+        enumerable: true,
+        configurable: true
+    });
+    return DotBinaryTextFieldComponent;
+}());
+var DotBinaryUploadButtonComponent = /** @class */ (function () {
+    function DotBinaryUploadButtonComponent() {
+        this.name = '';
+        this.required = false;
+        this.disabled = false;
+        this.buttonLabel = '';
+    }
+    DotBinaryUploadButtonComponent.prototype.componentDidLoad = function () {
+        this.fileInput = this.el.querySelector('dot-label input');
+    };
+    DotBinaryUploadButtonComponent.prototype.render = function () {
+        var _this = this;
+        return (h(Fragment, null, h("input", { accept: this.accept, disabled: this.disabled, id: getId(this.name), onChange: function (event) { return _this.fileChangeHandler(event); }, required: this.required || null, type: "file" }), h("button", { type: "button", disabled: this.disabled, onClick: function () { _this.fileInput.click(); } }, this.buttonLabel)));
+    };
+    DotBinaryUploadButtonComponent.prototype.fileChangeHandler = function (event) {
+        var file = this.fileInput.files[0];
+        if (isFileAllowed(file.name, this.accept)) {
+            this.emitFile(file);
+        }
+        else {
+            event.preventDefault();
+            this.emitFile(null, DotBinaryMessageError.INVALID);
+        }
+    };
+    DotBinaryUploadButtonComponent.prototype.emitFile = function (file, errorType) {
+        this.fileChange.emit({
+            file: file,
+            errorType: errorType
+        });
+    };
+    Object.defineProperty(DotBinaryUploadButtonComponent, "is", {
+        get: function () { return "dot-binary-upload-button"; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryUploadButtonComponent, "properties", {
+        get: function () {
+            return {
+                "accept": {
+                    "type": String,
+                    "attr": "accept",
+                    "reflectToAttr": true
+                },
+                "buttonLabel": {
+                    "type": String,
+                    "attr": "button-label",
+                    "reflectToAttr": true
+                },
+                "disabled": {
+                    "type": Boolean,
+                    "attr": "disabled",
+                    "reflectToAttr": true
+                },
+                "el": {
+                    "elementRef": true
+                },
+                "name": {
+                    "type": String,
+                    "attr": "name",
+                    "reflectToAttr": true
+                },
+                "required": {
+                    "type": Boolean,
+                    "attr": "required",
+                    "reflectToAttr": true
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryUploadButtonComponent, "events", {
+        get: function () {
+            return [{
+                    "name": "fileChange",
+                    "method": "fileChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotBinaryUploadButtonComponent, "style", {
+        get: function () { return "/**style-placeholder:dot-binary-upload-button:**/"; },
+        enumerable: true,
+        configurable: true
+    });
+    return DotBinaryUploadButtonComponent;
+}());
+export { DotBinaryFileComponent as DotBinaryFile, DotBinaryFilePreviewComponent as DotBinaryFilePreview, DotBinaryTextFieldComponent as DotBinaryTextField, DotBinaryUploadButtonComponent as DotBinaryUploadButton };

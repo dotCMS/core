@@ -1,0 +1,194 @@
+import { h } from '../dotcmsfields.core.js';
+import { a as Fragment } from './chunk-1d89c98b.js';
+import { a as getOriginalStatus, b as checkProp, n as getDotOptionsFromFieldValue, c as getClassNames, h as getHintId, i as getErrorClass, k as getId, d as getTagHint, e as getTagError, f as updateStatus } from './chunk-62cd3eff.js';
+import { a as getDotAttributesFromElement, b as setDotAttributesToElement } from './chunk-4205a04e.js';
+var DotMultiSelectComponent = /** @class */ (function () {
+    function DotMultiSelectComponent() {
+        this.disabled = false;
+        this.name = '';
+        this.label = '';
+        this.hint = '';
+        this.options = '';
+        this.required = false;
+        this.requiredMessage = "This field is required";
+        this.size = '3';
+        this.value = '';
+        this._dotTouched = false;
+        this._dotPristine = true;
+    }
+    DotMultiSelectComponent.prototype.componentWillLoad = function () {
+        this.validateProps();
+        this.emitInitialValue();
+        this.status = getOriginalStatus(this.isValid());
+        this.emitStatusChange();
+    };
+    DotMultiSelectComponent.prototype.componentDidLoad = function () {
+        var _this = this;
+        var htmlElement = this.el.querySelector('select');
+        setTimeout(function () {
+            var attrs = getDotAttributesFromElement(Array.from(_this.el.attributes), []);
+            setDotAttributesToElement(htmlElement, attrs);
+        }, 0);
+    };
+    DotMultiSelectComponent.prototype.optionsWatch = function () {
+        var validOptions = checkProp(this, 'options');
+        this._options = getDotOptionsFromFieldValue(validOptions);
+    };
+    DotMultiSelectComponent.prototype.hostData = function () {
+        return {
+            class: getClassNames(this.status, this.isValid(), this.required)
+        };
+    };
+    DotMultiSelectComponent.prototype.reset = function () {
+        this.value = '';
+        this.status = getOriginalStatus(this.isValid());
+        this.emitInitialValue();
+        this.emitStatusChange();
+    };
+    DotMultiSelectComponent.prototype.render = function () {
+        var _this = this;
+        return (h(Fragment, null, h("dot-label", { label: this.label, required: this.required, name: this.name }, h("select", { multiple: true, "aria-describedby": getHintId(this.hint), size: +this.size, class: getErrorClass(this.status.dotValid), id: getId(this.name), disabled: this.shouldBeDisabled(), onChange: function () { return _this.setValue(); } }, this._options.map(function (item) {
+            return (h("option", { selected: _this.value === item.value ? true : null, value: item.value }, item.label));
+        }))), getTagHint(this.hint), getTagError(!this.isValid(), this.requiredMessage)));
+    };
+    DotMultiSelectComponent.prototype.validateProps = function () {
+        this.optionsWatch();
+    };
+    DotMultiSelectComponent.prototype.shouldBeDisabled = function () {
+        return this.disabled ? true : null;
+    };
+    DotMultiSelectComponent.prototype.setValue = function () {
+        this.value = this.getValueFromMultiSelect();
+        this.status = updateStatus(this.status, {
+            dotTouched: true,
+            dotPristine: false,
+            dotValid: this.isValid()
+        });
+        this.emitValueChange();
+        this.emitStatusChange();
+    };
+    DotMultiSelectComponent.prototype.getValueFromMultiSelect = function () {
+        var selected = this.el.querySelectorAll('option:checked');
+        var values = Array.from(selected).map(function (el) { return el.value; });
+        return Array.from(values).join(',');
+    };
+    DotMultiSelectComponent.prototype.emitInitialValue = function () {
+        if (!this.value) {
+            this.value = this._options.length ? this._options[0].value : '';
+            this.emitValueChange();
+        }
+    };
+    DotMultiSelectComponent.prototype.emitStatusChange = function () {
+        this.statusChange.emit({
+            name: this.name,
+            status: this.status
+        });
+    };
+    DotMultiSelectComponent.prototype.isValid = function () {
+        return this.required ? !!this.value : true;
+    };
+    DotMultiSelectComponent.prototype.emitValueChange = function () {
+        this.valueChange.emit({
+            name: this.name,
+            value: this.value
+        });
+    };
+    Object.defineProperty(DotMultiSelectComponent, "is", {
+        get: function () { return "dot-multi-select"; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotMultiSelectComponent, "properties", {
+        get: function () {
+            return {
+                "_options": {
+                    "state": true
+                },
+                "disabled": {
+                    "type": Boolean,
+                    "attr": "disabled",
+                    "reflectToAttr": true
+                },
+                "el": {
+                    "elementRef": true
+                },
+                "hint": {
+                    "type": String,
+                    "attr": "hint",
+                    "reflectToAttr": true
+                },
+                "label": {
+                    "type": String,
+                    "attr": "label",
+                    "reflectToAttr": true
+                },
+                "name": {
+                    "type": String,
+                    "attr": "name",
+                    "reflectToAttr": true
+                },
+                "options": {
+                    "type": String,
+                    "attr": "options",
+                    "reflectToAttr": true,
+                    "watchCallbacks": ["optionsWatch"]
+                },
+                "required": {
+                    "type": Boolean,
+                    "attr": "required",
+                    "reflectToAttr": true
+                },
+                "requiredMessage": {
+                    "type": String,
+                    "attr": "required-message",
+                    "reflectToAttr": true
+                },
+                "reset": {
+                    "method": true
+                },
+                "size": {
+                    "type": String,
+                    "attr": "size",
+                    "reflectToAttr": true
+                },
+                "status": {
+                    "state": true
+                },
+                "value": {
+                    "type": String,
+                    "attr": "value",
+                    "reflectToAttr": true,
+                    "mutable": true
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotMultiSelectComponent, "events", {
+        get: function () {
+            return [{
+                    "name": "valueChange",
+                    "method": "valueChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }, {
+                    "name": "statusChange",
+                    "method": "statusChange",
+                    "bubbles": true,
+                    "cancelable": true,
+                    "composed": true
+                }];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DotMultiSelectComponent, "style", {
+        get: function () { return "/**style-placeholder:dot-multi-select:**/"; },
+        enumerable: true,
+        configurable: true
+    });
+    return DotMultiSelectComponent;
+}());
+export { DotMultiSelectComponent as DotMultiSelect };

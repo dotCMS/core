@@ -1,0 +1,213 @@
+dotcmsFields.loadBundle('/**:bundle-id:**/', ['exports', './chunk-35cb6fec.js', './chunk-42b2163a.js'], function (exports, __chunk_1, __chunk_2) {
+    var h = window.dotcmsFields.h;
+    var DotInputCalendarComponent = /** @class */ (function () {
+        function DotInputCalendarComponent() {
+            this.value = '';
+            this.name = '';
+            this.required = false;
+            this.disabled = false;
+            this.min = '';
+            this.max = '';
+            this.step = '1';
+            this.type = '';
+        }
+        DotInputCalendarComponent.prototype.reset = function () {
+            this.value = '';
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.emitValueChange();
+            this.emitStatusChange();
+        };
+        DotInputCalendarComponent.prototype.componentWillLoad = function () {
+            this.status = __chunk_2.getOriginalStatus(this.isValid());
+            this.emitStatusChange();
+        };
+        DotInputCalendarComponent.prototype.render = function () {
+            var _this = this;
+            return (h(__chunk_1.Fragment, null, h("input", { class: __chunk_2.getErrorClass(this.status.dotValid), disabled: this.disabled || null, id: __chunk_2.getId(this.name), onBlur: function () { return _this.blurHandler(); }, onInput: function (event) { return _this.setValue(event); }, required: this.required || null, type: this.type, value: this.value, min: this.min, max: this.max, step: this.step })));
+        };
+        DotInputCalendarComponent.prototype.isValid = function () {
+            return this.isValueInRange() && this.isRequired();
+        };
+        DotInputCalendarComponent.prototype.isRequired = function () {
+            return this.required ? !!this.value : true;
+        };
+        DotInputCalendarComponent.prototype.isValueInRange = function () {
+            return this.isInMaxRange() && this.isInMinRange();
+        };
+        DotInputCalendarComponent.prototype.isInMinRange = function () {
+            return !!this.min ? this.value >= this.min : true;
+        };
+        DotInputCalendarComponent.prototype.isInMaxRange = function () {
+            return !!this.max ? this.value <= this.max : true;
+        };
+        DotInputCalendarComponent.prototype.blurHandler = function () {
+            if (!this.status.dotTouched) {
+                this.status = __chunk_2.updateStatus(this.status, {
+                    dotTouched: true
+                });
+                this.emitStatusChange();
+            }
+        };
+        DotInputCalendarComponent.prototype.setValue = function (event) {
+            this.value = event.target.value.toString();
+            this.status = __chunk_2.updateStatus(this.status, {
+                dotTouched: true,
+                dotPristine: false,
+                dotValid: this.isValid()
+            });
+            this.emitValueChange();
+            this.emitStatusChange();
+        };
+        DotInputCalendarComponent.prototype.emitStatusChange = function () {
+            this._statusChange.emit({
+                name: this.name,
+                status: this.status,
+                isValidRange: this.isValueInRange()
+            });
+        };
+        DotInputCalendarComponent.prototype.emitValueChange = function () {
+            this._valueChange.emit({
+                name: this.name,
+                value: this.formattedValue()
+            });
+        };
+        DotInputCalendarComponent.prototype.formattedValue = function () {
+            return this.value.length === 5 ? this.value + ":00" : this.value;
+        };
+        Object.defineProperty(DotInputCalendarComponent, "is", {
+            get: function () { return "dot-input-calendar"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotInputCalendarComponent, "properties", {
+            get: function () {
+                return {
+                    "disabled": {
+                        "type": Boolean,
+                        "attr": "disabled",
+                        "reflectToAttr": true
+                    },
+                    "el": {
+                        "elementRef": true
+                    },
+                    "max": {
+                        "type": String,
+                        "attr": "max",
+                        "reflectToAttr": true
+                    },
+                    "min": {
+                        "type": String,
+                        "attr": "min",
+                        "reflectToAttr": true
+                    },
+                    "name": {
+                        "type": String,
+                        "attr": "name",
+                        "reflectToAttr": true
+                    },
+                    "required": {
+                        "type": Boolean,
+                        "attr": "required",
+                        "reflectToAttr": true
+                    },
+                    "reset": {
+                        "method": true
+                    },
+                    "status": {
+                        "state": true
+                    },
+                    "step": {
+                        "type": String,
+                        "attr": "step",
+                        "reflectToAttr": true
+                    },
+                    "type": {
+                        "type": String,
+                        "attr": "type",
+                        "reflectToAttr": true
+                    },
+                    "value": {
+                        "type": String,
+                        "attr": "value",
+                        "reflectToAttr": true,
+                        "mutable": true
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotInputCalendarComponent, "events", {
+            get: function () {
+                return [{
+                        "name": "_valueChange",
+                        "method": "_valueChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }, {
+                        "name": "_statusChange",
+                        "method": "_statusChange",
+                        "bubbles": true,
+                        "cancelable": true,
+                        "composed": true
+                    }];
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotInputCalendarComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-input-calendar:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotInputCalendarComponent;
+    }());
+    var DotLabelComponent = /** @class */ (function () {
+        function DotLabelComponent() {
+            this.name = '';
+            this.label = '';
+            this.required = false;
+        }
+        DotLabelComponent.prototype.render = function () {
+            return (h("label", { class: "dot-label", id: __chunk_2.getLabelId(this.name) }, h("span", { class: "dot-label__text" }, this.label, this.required ? h("span", { class: "dot-label__required-mark" }, "*") : null), h("slot", null)));
+        };
+        Object.defineProperty(DotLabelComponent, "is", {
+            get: function () { return "dot-label"; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotLabelComponent, "properties", {
+            get: function () {
+                return {
+                    "label": {
+                        "type": String,
+                        "attr": "label",
+                        "reflectToAttr": true
+                    },
+                    "name": {
+                        "type": String,
+                        "attr": "name",
+                        "reflectToAttr": true
+                    },
+                    "required": {
+                        "type": Boolean,
+                        "attr": "required",
+                        "reflectToAttr": true
+                    }
+                };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DotLabelComponent, "style", {
+            get: function () { return "/**style-placeholder:dot-label:**/"; },
+            enumerable: true,
+            configurable: true
+        });
+        return DotLabelComponent;
+    }());
+    exports.DotInputCalendar = DotInputCalendarComponent;
+    exports.DotLabel = DotLabelComponent;
+    Object.defineProperty(exports, '__esModule', { value: true });
+});
