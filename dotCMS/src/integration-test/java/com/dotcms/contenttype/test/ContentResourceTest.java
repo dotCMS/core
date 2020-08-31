@@ -57,6 +57,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -1438,6 +1439,74 @@ public class ContentResourceTest extends IntegrationTestBase {
         public void setReadListener(ReadListener readListener) {
           //Not implemented
         }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: Create a Category with 3 levels of depth:
+     *          Parent Category
+     *                  Child Category
+     *                          Grand Child Category
+     *
+     *                  Create a Content Type with a Category field, and a contentlet of it. To
+     *                  the contentlet add the Grand Child Category.
+     * Expected result: json response must include the grand child category info
+     */
+    @Test
+    public void test_getContent_includeGrandChildCategory_success()
+            throws Exception {
+
+        final long currentTime = System.currentTimeMillis();
+        //Create Parent Category.
+        final Category parentCategory = new CategoryDataGen()
+                .setCategoryName("CT-Category-Parent"+currentTime)
+                .setKey("parent"+currentTime)
+                .setCategoryVelocityVarName("parent"+currentTime)
+                .nextPersisted();
+
+        //Create First Child Category.
+        final Category childCategoryA = new CategoryDataGen()
+                .setCategoryName("CT-Category-A"+currentTime)
+                .setKey("categoryA"+currentTime)
+                .setCategoryVelocityVarName("categoryA"+currentTime)
+                .next();
+
+        //Second Level Category.
+        final Category childCategoryA_1 = new CategoryDataGen()
+                .setCategoryName("CT-Category-A-1"+currentTime)
+                .setKey("categoryA-1"+currentTime)
+                .setCategoryVelocityVarName("categoryA-1"+currentTime)
+                .next();
+
+        APILocator.getCategoryAPI().save(parentCategory, childCategoryA, user, false);
+        APILocator.getCategoryAPI().save(childCategoryA, childCategoryA_1, user, false);
+
+        // Content Type with category field
+        final List<Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+        fields.add(new FieldDataGen().type(CategoryField.class)
+                .name(parentCategory.getCategoryName()).velocityVarName(parentCategory.getCategoryVelocityVarName())
+                .values(parentCategory.getInode()).next());
+        final ContentType contentType = new ContentTypeDataGen().host(host).fields(fields).nextPersisted();
+
+        // Save content with grand child category
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "Test Contentlet"+currentTime)
+                .addCategory(childCategoryA_1)
+                .nextPersisted();
+
+
+        //Call resource
+        final Response responseResource = new ContentResource().getContent(createHttpRequest(),new MockHttpResponse(),"/id/"+contentlet.getIdentifier() + "/live/false/type/json");
+
+        // Verify result
+        assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+
+        // Verify JSON result
+        final JSONObject json = new JSONObject(responseResource.getEntity().toString());
+        final JSONArray contentlets = json.getJSONArray("contentlets");
+        assertEquals(1, contentlets.length());
+        assertTrue(contentlets.toString().contains(childCategoryA_1.getCategoryName()));
     }
 
 }
