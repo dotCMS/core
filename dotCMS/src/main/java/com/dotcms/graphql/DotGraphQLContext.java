@@ -1,17 +1,21 @@
 package com.dotcms.graphql;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import graphql.kickstart.execution.context.DefaultGraphQLContext;
 import graphql.kickstart.servlet.context.GraphQLServletContext;
-import org.dataloader.DataLoaderRegistry;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.dataloader.DataLoaderRegistry;
 
 /**
  * Extends the {@link DefaultGraphQLContext} to be able to set the dotCMS user and have it
@@ -23,6 +27,8 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
     private final User user;
+    private final List<Map<String, Object>> fieldCountMaps;
+    private final Map<String, Object> params;
 
     private DotGraphQLContext(DataLoaderRegistry dataLoaderRegistry, Subject subject, HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse, User user) {
@@ -30,6 +36,8 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
         this.httpServletRequest = httpServletRequest;
         this.httpServletResponse = httpServletResponse;
         this.user = user;
+        this.fieldCountMaps = new ArrayList<>();
+        this.params = new HashMap<>();
     }
 
     @Override
@@ -68,12 +76,28 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
         return user;
     }
 
+    public void addFieldCount(final String field, final long count) {
+        this.fieldCountMaps.add(map("fieldName", field, "totalCount", count));
+    }
+
+    public List<Map<String, Object>> getFieldCountMaps() {
+        return ImmutableList.copyOf(fieldCountMaps);
+    }
+
     public static Builder createServletContext(DataLoaderRegistry registry, Subject subject) {
         return new Builder(registry, subject);
     }
 
     public static Builder createServletContext() {
         return new Builder(new DataLoaderRegistry(), null);
+    }
+
+    public void addParam(final String key, final Object value) {
+        params.put(key, value);
+    }
+
+    public Object getParam(final String key) {
+        return params.get(key);
     }
 
     public static class Builder {

@@ -400,7 +400,7 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
 
     <%
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-        final String currentHostName = currentHost != null ? currentHost.getName() : "";
+        final String currentHostName = currentHost != null ? currentHost.getHostname() : "";
     %>
     const currentHost = '<%=currentHostName%>';
 

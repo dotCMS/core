@@ -1051,17 +1051,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
-
         // Looking content up this way can avoid any DB hits as these calls are all cached.
-        final List<Language> langs = APILocator.getLanguageAPI().getLanguages();
+        final List<Language> langs = this.languageAPI.getLanguages();
         for(final Language language : langs) {
-            final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-            if(cvi != null  && UtilMethods.isSet(cvi.getIdentifier()) && (includeDeleted || !cvi.isDeleted())) {
-                return find(cvi.getWorkingInode());
+            final ContentletVersionInfo contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
+            if (contentVersion != null  && UtilMethods.isSet(contentVersion.getIdentifier()) && (includeDeleted || !contentVersion.isDeleted())) {
+                return find(contentVersion.getWorkingInode());
+            }
+            if (null != contentVersion && contentVersion.isDeleted() && !includeDeleted) {
+                Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
+                        identifier));
             }
         }
         return null;
-
     }
 
 	@Override
@@ -1655,9 +1657,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if(offset>0) {
             searchSourceBuilder.from(offset);
         }
-        if(UtilMethods.isSet(sortBy) ) {
+        if(UtilMethods.isSet(sortBy)) {
             sortBy = sortBy.toLowerCase();
 
+            
             if(sortBy.startsWith("score")){
                 String[] sortByCriteria = sortBy.split("[,|\\s+]");
                 String defaultSecondarySort = "moddate";
@@ -1676,7 +1679,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                 searchSourceBuilder.sort("_score", SortOrder.DESC);
                 searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
-            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
+            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")  && !sortBy.equals(SortOrder.ASC.toString())  && !sortBy.equals(SortOrder.DESC.toString())) {
                 addBuilderSort(sortBy, searchSourceBuilder);
             }
         }else{

@@ -506,13 +506,14 @@ var cmsfile=null;
 
 	function cmsFileBrowser(callback, value, meta) {
 		tinyMCEFilePickerCallback=callback;
-		if(meta.filetype=="image"){
-			cmsFileBrowserImage.show();
-		}
-		else{
-			cmsFileBrowserFile.show();
-		}
-		dojo.query('.mce-window .mce-close')[0].click();
+
+		if (meta.filetype=="image") {
+            dojo.query('.mce-window .mce-close')[0].click();
+            cmsFileBrowserImage.show();
+        } else {
+            cmsFileBrowserFile.show()
+        }
+
 	}
 
 	//Glossary terms search
@@ -720,19 +721,21 @@ var cmsfile=null;
 
 	}
 
-
 	function addFileCallback(file) {
-		var ident
+		var ident, assetURI;
 		var ext = file.extension;
 		var ident = file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
-		if(fileExt == '<%= extension %>' || ext == 'page'){
-			tinyMCEFilePickerCallback(file.pageURI, {});
-		}else {
-			var assetURI = [file.path, file.name].join("");
-			tinyMCEFilePickerCallback(assetURI, {});
+		if (fileExt == "<%= extension %>" || ext == "page") {
+			assetURI = file.pageURI;
+		} else if (file.baseType === "FILEASSET") {
+			assetURI = `${file.path}`;
+		} else {
+			assetURI = `/dA/${file.path.split(".")[1]}/${file.name}`;
 		}
+
+		tinyMCEFilePickerCallback(assetURI, {});
 	}
 
 	function replaceAll(find, replace, str) {

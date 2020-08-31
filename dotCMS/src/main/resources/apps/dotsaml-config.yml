@@ -1,7 +1,7 @@
-name: "Saml Integration"
-iconUrl: "/black_18dp.png"
+name: "SSO - SAML"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/saml.png"
 allowExtraParameters: true
-description: "This App will auto tag images by connecting to Amazon's deep learning technology that requires no expertise to use.  The tagged images and assets will be searchable in dotCMS"
+description: "SAML SSO provides users the ability to authentcate against a centralized IDP/Authentication source such as Azure AD or Google's G Suite'.  For information on how to use this App, see the [online documentation](https://dotcms.com/docs/latest/sso-saml)."
 
 
 params:
@@ -10,57 +10,68 @@ params:
     hidden: false
     type: "BOOL"
     label: "Enable?"
-    hint: "Enable | Disable the SAML Configuration"
+    hint: "Enable | Disable this Configuration"
     required: true
   idpName:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Configuration Name"
-    hint: "Name for the Service"
+    label: "IDP Name"
+    hint: "Name for the IDP - for reference"
     required: true
   sPIssuerURL:
     value: ""
     hidden: false
     type: "STRING"
-    label: "SP Issuer URL"
-    hint: "Usually a dotCMS host url as an unique ID"
+    label: "Service Provider Issuer ID"
+    hint: "A unique Id that is shared with the IDP - usually the fully qualified url to your dotcms instance, e.g. https://dotcms.com/dotAdmin or https://testing.dotcms.com:8443/dotAdmin"
     required: true
   sPEndpointHostname:
     value: ""
     hidden: false
     type: "STRING"
-    label: "SP Endpoint Hostname"
-    hint: "Usually a dotCMS host url"
+    label: "Service Provider Endpoint Hostname/Port"
+    hint: "The fully qualified domain and optionally, port for your dotCMS installation (HTTPS is assumed). This will be used by your IDP for callbacks.  E.g. dotcms.com or testing.dotcms.com:8443"
     required: true
   signatureValidationType:
-    value: ""
     hidden: false
-    type: "STRING"
+    type: "SELECT"
     label: "Validation Type"
-    hint: "Validation Type"
+    hint: "Depends on your IDP Configuration."
     required: true
+    value:
+      -
+        label: "Only Response"
+        value: "response"
+        selected: true
+      -
+        label: "Only Assertion"
+        value: "assertion"
+      -
+        label: "Response & Assertion"
+        value: "responseandassertion"
   idPMetadataFile:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Idp Metadata File"
-    hint: "Idp Metadata File"
+    label: "IDP Metadata File"
+    hint: "Cut and paste your IDP Metadata File here - this should be valid XML"
     required: true
   publicCert:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Public Cert"
-    hint: "Public Cert"
+    label: "Public Certifcate"
+    hint: "Cut and paste your Public Certificate here"
     required: true
   privateKey:
     value: ""
-    hidden: false
+    hidden: true
     type: "STRING"
     label: "Private Key"
-    hint: "Private Key"
+    hint: "Cut and paste your Private Key here"
     required: true
+
 
 
 

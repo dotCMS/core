@@ -11,6 +11,7 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.loggers.Log4jUtil;
 import com.google.common.base.Objects;
 import com.google.common.hash.HashCode;
+import io.vavr.Lazy;
 import java.io.File;
 import java.util.List;
 import java.util.WeakHashMap;
@@ -30,14 +31,14 @@ public class Logger{
 	static {
 		Log4jUtil.configureDefaultSystemProperties();
 	}
-	private static WeakHashMap<Class, org.apache.logging.log4j.Logger> map = new WeakHashMap<>();
+	private static WeakHashMap<String, org.apache.logging.log4j.Logger> map = new WeakHashMap<>();
 
 	public static void clearLoggers(){
 		map.clear();
 	}
 
     public static org.apache.logging.log4j.Logger clearLogger ( Class clazz ) {
-        return map.remove( clazz );
+        return map.remove( clazz.getName() );
 	}
 
 	/**
@@ -46,11 +47,24 @@ public class Logger{
 	 * @return
 	 */
 	private synchronized static org.apache.logging.log4j.Logger loadLogger(Class cl){
-		if(map.get(cl) == null){
+		if(map.get(cl.getName()) == null){
 			org.apache.logging.log4j.Logger logger = LogManager.getLogger(cl);
-			map.put(cl, logger);
+			map.put(cl.getName(), logger);
 		}
-		return map.get(cl);
+		return map.get(cl.getName());
+	}
+
+	/**
+	 * This class is syncrozned.  It shouldn't be called. It is exposed so that
+	 * @param className
+	 * @return
+	 */
+	private synchronized static org.apache.logging.log4j.Logger loadLogger(final String className){
+		if(map.get(className) == null){
+			org.apache.logging.log4j.Logger logger = LogManager.getLogger(className);
+			map.put(className, logger);
+		}
+		return map.get(className);
 	}
 
 	public static void info(Class clazz, final Supplier<String> message) {
@@ -74,16 +88,31 @@ public class Logger{
     		velocityInfo(cl, message);
     		return;
     	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
         logger.info(message);
     }
 
+	public static void info(String cl, String message) {
+
+		org.apache.logging.log4j.Logger logger = map.get(cl);
+		if(logger == null){
+			logger = loadLogger(cl);
+		}
+		logger.info(message);
+	}
+
 	public static void debug(final Object ob, final Supplier<String> message) {
 		if (isDebugEnabled(ob.getClass())) {
 			debug(ob.getClass(), message.get());
+		}
+	}
+
+	public static void debug(final String className, final Supplier<String> message) {
+		if (isDebugEnabled(className)) {
+			debug(className, message.get());
 		}
 	}
 
@@ -106,19 +135,28 @@ public class Logger{
     		velocityDebug(cl, message);
     		return;
     	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
         logger.debug(message);
     }
 
+	public static void debug(String cl, String message) {
+
+		org.apache.logging.log4j.Logger logger = map.get(cl);
+		if(logger == null){
+			logger = loadLogger(cl);
+		}
+		logger.debug(message);
+	}
+
     public static void debug(Class cl, String message, Throwable ex) {
     	if(isVelocityMessage(cl)){
     		velocityDebug(cl, message, ex);
     		return;
     	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -141,7 +179,7 @@ public class Logger{
     		velocityError(cl, message);
     		return;
     	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -149,12 +187,22 @@ public class Logger{
         logger.error(message);
     }
 
+	public static void error(String cl, String message) {
+
+		org.apache.logging.log4j.Logger logger = map.get(cl);
+		if(logger == null){
+			logger = loadLogger(cl);
+		}
+
+		logger.error(message);
+	}
+
     public static void error(Class cl, String message, Throwable ex) {
     	if(isVelocityMessage(cl)){
     		velocityError(cl, message, ex);
     		return;
     	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -165,10 +213,22 @@ public class Logger{
     	    ex.printStackTrace();
     	}
     }
+
+	public static void error(String cl, String message, Throwable ex) {
+		org.apache.logging.log4j.Logger logger = map.get(cl);
+		if(logger == null){
+			logger = loadLogger(cl);
+		}
+		try{
+			logger.error(message, ex);
+		}catch(java.lang.IllegalStateException e){
+			ex.printStackTrace();
+		}
+	}
     /**
      * a map with a 5 minute max lifespan
      */
-    static ExpiringMap<Long, Long> logMap = new ExpiringMapBuilder().ttl(600*1000).size(2000).build();
+    static Lazy<ExpiringMap<Long, Long>> logMap = Lazy.of(()->new ExpiringMapBuilder().ttl(600*1000).size(2000).build());
 
 	/**
 	 * this method will print the message at WARN level every millis set
@@ -186,10 +246,10 @@ public class Logger{
         final StackTraceElement ste = ex.getStackTrace()[0];
 
         final Long hash=new Long(Objects.hashCode(ste,message.substring(0, Math.min(message.length(), 10)),cl));
-        final Long expireWhen = logMap.get(hash);
+        final Long expireWhen = logMap.get().get(hash);
         
         if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis );
             logger.warn(message + " (every "+warnEveryMillis + " millis)");
             
         }
@@ -210,10 +270,10 @@ public class Logger{
 
 
         final Long hash=new Long(Objects.hashCode(cl.getName(),message.substring(0, Math.min(message.length(), 10)),cl));
-        final Long expireWhen = logMap.get(hash);
+        final Long expireWhen = logMap.get().get(hash);
         
         if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis );
             logger.info(message + " (every "+warnEveryMillis + " millis)");
             
         }
@@ -236,7 +296,7 @@ public class Logger{
      * @param ex
      */
     public static void warnAndDebug(Class cl, String message, Throwable ex) {
-        org.apache.logging.log4j.Logger logger = map.get(cl);
+        org.apache.logging.log4j.Logger logger = map.get(cl.getName());
         if(logger == null){
             logger = loadLogger(cl);    
         }
@@ -282,7 +342,7 @@ public class Logger{
     		velocityFatal(cl, message);
     		return;
     	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -294,7 +354,7 @@ public class Logger{
     		velocityFatal(cl, message, ex);
     		return;
     	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -304,6 +364,12 @@ public class Logger{
 	public static void warn(final Object ob, final Supplier<String> message) {
 		if (isWarnEnabled(ob.getClass())) {
 			warn(ob.getClass(), message.get());
+		}
+	}
+
+	public static void warn(final String className, final Supplier<String> message) {
+		if (isWarnEnabled(className)) {
+			warn(className, message.get());
 		}
 	}
 
@@ -326,7 +392,7 @@ public class Logger{
     		velocityWarn(cl, message);
     		return;
     	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -334,29 +400,47 @@ public class Logger{
         logger.warn(message);
     }
 
+	public static void warn(String cl, String message) {
+
+		org.apache.logging.log4j.Logger logger = map.get(cl);
+		if(logger == null){
+			logger = loadLogger(cl);
+		}
+
+		logger.warn(message);
+	}
+
     public static void warn(Class cl, String message, Throwable ex) {
     	if(isVelocityMessage(cl)){
     		velocityWarn(cl, message, ex);
     		return;
     	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
 
         logger.warn(message, ex);
     }
+
     public static boolean isDebugEnabled(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
         return logger.isDebugEnabled();
-
     }
 
+	public static boolean isDebugEnabled(String cl) {
+		org.apache.logging.log4j.Logger logger = map.get(cl);
+		if(logger == null){
+			logger = loadLogger(cl);
+		}
+		return logger.isDebugEnabled();
+	}
+
     public static boolean isInfoEnabled(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -364,24 +448,40 @@ public class Logger{
 
     }
     public static boolean isWarnEnabled(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
         return logger.isWarnEnabled();
 
     }
+	public static boolean isWarnEnabled(String cl) {
+		org.apache.logging.log4j.Logger logger = map.get(cl);
+		if(logger == null){
+			logger = loadLogger(cl);
+		}
+		return logger.isWarnEnabled();
+
+	}
     public static boolean isErrorEnabled(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
         return logger.isErrorEnabled();
 
     }
-    
+
+	public static org.apache.logging.log4j.Logger getLogger(final String className) {
+		org.apache.logging.log4j.Logger logger = map.get(className);
+		if(logger == null){
+			logger = loadLogger(className);
+		}
+		return logger;
+	}
+
     public static org.apache.logging.log4j.Logger getLogger(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -391,7 +491,7 @@ public class Logger{
     
     
     public static void velocityError(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -399,7 +499,7 @@ public class Logger{
     }
     
     public static void velocityWarn(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -407,21 +507,21 @@ public class Logger{
     }
     
     public static void velocityInfo(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
 		logger.info(message + " @ " +  Thread.currentThread().getName(), thr);
     }
     public static void velocityFatal(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
 		logger.fatal(message + " @ " +  Thread.currentThread().getName(), thr);
 	}
     public static void velocityDebug(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -429,7 +529,7 @@ public class Logger{
 	}
 
     public static void velocityError(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -437,7 +537,7 @@ public class Logger{
 	}
 	
 	public static void velocityWarn(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -445,21 +545,21 @@ public class Logger{
 	}
 	
 	public static void velocityInfo(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
 		logger.info(message + " @ " +  Thread.currentThread().getName());
 	}
 	public static void velocityFatal(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
 		logger.fatal(message + " @ " +  Thread.currentThread().getName());
 	}
 	public static void velocityDebug(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl.getName());
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -511,10 +611,9 @@ public class Logger{
 	 */
 	public static Object setLevel(final String loggerName, final String level) {
 
-    	final Class loggerClass = ReflectionUtils.getClassFor(loggerName);
-    	if (null != loggerClass) {
+    	final Object logger = getLogger(loggerName);
+    	if (null != logger) {
 
-			final org.apache.logging.log4j.Logger logger = getLogger(loggerClass);
 			if (logger instanceof org.apache.logging.log4j.core.Logger) {
 
 				final Level logLevel = Level.getLevel(level);

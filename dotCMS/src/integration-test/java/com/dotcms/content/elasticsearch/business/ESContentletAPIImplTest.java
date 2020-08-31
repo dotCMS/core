@@ -9,6 +9,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -30,7 +31,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -54,7 +54,6 @@ import java.util.List;
 
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
@@ -671,6 +670,32 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             }
 
         }
+    }
+
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * Given Scenario: Try to check-in a version of an archived page with {@link Contentlet#DONT_VALIDATE_ME} flag on
+     * ExpectedResult: The method should not throw a {@link NullPointerException}, but a {@link DotDataException} because
+     * we are trying to check-in a version of an archived content
+     */
+    @Test
+    public void testCheckInArchivedPageShouldThrowDotDataException() {
+        final Contentlet contentlet = TestDataUtils
+                .getPageContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        ContentletDataGen.archive(contentlet);
+
+        final Contentlet newVersion = ContentletDataGen.checkout(contentlet);
+        newVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+        try {
+            ContentletDataGen.checkin(newVersion);
+            fail();
+        } catch (Exception e){
+            if (!(e.getCause() instanceof DotDataException)){
+                fail();
+            }
+        }
+
     }
 
     private void addPermission(
