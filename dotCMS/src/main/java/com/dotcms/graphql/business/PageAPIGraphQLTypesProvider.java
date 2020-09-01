@@ -1,7 +1,6 @@
 package com.dotcms.graphql.business;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
 import static graphql.Scalars.GraphQLBoolean;
@@ -13,11 +12,11 @@ import static graphql.schema.GraphQLList.list;
 import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
-import com.dotcms.graphql.datafetcher.SiteFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
 import com.dotcms.graphql.datafetcher.page.ContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
+import com.dotcms.graphql.datafetcher.page.RenderedContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
@@ -49,6 +48,7 @@ import io.vavr.control.Try;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -499,8 +499,24 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                         (containerRaw)->Try.of(()->containerRaw.getContainer().isWorking())
                                 .getOrElse(false))));
 
+        containerFields.put("rendered", new TypeFetcher(list(GraphQLTypeReference.typeRef("RenderedContainer"))
+                , new RenderedContainersDataFetcher()));
+
+        // RenderedContainer type
+        final Map<String, TypeFetcher> renderedContainerFields = new HashMap<>();
+        renderedContainerFields.put("uuid", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<Entry<String, String>, String>)
+                        Entry::getKey)));
+        renderedContainerFields.put("render", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<Entry<String, String>, String>)
+                        Entry::getValue)));
+
+        typeMap.put("RenderedContainer", TypeUtil.createObjectType("RenderedContainer",
+                renderedContainerFields));
+
         typeMap.put("Container", TypeUtil.createObjectType("Container",
                 containerFields));
+
 
         return typeMap.values();
 
