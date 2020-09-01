@@ -1424,6 +1424,114 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsRendered",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4bc167b7-fc5f-4022-b3d4-4753fc350d7c",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containers = jsonData.data.page.containers;",
+									"",
+									"    var container1rendered = containers[0].rendered;",
+									"    // rendered fields",
+									"    pm.expect(container1rendered[0].uuid, 'FAILED:[container1rendered[0].uuid]').equal(\"uuid-1\");",
+									"    pm.expect(container1rendered[0].render, 'FAILED:[container1rendered[0].render]').equal(\"\\n    <h2>Custom Packages</h2>\\n<p>Are you looking for the ultimate in Costa Rica vacations? Our team oat TravelLux will design your custom vacation package. We do not sell cookie-cutter trips. Instead, we take the time to get to know your unique &ldquo;travel personality&rdquo;. Then we match you with a hand-picked selection of housing, tours &amp; transportation options. The result is a tailor-made Costa Rica journey that will fit you like a glove.</p>\\n<p>We email you a detailed travel itinerary filled with info, pictures and videos. Your TravelLux agent will work with you to adjust your vacation package until you are 100% satisfied. This makes for a seamless, worry-free experience that allows you to relax &amp; enjoy the voyage.</p>\\n<p><a href=\\\"/contact-us/\\\" class=\\\"btn btn-primary\\\">Book Now</a></p>\\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/2400w/50q/ski_holidays.png 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/600w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433//1200w/50q/ski_holidays.png 2x\\\">\\n            <img src=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/480w/50q/ski_holidays.png\\\" alt=\\\"With over 400\\\" of snow fall a year we have the longest season in the Continental US\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Over 400\\\" of snow a year</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">With over 400\\\" of snow fall a year we have the longest season in the Continental US</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/1200w/50q/ski_holidays.png\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\");",
+									"",
+									"    pm.expect(container1rendered[1].uuid, 'FAILED:[container1rendered[1].uuid]').equal(\"uuid-2\");",
+									"    pm.expect(container1rendered[1].render, 'FAILED:[container1rendered[1].render]').equal(\"\\n    <!-- Container Code: /application/containers/video.vtl -->\\n\\n<a class=\\\"video-cover bg-overlay-30 mb-5\\\" data-lightbox=\\\"iframe\\\" href=\\\"https://www.youtube.com/watch?v=1qw4ayRc1t8\\\">\\n  <div class=\\\"video-img\\\" style=\\\"background-image: url(https://i.ytimg.com/vi/1qw4ayRc1t8/hqdefault.jpg);\\\"></div>\\n  <span class=\\\"icon mdi mdi-play video-cover-icon\\\"></span>\\n</a><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[2].uuid, 'FAILED:[container1rendered[2].uuid]').equal(\"uuid-3\");",
+									"    pm.expect(container1rendered[2].render, 'FAILED:[container1rendered[2].render]').equal(\"\\n    \\r\\n<h1 class=\\\"text-center\\\">Featured Activities</h1>\\n<div class=\\\"row justify-content-center\\\">\\n    </div>\\n<div></div>\");",
+									"    ",
+									"    pm.expect(container1rendered[3].uuid, 'FAILED:[container1rendered[3].uuid]').equal(\"uuid-4\");",
+									"    pm.expect(container1rendered[3].render, 'FAILED:[container1rendered[3].render]').equal(\"\\n    <h2>Costa Rica Family Adventure</h2>\\n<p>Tropical rainforests, zip lines, monkey sightings and waterfall swims make for the most unforgettable vacation&mdash;and photos.</p>\\n<p>Abundance abounds in Costa Rica: beautiful beaches, friendly people and endless adventures to embark upon. We dabble in it all with a family-friendly itinerary that will get everyone&rsquo;s heart pumping. Jump right in to adventure life in Costa Rica at Arenal Volcano where we zip along the treetops, get a glimpse of rural Tico life on a local farm, rappel down a canyon waterfall that lies deep in the tropical rainforest, and soak in thermal hot springs.</p>\\n<p>Journey south, crossing Lake Arenal by boat, and dive deep into the Monteverde cloud forest. Your hotel is located in the reserve, home to eight different biological zones and thousands of plants and animals. Keep your eyes peeled for monkeys and quetzals during the day and embark on night walks with your guide to experience a whole different world after dark. Spend a unique day exploring the forest giants from the ground up&mdash;climbing up specially outfitted trees and then exploring the forest on foot with your naturalist guide.</p><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[4].uuid, 'FAILED:[container1rendered[4].uuid]').equal(\"uuid-5\");",
+									"    pm.expect(container1rendered[4].render, 'FAILED:[container1rendered[4].render]').equal(\"\\n    <h3>Adventure travel done right</h3>\\n<p>Wherever you want to go, whatever you want to get into, we&rsquo;ve got a trip that&rsquo;ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that&rsquo;s more your thing).<strong><br /></strong></p><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[5].uuid, 'FAILED:[container1rendered[5].uuid]').equal(\"uuid-6\");",
+									"    pm.expect(container1rendered[5].render, 'FAILED:[container1rendered[5].render]').equal(\"\\n    <h3>Experience the world with us</h3>\\n<p>We practice Leave No Trace principles on all our trips and work with local people and businesses as often as possible.Our expert guides don&rsquo;t just know these places&mdash;they call them home. Their local knowledge unveils worlds few get to see. Hike, bike, swim and paddle with like-minded travelers who share your passion for adventure and the outdoors.</p><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[6].uuid, 'FAILED:[container1rendered[6].uuid]').equal(\"uuid-7\");",
+									"    pm.expect(container1rendered[6].render, 'FAILED:[container1rendered[6].render]').equal(\"\\n    \\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/2400w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/600w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca//1200w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <img src=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/480w/50q/waterfall-costa-rica.jpg\\\" alt=\\\"From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Fall into Costa Rica</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/1200w/50q/waterfall-costa-rica.jpg\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\");",
+									"",
+									"    pm.expect(container1rendered[7].uuid, 'FAILED:[container1rendered[7].uuid]').equal(\"uuid-8\");",
+									"    pm.expect(container1rendered[7].render, 'FAILED:[container1rendered[7].render]').equal(\"\\n    <div></div>\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      rendered {\n        uuid\n        render\n      }\n    }\n      \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -3805,87 +3913,87 @@
 	],
 	"variable": [
 		{
-			"id": "02f21064-c9e4-432e-adea-2d3b7488427b",
+			"id": "3ae5acd2-8f23-4ef4-919c-ce4b73a40326",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "8f7f9aca-fb7c-4a83-9552-483ded97654b",
+			"id": "223408a6-a071-43ec-89f0-d13a83ee001a",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "e61c7e42-96bf-4501-ae48-5bc07a2fcd48",
+			"id": "9cc05dab-5972-4860-b81e-e6d0b7e01732",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "100c7d96-1ac5-48fd-a3c0-70d53c6eee9c",
+			"id": "d32e26e8-2383-408d-a90b-1400594c194a",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "6babdd4f-9ea7-4edd-9b6e-fdb251fded6f",
+			"id": "532d76e6-37d2-4d18-b656-cfd49c1a9375",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "d5ac5b22-65c7-41cb-ab2a-b3faa6b7930e",
+			"id": "5a292530-ba78-4005-bcee-5a0352ab0f16",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "61f9a9ba-6851-4e1c-8ece-e4b1033d0ea3",
+			"id": "99fc29d7-5b93-488b-8fca-40edf6eb629d",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "71079227-5b9b-4338-9243-0a2c43dd599e",
+			"id": "35115ecc-8b32-418d-b256-1aa587a3ae28",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "f09f64b8-a34e-4b7f-b2da-d4a3b9c9e7e1",
+			"id": "e53c0706-a97a-4031-b28a-8ebcab4be083",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "133ce72c-ef0b-44af-afb2-d2dcbe645de0",
+			"id": "825a23ab-0b5d-4ec1-bdc2-29aeb066c991",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "2bcd476c-3ae6-47e7-9e16-4f69a48611f5",
+			"id": "b3da363a-89cd-40a1-9057-2f62f37bce2a",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "81442983-1cd6-47b1-b7ab-0672d3785013",
+			"id": "56414ec2-9beb-430c-a40f-288f0c6ca974",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "3aca436d-1c5c-4e7b-a4ca-17b19d9c7c06",
+			"id": "bd35d3c2-766d-4d3b-98f3-3c763db5b8c0",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "018e553f-4a92-4e04-b375-965bec45726d",
+			"id": "22510cca-d967-47c4-9b3c-ba56dbd4a4a1",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "9d2d7458-fba5-4d0b-8fef-dea180a58fd4",
+			"id": "139c8af0-ddd8-416c-9a7e-40a1b1f17702",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "9556e5b6-31fa-4d8d-8ca9-036aaf98f328",
+			"id": "316c7f42-6b15-4955-b253-6eb9a2b0a33a",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "cc15c9ae-1c86-4110-8e65-5b2e5ab1b3eb",
+			"id": "8c188323-0b34-4d5b-a3ec-754fd41881fc",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
