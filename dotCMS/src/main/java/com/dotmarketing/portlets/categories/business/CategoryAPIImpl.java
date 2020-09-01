@@ -678,6 +678,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 		return isParent(givenChild,givenParent,user,false);
 	}
 
+	@CloseDBIfOpened
 	public boolean isParent(final Category givenChild, final Category givenParent, final User user, final boolean respectFrontendRoles) {
 
 		try {

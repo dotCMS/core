@@ -10,7 +10,6 @@ import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.TextField;
