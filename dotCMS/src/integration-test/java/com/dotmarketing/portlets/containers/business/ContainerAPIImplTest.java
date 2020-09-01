@@ -361,7 +361,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         final Container container = new ContainerDataGen().site(host).nextPersisted();
         container.setTitle("Live Version");
         ContainerDataGen.publish(container);
-        
+
         container.setTitle("Working Version");
         APILocator.getContainerAPI()
                 .save(container, Collections.emptyList(), host, APILocator.getUserAPI().getSystemUser(), false);
