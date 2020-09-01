@@ -1,11 +1,13 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -15,6 +17,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Api to interact with Templates
+ * You can create and edit templates, publish/unpubish, archive/unarchive, delete, etc.
+ */
 public interface TemplateAPI {
 
 	/**
@@ -148,6 +154,46 @@ public interface TemplateAPI {
 	public Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Publish a template if has the appropiate permissions
+	 * @param template {@link Template} to publish (valid template)
+	 * @param user     {@link User} user to check the permissions
+	 * @param respectFrontendRoles {@link Boolean}
+	 * @return boolean true if publish
+	 */
+	boolean publishTemplate(Template template, User user, boolean respectFrontendRoles);
+
+	/**
+	 * Unpublish a template if has the appropiate permissions
+	 * @param template {@link Template} to unpublish (valid template)
+	 * @param user     {@link User} user to check the permissions
+	 * @param respectFrontendRoles {@link Boolean}
+	 * @return boolean true if publish
+	 */
+	boolean unpublishTemplate(Template template, User user, boolean respectFrontendRoles);
+
+	/**
+	 * Unlock the template
+	 * @param template {@link Template}
+	 * @param user     {@link User}
+	 */
+	void unlock (Template template, User user);
+
+	/**
+	 * Archive the template, it should be unpublish, but if it is not, then will be unpublish and consequently archive.
+	 * @param template {@link Template}
+	 * @param user     {@link User}
+	 * @param respectFrontendRoles
+	 * @return boolean true if success
+	 */
+	boolean archive (Template template, User user, boolean respectFrontendRoles);
+
+	/**
+	 * If the template is archive will unarchive it
+	 * @param template {@link Template}
+	 */
+	void unarchive (Template template);
+
+	/**
 	 * Delete the specified template
 	 *
 	 * @param template
@@ -189,10 +235,27 @@ public interface TemplateAPI {
 	 */
 	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Check if there are Contentlet Pages using this Template
+	 * @param template {@link Template}
+	 * @param user     {@link User}
+	 * @param respectFrontendRoles Boolean
+	 * @return Map, String Name -> Host Name : Page Name
+	 */
+	Map<String, String> checkPageDependencies(Template template, User user, boolean respectFrontendRoles);
+
 	public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 
     public Template find(String inode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 
+	/**
+	 * Makes a copy of sourceTemplate and returns the new one
+	 * @param sourceTemplate
+	 * @param user
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
     public Template copy(Template sourceTemplate, User user)throws DotDataException, DotSecurityException ;
     
 	/**

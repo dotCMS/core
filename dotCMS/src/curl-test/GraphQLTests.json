@@ -918,6 +918,390 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "publishUrlMappedContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f389f7b1-13d3-4629-8a2f-0cf8d5e7dc2a",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Ecotourism\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/175009d69e/fire?identifier=57ee7cd3-66fc-4f01-9b7e-11e53553c220",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"175009d69e",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "57ee7cd3-66fc-4f01-9b7e-11e53553c220"
+								}
+							]
+						},
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_PageContainsUrlMappedContentField",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3946c1d0-2052-473e-9a2c-07661f8f1606",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var urlmappedContent = jsonData.data.page.urlContentMap;",
+									"",
+									"    // mode",
+									"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Ecotourism in Costa Rica\");",
+									"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"57ee7cd3-66fc-4f01-9b7e-11e53553c220\");",
+									"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/blog/post/ecotourism-in-costa-rica\");",
+									"",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/blog/post/ecotourism-in-costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     urlContentMap {\n        title\n        identifier\n        urlMap\n        contentType\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "importDestinationsCostaRicaWithSidebar",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "104ea22a-a663-4ef4-9308-a724b82242b7",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-sidebar.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/costa-rica-sidebar.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_LayoutFieldContainsAllFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f8a0d0cc-61ee-426d-9351-69fe76628b7a",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var layout = jsonData.data.page.layout;",
+									"",
+									"    // layout fields",
+									"    // pm.expect(layout.footer, 'FAILED:[layout.footer]').equal(true);",
+									"    pm.expect(layout.width, 'FAILED:[layout.width]').equal(null);",
+									"    // pm.expect(layout.header, 'FAILED:[layout.header]').equal(true);",
+									"    pm.expect(layout.title, 'FAILED:[layout.title]').equal(\"anonymouslayout1598564677000\");",
+									"",
+									"    // rows fields",
+									"    var rows = layout.body.rows;",
+									"    pm.expect(rows.length, 'FAILED:[rows.length]').equal(6);",
+									"",
+									"    var row1 = rows[0];",
+									"    pm.expect(row1.styleClass, 'FAILED:[row1.styleClass]').equal(null);",
+									"",
+									"    var row1Columns = row1.columns;",
+									"    pm.expect(row1Columns.length, 'FAILED:[row1Columns.length]').equal(1);",
+									"",
+									"    var column1 = row1Columns[0];",
+									"    pm.expect(column1.preview, 'FAILED:[column1.preview]').equal(false);",
+									"    pm.expect(column1.width, 'FAILED:[column1.width]').equal(12);",
+									"    pm.expect(column1.widthPercent, 'FAILED:[column1.widthPercent]').equal(100);",
+									"    pm.expect(column1.left, 'FAILED:[column1.left]').equal(0);",
+									"    pm.expect(column1.leftOffset, 'FAILED:[column1.leftOffset]').equal(1);",
+									"    pm.expect(column1.styleClass, 'FAILED:[column1.styleClass]').equal(null);",
+									"",
+									"    var containers = column1.containers;",
+									"    pm.expect(containers.length, 'FAILED:[containers.length]').equal(1);",
+									"",
+									"    var container1 = containers[0];",
+									"    pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"5a07f889-4536-4956-aa6e-e7967969ec3f\");",
+									"    pm.expect(container1.uuid, 'FAILED:[container1.uuid]').equal(\"2\");",
+									"",
+									"    // sidebar",
+									"    var sidebar = layout.sidebar;",
+									"    pm.expect(sidebar.preview, 'FAILED:[sidebar.preview]').equal(false);",
+									"    pm.expect(sidebar.width, 'FAILED:[sidebar.width]').equal(\"small\");",
+									"    pm.expect(sidebar.widthPercent, 'FAILED:[sidebar.widthPercent]').equal(20);",
+									"    pm.expect(sidebar.location, 'FAILED:[sidebar.location]').equal(\"left\");",
+									"",
+									"    var sidebarContainers = sidebar.containers;",
+									"    pm.expect(sidebarContainers.length, 'FAILED:[sidebarContainers.length]').equal(2);",
+									"",
+									"    var sidebarContainer1 = sidebarContainers[0];",
+									"    pm.expect(sidebarContainer1.identifier, 'FAILED:[sidebarContainer1.identifier]').equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"    pm.expect(sidebarContainer1.uuid, 'FAILED:[sidebarContainers.uuid]').equal(\"1\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     layout {\n      footer\n      width\n      header\n      title\n      body {\n        rows {\n          styleClass\n          columns {\n            preview\n            width\n            widthPercent\n            left\n            leftOffset\n            styleClass\n            containers {\n              identifier\n              uuid\n            } \n          }\n        } \n      }\n      sidebar {\n        preview\n        width\n        widthPercent\n        location\n        containers {\n            identifier\n            uuid\n          } \n      }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -3299,87 +3683,87 @@
 	],
 	"variable": [
 		{
-			"id": "0d813943-1262-45ff-8633-79e9389586b0",
+			"id": "16acbba9-2597-4be2-9efb-a49ef05e684f",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "28d05b34-03c2-4ad1-bf2d-29e7142260b5",
+			"id": "de1be12b-269e-44b7-bb23-ac4bca9ea7db",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "c972fb41-2b98-4e6c-b62e-1ea91eb82ede",
+			"id": "abe08a03-a2a2-4058-baca-4543dbefb483",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "74ab1d38-f1b3-4421-962e-0b1d6838f930",
+			"id": "c402b9c9-9f3b-40a6-9af7-8f1e7f5d2d9f",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "4a21557f-b0a5-44a6-bc44-3055e85fb77b",
+			"id": "d9ca3e29-84c9-4501-8103-816a79960c6d",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "13dcc77c-7d3e-46f5-8933-3b9aa862693e",
+			"id": "0f938161-d161-45f2-b9a7-85e6944eec44",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "2a228302-c1a1-4bdb-9b2d-dd4785d786a2",
+			"id": "a21e0513-bd8f-4020-bb18-8243717aab3e",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "a3f2517b-53a8-4961-acdf-d842bff1c4fa",
+			"id": "d7e52160-e900-495c-ac20-5034dd3c7cdd",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "443923d7-30ce-44e2-8fcd-cd176f89bcdd",
+			"id": "7b22de2c-86d8-4c12-8294-0c96fd3042df",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "036f5015-5467-4fab-9532-ef2e083e8db5",
+			"id": "ea2d16b6-194e-438e-b950-38ecfe6215b6",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "035a10f6-485b-4fba-9c8a-8e9f44ba1ef5",
+			"id": "5e930148-2643-4514-98de-bf8af2fa4e34",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "2a78d192-ec93-4a9d-88c2-07ef4dd0cd69",
+			"id": "d22b5bbd-c0a8-4096-8fc2-9a838976a333",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "b4c95cb1-4db0-4a19-830e-bb504b5d2d8a",
+			"id": "3939ec8e-09ce-4eb8-8b4d-0bb7f8749a5b",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "375d90d7-e0ba-483f-985a-45d0b4eda502",
+			"id": "9beb1284-309b-4056-b9af-ea9be8169335",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "b7868f7c-5606-4cc6-a6b3-d8f4a709132e",
+			"id": "6c71d02c-7323-40f6-b1c0-c4ce25c556f1",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "897876a8-a717-4140-8e2c-d74da8cbff1a",
+			"id": "cc50683e-f7d7-448f-ad7f-91ae133f3242",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "bb90f451-fbf2-4b3c-9d59-dfe988ada17b",
+			"id": "b6c592b4-b3e8-42b0-afd1-648fc8ad7b2a",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

@@ -119,26 +119,7 @@ public class WfTaskAjax extends WfBaseAction {
 					continue;
 				}
 
-				final Identifier id = APILocator.getIdentifierAPI().find(token);
-				Contentlet contentlet = null;
-
-				try {
-					contentlet = APILocator.getContentletAPI().findContentletByIdentifier
-							(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), getUser(), false);
-				} catch(Exception e) { /* Quiet */}
-				
-				if (contentlet == null || ! UtilMethods.isSet(contentlet.getInode())) {
-
-					final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-					for(final Language language : languages) {
-
-						contentlet = APILocator.getContentletAPI().findContentletByIdentifier
-								(id.getId(), false, language.getId(), getUser(), false);
-						if(contentlet != null && UtilMethods.isSet(contentlet.getInode())){
-							break;
-						}
-					}
-				}
+				final Contentlet contentlet = APILocator.getContentletAPI().find(token,getUser(),false);
 
 				if (null != contentlet) {
 					APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
