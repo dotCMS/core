@@ -1,15 +1,16 @@
 package com.dotcms;
 
+import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
-import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
+import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.ema.EMAWebInterceptorTest;
+import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
-import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -24,8 +25,8 @@ import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
-import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
+import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
@@ -314,7 +315,8 @@ import org.junit.runners.Suite.SuiteClasses;
         DotTemplateToolTest.class,
         ContentletWebAPIImplIntegrationTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
-        FolderFactoryImplTest.class
+        FolderFactoryImplTest.class,
+        DotSamlResourceTest.class
 })
 public class MainSuite {
 

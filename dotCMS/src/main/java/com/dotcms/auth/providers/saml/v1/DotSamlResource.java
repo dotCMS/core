@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.saml.v1;
 
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
@@ -11,8 +12,10 @@ import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
 
@@ -49,6 +52,7 @@ public class DotSamlResource implements Serializable {
 	private final SAMLHelper           				   samlHelper;
 	private final SamlAuthenticationService            samlAuthenticationService;
 	private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
+	private final WebResource						   webResource;
 
 	public static final List<String> dotsamlPathSegments = new ArrayList<String>() {
 		{
@@ -65,6 +69,21 @@ public class DotSamlResource implements Serializable {
 		this.samlAuthenticationService            = DotSamlProxyFactory.getInstance().samlAuthenticationService();
 		this.identityProviderConfigurationFactory = DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory();
 		this.samlHelper                           = new SAMLHelper(this.samlAuthenticationService);
+		this.webResource						  = new WebResource();
+	}
+
+	@VisibleForTesting
+	protected DotSamlResource(final SamlConfigurationService           samlConfigurationService,
+							final SAMLHelper           				   samlHelper,
+							final SamlAuthenticationService            samlAuthenticationService,
+							final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
+							final WebResource						   webResource) {
+
+		this.samlConfigurationService			  = samlConfigurationService;
+		this.samlAuthenticationService            = samlAuthenticationService;
+		this.identityProviderConfigurationFactory = identityProviderConfigurationFactory;
+		this.samlHelper                           = samlHelper;
+		this.webResource						  = webResource;
 	}
 
 	/**
@@ -231,6 +250,13 @@ public class DotSamlResource implements Serializable {
 	public void metadata( @PathParam( "idpConfigId" ) final String idpConfigId,
 						  @Context final HttpServletRequest httpServletRequest,
 						  @Context final HttpServletResponse httpServletResponse ) throws IOException {
+
+		if (!new WebResource.InitBuilder(this.webResource).rejectWhenNoUser(true).
+				requestAndResponse(httpServletRequest, httpServletResponse)
+				.requiredBackendUser(true).init().getUser().isAdmin()) {
+
+			throw new RuntimeException(new DotSecurityException("SAML metadata is only accessible by administrators"));
+		}
 
 		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 

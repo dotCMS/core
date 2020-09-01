@@ -15,21 +15,30 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
 import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -39,11 +48,13 @@ import java.util.stream.Collectors;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
-	static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-	static IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-	static TemplateFactory templateFactory = FactoryLocator.getTemplateFactory();
-	static ContainerAPI containerAPI = APILocator.getContainerAPI();
-
+	private final  PermissionAPI    permissionAPI          = APILocator.getPermissionAPI();
+	private final  IdentifierAPI    identifierAPI          = APILocator.getIdentifierAPI();
+	private final  TemplateFactory  templateFactory        = FactoryLocator.getTemplateFactory();
+	private final  ContainerAPI     containerAPI           = APILocator.getContainerAPI();
+	private final  Lazy<VersionableAPI> versionableAPI     = Lazy.of(()->APILocator.getVersionableAPI());
+	private final  Lazy<HTMLPageAssetAPI> htmlPageAssetAPI = Lazy.of(()->APILocator.getHTMLPageAssetAPI());
+	private final  HostAPI          hostAPI                = APILocator.getHostAPI();
 
 
 	@CloseDBIfOpened
@@ -66,6 +77,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		FactoryLocator.getTemplateFactory().delete(template);
 	}
 
+	@WrapInTransaction
 	@Override
 	public Template copy(final Template sourceTemplate, final User user) throws DotDataException, DotSecurityException {
 
@@ -133,7 +145,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return newTemplate;
 	}
 
-	// todo: should be on a transaction???
+	@WrapInTransaction
 	public Template copy(Template sourceTemplate, Host destination, boolean forceOverwrite,
 			boolean copySourceContainers, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
@@ -173,6 +185,70 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		save((Template) webAsset);
 	}
 
+	@WrapInTransaction
+	public boolean publishTemplate(final Template template, final User user, final boolean respectFrontendRoles) {
+
+		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
+		return Try.of(()->PublishFactory.publishAsset(template, user, respectFrontendRoles)).getOrElseThrow(e -> new RuntimeException(e));
+	}
+
+	@WrapInTransaction
+	public boolean unpublishTemplate(final Template template, final User user, final boolean respectFrontendRoles) {
+
+		Logger.debug(this, ()-> "Unpublishing the template: " + template.getIdentifier());
+		final Folder parent = Try.of(()->APILocator.getFolderAPI()
+				.findParentFolder(template, user, respectFrontendRoles)).getOrElseThrow(e -> new RuntimeException(e));
+		return Try.of(()->WebAssetFactory.unPublishAsset(template, user.getUserId(), parent))
+				.getOrElseThrow(e -> new RuntimeException(e));
+	}
+
+	@WrapInTransaction
+	public void unlock (final Template template, final User user) {
+
+		Try.run(()->this.versionableAPI.get().setLocked(template, false, user))
+				.getOrElseThrow(e -> new RuntimeException(e));
+	}
+
+	@WrapInTransaction
+	public boolean archive (final Template template, final User user, final boolean respectFrontendRoles) {
+
+		Logger.debug(this, ()-> "Doing archive of the template: " + template.getIdentifier());
+		if (Try.of(()->template.isLive()).getOrElseThrow(e -> new RuntimeException(e))) {
+
+			if (!this.unpublishTemplate(template, user, respectFrontendRoles)) {
+
+				Logger.debug(this, "the template: " + template.getIdentifier() +
+						" could not be archived, b/c it was live and couldn't unpublish");
+				return false;
+			}
+		}
+
+		return Try.of(()-> WebAssetFactory.archiveAsset(template, user.getUserId())).getOrElseThrow(e -> new RuntimeException(e));
+	}
+
+	@WrapInTransaction
+	public void unarchive (final Template template) {
+
+		Logger.debug(this, ()-> "Doing unarchive of the template: " + template.getIdentifier());
+		if (Try.of(()->template.isArchived()).getOrElseThrow(e -> new RuntimeException(e))) {
+
+			Try.run(()->WebAssetFactory.unArchiveAsset(template))
+					.getOrElseThrow(e -> new RuntimeException(e));
+		}
+	}
+
+	@WrapInTransaction
+	public boolean delete (final Template template, final User user) {
+
+		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
+		if (Try.of(()->template.isArchived()).getOrElseThrow(e -> new RuntimeException(e))) {
+
+			return Try.of(()->WebAssetFactory.deleteAsset(template,user))
+					.getOrElseThrow(e -> new RuntimeException(e));
+		}
+
+		return false;
+	}
 
 	@WrapInTransaction
 	public Template saveTemplate(final Template template, final Host destination, final User user, final boolean respectFrontendRoles)
@@ -404,6 +480,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return (!UtilMethods.isSet(info)) ? null : find(info.getLiveInode(), user, respectFrontendRoles);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		String result = null;
@@ -426,6 +503,31 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			result = builder.toString();
 		}
 		return result;
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public Map<String, String> checkPageDependencies(final Template template, final User user, final boolean respectFrontendRoles) {
+
+		final ImmutableMap.Builder<String, String> resultMapBuilder = new ImmutableMap.Builder<>();
+
+		final List<Contentlet> pages = Try.of(()->this.htmlPageAssetAPI.get().findPagesByTemplate(template, user, respectFrontendRoles,
+				TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT)).getOrElseThrow(e -> new RuntimeException(e));
+
+		if (pages!= null && !pages.isEmpty()) {
+
+			for (final Contentlet page : pages) {
+
+				final HTMLPageAsset pageAsset = this.htmlPageAssetAPI.get().fromContentlet(page);
+				final Host host               = Try.of(()->this.hostAPI.find(pageAsset.getHost(), user, false))
+													.getOrElseThrow(e -> new RuntimeException(e));
+
+				resultMapBuilder.put(template.getName(), host.getHostname() + ":" +
+						Try.of(()->pageAsset.getURI()).getOrElseThrow(e -> new RuntimeException(e)));
+			}
+		}
+
+		return resultMapBuilder.build();
 	}
 
     @Override
