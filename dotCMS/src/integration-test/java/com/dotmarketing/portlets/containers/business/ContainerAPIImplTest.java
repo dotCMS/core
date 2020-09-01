@@ -361,10 +361,13 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         final Container container = new ContainerDataGen().site(host).nextPersisted();
         container.setTitle("Live Version");
         ContainerDataGen.publish(container);
-
+        
         container.setTitle("Working Version");
         APILocator.getContainerAPI()
                 .save(container, Collections.emptyList(), host, APILocator.getUserAPI().getSystemUser(), false);
+
+        final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(container.getIdentifier());
+        CacheLocator.getContainerCache().remove(versionInfo);
 
         final Optional<Container> containerFromDatabase =
                 APILocator.getContainerAPI().findContainer(container.getIdentifier(), APILocator.systemUser(), true, false);
@@ -372,7 +375,6 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         assertTrue(containerFromDatabase.isPresent());
         assertEquals(container.getIdentifier(), containerFromDatabase.get().getIdentifier());
 
-        final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(container.getIdentifier());
         assertEquals(versionInfo.getLiveInode(), containerFromDatabase.get().getInode());
     }
 
@@ -677,11 +679,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                 APILocator.getContainerAPI().findContainer(fullPathUsingAnotherHost,
                         user, true, false);
 
-        final FileAssetContainer fileAssetContainerFromDataBase = (FileAssetContainer) containerFromDatabaseWithAbsolutePath.get();
-        assertEquals(
-                fileAssetContainer.getIdentifier(),
-                fileAssetContainerFromDataBase.getIdentifier()
-        );
+        assertFalse(containerFromDatabaseWithAbsolutePath.isPresent());
     }
 
     /**
@@ -721,11 +719,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                 APILocator.getContainerAPI().findContainer(fullPathUsingAnotherHost,
                         backEndUser, true, false);
 
-        final FileAssetContainer fileAssetContainerFromDataBase = (FileAssetContainer) containerFromDatabaseWithAbsolutePath.get();
-        assertEquals(
-                fileAssetContainer.getIdentifier(),
-                fileAssetContainerFromDataBase.getIdentifier()
-        );
+        assertFalse(containerFromDatabaseWithAbsolutePath.isPresent());
     }
 
     @NotNull

@@ -250,7 +250,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     public Container find(final String inode, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 	      final  Identifier  identifier = Try.of(()->APILocator.getIdentifierAPI().findFromInode(inode)).getOrNull();
-        final Container container = this.isContainerFile(identifier)?
+        final Container container = this.isContainerFile(identifier) ?
 				this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
                 containerFactory.find(inode);
 
@@ -855,7 +855,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				if (container != null) {
 					return  new ResolvedPath(host, relativePath, container);
 				}
-			} catch (NotFoundInDbException e) {
+			} catch (NotFoundInDbException | DotSecurityException e) {
 				continue;
 			}
 		}
