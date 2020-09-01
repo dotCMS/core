@@ -182,18 +182,18 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
      * Fixes role inconsistencies for a given server id. Fixing a role means
      * updating its id with the one received from the other end
      *
-     * @param endpointId
+     * @param remoteIP
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Override
-    public void executeFix(final String endpointId) throws DotDataException, DotSecurityException {
+    public void executeFix(final String remoteIP) throws DotDataException, DotSecurityException {
         
         DotConnect dc = new DotConnect();
 
         dc.setSQL("select name, local_role_id, remote_role_id from "+ getIntegrityType().getResultsTableName() +
             	 " where endpoint_id = ? order by name asc");
-        dc.addParam(endpointId);
+        dc.addParam(remoteIP);
 
         for (Map<String, Object> result : dc.loadObjectResults()) {
         	String oldRoleId = (String) result.get("local_role_id");

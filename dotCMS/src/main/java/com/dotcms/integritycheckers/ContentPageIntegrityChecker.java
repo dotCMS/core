@@ -125,12 +125,12 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
      *             action.
      */
     @Override
-    public void executeFix(final String endpointId) throws DotDataException, DotSecurityException {
+    public void executeFix(final String remoteIP) throws DotDataException, DotSecurityException {
         // Get the information of the IR.
         DotConnect dc = new DotConnect();
         dc.setSQL("SELECT " + getIntegrityType().getFirstDisplayColumnLabel() + ", local_identifier, remote_identifier, local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, language_id FROM "
                 + getIntegrityType().getResultsTableName() + " WHERE endpoint_id = ? ORDER BY " + getIntegrityType().getFirstDisplayColumnLabel());
-        dc.addParam(endpointId);
+        dc.addParam(remoteIP);
         List<Map<String, Object>> results = dc.loadObjectResults();
 
         // We need to load the map with the affected identifiers, inodes and languages

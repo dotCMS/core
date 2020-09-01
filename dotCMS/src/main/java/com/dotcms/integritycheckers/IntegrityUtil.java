@@ -391,16 +391,16 @@ public class IntegrityUtil {
 	 *             An error occurred during the integrity fix process. The
 	 *             results table must be wiped out.
 	 */
-    public void fixConflicts(InputStream dataToFix, String endpointId, IntegrityType type)
+    public void fixConflicts(InputStream dataToFix, String remoteIP, IntegrityType type)
             throws Exception {
-        final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
+        final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + remoteIP;
 
         // lets first unzip the given file
         unzipFile(dataToFix, outputDir);
 
         // lets generate the tables with the data to be fixed
-        generateDataToFixTable(endpointId, type);
-        fixConflicts(endpointId, type);
+        generateDataToFixTable(remoteIP, type);
+        fixConflicts(remoteIP, type);
 
         HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             @Override
@@ -441,11 +441,11 @@ public class IntegrityUtil {
 	 * @throws Exception
 	 *             An error occurred during the integrity fix process.
 	 */
-    public void generateDataToFixTable(String endpointId, IntegrityType type) throws Exception {
+    public void generateDataToFixTable(String remoteIP, IntegrityType type) throws Exception {
 
         try {
             CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
-                    + endpointId + File.separator + type.getDataToFixCSVName(), '|',
+                    + remoteIP + File.separator + type.getDataToFixCSVName(), '|',
                     Charset.forName("UTF-8"));
 
             final String resultsTable = type.getResultsTableName();
@@ -461,16 +461,16 @@ public class IntegrityUtil {
 	        	case FILEASSETS:
 	                sbInsertTempTable.append(
 	                	" (local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, local_identifier, remote_identifier, "
-	                ).append(type.getFirstDisplayColumnLabel()).append(", endpoint_id, language_id) values(?,?,?,?,?,?,?,?,?)");
+	                ).append(type.getFirstDisplayColumnLabel()).append(", remote_ip, language_id) values(?,?,?,?,?,?,?,?,?)");
 	                break;
             	case FOLDERS:
-                    sbInsertTempTable.append(" (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)");
+                    sbInsertTempTable.append(" (local_inode, remote_inode, local_identifier, remote_identifier, remote_ip) values(?,?,?,?,?)");
                     break;
             	case CMS_ROLES:
-            		sbInsertTempTable.append(" (name, role_key, local_role_id, remote_role_id, local_role_fqn, remote_role_fqn, endpoint_id) values(?,?,?,?,?,?,?)");
+            		sbInsertTempTable.append(" (name, role_key, local_role_id, remote_role_id, local_role_fqn, remote_role_fqn, remote_ip) values(?,?,?,?,?,?,?)");
             		break;
                 default:
-                    sbInsertTempTable.append(" (local_inode, remote_inode, endpoint_id) values(?,?,?)");
+                    sbInsertTempTable.append(" (local_inode, remote_inode, remote_ip) values(?,?,?)");
                 	break;
             }
             final String INSERT_TEMP_TABLE = sbInsertTempTable.toString();
@@ -503,7 +503,7 @@ public class IntegrityUtil {
 	                }
                 }
 
-                dc.addParam(endpointId);
+                dc.addParam(remoteIP);
 
                 if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
                     dc.addParam(new Long(csvFile.get(7))); // languageId
@@ -572,9 +572,9 @@ public class IntegrityUtil {
 	 *             The specified user does not have permissions to perform the
 	 *             action.
 	 */
-    public void fixConflicts(final String endpointId, IntegrityType type) throws DotDataException,
+    public void fixConflicts(final String remoteIP, IntegrityType type) throws DotDataException,
             DotSecurityException {
-        type.getIntegrityChecker().executeFix(endpointId);
+        type.getIntegrityChecker().executeFix(remoteIP);
     }
 
     /**

@@ -68,12 +68,12 @@ public interface IntegrityChecker {
      * When there is conflicts, this method will fix them depending of the
      * implementation of every checker
      * 
-     * @param endpointId
+     * @param remoteIP
      *            Server identifier were we need to fix conflicts
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public void executeFix(final String endpointId) throws DotDataException, DotSecurityException;
+    public void executeFix(final String remoteIP) throws DotDataException, DotSecurityException;
 
     /**
      * Get temporal table names for an specific endpoint id.
