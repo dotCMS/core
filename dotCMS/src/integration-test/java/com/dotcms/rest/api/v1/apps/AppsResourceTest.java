@@ -97,6 +97,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         when(user.getFullName()).thenReturn(ADMIN_NAME);
         when(user.getLocale()).thenReturn(Locale.getDefault());
         when(user.isBackendUser()).thenReturn(true);
+        when(user.isAdmin()).thenReturn(true);
 
         final WebResource webResource = mock(WebResource.class);
         final InitDataObject dataObject = mock(InitDataObject.class);

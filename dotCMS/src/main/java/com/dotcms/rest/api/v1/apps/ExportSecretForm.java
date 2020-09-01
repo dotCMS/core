@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.apps;
 
+import java.util.List;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -40,5 +43,16 @@ public class ExportSecretForm extends Validated {
 
     public Map<String, Set<String>> getAppKeysBySite() {
         return appKeysBySite;
+    }
+
+    @Override
+    public String toString() {
+        final List<String> stringsList = appKeysBySite.entrySet().stream()
+                .map(entry -> "Site " + entry.getKey() + " keys: " + String
+                        .join(",", entry.getValue())).collect(
+                        Collectors.toList());
+
+        return String.format("ExportSecretForm{ all={%s} {%s}}", exportAll,
+                String.join("\n", stringsList));
     }
 }

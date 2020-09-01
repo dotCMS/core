@@ -462,8 +462,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             //no need to close i'll get closed upon writing the response
-            final InputStream stream = helper.exportSecrets(exportSecretForm, user);
-            return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM)
+            return Response.ok(helper.exportSecrets(exportSecretForm, user), MediaType.APPLICATION_OCTET_STREAM)
                     .header("content-disposition", "attachment; filename=appSecrets.export")
                     .build(); // 200
         } catch (Exception e) {

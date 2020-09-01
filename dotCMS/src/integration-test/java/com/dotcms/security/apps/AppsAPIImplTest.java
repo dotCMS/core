@@ -1055,13 +1055,13 @@ public class AppsAPIImplTest {
         //AES only supports key sizes of 16, 24 or 32 bytes.
         final String password = RandomStringUtils.randomAlphanumeric(32);
         final Key key = AppsUtil.generateKey(password);
-        final File exportSecretsFile = api.exportSecrets(key, true, null, admin);
-        assertTrue(exportSecretsFile.exists());
+        final Path exportSecretsFile = api.exportSecrets(key, true, null, admin);
+        assertTrue(exportSecretsFile.toFile().exists());
 
         //Remove so we can re import them.
         api.deleteSecrets(appKey, site, admin);
 
-        final Map<String, List<AppSecrets>> secretAppsBySiteId = api.importSecrets(exportSecretsFile.toPath(), key, admin);
+        final Map<String, List<AppSecrets>> secretAppsBySiteId = api.importSecrets(exportSecretsFile, key, admin);
         assertFalse(secretAppsBySiteId.isEmpty());
         assertTrue(secretAppsBySiteId.containsKey(site.getIdentifier()));
         final List<AppSecrets> appSecretsBySite = secretAppsBySiteId.get(site.getIdentifier());

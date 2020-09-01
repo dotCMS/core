@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Key;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -719,18 +720,15 @@ class AppsHelper {
     InputStream exportSecrets(final ExportSecretForm form, final User user)
             throws DotSecurityException, IOException, DotDataException {
 
+        Logger.info(AppsHelper.class,"Secrets export: "+form);
+
         if(isNotSet(form.getPassword())){
            throw new DotDataException("Unable to locate password param.");
         }
         final String password = form.getPassword();
         final Key key = AppsUtil.generateKey(password);
-        final File file = appsAPI
-                .exportSecrets(key, form.isExportAll(), form.getAppKeysBySite(), user);
-        try {
-            return  Files.newInputStream(file.toPath());
-        } finally {
-            file.delete();
-        }
+            return  Files.newInputStream(appsAPI
+                    .exportSecrets(key, form.isExportAll(), form.getAppKeysBySite(), user));
     }
 
     /**
@@ -763,7 +761,7 @@ class AppsHelper {
         final Key key = AppsUtil.generateKey(password);
         final Map<String, List<AppSecrets>> importedSecretsBySiteId = appsAPI
                 .importSecrets(files.get(0).toPath(), key, user);
-        for (Entry<String, List<AppSecrets>> entry : importedSecretsBySiteId.entrySet()) {
+        for (final Entry<String, List<AppSecrets>> entry : importedSecretsBySiteId.entrySet()) {
             final String siteId = entry.getKey();
             final List<AppSecrets> secrets = entry.getValue();
             final Host site = hostAPI.find(siteId, user, false);

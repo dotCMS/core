@@ -162,8 +162,13 @@ public class AppsUtilTest {
         Assert.assertEquals(input, new String(decrypted));
     }
 
+    /**
+     * Keys have fixed values. (32 is the minimum valid length) A key can't have a random length.
+     * Given scenario: We need to generate an encryption Key out of a given password.
+     * Expected Result: Here we simply transform any password adding or removing fill-chars to fit a 32 length
+     */
      @Test
-     public void Test_Key_Padding(){
+     public void Test_Seed_Key_Add_Remove_Padding(){
          assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(14)).length(),32);
          assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(140)).length(),32);
          assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(32)).length(),32);

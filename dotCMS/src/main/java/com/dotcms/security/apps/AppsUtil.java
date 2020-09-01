@@ -135,7 +135,7 @@ public class AppsUtil {
      * The main difference is that this ones does not use a string in the middle to extract the resulting bytes.
      * @see Encryptor#decrypt(Key, String)
      * @param key security Key
-     * @param encryptedString
+     * @param encryptedString encrypted string
      * @return decrypted text as a char array
      * @throws EncryptorException
      */
@@ -197,7 +197,7 @@ public class AppsUtil {
     }
 
     /**
-     * given a seed password thi will generate a Security Key
+     * given a seed password this will generate a Security Key
      * @param password
      * @return
      */

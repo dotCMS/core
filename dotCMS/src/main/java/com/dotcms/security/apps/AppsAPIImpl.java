@@ -144,7 +144,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     private boolean userDoesNotHaveAccess(final User user) throws DotDataException {
-        return !userAPI.isCMSAdmin(user) && !layoutAPI
+        return !user.isAdmin() && !layoutAPI
                 .doesUserHaveAccessToPortlet(APPS_PORTLET_ID, user);
     }
 
@@ -1012,16 +1012,16 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     *
+     * {@inheritDoc}
      * @param key
      * @param paramAppKeysBySite
      * @return
      */
-    public File exportSecrets(final Key key, final boolean exportAll,
+    public Path exportSecrets(final Key key, final boolean exportAll,
             final Map<String, Set<String>> paramAppKeysBySite, final User user)
             throws DotDataException, DotSecurityException, IOException {
 
-        if(!userAPI.isCMSAdmin(user)){
+        if(!user.isAdmin()){
             throw new DotSecurityException("Only Admins are allowed to perform an export operation.");
         }
 
@@ -1032,16 +1032,20 @@ public class AppsAPIImpl implements AppsAPI {
             exportedSecrets = collectSecretsForExport(paramAppKeysBySite, user);
         }
 
+        Logger.info(AppsAPIImpl.class,""+exportedSecrets);
+
         final File tempFile = File.createTempFile("secretsExport", ".tmp");
         try {
             writeObject(exportedSecrets, tempFile.toPath());
             final byte[] bytes = Files.readAllBytes(tempFile.toPath());
             try {
                 final File file = File.createTempFile("secrets", ".export");
+                file.deleteOnExit();
                 final byte[] encrypted = AppsUtil.encrypt(key, bytes);
-                try (OutputStream outputStream = Files.newOutputStream(file.toPath())) {
+                final Path path = file.toPath();
+                try (OutputStream outputStream = Files.newOutputStream(path)) {
                     outputStream.write(encrypted);
-                    return file;
+                    return path;
                 }
             } catch (EncryptorException e) {
                 throw new DotDataException(e);
@@ -1093,7 +1097,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     *
+     * Takes a wrapping object that encapsulates all entries an write'em out ino a stream
      * @param bean
      * @param file
      * @throws IOException
@@ -1108,7 +1112,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     *
+     * {@inheritDoc}
      * @param incomingFile
      * @param key
      * @param user
@@ -1120,7 +1124,7 @@ public class AppsAPIImpl implements AppsAPI {
      */
    public Map<String, List<AppSecrets>> importSecrets(final Path incomingFile, final Key key, final User user)
             throws DotDataException, DotSecurityException, IOException, EncryptorException {
-        if(!userAPI.isCMSAdmin(user)){
+        if(!user.isAdmin()){
             throw new DotSecurityException("Only Admins are allowed to perform an export operation.");
         }
 
@@ -1140,7 +1144,8 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     *
+     * Reads the exported file stream
+     * and returns a wrapper that contains all entries.
      * @param importFile
      * @return
      * @throws IOException
