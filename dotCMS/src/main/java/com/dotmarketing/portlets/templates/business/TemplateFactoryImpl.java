@@ -51,15 +51,15 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	public Template find(String inode) throws DotStateException, DotDataException {
 		
 		Template template = templateCache.get(inode);
-		
+
 		if(template==null){
-		
-		
 			HibernateUtil hu = new HibernateUtil(Template.class);
 			template = (Template) hu.load(inode);
+
 			if(template != null && template.getInode() != null)
 				templateCache.add(inode, template);
 		}
+
 		return template;
 	}
 
@@ -528,7 +528,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
        HibernateUtil.saveOrUpdate(templateToUpdate);
        templateCache.add(templateToUpdate.getInode(), templateToUpdate);
        new TemplateLoader().invalidate(templateToUpdate);
-   };
+   }
 
    /**
 	 * Method will replace user references of the given userId in templates
