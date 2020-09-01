@@ -6,7 +6,6 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
@@ -105,5 +104,41 @@ public class FolderResource implements Serializable {
         }
         return response;
     }
+
+
+    /***
+     * This endpoint finds a folder by the given path and
+     * returns the requested folder and all the subFolders of it, respecting the user
+     * permissions.
+     *
+     * @param siteId siteId where the folder lives
+     * @param path path of the folder to find
+     * @return FolderView with the info of the folder requested and the subFolders
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path ("/siteId/{siteId}/path/{path : .+}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final Response loadFolderAndSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
+                                                      @Context final HttpServletResponse httpServletResponse,
+                                                      @PathParam("siteId") final String siteId,
+                                                      @PathParam("path") final String path) throws  DotDataException, DotSecurityException   {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(httpServletRequest, httpServletResponse)
+                        .init();
+        final User user = initData.getUser();
+
+        return Response.ok(new ResponseEntityView(folderHelper.loadFolderAndSubFoldersByPath(siteId,path, user))).build(); // 200
+    }
+
+
 
 }

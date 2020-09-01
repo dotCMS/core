@@ -26,9 +26,13 @@ import com.dotcms.graphql.datafetcher.SiteFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TitleImageFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
 import graphql.schema.GraphQLTypeReference;
+import graphql.schema.PropertyDataFetcher;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Utility class that defines and returns the available fields for the {@link InterfaceType#CONTENTLET}
@@ -53,7 +57,11 @@ public final class ContentFields {
         contentFields.put(INODE, new TypeFetcher(GraphQLID));
         contentFields.put(HOST_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("Site"), new SiteFieldDataFetcher()));
         contentFields.put(FOLDER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("Folder"), new FolderFieldDataFetcher()));
-        contentFields.put(URL_MAP, new TypeFetcher(GraphQLString));
+        contentFields.put(URL_MAP, new TypeFetcher(GraphQLString, PropertyDataFetcher
+                .fetching((Function<Contentlet, String>) (contentlet) ->
+                        UtilMethods.isSet(contentlet.getStringProperty("urlMap"))
+                                ? contentlet.getStringProperty("urlMap")
+                                : contentlet.getStringProperty("URL_MAP_FOR_CONTENT"))));
         contentFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
         contentFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
         return contentFields;
