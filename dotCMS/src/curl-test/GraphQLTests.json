@@ -1302,6 +1302,128 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsFirstLevelFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6a1e31db-9d14-4334-b68d-ed3fc9c921a0",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containers = jsonData.data.page.containers;",
+									"",
+									"    var container1 = containers[0];",
+									"",
+									"    // containers fields",
+									"    pm.expect(container1.archived, 'FAILED:[container1.archived]').equal(false);",
+									"    pm.expect(container1.categoryId, 'FAILED:[container1.categoryId]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.deleted, 'FAILED:[container1.deleted]').equal(false);",
+									"    pm.expect(container1.friendlyName, 'FAILED:[container1.friendlyName]').equal(\"container\");",
+									"    pm.expect(container1.host.hostName, 'FAILED:[container1.host.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.iDate, 'FAILED:[container1.iDate]').not.null;",
+									"    pm.expect(container1.idate, 'FAILED:[container1.idate]').not.null;",
+									"    pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.inode, 'FAILED:[container1.inode]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.languageId, 'FAILED:[container1.languageId]').equal(1);",
+									"    pm.expect(container1.live, 'FAILED:[container1.live]').equal(true);",
+									"    pm.expect(container1.locked, 'FAILED:[container1.locked]').equal(false);",
+									"    pm.expect(container1.maxContentlets, 'FAILED:[container1.maxContentlets]').equal(25);",
+									"    pm.expect(container1.modDate, 'FAILED:[container1.modDate]').not.null;",
+									"    pm.expect(container1.modUser.userId, 'FAILED:[container1.modUser.userId]').equal(\"system\");",
+									"    pm.expect(container1.name, 'FAILED:[container1.name]').equal(\"Default\");",
+									"    pm.expect(container1.new, 'FAILED:[container1.new]').equal(false);",
+									"    pm.expect(container1.notes, 'FAILED:[container1.notes]').equal(\"New File Container\");",
+									"    pm.expect(container1.owner.userId, 'FAILED:[container1.owner.userId]').equal(\"dotcms.org.1\");",
+									"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
+									"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
+									"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
+									"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
+									"    pm.expect(container1.sortOrder, 'FAILED:[container1.sortOrder]').equal(0);",
+									"    pm.expect(container1.source, 'FAILED:[container1.source]').equal(\"FILE\");",
+									"    pm.expect(container1.staticify, 'FAILED:[container1.staticify]').equal(false);",
+									"    pm.expect(container1.title, 'FAILED:[container1.source]').equal(\"Default\");",
+									"    pm.expect(container1.type, 'FAILED:[container1.type]').equal(\"containers\");",
+									"    pm.expect(container1.useDiv, 'FAILED:[container1.useDiv]').equal(false);",
+									"    pm.expect(container1.versionId, 'FAILED:[container1.versionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.versionType, 'FAILED:[container1.versionType]').equal(\"containers\");",
+									"    pm.expect(container1.working, 'FAILED:[container1.working]').equal(true);",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      archived\n      categoryId\n      deleted\n      friendlyName\n      host {\n        hostName\n      }\n      iDate\n      idate\n      identifier\n      inode\n      languageId\n      live\n      locked\n      maxContentlets\n      modDate\n      modUser {\n        userId\n      }\n      name\n      new\n      notes\n      owner {\n        userId\n      }\n      parentPermissionable {\n        hostName\n      }\n      path\n      permissionId\n      permissionType\n      postLoop\n      preLoop\n      showOnMenu\n      sortOrder\n      source\n      staticify\n      title\n      type\n      useDiv\n      versionId\n      versionType\n      working\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -3683,87 +3805,87 @@
 	],
 	"variable": [
 		{
-			"id": "16acbba9-2597-4be2-9efb-a49ef05e684f",
+			"id": "02f21064-c9e4-432e-adea-2d3b7488427b",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "de1be12b-269e-44b7-bb23-ac4bca9ea7db",
+			"id": "8f7f9aca-fb7c-4a83-9552-483ded97654b",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "abe08a03-a2a2-4058-baca-4543dbefb483",
+			"id": "e61c7e42-96bf-4501-ae48-5bc07a2fcd48",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "c402b9c9-9f3b-40a6-9af7-8f1e7f5d2d9f",
+			"id": "100c7d96-1ac5-48fd-a3c0-70d53c6eee9c",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "d9ca3e29-84c9-4501-8103-816a79960c6d",
+			"id": "6babdd4f-9ea7-4edd-9b6e-fdb251fded6f",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "0f938161-d161-45f2-b9a7-85e6944eec44",
+			"id": "d5ac5b22-65c7-41cb-ab2a-b3faa6b7930e",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "a21e0513-bd8f-4020-bb18-8243717aab3e",
+			"id": "61f9a9ba-6851-4e1c-8ece-e4b1033d0ea3",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "d7e52160-e900-495c-ac20-5034dd3c7cdd",
+			"id": "71079227-5b9b-4338-9243-0a2c43dd599e",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "7b22de2c-86d8-4c12-8294-0c96fd3042df",
+			"id": "f09f64b8-a34e-4b7f-b2da-d4a3b9c9e7e1",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "ea2d16b6-194e-438e-b950-38ecfe6215b6",
+			"id": "133ce72c-ef0b-44af-afb2-d2dcbe645de0",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "5e930148-2643-4514-98de-bf8af2fa4e34",
+			"id": "2bcd476c-3ae6-47e7-9e16-4f69a48611f5",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "d22b5bbd-c0a8-4096-8fc2-9a838976a333",
+			"id": "81442983-1cd6-47b1-b7ab-0672d3785013",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "3939ec8e-09ce-4eb8-8b4d-0bb7f8749a5b",
+			"id": "3aca436d-1c5c-4e7b-a4ca-17b19d9c7c06",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "9beb1284-309b-4056-b9af-ea9be8169335",
+			"id": "018e553f-4a92-4e04-b375-965bec45726d",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "6c71d02c-7323-40f6-b1c0-c4ce25c556f1",
+			"id": "9d2d7458-fba5-4d0b-8fef-dea180a58fd4",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "cc50683e-f7d7-448f-ad7f-91ae133f3242",
+			"id": "9556e5b6-31fa-4d8d-8ca9-036aaf98f328",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "b6c592b4-b3e8-42b0-afd1-648fc8ad7b2a",
+			"id": "cc15c9ae-1c86-4110-8e65-5b2e5ab1b3eb",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
