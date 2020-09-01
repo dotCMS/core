@@ -62,14 +62,6 @@ public enum PageMode {
     }
     
 
-    private static PageMode get(final HttpSession ses) {
-
-        PageMode mode = PageMode.isPageModeSet(ses)
-                        ? (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION)
-                        : DEFAULT_PAGE_MODE;
-
-        return mode;
-    }
 
     public static PageMode getWithNavigateMode(final HttpServletRequest req) {
         HttpSession ses = req.getSession(false);
@@ -83,40 +75,34 @@ public enum PageMode {
     public static PageMode get(final HttpServletRequest request) {
 
         if (request == null || null!= request.getHeader("X-Requested-With")) {
-
             return DEFAULT_PAGE_MODE;
         }
+        
+        final User user = PortalUtil.getUser(request);
 
-        PageMode pageMode = null;
-
+        // only backend users can see non-live assets
+        if (user == null || !user.isBackendUser()) {
+            return DEFAULT_PAGE_MODE;
+        }
+        
         if (null != request.getParameter(WebKeys.PAGE_MODE_PARAMETER)) {
-
-            pageMode = PageMode.get(request.getParameter(WebKeys.PAGE_MODE_PARAMETER));
+            final PageMode pageMode = PageMode.get(request.getParameter(WebKeys.PAGE_MODE_PARAMETER));
             request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, pageMode);
+            return pageMode;
         }
 
-        if (null == pageMode && null != request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)) {
-
-            pageMode = (PageMode) request.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
+        if (null != request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)) {
+            return (PageMode) request.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
         }
 
         final HttpSession session = request.getSession(false);
-        if (null == pageMode) {
-            pageMode = get(session);
+        if (null !=session && null != session.getAttribute(WebKeys.PAGE_MODE_SESSION)) {
+            return (PageMode) session.getAttribute(WebKeys.PAGE_MODE_SESSION);
         }
 
-        if (DEFAULT_PAGE_MODE != pageMode) {
+        Logger.debug(PageMode.class,()->String.format("Setting PREVIEW_MODE for uri `%s`", request.getRequestURI()));
 
-            final User user = PortalUtil.getUser(request);
-
-            if (user == null || !user.isBackendUser()) {
-                pageMode = DEFAULT_PAGE_MODE;
-            }
-        }
-        if(Logger.isDebugEnabled(PageMode.class)){
-           Logger.debug(PageMode.class,String.format("PageMode for uri `%s` is `%s`", request.getRequestURI(), pageMode));
-        }
-        return pageMode;
+        return PREVIEW_MODE;
     }
     
     public static PageMode get(final String modeStr) {
@@ -190,4 +176,8 @@ public enum PageMode {
                 request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null ;
     }
 
+    @Override
+    public String toString() {
+        return this.name();
+    }
 }

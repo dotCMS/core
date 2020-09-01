@@ -66,6 +66,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.FileUtil;
 
 import eu.bitwalker.useragentutils.Browser;
@@ -239,9 +240,9 @@ public class BinaryExporterServlet extends HttpServlet {
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
 
-			User user = userWebAPI.getLoggedInUser(req);
+			final User user = PortalUtil.getUser(req);
 
-			PageMode mode = PageMode.get(req);
+			final PageMode mode = PageMode.get(req);
 
 			String downloadName = "file_asset";
 			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
@@ -265,12 +266,9 @@ public class BinaryExporterServlet extends HttpServlet {
 						}
 					}
 				} else {
-				    boolean live=userWebAPI.isLoggedToFrontend(req);
+				    boolean live=mode.showLive;
 
-					//GIT-4506
-					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-					    live = mode.showLive;
-					}
+
 
 				    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
 				        live=true;
