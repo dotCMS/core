@@ -148,14 +148,18 @@ public class ESMappingAPITest {
 
     }
 
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When the property `CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS` is set to false, _text fields shouldn't be included in the map
+     * ExpectedResult: The result map should not contain any _text field
+     */
     @Test
     public void test_toMap_when_textFieldShouldNotBeIncluded(){
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
         Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
 
         final Map<String, Object> contentletMap = esMappingAPI.toMap(TestDataUtils
-                .getNewsContent(true, language.getId(),
-                        TestDataUtils.getNewsLikeContentType().id()));
+                .getNewsContent(true, language.getId(), getNewsLikeContentType().id()));
 
         assertNotNull(contentletMap);
 
@@ -178,14 +182,18 @@ public class ESMappingAPITest {
         assertFalse(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_PUBLISH + TEXT).toLowerCase()));
     }
 
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When the property `CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS` is set to true, _text fields should be included in the map
+     * ExpectedResult: The result map should contain all _text fields
+     */
     @Test
     public void test_toMap_when_textFieldShouldBeIncluded(){
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
 
         Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
         final Map<String, Object> contentletMap = esMappingAPI.toMap(TestDataUtils
-                .getNewsContent(true, language.getId(),
-                        TestDataUtils.getNewsLikeContentType().id()));
+                .getNewsContent(true, language.getId(), getNewsLikeContentType().id()));
 
         assertNotNull(contentletMap);
 
