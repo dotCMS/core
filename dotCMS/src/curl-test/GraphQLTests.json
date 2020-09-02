@@ -1623,6 +1623,140 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsContainerContentlets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d38eb470-9084-4546-9048-740c9c9fac7c",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containerContentlets = jsonData.data.page.containers[0].containerContentlets;",
+									"",
+									"    var containerContentlets1 = containerContentlets[0];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets1.uuid, 'FAILED:[containerContentlets1.uuid]').equal(\"uuid-3\");",
+									"    pm.expect(containerContentlets1.contentlets[0].identifier, 'FAILED:[containerContentlets1.contentlets[0]].identifier').equal(\"fb6a06da-8c0f-4828-99c5-91b03b17eaf7\");",
+									"    pm.expect(containerContentlets1.contentlets[0].title, 'FAILED:[containerContentlets1.contentlets[0]].title').equal(\"Destination Related Activities\");",
+									"",
+									"    var containerContentlets2 = containerContentlets[1];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets2.uuid, 'FAILED:[containerContentlets2.uuid]').equal(\"uuid-4\");",
+									"    pm.expect(containerContentlets2.contentlets[0].identifier, 'FAILED:[containerContentlets2.contentlets[0]].identifier').equal(\"3e6533b7-c3ba-4ec4-8bca-6a88d54cd037\");",
+									"    pm.expect(containerContentlets2.contentlets[0].title, 'FAILED:[containerContentlets2.contentlets[0]].title').equal(\"Costa Rica Family Adventure\");",
+									"",
+									"    var containerContentlets3 = containerContentlets[2];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets3.uuid, 'FAILED:[containerContentlets3.uuid]').equal(\"uuid-5\");",
+									"    pm.expect(containerContentlets3.contentlets[0].identifier, 'FAILED:[containerContentlets3.contentlets[0]].identifier').equal(\"57abf7cc-8b91-4cb9-8e5d-bc7f0ff54665\");",
+									"    pm.expect(containerContentlets3.contentlets[0].title, 'FAILED:[containerContentlets3.contentlets[0]].title').equal(\"Adventure travel done right\");",
+									"",
+									"    var containerContentlets4 = containerContentlets[3];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets4.uuid, 'FAILED:[containerContentlets4.uuid]').equal(\"uuid-6\");",
+									"    pm.expect(containerContentlets4.contentlets[0].identifier, 'FAILED:[containerContentlets4.contentlets[0]].identifier').equal(\"5a4e4ef3-884f-4258-9009-f8fa83236242\");",
+									"    pm.expect(containerContentlets4.contentlets[0].title, 'FAILED:[containerContentlets4.contentlets[0]].title').equal(\"Experience the world with us\");",
+									"",
+									"    var containerContentlets5 = containerContentlets[4];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets5.uuid, 'FAILED:[containerContentlets5.uuid]').equal(\"uuid-8\");",
+									"    pm.expect(containerContentlets5.contentlets[0].identifier, 'FAILED:[containerContentlets5.contentlets[0]].identifier').equal(\"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\");",
+									"    pm.expect(containerContentlets5.contentlets[0].title, 'FAILED:[containerContentlets5.contentlets[0]].title').equal(\"Costa Rica FAQ\");",
+									"",
+									"    var containerContentlets6 = containerContentlets[5];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets6.uuid, 'FAILED:[containerContentlets6.uuid]').equal(\"uuid-7\");",
+									"    pm.expect(containerContentlets6.contentlets[0].identifier, 'FAILED:[containerContentlets6.contentlets[0]].identifier').equal(\"bfee8f08-a6d1-4fd7-8f70-476e62663eca\");",
+									"    pm.expect(containerContentlets6.contentlets[0].title, 'FAILED:[containerContentlets6.contentlets[0]].title').equal(\"Fall into Costa Rica\");",
+									"",
+									"    var containerContentlets7 = containerContentlets[6];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets7.uuid, 'FAILED:[containerContentlets7.uuid]').equal(\"uuid-2\");",
+									"    pm.expect(containerContentlets7.contentlets[0].identifier, 'FAILED:[containerContentlets7.contentlets[0]].identifier').equal(\"f40c6030-3532-4e75-9ca8-0d92261264e3\");",
+									"    pm.expect(containerContentlets7.contentlets[0].title, 'FAILED:[containerContentlets7.contentlets[0]].title').equal(\"Nat Geo Top Rated Eco Lodge, Episode 2 of 4\");",
+									"",
+									"    var containerContentlets8 = containerContentlets[7];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets8.uuid, 'FAILED:[containerContentlets8.uuid]').equal(\"uuid-1\");",
+									"    pm.expect(containerContentlets8.contentlets[0].identifier, 'FAILED:[containerContentlets8.contentlets[0]].identifier').equal(\"f827c41a-5689-4733-b4d7-916d3a31c9c6\");",
+									"    pm.expect(containerContentlets8.contentlets[0].title, 'FAILED:[containerContentlets8.contentlets[0]].title').equal(\"Costa Rica Intro\");",
+									"",
+									"    pm.expect(containerContentlets8.contentlets[1].identifier, 'FAILED:[containerContentlets8.contentlets[0]].identifier').equal(\"7b4ba67a-1793-4daf-bed9-f8ce054f1433\");",
+									"    pm.expect(containerContentlets8.contentlets[1].title, 'FAILED:[containerContentlets8.contentlets[0]].title').equal(\"Over 400\\\" of snow a year\");",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n        }\n      }\n    }\n      \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -4004,87 +4138,87 @@
 	],
 	"variable": [
 		{
-			"id": "453d65f3-478f-4337-adc4-2e08f4b1376b",
+			"id": "e6977410-87fb-431a-a035-9bbc91878801",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "ab353b27-b64f-4946-86f6-a6dfa44a4867",
+			"id": "0b97929a-df3f-424f-9675-4a54cab6a660",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "83b8c1f4-e915-43de-bf3b-d9a6cf293c2b",
+			"id": "69cdf292-e5f7-411a-9235-1ff5eb3c09e6",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "98fbb2aa-fa3f-40de-89f7-51c9009d39d0",
+			"id": "2d4ccd4e-49fb-4d4d-a1e9-5435f7bceee9",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "93bdf80c-5a61-4ab0-8783-78472f6dc8cd",
+			"id": "e89e171c-d630-4c6f-a29e-170859d5ff4e",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "81962750-10db-491f-8cd1-1c889c59cbe0",
+			"id": "c1071cb8-ed2c-485a-b628-0bd91a18faf9",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "2190bdea-0ce9-4320-8965-70660db0e3ac",
+			"id": "74cc2b25-8013-4545-a751-f383e6b7fd0e",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "c30d80cb-782f-4650-8f7a-d066095b146c",
+			"id": "c48fef96-e5ae-4229-9d3c-d9391580eb75",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "ba197ab0-737b-41d4-99d2-eead9631d8f1",
+			"id": "52c1742d-636e-4975-9cee-c76752b63faf",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "c125ad8e-d100-4473-afcf-77e3c94c7a76",
+			"id": "bebf6755-66a0-4299-ae4e-460679bfc51e",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "e8ff212e-0321-4fd9-9028-281ec7db8c3e",
+			"id": "0b2f98e6-33a8-48f1-8eeb-fa45f62b49cf",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "21df1c60-e316-4d0d-b57b-b915adf56c43",
+			"id": "e065a17c-c7d6-4c89-82f9-ffc273b0686d",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "5fed6755-0037-478f-a06c-e1b632ee0ac5",
+			"id": "198c978f-bb67-4377-80b3-0ace4f263540",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "13303683-3b15-400b-aa11-e14a0c8c573d",
+			"id": "dcb9dfbd-258e-49f4-bf83-c668fd17f729",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "af595c8f-d2a1-4ed1-be5c-6d5008b726fa",
+			"id": "f1b1cdab-bb44-4cbd-b819-c8d18cde2d7c",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "a3e414bf-63c6-4013-b648-d97581d5369b",
+			"id": "1cf1d4e9-1a8c-405e-9201-eb010c38a0e4",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "6a068f46-3898-41ff-9b56-f9e639aba55d",
+			"id": "2d714b99-c7a8-42f0-bf99-9c5d3b8818a4",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

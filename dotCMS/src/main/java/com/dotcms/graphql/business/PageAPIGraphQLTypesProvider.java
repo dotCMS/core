@@ -508,6 +508,11 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 list(GraphQLTypeReference.typeRef("ContainerStructure")),
                 PropertyDataFetcher.fetching(ContainerRaw::getContainerStructures)));
 
+        containerFields.put("containerContentlets", new TypeFetcher(
+                list(GraphQLTypeReference.typeRef("ContainerContentlets")),
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Set<Entry<String, List<Contentlet>>>>)
+                        (containerRaw)->containerRaw.getContentlets().entrySet())));
+
         // RenderedContainer type
         final Map<String, TypeFetcher> renderedContainerFields = new HashMap<>();
         renderedContainerFields.put("uuid", new TypeFetcher(GraphQLString,
@@ -536,9 +541,21 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         typeMap.put("ContainerStructure", TypeUtil.createObjectType("ContainerStructure",
                 containerStructureFields));
 
+        // ContainerContentlets type
+        final Map<String, TypeFetcher> containerContentletsFields = new HashMap<>();
+        containerContentletsFields.put("uuid", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<Entry<String, List<Contentlet>>, String>)
+                        Entry::getKey)));
+        containerContentletsFields.put("contentlets", new TypeFetcher(
+                list(GraphQLTypeReference.typeRef("Contentlet")),
+                PropertyDataFetcher.fetching((Function<Entry<String, List<Contentlet>>, List<Contentlet>>)
+                        Entry::getValue)));
+
+        typeMap.put("ContainerContentlets", TypeUtil.createObjectType("ContainerContentlets",
+                containerContentletsFields));
+
         typeMap.put("Container", TypeUtil.createObjectType("Container",
                 containerFields));
-
 
         return typeMap.values();
 
