@@ -24,6 +24,7 @@ import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import com.dotcms.visitor.domain.Geolocation;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
@@ -47,6 +48,7 @@ import graphql.schema.PropertyDataFetcher;
 import io.vavr.control.Try;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -502,6 +504,10 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         containerFields.put("rendered", new TypeFetcher(list(GraphQLTypeReference.typeRef("RenderedContainer"))
                 , new RenderedContainersDataFetcher()));
 
+        containerFields.put("containerStructures", new TypeFetcher(
+                list(GraphQLTypeReference.typeRef("ContainerStructure")),
+                PropertyDataFetcher.fetching(ContainerRaw::getContainerStructures)));
+
         // RenderedContainer type
         final Map<String, TypeFetcher> renderedContainerFields = new HashMap<>();
         renderedContainerFields.put("uuid", new TypeFetcher(GraphQLString,
@@ -513,6 +519,22 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         typeMap.put("RenderedContainer", TypeUtil.createObjectType("RenderedContainer",
                 renderedContainerFields));
+
+        // ContainerStructure type
+        final Map<String, TypeFetcher> containerStructureFields = new HashMap<>();
+        containerStructureFields.put("id", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getId)));
+        containerStructureFields.put("structureId", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getStructureId)));
+        containerStructureFields.put("containerInode", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getContainerInode)));
+        containerStructureFields.put("containerId", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getContainerId)));
+        containerStructureFields.put("code", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getCode)));
+
+        typeMap.put("ContainerStructure", TypeUtil.createObjectType("ContainerStructure",
+                containerStructureFields));
 
         typeMap.put("Container", TypeUtil.createObjectType("Container",
                 containerFields));

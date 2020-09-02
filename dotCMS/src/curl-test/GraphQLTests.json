@@ -1532,6 +1532,97 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsContainerStructure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "81e885fb-9c24-4249-b80a-d3fab80927b7",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containerStructure = jsonData.data.page.containers[0].containerStructures[0];",
+									"",
+									"    // containerStructure fields",
+									"    pm.expect(containerStructure.id, 'FAILED:[containerStructure.id]').equal(\"86a06a2e-ba40-43d4-a3ad-3a870d43bfc1\");",
+									"    pm.expect(containerStructure.structureId, 'FAILED:[containerStructure.structureId]').equal(\"799f176a-d32e-4844-a07c-1b5fcd107578\");",
+									"    pm.expect(containerStructure.containerInode, 'FAILED:[containerStructure.containerInode]').equal(\"61f070f0-8def-4858-ab76-f22bcb6feaaa\");",
+									"    pm.expect(containerStructure.containerId, 'FAILED:[containerStructure.containerId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(containerStructure.code, 'FAILED:[containerStructure.code]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/blog.vtl\\\")\");",
+									"",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerStructures {\n        id\n        structureId\n        containerInode\n        containerId\n        code\n      }\n    }\n      \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -3913,87 +4004,87 @@
 	],
 	"variable": [
 		{
-			"id": "3ae5acd2-8f23-4ef4-919c-ce4b73a40326",
+			"id": "453d65f3-478f-4337-adc4-2e08f4b1376b",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "223408a6-a071-43ec-89f0-d13a83ee001a",
+			"id": "ab353b27-b64f-4946-86f6-a6dfa44a4867",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "9cc05dab-5972-4860-b81e-e6d0b7e01732",
+			"id": "83b8c1f4-e915-43de-bf3b-d9a6cf293c2b",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "d32e26e8-2383-408d-a90b-1400594c194a",
+			"id": "98fbb2aa-fa3f-40de-89f7-51c9009d39d0",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "532d76e6-37d2-4d18-b656-cfd49c1a9375",
+			"id": "93bdf80c-5a61-4ab0-8783-78472f6dc8cd",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "5a292530-ba78-4005-bcee-5a0352ab0f16",
+			"id": "81962750-10db-491f-8cd1-1c889c59cbe0",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "99fc29d7-5b93-488b-8fca-40edf6eb629d",
+			"id": "2190bdea-0ce9-4320-8965-70660db0e3ac",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "35115ecc-8b32-418d-b256-1aa587a3ae28",
+			"id": "c30d80cb-782f-4650-8f7a-d066095b146c",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "e53c0706-a97a-4031-b28a-8ebcab4be083",
+			"id": "ba197ab0-737b-41d4-99d2-eead9631d8f1",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "825a23ab-0b5d-4ec1-bdc2-29aeb066c991",
+			"id": "c125ad8e-d100-4473-afcf-77e3c94c7a76",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "b3da363a-89cd-40a1-9057-2f62f37bce2a",
+			"id": "e8ff212e-0321-4fd9-9028-281ec7db8c3e",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "56414ec2-9beb-430c-a40f-288f0c6ca974",
+			"id": "21df1c60-e316-4d0d-b57b-b915adf56c43",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "bd35d3c2-766d-4d3b-98f3-3c763db5b8c0",
+			"id": "5fed6755-0037-478f-a06c-e1b632ee0ac5",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "22510cca-d967-47c4-9b3c-ba56dbd4a4a1",
+			"id": "13303683-3b15-400b-aa11-e14a0c8c573d",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "139c8af0-ddd8-416c-9a7e-40a1b1f17702",
+			"id": "af595c8f-d2a1-4ed1-be5c-6d5008b726fa",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "316c7f42-6b15-4955-b253-6eb9a2b0a33a",
+			"id": "a3e414bf-63c6-4013-b648-d97581d5369b",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "8c188323-0b34-4d5b-a3ec-754fd41881fc",
+			"id": "6a068f46-3898-41ff-9b56-f9e639aba55d",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
