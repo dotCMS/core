@@ -593,7 +593,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void loadPermissions(final Contentlet con, final Map<String,Object> m) throws DotDataException {
+	protected void loadPermissions(final Contentlet con, final Map<String,Object> contentletMap) throws DotDataException {
 		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
 		StringBuilder permissionsSt = new StringBuilder();
@@ -618,15 +618,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			}
 		}
-		m.put(ESMappingConstants.PERMISSIONS, permissionsSt.toString());
-		m.put(ESMappingConstants.OWNER_CAN_READ, ownerCanRead);
-		m.put(ESMappingConstants.OWNER_CAN_WRITE, ownerCanWrite);
-		m.put(ESMappingConstants.OWNER_CAN_PUBLISH, ownerCanPub);
+		contentletMap.put(ESMappingConstants.PERMISSIONS, permissionsSt.toString());
+		contentletMap.put(ESMappingConstants.OWNER_CAN_READ, ownerCanRead);
+		contentletMap.put(ESMappingConstants.OWNER_CAN_WRITE, ownerCanWrite);
+		contentletMap.put(ESMappingConstants.OWNER_CAN_PUBLISH, ownerCanPub);
 
         if (Config.getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
-            m.put(ESMappingConstants.OWNER_CAN_READ + TEXT, Boolean.toString(ownerCanRead));
-            m.put(ESMappingConstants.OWNER_CAN_WRITE + TEXT, Boolean.toString(ownerCanWrite));
-            m.put(ESMappingConstants.OWNER_CAN_PUBLISH + TEXT, Boolean.toString(ownerCanPub));
+            contentletMap.put(ESMappingConstants.OWNER_CAN_READ + TEXT, Boolean.toString(ownerCanRead));
+            contentletMap.put(ESMappingConstants.OWNER_CAN_WRITE + TEXT, Boolean.toString(ownerCanWrite));
+            contentletMap.put(ESMappingConstants.OWNER_CAN_PUBLISH + TEXT, Boolean.toString(ownerCanPub));
         }
 	}
 
