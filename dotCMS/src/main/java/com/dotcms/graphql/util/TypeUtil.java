@@ -93,6 +93,10 @@ public class TypeUtil {
         return typeName + "Collection";
     }
 
+    public static String oldCollectionizedName(final String typeName) {
+        return typeName.substring(0, 1).toLowerCase() + typeName.substring(1) + "Collection";
+    }
+
     public static String singularizeCollectionName(final String collectionName) {
         return collectionName.replaceAll("Collection", "");
     }
