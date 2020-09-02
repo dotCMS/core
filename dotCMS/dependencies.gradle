@@ -9,7 +9,7 @@ dependencies {
     compile ('io.jsonwebtoken:jjwt:0.6.0'){
         transitive = false
     }
-    compile group: 'com.dotcms.lib', name: 'dot.webp-imageio-core', version:'0.1.4'
+    compile group: 'com.dotcms.lib', name: 'dot.webp-imageio-core', version:'0.1.5'
     compile group: 'org.scijava', name: 'native-lib-loader', version: '2.3.2'
     compile group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
     compile group: 'com.dotcms.lib', name: 'dot.asm', version:'3.1_2'
