@@ -137,10 +137,13 @@ public class DotParse extends DotDirective {
             final Contentlet contentlet = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(),
                             respectFrontEndRolesForVTL);
             final File fileToServe = contentlet.getBinary(idAndField._2);
+            
+            
+            
 
             // add the edit control if we have run through a page render
-            if (!context.containsKey("dontShowIcon") && PageMode.EDIT_MODE == params.mode) {
-                final String editIcon = String.format(EDIT_ICON, contentlet.getInode(), idAndField._1.getId(),
+            if (!context.containsKey("dontShowIcon") && PageMode.EDIT_MODE == params.mode && context.containsKey("dotPageContent")) {
+                final String editIcon = String.format(EDIT_ICON, contentlet.getInode(), idAndField._1.getAssetName(),
                                 APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
                                                 user),
                                 APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT,
