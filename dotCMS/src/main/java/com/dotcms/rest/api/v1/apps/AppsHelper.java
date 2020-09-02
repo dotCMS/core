@@ -757,16 +757,19 @@ class AppsHelper {
         if(null == object){
             throw new DotDataException("Unable to locate password param.");
         }
+
         final String password = object.toString();
         final Key key = AppsUtil.generateKey(password);
         final Map<String, List<AppSecrets>> importedSecretsBySiteId = appsAPI
                 .importSecrets(files.get(0).toPath(), key, user);
+        Logger.info(AppsHelper.class,"Number of secrets found: "+importedSecretsBySiteId.size());
         for (final Entry<String, List<AppSecrets>> entry : importedSecretsBySiteId.entrySet()) {
             final String siteId = entry.getKey();
             final List<AppSecrets> secrets = entry.getValue();
             final Host site = hostAPI.find(siteId, user, false);
             if(null != site && isSet(site.getIdentifier())){
                 for (final AppSecrets appSecrets : secrets) {
+                    Logger.info(AppsHelper.class,String.format("Importing secret `%s` ",appSecrets));
                     appsAPI.saveSecrets(appSecrets, site, user);
                 }
             }

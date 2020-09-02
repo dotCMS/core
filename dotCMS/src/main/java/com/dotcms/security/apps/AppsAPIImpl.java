@@ -1056,9 +1056,9 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     *
-     * @param paramAppKeysBySite
-     * @param user
+     * constructs the Import export object
+     * @param paramAppKeysBySite selection
+     * @param user user
      * @return
      * @throws DotDataException
      * @throws DotSecurityException

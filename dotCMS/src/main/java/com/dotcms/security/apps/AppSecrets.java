@@ -5,8 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class AppSecrets implements Serializable {
 
@@ -112,4 +114,15 @@ public class AppSecrets implements Serializable {
       return new Builder().build();
     }
 
+    @Override
+    public String toString() {
+        final List<String> stringsList = secrets.entrySet().stream()
+                .map(entry -> {
+                   final String name = entry.getKey();
+                   final Secret secret = entry.getValue();
+                   return "{ name: " + name + " , type: " + secret.getType() + ", hidden: " + secret.isHidden() + "}";
+                }).collect(Collectors.toList());
+
+        return String.format("AppSecrets{key= `%s` secrets=`%s` }",key, stringsList);
+    }
 }
