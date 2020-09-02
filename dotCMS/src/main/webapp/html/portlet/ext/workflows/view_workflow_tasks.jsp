@@ -388,6 +388,7 @@
 					};
 					var pushHandler = new dotcms.dojo.push.PushHandler(
 							'<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+					debugger;
 					pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback, true);
 				} else {
 					contentAdmin.saveAssign();
@@ -409,7 +410,7 @@
 	}
 
 	function fireActionCallback(actionId, formData){
-
+		debugger
 		var pushPusblishFormData = formData.pushPublish;
 		var assignComment = formData.assignComment;
 
@@ -437,6 +438,7 @@
 	}
 
 	function fireAction(actionId, popupData) {
+		debugger
 		let selectedInodes = getTaskSelectedInodes();
 		if(!selectedInodes){
 			return;

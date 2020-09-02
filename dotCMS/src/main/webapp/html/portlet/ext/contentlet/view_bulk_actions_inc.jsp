@@ -262,7 +262,7 @@
             actionId:actionId,
             inode:inode
         };
-
+        debugger;
         var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
         pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback);
         return true;
@@ -295,7 +295,7 @@
     }
 
     function fireAction(actionId, popupData) {
-
+        debugger;
         dojo.byId('bulkActionsContainer').innerHTML = `<%=LanguageUtil.get(pageContext, "Applying")%>`;
 
         var selectedInodes = getSelectedInodes();

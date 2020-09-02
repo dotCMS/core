@@ -190,6 +190,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     },
 
     showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate, isBulk){
+        debugger
         this.assetIdentifier = null;
 
         this.workflow = workflow;
