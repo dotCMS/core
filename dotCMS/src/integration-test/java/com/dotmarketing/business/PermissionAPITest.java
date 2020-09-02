@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -213,8 +214,13 @@ public class PermissionAPITest extends IntegrationTestBase {
         final Language newLanguage             = new LanguageDataGen().languageCode("es").country("MX").nextPersisted();
 
         assertFalse(permissionAPI.doesUserHavePermission(contentletDefaultLang, PermissionAPI.PERMISSION_USE, user, PageMode.get().respectAnonPerms));
-        contentletDefaultLang.setLanguageId(newLanguage.getId());
-        assertFalse(permissionAPI.doesUserHavePermission(contentletDefaultLang, PermissionAPI.PERMISSION_USE, user, PageMode.get().respectAnonPerms));
+
+        try {
+            contentletDefaultLang.setLanguageId(newLanguage.getId());
+            assertFalse(permissionAPI.doesUserHavePermission(contentletDefaultLang, PermissionAPI.PERMISSION_USE, user, PageMode.get().respectAnonPerms));
+        } catch (DotStateException e) {
+            fail("When asking for permission even if the contentlet is on a language without working version, shouldn't throw DotStateException");
+        }
     }
 
     @Test
