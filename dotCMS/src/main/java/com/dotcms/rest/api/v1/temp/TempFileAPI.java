@@ -3,11 +3,11 @@ package com.dotcms.rest.api.v1.temp;
 import com.dotcms.rest.exception.BadRequestException;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -158,7 +158,7 @@ public class TempFileAPI {
     final File tempFile = dotTempFile.file;
     final long maxLength = maxFileSize(request);
         
-    try (final OutputStream out = new BoundedOutputStream(maxLength,new FileOutputStream(tempFile))) {
+    try (final OutputStream out = new BoundedOutputStream(maxLength,Files.newOutputStream(tempFile.toPath()))) {
 
 
       int read = 0;
@@ -198,7 +198,7 @@ public class TempFileAPI {
       final File tempFile = dotTempFile.file;
 
       final OutputStream out = new BoundedOutputStream(maxFileSize(request),
-              new FileOutputStream(tempFile));
+                      Files.newOutputStream(tempFile.toPath()));
 
       final CircuitBreakerUrl urlGetter =
               CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url.toString())

@@ -2,6 +2,7 @@ package com.dotmarketing.common.reindex;
 
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -30,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in the
@@ -88,10 +88,10 @@ public class ReindexThread {
     private long contentletsIndexed = 0;
     // bulk up to this many requests
     public static final int ELASTICSEARCH_BULK_ACTIONS = Config
-            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 1000);
+            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 250);
     //how many threads will be used per shard
     public static final int ELASTICSEARCH_CONCURRENT_REQUESTS = Config
-            .getIntProperty("REINDEX_THREAD_CONCURRENT_REQUESTS", 3);
+            .getIntProperty("REINDEX_THREAD_CONCURRENT_REQUESTS", 1);
     //Bulk size in MB. -1 means disabled
     public static final int ELASTICSEARCH_BULK_SIZE = Config
             .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 10);
@@ -104,16 +104,16 @@ public class ReindexThread {
             new ThreadFactoryBuilder().setNameFormat("reindex-thread-%d").build()
     );
 
-    
+
     private final static AtomicBoolean rebuildBulkIndexer=new AtomicBoolean(false);
-    
+
     public static void rebuildBulkIndexer() {
       Logger.warn(ReindexThread.class, "------------------------");
       Logger.warn(ReindexThread.class, "ReindexThread BulkProcessor needs to be Rebuilt");
       Logger.warn(ReindexThread.class, "------------------------");
       ReindexThread.rebuildBulkIndexer.set(true);
     }
-    
+
     private ReindexThread() {
 
         this(APILocator.getReindexQueueAPI(), APILocator.getNotificationAPI(), APILocator.getUserAPI(), APILocator.getRoleAPI(),
@@ -154,7 +154,7 @@ public class ReindexThread {
         return contentletsIndexed;
     }
 
-    
+
     private BulkProcessor closeBulkProcessor(final BulkProcessor bulkProcessor) throws InterruptedException {
       if(bulkProcessor!=null) {
         bulkProcessor.awaitClose(BULK_PROCESSOR_AWAIT_TIMEOUT, TimeUnit.SECONDS);
@@ -162,9 +162,9 @@ public class ReindexThread {
       rebuildBulkIndexer.set(false);
       return null;
     }
-    
-    
-    
+
+
+
   /**
    * This method is constantly verifying the existence of records in the {@code dist_reindex_journal}
    * table. If a record is found, then it must be added to the Elastic index. If that's not possible,
@@ -176,31 +176,33 @@ public class ReindexThread {
     BulkProcessorListener bulkProcessorListener = null;
     while (STATE != ThreadState.STOPPED) {
       try {
+
         final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
+
         if (!workingRecords.isEmpty()) {
-          
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
               || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
-            if (bulkProcessor == null || rebuildBulkIndexer.get()) {
-              closeBulkProcessor(bulkProcessor);
-              bulkProcessorListener = new BulkProcessorListener();
-              bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
-            }
-            bulkProcessorListener.workingRecords.putAll(workingRecords);
-            indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-            contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
-          // otherwise, reindex normally  
-          } else {
-            reindexWithBulkRequest(workingRecords);
+              if (bulkProcessor == null || rebuildBulkIndexer.get()) {
+                  closeBulkProcessor(bulkProcessor);
+                  bulkProcessorListener = new BulkProcessorListener();
+                  bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
+              }
+              bulkProcessorListener.workingRecords.putAll(workingRecords);
+              indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
+              contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
+              // otherwise, reindex normally
+          } else if (!ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()){
+              reindexWithBulkRequest(workingRecords);
           }
         } else {
-          
+
           bulkProcessor = closeBulkProcessor(bulkProcessor);
           switchOverIfNeeded();
 
           Thread.sleep(SLEEP);
         }
+
       } catch (Exception ex) {
         Logger.error(this, "ReindexThread Exception", ex);
         ThreadUtils.sleep(SLEEP_ON_ERROR);
@@ -232,9 +234,10 @@ public class ReindexThread {
     private boolean switchOverIfNeeded() throws LanguageException, DotDataException, SQLException, InterruptedException {
         if (ESReindexationProcessStatus.inFullReindexation() && queueApi.recordsInQueue() == 0) {
             // The re-indexation process has finished successfully
-            indexAPI.reindexSwitchover(false);
-            // Generate and send an user notification
-            sendNotification("notification.reindexing.success", null, null, false);
+            if (indexAPI.reindexSwitchover(false)) {
+                // Generate and send an user notification
+                sendNotification("notification.reindexing.success", null, null, false);
+            }
             return true;
         }
         return false;
@@ -322,5 +325,4 @@ public class ReindexThread {
                 notificationLevel, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
         systemUser.getLocale());
   }
-
 }

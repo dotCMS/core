@@ -1,6 +1,8 @@
 package com.dotcms.security.apps;
 
 import static com.dotcms.security.apps.AppsCache.CACHE_404;
+
+import com.dotcms.auth.providers.jwt.factories.SigningKeyFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -8,10 +10,12 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -25,6 +29,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -32,6 +37,7 @@ import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import org.apache.commons.lang.time.FastDateFormat;
 
 
 /**
@@ -49,6 +55,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     private static final String SECRETS_STORE_SECRET_KEY_FACTORY_TYPE = "PBE";
     private static final String SECRETS_KEYSTORE_PASSWORD_KEY = "SECRETS_KEYSTORE_PASSWORD_KEY";
     private static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
+    private static final String APPS_KEY_PROVIDER_CLASS = "APPS_KEY_PROVIDER_CLASS";
     private final String secretsKeyStorePath;
     private final AppsCache cache;
 
@@ -78,7 +85,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     @VisibleForTesting
     private char[] loadStorePassword() {
         return getFromCache(SECRETS_KEYSTORE_PASSWORD_KEY,
-                () -> Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY, digest(ClusterFactory.getClusterId()))
+                () -> Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY, digest(ClusterFactory.getClusterSalt()))
                                 .toCharArray());
 
     }
@@ -122,7 +129,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             return keyStore;
 
         } catch (Exception e) {
-            Logger.error(this.getClass(), "unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
+            Logger.debug(this.getClass(), "unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
         }
 
@@ -160,7 +167,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         try {
             return getKeysFromCache().contains(variableKey);
         } catch (Exception e) {
-            Logger.error(SecretsStoreKeyStoreImpl.class,e);
+            Logger.debug(this,e.getMessage());
             throw new DotRuntimeException(e);
         }
     }
@@ -281,7 +288,26 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @return
      */
     private Key key() {
-        return Sneaky.sneak(() -> APILocator.getCompanyAPI().getDefaultCompany()).getKeyObj();
+        final String providerClassName = getCustomKeyProvider();
+        if(UtilMethods.isSet(providerClassName)){
+            try {
+                final SigningKeyFactory customKeyProvider = ((Class<SigningKeyFactory>) Class
+                        .forName(providerClassName)).newInstance();
+                return customKeyProvider.getKey();
+            } catch (Exception e) {
+                Logger.error(this.getClass(), " Fail to get Security Key from Custom Key Provider Will fallback to default key provider. ", e);
+            }
+        }
+        return Sneaky.sneak(() -> AppsKeyDefaultProvider.INSTANCE.get().getKey());
+    }
+
+    /**
+     * brings the possibility to load a custom class to override the default Key provider thought an implementation of <code>SigningKeyFactory</code>
+     * @return
+     */
+    private String getCustomKeyProvider() {
+        return Config
+                .getStringProperty(APPS_KEY_PROVIDER_CLASS, null);
     }
 
     /**
@@ -399,4 +425,21 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         cache.flushSecret(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void backupAndRemoveKeyStore() throws IOException {
+        final File secretStoreFile = new File(secretsKeyStorePath);
+        if (!secretStoreFile.exists()) {
+            Logger.warn(SecretsStoreKeyStoreImpl.class, String.format("KeyStore file `%s` does NOT exist therefore it can not be backed-up. ",secretsKeyStorePath));
+            return;
+        }
+        final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+        final String name = secretStoreFile.getName();
+        final File secretStoreFileBak = new File(secretStoreFile.getParent(), datetimeFormat.format(new Date()) + "-" + name );
+        Files.copy(secretStoreFile.toPath(), secretStoreFileBak.toPath());
+        secretStoreFile.delete();
+
+        Logger.info(SecretsStoreKeyStoreImpl.class, ()->String.format("KeyStore `%s` has been removed a backup has been created.", secretsKeyStorePath));
+    }
 }

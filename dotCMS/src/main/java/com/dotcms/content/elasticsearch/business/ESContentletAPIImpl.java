@@ -1,10 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -48,23 +44,27 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
-
-import com.dotcms.util.*;
-
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.ThreadContextUtil;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -160,6 +160,18 @@ import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.control.Try;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.BeanUtils;
+
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -190,18 +202,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
 
-import io.vavr.control.Try;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.BeanUtils;
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -220,7 +224,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
 
     private final ContentletIndexAPIImpl  indexAPI;
-    private ESIndexAPI            esIndexAPI;
     private final ESContentFactoryImpl  contentFactory;
     private final PermissionAPI         permissionAPI;
     private final CategoryAPI           categoryAPI;
@@ -231,7 +234,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
     private final TempFileAPI           tempApi ;
-    private static final int MAX_LIMIT = 10000;
+    public static final int MAX_LIMIT = 10000;
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
@@ -253,13 +256,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     };
 
     private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
+    private ESReadOnlyMonitor esReadOnlyMonitor;
 
     /**
      * Default class constructor.
      */
-    public ESContentletAPIImpl () {
+    @VisibleForTesting
+    public ESContentletAPIImpl (final ESReadOnlyMonitor esReadOnlyMonitor) {
         indexAPI = new ContentletIndexAPIImpl();
-        esIndexAPI = new ESIndexAPI();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
@@ -272,7 +276,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi=  APILocator.getTempFileAPI();
+        this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
+
+    public ESContentletAPIImpl () {
+        this(ESReadOnlyMonitor.getInstance());
+    }
+
 
     @Override
     public SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
@@ -442,8 +452,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:" + live, e);
         }
     }
-    
-    
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException {
+        try {
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
+
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
+        }
+    }
     
     
     @CloseDBIfOpened
@@ -456,6 +475,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
     }
+
 
     @CloseDBIfOpened
     @Override
@@ -550,7 +570,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void publish(final Contentlet contentlet, final User userIn, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
         final User user = (userIn!=null) ? userIn : APILocator.getUserAPI().getAnonymousUser();
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+        String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
         String contentPushExpireDate  = contentlet.getStringProperty("wfExpireDate");
 
         contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
@@ -647,7 +667,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getWorkflowAPI().fireWorkflowPostCheckin(workflow);
         }
 
-        if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+        if(contentlet.isFileAsset()) {
 
             cleanFileAssetCache(contentlet, user, respectFrontendRoles);
         }
@@ -658,6 +678,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
         }
 
+        if(contentlet.isVanityUrl()) {
+
+            APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
+        }
+        
+        
         /*
         Triggers a local system event when this contentlet commit listener is executed,
         anyone who need it can subscribed to this commit listener event, on this case will be
@@ -937,31 +963,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(UtilMethods.isSet(sortBy) && sortBy.trim().equalsIgnoreCase("random")){
             sortBy="random";
         }
-        if(limit>MAX_LIMIT || limit <=0){
+
+        if(limit <=0){
             limit = MAX_LIMIT;
         }
-        SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
-        PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
-        list.setTotalResults(lc.getTotalHits().value);
 
-        for (SearchHit sh : lc.getHits()) {
-            try{
-                Map<String, Object> sourceMap = sh.getSourceAsMap();
-                ContentletSearch conwrapper= new ContentletSearch();
-                conwrapper.setId(sh.getId());
-                conwrapper.setIndex(sh.getIndex());
-                conwrapper.setIdentifier(sourceMap.get("identifier").toString());
-                conwrapper.setInode(sourceMap.get("inode").toString());
-                conwrapper.setScore(sh.getScore());
+        if(limit<=MAX_LIMIT) {
+            SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
+            PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
+            list.setTotalResults(lc.getTotalHits().value);
 
-                list.add(conwrapper);
+            for (SearchHit sh : lc.getHits()) {
+                try{
+                    Map<String, Object> sourceMap = sh.getSourceAsMap();
+                    ContentletSearch conwrapper= new ContentletSearch();
+                    conwrapper.setId(sh.getId());
+                    conwrapper.setIndex(sh.getIndex());
+                    conwrapper.setIdentifier(sourceMap.get("identifier").toString());
+                    conwrapper.setInode(sourceMap.get("inode").toString());
+                    conwrapper.setScore(sh.getScore());
+
+                    list.add(conwrapper);
+                }
+                catch(Exception e){
+                    Logger.error(this,e.getMessage(),e);
+                }
+
             }
-            catch(Exception e){
-                Logger.error(this,e.getMessage(),e);
-            }
-
+            return list;
+        } else {
+            return contentFactory.indexSearchScroll(buffy.toString(), sortBy);
         }
-        return list;
+
     }
 
     @CloseDBIfOpened
@@ -1405,8 +1438,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("The contentlet cannot Be null");
         }
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unlocking Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -1506,16 +1539,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, User user,
-            boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+    public List<Contentlet> getRelatedContent(final Contentlet contentlet, final Relationship rel, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
             return getRelatedContent(contentlet, rel, null, user, respectFrontendRoles);
-        } catch (Exception e) {
-            final String errorMessage =
-                    "Unable to look up related content for contentlet with identifier "
-                            + contentlet.getIdentifier() + " and title " + contentlet.getTitle()
-                            + ". Relationship Name: " + rel.getRelationTypeValue();
+        } catch (final Exception e) {
+            final String errorMessage = String.format("Related content for contentlet with " +
+                    "identifier '%s', title '%s', Relationship Name '%s' was not found: %s", contentlet.getIdentifier(), contentlet
+                    .getTitle(), rel.getRelationTypeValue(), e.getMessage());
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
@@ -1526,29 +1557,47 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    /**
+     * Returns the list of child Contentlets related to the specified Contentlet based on a given Relationship.
+     *
+     * @param contentlet           The {@link Contentlet} whose child Contentlets will be retrieved.
+     * @param rel                  The {@link Relationship} used to get the child Contentlets.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
+     *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
+     *                             false}.
+     * @param limit                The limit to the amount of results that will be returned.
+     * @param offset               The offset applied to the result, mostly for pagination purposes.
+     *
+     * @return The list of {@link Contentlet} objects that are the children of the specified Contentlet.
+     *
+     * @throws DotSecurityException The user executing this action does not have the required permissions.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
     private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, int limit, int offset)
+            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
             throws DotSecurityException, DotDataException {
-
-        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
+        final boolean HAS_PARENT = Boolean.TRUE;
+        final boolean WORKING_VERSION = Boolean.FALSE;
+        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, true, false, "tree_order", limit, offset);
-        } else{
+                    .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+        } else {
 
             final List<Contentlet> result = new ArrayList<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
             SearchResponse response;
-
+            final boolean DONT_PULL_PARENTS = Boolean.FALSE;
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet, relationshipName, false, false, user,
+                        .esSearchRelated(contentlet, relationshipName, DONT_PULL_PARENTS, WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
-            } else{
+            } else {
                 //Search for related content in other versions of the same contentlet
                 response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, false, false, user,
+                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, DONT_PULL_PARENTS, WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
@@ -1556,8 +1605,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return result;
             }
 
-            for (SearchHit sh : response.getHits()) {
-                Map<String, Object> sourceMap = sh.getSourceAsMap();
+            for (final SearchHit sh : response.getHits()) {
+                final Map<String, Object> sourceMap = sh.getSourceAsMap();
                 if (sourceMap.get(relationshipName) != null) {
                     List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(relationshipName));
 
@@ -1568,10 +1617,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     relatedIdentifiers.stream().forEach(child -> {
                         try {
-                            result.add(findContentletByIdentifierAnyLanguage(
-                                    child));
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+                            final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(child, true);
+                            if (null != mappedContentlet && UtilMethods.isSet(mappedContentlet.getIdentifier())) {
+                                result.add(mappedContentlet);
+                            } else {
+                                Logger.warn(this, String.format("Child Contentlet with ID '%s' for relationship '%s' " +
+                                                "was not found. Verify that it exists in the database", child,
+                                        rel.getRelationTypeValue()));
+                            }
+                        } catch (final Exception e) {
+                            throw new RuntimeException(String.format("An error occurred when mapping Child related " +
+                                    "content '%s': %s", child, e.getMessage()), e);
                         }
                     });
                 }
@@ -1581,37 +1637,61 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    /**
+     * Returns the list of parent Contentlets related to the specified Contentlet based on a given Relationship.
+     *
+     * @param contentlet           The {@link Contentlet} whose parent Contentlets will be retrieved.
+     * @param rel                  The {@link Relationship} used to get the parent Contentlets.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
+     *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
+     *                             false}.
+     * @param limit                The limit to the amount of results that will be returned.
+     * @param offset               The offset applied to the result, mostly for pagination purposes.
+     *
+     * @return The list of {@link Contentlet} objects that are the parents of the specified Contentlet.
+     *
+     * @throws DotSecurityException The user executing this action does not have the required permissions.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, int limit, int offset)
+            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
             throws DotSecurityException, DotDataException {
-
-        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
+        final boolean HAS_NO_PARENT = Boolean.FALSE;
+        final boolean WORKING_VERSION = Boolean.FALSE;
+        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, false, false, "tree_order", limit, offset);
-        } else{
+                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+        } else {
             final Map<String, Contentlet> relatedMap = new HashMap<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
             SearchResponse response;
-
+            final boolean PULL_PARENTS = Boolean.TRUE;
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
-                    .esSearchRelated(contentlet, relationshipName, true,false, user,
+                    .esSearchRelated(contentlet, relationshipName, PULL_PARENTS, WORKING_VERSION, user,
                             respectFrontendRoles, limit, offset, null);
-            } else{
+            } else {
                 response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, true,false, user,
+                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, PULL_PARENTS, WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
             if (response.getHits() != null) {
-                for (SearchHit sh : response.getHits()) {
+                for (final SearchHit sh : response.getHits()) {
                     final Map<String, Object> sourceMap = sh.getSourceAsMap();
                     final String identifier = (String) sourceMap.get("identifier");
                     if (identifier != null && !relatedMap.containsKey(identifier)) {
-                        relatedMap
-                                .put(identifier, findContentletByIdentifierAnyLanguage(identifier));
+                        final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(identifier, true);
+                        if (null != mappedContentlet && UtilMethods.isSet(mappedContentlet.getIdentifier())) {
+                            relatedMap.put(identifier, mappedContentlet);
+                        } else {
+                            Logger.warn(this, String.format("Parent Contentlet with ID '%s' for relationship '%s' was" +
+                                            " not found. Verify that it exists in the database", identifier,
+                                    rel.getRelationTypeValue()));
+                        }
                     }
                 }
             }
@@ -1629,13 +1709,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
-            String sortBy, final long language, final Boolean live)
+    public List<Contentlet> getRelatedContent(final Contentlet contentlet, final Relationship rel,
+            final Boolean pullByParent, final User user, final boolean respectFrontendRoles, final int limit, final int offset,
+            final String sortBy, final long language, final Boolean live)
             throws DotDataException {
+        String fieldVariable = rel.getRelationTypeValue();
         try {
-            String fieldVariable = rel.getRelationTypeValue();
-
             if (rel.isRelationshipField()) {
                 if ((relationshipAPI.sameParentAndChild(rel) && pullByParent != null
                         && pullByParent) || (relationshipAPI
@@ -1651,13 +1730,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, pullByParent, limit,
                             offset, sortBy, language, live);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             final String id = contentlet!=null ? contentlet.getIdentifier() : "null";
             final String relName = rel!=null ? rel.getRelationTypeValue() : "null";
-
-            final String errorMessage =
-                    "Unable to look up related content for contentlet with identifier "
-                            + id + ". Relationship name: " + relName;
+            final String errorMessage = String.format("Unable to look up related content for contentlet with " +
+                    "identifier '%s', Relationship name '%s'(%s): %s", id, relName, fieldVariable, e.getMessage());
 
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
@@ -1698,15 +1775,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     @Deprecated
-    public List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, boolean pullByParent,
-                                                       User user, boolean respectFrontendRoles)
+    public List<Contentlet> getRelatedContentFromIndex(final Contentlet contentlet, final Relationship rel, final boolean pullByParent,
+                                                       final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
         try {
             return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1, null);
-        } catch (Exception e){
-            final String errorMessage = "Unable to look up related content for contentlet with identifier "
-                    + contentlet.getIdentifier() + ". Relationship Name: " + rel.getRelationTypeValue();
+        } catch (final Exception e) {
+            final String errorMessage = String.format("Unable to look up related content for contentlet from Index " +
+                    "with identifier '%s', Relationship Name '%s': %s", contentlet.getIdentifier(), rel.getRelationTypeValue
+                    (), e.getMessage());
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class, errorMessage + ". An empty list will be returned", e);
@@ -2755,6 +2833,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final IndexPolicy  indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
         final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(),
                 false, contentlet.getLanguageId(), user, respectFrontendRoles);
+
+        if(workingContentlet==null) {
+            return;
+        }
+
         Contentlet liveContentlet = null;
 
         try {
@@ -2897,8 +2980,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Locking Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2961,7 +3044,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
     }
+    
+    @WrapInTransaction
+    @Override
+    public void refresh(ContentType type) throws DotReindexStateException {
+        try {
+            reindexQueueAPI.addStructureReindexEntries(type.id());
+            //CacheLocator.getContentletCache().clearCache();
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new DotReindexStateException("Unable to complete reindex",e);
+        }
 
+    }
     /**
      *
      * @param contentlet
@@ -3124,8 +3219,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -3209,6 +3304,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
         CacheLocator.getContentletCache().remove(contentlet.getInode());
+        if(contentlet.isVanityUrl()) {
+            APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
+        }
         publishRelatedHtmlPages(contentlet);
     }
 
@@ -3319,8 +3417,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void unarchive(final Contentlet contentlet, final User user, final boolean respectFrontendRoles)
             throws DotDataException,DotSecurityException, DotContentletStateException {
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -4036,8 +4134,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         try {
 
-            String wfPublishDate = contentletIn.getStringProperty("wfPublishDate");
-            String wfExpireDate  = contentletIn.getStringProperty("wfExpireDate");
+            String wfPublishDate = contentletIn.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
+            String wfExpireDate  = contentletIn.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
             final boolean isWorkflowInProgress = contentletIn.isWorkflowInProgress();
             final String contentPushPublishDateBefore = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
             final String contentPushExpireDateBefore  = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
@@ -4075,11 +4173,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 )
                         ); // end synchronized block
             } catch (final Throwable t) {
+              Logger.warn(getClass(),t.getMessage(),t);
                  bubbleUpException(t);
             }
 
-            wfPublishDate = contentletOut.getStringProperty("wfPublishDate");
-            wfExpireDate = contentletOut.getStringProperty("wfExpireDate");
+            wfPublishDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
+            wfExpireDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
 
             final String contentPushPublishDateAfter = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
             final String contentPushExpireDateAfter = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
@@ -4330,7 +4429,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (!isCheckInSafe(contentRelationships, getEsIndexAPI())){
+        if (!isCheckInSafe(contentRelationships)){
+            this.esReadOnlyMonitor.start();
             throw new DotContentletStateException(
                     "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
         }
@@ -4463,13 +4563,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             // Keep the 5 properties BEFORE store the contentlet on DB.
-            final String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-            final String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-            final String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-            final String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-            final String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
-            final String contentWhereToSend = contentlet.getStringProperty("whereToSend");
-            final String forcePush = contentlet.getStringProperty("forcePush");
+            final String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
+            final String contentPushPublishTime = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME);
+            final String contentPushExpireDate = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
+            final String contentPushExpireTime = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME);
+            final String contentPushNeverExpire = contentlet.getStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE);
+            final String contentWhereToSend = contentlet.getStringProperty(Contentlet.WHERE_TO_SEND);
+            final String filterKey = contentlet.getStringProperty(Contentlet.FILTER_KEY);
+            final String iWantTo = contentlet.getStringProperty(Contentlet.I_WANT_TO);
 
                 /*
                  For HTMLPages get the url of the page sent by the user, we use the Contentlet object to
@@ -4983,7 +5084,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(contentlet != null && contentlet.isVanityUrl()){
                 //remove from cache
-                VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
+               APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
             }
 
             if(contentlet != null && contentlet.isKeyValue()){
@@ -5016,13 +5117,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             // Set the properties again after the store on DB and before the fire on an Actionlet.
-            contentlet.setStringProperty("wfPublishDate", contentPushPublishDate);
-            contentlet.setStringProperty("wfPublishTime", contentPushPublishTime);
-            contentlet.setStringProperty("wfExpireDate", contentPushExpireDate);
-            contentlet.setStringProperty("wfExpireTime", contentPushExpireTime);
-            contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
-            contentlet.setStringProperty("whereToSend", contentWhereToSend);
-            contentlet.setStringProperty("forcePush", forcePush);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, contentPushPublishDate);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, contentPushPublishTime);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, contentPushExpireDate);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, contentPushExpireTime);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, contentPushNeverExpire);
+            contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, contentWhereToSend);
+            contentlet.setStringProperty(Contentlet.FILTER_KEY, filterKey);
+            contentlet.setStringProperty(Contentlet.I_WANT_TO, iWantTo);
 
             //wapi.
             if(workflow!=null) {
@@ -5065,16 +5167,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    @VisibleForTesting
-    ESIndexAPI getEsIndexAPI() {
-        return esIndexAPI;
-    }
-
-    @VisibleForTesting
-    void setEsIndexAPI(ESIndexAPI esIndexAPI) {
-        this.esIndexAPI = esIndexAPI;
-    }
-
     /**
      * Method that verifies if a check in operation can be executed.
      * It is safe to execute a checkin if write operations can be performed on the ES cluster.
@@ -5083,12 +5175,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @return
      */
     @VisibleForTesting
-    boolean isCheckInSafe(final ContentletRelationships relationships, final ESIndexAPI esIndexAPI) {
+    boolean isCheckInSafe(final ContentletRelationships relationships) {
 
         if (relationships != null && relationships.getRelationshipsRecords().size() > 0) {
-            boolean isClusterReadOnly = esIndexAPI.isClusterInReadOnlyMode();
+            final boolean isClusterReadOnly = ElasticsearchUtil.isClusterInReadOnlyMode();
+            final boolean isEitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
 
-            if (isClusterReadOnly && hasLegacyRelationships(relationships)) {
+            if (
+                    (isEitherLiveOrWorkingIndicesReadOnly || isClusterReadOnly)
+                            && hasLegacyRelationships(relationships)) {
                 return false;
             }
         }
@@ -5190,9 +5285,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         );
     }
 
+    /**
+     * Updates the Template of the specified Contentlet - in case it's an HTML Page - in all of its existing language
+     * versions, only if its value is different from the current one. This update operation can be overridden by setting
+     * the configuration parameter {@code DO_NOT_UPDATE_TEMPLATES} as {@code true}.
+     *
+     * @param contentlet The {@link Contentlet} whose Template will be updated, if necessary
+     * @param user       The {@link User} performing this action.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified user does not have the required permissions to perform this action.
+     */
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
             throws DotDataException, DotSecurityException{
-        
+        final boolean DONT_RESPECT_FRONTEND_ROLES = Boolean.FALSE;
         final String DO_NOT_UPDATE_TEMPLATES= "DO_NOT_UPDATE_TEMPLATES";
         
         if(contentlet.getBoolProperty(DO_NOT_UPDATE_TEMPLATES)){
@@ -5203,20 +5309,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .getFieldVar(HTMLPageAssetAPI.TEMPLATE_FIELD);
             final String identifier = contentlet.getIdentifier();
             final String newTemplate = contentlet.get(HTMLPageAssetAPI.TEMPLATE_FIELD).toString();
-            final String existingTemplate = loadField(
-                    findContentletByIdentifierAnyLanguage(contentlet.getIdentifier())
-                            .getInode(), fieldVar).toString();
+            final Contentlet contentInAnyLang = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
+            if (null == contentInAnyLang || !UtilMethods.isSet(contentInAnyLang.getIdentifier())) {
+                throw new DotDataException(String.format("Contentlet with ID '%s' has not been found, or is currently" +
+                        " marked as 'Archived'.", contentlet.getIdentifier()));
+            }
+            final String existingTemplate = loadField(contentInAnyLang.getInode(), fieldVar).toString();
             if (!existingTemplate.equals(newTemplate)){
-                List<ContentletVersionInfo> vers = APILocator.getVersionableAPI().findContentletVersionInfos(identifier);
+                final List<ContentletVersionInfo> contentletVersions = APILocator.getVersionableAPI().findContentletVersionInfos(identifier);
                 
-                for(ContentletVersionInfo ver : vers) {
-                    Contentlet c = find(ver.getWorkingInode(), user, false);
-                    if(contentlet.getInode().equals(c.getInode())) {
+                for (final ContentletVersionInfo version : contentletVersions) {
+                    final Contentlet contentVersion = find(version.getWorkingInode(), user, DONT_RESPECT_FRONTEND_ROLES);
+                    if (contentlet.getInode().equals(contentVersion.getInode())) {
                         continue;
                     }
 
                     //Create a new working version with the template when the page version is live and working
-                    Contentlet newPageVersion = checkout(c.getInode(), user, false);
+                    final Contentlet newPageVersion = checkout(contentVersion.getInode(), user, DONT_RESPECT_FRONTEND_ROLES);
                     newPageVersion.setBoolProperty(DO_NOT_UPDATE_TEMPLATES, true);
                     newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
                     newPageVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
@@ -5228,7 +5337,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         newPageVersion.getMap().put(Contentlet.WORKFLOW_IN_PROGRESS, contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
                     }
 
-                    checkin(newPageVersion,  user, false);
+                    checkin(newPageVersion,  user, DONT_RESPECT_FRONTEND_ROLES);
                 }
             }
         }
@@ -5701,7 +5810,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }else if(isFieldTypeLong(field)){
                         contentlet.setLongProperty(conVariable,value != null ? ((Number)value).longValue(): null);
                     }else if(isFieldTypeBinary(field)){
-                        contentlet.setBinary(conVariable,(java.io.File)value);
+                        final File myFile = (value instanceof String) ? new File(String.valueOf(value)) : (File) value; 
+                        contentlet.setBinary(conVariable,myFile);
                     } else {
                         contentlet.setProperty(conVariable, value);
                     }
@@ -5756,6 +5866,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 (String) properties.get(Contentlet.WORKFLOW_EXPIRE_TIME));
         contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE,
                 (String) properties.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
+        contentlet.setStringProperty(Contentlet.FILTER_KEY,
+                (String) properties.get(Contentlet.FILTER_KEY));
+        contentlet.setStringProperty(Contentlet.WHERE_TO_SEND,
+                (String) properties.get(Contentlet.WHERE_TO_SEND));
+        contentlet.setStringProperty(Contentlet.I_WANT_TO,
+                (String) properties.get(Contentlet.I_WANT_TO));
     }
 
     @Override
@@ -6527,10 +6643,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } catch (final DotContentletValidationException ve) {
             throw ve;
-        } catch (final DotSecurityException | DotDataException e) {
-            Logger.error(this, "Error validating contentlet [" + contentlet.getIdentifier() + "]: " + e.getMessage(),
-                    e);
-        }
+        } 
         validateRelationships(contentlet, contentRelationships);
     }
 
@@ -8115,13 +8228,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                        final String description, final User user) {
 
         String contentPushPublishDate = contentlet
-                .getStringProperty("wfPublishDate");
+                .getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
         String contentPushPublishTime = contentlet
-                .getStringProperty("wfPublishTime");
+                .getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME);
         String contentPushExpireDate = contentlet
-                .getStringProperty("wfExpireDate");
+                .getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
         String contentPushExpireTime = contentlet
-                .getStringProperty("wfExpireTime");
+                .getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME);
         contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate) ? contentPushPublishDate
                 : "N/A";
         contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime) ? contentPushPublishTime

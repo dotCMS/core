@@ -9,7 +9,7 @@ import java.util.List;
 
 public abstract class BundleFactory {
 
-    protected final static String INSERT_BUNDLE = "INSERT INTO publishing_bundle (id,name,publish_date,expire_date,owner,force_push) VALUES (?,?,?,?,?,?)";
+    protected final static String INSERT_BUNDLE = "INSERT INTO publishing_bundle (id,name,publish_date,expire_date,owner,force_push,filter_key) VALUES (?,?,?,?,?,?,?)";
 
     protected final static String INSERT_BUNDLE_ENVIRONMENT = "INSERT INTO publishing_bundle_environment (id,bundle_id,environment_id) VALUES (?,?,?)";
 
@@ -30,7 +30,7 @@ public abstract class BundleFactory {
 
     protected final static String DELETE_BUNDLE = "DELETE FROM publishing_bundle where id = ?";
 
-    protected final static String UPDATE_BUNDLE = "UPDATE publishing_bundle SET name = ?, publish_date = ?, expire_date = ?, force_push = ? where id = ?";
+    protected final static String UPDATE_BUNDLE = "UPDATE publishing_bundle SET name = ?, publish_date = ?, expire_date = ?, force_push = ?, filter_key = ? where id = ?";
 
     protected final static String UPDATE_BUNDLE_OWNER_REFERENCES = "UPDATE publishing_bundle SET owner = ? where owner = ?";
 

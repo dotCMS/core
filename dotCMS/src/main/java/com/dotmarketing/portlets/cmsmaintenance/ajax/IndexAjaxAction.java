@@ -4,10 +4,10 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.elasticsearch.business.IndexType;
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.index.ESIndexResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -20,23 +20,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import java.io.File;
+import io.vavr.control.Try;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 public class IndexAjaxAction extends AjaxAction {
 
@@ -121,98 +113,20 @@ public class IndexAjaxAction extends AjaxAction {
 
 	}
 
-	public void restoreIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
-	    try {
-            FileItemFactory factory = new DiskFileItemFactory();
-            ServletFileUpload upload = new ServletFileUpload(factory);
-            List<FileItem> items = (List<FileItem>) upload.parseRequest(request);
-
-            String indexToRestore=null;
-            boolean clearBeforeRestore=false;
-            String aliasToRestore=null;
-            File ufile=null;
-            boolean isFlash=false;
-            for(FileItem it : items) {
-               if(it.getFieldName().equalsIgnoreCase("indexToRestore")) {
-                   indexToRestore=it.getString().trim();
-               }
-               else if(it.getFieldName().equalsIgnoreCase("aliasToRestore")) {
-                   aliasToRestore=it.getString().trim();
-               }
-               else if(it.getFieldName().equalsIgnoreCase("uploadedfiles[]") || it.getFieldName().equals("uploadedfile")
-                       || it.getFieldName().equalsIgnoreCase("uploadedfileFlash")) {
-                   isFlash=it.getFieldName().equalsIgnoreCase("uploadedfileFlash");
-                   ufile=File.createTempFile("indexToRestore", "idx");
-                   InputStream in=it.getInputStream();
-                   final OutputStream out = Files.newOutputStream(ufile.toPath());
-                   IOUtils.copyLarge(in, out);
-                   IOUtils.closeQuietly(out);
-                   IOUtils.closeQuietly(in);
-               }
-               else if(it.getFieldName().equalsIgnoreCase("clearBeforeRestore")) {
-                   clearBeforeRestore=true;
-               }
-            }
-
-            if(ufile!=null) {
-                ESIndexResource.restoreIndex(ufile, aliasToRestore, indexToRestore, clearBeforeRestore);
-            }
-            
-            PrintWriter out=response.getWriter();
-            if(isFlash) {
-                out.println("response=ok");
-            }
-            else {
-                response.setContentType("application/json");
-                out.println("{\"response\":1}");
-            }
-            
-	    }
-	    catch(FileUploadException fue) {
-	        Logger.error(this, "Error uploading file", fue);
-	        throw new IOException(fue);
-	    }
-	}
-
 	
-	public void downloadIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
-		Map<String, String> map = getURIParams();
-		response.setContentType("application/zip");
 
-		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
-		if(!UtilMethods.isSet(indexName)) return;
-		
-		File f=ESIndexResource.downloadIndex(indexName);
-		response.setContentLength((int) f.length());
-		OutputStream out = response.getOutputStream();
-		final InputStream in = Files.newInputStream(f.toPath());
-
-		response.setHeader("Content-Type", "application/zip");
-		response.setHeader("Content-Disposition", "attachment; filename=" + indexName + ".zip");
-
-		IOUtils.copyLarge(in, out);
-
-		f.delete();
-	}
 
 	public void createIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 
 		Map<String, String> map = getURIParams();
-		int shards = 0;
-
-		try{
-			shards = Integer.parseInt(map.get("shards"));
-
-		}
-		catch(Exception e){
-
-		}
+		final int shards = Try.of(()->Integer.parseInt(map.get("shards"))).getOrElse(1);
 
 
-		boolean live = map.get("live") != null;
-		String indexName = map.get("indexName");
-		
-		ESIndexResource.create(indexName, shards, live);
+		final boolean live = map.get("live") != null;
+		final String indexName=((live) ? "live_" : "working_" ) + APILocator.getContentletIndexAPI().timestampFormatter.format(new Date());
+
+		APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
+        ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
 	}
 
 	public void clearIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotStateException, DotDataException {
@@ -235,14 +149,21 @@ public class IndexAjaxAction extends AjaxAction {
 	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
-
-		ESIndexResource.activateIndex(indexName);
+		if(IndexType.SITE_SEARCH.is(indexName)){
+			APILocator.getSiteSearchAPI().activateIndex(indexName);
+			return;
+		}
+		APILocator.getContentletIndexAPI().activateIndex(indexName);
 
 	}
 	public void deactivateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
-		ESIndexResource.deactivateIndex(indexName);
+		if(IndexType.SITE_SEARCH.is(indexName)){
+			APILocator.getSiteSearchAPI().deactivateIndex(indexName);
+			return;
+		}
+		APILocator.getContentletIndexAPI().deactivateIndex(indexName);
 	}
 
 	@Override
@@ -330,12 +251,6 @@ public class IndexAjaxAction extends AjaxAction {
 		response.getWriter().println(resp);
     }
 
-	public void getIndexRecordCount(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		Map<String, String> map = getURIParams();
-		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
-
-		response.getWriter().println(ESIndexResource.indexDocumentCount(indexName));
-	}
 
 	public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();

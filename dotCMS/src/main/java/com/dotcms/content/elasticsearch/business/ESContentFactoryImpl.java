@@ -1,11 +1,13 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotmarketing.util.PaginatedArrayList;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,6 +26,8 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.search.TotalHits;
@@ -31,15 +35,19 @@ import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -682,65 +690,118 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-	@Override
-	protected int deleteOldContent(Date deleteFrom) throws DotDataException {
-	    ContentletCache cc = CacheLocator.getContentletCache();
-        Calendar calendar = Calendar.getInstance();
+    /**
+     * Deletes all the Contentlet versions that are older than the specified date.
+     *
+     * @param deleteFrom The date as of which all contents older than that will be deleted.
+     *
+     * @return The number of records deleted by this operation.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    @Override
+    protected int deleteOldContent(final Date deleteFrom) throws DotDataException {
+        final Calendar calendar = Calendar.getInstance();
         calendar.setTime(deleteFrom);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        Date date = calendar.getTime();
-        //Because of the way Oracle databases handle dates,
-        //this string is converted to Uppercase.This does
-        //not cause a problem with the other databases
+        final Date date = calendar.getTime();
         DotConnect dc = new DotConnect();
-
-        String countSQL = ("select count(*) as count from contentlet");
+        final String countSQL = "select count(*) as count from contentlet";
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
-        int before = Integer.parseInt(result.get(0).get("count"));
-
-        String deleteContentletSQL = "delete from contentlet where identifier<>'SYSTEM_HOST' and mod_date < ? " +
-        "and not exists (select * from contentlet_version_info where working_inode=contentlet.inode or live_inode=contentlet.inode)";
-        dc.setSQL(deleteContentletSQL);
+        final int before = Integer.parseInt(result.get(0).get("count"));
+        dc = new DotConnect();
+        final String query = new StringBuilder("SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS")
+                .append(" (SELECT working_inode FROM contentlet_version_info WHERE working_inode = contentlet.inode)")
+                .append(" INTERSECT")
+                .append(" SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS")
+                .append(" (SELECT live_inode FROM contentlet_version_info WHERE live_inode = contentlet.inode)")
+                .toString();
+        dc.setSQL(query);
         dc.addParam(date);
-        dc.loadResult();
-
-        String deleteOrphanInodes="delete from inode where type='contentlet' and idate < ? and inode not in (select inode from contentlet)";
-        dc.setSQL(deleteOrphanInodes);
         dc.addParam(date);
-        dc.loadResult();
-
+        result = dc.loadResults();
+        int oldInodesCount = result.size();
+        if (oldInodesCount > 0) {
+            final List<String> inodeList = result.stream().map(row -> row.get("inode")).collect(Collectors.toList());
+            deleteContentData(inodeList);
+        }
+        dc = new DotConnect();
         dc.setSQL(countSQL);
         result = dc.loadResults();
-        int after = Integer.parseInt(result.get(0).get("count"));
-
-        int deleted=before - after;
-
-        // deleting orphan binary files
-        java.io.File assets=new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
-        for(java.io.File ff1 : assets.listFiles())
-            if(ff1.isDirectory() && ff1.getName().length()==1 && ff1.getName().matches("^[a-f0-9]$"))
-                for(java.io.File ff2 : ff1.listFiles())
-                    if(ff2.isDirectory() && ff2.getName().length()==1 && ff2.getName().matches("^[a-f0-9]$"))
-                        for(java.io.File ff3 : ff2.listFiles())
-                            try {
-                                if(ff3.isDirectory()) {
-                                    Contentlet con=find(ff3.getName());
-                                    if(con==null || !UtilMethods.isSet(con.getIdentifier()))
-                                        if(!FileUtils.deleteQuietly(ff3))
-                                            Logger.warn(this, "can't delete "+ff3.getAbsolutePath());
-                                }
-                            }
-                            catch(Exception ex) {
-                                Logger.warn(this, ex.getMessage());
-                            }
-
-
+        final int after = Integer.parseInt(result.get(0).get("count"));
+        final int deleted = before - after;
+        if (deleted > 0) {
+            deleteOrphanedBinaryFiles();
+        }
         return deleted;
-	}
+    }
+
+    /**
+     * Deletes the content data associated to the specified list of Inodes. Based on such a list, the {@code contentlet}
+     * will be cleaned up as well.
+     *
+     * @param inodeList The list of Inodes that will be deleted.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    private void deleteContentData(final List<String> inodeList) throws DotDataException {
+        final int splitAt = 100;
+        // Split all records into lists of size 'truncateAt'
+        final List<List<String>> inodesToDelete = Lists.partition(inodeList, splitAt);
+        final List<String> queries = Lists.newArrayList("DELETE FROM contentlet WHERE inode IN (?)",
+                "DELETE FROM inode WHERE inode IN (?)");
+        for (final String query : queries) {
+            for (final List<String> inodes : inodesToDelete) {
+                final DotConnect dc = new DotConnect();
+                // Generate the "(?,?,?...)" string depending of the number of inodes
+                final String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
+                dc.setSQL(query.replace("?", parameterPlaceholders));
+                for (final String inode : inodes) {
+                    dc.addParam(inode);
+                }
+                dc.loadResult();
+            }
+        }
+    }
+
+    /**
+     * Deletes binary files in the {@code /assets/} folder that don't belong to a valid Inode. This cleanup routine
+     * helps dotCMS keep things in order when deleting old versions of contentlets.
+     */
+    private void deleteOrphanedBinaryFiles() {
+        // Deleting orphaned binary files
+        final java.io.File assets = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
+        for (final java.io.File firstLevelFolder : assets.listFiles()) {
+            if (firstLevelFolder.isDirectory() && firstLevelFolder.getName().length() == 1 && firstLevelFolder
+                    .getName().matches("^[a-f0-9]$")) {
+                for (final java.io.File secondLevelFolder : firstLevelFolder.listFiles()) {
+                    if (secondLevelFolder.isDirectory() && secondLevelFolder.getName().length() == 1 &&
+                            secondLevelFolder.getName().matches("^[a-f0-9]$")) {
+                        for (final java.io.File asset : secondLevelFolder.listFiles()) {
+                            try {
+                                if (asset.isDirectory()) {
+                                    final Contentlet contentlet = find(asset.getName());
+                                    if (null == contentlet || !UtilMethods.isSet(contentlet.getIdentifier())) {
+                                        if (!FileUtils.deleteQuietly(asset)) {
+                                            Logger.warn(this, "Asset '" + asset.getAbsolutePath() + "' could " +
+                                                    "not be deleted.");
+                                        }
+                                    }
+                                }
+                            } catch (final Exception ex) {
+                                Logger.warn(this, String.format("An error occurred when deleting asset '%s': %s",
+                                        asset.getAbsolutePath(), ex.getMessage()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 	@Override
 	protected void deleteVersion(Contentlet contentlet) throws DotDataException {
@@ -984,15 +1045,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
 	    
 	    // Looking content up this way can avoid any DB hits as these calls are all cached.
-	    final List<Language> langs = APILocator.getLanguageAPI().getLanguages();
-	    for(final Language language : langs) {
-	        final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-	        if(cvi != null  && UtilMethods.isSet(cvi.getIdentifier()) && !cvi.isDeleted()) {
-	            return find(cvi.getWorkingInode());
-	        }
-	    }
-	    return null;
+	    return findContentletByIdentifierAnyLanguage(identifier, false);
 
+    }
+
+    @Override
+    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
+        // Looking content up this way can avoid any DB hits as these calls are all cached.
+        final List<Language> langs = this.languageAPI.getLanguages();
+        for(final Language language : langs) {
+            final ContentletVersionInfo contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
+            if (contentVersion != null  && UtilMethods.isSet(contentVersion.getIdentifier()) && (includeDeleted || !contentVersion.isDeleted())) {
+                return find(contentVersion.getWorkingInode());
+            }
+            if (null != contentVersion && contentVersion.isDeleted() && !includeDeleted) {
+                Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
+                        identifier));
+            }
+        }
+        return null;
     }
 
 	@Override
@@ -1586,6 +1657,67 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if(offset>0) {
             searchSourceBuilder.from(offset);
         }
+        if(UtilMethods.isSet(sortBy)) {
+            sortBy = sortBy.toLowerCase();
+
+            
+            if(sortBy.startsWith("score")){
+                String[] sortByCriteria = sortBy.split("[,|\\s+]");
+                String defaultSecondarySort = "moddate";
+                SortOrder defaultSecondardOrder = SortOrder.DESC;
+
+                if(sortByCriteria.length>2){
+                    if(sortByCriteria[2].equalsIgnoreCase("desc")) {
+                        defaultSecondardOrder = SortOrder.DESC;
+                    } else {
+                        defaultSecondardOrder = SortOrder.ASC;
+                    }
+                }
+                if(sortByCriteria.length>1){
+                    defaultSecondarySort= sortByCriteria[1];
+                }
+
+                searchSourceBuilder.sort("_score", SortOrder.DESC);
+                searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
+            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")  && !sortBy.equals(SortOrder.ASC.toString())  && !sortBy.equals(SortOrder.DESC.toString())) {
+                addBuilderSort(sortBy, searchSourceBuilder);
+            }
+        }else{
+            searchSourceBuilder.sort("moddate", SortOrder.DESC);
+        }
+
+        searchRequest.source(searchSourceBuilder);
+        return cachedIndexSearch(searchRequest);
+
+
+    }
+
+    PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
+
+        final String formattedQuery = LuceneQueryDateTimeFormatter
+                .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
+
+        // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
+        try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return null;
+        }
+        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+            indexToHit = info.getLive();
+        } else {
+            indexToHit = info.getWorking();
+        }
+
+        final SearchRequest searchRequest = new SearchRequest();
+        final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        searchRequest.indices(indexToHit);
+
         if(UtilMethods.isSet(sortBy) ) {
             sortBy = sortBy.toLowerCase();
 
@@ -1614,10 +1746,83 @@ public class ESContentFactoryImpl extends ContentletFactory {
             searchSourceBuilder.sort("moddate", SortOrder.DESC);
         }
 
+        searchSourceBuilder.size(MAX_LIMIT);
         searchRequest.source(searchSourceBuilder);
-        return cachedIndexSearch(searchRequest);
+        final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
+        searchRequest.scroll(scroll);
+
+        PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
+
+        try {
+            SearchResponse searchResponse = RestHighLevelClientProvider.getInstance().getClient()
+                    .search(searchRequest, RequestOptions.DEFAULT);
+            String scrollId = searchResponse.getScrollId();
+            SearchHits searchHits = searchResponse.getHits();
+
+            contentletSearchList.addAll(getContentletSearchFromSearchHits(searchHits));
+            contentletSearchList.setTotalResults(searchHits.getTotalHits().value);
+
+            while (searchHits.getHits() != null && searchHits.getHits().length > 0) {
+
+                SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+                scrollRequest.scroll(scroll);
+                searchResponse = RestHighLevelClientProvider.getInstance().getClient()
+                        .scroll(scrollRequest, RequestOptions.DEFAULT);
+                scrollId = searchResponse.getScrollId();
+                searchHits = searchResponse.getHits();
+
+                contentletSearchList.addAll(getContentletSearchFromSearchHits(searchHits));
+            }
+
+            ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+            clearScrollRequest.addScrollId(scrollId);
+            ClearScrollResponse clearScrollResponse = RestHighLevelClientProvider.getInstance()
+                    .getClient().clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+            boolean succeeded = clearScrollResponse.isSucceeded();
+
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(searchRequest.source()) ));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            return new PaginatedArrayList<>();
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                    searchRequest.source().toString(), e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+
+        return contentletSearchList;
 
 
+    }
+
+    private List<ContentletSearch> getContentletSearchFromSearchHits(final SearchHits searchHits) {
+        PaginatedArrayList<ContentletSearch> list=new PaginatedArrayList<>();
+        list.setTotalResults(searchHits.getTotalHits().value);
+
+        for (SearchHit sh : searchHits.getHits()) {
+            try{
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
+                ContentletSearch conwrapper= new ContentletSearch();
+                conwrapper.setId(sh.getId());
+                conwrapper.setIndex(sh.getIndex());
+                conwrapper.setIdentifier(sourceMap.get("identifier").toString());
+                conwrapper.setInode(sourceMap.get("inode").toString());
+                conwrapper.setScore(sh.getScore());
+
+                list.add(conwrapper);
+            }
+            catch(Exception e){
+                Logger.error(this,e.getMessage(),e);
+                throw e;
+            }
+
+        }
+        return list;
     }
 
     public static void addBuilderSort(String sortBy, SearchSourceBuilder srb) {

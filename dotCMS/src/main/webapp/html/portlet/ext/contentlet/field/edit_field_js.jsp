@@ -318,7 +318,6 @@ var cmsfile=null;
 		}
 	}
 
-
 	function emmitFieldDataChange(val) {
 			var customEvent = document.createEvent("CustomEvent");
 			customEvent.initCustomEvent("ng-event", false, false,  {
@@ -331,7 +330,7 @@ var cmsfile=null;
 	function insertAssetInEditor(dotAssets) {
 		dotAssets.forEach(async (asset) => {
 			let results = await fetch(
-				`/api/v1/content/resourcelink?identifier=${asset.identifier}`
+				`/api/v1/content/resourcelinks?identifier=${asset.identifier}`
 			);
 			results = await results.json();
 
@@ -342,8 +341,7 @@ var cmsfile=null;
 				"image/tiff",
 				"image/png",
 			];
-			const { mimeType, idPath } = results.entity.asset;
-
+			const { mimeType, idPath } = results.entity[asset.titleImage];
 			const image = `
 					<img
 					src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
@@ -356,7 +354,21 @@ var cmsfile=null;
 
 			const link = `<a href="${idPath}">${asset.title}</a>`;
 			const assetToInsert = mimeWhiteList.includes(mimeType) ? image : link;
-			tinymce.execCommand("mceInsertContent", false, assetToInsert);
+        	tinymce.execCommand("mceInsertContent", false, assetToInsert);
+			setAssetDimensionsInEditor();
+
+		});
+	}
+
+	function setAssetDimensionsInEditor () {
+		const images = tinymce.activeEditor.contentDocument.querySelectorAll('img');
+		images.forEach(image => {
+			image.addEventListener('load', () => {
+				if(!image.getAttribute('width')){
+					image.setAttribute('width', image.naturalWidth);
+					image.setAttribute('height', image.naturalHeight);
+				}
+			})
 		});
 	}
 
@@ -370,7 +382,6 @@ var cmsfile=null;
 		})
 		dropzoneEvents = true
   }
-
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
@@ -422,7 +433,21 @@ var cmsfile=null;
                     if (kind === 'file') {
                         dropZone.style.pointerEvents = "all";
                     }
+                  });
+
+                  editor.on("ExecCommand", function (e) {
+                    if (e.command === 'mceFullScreen'){
+                        if (dropZone.style.position === '') {
+                            dropZone.style.position = 'fixed';
+                            dropZone.style.zIndex = '999';
+                        } else {
+                            dropZone.style.position = '';
+                            dropZone.style.zIndex = '';
+                        }
+                    }
+
 			      });
+
 			      editor.dom.bind(document, "dragleave", function (e) {
 			        dropZone.style.pointerEvents = "none";
 			        return false;
@@ -481,14 +506,13 @@ var cmsfile=null;
 
 	function cmsFileBrowser(callback, value, meta) {
 		tinyMCEFilePickerCallback=callback;
-		if(meta.filetype=="image"){
-			cmsFileBrowserImage.show();
-		}
-		else{
-			cmsFileBrowserFile.show();
-		}
-		dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' })
-		dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' })
+
+		if (meta.filetype=="image") {
+            dojo.query('.mce-window .mce-close')[0].click();
+            cmsFileBrowserImage.show();
+        } else {
+            cmsFileBrowserFile.show()
+        }
 
 	}
 
@@ -671,11 +695,9 @@ var cmsfile=null;
 	}
 
 	function addFileImageCallback(file) {
-		
 		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
-
-		var assetURI = replaceUrlPattern(pattern, file);
-		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
+        var assetURI = replaceUrlPattern(pattern, file);
+        insertAssetInEditor([file])
 	}
 
 
@@ -699,19 +721,21 @@ var cmsfile=null;
 
 	}
 
-
 	function addFileCallback(file) {
-		var ident
+		var ident, assetURI;
 		var ext = file.extension;
 		var ident = file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
-		if(fileExt == '<%= extension %>' || ext == 'page'){
-			tinyMCEFilePickerCallback(file.pageURI, {});
-		}else {
-			var assetURI = [file.path, file.name].join("");
-			tinyMCEFilePickerCallback(assetURI, {});
+		if (fileExt == "<%= extension %>" || ext == "page") {
+			assetURI = file.pageURI;
+		} else if (file.baseType === "FILEASSET") {
+			assetURI = `${file.path}`;
+		} else {
+			assetURI = `/dA/${file.path.split(".")[1]}/${file.name}`;
 		}
+
+		tinyMCEFilePickerCallback(assetURI, {});
 	}
 
 	function replaceAll(find, replace, str) {

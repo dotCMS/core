@@ -140,7 +140,9 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         final Contentlet checkedOut = contentletAPI
                 .checkout(contentlet.getInode(), systemUser, false);
         checkedOut.setProperty("body", String.join(",", coneheads));
+        checkedOut.setIndexPolicy(IndexPolicy.WAIT_FOR);
         contentletAPI.checkin(checkedOut, systemUser, false);
+        workingPage.setIndexPolicy(IndexPolicy.WAIT_FOR);
         contentletAPI.checkin(workingPage, systemUser, false);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);

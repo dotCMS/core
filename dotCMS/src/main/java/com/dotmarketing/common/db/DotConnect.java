@@ -96,7 +96,17 @@ public class DotConnect {
     public int loadInt(String x) throws DotDataException {
         x = x.toLowerCase();
         try {
-            return (Integer) loadObjectResults().get(0).get(x);
+            return Integer.parseInt(String.valueOf(loadObjectResults().get(0).get(x)));
+        } catch (Exception e) {
+            Logger.debug(this, "loadInt: " + e);
+            throw new DotDataException(e.toString(), e);
+        }
+    }
+    
+    public long loadLong(String x) throws DotDataException {
+        x = x.toLowerCase();
+        try {
+            return Long.parseLong(String.valueOf(loadObjectResults().get(0).get(x)));
         } catch (Exception e) {
             Logger.debug(this, "loadInt: " + e);
             throw new DotDataException(e.toString(), e);

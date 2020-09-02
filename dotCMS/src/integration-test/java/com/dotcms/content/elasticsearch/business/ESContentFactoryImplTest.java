@@ -325,6 +325,42 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         assertFalse(UtilMethods.isSet(searchHits.getHits()));
     }
 
+    
+    
+    
+    /**
+     * this method tests that if we are passing in asc or desc as a sort order (both invalid without a
+     * specified field) then we do not blow up.
+     */
+
+    @Test
+    public void test_trying_with_bad_sorts() {
+        final SearchHits descendingHits = instance.indexSearch("*", 20, 0, "desc");
+        // we should have hits, as we are ignoring the invalid sort
+        assert (descendingHits.getHits().length > 0);
+
+
+        final SearchHits ascendingHits = instance.indexSearch("*", 20, 0, "asc");
+     // we should have hits, as we are ignoring the invalid sort
+        assert (ascendingHits.getHits().length > 0);
+
+        final SearchHits descendingHitsUpper = instance.indexSearch("*", 20, 0, "DESC");
+        // we should have hits, as we are ignoring the invalid sort
+        assert (descendingHitsUpper.getHits().length > 0);
+        
+        final SearchHits ascHitsUpper = instance.indexSearch("*", 20, 0, "DESC");
+        // we should have hits, as we are ignoring the invalid sort
+        assert (ascHitsUpper.getHits().length > 0);        
+        
+        
+    }
+
+    
+    
+    
+    
+    
+    
     private float getMaxScore(SearchHit[] hits) {
         float maxScore = java.lang.Float.MIN_VALUE;
 
@@ -733,5 +769,119 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 .contains("-basetype:" + BaseContentType.PERSONA.getType()));
         assertFalse(
                 translatedQuery.getQuery().contains("-basetype:" + BaseContentType.FORM.getType()));
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String)}
+     * Given Scenario: Happy path to get a contentlet given its identifier regardless of the language
+     * ExpectedResult: The method should return a contentlet
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_findContentletByIdentifierAnyLanguage()
+            throws DotSecurityException, DotDataException {
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final User user = APILocator.systemUser();
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+
+        final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
+
+        final Contentlet banner1 = TestDataUtils
+                .getBannerLikeContent(true, language1.getId(), bannerLikeContentType.id(), null);
+
+        Contentlet banner2 = contentletAPI.checkout(banner1.getInode(), APILocator.systemUser(), false);
+
+        banner2.setLanguageId(language2.getId());
+
+        banner2 = contentletAPI.checkin(banner2, user, false);
+
+        final Contentlet result = instance.findContentletByIdentifierAnyLanguage(banner1.getIdentifier());
+
+        assertNotNull(result);
+        assertEquals(banner2.getIdentifier(), result.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String)}
+     * Given Scenario: Find a contentlet given its identifier regardless of the language and all versions
+     * of the contentlet are archived
+     * ExpectedResult: The method shouldn't return any contentlet
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_findContentletByIdentifierAnyLanguageNoArchived()
+            throws DotSecurityException, DotDataException {
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final User user = APILocator.systemUser();
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+
+        final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
+
+        final Contentlet banner1 = TestDataUtils
+                .getBannerLikeContent(true, language1.getId(), bannerLikeContentType.id(), null);
+
+        Contentlet banner2 = contentletAPI.checkout(banner1.getInode(), APILocator.systemUser(), false);
+
+        banner2.setLanguageId(language2.getId());
+
+        banner2 = contentletAPI.checkin(banner2, user, false);
+
+        contentletAPI.archive(banner1, user, false);
+        contentletAPI.archive(banner2, user, false);
+
+        CacheLocator.getContentletCache().remove(banner1);
+        CacheLocator.getContentletCache().remove(banner2);
+
+        final Contentlet result = instance.findContentletByIdentifierAnyLanguage(banner1.getIdentifier());
+
+        assertNull(result);
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String, boolean)} 
+     * Given Scenario: Get a contentlet given its identifier regardless of the language and its archived status
+     * ExpectedResult: The method should return a contentlet
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_findContentletByIdentifierAnyLanguageIncludeDeleted()
+            throws DotSecurityException, DotDataException {
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final User user = APILocator.systemUser();
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+
+        final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
+
+        final Contentlet banner1 = TestDataUtils
+                .getBannerLikeContent(true, language1.getId(), bannerLikeContentType.id(), null);
+
+        Contentlet banner2 = contentletAPI.checkout(banner1.getInode(), APILocator.systemUser(), false);
+
+        banner2.setLanguageId(language2.getId());
+
+        banner2 = contentletAPI.checkin(banner2, user, false);
+
+        contentletAPI.archive(banner1, user, false);
+        contentletAPI.archive(banner2, user, false);
+
+        CacheLocator.getContentletCache().remove(banner1);
+        CacheLocator.getContentletCache().remove(banner2);
+
+        final Contentlet result = instance.findContentletByIdentifierAnyLanguage(banner1.getIdentifier(), true);
+
+        assertNotNull(result);
+        assertEquals(banner2.getIdentifier(), result.getIdentifier());
     }
 }

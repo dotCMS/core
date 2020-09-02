@@ -7,7 +7,6 @@ import static com.liferay.util.StringPool.FORWARD_SLASH;
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
@@ -33,6 +32,7 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.util.StringPool;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -42,6 +42,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
@@ -211,6 +212,11 @@ public class FileAssetContainerUtil {
         final int indexOf = fullPath.indexOf(hostname);
 
         return -1 != indexOf? fullPath.substring(indexOf + hostname.length()): fullPath;
+    }
+
+    public String getRelativePath(final String path) {
+        final String hostName = this.getHostName(path);
+        return this.getPathFromFullPath(hostName, path);
     }
 
     /**
@@ -503,7 +509,27 @@ public class FileAssetContainerUtil {
      * @throws DotDataException
      */
     public String getFullPath(final FileAssetContainer container) {
-        return builder(HOST_INDICATOR, container.getHost().getHostname(), container.getPath()).toString();
+        return getFullPath(container.getHost(), container.getPath());
     }
 
+    public String getFullPath(final String containerPath) {
+        try {
+            if (isFullPath(containerPath)) {
+                return containerPath;
+            } else {
+                final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+                return getFullPath(currentHost, containerPath);
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    public String getFullPath(final Host host, final String containerPath) {
+        return getFullPath(host.getHostname(), containerPath);
+    }
+
+    public String getFullPath(final String hostName, final String containerPath) {
+        return builder(HOST_INDICATOR, hostName, containerPath).toString();
+    }
 }

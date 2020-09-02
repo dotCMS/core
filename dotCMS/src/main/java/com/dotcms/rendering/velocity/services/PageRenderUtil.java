@@ -11,7 +11,6 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -58,6 +57,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -346,30 +346,9 @@ public class PageRenderUtil implements Serializable {
     }
 
     private Container getContainer(final boolean live, final String containerId) throws DotSecurityException, DotDataException {
-
-        Container container = null;
-        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
-        final ContainerFinderByIdOrPathStrategy workingStrategy = strategy.isPresent() ? strategy.get() : strategyResolver.getDefaultStrategy();
-        final Supplier<Host> resourceHostSupplier = () -> this.site;
-
-        try {
-            if (live) {
-
-                container = this.getLiveContainerById(containerId);
-                if (null == container) {
-                    container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
-                }
-            } else {
-                container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
-            }
-        } catch (NotFoundInDbException | DotRuntimeException e) {
-
-            new ContainerExceptionNotifier(e, containerId).notifyUser();
-            container = null;
-        }
-        return container;
+        final Optional<Container> optionalContainer =
+                APILocator.getContainerAPI().findContainer(containerId, APILocator.systemUser(), live, false);
+        return optionalContainer.isPresent() ? optionalContainer.get() : null;
     }
 
     private void addPermissions(final Container container) throws DotDataException {
@@ -417,31 +396,8 @@ public class PageRenderUtil implements Serializable {
     }
 
     private boolean needParseContainerPrefix(final Container container, final String uniqueId) {
-        String containerIdOrPath = null;
-
-        if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
-            containerIdOrPath = getRelativePathFromSite((FileAssetContainer) container);
-        } else {
-            containerIdOrPath = container.getIdentifier();
-        }
-
         return !ParseContainer.isParserContainerUUID(uniqueId) &&
-                (templateLayout == null || !templateLayout.existsContainer(containerIdOrPath, uniqueId));
-    }
-
-    /**
-     * If the container's Host is equals to {@link PageRenderUtil#site} then return the relative path, but if the Host
-     * are different then it return the full path.
-     *
-     * @param container
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    private String getRelativePathFromSite(final FileAssetContainer container) {
-        return this.site.getIdentifier().equals(container.getHost().getIdentifier()) ?
-                container.getPath() :
-                FileAssetContainerUtil.getInstance().getFullPath(container);
+                (templateLayout == null || !templateLayout.existsContainer(container, uniqueId));
     }
 
     private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet) {

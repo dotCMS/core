@@ -26,6 +26,8 @@ import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.business.DotAssetAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.device.DeviceAPI;
+import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -175,7 +177,7 @@ public class APILocator extends Locator<APIIndex>{
 			return;
 		}
 
-		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null, false);
+		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
 		if (apiLocatorClass != null) {
 			instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
 		}
@@ -1003,6 +1005,15 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link com.dotcms.device.DeviceAPI} class.
+	 *
+	 * @return The {@link com.dotcms.device.DeviceAPI} class.
+	 */
+	public static DeviceAPI getDeviceAPI(){
+		return (DeviceAPI) getInstance(APIIndex.DEVICE_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1145,7 +1156,10 @@ enum APIIndex
 	DOT_ASSET_API,
 	BROWSER_API,
 	FILESTORAGE_API,
-	CONTENTLET_METADATA_API;
+	CONTENTLET_METADATA_API,
+	DEVICE_API;
+
+
 
 
 	Object create() {
@@ -1227,6 +1241,7 @@ enum APIIndex
 			case BROWSER_API: return new BrowserAPIImpl();
 			case FILESTORAGE_API: return new FileStorageAPIImpl();
 			case CONTENTLET_METADATA_API: return new ContentletMetadataAPIImpl();
+			case DEVICE_API: return new DeviceAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
@@ -1238,17 +1253,8 @@ enum APIIndex
 	 */
 	private static VanityUrlAPI createVanityUrlAPI () {
 
-		VanityUrlAPI vanityUrlAPI = null;
-
-		try {
-
-			vanityUrlAPI = new VanityUrlAPIImpl();
-		} catch (DotDataException e) {
-			Logger.error(APILocator.class, "The Vanity API couldn't be created", e);
-		}
-
-		return vanityUrlAPI;
-	} // createVanityUrlAPI.
+		return new VanityUrlAPIImpl();
+	}
 
     /**
      * Correctly initializes a new single instance of the {@link FileWatcherAPI}.

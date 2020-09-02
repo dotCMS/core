@@ -300,7 +300,13 @@ public class CMSUrlUtil {
 
 		return false;
 	}
-
+	
+  public boolean isVanityUrl(final String uri,
+      final Host host,
+      final long languageId) {
+    
+    return isVanityUrl(uri, host, APILocator.getLanguageAPI().getLanguage(languageId));
+  }
 	/**
 	 * Indicates if the uri belongs to a VanityUrl
 	 *
@@ -311,9 +317,9 @@ public class CMSUrlUtil {
 	 */
 	public boolean isVanityUrl(final String uri,
 							   final Host host,
-							   final long languageId) {
+							   final Language language) {
 
-		return APILocator.getVanityUrlAPI().isVanityUrl(uri, host, languageId);
+		return APILocator.getVanityUrlAPI().resolveVanityUrl(uri, host, language).isPresent();
 	} // isVanityUrl.
 
 	/**

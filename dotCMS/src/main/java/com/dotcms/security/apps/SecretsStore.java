@@ -1,5 +1,6 @@
 package com.dotcms.security.apps;
 
+import java.io.IOException;
 import java.util.Optional;
 import com.dotmarketing.util.Config;
 import io.vavr.control.Try;
@@ -55,6 +56,13 @@ public interface SecretsStore {
      * @throws Exception
      */
     void deleteValue(String secretKey);
+
+    /**
+     * Creates a backup copy of the p12 keystore file.
+     * Then removes the original file.
+     * @throws IOException
+     */
+    void backupAndRemoveKeyStore() throws IOException;
 
     /**
      * 

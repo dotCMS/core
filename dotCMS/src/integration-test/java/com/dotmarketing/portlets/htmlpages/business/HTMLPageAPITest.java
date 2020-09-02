@@ -36,6 +36,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -378,9 +379,9 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 			new TestCaseFindByIdLanguageFallback(en, en, en, null, false, new User()),
 			new TestCaseFindByIdLanguageFallback(es,en, en, null, true, new User()),
 				new TestCaseFindByIdLanguageFallback(en, -1, es,
-						ResourceNotFoundException.class, false, new User()),
+						DoesNotExistException.class, false, new User()),
 				new TestCaseFindByIdLanguageFallback(en, -1, es,
-						ResourceNotFoundException.class, false, new User()),
+						DoesNotExistException.class, false, new User()),
 			new TestCaseFindByIdLanguageFallback(en, en, en, DotSecurityException.class, false, null),
 		};
 	}

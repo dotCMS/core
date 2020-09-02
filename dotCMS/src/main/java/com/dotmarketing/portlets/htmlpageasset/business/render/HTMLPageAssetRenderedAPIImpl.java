@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -14,13 +15,17 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.model.IPersona;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.PageMode;
@@ -28,9 +33,11 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -130,6 +137,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .build(false, context.getPageMode());
     }
 
+    @Override
+    public HTMLPageUrl getHtmlPageAsset(final PageContext context,
+            final HttpServletRequest request) throws DotSecurityException, DotDataException {
+        final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
+        return getHtmlPageAsset(context, host, request);
+    }
 
     @Override
     public PageView getPageRendered(
@@ -224,6 +237,25 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
     }
 
+    @Override
+    public ViewAsPageStatus getViewAsStatus(final HttpServletRequest request,
+            final PageMode pageMode, final HTMLPageAsset htmlpage, final User user)
+            throws DotDataException {
+        final Set<String> pagePersonalizationSet  = APILocator.getMultiTreeAPI()
+                .getPersonalizationsForPage(htmlpage);
+        final IPersona persona     = this.getCurrentPersona(request);
+        final boolean personalized = this.isPersonalized(persona, pagePersonalizationSet);
+        final Contentlet device = APILocator.getDeviceAPI().getCurrentDevice(request, user)
+                .orElse(null);
+
+        return new ViewAsPageStatus(
+                getVisitor(request),
+                WebAPILocator.getLanguageWebAPI().getLanguage(request),
+                device,
+                pageMode,
+                personalized );
+    }
+
     public String getPageHtml(
             final PageContext context,
             final HttpServletRequest request,
@@ -232,7 +264,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
-        final IHTMLPage page = htmlPageUrl.getHTMLPage();
+        final HTMLPageAsset page = htmlPageUrl.getHTMLPage();
 
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
@@ -386,6 +418,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             }
         }
 
+        public URLMapInfo getUrlMapInfo() {
+            return urlMapInfo;
+        }
+
         public String getPageUrl() {
             return htmlPage.getPageUrl();
         }
@@ -394,7 +430,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             return urlMapInfo != null ? urlMapInfo.getUrlMapped() : htmlPage.getURI();
         }
 
-        public IHTMLPage getHTMLPage() {
+        public HTMLPageAsset getHTMLPage() {
             return htmlPage;
         }
 
@@ -406,5 +442,21 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
       if(fireRules) {
         RulesEngine.fireRules(request,  response, page, FireOn.EVERY_PAGE);
       }
+    }
+
+    private Visitor getVisitor(final HttpServletRequest request) {
+        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
+        return visitor.orElse(null);
+    }
+
+    private IPersona getCurrentPersona(final HttpServletRequest request) {
+        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
+        return visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
+    }
+
+    private boolean isPersonalized (final IPersona persona, final Set<String> pagePersonalizationSet) {
+
+        return null != persona && pagePersonalizationSet.contains
+                (Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag());
     }
 }

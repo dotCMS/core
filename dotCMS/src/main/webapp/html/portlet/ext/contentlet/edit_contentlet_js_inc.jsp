@@ -409,7 +409,6 @@
         }else {
             isContentSaving = true;
         }
-
         ContentletAjax.saveContent(fmData,isAutoSave,isCheckin,publish,saveContentCallback);
     }
 
@@ -583,7 +582,6 @@
 
         dijit.byId('savingContentDialog').hide();
         resetHasChanged();
-
         // Show DotContentletValidationExceptions.
         if(data["saveContentErrors"] && data["saveContentErrors"][0] != null ){
             var errorDisplayElement = dijit.byId('saveContentErrors');
@@ -818,7 +816,6 @@
 
 
     function saveAssignCallBack(actionId, formData) {
-
         var pushPublish = formData.pushPublish;
         var assignComment = formData.assignComment;
 

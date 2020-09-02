@@ -2,13 +2,19 @@ package com.dotcms.security.apps;
 
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * its a super class that serves as the base form both Params and Secrets.
  * @param <T>
  */
-public abstract class AbstractProperty<T> {
+public abstract class AbstractProperty<T> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     protected final T value;
     protected final Boolean hidden;
@@ -47,6 +53,12 @@ public abstract class AbstractProperty<T> {
     @JsonIgnore
     public boolean getBoolean() {
         return Boolean.parseBoolean(getString());
+    }
+
+    @JsonIgnore
+    public List<Map> getList() {
+       final List list = (List)value;
+       return new ArrayList<>(list);
     }
 
     @Override
