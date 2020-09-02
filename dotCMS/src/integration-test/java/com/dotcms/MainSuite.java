@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegration
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
+import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
@@ -316,7 +317,8 @@ import org.junit.runners.Suite.SuiteClasses;
         GoogleTranslationServiceIntegrationTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
         FolderFactoryImplTest.class,
-        DotSamlResourceTest.class
+        DotSamlResourceTest.class,
+        DotStatefulJobTest.class
 })
 public class MainSuite {
 

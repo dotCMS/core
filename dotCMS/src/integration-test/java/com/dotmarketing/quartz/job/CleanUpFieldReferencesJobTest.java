@@ -1,8 +1,8 @@
 package com.dotmarketing.quartz.job;
 
+import static com.dotmarketing.quartz.DotStatefulJob.EXECUTION_DATA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -15,22 +15,24 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -114,12 +116,15 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             Contentlet contentlet = contentletDataGen.languageId(langId)
                     .setProperty(field.variable(), testCase.fieldValue).nextPersisted();
 
+            final Map<String, Object> jobProperties = new HashMap<>();
             // Execute jobs to delete fields
-            TestJobExecutor.execute(instance,
-                    CollectionsUtils
-                            .map("deletionDate",
-                                    new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000),
-                                    "field", field, "user", systemUser));
+            final ImmutableMap<String, Serializable> nextExecutionData = ImmutableMap
+                    .of("deletionDate", new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000),
+                            "field", field, "user", systemUser);
+
+            jobProperties.put(EXECUTION_DATA, nextExecutionData);
+
+            TestJobExecutor.execute(instance, jobProperties);
 
             // Make sure the field value is cleaned up
             contentlet = APILocator.getContentletAPI().find(contentlet.getInode(), systemUser, false);
