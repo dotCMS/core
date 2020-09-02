@@ -6,9 +6,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -29,6 +32,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -37,6 +41,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -178,6 +183,38 @@ public class PermissionAPITest extends IntegrationTestBase {
         }
         assertTrue(throwException);
         
+    }
+
+    /**
+     * Method to test:  doesUserHavePermission
+     * Given Scenario:  when calls  doesUserHavePermission, to a contentlet with a diff language (not the default) with or not permission, the non-default language was throwing an exception
+     * ExpectedResult: Now should work on and just return true or false instead of a non-working version exception
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void doesUserHavePermission_another_lang() throws DotDataException, DotSecurityException {
+
+        final Role nrole = getRole("TestingRole2");
+        final User user= UserTestUtil.getUser("useruser", false, true);
+
+        if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        final Language defaultLanguage         = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentTypeAPI contentTypeAPI    = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType contentGenericType   = contentTypeAPI.find("webPageContent");
+        final Contentlet contentletDefaultLang = new ContentletDataGen(contentGenericType.id())
+                .setProperty("title", "TestContent")
+                .setProperty("body",  "TestBody" ).languageId(defaultLanguage.getId()).nextPersisted();
+        final Language newLanguage             = new LanguageDataGen().languageCode("es").country("MX").nextPersisted();
+
+        assertFalse(permissionAPI.doesUserHavePermission(contentletDefaultLang, PermissionAPI.PERMISSION_USE, user, PageMode.get().respectAnonPerms));
+        contentletDefaultLang.setLanguageId(newLanguage.getId());
+        assertFalse(permissionAPI.doesUserHavePermission(contentletDefaultLang, PermissionAPI.PERMISSION_USE, user, PageMode.get().respectAnonPerms));
     }
 
     @Test
