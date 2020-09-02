@@ -16,7 +16,6 @@ import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
