@@ -296,7 +296,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
 
-            addTextFieldToMapIfNeeded(contentletMap, contentlet, contentIdentifier, versionInfo, contentType);
+            final Optional<Map<String, Object>> textFields = getTextFieldToMapIfNeeded(contentlet, contentIdentifier, versionInfo, contentType);
+            if (textFields.isPresent()){
+                contentletMap.putAll(textFields.get());
+            }
+
             String urlMap;
 			try{
 				urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
@@ -374,8 +378,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
     /**
-     * Fields with suffix _text will be indexed if the property `CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS` is on
-     * @param contentletMap
+     * Fields with suffix _text will be returned if the property `CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS` is on
      * @param contentlet
      * @param contentIdentifier
      * @param versionInfo
@@ -383,47 +386,52 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    private void addTextFieldToMapIfNeeded(final Map<String, Object> contentletMap,
+    private Optional<Map<String, Object>> getTextFieldToMapIfNeeded(
             final Contentlet contentlet, final Identifier contentIdentifier,
             final ContentletVersionInfo versionInfo, final ContentType contentType)
             throws DotSecurityException, DotDataException {
         if (Config.getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
-            contentletMap.put(ESMappingConstants.STRUCTURE_TYPE + TEXT,
+            final Map<String, Object> textFieldsMap = new HashMap<>();
+            textFieldsMap.put(ESMappingConstants.STRUCTURE_TYPE + TEXT,
                     Integer.toString(
                             contentType.baseType().getType())); // marked for DEPRECATION
-            contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT,
+            textFieldsMap.put(ESMappingConstants.BASE_TYPE + TEXT,
                     Integer.toString(contentType.baseType().getType()));
-            contentletMap.put(ESMappingConstants.MOD_DATE + TEXT,
+            textFieldsMap.put(ESMappingConstants.MOD_DATE + TEXT,
                     datetimeFormat.format(contentlet.getModDate()));
-            contentletMap
+            textFieldsMap
                     .put(ESMappingConstants.LIVE + TEXT, Boolean.toString(contentlet.isLive()));
-            contentletMap.put(ESMappingConstants.WORKING + TEXT,
+            textFieldsMap.put(ESMappingConstants.WORKING + TEXT,
                     Boolean.toString(contentlet.isWorking()));
-            contentletMap
+            textFieldsMap
                     .put(ESMappingConstants.LOCKED + TEXT, Boolean.toString(contentlet.isLocked()));
-            contentletMap.put(ESMappingConstants.DELETED + TEXT,
+            textFieldsMap.put(ESMappingConstants.DELETED + TEXT,
                     Boolean.toString(contentlet.isArchived()));
-            contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT,
+            textFieldsMap.put(ESMappingConstants.LANGUAGE_ID + TEXT,
                     Long.toString(contentlet.getLanguageId()));
 
             if (UtilMethods.isSet(contentIdentifier.getSysPublishDate())) {
-                contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
+                textFieldsMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
                         datetimeFormat.format(contentIdentifier.getSysPublishDate()));
             } else {
-                contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
+                textFieldsMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
                         datetimeFormat.format(versionInfo.getVersionTs()));
             }
 
             if (UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
-                contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
+                textFieldsMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
                         datetimeFormat.format(contentIdentifier.getSysExpireDate()));
             } else {
-                contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
+                textFieldsMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
             }
 
-            contentletMap.put(ESMappingConstants.VERSION_TS + TEXT,
+            textFieldsMap.put(ESMappingConstants.VERSION_TS + TEXT,
                     datetimeFormat.format(versionInfo.getVersionTs()));
+
+            return Optional.of(textFieldsMap);
         }
+
+        return Optional.empty();
     }
 
 	private void generateBinaryMetadata(final Contentlet contentlet,
