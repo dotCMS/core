@@ -1,12 +1,6 @@
 package com.dotcms.rest.config;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.dotcms.auth.providers.saml.v1.DotSamlResource;
-import com.dotcms.rest.api.v1.system.logger.LoggerResource;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
@@ -50,17 +44,24 @@ import com.dotcms.rest.api.v1.system.AppContextInitResource;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
 import com.dotcms.rest.api.v1.system.UpgradeTaskResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
+import com.dotcms.rest.api.v1.system.logger.LoggerResource;
 import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
 import com.dotcms.rest.api.v1.temp.TempFileResource;
+import com.dotcms.rest.api.v1.template.TemplateResource;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
 import com.google.common.collect.ImmutableSet;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -158,6 +159,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(PushPublishFilterResource.class)
 			.add(DotSamlResource.class)
 			.add(LoggerResource.class)
+			.add(TemplateResource.class)
 			.build();
 
 

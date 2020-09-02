@@ -13,7 +13,7 @@ public interface MessageObserver {
      * @param clazz
      * @param message
      */
-    void updateError(Class clazz, String message);
+    void updateError(String clazz, String message);
 
     /**
      * Updates to the observers when there is an error.
@@ -21,28 +21,29 @@ public interface MessageObserver {
      * @param message
      * @param throwable
      */
-    void updateError(Class clazz, String message, Throwable throwable);
+    void updateError(String clazz, String message, Throwable throwable);
 
-    void updateError(Class clazz, String message, Object... arguments);
+    void updateError(String clazz, String message, Object... arguments);
 
     /**
      * Updates to the observers when there is an debug.
      * @param clazz
      * @param message
      */
-    void updateDebug(Class clazz, String message);
+    void updateDebug(String clazz, String message);
+
 
     /**
      * Updates to the observers when there is an info.
      * @param clazz
      * @param message
      */
-    void updateInfo(Class clazz, String message);
+    void updateInfo(String clazz, String message);
 
     /**
      * Updates to the observers when there is a warning
      * @param clazz
      * @param message
      */
-    void updateWarning(Class clazz, String message);
+    void updateWarning(String clazz, String message);
 }

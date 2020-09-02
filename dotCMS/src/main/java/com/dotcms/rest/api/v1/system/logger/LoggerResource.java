@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.system.logger;
 
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -52,9 +51,10 @@ public class LoggerResource {
             throw new DotSecurityException("User is not admin");
         }
 
-        final Class loggerClass = ReflectionUtils.getClassFor(loggerName);
+        final Object loggerClass = Logger.getLogger(loggerName);
         if (null != loggerClass) {
-            return Response.ok(new ResponseEntityView(this.toView(Logger.getLogger(loggerClass)))).build();
+
+            return Response.ok(new ResponseEntityView(this.toView(loggerClass))).build();
         }
 
         throw new DoesNotExistException("Logger: " + loggerName + " does not exists");
