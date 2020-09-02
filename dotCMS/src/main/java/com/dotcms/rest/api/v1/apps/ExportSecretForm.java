@@ -1,16 +1,15 @@
 package com.dotcms.rest.api.v1.apps;
 
+import com.dotcms.rest.api.Validated;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.StringJoiner;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import com.dotcms.rest.api.Validated;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Set;
-import java.util.Map;
 
 public class ExportSecretForm extends Validated {
 

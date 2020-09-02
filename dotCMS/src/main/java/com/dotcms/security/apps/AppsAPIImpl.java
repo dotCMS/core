@@ -1032,7 +1032,7 @@ public class AppsAPIImpl implements AppsAPI {
             exportedSecrets = collectSecretsForExport(paramAppKeysBySite, user);
         }
 
-        Logger.info(AppsAPIImpl.class,""+exportedSecrets);
+        Logger.info(AppsAPIImpl.class," exporting : "+exportedSecrets);
 
         final File tempFile = File.createTempFile("secretsExport", ".tmp");
         try {

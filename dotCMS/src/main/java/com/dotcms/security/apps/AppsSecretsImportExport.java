@@ -35,7 +35,7 @@ public class AppsSecretsImportExport implements Serializable {
     @Override
     public String toString() {
         final List<String> stringsList = secrets.entrySet().stream()
-                .map(entry -> entry.getKey() + " with : " + entry.getValue().size()+" secrets ")
+                .map(entry -> "{"+entry.getKey() + " with : " + entry.getValue().size()+" secrets. }")
                 .collect(Collectors.toList());
         return String.format("AppsSecretsImportExport{`%s`}", stringsList);
     }
