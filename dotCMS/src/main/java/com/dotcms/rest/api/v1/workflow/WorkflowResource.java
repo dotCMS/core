@@ -147,8 +147,6 @@ public class WorkflowResource {
     private static final String EXPIRE_DATE   = "expireDate";
     private static final String EXPIRE_TIME   = "expireTime";
     private static final String NEVER_EXPIRE  = "neverExpire";
-    private static final String WHERE_TO_SEND = "whereToSend";
-    private static final String FORCE_PUSH    = "forcePush";
     private static final String BINARY_FIELDS = "binaryFields";
     private static final String PREFIX_BINARY = "binary";
     private static final String ACTION_NAME   = "actionName";
@@ -404,7 +402,8 @@ public class WorkflowResource {
 
             final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(),
                     LISTING.equalsIgnoreCase(renderMode)?WorkflowAPI.RenderMode.LISTING:WorkflowAPI.RenderMode.EDITING);
-            return Response.ok(new ResponseEntityView(actions)).build(); // 200
+            return Response.ok(new ResponseEntityView(actions.stream()
+                    .map(this::toWorkflowActionView).collect(Collectors.toList()))).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAvailableActions, contentlet inode: " + inode +
@@ -413,6 +412,52 @@ public class WorkflowResource {
         }
     } // findAvailableActions.
 
+    private WorkflowActionView toWorkflowActionView(final WorkflowAction workflowAction) {
+
+        final WorkflowActionView workflowActionView = new WorkflowActionView();
+
+        workflowActionView.setId(workflowAction.getId());
+        workflowActionView.setName(workflowAction.getName());
+        workflowActionView.setStepId(workflowAction.getSchemeId());
+        workflowActionView.setSchemeId(workflowAction.getSchemeId());
+        workflowActionView.setCondition(workflowAction.getCondition());
+        workflowActionView.setNextStep(workflowAction.getNextStep());
+        workflowActionView.setNextAssign(workflowAction.getNextAssign());
+        workflowActionView.setIcon(workflowAction.getIcon());
+        workflowActionView.setRoleHierarchyForAssign(workflowAction.isRoleHierarchyForAssign());
+        workflowActionView.setRequiresCheckout(workflowAction.isRoleHierarchyForAssign());
+        workflowActionView.setAssignable(workflowAction.isAssignable());
+        workflowActionView.setCommentable(workflowAction.isCommentable());
+        workflowActionView.setOrder(workflowAction.getOrder());
+        workflowActionView.setSaveActionlet(workflowAction.hasSaveActionlet());
+        workflowActionView.setPublishActionlet(workflowAction.hasPublishActionlet());
+        workflowActionView.setUnpublishActionlet(workflowAction.hasUnpublishActionlet());
+        workflowActionView.setArchiveActionlet(workflowAction.hasArchiveActionlet());
+        workflowActionView.setPushPublishActionlet(workflowAction.hasPushPublishActionlet());
+        workflowActionView.setUnarchiveActionlet(workflowAction.hasUnarchiveActionlet());
+        workflowActionView.setDeleteActionlet(workflowAction.hasDeleteActionlet());
+        workflowActionView.setDestroyActionlet(workflowAction.hasDestroyActionlet());
+        workflowActionView.setShowOn(workflowAction.getShowOn());
+
+        final List<ActionInputView> actionInputViews = new ArrayList<>();
+
+        if (workflowAction.isAssignable()) {
+
+            actionInputViews.add(new ActionInputView("assignable", Collections.emptyMap()));
+        }
+        if (workflowAction.isCommentable()) {
+
+            actionInputViews.add(new ActionInputView("commentable", Collections.emptyMap()));
+        }
+        if (workflowAction.hasPushPublishActionlet()) {
+
+            actionInputViews.add(new ActionInputView("pushPublish", Collections.emptyMap()));
+        }
+
+        workflowActionView.setActionInputs(actionInputViews);
+
+        return workflowActionView;
+    }
 
 
     /**
@@ -1279,7 +1324,7 @@ public class WorkflowResource {
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
-            final FireActionByNameForm fireActionForm = this.processForm (multipart);
+            final FireActionByNameForm fireActionForm = this.processForm (multipart, initDataObject.getUser());
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
@@ -1387,7 +1432,15 @@ public class WorkflowResource {
         if(fireActionForm != null) {
 
             formBuilder.workflowActionComments(fireActionForm.getComments())
-                    .workflowAssignKey(fireActionForm.getAssign());
+                    .workflowAssignKey(fireActionForm.getAssign())
+                    .workflowPublishDate(fireActionForm.getPublishDate())
+                    .workflowPublishTime(fireActionForm.getPublishTime())
+                    .workflowExpireDate(fireActionForm.getExpireDate())
+                    .workflowExpireTime(fireActionForm.getExpireTime())
+                    .workflowNeverExpire(fireActionForm.getNeverExpire())
+                    .workflowFilterKey(fireActionForm.getFilterKey())
+                    .workflowWhereToSend(fireActionForm.getWhereToSend())
+                    .workflowIWantTo(fireActionForm.getIWantTo());
         }
 
         if (contentlet.getMap().containsKey(Contentlet.RELATIONSHIP_KEY)) {
@@ -1617,7 +1670,7 @@ public class WorkflowResource {
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
-            final FireActionForm fireActionForm = this.processForm (multipart);
+            final FireActionForm fireActionForm = this.processForm (multipart, initDataObject.getUser());
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
@@ -1697,7 +1750,7 @@ public class WorkflowResource {
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
-            final FireActionForm fireActionForm = this.processForm (multipart);
+            final FireActionForm fireActionForm = this.processForm (multipart, initDataObject.getUser());
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
@@ -1723,7 +1776,7 @@ public class WorkflowResource {
                 JsonArrayToLinkedSetConverter.EMPTY_LINKED_SET;
     }
 
-    private FireActionByNameForm processForm(final FormDataMultiPart multipart)
+    private FireActionByNameForm processForm(final FormDataMultiPart multipart, final User user)
             throws IOException, JSONException, DotSecurityException, DotDataException {
 
         Map<String, Object> contentletMap = Collections.emptyMap();
@@ -1739,7 +1792,7 @@ public class WorkflowResource {
 
         this.validateMultiPartContent    (contentletMap, binaryFields);
         this.processFireActionFormValues (fireActionFormBuilder, multiPartContent._1);
-        this.processFiles                (contentletMap, multiPartContent._2, binaryFields);
+        this.processFiles                (contentletMap, multiPartContent._2, binaryFields, user);
         fireActionFormBuilder.contentlet (contentletMap);
 
         return fireActionFormBuilder.build();
@@ -1779,11 +1832,23 @@ public class WorkflowResource {
         return binaryFields.size() <= binaryFileSize? binaryFields: binaryFields.subList(0, binaryFields.size());
     }
 
+    private String getContentTypeInode (final Map<String, Object> contentMap, final User user, final List<File> binaryFiles) {
+
+        this.contentHelper.checkOrSetContentType(contentMap, user, binaryFiles);
+        return MapToContentletPopulator.INSTANCE.getContentTypeInode(contentMap);
+    }
+
     private void processFiles(final Map<String, Object> contentMap, final List<File> binaryFiles,
-                              final LinkedHashSet<String> argBinaryFields) throws DotDataException, DotSecurityException {
+                              final LinkedHashSet<String> argBinaryFields, final User user) throws DotDataException, DotSecurityException {
 
         final ContentTypeAPI contentTypeAPI      = APILocator.getContentTypeAPI(APILocator.systemUser());
-        final String         contentTypeInode    = MapToContentletPopulator.INSTANCE.getContentTypeInode(contentMap);
+        final String         contentTypeInode    = this.getContentTypeInode(contentMap, user, binaryFiles);
+
+        if (!UtilMethods.isSet(contentTypeInode)) {
+
+            throw new BadRequestException("The content type or base type, is not set or is invalid");
+        }
+
         final List<Field>    fields              = contentTypeAPI.find(contentTypeInode).fields();
         final List<String>   binaryFields        = argBinaryFields.size() > 0?
                 new ArrayList<>(argBinaryFields) : this.getBinaryFields (fields, contentMap, binaryFiles.size());
@@ -1854,22 +1919,26 @@ public class WorkflowResource {
             contentMap.remove(NEVER_EXPIRE);
         }
 
-        if (contentMap.containsKey(WHERE_TO_SEND)) {
+        if (contentMap.containsKey(Contentlet.WHERE_TO_SEND)) {
 
-            fireActionFormBuilder.whereToSend((String)contentMap.get(WHERE_TO_SEND));
-            contentMap.remove(WHERE_TO_SEND);
-        }
-
-        if (contentMap.containsKey(FORCE_PUSH)) {
-
-            fireActionFormBuilder.forcePush((String)contentMap.get(FORCE_PUSH));
-            contentMap.remove(FORCE_PUSH);
+            fireActionFormBuilder.whereToSend((String)contentMap.get(Contentlet.WHERE_TO_SEND));
+            contentMap.remove(Contentlet.WHERE_TO_SEND);
         }
 
         if (contentMap.containsKey(ACTION_NAME)) {
 
             fireActionFormBuilder.actionName((String)contentMap.get(ACTION_NAME));
             contentMap.remove(ACTION_NAME);
+        }
+
+        if (contentMap.containsKey(Contentlet.FILTER_KEY)) {
+            fireActionFormBuilder.filterKey((String)contentMap.get(Contentlet.FILTER_KEY));
+            contentMap.remove(Contentlet.FILTER_KEY);
+        }
+
+        if (contentMap.containsKey(Contentlet.I_WANT_TO)) {
+            fireActionFormBuilder.filterKey((String)contentMap.get(Contentlet.I_WANT_TO));
+            contentMap.remove(Contentlet.I_WANT_TO);
         }
     }
 
@@ -1959,6 +2028,12 @@ public class WorkflowResource {
     private Contentlet populateContentlet(final FireActionForm fireActionForm, final Contentlet contentletInput, final User user,final PageMode mode)
             throws DotSecurityException {
 
+        if (contentletInput.isNew()) {
+            // checks if has content type assigned, otherwise tries to see
+            // if can figure out the content type based on a base type.
+            this.contentHelper.checkOrSetContentType(fireActionForm.getContentletFormData(), user);
+        }
+
         final Contentlet contentlet = this.contentHelper.populateContentletFromMap
                 (contentletInput, fireActionForm.getContentletFormData());
 
@@ -1990,13 +2065,14 @@ public class WorkflowResource {
             throw new DotSecurityException(errorMessageSupplier.get(), e);
         }
 
-        contentlet.setStringProperty("wfPublishDate", fireActionForm.getPublishDate());
-        contentlet.setStringProperty("wfPublishTime", fireActionForm.getPublishTime());
-        contentlet.setStringProperty("wfExpireDate",  fireActionForm.getExpireDate());
-        contentlet.setStringProperty("wfExpireTime",  fireActionForm.getExpireTime());
-        contentlet.setStringProperty("wfNeverExpire", fireActionForm.getNeverExpire());
-        contentlet.setStringProperty(WHERE_TO_SEND,   fireActionForm.getWhereToSend());
-        contentlet.setStringProperty(FORCE_PUSH,     fireActionForm.getForcePush());
+        contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, fireActionForm.getPublishDate());
+        contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, fireActionForm.getPublishTime());
+        contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE,  fireActionForm.getExpireDate());
+        contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME,  fireActionForm.getExpireTime());
+        contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, fireActionForm.getNeverExpire());
+        contentlet.setStringProperty(Contentlet.WHERE_TO_SEND,   fireActionForm.getWhereToSend());
+        contentlet.setStringProperty(Contentlet.FILTER_KEY, fireActionForm.getFilterKey());
+        contentlet.setStringProperty(Contentlet.I_WANT_TO, fireActionForm.getFilterKey());
 
         for(Field constant : contentlet.getContentType().fields()) {
           if(constant instanceof ConstantField)

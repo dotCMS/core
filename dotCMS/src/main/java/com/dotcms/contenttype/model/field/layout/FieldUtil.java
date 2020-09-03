@@ -1,20 +1,14 @@
 package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.*;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.liferay.portal.model.User;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -234,27 +228,6 @@ public class FieldUtil {
 
         jsonFieldTransformer = new JsonFieldTransformer(jsonObject.toString());
         return jsonFieldTransformer.from();
-    }
-
-    public static void setFieldInternationalization(
-            final ContentType contentType,
-            final ContentTypeInternationalization contentTypeInternationalization,
-            final Map<String, Object> fieldMap
-    )  {
-
-        final long languageId = contentTypeInternationalization.getLanguageId();
-        final boolean live = contentTypeInternationalization.isLive();
-        final User user = APILocator.systemUser();
-        
-        for (final String propertyName : fieldMap.keySet()) {
-            final String key = String.format("%s.%s.%s", contentType.variable(), fieldMap.get("variable"), propertyName);
-            final String i18nValue = APILocator.getLanguageVariableAPI().getLanguageVariable(
-                    key, languageId, user, live, user == null);
-
-            if (!i18nValue.equals(key) && !i18nValue.equals(fieldMap.get(propertyName).toString())) {
-                fieldMap.put(propertyName, i18nValue);
-            }
-        }
     }
 
     /**

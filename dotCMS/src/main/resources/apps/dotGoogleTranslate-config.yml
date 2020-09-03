@@ -1,0 +1,12 @@
+name: "Google Translation"
+description: "Enables the Google Translation Actionlet to auto translate content to other languages"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/google-translate.png"
+allowExtraParameters: false
+params:
+  apiKey:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "Google Service API Key"
+    hint: "API Key to access the Google Translate Service"
+    required: true

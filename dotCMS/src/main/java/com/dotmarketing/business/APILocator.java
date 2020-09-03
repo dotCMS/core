@@ -1,18 +1,11 @@
 package com.dotmarketing.business;
 
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditAPIImpl;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
-import com.dotcms.cluster.business.ClusterAPI;
-import com.dotcms.cluster.business.ClusterAPIImpl;
+import com.dotcms.browser.BrowserAPI;
+import com.dotcms.browser.BrowserAPIImpl;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -20,12 +13,21 @@ import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPIImpl;
+import com.dotcms.contenttype.business.DotAssetAPI;
+import com.dotcms.contenttype.business.DotAssetAPIImpl;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.device.DeviceAPI;
+import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -48,6 +50,8 @@ import com.dotcms.publisher.assets.business.PushedAssetsAPI;
 import com.dotcms.publisher.assets.business.PushedAssetsAPIImpl;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.bundle.business.BundleAPIImpl;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditAPIImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPIImpl;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
@@ -58,6 +62,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -134,6 +139,10 @@ import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * APILocator is a factory method (pattern) to get single(ton) service objects.
@@ -164,7 +173,7 @@ public class APILocator extends Locator<APIIndex>{
 			return;
 		}
 
-		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null, false);
+		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
 		if (apiLocatorClass != null) {
 			instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
 		}
@@ -660,6 +669,15 @@ public class APILocator extends Locator<APIIndex>{
 		return (BundleAPI)getInstance(APIIndex.BUNDLE_API);
 	}
 
+	/**
+	 * Creates a single instance of the {@link BrowserAPI} class.
+	 *
+	 * @return The {@link BrowserAPI} class.
+	 */
+	public static BrowserAPI getBrowserAPI() {
+		return (BrowserAPI)getInstance(APIIndex.BROWSER_API);
+	}
+
 	public static TempFileAPI getTempFileAPI() {
 	  return new TempFileAPI();
 	}
@@ -905,15 +923,6 @@ public class APILocator extends Locator<APIIndex>{
 		return (HTMLPageAssetRenderedAPI) getInstance(APIIndex.HTMLPAGE_ASSET_RENDERED_API);
 	}
 
-	/*
-	 * Creates a single instance of the {@link ClusterAPI}
-	 *
-	 * @return The {@link ClusterAPI} class.
-	 */
-	public static ClusterAPI getClusterAPI() {
-		return (ClusterAPI) getInstance(APIIndex.CLUSTER_API);
-	}
-
 	/**
 	 * Creates a single instance of the {@link ThemeAPI} class.
 	 *
@@ -924,9 +933,9 @@ public class APILocator extends Locator<APIIndex>{
 	}
 	
     /**
-     * Creates a single instance of the {@link JWTTokenAPI} class.
+     * Creates a single instance of the {@link ApiTokenAPI} class.
      *
-     * @return The {@link JWTTokenAPI} class.
+     * @return The {@link ApiTokenAPI} class.
      */
     public static ApiTokenAPI getApiTokenAPI() {
         return (ApiTokenAPI) getInstance(APIIndex.API_TOKEN_API);
@@ -957,6 +966,31 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static PublishAuditAPI getPublishAuditAPI() {
 		return (PublishAuditAPI) getInstance(APIIndex.PUBLISH_AUDIT_API);
+	}
+
+	/**
+	 * Single point of entry to the service integration api
+	 * @return The {@link AppsAPI} class.
+	 */
+	public static AppsAPI getAppsAPI(){
+	   return (AppsAPI) getInstance(APIIndex.APPS_API);
+	}
+
+	/**
+	 * Single point of entry to the dot asset api
+	 * @return The {@link DotAssetAPI} class.
+	 */
+	public static DotAssetAPI getDotAssetAPI(){
+		return (DotAssetAPI) getInstance(APIIndex.DOT_ASSET_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link com.dotcms.device.DeviceAPI} class.
+	 *
+	 * @return The {@link com.dotcms.device.DeviceAPI} class.
+	 */
+	public static DeviceAPI getDeviceAPI(){
+		return (DeviceAPI) getInstance(APIIndex.DEVICE_API);
 	}
 
 	/**
@@ -1092,13 +1126,16 @@ enum APIIndex
 	VANITY_URLS_API,
 	MULTI_TREE_API,
 	HTMLPAGE_ASSET_RENDERED_API,
-	CLUSTER_API,
 	THEME_API,
 	API_TOKEN_API,
 	GRAPHQL_API,
 	URLMAP_API,
 	CONTENT_TYPE_FIELD_LAYOUT_API,
-	PUBLISH_AUDIT_API;
+	PUBLISH_AUDIT_API,
+	APPS_API,
+	DOT_ASSET_API,
+	BROWSER_API,
+	DEVICE_API;
 
 
 
@@ -1171,13 +1208,16 @@ enum APIIndex
 			case LOCAL_SYSTEM_EVENTS_API: return LocalSystemEventsAPIFactory.getInstance().getLocalSystemEventsAPI();
 			case MULTI_TREE_API: return new MultiTreeAPIImpl();
 			case HTMLPAGE_ASSET_RENDERED_API: return new HTMLPageAssetRenderedAPIImpl();
-			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
 			case GRAPHQL_API: return  new GraphqlAPIImpl();
 	        case API_TOKEN_API: return new ApiTokenAPI();
 			case URLMAP_API: return new URLMapAPIImpl();
 			case CONTENT_TYPE_FIELD_LAYOUT_API: return new ContentTypeFieldLayoutAPIImpl();
 			case PUBLISH_AUDIT_API: return PublishAuditAPIImpl.getInstance();
+			case APPS_API: return AppsAPI.INSTANCE.get();
+			case DOT_ASSET_API: return new DotAssetAPIImpl();
+			case BROWSER_API: return new BrowserAPIImpl();
+			case DEVICE_API: return new DeviceAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
@@ -1189,17 +1229,8 @@ enum APIIndex
 	 */
 	private static VanityUrlAPI createVanityUrlAPI () {
 
-		VanityUrlAPI vanityUrlAPI = null;
-
-		try {
-
-			vanityUrlAPI = new VanityUrlAPIImpl();
-		} catch (DotDataException e) {
-			Logger.error(APILocator.class, "The Vanity API couldn't be created", e);
-		}
-
-		return vanityUrlAPI;
-	} // createVanityUrlAPI.
+		return new VanityUrlAPIImpl();
+	}
 
     /**
      * Correctly initializes a new single instance of the {@link FileWatcherAPI}.

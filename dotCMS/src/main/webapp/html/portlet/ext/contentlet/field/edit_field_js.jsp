@@ -43,7 +43,6 @@
 			languages : '<%= usera.getLanguageId().substring(0,2) %>',
 			disk_cache : true,
 			debug : false
-
 		});
 	}else{
 		tinymce.init({
@@ -64,7 +63,6 @@
     		file_picker_callback: function(callback, value, meta) {
     			cmsFileBrowser(callback, value, meta);
     		}
-
 		});
 	}
 </script>
@@ -125,10 +123,7 @@ var cmsfile=null;
 		field.value = dateValue;
 
 		if(typeof updateStartRecurrenceDate === 'function' && (varName == 'startDate' || varName == 'endDate')){
-
-
-             updateStartRecurrenceDate(varName);
-
+       updateStartRecurrenceDate(varName);
 		}
 	}
 
@@ -323,14 +318,70 @@ var cmsfile=null;
 		}
 	}
 
-    function emmitFieldDataChange(val) {
-        var customEvent = document.createEvent("CustomEvent");
-        customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "edit-contentlet-data-updated",
-            payload: val
-        });
-        document.dispatchEvent(customEvent)
-    }
+	function emmitFieldDataChange(val) {
+			var customEvent = document.createEvent("CustomEvent");
+			customEvent.initCustomEvent("ng-event", false, false,  {
+					name: "edit-contentlet-data-updated",
+					payload: val
+			});
+			document.dispatchEvent(customEvent)
+	}
+
+	function insertAssetInEditor(dotAssets) {
+		dotAssets.forEach(async (asset) => {
+			let results = await fetch(
+				`/api/v1/content/resourcelinks?identifier=${asset.identifier}`
+			);
+			results = await results.json();
+
+			const mimeWhiteList = [
+				"image/jpeg",
+				"image/gif",
+				"image/webp",
+				"image/tiff",
+				"image/png",
+			];
+			const { mimeType, idPath } = results.entity[asset.titleImage];
+			const image = `
+					<img
+					src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
+					alt="${asset.title}"
+					data-field-name="${asset.titleImage}"
+					data-inode="${asset.inode}"
+					data-identifier="${asset.identifier}"
+					data-saveas="${asset.title}"
+					/>`;
+
+			const link = `<a href="${idPath}">${asset.title}</a>`;
+			const assetToInsert = mimeWhiteList.includes(mimeType) ? image : link;
+        	tinymce.execCommand("mceInsertContent", false, assetToInsert);
+			setAssetDimensionsInEditor();
+
+		});
+	}
+
+	function setAssetDimensionsInEditor () {
+		const images = tinymce.activeEditor.contentDocument.querySelectorAll('img');
+		images.forEach(image => {
+			image.addEventListener('load', () => {
+				if(!image.getAttribute('width')){
+					image.setAttribute('width', image.naturalWidth);
+					image.setAttribute('height', image.naturalHeight);
+				}
+			})
+		});
+	}
+
+  var dropzoneEvents = false
+
+  function bindDropZoneUploadComplete(activeEditor, textAreaId) {
+		const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+		dropZone.addEventListener('uploadComplete', async (asset) => {
+			dropZone.style.pointerEvents = "none";
+			asset.detail && insertAssetInEditor(asset.detail)
+		})
+		dropzoneEvents = true
+  }
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
@@ -353,7 +404,7 @@ var cmsfile=null;
 					     catch(e){
 					    	 showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 					     }
-	
+
 					 <%}else{%>
 					         var <%=field.variable()%>tinyPropOverride =  tinyMCEProps;
 				     <%}%>
@@ -368,16 +419,55 @@ var cmsfile=null;
 			}else if(tinyConf.plugins != undefined ){
 			    tinyConf.plugins=tinyConf.plugins.replace("compat3x","");
 			}
-            console.log(textAreaId, tinyConf );
 			//Enabling the wysiwyg
 			try {
-                var wellTinyMCE = new tinymce.Editor(textAreaId, tinyConf, tinymce.EditorManager);
-				wellTinyMCE.render();
-                wellTinyMCE.on('change', emmitFieldDataChange);
+			  // Init instance callback to fix the pointer-events issue.
+			  tinyConf = {
+			    ...tinyConf,
+			    init_instance_callback: (editor) => {
+			      let dropZone = document.getElementById(
+			        `dot-asset-drop-zone-${textAreaId}`
+			      );
+			      editor.on("dragover", function (e) {
+                    const { kind } = Array.from(e.dataTransfer.items)[0];
+                    if (kind === 'file') {
+                        dropZone.style.pointerEvents = "all";
+                    }
+                  });
+
+                  editor.on("ExecCommand", function (e) {
+                    if (e.command === 'mceFullScreen'){
+                        if (dropZone.style.position === '') {
+                            dropZone.style.position = 'fixed';
+                            dropZone.style.zIndex = '999';
+                        } else {
+                            dropZone.style.position = '';
+                            dropZone.style.zIndex = '';
+                        }
+                    }
+
+			      });
+
+			      editor.dom.bind(document, "dragleave", function (e) {
+			        dropZone.style.pointerEvents = "none";
+			        return false;
+			      });
+          }
+			  };
+			  var wellTinyMCE = new tinymce.Editor(
+			    textAreaId,
+			    tinyConf,
+			    tinymce.EditorManager
+			  );
+			  if (!dropzoneEvents) {
+			    bindDropZoneUploadComplete(tinymce, textAreaId);
+			  }
+			  wellTinyMCE.render();
+			  wellTinyMCE.on("change", emmitFieldDataChange);
+			} catch (e) {
+			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
-			catch(e) {
-				showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
-			}
+
 			enabledWYSIWYG[textAreaId] = true;
 		}
 	}
@@ -416,14 +506,13 @@ var cmsfile=null;
 
 	function cmsFileBrowser(callback, value, meta) {
 		tinyMCEFilePickerCallback=callback;
-		if(meta.filetype=="image"){
-			cmsFileBrowserImage.show();
-		}
-		else{
-			cmsFileBrowserFile.show();
-		}
-		dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' })
-		dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' })
+
+		if (meta.filetype=="image") {
+            dojo.query('.mce-window .mce-close')[0].click();
+            cmsFileBrowserImage.show();
+        } else {
+            cmsFileBrowserFile.show()
+        }
 
 	}
 
@@ -538,14 +627,35 @@ var cmsfile=null;
 		 var data = dijit.byId('HostSelector').attr('selectedItem');
 		 if(data["type"]== "host"){
 			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId(field).dataset.hostType =  data["type"];
 			dojo.byId('hostId').value =  dijit.byId('HostSelector').attr('value');
 			dojo.byId('folderInode').value = "";
+
 		 }else if(data["type"]== "folder"){
 			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId(field).dataset.hostType =  data["type"];
 			dojo.byId('folderInode').value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId('hostId').dataset.hostType = data["type"];
 			dojo.byId('hostId').value = "";
 		}
 	  }
+	}
+
+	function setDotAssetHost() {
+		const contentHost = dojo.byId("contentHost");
+		const dropZoneComponents = Array.from(
+			document.querySelectorAll(".wysiwyg__dot-asset-drop-zone")
+		);
+		dropZoneComponents.forEach((dropZone) => {
+			if (
+				contentHost.dataset.hostType === "host" && contentHost.value !== "SYSTEM_HOST" ||
+				contentHost.dataset.hostType === "folder"
+			) {
+				dropZone["folder"] = contentHost.value;
+			} else {
+				dropZone["folder"] = ""
+			}
+		});
 	}
 
 	function aceAreaById(textarea){
@@ -564,7 +674,7 @@ var cmsfile=null;
 		    minLines: 25,
 		    maxLines:40
 	    });
-	    
+
     	aceEditors[textarea].clearSelection();
 		enabledCodeAreas[textarea]=true;
 		aceEditors[textarea].on("change", function(){
@@ -585,39 +695,12 @@ var cmsfile=null;
 	}
 
 	function addFileImageCallback(file) {
-		
-		//console.log(file);
 		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
-
-		var assetURI = replaceUrlPattern(pattern, file);
-
-	    // console.log("assetURI:" + assetURI)
-	    /*
-	    pattern="/dA/{shortyId}/{name}?language_id";
-	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	    
-	    pattern="/dA/{shortyInode}/{name}?language_id={languageId}";
-	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	        
-        pattern="/dA/{shortyInode}/{extension}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-            
-        pattern="/dA/{inode}/{extension}?language_id={languageId}";
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-        
-        pattern="/dA/{identifier}/{extension}?language_id={languageId}";  
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-
-	    
-        pattern="//{hostName}{path}{name}?language_id={languageId}";  
-        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	    */
-	    
-	    
-		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
+        var assetURI = replaceUrlPattern(pattern, file);
+        insertAssetInEditor([file])
 	}
-	
-	
+
+
 	function replaceUrlPattern(pattern, file){
 
 	     return pattern
@@ -629,28 +712,30 @@ var cmsfile=null;
           .replace(/{hostname}/g    ,file.hostName)
           .replace(/{hostName}/g    ,file.hostName)
           .replace(/{inode}/g       ,file.inode)
-          .replace(/{hostId}/g      ,file.host)   
+          .replace(/{hostId}/g      ,file.host)
           .replace(/{identifier}/g  ,file.identifier)
           .replace(/{id}/g          ,file.identifier)
           .replace(/{shortyInode}/g ,file.inode.replace("-", "").substring(0, 10))
           .replace(/{shortyId}/g    ,file.identifier.replace("-", "").substring(0, 10))
           ;
-		
+
 	}
-	
-	
+
 	function addFileCallback(file) {
-		var ident
+		var ident, assetURI;
 		var ext = file.extension;
 		var ident = file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
-		if(fileExt == '<%= extension %>' || ext == 'page'){
-			tinyMCEFilePickerCallback(file.pageURI, {});
-		}else {
-			var assetURI = [file.path, file.name].join("");
-			tinyMCEFilePickerCallback(assetURI, {});
+		if (fileExt == "<%= extension %>" || ext == "page") {
+			assetURI = file.pageURI;
+		} else if (file.baseType === "FILEASSET") {
+			assetURI = `${file.path}`;
+		} else {
+			assetURI = `/dA/${file.path.split(".")[1]}/${file.name}`;
 		}
+
+		tinyMCEFilePickerCallback(assetURI, {});
 	}
 
 	function replaceAll(find, replace, str) {
@@ -815,12 +900,12 @@ var cmsfile=null;
 			//textEditor[textarea].setTheme("ace/theme/textmate");
 			textEditor[textarea].getSession().setMode("ace/mode/"+keyValue);
 			textEditor[textarea].getSession().setUseWrapMode(true);
-			
+
 			textEditor[textarea].setOptions({
 		            minLines: 15,
 		            maxLines:35
 		        });
-			
+
 			 aceTextId[textarea] = textarea;
 		}
     	dijit.byId("toggleEditor_"+textarea).disabled=true;

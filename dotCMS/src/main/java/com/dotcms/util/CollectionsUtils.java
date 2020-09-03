@@ -4,7 +4,6 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.formula.functions.T;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
@@ -750,7 +749,63 @@ public class CollectionsUtils implements Serializable {
                         entry(key11, value11), entry(key12, value12), entry(key13, value13), entry(key14, value14),
                         entry(key15, value15), entry(key16, value16), entry(key17, value17), entry(key18, value18));
     } // map.
-    
+
+    /**
+     * Creates a new map based on a list of key/value parameters.
+     *
+     * @param key1
+     * @param value1
+     * @param key2
+     * @param value2
+     * @param key3
+     * @param value3
+     * @param key4
+     * @param value4
+     * @param key5
+     * @param value5
+     * @param key6
+     * @param value6
+     * @param key7
+     * @param value7
+     * @param key8
+     * @param value8
+     * @param key9
+     * @param value9
+     * @param key10
+     * @param value10
+     * @param key11
+     * @param value11
+     * @param key12
+     * @param value12
+     * @param key13
+     * @param value13
+     * @param key14
+     * @param value14
+     * @param key15
+     * @param value15
+     * @param key16
+     * @param value16
+     * @param key17
+     * @param value17
+     * @param key18
+     * @param value18
+     * @return
+     */
+    public static <K, V> Map<K, V> map(final K key1, final V value1, final K key2, final V value2, final K key3, final V value3,
+                                       final K key4, final V value4, final K key5, final V value5, final K key6, final V value6, final K key7,
+                                       final V value7, final K key8, final V value8, final K key9, final V value9, final K key10, final V value10,
+                                       final K key11, final V value11, final K key12, final V value12, final K key13, final V value13, final K key14,
+                                       final V value14, final K key15, final V value15, final K key16, final V value16, final K key17,
+                                       final V value17, final K key18, final V value18 , final K key19, final V value19, final K key20, final V value20) {
+        return mapEntries(entry(key1, value1), entry(key2, value2), entry(key3, value3), entry(key4, value4), entry(key5, value5),
+                entry(key6, value6), entry(key7, value7), entry(key8, value8), entry(key9, value9), entry(key10, value10),
+                entry(key11, value11), entry(key12, value12), entry(key13, value13), entry(key14, value14),
+                entry(key15, value15), entry(key16, value16), entry(key17, value17), entry(key18, value18),
+                entry(key19, value19), entry(key20, value20));
+    } // map.
+
+
+
     /**
      * Returns an immutable map based on the objects entries (must be pairs otherwise will throws an {@link IllegalArgumentException})
      * @param entries Object an array
@@ -926,7 +981,7 @@ public class CollectionsUtils implements Serializable {
 	    return new ImmutableListCollector<>();
     }
 
-	private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
+    private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
         @Override
         public Supplier<ImmutableList.Builder<T>> supplier() {
             return ImmutableList.Builder::new;

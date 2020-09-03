@@ -9,10 +9,12 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.MimeTypeUtils;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -26,6 +28,7 @@ import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,6 +37,7 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -128,12 +132,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
   public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
   public static final String AUTO_ASSIGN_WORKFLOW = "AUTO_ASSIGN_WORKFLOW";
+  public static final String TEMPLATE_MAPPINGS = "TEMPLATE_MAPPINGS";
 
   public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
   public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
   public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
   public static final String WORKFLOW_EXPIRE_TIME = "wfExpireTime";
   public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
+  public static final String FILTER_KEY = "filterKey";
+  public static final String WHERE_TO_SEND = "whereToSend";
+  public static final String I_WANT_TO = "iWantTo";
   public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
   public static final String RELATIONSHIP_KEY = "__##relationships##__";
 
@@ -231,7 +239,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   /**
    * Create a contentlet based on a map (makes a copy of it)
    *
-   * @param map
+   * @param mapIn
    */
   public Contentlet(final Map<String, Object> mapIn) {
     this();
@@ -269,21 +277,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     @Override
-    public String getTitle(){
+    public final String getTitle(){
     	try {
 
-    		//Verifies if the content type has defined a title field
-			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
-					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
+    		if (UtilMethods.isSet(this.map.get(TITTLE_KEY))) {
 
-
-			if (fieldFound.isPresent()) {
-				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
+    			return map.get(TITTLE_KEY).toString();
 			}
 
-			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
-			map.put(TITTLE_KEY, title);
+    		//Verifies if the content type has defined a title field
+			final Optional<com.dotcms.contenttype.model.field.Field>
+					fieldWithSuspectTitleFound = getFieldWithVarStartingWithTitleWord();
 
+			String title = fieldWithSuspectTitleFound.isPresent() &&  map.get(fieldWithSuspectTitleFound.get().variable())!=null?
+				map.get(fieldWithSuspectTitleFound.get().variable()).toString(): null;
+
+			if (!UtilMethods.isSet(title)) {
+				title = this.buildName();
+			}
+
+			map.put(TITTLE_KEY, title);
     	    return title;
 		} catch (Exception e) {
 			Logger.debug(this,"Unable to get title for contentlet, id: " + getIdentifier(), e);
@@ -291,7 +304,112 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 	}
 
-    @Override
+	/**
+	 * This method fetch the field and look for a listed properties, it will try to get the first text field as a title.
+	 * Otherwise will try to see if there is a binary available.
+	 *
+	 * In addition if a title is found, it is chuck to 255.
+	 *
+	 * Finally there is two special cases for FileAssets and DotAssets
+	 *
+	 * If any match, uses the identifier as a title.
+	 * @return String
+	 * @throws DotContentletStateException
+	 */
+	@CloseDBIfOpened
+	private String buildName()
+			throws DotContentletStateException {
+
+		// if already set previously
+		String returnValue = (String) this.map.get(Contentlet.DOT_NAME_KEY);
+		if(UtilMethods.isSet(returnValue)){
+			return returnValue;
+		}
+
+		// look for listed, text and binary fields
+		final List<Field> fields = FieldsCache.getFieldsByStructureInode(this.getStructureInode());
+		String binaryValue       = null;
+
+		for (final Field field : fields) {
+
+			try {
+
+				if(field.isListed()  && this.map.get(field.getVelocityVarName())!=null) {
+
+					if (APILocator.getContentletAPI().isFieldTypeString(field)) {
+						returnValue = this.map.get(field.getVelocityVarName()).toString();
+						break; // found one
+					}
+
+					// if it is a binary
+					if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
+						binaryValue = this.getBinary(field.getVelocityVarName()).getName();
+					}
+				}
+			} catch(Exception e){
+				Logger.warn(this.getClass(), "unable to get field value " + field.getVelocityVarName() + " " + e, e);
+			}
+		}
+
+		// if not found text but found binary
+		returnValue = !UtilMethods.isSet(returnValue) && UtilMethods.isSet(binaryValue)? binaryValue:returnValue;
+
+		if(UtilMethods.isSet(returnValue)) {
+
+			this.setStringProperty(Contentlet.DOT_NAME_KEY, returnValue.length() > 250 ?
+					returnValue.substring(0, 250) : returnValue);
+			return this.getStringProperty(Contentlet.DOT_NAME_KEY);
+		}
+
+		/// if not found listed, so try to see by type (file asset or dotasset)
+		if (UtilMethods.isSet(this.getIdentifier())) {
+
+			if (this.isFileAsset()) {
+				try {
+
+					final String assetName = APILocator.getIdentifierAPI().find(this.getIdentifier()).getAssetName();
+					this.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
+				} catch (Exception e){
+					Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + this.getIdentifier(), e);
+				}
+			} else {
+
+				final Optional<BaseContentType> baseContentTypeOpt = this.getBaseType();
+				if (baseContentTypeOpt.isPresent() && baseContentTypeOpt.get() == BaseContentType.DOTASSET) {
+					try {
+
+						final String transientNameKey = DotAssetContentType.ASSET_FIELD_VAR + "name";
+						final String dotAssetName     = this.getStringProperty(transientNameKey);
+						String assetName              = dotAssetName;
+						if (!UtilMethods.isSet(dotAssetName) && null != this.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
+							assetName = this.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
+							this.setStringProperty(transientNameKey, assetName);
+						}
+
+						this.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
+					} catch (Exception e) {
+						Logger.warn(this.getClass(), "Unable to get binary name for contentlet with identifier: " + this.getIdentifier(), e);
+					}
+				}
+			}
+		}
+
+		// nothing, so set identifier.
+		this.setStringProperty("__NAME__", this.getIdentifier());
+		return this.getIdentifier();
+	}
+
+	/**
+	 * Looks for a field whose variable starts with "title" and if found returns it
+	 * @return the first field found whose variable starts with "title", if any
+	 */
+	private Optional<com.dotcms.contenttype.model.field.Field> getFieldWithVarStartingWithTitleWord() {
+		return this.getContentType().fields().stream()
+				.filter(field -> UtilMethods.isSet(field.variable())
+						&& field.variable().startsWith(TITTLE_KEY)).findAny();
+	}
+
+	@Override
     public String getVersionId() {
     	return getIdentifier();
     }
@@ -901,7 +1019,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
-	private final static String TITLE_IMAGE_NOT_FOUND = "TITLE_IMAGE_NOT_FOUND";
+	public final static String TITLE_IMAGE_NOT_FOUND = "TITLE_IMAGE_NOT_FOUND";
 
 
     public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
@@ -914,7 +1032,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             String returnVal = TITLE_IMAGE_NOT_FOUND;
             for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
                 try {
-                    if(f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString())){
+                    if(f instanceof BinaryField && (UtilMethods.isImage(this.getBinary(f.variable()).toString()) || MimeTypeUtils.getMimeType(this.getBinary(f.variable())).contains("pdf") )){
                         returnVal=f.variable();
                         break;
                     }
@@ -1259,6 +1377,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return getContentType().baseType() == BaseContentType.FILEASSET;
 	}
 
+	/**
+	 * It'll tell you if you're dealing with content of type DotAsset
+	 * @return
+	 */
+	public boolean isDotAsset() {
+		return getContentType().baseType() == BaseContentType.DOTASSET;
+	}
 
 	/**
 	 * It'll tell you if you're dealing with content of type FileAsset that is used as container
@@ -1471,6 +1596,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void cleanup(){
 	    getMap().remove(IS_COPY_CONTENTLET);
 	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
+	    getMap().remove(TEMPLATE_MAPPINGS);
 		getWritableNullProperties().clear();
 	}
 
@@ -1506,6 +1632,33 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public boolean hasLiveVersion() throws DotStateException, DotDataException {
 		return APILocator.getVersionableAPI().hasLiveVersion(this);
+	}
+
+	/**
+	 * Get the optional contentlet Base Content Type
+	 * 1) first look up on the contentlet properties
+	 * 2) otherwise tries to look for based on the content type (if set)
+	 *
+	 * returns empty if can not determine any content type
+	 *
+	 * @return the contentlet Base Content Type
+	 */
+	@JsonIgnore
+	public Optional<BaseContentType> getBaseType() {
+
+		if (this.map.containsKey(Contentlet.BASE_TYPE_KEY)) {
+
+			return Optional.ofNullable(BaseContentType.getBaseContentType(
+					(String) this.map.get(Contentlet.BASE_TYPE_KEY)));
+		}
+
+		final ContentType contentletContentType = this.getContentType();
+		if (null != contentletContentType) {
+
+			return Optional.ofNullable(contentletContentType.baseType());
+		}
+
+		return Optional.empty();
 	}
 
 	/**
@@ -1545,8 +1698,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public boolean isVanityUrl() throws DotDataException, DotSecurityException {
-		return getContentType().baseType() == BaseContentType.VANITY_URL;
+	public boolean isVanityUrl()  {
+		return getContentType()!=null && getContentType().baseType() == BaseContentType.VANITY_URL;
 	}
 
     /**

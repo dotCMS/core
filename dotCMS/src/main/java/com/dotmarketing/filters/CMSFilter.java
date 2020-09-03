@@ -2,6 +2,7 @@ package com.dotmarketing.filters;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -60,7 +61,7 @@ public class CMSFilter implements Filter {
         IAm iAm = IAm.NOTHING_IN_THE_CMS;
 
         // Set the request in the thread local.
-        this.requestThreadLocal.setRequest(request);
+
         this.responseThreadLocal.setResponse(response);
 
         // Get the URI and query string from the request
@@ -185,6 +186,12 @@ public class CMSFilter implements Filter {
                  */
                 return;
             }
+        }
+        
+        // allow vanities to forward to a dA asset
+        if(request instanceof VanityUrlRequestWrapper && !response.isCommitted() && (uri.startsWith("/dA/") || uri.startsWith("/contentAsset/")) ) {
+            request.getRequestDispatcher(uri).forward(request, response);
+            return;
         }
 
 

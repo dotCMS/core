@@ -1863,26 +1863,6 @@ CREATE OR REPLACE TYPE reindex_record AS OBJECT (
 /
 CREATE OR REPLACE TYPE reindex_record_list IS TABLE OF reindex_record;
 /
-CREATE OR REPLACE FUNCTION load_records_to_index(server_id VARCHAR2, records_to_fetch NUMBER, priority_level NUMBER)
-   RETURN types.ref_cursor IS
- cursor_ret types.ref_cursor;
- data_ret reindex_record_list;
-BEGIN
-  data_ret := reindex_record_list();
-  FOR dj in (SELECT * FROM dist_reindex_journal
-         WHERE serverid IS NULL AND priority <= priority_level AND rownum<=records_to_fetch
-         ORDER BY priority ASC
-         FOR UPDATE)
-  LOOP
-    UPDATE dist_reindex_journal SET serverid=server_id WHERE id=dj.id;
-    data_ret.extend;
-    data_ret(data_ret.Last) := reindex_record(dj.id,dj.inode_to_index,dj.ident_to_index,dj.priority,dj.dist_action);
-  END LOOP;
-  OPEN cursor_ret FOR
-    SELECT * FROM TABLE(CAST(data_ret AS reindex_record_list));
-  RETURN cursor_ret;
-END;
-/
 CREATE OR REPLACE PACKAGE check_parent_path_pkg as
     type ridArray is table of rowid index by binary_integer;
     newRows ridArray;
@@ -2423,7 +2403,9 @@ create table publishing_bundle(
 	  name varchar2(255) NOT NULL,
 	  publish_date TIMESTAMP,
 	  expire_date TIMESTAMP,
-	  owner varchar2(100)
+	  owner varchar2(100),
+	  force_push number(1,0),
+	  filter_key varchar2(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
@@ -2451,12 +2433,10 @@ CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
 
-alter table publishing_bundle add force_push number(1,0) ;
-
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
 -- Cluster Tables
-CREATE TABLE dot_cluster(cluster_id varchar2(36), PRIMARY KEY (cluster_id) );
+CREATE TABLE dot_cluster(cluster_id varchar2(36), cluster_salt VARCHAR(256), PRIMARY KEY (cluster_id) );
 CREATE TABLE cluster_server(server_id varchar2(36) NOT NULL, cluster_id varchar2(36) NOT NULL, name varchar2(100), ip_address varchar2(39) NOT NULL, host varchar2(255), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ varchar2(100), PRIMARY KEY (server_id) );
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id varchar2(36) NOT NULL,server_id varchar2(36) NOT NULL, startup TIMESTAMP, heartbeat TIMESTAMP, PRIMARY KEY (id));

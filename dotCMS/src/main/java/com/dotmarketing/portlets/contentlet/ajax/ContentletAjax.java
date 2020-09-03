@@ -1,21 +1,14 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotcms.exception.ExceptionUtil.getRootCause;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
@@ -30,6 +23,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -92,6 +86,10 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
+import org.jetbrains.annotations.NotNull;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -99,15 +97,21 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import org.jetbrains.annotations.NotNull;
+
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -179,7 +183,11 @@ public class ContentletAjax {
 			result.put("iconClass", UtilHTML.getIconClass(contentlet));
 			result.put("identifier", contentlet.getIdentifier());
 			result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
+			
 			result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
+			if(contentlet.getTitleImage().isPresent()) {
+			    result.put("titleImage", contentlet.getTitleImage().get());
+			}
 			result.put("title", String.valueOf(contentlet.getTitle()));
 			result.put("inode", String.valueOf(contentlet.getInode()));
 			result.put("working", String.valueOf(contentlet.isWorking()));
@@ -497,6 +505,15 @@ public class ContentletAjax {
 	 public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	   return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked, page, orderBy, perPage, currentUser, sess, modDateFrom, modDateTo);
 	 }
+
+	 private <T> List<T> distinct (final List<T> collection, final Function<T, Object> indexKeyFunction) {
+
+		 final Map<Object, T> collectionIndexMap = collection.stream().collect(
+		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing,
+						LinkedHashMap::new));
+
+		return new ArrayList<>(collectionIndexMap.values());
+	 }
 	/**
 	 * This method is used by the back-end to pull the content from the Lucene
 	 * index and also checks the user permissions to see the content.
@@ -553,12 +570,7 @@ public class ContentletAjax {
 		}
 
 		// Building search params and lucene query
-		StringBuffer luceneQuery = new StringBuffer("-contentType:forms ");
-
-    if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-      luceneQuery.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
-      luceneQuery.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
-    }
+		StringBuffer luceneQuery = new StringBuffer();
 
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
@@ -612,8 +624,8 @@ public class ContentletAjax {
 		            break;
 		        }
 		    }
-		    luceneQuery.append("-contentType:Host ");
-		    luceneQuery.append("-baseType:3 ");
+            luceneQuery.append("-contentType:forms ");
+            luceneQuery.append("-contentType:Host ");
 		}
 
         final String finalSort = getFinalSort(fields, orderBy, st, structureInodes);
@@ -664,17 +676,9 @@ public class ContentletAjax {
                 Optional<Relationship> childRelationship = getRelationshipFromChildField(st, fieldName);
                 if (childRelationship.isPresent()) {
                     //Getting related identifiers from index when filtering by parent
-                    final Contentlet relatedParent = conAPI
-                            .findContentletByIdentifierAnyLanguage(fieldValue);
-                    final List<String> relatedContent = conAPI
-                            .getRelatedContent(relatedParent, childRelationship.get(), true,
-                                    currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
-                                    offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
-                            .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
-
-                    if (relatedQueryByChild.length() > 0) {
-                        relatedQueryByChild.append(StringPool.COMMA);
-                    }
+                    final List<String> relatedContent = getRelatedIdentifiers(currentUser, offset,
+                            relatedQueryByChild, finalSort, fieldValue,
+                            childRelationship);
 
                     relatedQueryByChild.append(fieldName).append(StringPool.COLON).append(fieldValue);
 
@@ -874,10 +878,12 @@ public class ContentletAjax {
 							        if("catchall".equals(fieldName)) {
 							           
 							            luceneQuery.append(" title:'" + fieldValueStr + "'^15 ");
-							            for(String x : fieldValueStr.split("[,|\\s+]")) {
-							                luceneQuery.append(" title:" + x + "^5 ");
-							                
-							            }
+                                        final String[] titleSplit = fieldValueStr.split("[,|\\s+]");
+                                        if (titleSplit.length > 1) {
+                                            for (final String term : titleSplit) {
+                                                luceneQuery.append(" title:" + term + "^5 ");
+                                            }
+                                        }
 							            luceneQuery.append(" title_dotraw:*" + fieldValueStr + "*^5 ");
 							        }
 							        
@@ -956,10 +962,11 @@ public class ContentletAjax {
 
 		//Executing the query
 		long before = System.currentTimeMillis();
-		PaginatedArrayList <Contentlet> hits = new PaginatedArrayList <Contentlet>();
+		PaginatedArrayList <ContentletSearch> hits = new PaginatedArrayList <>();
 		long totalHits=0;
 		try{
-			hits = (PaginatedArrayList<Contentlet>) conAPI.search(luceneQuery.toString(), perPage + 1, offset, finalSort, currentUser, false);
+			hits =(PaginatedArrayList)conAPI.searchIndex(luceneQuery.toString(), perPage, offset, finalSort, currentUser, false);
+
 			totalHits = hits.getTotalResults();
 		}catch (Exception pe) {
 			Logger.error(ContentletAjax.class, "Unable to execute Lucene Query", pe);
@@ -984,9 +991,12 @@ public class ContentletAjax {
 			fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Title")).getOrElse("Title"));
 			headers.add(fieldMap);
 
-			fieldMap = new HashMap<> ();
-			fieldMap.put("fieldVelocityVarName", "__type__");
-			fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
+			// if there is a type selected, does not make sense to show it on the list.
+			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode) || this.hasManyContentTypes(structureInode)) {
+				fieldMap = new HashMap<>();
+				fieldMap.put("fieldVelocityVarName", "__type__");
+				fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
+			}
 			headers.add(fieldMap);
 
 
@@ -997,185 +1007,18 @@ public class ContentletAjax {
 		fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Step")).getOrElse("Step"));
 		headers.add(fieldMap);
 
-		results.add(headers);
+		results.add(this.distinct(headers, headerFieldMap -> Map.class.cast(headerFieldMap).get("fieldVelocityVarName")));
 
 		// we add the total hists for the query
 		results.add(totalHits);
 
 		List<String> expiredInodes=new ArrayList<>();
 
-		//Adding the query results
-		Contentlet con;
-		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
+		boolean exporting = perPage > MAX_LIMIT;
 
-			Map<String, String> searchResult = null;
-
-			try {
-				con = hits.get(i);
-				Identifier ident = APILocator.getIdentifierAPI().find(con);
-				if (!con.isLive()) {
-					if (UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
-						expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
-				}
-
-				searchResult = new HashMap<String, String>();
-				ContentType type = con.getContentType();
-				searchResult.put("typeVariable", type.variable());
-				searchResult.put("baseType",type.baseType().name());
-				for (String fieldContentlet : fieldsMapping.keySet()) {
-					String fieldValue = null;
-					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
-						fieldValue = (con.getMap().get(fieldContentlet)).toString();
-					}
-					Field field = (Field) fieldsMapping.get(fieldContentlet);
-					if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
-							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
-							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-						try {
-							Date date = DateUtil.convertDate(fieldValue, new String[]{"yyyy-MM-dd HH:mm:ss", "E MMM dd HH:mm:ss z yyyy"});
-							if (field.getFieldType().equals(Field.FieldType.DATE.toString()))
-								fieldValue = UtilMethods.dateToHTMLDate(date);
-							if (field.getFieldType().equals(Field.FieldType.TIME.toString()))
-								fieldValue = UtilMethods.dateToHTMLTime(date);
-							if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
-								fieldValue = UtilMethods.dateToHTMLDate(date) + " " + UtilMethods.dateToHTMLTime(date);
-						} catch (java.text.ParseException e) {
-							Logger.error(ContentletAjax.class, e.getMessage(), e);
-							throw new DotRuntimeException(e.getMessage(), e);
-						}
-					} else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) || field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())) {
-						if (UtilMethods.isSet(fieldValue))
-							fieldValue = fieldValue.replaceAll("# #", ",").replaceAll("#", "");
-					}
-
-					//We need to replace the URL value from the contentlet with the one in the Identifier only for pages.
-					if (("url").equals(fieldContentlet) &&
-							type != null &&
-							type  instanceof PageContentType &&
-							UtilMethods.isSet(ident) &&
-							UtilMethods.isSet(ident.getAssetName())) {
-						fieldValue = ident.getAssetName();
-					}
-
-					searchResult.put(fieldContentlet, fieldValue);
-				}
-
-				searchResult.put("inode", con.getInode());
-				searchResult.put("Identifier",con.getIdentifier());
-				searchResult.put("identifier", con.getIdentifier());
-				final Contentlet contentlet = con;
-				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
-
-				String spanClass = UtilHTML.getIconClass(contentlet);
-
-				String typeStringToShow = type.name();
-				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
-
-				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
-				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
-				searchResult.put("modDate", fieldValue);
-				String user = "";
-				User contentEditor = null;
-				try {
-					contentEditor = APILocator.getUserAPI().loadUserById(con.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
-				} catch (Exception e1) {
-					Logger.error(ContentletAjax.class,e1.getMessage() + " no such user.  did mod_user get deleted?");
-					Logger.debug(ContentletAjax.class,e1.getMessage(), e1);
-					contentEditor = new User();
-				}
-
-				if (contentEditor.getFirstName() == null || contentEditor.getLastName() == null) {
-					user = con.getModUser();
-				} else {
-					user = contentEditor.getFullName();
-				}
-				PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-				List<Permission> permissions = null;
-				try {
-					permissions = permissionAPI.getPermissions(con);
-				} catch (DotDataException e) {
-				}
-				StringBuffer permissionsSt = new StringBuffer();
-				Boolean ownerCanRead = false;
-				Boolean ownerCanWrite = false;
-				Boolean ownerCanPub = false;
-				for (Permission permission : permissions) {
-					String str = "P" + permission.getRoleId() + "." + permission.getPermission() + "P ";
-					if (permissionsSt.toString().indexOf(str) < 0) {
-						permissionsSt.append(str);
-					}
-					try {
-						if (APILocator.getRoleAPI().loadCMSOwnerRole().getId().equals(String.valueOf(permission.getRoleId()))) {
-							if (permission.getPermission() == PERMISSION_READ) {
-								ownerCanRead = true;
-							} else if (permission.getPermission() == PERMISSION_WRITE) {
-								ownerCanRead = true;
-								ownerCanWrite = true;
-							} else if (permission.getPermission() == PERMISSION_PUBLISH) {
-								ownerCanRead = true;
-								ownerCanWrite = true;
-								ownerCanPub = true;
-							}
-						}
-					} catch (DotDataException e) {
-
-					}
-				}
-				searchResult.put("modUser", user);
-				searchResult.put("owner", con.getOwner());
-				searchResult.put("ownerCanRead", ownerCanRead.toString());
-				searchResult.put("ownerCanWrite", ownerCanWrite.toString());
-				searchResult.put("ownerCanPublish", ownerCanPub.toString());
-				Boolean working = con.isWorking();
-				searchResult.put("working", working.toString());
-				Boolean live = con.isLive();
-				searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
-				searchResult.put("hasLiveVersion", "false");
-				if (!con.isLive() && con.isWorking() && !con.isArchived()) {
-					if (APILocator.getVersionableAPI().hasLiveVersion(con)) {
-						searchResult.put("hasLiveVersion", "true");
-						searchResult.put("allowUnpublishOfLiveVersion", "true");
-						searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
-					}
-				}
-
-				searchResult.put("live", live.toString());
-				Boolean isdeleted = con.isArchived();
-				searchResult.put("deleted", isdeleted.toString());
-				Boolean locked = con.isLocked();
-				searchResult.put("locked", locked.toString());
-				searchResult.put("structureInode", con.getStructureInode());
-				setCurrentStep(currentUser, searchResult, contentlet);
-
-				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
-
-				// Workflow Actions
-				final JSONArray wfActionMapList = this.getAvailableWorkflowActionsListingJson(currentUser, con);
-
-
-				searchResult.put("wfActionMapList", wfActionMapList.toString());
-				// End Workflow Actions
-
-				//searchResult.put("structureName", st.getVelocityVarName());
-				Long LanguageId = con.getLanguageId();
-				searchResult.put("languageId", LanguageId.toString());
-				searchResult.put("permissions", permissionsSt.toString());
-			} catch (DotSecurityException e) {
-
-				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
-				searchResult = null;
-
-			} catch (Exception e) {
-
-				Logger.error(this, "Couldn't read the content: " + searchResult, e);
-				searchResult = null;
-
-			}
-
-			if (UtilMethods.isSet(searchResult)) {
-				results.add(searchResult);
-			}
-		}
+//		Adding the query results
+		addContentMapsToResults(structureInode, perPage, currentUser, fieldsMapping, hits, results,
+				expiredInodes, exporting);
 
 		long total = hits.getTotalResults();
 		counters.put("total", total);
@@ -1228,7 +1071,261 @@ public class ContentletAjax {
 		return results;
 	}
 
-    /**
+	private void addContentMapsToResults(String structureInode, int perPage, User currentUser,
+			Map<String, Field> fieldsMapping, PaginatedArrayList<ContentletSearch> hits,
+			List<Object> results, List<String> expiredInodes, final boolean exporting) {
+		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
+
+			Map<String, String> searchResult = null;
+
+			try {
+				final ContentletSearch contentletSearch = hits.get(i);
+				final Contentlet con = APILocator
+						.getContentletAPI().find(contentletSearch.getInode(), currentUser, false);
+
+				Identifier ident = APILocator.getIdentifierAPI().find(con);
+				if (!con.isLive()) {
+					if (UtilMethods
+							.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
+						expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
+				}
+
+				searchResult = new HashMap<String, String>();
+				ContentType type = con.getContentType();
+				searchResult.put("typeVariable", type.variable());
+				searchResult.put("baseType",type.baseType().name());
+				for (final String fieldContentlet : fieldsMapping.keySet()) {
+					String fieldValue = null;
+					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
+						fieldValue = (con.getMap().get(fieldContentlet)).toString();
+					}
+
+					final Field field = fieldsMapping.get(fieldContentlet);
+					if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(FieldType.DATE.toString()) ||
+							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(FieldType.TIME.toString()) ||
+							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(FieldType.DATE_TIME.toString())) {
+						try {
+							Date date = DateUtil.convertDate(fieldValue, new String[]{"yyyy-MM-dd HH:mm:ss", "E MMM dd HH:mm:ss z yyyy"});
+							if (field.getFieldType().equals(FieldType.DATE.toString()))
+								fieldValue = UtilMethods.dateToHTMLDate(date);
+							if (field.getFieldType().equals(FieldType.TIME.toString()))
+								fieldValue = UtilMethods.dateToHTMLTime(date);
+							if (field.getFieldType().equals(FieldType.DATE_TIME.toString()))
+								fieldValue = UtilMethods.dateToHTMLDate(date) + " " + UtilMethods.dateToHTMLTime(date);
+						} catch (java.text.ParseException e) {
+							Logger.error(ContentletAjax.class, e.getMessage(), e);
+							throw new DotRuntimeException(e.getMessage(), e);
+						}
+					} else if (field.getFieldType().equals(FieldType.CHECKBOX.toString()) || field.getFieldType().equals(
+							FieldType.MULTI_SELECT.toString())) {
+						if (UtilMethods.isSet(fieldValue))
+							fieldValue = fieldValue.replaceAll("# #", ",").replaceAll("#", "");
+					}
+
+					//We need to replace the URL value from the contentlet with the one in the Identifier only for pages.
+					if (("url").equals(fieldContentlet) &&
+							type != null &&
+							type  instanceof PageContentType &&
+							UtilMethods.isSet(ident) &&
+							UtilMethods.isSet(ident.getAssetName())) {
+						fieldValue = ident.getAssetName();
+					}
+
+					// when a content type is selected and the field is listed and binary, instead of displaying the path, must display just the name
+					if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && field.isListed() && field.getFieldType().equals(
+							FieldType.BINARY.toString())) {
+
+						final String binaryName = con.getBinary(fieldContentlet)!=null ?
+								con.getBinary(fieldContentlet).getName() : "NOT_FOUND";
+
+						searchResult.put(fieldContentlet+"_title_", binaryName);
+					}
+
+					searchResult.put(fieldContentlet, fieldValue);
+				}
+
+				searchResult.put("inode", con.getInode());
+				searchResult.put("Identifier",con.getIdentifier());
+				searchResult.put("identifier", con.getIdentifier());
+				final Contentlet contentlet = con;
+				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
+
+				String spanClass = UtilHTML.getIconClass(contentlet);
+
+				String typeStringToShow = type.name();
+				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
+
+				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
+				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
+	            if(contentlet.getTitleImage().isPresent()) {
+	                searchResult.put("titleImage", contentlet.getTitleImage().get().variable());
+	            }
+				searchResult.put("modDate", fieldValue);
+				String user = "";
+				User contentEditor = null;
+				try {
+					contentEditor = APILocator.getUserAPI().loadUserById(con.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
+				} catch (Exception e1) {
+					Logger.error(ContentletAjax.class,e1.getMessage() + " no such user.  did mod_user get deleted?");
+					Logger.debug(ContentletAjax.class,e1.getMessage(), e1);
+					contentEditor = new User();
+				}
+
+				if (contentEditor.getFirstName() == null || contentEditor.getLastName() == null) {
+					user = con.getModUser();
+				} else {
+					user = contentEditor.getFullName();
+				}
+
+				if(!exporting) {
+
+					PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+					List<Permission> permissions = null;
+					try {
+						permissions = permissionAPI.getPermissions(con);
+					} catch (DotDataException e) {
+					}
+
+					StringBuffer permissionsSt = new StringBuffer();
+					Boolean ownerCanRead = false;
+					Boolean ownerCanWrite = false;
+					Boolean ownerCanPub = false;
+					for (Permission permission : permissions) {
+						String str = "P" + permission.getRoleId() + "." + permission.getPermission()
+								+ "P ";
+						if (permissionsSt.toString().indexOf(str) < 0) {
+							permissionsSt.append(str);
+						}
+						try {
+							if (APILocator.getRoleAPI().loadCMSOwnerRole().getId()
+									.equals(String.valueOf(permission.getRoleId()))) {
+								if (permission.getPermission() == PERMISSION_READ) {
+									ownerCanRead = true;
+								} else if (permission.getPermission() == PERMISSION_WRITE) {
+									ownerCanRead = true;
+									ownerCanWrite = true;
+								} else if (permission.getPermission() == PERMISSION_PUBLISH) {
+									ownerCanRead = true;
+									ownerCanWrite = true;
+									ownerCanPub = true;
+								}
+							}
+						} catch (DotDataException e) {
+
+						}
+					}
+
+					searchResult.put("ownerCanRead", ownerCanRead.toString());
+					searchResult.put("ownerCanWrite", ownerCanWrite.toString());
+					searchResult.put("ownerCanPublish", ownerCanPub.toString());
+					searchResult.put("permissions", permissionsSt.toString());
+
+				}
+
+				searchResult.put("owner", con.getOwner());
+				searchResult.put("modUser", user);
+				Boolean working = con.isWorking();
+				searchResult.put("working", working.toString());
+				Boolean live = con.isLive();
+				searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+
+				searchResult.put("hasLiveVersion", "false");
+
+				final boolean hasLiveVersion = APILocator.getVersionableAPI().hasLiveVersion(con);
+				if (live && hasLiveVersion) {
+
+					searchResult.put("hasLiveVersion", "true");
+				}
+				if (!live && working && !con.isArchived()) {
+					if (hasLiveVersion) {
+						searchResult.put("hasLiveVersion", "true");
+						searchResult.put("allowUnpublishOfLiveVersion", "true");
+						searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
+					}
+				}
+
+				searchResult.put("live", live.toString());
+				Boolean isdeleted = con.isArchived();
+				searchResult.put("deleted", isdeleted.toString());
+				Boolean locked = con.isLocked();
+				searchResult.put("locked", locked.toString());
+				searchResult.put("structureInode", con.getStructureInode());
+
+				if(!exporting) {
+					setCurrentStep(currentUser, searchResult, contentlet);
+				}
+
+				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
+
+				if(!exporting) {
+					// Workflow Actions
+					final JSONArray wfActionMapList = this
+							.getAvailableWorkflowActionsListingJson(currentUser, con);
+					searchResult.put("wfActionMapList", wfActionMapList.toString());
+				}
+				// End Workflow Actions
+
+				//searchResult.put("structureName", st.getVelocityVarName());
+				Long languageId = con.getLanguageId();
+				searchResult.put("languageId", languageId.toString());
+				final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
+				searchResult.put("language", language.toString());
+
+				//Add mimeType
+				if(type.baseType().getType() == BaseContentType.FILEASSET.getType()){
+					searchResult.put("mimeType", APILocator.getFileAssetAPI()
+							.getMimeType(APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName()));
+				} else if(type.baseType().getType() == BaseContentType.HTMLPAGE.getType()){
+					searchResult.put("mimeType", "application/dotpage");
+				} else if(type.baseType().getType() == BaseContentType.DOTASSET.getType()){
+					searchResult.put("mimeType", APILocator.getFileAssetAPI()
+							.getMimeType(con.getBinary(DotAssetContentType.ASSET_FIELD_VAR)));
+				} else {
+					searchResult.put("mimeType", "");
+				}
+
+				searchResult.put("__icon__",UtilHTML.getIconClass(con ));
+			} catch (DotSecurityException e) {
+
+				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
+				searchResult = null;
+
+			} catch (Exception e) {
+
+				Logger.error(this, "Couldn't read the content: " + searchResult, e);
+				searchResult = null;
+
+			}
+
+			if (UtilMethods.isSet(searchResult)) {
+				results.add(searchResult);
+			}
+		}
+	}
+
+	List<String> getRelatedIdentifiers(User currentUser, int offset,
+            StringBuilder relatedQueryByChild, String finalSort, String fieldValue,
+            Optional<Relationship> childRelationship) throws DotDataException {
+        final Contentlet relatedParent = conAPI
+                .findContentletByIdentifierAnyLanguage(fieldValue);
+        final List<String> relatedContent = conAPI
+                .getRelatedContent(relatedParent, childRelationship.get(), true,
+                        currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
+                        offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
+                .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
+
+        if (relatedQueryByChild.length() > 0) {
+            relatedQueryByChild.append(StringPool.COMMA);
+        }
+        return relatedContent;
+    }
+
+    private boolean hasManyContentTypes(final String structureInode) {
+
+		return null != structureInode && structureInode.split(StringPool.COMMA).length > 1;
+	}
+
+	/**
      *
      * @param fields
      * @param orderBy
@@ -1851,7 +1948,8 @@ public class ContentletAjax {
 						  .cast(rootCause);
 				  clearBinary = handleValidationException(user, ve, saveContentErrors);
 			  } else {
-				  Logger.error(this, e.getMessage(), e);
+				  Logger.debug(this, e.getMessage(), e);
+				  Logger.error(this, e.getMessage());
 				  saveContentErrors.add(e.getMessage());
 				  callbackData.put("saveContentErrors", saveContentErrors);
 				  callbackData.put("referer", referer);

@@ -850,6 +850,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
             } else {
                 var name = asset.title;
+                name = typeof name !== 'undefined'? name: asset.identifier;
                 var assetIcon = '/icon?i=' + name.toLowerCase();
                 if (asset.type == 'file_asset') {
                     name = asset.fileName;
@@ -1510,12 +1511,12 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function copyFolderCallback (response) {
-        if (!response) {
-            reloadContent ();
-            showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-copy-another-folder-with-the-same-name-already-exists-in-the-destination")) %>');
-        } else {
+        if(response == '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-copied")) %>'){
             BrowserAjax.getTree(null, initializeTree);
-            showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-copied")) %>');
+            showDotCMSSystemMessage(response);
+        } else {
+            reloadContent ();
+            showDotCMSErrorMessage(response);
         }
     }
 
@@ -1636,8 +1637,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
      *
      * objId - The Identifier or inode of the object to push.
      * referrer - The referrer page.
-     * isArchived - If true, only the "Remove" option in the Push Dialog
-     *              will be displayed.
+     * isArchived - If true, allow users to ONLY do a "Push" or "Remove", NOT a "Push & Remove".
      */
     function remotePublish (objId, referrer, isArchived) {
         if (isArchived != undefined && isArchived != null) {

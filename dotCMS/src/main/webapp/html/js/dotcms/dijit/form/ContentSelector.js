@@ -291,7 +291,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			return result;
 
 		}else if(type=='radio'){
-			dijit.registry.remove(this.structureVelVar+"."+ fieldVelocityVarName +"Field" + this.counter_radio);
 			//radio buttons fields
 			var option = field["fieldValues"].split("\r\n");
 			var result="";
@@ -299,14 +298,17 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			for(var i = 0; i < option.length; i++){
 				var actual_option = option[i].split("|");
 				if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
-					result = result + "<input type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field-R"+ this.counter_radio+"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
+				    var radioId = this.structureVelVar + "." + fieldVelocityVarName
+				        + "Field-D"+ this.dialogCounter + "-R" + this.counter_radio;
+			        dijit.registry.remove(radioId);
+					result = result + "<input type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + radioId +"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
 					if(!this.radiobuttonsIds[this.dialogCounter])
 						this.radiobuttonsIds[this.dialogCounter]=new Array();
-					this.radiobuttonsIds[this.dialogCounter][this.radiobuttonsIds[this.dialogCounter].length] = this.structureVelVar+"."+fieldVelocityVarName + "Field-R"+ this.counter_radio;
+					this.radiobuttonsIds[this.dialogCounter][this.radiobuttonsIds[this.dialogCounter].length] = radioId;
 
 					this.setDotFieldTypeStr = this.setDotFieldTypeStr
 					+ "dojo.attr("
-					+ "'" + this.structureVelVar+"."+fieldVelocityVarName + "Field" + this.counter_radio + "'"
+					+ "'" + radioId + "'"
 					+ ",'" + this.DOT_FIELD_TYPE + "'"
 					+ ",'" + type + "');";
 
@@ -535,6 +537,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_doSearch: function (page, sortBy) {
+        if (sortBy && sortBy[0] === '.') {
+            sortBy = sortBy.slice(1)
+        }
+
 
         var fieldsValues = new Array ();
 
@@ -864,6 +870,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
                     cell.style.width = '50%';
                 }
 
+				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
 				var value = cellData[header["fieldVelocityVarName"]];
 				if (value != null)
 					cell.innerHTML = value;
@@ -871,11 +878,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 			for(var l = 0; l < this.availableLanguages.length; l++){
 				if(this.availableLanguages[l]['id'] == cellData['languageId']){
-                    var cell = row.insertCell (row.cells.length);
-                    var imgName = this.availableLanguages[l]['languageCode'] + (this.availableLanguages[l]['countryCode'] ? "_" + this.availableLanguages[l]['countryCode'] : '');
-                    var flagLabel = this.availableLanguages[l]['language'] + (this.availableLanguages[l]['countryCode'] ? "&nbsp;("+this.availableLanguages[l]['countryCode']+")" : '');
-					var langStr = "<img src=\"/html/images/languages/" + imgName + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;"
-					cell.innerHTML = langStr + flagLabel;
+					var cell = row.insertCell (row.cells.length);
+					var langStr = "<img src=\"/html/images/languages/" + this.availableLanguages[l]['languageCode'] + "_" + this.availableLanguages[l]['countryCode'] + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;"
+					cell.innerHTML = langStr + this.availableLanguages[l]['language']+"&nbsp;("+this.availableLanguages[l]['countryCode']+")";
 				}
 			}
 

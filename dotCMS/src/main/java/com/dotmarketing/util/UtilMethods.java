@@ -312,6 +312,34 @@ public class UtilMethods {
 
     }
 
+
+    public static boolean isNotSet(final char[] chars){
+       return !isSet(chars);
+    }
+
+    /**
+     * if you're telling your self what a dumb thing this is.. We could have used Strings instead.
+     * Well that's precisely what we intent to avoid.
+     * Strings are immutable and even if you null em their reference could stick around long enough to reveal their value in case of a Thread-dump attack.
+     * That makes char array the data type of choice to handle secrets.
+     * @param chars
+     * @return
+     */
+    public static boolean isSet(final char[] chars){
+       if(null == chars){
+          return false;
+       }
+        final boolean isNull = chars.length == 4 &&
+                Character.toLowerCase(chars[0]) == 'n' &&
+                Character.toLowerCase(chars[1]) == 'u' &&
+                Character.toLowerCase(chars[2]) == 'l' &&
+                Character.toLowerCase(chars[3]) == 'l';
+       if(isNull){
+           return false;
+       }
+       return (chars.length > 0);
+    }
+
     /**
      * If argument instance is set, returns it otherwise will invoke the supplier to get the default value
      * @param instance
@@ -1842,7 +1870,7 @@ public class UtilMethods {
      */
     public static String getCharsetConfiguration() {
     	// CHARSET key in properties file specifies both content tableName and charset
-    	String charsetWithContentType = Config.getStringProperty("CHARSET");
+    	String charsetWithContentType = Config.getStringProperty("CHARSET", "UTF-8");
 
     	if (isSet(charsetWithContentType)) {
     		// We are only interested in charset

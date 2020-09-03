@@ -2183,7 +2183,9 @@ create table publishing_bundle(
   name varchar(255) NOT NULL,
   publish_date TIMESTAMP,
   expire_date TIMESTAMP,
-  owner varchar(100)
+  owner varchar(100),
+  force_push bool,
+  filter_key varchar(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
@@ -2211,22 +2213,18 @@ CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
 
-alter table publishing_bundle add force_push bool ;
-
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
 
 -- Cluster Tables
 
-CREATE TABLE dot_cluster(cluster_id varchar(36), PRIMARY KEY (cluster_id) );
+CREATE TABLE dot_cluster(cluster_id varchar(36), cluster_salt VARCHAR(256), PRIMARY KEY (cluster_id) );
 CREATE TABLE cluster_server(server_id varchar(36) primary key, cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(255), cache_port int, es_transport_tcp_port int, es_network_port int, es_http_port int, key_ varchar(100));
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id varchar(36) primary key, server_id varchar(36) references cluster_server(server_id), startup TIMESTAMP, heartbeat TIMESTAMP);
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 
-
-CREATE ALIAS load_records_to_index FOR "com.dotcms.h2.H2Procedure.loadRecordsToIndex";
 CREATE ALIAS dotFolderPath FOR "com.dotcms.h2.H2Procedure.dotFolderPath";
 CREATE TRIGGER rename_folder_assets_trigger AFTER UPDATE ON Folder FOR EACH ROW CALL "com.dotcms.h2.FolderRenameTrigger";
 CREATE TRIGGER check_child_assets_trigger BEFORE DELETE ON identifier FOR EACH ROW CALL "com.dotcms.h2.CheckChildAssetTrigger";

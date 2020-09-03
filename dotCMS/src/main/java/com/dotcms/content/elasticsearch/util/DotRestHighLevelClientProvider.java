@@ -4,23 +4,28 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URL;
 import java.nio.CharBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -29,6 +34,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +51,8 @@ import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
@@ -70,6 +78,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
     private RestHighLevelClient client;
 
     private static SSLContext sslContextFromPem;
+    private static final String HTTPS_PROTOCOL = "https";
 
     DotRestHighLevelClientProvider() {
         try {
@@ -83,10 +92,14 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private BasicCredentialsProvider getCredentialsProvider() throws IOException, GeneralSecurityException {
         final String esAuthType = getESAuthType();
-
+        final boolean tlsEnabled = Config.getBooleanProperty("ES_TLS_ENABLED", false);
         //Loading TLS certificates
-        if (Config.getBooleanProperty("ES_TLS_ENABLED", true)) {
+        if (tlsEnabled && HTTPS_PROTOCOL
+                .equalsIgnoreCase(Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL))) {
             loadTLSCertificates();
+        } else if (!tlsEnabled){
+            Logger.warn(this.getClass(),
+                    "Elastic RestHighLevelClient will be initialized without certificates");
         }
 
         final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -106,17 +119,54 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
+        
+        final HttpHost[] esEndpoints = getEndpoints();
+        
+        
+        
+        
+        
+        Logger.info(this.getClass(),
+                        "Initializing Elastic RestHighLevelClient using endpoints [");
+        for(HttpHost host : esEndpoints) {
+            Logger.info(this.getClass(), "  - " + host);
+        }
+        Logger.info(this.getClass(),
+                        "]");
+        
+        
+        final boolean securedConnection = esEndpoints[0].getSchemeName().equalsIgnoreCase("https");
+        if (securedConnection){
+            Logger.info(this.getClass(),
+                    "Initializing Elastic RestHighLevelClient using a secured https connection");
+        } else{
+            Logger.warn(this.getClass(),
+                    "Initializing Elastic RestHighLevelClient using an unsecured http connection");
+        }
 
         final RestClientBuilder clientBuilder = RestClient
-                .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
-                        Config.getIntProperty("ES_PORT", 9200), sslContextFromPem != null ? "https" :"http"))
+                .builder(esEndpoints)
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
+                    
+                    
                     if (sslContextFromPem != null) {
-                        httpClientBuilder
-                                .setSSLContext(sslContextFromPem);
+                        httpClientBuilder.setSSLContext(sslContextFromPem);
+
+                    } else if (securedConnection){
+                        try {
+                            httpClientBuilder.setSSLContext(SSLContexts
+                                    .custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build());
+                        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+                            Logger.error(this.getClass(),
+                                    "Error setting TrustSelfSignedStrategy for Elastic RestHighLevelClient",
+                                    e);
+                            throw new DotRuntimeException(e);
+                        }
                     }
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
+                    httpClientBuilder.setHostnameVerifier(AllowAllHostnameVerifier.INSTANCE);
+                    
                     return httpClientBuilder;
                 })
                 .setFailureListener(new RestClient.FailureListener() {
@@ -136,6 +186,30 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         return clientBuilder;
     }
 
+    
+    private HttpHost[] getEndpoints() {
+
+        final String[] endpoints = Config.getStringArrayProperty("ES_ENDPOINTS", getDefaultEndpoint());
+        return Arrays.asList(endpoints).stream().map(h -> {
+            URL url = Try.of(()->new URL(h)).getOrElseThrow(e->new DotRuntimeException(e));
+            return new HttpHost(url.getHost(), url.getPort(), url.getProtocol());
+        }).toArray(HttpHost[]::new);
+    }
+    
+    
+    private String[] getDefaultEndpoint() {
+
+        String ES_HOSTNAME   = Config.getStringProperty("ES_HOSTNAME", "localhost");
+        String ES_PROTOCOL   = Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL);
+        int ES_PORT          = Config.getIntProperty("ES_PORT", 9200);
+        
+        return new String[] {ES_PROTOCOL + "://" + ES_HOSTNAME + ":" + ES_PORT};
+    }
+    
+    
+
+
+    
     private String getESAuthType() {
         return Config.getStringProperty("ES_AUTH_TYPE", BASIC_AUTH_TYPE);
     }

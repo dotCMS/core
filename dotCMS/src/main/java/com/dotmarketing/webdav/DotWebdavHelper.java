@@ -3,6 +3,8 @@ package com.dotmarketing.webdav;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
@@ -35,6 +37,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -80,9 +83,22 @@ import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * This Helper Class provides all the utility methods needed for the interaction between dotCMS and WebDAV.
+ * Web-based Distributed Authoring and Versioning, or WebDAV, is an extension of the HTTP protocol that allows you to
+ * create a connection between your local computer and a server to easily transfer files between machines.
+ * <p>
+ * This helper has direct communication with the Workflow API used for saving, moving, and deleting pieces of content
+ * in the system. </p>
+ *
+ * @author root
+ * @since Mar 22, 2012
+ */
 public class DotWebdavHelper {
 
-	private static String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
+	private static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
 		protected Perl5Matcher initialValue() {
 			return new Perl5Matcher();
@@ -160,49 +176,63 @@ public class DotWebdavHelper {
 		}
 	}
 
-	public User authorizePrincipal(String username, String passwd)	throws DotSecurityException, NoSuchUserException, DotDataException {
-		User _user;
+	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
 
-		boolean useEmailAsLogin = true;
-		Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-		if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
-			useEmailAsLogin = false;
-		}
+
+		final Company company         = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
+		final boolean useEmailAsLogin = !company.getAuthType().equals(Company.AUTH_TYPE_ID);
+
 		try {
+
 			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
-				Authenticator authenticator;
-				authenticator = (Authenticator) new com.dotcms.repackage.bsh.Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
+
+				final Authenticator authenticator = (Authenticator) new com.dotcms.repackage.bsh.
+						Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
 				if (useEmailAsLogin) {
-					authenticator.authenticateByEmailAddress(comp.getCompanyId(), username, passwd);
+
+					authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd);
 				} else {
-					authenticator.authenticateByUserId(comp.getCompanyId(), username, passwd);
+
+					authenticator.authenticateByUserId      (company.getCompanyId(), username, passwd);
 				}
 			}
-		}catch (AuthException ae) {
+		} catch (AuthException ae) {
+
 			Logger.debug(this, "Username : " + username + " failed to login", ae);
 			throw new DotSecurityException(ae.getMessage(),ae);
-		}catch (Exception e) {
+		} catch (Exception e) {
+
 			Logger.error(this, e.getMessage(), e);
 			throw new DotSecurityException(e.getMessage(),e);
 		}
-		UserAPI userAPI=APILocator.getUserAPI();
-		if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
-			_user = userAPI.loadUserById(username,userAPI.getSystemUser(),false);
-		} else {
-			_user = userAPI.loadByUserByEmail(username, userAPI.getSystemUser(), false);
-		}
 
-		if (_user == null) {
+		final UserAPI userAPI = APILocator.getUserAPI();
+		final User user       = company.getAuthType().equals(Company.AUTH_TYPE_ID)?
+				userAPI.loadUserById     (username,userAPI.getSystemUser(),false):
+				userAPI.loadByUserByEmail(username, userAPI.getSystemUser(), false);
+
+		if (user == null) {
+
 			throw new DotSecurityException("The user was returned NULL");
 		}
 
 		// Validate password and rehash when is needed
-		if (LoginFactory.passwordMatch(passwd, _user)) {
-			return _user;
-		} else {
-			Logger.debug(this, "The user's passwords didn't match");
+		if (!LoginFactory.passwordMatch(passwd, user) && !this.tryMatchJsonWebToken(passwd, user)) {
+
+			Logger.debug(this, ()-> "The user's passwords didn't match");
 			throw new DotSecurityException("The user's passwords didn't match");
 		}
+
+		return user;
+	}
+
+	private boolean tryMatchJsonWebToken (final String jsonWebToken, final User user) {
+
+		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final String ipAddress           = null != request? request.getRemoteAddr(): null;
+		final Optional<JWToken> tokenOpt = APILocator.getApiTokenAPI().fromJwt(jsonWebToken.trim(), ipAddress);
+
+		return tokenOpt.isPresent() && tokenOpt.get().getUserId().equals(user.getUserId());
 	}
 
 	public boolean isFolder(String uriAux, User user) throws IOException {
@@ -674,7 +704,7 @@ public class DotWebdavHelper {
 	}
 
 	private File writeDataIfEmptyFile(Folder folder, String fileName, File fileData) throws IOException{
-		if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+		if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", true)){
 			Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
 			FileUtil.write(fileData, emptyFileData);
 		}
@@ -853,10 +883,29 @@ public class DotWebdavHelper {
 		}
 	}
 
+
+	/**
+	 * Saves a File Asset that is being uploaded into dotCMS. Based on the Contentlet's data, it will be determined
+	 * whether it will be processed by a Workflow or not.
+	 *
+	 * @param resourceUri     The location where the Resource -- i.e., File Asset -- is being saved.
+	 * @param user            The user performing this action.
+	 * @param isAutoPub       If {@code true}, the Resource will be published automatically. Otherwise, set to {@code
+	 *                        false}.
+	 * @param disableWorkflow If {@code true}, no Workflow will be executed on the specified Resource. Otherwise, set to
+	 *                        {@code false}.
+	 * @param fileAsset       The Resource as File Asset that is being saved.
+	 *
+	 * @return The {@link Contentlet} that has just been saved.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the data source.
+	 * @throws DotSecurityException The specified user doesn't have the required permissions to permiform this action.
+	 */
 	private Contentlet runWorkflowIfPossible(final String resourceUri, final User user, final boolean isAutoPub,
 											 final boolean disableWorkflow, final Contentlet fileAsset)
 			throws DotDataException, DotSecurityException {
 
+		fileAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
 		fileAsset.getMap().put(Contentlet.VALIDATE_EMPTY_FILE, false);
 
 		return disableWorkflow?

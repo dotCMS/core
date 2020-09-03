@@ -4,9 +4,10 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.Translated
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.services.SiteLoader;
-import com.dotcms.services.VanityUrlServices;
+
 import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -159,13 +160,11 @@ public class ContentletCacheImpl extends ContentletCache {
 		try {
 
 			content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(key,primaryGroup);
-			try {
-				if(content != null && content.isVanityUrl()){
-					VanityUrlServices.getInstance().invalidateVanityUrl(content);
-				}
-			} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
-				Logger.debug(this, "Cache Vanity URL cache entry not found", e);
+
+			if(content != null && content.isVanityUrl()){
+				APILocator.getVanityUrlAPI().invalidateVanityUrl(content);
 			}
+		
 		}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
@@ -183,6 +182,9 @@ public class ContentletCacheImpl extends ContentletCache {
 		}
 		CacheLocator.getHTMLPageCache().remove(key);
 		new ShortyIdCache().remove(key);
+		
+        //Delete query cache when a new content has been reindexed
+        CacheLocator.getESQueryCache().clearCache();
 	}
 
 	public String[] getGroups() {

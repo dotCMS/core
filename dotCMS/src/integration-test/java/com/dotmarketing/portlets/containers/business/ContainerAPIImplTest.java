@@ -1,31 +1,20 @@
 package com.dotmarketing.portlets.containers.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContainerAsFileDataGen;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -36,27 +25,25 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.liferay.portal.model.User;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import org.apache.felix.framework.OSGIUtil;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test of {@link ContainerAPIImpl}
@@ -97,7 +84,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                 PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_READ);
         APILocator.getPermissionAPI().save(permissionWrite, host, APILocator.systemUser(), false);
 
-        try {
+
             final ContentType contentType1 = TestDataUtils
                     .getBlogLikeContentType("Blog" + System.currentTimeMillis(), host);
             final ContentType contentType2 = TestDataUtils
@@ -118,15 +105,6 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
             assertTrue("Blog like CT was expected", optionalContentType1.isPresent());
             assertTrue("Banner Like CT was expected", optionalContentType2.isPresent());
-
-        } finally {
-            HibernateUtil.startTransaction();
-            if (container != null) {
-                APILocator.getContainerAPI().delete(container, APILocator.systemUser(), false);
-            }
-
-            HibernateUtil.commitTransaction();
-        }
     }
 
     @Test
@@ -331,4 +309,440 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                         .build());
     }
 
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a {@link Container} not publish by Id and live equals to false
+     * Should: return it
+     */
+    @Test
+    public void whenFindContainerByIdAndExists() throws DotSecurityException, DotDataException {
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer(container.getIdentifier(), APILocator.systemUser(), false, false);
+
+        assertTrue(containerFromDatabase.isPresent());
+        assertEquals(container.getIdentifier(), containerFromDatabase.get().getIdentifier());
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a published {@link Container}  by Id and live equals to false
+     * Should: return the working version
+     */
+    @Test
+    public void whenFindPublishContainerByIdAndExistsAndLiveFalse() throws DotSecurityException, DotDataException, WebAssetException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().site(host).nextPersisted();
+        container.setTitle("Live Version");
+        ContainerDataGen.publish(container);
+
+        container.setTitle("Working Version");
+        APILocator.getContainerAPI()
+                .save(container, Collections.emptyList(), host, APILocator.getUserAPI().getSystemUser(), false);
+
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer(container.getIdentifier(), APILocator.systemUser(), false, false);
+
+        assertTrue(containerFromDatabase.isPresent());
+        assertEquals(container.getIdentifier(), containerFromDatabase.get().getIdentifier());
+
+        final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(container.getIdentifier());
+        assertEquals(versionInfo.getWorkingInode(), containerFromDatabase.get().getInode());
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a published {@link Container}  by Id and live equals to true
+     * Should: return the live version
+     */
+    @Test
+    public void whenFindPublishContainerByIdAndExistsAndLiveTrue() throws DotSecurityException, DotDataException, WebAssetException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().site(host).nextPersisted();
+        container.setTitle("Live Version");
+        ContainerDataGen.publish(container);
+
+        container.setTitle("Working Version");
+        APILocator.getContainerAPI()
+                .save(container, Collections.emptyList(), host, APILocator.getUserAPI().getSystemUser(), false);
+
+        final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(container.getIdentifier());
+        CacheLocator.getContainerCache().remove(versionInfo);
+
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer(container.getIdentifier(), APILocator.systemUser(), true, false);
+
+        assertTrue(containerFromDatabase.isPresent());
+        assertEquals(container.getIdentifier(), containerFromDatabase.get().getIdentifier());
+
+        assertEquals(versionInfo.getLiveInode(), containerFromDatabase.get().getInode());
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a {@link Container} by Id and it not exists
+     * Should: return a empty Optional
+     */
+    @Test
+    public void whenFindContainerByIdAndNotExists() throws DotSecurityException, DotDataException {
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer("not_exists", APILocator.systemUser(), false, false);
+
+        assertFalse(containerFromDatabase.isPresent());
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a not published {@link FileAssetContainer} by absolute path and id, wit Live equals to true and false
+     * Should: for all the case should return the working version
+     */
+    @Test
+    public void whenFindFileContainerByAbsolutePathAndExists() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        //Find by Id
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), APILocator.systemUser(),
+                        false, false);
+
+        assertTrue(containerFromDatabase.isPresent());
+        assertEquals(
+                fileAssetContainer.getIdentifier(),
+                containerFromDatabase.get().getIdentifier()
+        );
+
+        //Find by absolute path
+        final Optional<Container> containerFromDatabaseByAbsolutePath =
+                APILocator.getContainerAPI().findContainer(
+                        FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) containerFromDatabase.get()),
+                        APILocator.systemUser(), false, false);
+
+        assertTrue(containerFromDatabaseByAbsolutePath.isPresent());
+        assertEquals(
+                fileAssetContainer.getIdentifier(),
+                containerFromDatabaseByAbsolutePath.get().getIdentifier()
+        );
+
+        //find with Live equals to true
+        final Optional<Container> containerInLive = APILocator.getContainerAPI().findContainer(
+                FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) containerFromDatabaseByAbsolutePath.get()),
+                APILocator.systemUser(),
+                true, false);
+
+        assertTrue(containerInLive.isPresent());
+
+        final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(fileAssetContainer.getIdentifier());
+        assertEquals(
+                versionInfo.getWorkingInode(),
+                containerInLive.get().getInode()
+        );
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a published {@link FileAssetContainer} by absolute path and id
+     * Should: return it
+     */
+    @Test
+    public void whenFindPublishedFileContainerByAbsolutePathAndExists() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+        final Contentlet contentlet = APILocator.getContentletAPI().find(fileAssetContainer.getInode(),
+                APILocator.systemUser(), false);
+        publish(contentlet);
+
+        //find by id
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), APILocator.systemUser(),
+                        true, false);
+
+        assertTrue(containerFromDatabase.isPresent());
+        assertEquals(
+                fileAssetContainer.getIdentifier(),
+                containerFromDatabase.get().getIdentifier()
+        );
+
+        //find by absolute path
+        final Optional<Container> containerFromDatabaseWithAbsolutePath =
+                APILocator.getContainerAPI().findContainer(
+                        FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) containerFromDatabase.get()),
+                        APILocator.systemUser(), true, false);
+
+        assertEquals(
+                fileAssetContainer.getIdentifier(),
+                containerFromDatabaseWithAbsolutePath.get().getIdentifier()
+        );
+
+        final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(fileAssetContainer.getIdentifier());
+
+        assertTrue(containerFromDatabaseWithAbsolutePath.isPresent());
+        assertEquals(
+                versionInfo.getLiveInode(),
+                containerFromDatabaseWithAbsolutePath.get().getInode()
+        );
+
+        //find with LIVE equals false, should return the working version
+        final Optional<Container> workingContainerFromDatabase =
+                APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), APILocator.systemUser(), false,
+                        false);
+
+        assertEquals(versionInfo.getWorkingInode(), workingContainerFromDatabase.get().getInode());
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a {@link FileAssetContainer} that exists in current host by absolute path but using another host
+     *       Also find the container with Relative Path
+     * Should: return it
+     */
+    @Test
+    public void whenFindFileContainerByAbsolutePathAndExistsInCurrentHost() throws DotDataException, DotSecurityException {
+        final Host anotherHost = new SiteDataGen().nextPersisted();
+        final Host currentHost = new SiteDataGen().nextPersisted();
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        when(request.getParameter("host_id")).thenReturn(currentHost.getIdentifier());
+
+        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
+                .host(currentHost)
+                .nextPersisted();
+
+        //find by id
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), APILocator.systemUser(),
+                        false, false);
+
+        final String fullPathUsingAnotherHost = FileAssetContainerUtil.getInstance().getFullPath(
+                anotherHost,
+                ((FileAssetContainer) containerFromDatabase.get()).getPath());
+
+        //find by absolute path using the another hist
+        final Optional<Container> containerFromDatabaseWithAbsolutePath =
+                APILocator.getContainerAPI().findContainer(fullPathUsingAnotherHost,
+                        APILocator.systemUser(), true, false);
+
+        final FileAssetContainer fileAssetContainerFromDataBase = (FileAssetContainer) containerFromDatabaseWithAbsolutePath.get();
+        assertEquals(
+                fileAssetContainer.getIdentifier(),
+                fileAssetContainerFromDataBase.getIdentifier()
+        );
+
+        assertEquals(
+                fileAssetContainerFromDataBase.getHost().getIdentifier(),
+                currentHost.getIdentifier()
+        );
+
+        //using relative path
+        final Optional<Container> containerFromDatabaseWithRelativePath =
+                APILocator.getContainerAPI().findContainer(((FileAssetContainer) containerFromDatabase.get()).getPath(),
+                        APILocator.systemUser(), true, false);
+
+        final FileAssetContainer fileAssetContainerFromDataBaseWithRelativePath = (FileAssetContainer) containerFromDatabaseWithRelativePath.get();
+        assertEquals(
+                fileAssetContainer.getIdentifier(),
+                fileAssetContainerFromDataBaseWithRelativePath.getIdentifier()
+        );
+
+        assertEquals(
+                fileAssetContainerFromDataBaseWithRelativePath.getHost().getIdentifier(),
+                currentHost.getIdentifier()
+        );
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a {@link FileAssetContainer} that exists in current host by absolute path but using another host
+     *       Also find the container with Relative Path
+     * Should: return it
+     */
+    @Test
+    public void whenFindFileContainerByAbsolutePathAndExistsInDefaultHost() throws DotDataException, DotSecurityException {
+        final Host anotherHost = new SiteDataGen().nextPersisted();
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        when(request.getParameter("host_id")).thenReturn(defaultHost.getIdentifier());
+
+        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
+                .host(defaultHost)
+                .nextPersisted();
+
+        //find by id
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), APILocator.systemUser(),
+                        false, false);
+
+        final String fullPathUsingAnotherHost = FileAssetContainerUtil.getInstance().getFullPath(
+                anotherHost,
+                ((FileAssetContainer) containerFromDatabase.get()).getPath());
+
+        //find by absolute path using the another host
+        final Optional<Container> containerFromDatabaseWithAbsolutePath =
+                APILocator.getContainerAPI().findContainer(fullPathUsingAnotherHost,
+                        APILocator.systemUser(), true, false);
+
+        final FileAssetContainer fileAssetContainerFromDataBase = (FileAssetContainer) containerFromDatabaseWithAbsolutePath.get();
+        assertEquals(
+                fileAssetContainer.getIdentifier(),
+                fileAssetContainerFromDataBase.getIdentifier()
+        );
+
+        assertEquals(
+                fileAssetContainerFromDataBase.getHost().getIdentifier(),
+                defaultHost.getIdentifier()
+        );
+
+        //using relative path
+        final Optional<Container> containerFromDatabaseWithRelativePath =
+                APILocator.getContainerAPI().findContainer(((FileAssetContainer) containerFromDatabase.get()).getPath(),
+                        APILocator.systemUser(), true, false);
+
+        final FileAssetContainer fileAssetContainerFromDataBaseWithRelativePath = (FileAssetContainer) containerFromDatabaseWithRelativePath.get();
+        assertEquals(
+                fileAssetContainer.getIdentifier(),
+                fileAssetContainerFromDataBaseWithRelativePath.getIdentifier()
+        );
+
+        assertEquals(
+                fileAssetContainerFromDataBaseWithRelativePath.getHost().getIdentifier(),
+                defaultHost.getIdentifier()
+        );
+    }
+
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a {@link FileAssetContainer} by relative path and it not exists
+     * Should: return Empty Optional
+     */
+    @Test
+    public void whenFindFileContainerByRelativePathAndNotExists() throws DotSecurityException, DotDataException {
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer("/not_exists", APILocator.systemUser(), false, false);
+
+        assertFalse(containerFromDatabase.isPresent());
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: Find a {@link Container} by Id and it exists but the not have permission
+     * Should: throw a {@link DotSecurityException}
+     */
+    @Test(expected = DotSecurityException.class)
+    public void whenFindContainerByIdAndUserNotHasPermission() throws DotDataException, DotSecurityException {
+        final User user = new UserDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), user,
+                false, false);
+        throw new AssertionError("DotSecurityException expected");
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: the FileContainer exists but the user not have permission in Default host
+     * Should: return it
+     */
+    @Test
+    public void whenUserNotHavePermissionInDefaultHost() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
+                .nextPersisted();
+
+        addPermission(role, host, PermissionLevel.READ.getType());
+
+        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), APILocator.systemUser(),
+                        false, false);
+
+        final String fullPathUsingAnotherHost = FileAssetContainerUtil.getInstance().getFullPath(
+                host,
+                ((FileAssetContainer) containerFromDatabase.get()).getPath());
+
+        final Optional<Container> containerFromDatabaseWithAbsolutePath =
+                APILocator.getContainerAPI().findContainer(fullPathUsingAnotherHost,
+                        user, true, false);
+
+        assertFalse(containerFromDatabaseWithAbsolutePath.isPresent());
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#findContainer(String, User, boolean, boolean)}
+     * When: the FileContainer exists but the user not have permission in Current host
+     * Should: return it
+     */
+    @Test
+    public void whenUserNotHavePermissionInCurrentHost() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Host currentHost = new SiteDataGen().nextPersisted();
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        when(request.getParameter("host_id")).thenReturn(currentHost.getIdentifier());
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User backEndUser = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
+                .nextPersisted();
+
+        addPermission(role, host, PermissionLevel.READ.getType());
+
+        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final Optional<Container> containerFromDatabase =
+                APILocator.getContainerAPI().findContainer(fileAssetContainer.getIdentifier(), APILocator.systemUser(),
+                        false, false);
+
+        final String fullPathUsingAnotherHost = FileAssetContainerUtil.getInstance().getFullPath(
+                host,
+                ((FileAssetContainer) containerFromDatabase.get()).getPath());
+
+        final Optional<Container> containerFromDatabaseWithAbsolutePath =
+                APILocator.getContainerAPI().findContainer(fullPathUsingAnotherHost,
+                        backEndUser, true, false);
+
+        assertFalse(containerFromDatabaseWithAbsolutePath.isPresent());
+    }
+
+    @NotNull
+    private void addPermission(
+            final Role role,
+            final Permissionable permissionable,
+            final int permissionPublish) {
+
+        final Permission publishPermission = getPermission(role, permissionable, permissionPublish);
+
+        try {
+            APILocator.getPermissionAPI().save(publishPermission, permissionable, APILocator.systemUser(), false);
+        } catch (DotDataException | DotSecurityException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NotNull
+    private Permission getPermission(Role role, Permissionable permissionable, int permissionPublish) {
+        final Permission publishPermission = new Permission();
+        publishPermission.setInode(permissionable.getPermissionId());
+        publishPermission.setRoleId(role.getId());
+        publishPermission.setPermission(permissionPublish);
+        return publishPermission;
+    }
 }

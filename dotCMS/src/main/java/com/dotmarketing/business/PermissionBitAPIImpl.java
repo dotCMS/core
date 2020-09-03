@@ -310,6 +310,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		final List<Permission> perms =  getPermissions(permissionable, true);
 		final boolean isContentlet = permissionable instanceof Contentlet;
+
+
 		for(Permission p : perms){
 			if(p.matchesPermission(permissionType)){
 				if(respectFrontendRoles){
@@ -1277,7 +1279,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			if(this.isHost(permissionable)){
 
 				isHost = true;
-				host = (permissionable instanceof PermissionableProxy)?
+				host = !(permissionable instanceof Host)?
 						APILocator.getHostAPI()
 							.find(permissionable.getPermissionId(), APILocator.systemUser(),false):
 						(Host) permissionable;
@@ -1406,6 +1408,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	private boolean isHost(final Permissionable permissionable) {
 
 		return permissionable instanceof Host ||
+				(permissionable instanceof Contentlet && ((Contentlet) permissionable).isHost()) ||
 				(null != permissionable && permissionable instanceof PermissionableProxy
 						&& Host.class.getName().equals(PermissionableProxy.class.cast(permissionable).getType()));
 	}

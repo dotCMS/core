@@ -48,6 +48,7 @@ import com.dotcms.rest.config.DotRestApplication;
 import com.dotcms.rest.exception.mapper.*;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
@@ -64,7 +65,7 @@ import javax.ws.rs.core.Application;
 import java.io.IOException;
 import java.util.List;
 
-public class ReloadableServletContainer extends HttpServlet implements Filter {
+public class ReloadableServletContainer extends HttpServlet  {
 
     /**
      *
@@ -89,10 +90,6 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
 
     // GenericServlet
 
-    @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-            container.doFilter(req, res, chain);
-    }
 
     @Override
     public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
@@ -123,10 +120,12 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
         container.init(config);
     }
 
-    public static void reload(Application app) {
-        container = new ServletContainer(createResourceConfig(app));
+    public static void reload(final Application app) {
+       
         try {
-            container.init(servletConfig);
+            final ServletContainer testContainer = new ServletContainer(createResourceConfig(app));
+            testContainer.init(servletConfig);
+            container = testContainer; // todo: do a thread-safe switch
         } catch (ServletException e) {
             throw new DotStateException(e.getMessage(), e);
         }
@@ -184,7 +183,9 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
                 .register((new DotBadRequestExceptionMapper<JsonProcessingException>(){}).getClass())
                 .register((new DotBadRequestExceptionMapper<NumberFormatException>(){}).getClass())
                 .register(DotSecurityExceptionMapper.class)
-                .register(DotDataExceptionMapper.class);
+                .register(DotDataExceptionMapper.class)
+                .register(ElasticsearchStatusExceptionMapper.class)
+                .register((new DotBadRequestExceptionMapper<InvalidFolderNameException>(){}).getClass());
                 //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
     }
 }

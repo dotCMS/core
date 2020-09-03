@@ -4,17 +4,16 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import com.dotcms.business.WrapInTransaction;
+import com.dotcms.browser.BrowserAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.rendering.velocity.viewtools.BrowserAPI;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -64,6 +63,9 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -90,7 +92,7 @@ public class BrowserAjax {
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 	private ContentletAPI contentletAPI = APILocator.getContentletAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
-	private BrowserAPI browserAPI = new BrowserAPI();
+	private BrowserAPI browserAPI = APILocator.getBrowserAPI();
 	private VersionableAPI versionAPI = APILocator.getVersionableAPI();
 	private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
@@ -346,6 +348,25 @@ public class BrowserAjax {
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
 	}
 
+	   public Map<String, Object> getFolderContentWithDotAssets(final String folderId, final int offset,
+																final int maxResults, final String filter, final List<String> mimeTypes,
+																final List<String> extensions, final boolean showArchived, final boolean noFolders,
+																final boolean onlyFiles, final String sortBy, final boolean sortByDesc,
+																final boolean excludeLinks, final boolean dotAssets) throws DotSecurityException, DotDataException {
+
+	        final WebContext webContext  = WebContextFactory.get();
+	        final HttpServletRequest req = webContext.getHttpServletRequest();
+	        final User user              = getUser(req);
+	        final long getAllLanguages   = 0;
+
+	        final Map<String, Object> results = browserAPI.getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions,
+					true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, getAllLanguages, dotAssets);
+
+	        listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
+
+	        return results;
+	   }
+
 	/**
 	 * Retrieves the list of contents under the specified folder. This specific
 	 * implementation will only have one identifier per entry. This means that,
@@ -438,7 +459,8 @@ public class BrowserAjax {
 
 		// Examine only the pages with more than 1 assigned language
 		for (Map<String, Object> content : results) {
-			if ((boolean) content.get("isContentlet")) {
+		    
+			if(Try.of(()->(boolean) content.get("isContentlet")).getOrElse(false)) {
 				String ident = (String) content.get("identifier");
 				if (contentLangCounter.containsKey(ident)) {
 					int counter = contentLangCounter.get(ident);
@@ -632,6 +654,23 @@ public class BrowserAjax {
 			    pageMap.put("mimeType", "application/dotpage");
 	            pageMap.put("pageURI", ident.getURI());
 	            return pageMap;
+			} else if(cont.getStructure().getStructureType()== BaseContentType.DOTASSET.getType()) {
+
+				final java.io.File file = Try.of(()->cont.getBinary(DotAssetContentType.ASSET_FIELD_VAR)).getOrNull();
+				if (null != file) {
+					final String fileName = file.getName();
+					final String mimeType = servletContext.getMimeType(fileName.toLowerCase());
+
+					final Map<String, Object> fileMap = cont.getMap();
+					fileMap.put("mimeType", mimeType);
+					fileMap.put("path",          "/dA/" + cont.getIdentifier() + StringPool.SLASH);
+					fileMap.put("type", "dotasset");
+					fileMap.put("type", "dotasset");
+					fileMap.put("name",     fileName);
+					fileMap.put("fileName", fileName);
+
+					return fileMap;
+				}
 			}
 		}
 
@@ -730,49 +769,60 @@ public class BrowserAjax {
      * @return Confirmation message
      * @throws Exception
      */
-    public boolean copyFolder ( String inode, String newFolder ) throws Exception {
+    public String copyFolder ( String inode, String newFolder ) throws Exception {
 
-        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser( req );
+        HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( request );
 
         UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
         HostAPI hostAPI = APILocator.getHostAPI();
 
+		final Locale requestLocale       = request.getLocale();
+		final String successString       = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-copied"));
+		final String errorTryToMoveFolderToItself       = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-copied-to-itself"));
+		final String errorTryToMoveFolderToChild       = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-copied-to-children"));
+
         //Searching for the folder to copy
         Folder folder = APILocator.getFolderAPI().find( inode, user, false );
 
-        if ( !folderAPI.exists( newFolder ) ) {
+        try {
+			if ( !folderAPI.exists( newFolder ) ) {
 
-            Host parentHost = hostAPI.find( newFolder, user, !userWebAPI.isLoggedToBackend( req ) );
+				Host parentHost = hostAPI.find( newFolder, user, !userWebAPI.isLoggedToBackend( request ) );
 
-            if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentHost, PERMISSION_WRITE, user ) ) {
-                throw new DotRuntimeException( "The user doesn't have the required permissions." );
-            }
+				if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentHost, PERMISSION_WRITE, user ) ) {
+					throw new DotRuntimeException( "The user doesn't have the required permissions." );
+				}
 
-            folderAPI.copy( folder, parentHost, user, false );
-            refreshIndex( null, parentHost, folder );
-        } else {
+				folderAPI.copy( folder, parentHost, user, false );
+				refreshIndex( null, parentHost, folder );
+			} else {
 
-            Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
+				Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
 
-            if ( !permissionAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user ) ) {
-                throw new DotRuntimeException( "The user doesn't have the required permissions." );
-            }
+				if ( !permissionAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user ) ) {
+					throw new DotRuntimeException( "The user doesn't have the required permissions." );
+				}
 
-            if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
-                //Trying to move a folder over itself
-                return false;
-            }
-            if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
-                //Trying to move a folder over one of its children
-                return false;
-            }
+				if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
+					//Trying to move a folder over itself
+					return errorTryToMoveFolderToItself;
+				}
+				if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
+					//Trying to move a folder over one of its children
+					return errorTryToMoveFolderToChild;
+				}
 
-            folderAPI.copy( folder, parentFolder, user, false );
-            refreshIndex(parentFolder, null, folder );
-        }
+				folderAPI.copy( folder, parentFolder, user, false );
+				refreshIndex(parentFolder, null, folder );
+			}
+		} catch(InvalidFolderNameException e ) {
+			Logger.error(this, "Error copying folder with id:" + folder.getInode() + " into folder with id:"
+					+ newFolder + ". Error: " + e.getMessage());
+			return e.getLocalizedMessage();
+		}
 
-        return true;
+        return successString;
     }
 
     /**
@@ -799,7 +849,11 @@ public class BrowserAjax {
 
             	return errorString;
 			}
-        } catch (Exception e) {
+        } catch(InvalidFolderNameException e ) {
+			Logger.error(this, "Error moving folder with id:" + folderId + " into folder with id:"
+					+ newFolderId + ". Error: " + e.getMessage());
+			return e.getLocalizedMessage();
+		}catch (Exception e) {
         	Logger.error(this, "Error moving folder with id:" + folderId + " into folder with id:"
 					+ newFolderId + ". Error: " + e.getMessage(), e);
             return e.getLocalizedMessage();

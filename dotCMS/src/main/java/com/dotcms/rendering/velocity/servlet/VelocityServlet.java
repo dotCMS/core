@@ -1,31 +1,38 @@
 package com.dotcms.rendering.velocity.servlet;
 
-import com.dotcms.business.CloseDB;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.filters.CMSUrlUtil;
-import com.dotmarketing.filters.Constants;
-import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-
-
-import org.apache.velocity.exception.ResourceNotFoundException;
-
+import java.io.IOException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import com.dotcms.business.CloseDB;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.UserWebAPIImpl;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.filters.Constants;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 
 public class VelocityServlet extends HttpServlet {
 
 
+    
+    private UserWebAPIImpl userApi = (UserWebAPIImpl) WebAPILocator.getUserWebAPI();
+    
+    
+    
     /**
      * 
      */
@@ -35,9 +42,22 @@ public class VelocityServlet extends HttpServlet {
     @Override
     @CloseDB
     protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
-        VelocityRequestWrapper request = new VelocityRequestWrapper(req);
+        final VelocityRequestWrapper request =VelocityRequestWrapper.wrapVelocityRequest(req);
         final String uri = CMSUrlUtil.getCurrentURI(request);
+        final boolean comeFromSomeWhere = request.getHeader("referer") != null;
+        
 
+        
+        final User user = (userApi.getLoggedInUser(request)!=null) 
+                        ? userApi.getLoggedInUser(request) 
+                        : userApi.getLoggedInFrontendUser(request) !=null
+                           ? userApi.getLoggedInFrontendUser(request)
+                           : userApi.getAnonymousUserNoThrow();
+        
+        request.setRequestUri(uri);
+        final PageMode mode = PageMode.getWithNavigateMode(request);
+        
+        // if you are hitting the servlet without running through the other filters
         if (uri == null) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "VelocityServlet called without running through the CMS Filter");
             Logger.error(this.getClass(),
@@ -45,47 +65,67 @@ public class VelocityServlet extends HttpServlet {
                             + Constants.CMS_FILTER_URI_OVERRIDE);
             return;
         }
-
-        final boolean comeFromSomeWhere = request.getHeader("referer") != null;
-
-        if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromSomeWhere){
+        
+        // if you are a backend user, redirect you to the page edit screen
+        if (user!=null && user.hasConsoleAccess() && !comeFromSomeWhere){
             goToEditPage(uri,request, response);
-        } else {
-
-            if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) ||
-                    (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level) ||
-                    (!LicenseUtil.isASAllowed())) {
-                Logger.error(this, "Enterprise License is required");
+            return;
+        } 
+        
+        // if you are not running ee
+        if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level)
+                        || (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level)
+                        || (!LicenseUtil.isASAllowed())) {
+            Logger.error(this, "Enterprise License is required");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        
+        
+        // try to get the page
+        try {
+            final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setPageUri(uri)
+                            .setPageMode(mode)
+                            .setUser(user)
+                            .setPageMode(mode)
+                            .build(),
+                    request,
+                    response
+            );
+            response.getOutputStream().write(pageHtml.getBytes());
+        } catch (ResourceNotFoundException rnfe) {
+            Logger.warnAndDebug(this.getClass(), "ResourceNotFoundException" + rnfe.toString(), rnfe);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+        } catch (DotSecurityException dse) {
+            Logger.warnAndDebug(this.getClass(), dse.getMessage(),dse);
+            if(!response.isCommitted()) {
+                if(user==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }else {
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                    return;
+                }
+            }
+        } catch (HTMLPageAssetNotFoundException hpnfe) {
+            Logger.warnAndDebug(this.getClass(), hpnfe.getMessage(),hpnfe);
+            if(!response.isCommitted()) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-
-            final PageMode mode = PageMode.getWithNavigateMode(request);
-            try {
-                final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                        PageContextBuilder.builder()
-                                .setPageUri(uri)
-                                .setPageMode(mode)
-                                .setUser(WebAPILocator.getUserWebAPI().getLoggedInUser(request))
-                                .setPageMode(mode)
-                                .build(),
-                        request,
-                        response
-                );
-                response.getOutputStream().write(pageHtml.getBytes());
-            } catch (ResourceNotFoundException rnfe) {
-                Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            } catch (java.lang.IllegalStateException state) {
-                Logger.debug(this, "IllegalStateException" + state.toString());
-                // Eat this, client disconnect noise
-            } catch (Exception e) {
-                if(!response.isCommitted()) {
-                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
-                }
-                Logger.warnAndDebug(this.getClass(), e.getMessage(),e);
+        } catch (IllegalStateException state) {
+            // Eat this, client disconnect noise
+            Logger.debug(this, ()-> "IllegalStateException" + state.toString());
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(), e.getMessage(),e);
+            if(!response.isCommitted()) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
             }
+            
         }
+        
     }
 
     @Override

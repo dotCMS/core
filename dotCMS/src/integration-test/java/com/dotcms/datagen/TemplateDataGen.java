@@ -8,15 +8,22 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +47,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     private static final TemplateAPI templateAPI = APILocator.getTemplateAPI();
     private static final String type = "template";
+    private boolean setBodyAsNull = false;
 
     /**
      * Sets body property to the TemplateDataGen instance. This will be used when a new {@link
@@ -73,6 +81,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
             throw new DotRuntimeException(e);
         }
 
+        return this;
+    }
+
+    public TemplateDataGen drawedBody(final String drawedBody) {
+        this.drawedBody = drawedBody;
         return this;
     }
 
@@ -167,6 +180,16 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         return this;
     }
 
+    public TemplateDataGen withContainer(final Container container, final String UUID) {
+        if (container instanceof FileAssetContainer) {
+            this.withContainer(((FileAssetContainer) container).getPath(), UUID);
+        } else {
+            this.withContainer(container.getIdentifier(), UUID);
+        }
+
+        return this;
+    }
+
     public TemplateDataGen withContainer(final String containerId) {
         final Set<String> containerIds = containers.stream()
                 .map(map -> map.get("containerId"))
@@ -200,6 +223,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
      */
     public TemplateDataGen clearContainers() {
         containers.clear();
+        return this;
+    }
+
+    public TemplateDataGen theme(final Contentlet theme) {
+        this.theme = theme.getFolder();
         return this;
     }
 
@@ -240,7 +268,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     @Override
     public Template persist(Template template) {
 
-        if (Strings.isNullOrEmpty(body)) {
+        if (Strings.isNullOrEmpty(body) && !setBodyAsNull) {
 
             if (containers.isEmpty()) {
                 withContainer(new ContainerDataGen().nextPersisted().getIdentifier());
@@ -267,13 +295,17 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
 
         try {
-            final Template savedTemplate = templateAPI.saveTemplate(template, host, user, false);
+            final Template savedTemplate = save(template);
             APILocator.getVersionableAPI().setLive(savedTemplate);
 
             return savedTemplate;
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Template save(final Template template) throws DotDataException, DotSecurityException {
+        return templateAPI.saveTemplate(template, host, user, false);
     }
 
     @WrapInTransaction
@@ -285,4 +317,15 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
     }
 
+    @WrapInTransaction
+    public static void publish(final Template template)
+            throws DotSecurityException, WebAssetException, DotDataException {
+        PublishFactory.publishAsset(template, APILocator.systemUser(),
+                false, false);
+    }
+
+    public TemplateDataGen setBodyAsNull() {
+        this.setBodyAsNull = true;
+        return this;
+    }
 }

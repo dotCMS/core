@@ -11,14 +11,12 @@
 <%@page import="java.util.Enumeration"%>
 <%	
 	String dojoPath = Config.getStringProperty("path.to.dojo");
-
 	String id = request.getParameter("id");
-	
+
+	String wysiwyg = (UtilMethods.isSet(request.getParameter("wysiwyg"))) ? request.getParameter("wysiwyg") : null;
+
 	String fieldName = (UtilMethods.isSet(request.getParameter("fieldName"))) ? request.getParameter("fieldName") : "fileAsset";
-
 	String baseImage =  "/contentAsset/image/" + id + "/" + fieldName + "/" ;
-
-
 
 	String hostId = null;
 	if (request.getParameter("host_id") != null) {
@@ -27,8 +25,7 @@
 		hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
 	}
 		
-	
-    User user = com.liferay.portal.util.PortalUtil.getUser(request);
+ User user = com.liferay.portal.util.PortalUtil.getUser(request);
 
     if(user ==null || LicenseLevel.COMMUNITY.level == LicenseUtil.getLevel()){
     	response.getWriter().println("Unauthorized");
@@ -37,7 +34,6 @@
 	
     String userAgent = request.getHeader("USER-AGENT");
 %>
-
 
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD. HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -101,12 +97,7 @@
 				imageEditor.initIframe();
 			}
 		);
-
-		
-
-		
-		
-		
+	
 	</script>
 	
 </head>
@@ -160,9 +151,13 @@
 					</button>
 					&nbsp;
 				</span>
-                &nbsp;
+         &nbsp;
 				<button dojoType="dijit.form.Button" onclick="imageEditor.saveImage()" >
-					<%= LanguageUtil.get(pageContext, "Save") %>
+						<% if(wysiwyg == null) { %>
+							<%= LanguageUtil.get(pageContext, "Save") %>
+						<%} else {%>	
+							<%= LanguageUtil.get(pageContext, "Apply") %>
+						<% } %>
 				</button>
 				&nbsp;
 				<button dojoType="dijit.form.Button" onClick="imageEditor.closeImageWindow()" >
@@ -224,7 +219,7 @@
                     showButtons="true" 
                     intermediateChanges="true"
 					scrollOnFocus=false>
-
+                    <script type="dojo/method" event="_mouseWheeled"></script>
                   <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height: 5px;"></div>
                   <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height: 1em; font-size: 75%; color: gray;">
                      <li>1%</li>
@@ -312,7 +307,7 @@
                         showButtons="true"
                         intermediateChanges="true"
 						scrollOnFocus=false>
-
+                        <script type="dojo/method" event="_mouseWheeled"></script>
                     <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height:5px;"></div>
                     <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">
                         <li>0</li>

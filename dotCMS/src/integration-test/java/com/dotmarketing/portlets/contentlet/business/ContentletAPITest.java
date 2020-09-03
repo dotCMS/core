@@ -19,18 +19,11 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.RadioField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
@@ -89,6 +82,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
@@ -156,6 +150,56 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class ContentletAPITest extends ContentletBaseTest {
+
+    @Test
+    public void testDotAsset_Checkin () throws DotDataException, DotSecurityException, IOException {
+
+        // 1) creates a dotasset for test
+        final String variable = "testDotAsset" + System.currentTimeMillis();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        ContentType dotAssetContentType     = contentTypeAPI
+                .save(ContentTypeBuilder.builder(DotAssetContentType.class).folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST).name(variable)
+                .owner(user.getUserId()).build());
+        final Map<String, com.dotcms.contenttype.model.field.Field> fieldMap = dotAssetContentType.fieldMap();
+        com.dotcms.contenttype.model.field.Field binaryField           = fieldMap.get(DotAssetContentType.ASSET_FIELD_VAR);
+        final FieldVariable allowFileTypes = ImmutableFieldVariable.builder().key(BinaryField.ALLOWED_FILE_TYPES)
+                .value("application/*, text/*").fieldId(binaryField.id()).build();
+        binaryField.constructFieldVariables(Arrays.asList(allowFileTypes));
+
+        dotAssetContentType = contentTypeAPI.save(dotAssetContentType);
+        binaryField = fieldAPI.save(binaryField, user);
+        fieldAPI.save(allowFileTypes, user);
+
+        final File tempTestFile = File
+                .createTempFile("fileTest_" + new Date().getTime(), ".txt");
+        FileUtils.writeStringToFile(tempTestFile, "Test hi this a test longer than ten characters");
+
+        Contentlet dotAssetContentlet = new Contentlet();
+        dotAssetContentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        dotAssetContentlet.setModUser(user.getUserId());
+        dotAssetContentlet.setHost(APILocator.systemHost().getIdentifier());
+        dotAssetContentlet.setStringProperty(Contentlet.BASE_TYPE_KEY, BaseContentType.DOTASSET.getAlternateName());
+        dotAssetContentlet.setBinary(binaryField, tempTestFile);
+        dotAssetContentlet.setIndexPolicy(IndexPolicy.FORCE);
+        dotAssetContentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        dotAssetContentlet = contentletAPI.checkin(dotAssetContentlet, user, false);
+        dotAssetContentlet = contentletAPI.find(dotAssetContentlet.getInode(), user, false);
+
+        assertNotNull(dotAssetContentlet);
+        assertEquals("The Content Type should be: " + variable,
+                dotAssetContentType.variable(), dotAssetContentlet.getContentType().variable());
+
+        final String contentletTitle = dotAssetContentlet.getTitle();
+
+        assertEquals("the contentlet title should be the binary field name", contentletTitle, tempTestFile.getName());
+
+        dotAssetContentlet.getMap().remove(Contentlet.TITTLE_KEY);
+
+        final String contentletTitle2 = dotAssetContentlet.getTitle();
+
+        assertEquals("the contentlet title should be the binary field name", contentletTitle2, contentletTitle);
+    }
 
     @Test
     public void testCheckinDefaultActionsSkipBySettingActionId () throws DotDataException, DotSecurityException {
@@ -4533,6 +4577,150 @@ public class ContentletAPITest extends ContentletBaseTest {
     /**
      * This test will:
      * --- Create a content type called "Nested".
+     * --- Add  1 Text field called Title
+     * --- Add  1 Binary field called File
+     * --- Set an application/* as a {@link com.dotcms.contenttype.model.field.BinaryField#ALLOWED_FILE_TYPES}
+     * --- Upload a wrong file
+     * --- expects DotContentletValidationException
+     *
+     */
+    @Test (expected = DotContentletValidationException.class)
+    public void test_validateContentlet_wrong_size_expect_DotContentletValidationException() throws Exception {
+
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField   = null;
+        com.dotcms.contenttype.model.field.Field binaryField = null;
+
+        Contentlet contentletA = null;
+
+        // Create Content Type.
+        contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                .description("Nested" + System.currentTimeMillis())
+                .host(defaultHost.getIdentifier())
+                .name("Nested" + System.currentTimeMillis())
+                .owner("owner")
+                .variable("nested" + System.currentTimeMillis())
+                .build();
+
+        contentType = contentTypeAPI.save(contentType);
+
+        // Save Fields. 1. Text
+        // Creating Text Field: Title.
+        textField = ImmutableTextField.builder()
+                .name("Title")
+                .variable("title")
+                .contentTypeId(contentType.id())
+                .dataType(DataTypes.TEXT)
+                .build();
+
+        textField = fieldAPI.save(textField, user);
+
+        // Save Fields. 1. Binary
+        // Creating Text Field: File.
+        binaryField = ImmutableBinaryField.builder()
+                .name("file")
+                .variable("file")
+                .contentTypeId(contentType.id())
+                .build();
+
+
+        binaryField = fieldAPI.save(binaryField, user);
+
+        FieldVariable maxLength      = ImmutableFieldVariable.builder().key(BinaryField.MAX_FILE_LENGTH).value("10").fieldId(binaryField.id()).build();
+        FieldVariable allowFileTypes = ImmutableFieldVariable.builder().key(BinaryField.ALLOWED_FILE_TYPES).value("application/*, text/*").fieldId(binaryField.id()).build();
+        binaryField.constructFieldVariables(Arrays.asList(maxLength, allowFileTypes));
+        fieldAPI.save(maxLength, user);
+        fieldAPI.save(allowFileTypes, user);
+
+        final File tempTestFile = File
+                .createTempFile("csvTest_" + new Date().getTime(), ".txt");
+        FileUtils.writeStringToFile(tempTestFile, "Test hi this a test longer than ten characters");
+
+        contentletA = new Contentlet();
+        contentletA.setStructureInode(contentType.inode());
+        contentletA.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        contentletA.setStringProperty(textField.variable(), "A");
+        contentletA.setBinary(binaryField, tempTestFile);
+        contentletA.setIndexPolicy(IndexPolicy.FORCE);
+        contentletA.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentletA = contentletAPI.checkin(contentletA, user, false);
+    }
+
+    /**
+     * This test will:
+     * --- Create a content type called "Nested".
+     * --- Add  1 Text field called Title
+     * --- Add  1 Binary field called File
+     * --- Set an application/* as a {@link com.dotcms.contenttype.model.field.BinaryField#ALLOWED_FILE_TYPES}
+     * --- Upload a wrong file
+     * --- expects DotContentletValidationException
+     *
+     */
+    @Test (expected = DotContentletValidationException.class)
+    public void test_validateContentlet_wrong_mime_type_expect_DotContentletValidationException() throws Exception {
+
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField   = null;
+        com.dotcms.contenttype.model.field.Field binaryField = null;
+
+        Contentlet contentletA = null;
+
+            // Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                    .description("Nested" + System.currentTimeMillis())
+                    .host(defaultHost.getIdentifier())
+                    .name("Nested" + System.currentTimeMillis())
+                    .owner("owner")
+                    .variable("nested" + System.currentTimeMillis())
+                    .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            // Save Fields. 1. Text
+            // Creating Text Field: Title.
+            textField = ImmutableTextField.builder()
+                    .name("Title")
+                    .variable("title")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+
+            textField = fieldAPI.save(textField, user);
+
+            // Save Fields. 1. Binary
+            // Creating Text Field: File.
+            binaryField = ImmutableBinaryField.builder()
+                    .name("file")
+                    .variable("file")
+                    .contentTypeId(contentType.id())
+                    .build();
+
+
+            binaryField = fieldAPI.save(binaryField, user);
+
+            FieldVariable maxLength      = ImmutableFieldVariable.builder().key(BinaryField.MAX_FILE_LENGTH).value("10").fieldId(binaryField.id()).build();
+            FieldVariable allowFileTypes = ImmutableFieldVariable.builder().key(BinaryField.ALLOWED_FILE_TYPES).value("application/*").fieldId(binaryField.id()).build();
+            binaryField.constructFieldVariables(Arrays.asList(maxLength, allowFileTypes));
+            fieldAPI.save(maxLength, user);
+            fieldAPI.save(allowFileTypes, user);
+
+            final File tempTestFile = File
+                    .createTempFile("csvTest_" + new Date().getTime(), ".txt");
+            FileUtils.writeStringToFile(tempTestFile, "Test");
+
+            contentletA = new Contentlet();
+            contentletA.setStructureInode(contentType.inode());
+            contentletA.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentletA.setStringProperty(textField.variable(), "A");
+            contentletA.setBinary(binaryField, tempTestFile);
+            contentletA.setIndexPolicy(IndexPolicy.FORCE);
+            contentletA.setIndexPolicyDependencies(IndexPolicy.FORCE);
+            contentletA = contentletAPI.checkin(contentletA, user, false);
+    }
+
+    /**
+     * This test will:
+     * --- Create a content type called "Nested".
      * --- Add only 1 Text field called Title
      * --- Create a Content "A". Save/publish it.
      * --- Create a Content "B". Save/publish it.
@@ -4936,6 +5124,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             blogContent = contentletAPI.checkin(blogContent, (ContentletRelationships) null, categories,
                 null, user, false);
+
+            // let's check cats saved fine
+            List<Category> contentCats = APILocator.getCategoryAPI().getParents(blogContent, user,
+                    false);
+
+            assertTrue(contentCats.containsAll(categories));
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
@@ -5464,7 +5658,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
                 false);
 
-            List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent);
+            List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent,false);
 
             assertTrue(relatedContentFromDB.containsAll(relatedContent));
 
@@ -5475,7 +5669,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
                 null, null, user, false);
 
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent, false);
 
             assertTrue(existingRelationships.containsAll(relatedContent));
         } finally {
@@ -5940,12 +6134,18 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //html page is removed
             contentletAPI.archive(htmlPage, user, false);
-            contentletAPI.delete(htmlPage, user, false);
+
+            try {
+                contentletAPI.delete(htmlPage, user, false);
+                assertTrue("DotWorkflowException expected", false );
+            }  catch (DotWorkflowException e) {
+                //Expected
+            }
 
             //verify that the content type was unlinked from the deleted page
             type = contentTypeAPI.find(type.id());
-            assertNull(type.detailPage());
-            assertNull(type.urlMapPattern());
+            assertEquals(htmlPage.getIdentifier(), type.detailPage());
+            assertEquals("/mapPatternForTesting", type.urlMapPattern());
         } finally {
             if (type != null){
                 contentTypeAPI.delete(type);
@@ -6772,22 +6972,26 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentInSpanish.setLanguageId(spanishLanguage.getId());
             contentInSpanish = ContentletDataGen.checkin(contentInSpanish);
 
+            
+            
+            
+            
             assertEquals(2,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier()  + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
             contentInSpanish.setIndexPolicy(IndexPolicy.FORCE);
             ContentletDataGen.archive(contentInSpanish);
             ContentletDataGen.delete(contentInSpanish);
 
             assertEquals(1,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier() + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
             contentInEnglish.setIndexPolicy(IndexPolicy.FORCE);
             ContentletDataGen.archive(contentInEnglish);
             ContentletDataGen.delete(contentInEnglish);
 
             assertEquals(0,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier() + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
         } finally {
             if (contentType != null) {

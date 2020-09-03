@@ -1902,27 +1902,6 @@ CREATE TRIGGER structure_host_folder_trigger BEFORE INSERT OR UPDATE
     ON structure FOR EACH ROW
     EXECUTE PROCEDURE structure_host_folder_check();
 
-CREATE OR REPLACE FUNCTION load_records_to_index(server_id character varying, records_to_fetch int, priority_level int)
-  RETURNS SETOF dist_reindex_journal AS'
-DECLARE
-   dj dist_reindex_journal;
-BEGIN
-
-    FOR dj IN SELECT * FROM dist_reindex_journal
-       WHERE serverid IS NULL
-       AND priority <= priority_level
-       ORDER BY priority ASC
-       LIMIT records_to_fetch
-       FOR UPDATE
-    LOOP
-        UPDATE dist_reindex_journal SET serverid=server_id WHERE id=dj.id;
-        RETURN NEXT dj;
-    END LOOP;
-
-END'
-LANGUAGE 'plpgsql';
-
-
 CREATE OR REPLACE FUNCTION content_versions_check() RETURNS trigger AS '
    DECLARE
        versionsCount integer;
@@ -2363,7 +2342,9 @@ create table publishing_bundle(
   name varchar(255) NOT NULL,
   publish_date TIMESTAMP,
   expire_date TIMESTAMP,
-  owner varchar(100)
+  owner varchar(100),
+  force_push bool,
+  filter_key varchar(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
@@ -2391,13 +2372,11 @@ CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
 
-alter table publishing_bundle add force_push bool ;
-
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
 -- Cluster Tables
 
-CREATE TABLE dot_cluster(cluster_id varchar(36), PRIMARY KEY (cluster_id) );
+CREATE TABLE dot_cluster(cluster_id varchar(36), cluster_salt VARCHAR(256), PRIMARY KEY (cluster_id) );
 CREATE TABLE cluster_server(server_id varchar(36), cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(255), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ varchar(100), PRIMARY KEY (server_id));
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id varchar(36), server_id varchar(36) references cluster_server(server_id), startup timestamp without time zone null, heartbeat timestamp without time zone null, PRIMARY KEY (id));

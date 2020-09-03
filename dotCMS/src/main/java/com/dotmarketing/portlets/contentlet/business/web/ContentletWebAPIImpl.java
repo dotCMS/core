@@ -57,7 +57,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.dotmarketing.portlets.contentlet.util.ActionletUtil.hasPushPublishActionlet;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.getEnvironmentsToSendTo;
 
 /*
@@ -309,7 +309,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 	}
 
-	private void saveWebAsset(Map<String, Object> contentletFormData,
+	private void  saveWebAsset(Map<String, Object> contentletFormData,
 			boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
 		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
@@ -317,8 +317,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		// Getting the contentlets variables to work
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+		final Map<String, Object> oldContentletMap = currentContentlet.getMap();
 		//Form doesn't always contain this value upfront. And since populateContentlet sets 0 we better set it upfront
-		contentletFormData.put("identifier", currentContentlet.getIdentifier());
+		contentletFormData.put(Contentlet.IDENTIFIER_KEY, currentContentlet.getIdentifier());
 		final boolean isNew = !InodeUtils.isSet(currentContentlet.getInode());
 
 		if (!isNew && Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
@@ -328,24 +329,26 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		/***
 		 * Workflow
 		 */
-		currentContentlet.setStringProperty("wfActionId", (String) contentletFormData.get("wfActionId"));
-		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
-		currentContentlet.setStringProperty("wfActionAssign", (String) contentletFormData.get("wfActionAssign"));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, (String) contentletFormData.get(Contentlet.WORKFLOW_ACTION_KEY));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, (String) contentletFormData.get(Contentlet.WORKFLOW_COMMENTS_KEY));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, (String) contentletFormData.get(Contentlet.WORKFLOW_ASSIGN_KEY));
 
 		/**
 		 * Push Publishing Actionlet
 		 */
-		currentContentlet.setStringProperty("wfPublishDate", (String) contentletFormData.get("wfPublishDate"));
-		currentContentlet.setStringProperty("wfPublishTime", (String) contentletFormData.get("wfPublishTime"));
-		currentContentlet.setStringProperty("wfExpireDate", (String) contentletFormData.get("wfExpireDate"));
-		currentContentlet.setStringProperty("wfExpireTime", (String) contentletFormData.get("wfExpireTime"));
-		currentContentlet.setStringProperty("wfNeverExpire", (String) contentletFormData.get("wfNeverExpire"));
-		currentContentlet.setStringProperty("whereToSend", (String) contentletFormData.get("whereToSend"));
-		currentContentlet.setStringProperty("forcePush", (String) contentletFormData.get("forcePush"));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, (String) contentletFormData.get(Contentlet.WORKFLOW_PUBLISH_DATE));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, (String) contentletFormData.get(Contentlet.WORKFLOW_PUBLISH_TIME));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, (String) contentletFormData.get(Contentlet.WORKFLOW_EXPIRE_DATE));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, (String) contentletFormData.get(Contentlet.WORKFLOW_EXPIRE_TIME));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, (String) contentletFormData.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
+		currentContentlet.setStringProperty(Contentlet.WHERE_TO_SEND, (String) contentletFormData.get(Contentlet.WHERE_TO_SEND));
+		currentContentlet.setStringProperty(Contentlet.FILTER_KEY, (String) contentletFormData.get(Contentlet.FILTER_KEY));
+		currentContentlet.setStringProperty(Contentlet.I_WANT_TO, (String) contentletFormData.get(Contentlet.I_WANT_TO));
 
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
+
 		try{
 			populateContent(contentletFormData, user, currentContentlet, isAutoSave);
 			//http://jira.dotmarketing.net/browse/DOTCMS-1450
@@ -404,7 +407,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					throw new DotSecurityException("User has no Add Children Permissions on selected host");
 				}
 				currentContentlet.setHost(hostId);
-				currentContentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+				currentContentlet.setFolder(SYSTEM_FOLDER);
 			}
 
 			if("folderInode".equalsIgnoreCase(elementName) &&
@@ -481,7 +484,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 			}
 
-			if (UtilMethods.isSet((String) contentletFormData.get("wfActionId"))) {
+			if (shouldUseWorkflow(contentletFormData)) {
 
 				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet,
 						new ContentletDependencies.Builder().respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
@@ -495,7 +498,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								.generateSystemEvent(generateSystemEvent).build());
 
 				if (hasPushPublishActionlet(APILocator.getWorkflowAPI().findAction((String) contentletFormData.get("wfActionId"), user))) {
-					final String whoToSendTmp = (String)currentContentlet.get(WHERE_TO_SEND);
+					final String whoToSendTmp = (String)currentContentlet.get(Contentlet.WHERE_TO_SEND);
 					final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
 					request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + user.getUserId(), envsToSendTo );
 				}
@@ -504,13 +507,24 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
 								", without an action.");
-				if (Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
+				if (currentContentlet.isHost()) {
 
 					Logger.info(this, "Saving the Host");
 					currentContentlet.setInode(null);
                     currentContentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 					currentContentlet = this.conAPI.checkin
 							(currentContentlet, contentletRelationships, categories, null, user, false, generateSystemEvent);
+
+					if (!currentContentlet.isNew() &&
+							!currentContentlet.getTitle().equals(oldContentletMap.get(Host.HOST_NAME_KEY))) {
+						UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
+								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
+								currentContentlet.getName()
+						);
+					}
+				} else {
+					Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
+							", without an action is just allow to Host.");
 				}
 			}
 		} catch(DotContentletValidationException ve) {
@@ -562,6 +576,15 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	/**
+	 * return true if should use workflow with to save the contentlet
+	 * @param contentletFormData
+	 * @return
+	 */
+	private boolean shouldUseWorkflow(Map<String, Object> contentletFormData) {
+		return UtilMethods.isSet((String) contentletFormData.get("wfActionId"));
+	}
+
+	/**
      * {@inheritDoc}
 	 */
 
@@ -576,8 +599,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					false);
 			if (parentFolder != null
 					&& InodeUtils.isSet(parentFolder.getInode())) {
+
 				Host host = hostAPI.find(parentFolder.getHostId(), systemUser,
 						true);
+
 				String parentFolderPath = parentFolder.getPath();
 				if (UtilMethods.isSet(parentFolderPath)) {
 					if (!parentFolderPath.startsWith("/")) {
@@ -842,8 +867,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		} catch (DotContentletStateException e) {
 			throw e;
 		} catch (Exception e) {
-			Logger.error(this, "Unable to populate content. ", e);
-			throw new Exception("Unable to populate content");
+			final String message = String.format("Unable to populate content: %s", e.getMessage());
+			Logger.error(this, message, e);
+			throw new Exception(message, e);
 		}
 
 		return contentlet;
@@ -1040,25 +1066,29 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		for (String key : keys) {
 			if (key.startsWith("rel_") && key.endsWith("_inodes")) {
-				//When you click the option Relate New Content, it adds the relwith key with the id of the contentlet that you edited at first.
-				final boolean isRelatingNewContent =  contentletFormData.containsKey("relwith");
-                final String relationHasParent =
-                        contentletFormData.get("relisparent") != null ? (String) contentletFormData
-                                .get("relisparent") : "";
-				//This boolean determines if the contentletFormData is a parent or a child
+
+                final String inodesSt = (String) contentletFormData.get(key);
+                if(!UtilMethods.isSet(inodesSt)){
+                    continue;
+                }
+
+                final String[] inodes = inodesSt.split(",");
+
+                final Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
+                final boolean isRelatingNewContent = isRelatingNewContent(contentletFormData,
+                        relationship);
+
+                //This boolean determines if the contentletFormData is a parent or a child
 				//This is the proper behaviour of the boolean:
 				//if you are relating a new child should be false, because the contentletFormData is a child
 				//if you are relating a new parent should be true, because the contentletFormData is a parent
 				//if you are relating an existing child should be true, because the contentletFormData is a parent
 				//if you are relating an existing parent should be false, because the contentletFormData is a child
 				final boolean isContentletAParent = (key.contains("_P_")) ? !isRelatingNewContent : isRelatingNewContent;
-				final String inodesSt = (String) contentletFormData.get(key);
-				if(!UtilMethods.isSet(inodesSt)){
-					continue;
-				}
-				final String[] inodes = inodesSt.split(",");
 
-				final Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
+                final String relationHasParent =
+                        contentletFormData.get("relisparent") != null ? (String) contentletFormData
+                                .get("relisparent") : "";
 
 				if (relationshipsData == null){
 					relationshipsData = new ContentletRelationships(currentContentlet);
@@ -1088,7 +1118,22 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return relationshipsData;
 	}
 
-	public void cancelContentEdit(String workingContentletInode,
+    /**
+     * When you click the option Relate New Content, it adds the relwith key with the id of the contentlet that you edited at first and reltype with the relationship name.
+     * Also, it is important to verify that the reltype applies to the relationship that we are currently populating (case when there are multiple relationships).
+     * View issue: https://github.com/dotCMS/core/issues/17743
+     * @param contentletFormData
+     * @param relationship
+     * @return
+     */
+    private boolean isRelatingNewContent(Map<String, Object> contentletFormData,
+            Relationship relationship) {
+
+        return contentletFormData.containsKey("relwith") && relationship
+                .getRelationTypeValue().equals(contentletFormData.get("reltype"));
+    }
+
+    public void cancelContentEdit(String workingContentletInode,
 			String currentContentletInode,User user) throws Exception {
 
 		HibernateUtil.startTransaction();

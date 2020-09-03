@@ -4,6 +4,8 @@ import com.dotcms.graphql.DotGraphQLContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -13,22 +15,29 @@ import java.util.Map;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
-public class SiteFieldDataFetcher implements DataFetcher<Map<String, Object>> {
+public class SiteFieldDataFetcher implements DataFetcher<Contentlet> {
     @Override
-    public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
+    public Contentlet get(final DataFetchingEnvironment environment) throws Exception {
         try {
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
             final Contentlet contentlet = environment.getSource();
-            final Map<String, Object> siteMap = new HashMap<>();
 
             final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
 
-            siteMap.put("hostId", host.getIdentifier());
-            siteMap.put("hostName", host.getHostname());
-            siteMap.put("hostAliases", host.getAliases());
-            siteMap.put("hostTagStorage", host.getTagStorage());
 
-            return siteMap;
+
+            final DotContentletTransformer transformer = new DotTransformerBuilder()
+                    .graphQLDataFetchOptions().content(host).build();
+
+            final Contentlet hydratedHost = transformer.hydrate().get(0);
+
+            final Map<String, Object> innerMap = hydratedHost.getMap();
+            innerMap.put("hostId", host.getIdentifier());
+            innerMap.put("hostName", host.getHostname());
+            innerMap.put("hostAliases", host.getAliases());
+            innerMap.put("hostTagStorage", host.getTagStorage());
+
+            return hydratedHost;
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;

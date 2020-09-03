@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Map;
 
 import com.dotmarketing.beans.Identifier;
@@ -26,6 +27,8 @@ import com.liferay.portal.model.User;
  * @since Aug 28, 2014
  *
  */
+
+@JsonSerialize(using = HTMLPageAssetSerializer.class)
 public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     private static final long serialVersionUID = -4775734788059690797L;
@@ -209,10 +212,7 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
         setStringProperty(HTMLPageAssetAPI.TITLE_FIELD, title);
     }    
     
-    @Override
-    public String getTitle() {
-        return getStringProperty(HTMLPageAssetAPI.TITLE_FIELD);
-    }
+
 
     @Override
     public boolean isContent() {

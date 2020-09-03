@@ -5,11 +5,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.MimeTypeUtils;
+import com.dotmarketing.business.*;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
@@ -24,11 +31,6 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -51,6 +53,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 /**
  * This class is a bridge impl that will support the older
@@ -67,17 +70,35 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	final ContentletAPI contAPI;
 	final PermissionAPI perAPI;
 	private final IdentifierAPI identifierAPI;
+	private final FileAssetFactory fileAssetFactory;
+	private final ContentletCache contentletCache;
 
 	public FileAssetAPIImpl() {
-	    this(APILocator.getContentletAPI(),APILocator.getPermissionAPI(),APILocator.getSystemEventsAPI(),APILocator.getIdentifierAPI());
+	    this(
+	    		APILocator.getContentletAPI(),
+				APILocator.getPermissionAPI(),
+				APILocator.getSystemEventsAPI(),
+				APILocator.getIdentifierAPI(),
+				FactoryLocator.getFileAssetFactory(),
+				CacheLocator.getContentletCache()
+		);
 	}
 
-   public FileAssetAPIImpl(ContentletAPI contAPI,PermissionAPI perAPI, SystemEventsAPI systemEventsAPI, IdentifierAPI identifierAPI ) {
+	@VisibleForTesting
+    public FileAssetAPIImpl(
+			final ContentletAPI contAPI,
+			final PermissionAPI perAPI,
+			final SystemEventsAPI systemEventsAPI,
+			final IdentifierAPI identifierAPI,
+			final FileAssetFactory fileAssetFactory,
+			final ContentletCache contentletCache) {
 
         this.contAPI = contAPI;
         this.perAPI = perAPI;
         this.systemEventsAPI = systemEventsAPI;
         this.identifierAPI   = identifierAPI;
+        this.fileAssetFactory = fileAssetFactory;
+        this.contentletCache = contentletCache;
     }
 	
 	
@@ -102,18 +123,40 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 	 */
 	@CloseDBIfOpened
-	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException,
-			DotSecurityException {
-		List<FileAsset> assets = null;
+	public List<FileAsset> findFileAssetsByFolder(
+			final Folder parentFolder,
+			final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		List<Contentlet> contentlets = null;
+
 		try{
-			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),
-					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+			contentlets = contAPI.search(
+					"+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET + " +conFolder:" + parentFolder.getInode(),
+					-1, 0, null, user, respectFrontendRoles);
+		} catch (DotRuntimeException e) {
+			if ( ExceptionUtil.causedBy(e, ConnectException.class)) {
+				Logger.warnEveryAndDebug(FileAssetAPIImpl.class, e.getMessage(), e, 5000);
+				contentlets = getFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
+			} else {
+				throw e;
+			}
+		} catch (DotSecurityException | DotDataException e) {
+			throw e;
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
-		return assets;
 
+		return fromContentlets(perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+
+	}
+
+	private synchronized List<Contentlet> getFileAssetsByFolderInDB(
+			final Folder parentFolder,
+			final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		return this.fileAssetFactory.findFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
 	}
 
 	@CloseDBIfOpened
@@ -259,7 +302,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				}
 			}
 		}
-		CacheLocator.getContentletCache().add(fileAsset);
+		this.contentletCache.add(fileAsset);
 		return fileAsset;
 	}
 	
@@ -648,11 +691,21 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     }
 
     @Override
-    public File getContentMetadataFile(String inode) {
+    public File getContentMetadataFile(final String inode) {
         return new File(getRealAssetsRootPath()+File.separator+
                 inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+inode+File.separator+
                 "metaData"+File.separator+"content");
     }
+
+	@Override
+	public File getContentMetadataFile(final String inode, final String fileName) {
+
+		return null == fileName?
+				this.getContentMetadataFile(inode):
+				new File(getRealAssetsRootPath()+File.separator+
+				inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+inode+File.separator+
+				fileName);
+	}
 
     @Override
     public String getContentMetadataAsString(File metadataFile) throws Exception {
@@ -751,8 +804,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         final String inode = fileAsset.getInode();
         if (UtilMethods.isSet(inode)) {
             final String realAssetPath = getRealAssetsRootPath();
-            java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator
-                    + "dotGenerated" + java.io.File.separator + inode.charAt(0)
+            java.io.File tumbnailDir = new java.io.File(ConfigUtils.getDotGeneratedPath() + java.io.File.separator + inode.charAt(0)
                     + java.io.File.separator + inode.charAt(1));
             if (tumbnailDir != null) {
                 java.io.File[] files = tumbnailDir.listFiles();
@@ -778,6 +830,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         }
     }
 
+    @Override
 	public String getMimeType(String filename) {
 		if (filename != null) {
 			filename = filename.toLowerCase();
@@ -796,6 +849,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 
 		return mimeType;
+	}
+
+	@Override
+	public String getMimeType(final File binary) {
+
+    	return MimeTypeUtils.getMimeType(binary);
 	}
 
 	public String getRealAssetPathTmpBinary() {

@@ -1,4 +1,5 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotmarketing.business.web.WebAPILocator" %>
 <script language="Javascript">
 <%--
  * This file contains all the Javascript function for drawing the template.
@@ -13,9 +14,10 @@ var removeContainerMSG;
 var countAddContainerLinks;
 var countContainersAdded;
 var containersAdded = [];
+var containersUUID = {};
 
-
-function drawDefault(overrideBody, addContainer, removeContainer,containersStr,containersLen){
+function drawDefault(overrideBody, addContainer, removeContainer,containersStr,containersLen, maxUUID){
+    containersUUID = maxUUID;
 	addContainerMSG = addContainer;
 	removeContainerMSG = removeContainer;
 	countAddContainerLinks = document.getElementById("countAddContainerLinks");
@@ -366,9 +368,15 @@ function removeGrid(yuiBId){
 }
 
 function getUUID (container) {
-
-    return Date.now();
+    if (container.source == "<%=Source.FILE%>") {
+        containersUUID[container.path] = !!containersUUID[container.path] ? containersUUID[container.path] + 1 : 1;
+        return containersUUID[container.path];
+    } else {
+        containersUUID[container.id] = !!containersUUID[container.id] ? containersUUID[container.id] + 1 : 1;
+        return containersUUID[container.id];
+    }
 }
+
 /**
  * This function add a container into a div in the design template phase.
  *
@@ -379,7 +387,7 @@ function getUUID (container) {
 function addDrawedContainer(idDiv, container, value, error_msg, container_exist){
 	var div_container  = document.getElementById(idDiv.value+"_div_"+value);
 	var span_container = document.getElementById(idDiv.value+"_span_"+value);
-	var uuid           = getUUID (span_container);
+	var uuid           = getUUID (container);
 
 	// now, adding the ability to add repeated containers.
 
@@ -396,8 +404,14 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
 	//set the title for better recognize the container's div
 	containerDivHidden.setAttribute("title","container_"+value);
 	containerDivHidden.setAttribute("id", idDiv.value+"_div_"+value+"_"+uuid);
-	if (container.source == "<%=Source.FILE%>") {
 
+    <%
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+        final String currentHostName = currentHost != null ? currentHost.getHostname() : "";
+    %>
+    const currentHost = '<%=currentHostName%>';
+
+	if (container.source == "<%=Source.FILE%>") {
         containerDivHidden.innerHTML='#parseContainer(\'' + container.path + '\',\''+uuid+'\')\n';
     } else {
         containerDivHidden.innerHTML='#parseContainer(\'' + value + '\',\''+uuid+'\')\n';

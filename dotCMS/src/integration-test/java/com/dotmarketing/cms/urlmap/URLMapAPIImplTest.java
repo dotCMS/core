@@ -26,18 +26,16 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import org.junit.Before;
+import org.junit.Test;
 
 public class URLMapAPIImplTest {
     public static final String TEST_PATTERN = "/testpattern";
@@ -45,7 +43,8 @@ public class URLMapAPIImplTest {
     private static Host host;
 
     private URLMapAPIImpl urlMapAPI;
-    private static HTMLPageAsset detailPage;
+    private static HTMLPageAsset detailPage1;
+    private static HTMLPageAsset detailPage2;
     private static HttpSession session;
 
     @Before
@@ -62,16 +61,30 @@ public class URLMapAPIImplTest {
         final Folder parent2 = new FolderDataGen().name(parent2Name).title(parent2Name).parent(parent1)
                 .nextPersisted();
 
+        final String parent3Name = "news-events2";
+        final Folder parent3 = new FolderDataGen().name(parent3Name).title(parent3Name).site(host)
+                .nextPersisted();
+        final String parent4Name = "news2";
+        final Folder parent4 = new FolderDataGen().name(parent4Name).title(parent4Name).parent(parent3)
+                .nextPersisted();
+
         final Template template = new TemplateDataGen().nextPersisted();
-        detailPage = new HTMLPageDataGen(parent2, template)
+        detailPage1 = new HTMLPageDataGen(parent2, template)
                 .pageURL("news-detail")
                 .title("news-detail")
+                .nextPersisted();
+
+        detailPage2 = new HTMLPageDataGen(parent4, template)
+                .pageURL("news-detail2")
+                .title("news-detail2")
                 .nextPersisted();
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         session = mock(HttpSession.class);
 
         when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
+
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     }
 
@@ -80,6 +93,133 @@ public class URLMapAPIImplTest {
         urlMapAPI = new URLMapAPIImpl();
     }
 
+    /**
+     * UrlMapped Content that lives on the system host should be available on every host where the map
+     * detail page exists (by path). If content does not live on the system host, it should only be
+     * available on the host it is currently one
+     * 
+     * @throws Exception
+     */
+
+
+    @Test
+    public void systemHost_UrlMaps_Should_Work_Across_Hosts() throws Exception {
+
+        final Host host1 = new SiteDataGen().nextPersisted();
+        final Host host2 = new SiteDataGen().nextPersisted();
+        final Host host3 = new SiteDataGen().nextPersisted();
+        
+        final Folder folder1 = new FolderDataGen().name("folder").title("folder").site(host1).nextPersisted();
+        final Folder folder2 = new FolderDataGen().name("folder").title("folder").site(host2).nextPersisted();
+
+
+
+        final Template template1 = new TemplateDataGen().site(host1).nextPersisted();
+        final Template template2 = new TemplateDataGen().site(host2).nextPersisted();
+
+        final HTMLPageAsset pageOnHost1 = new HTMLPageDataGen(folder1, template1).pageURL("my-detail")
+                        .title("my-detail").nextPersisted();
+
+        final HTMLPageAsset pageOnHost2 = new HTMLPageDataGen(folder2, template2).pageURL("my-detail")
+                        .title("my-detail").nextPersisted();
+
+        final String urlPattern = "/" + UUIDGenerator.shorty() + "/{urlTitle}";
+        
+        // set the detail page to page on host1
+        final ContentType contentType1 = getNewsLikeContentType("News" + System.currentTimeMillis(),
+                        APILocator.systemHost(), pageOnHost1.getIdentifier(), urlPattern);
+
+
+        final Contentlet newsOnSystemHost = TestDataUtils.getNewsContent(true,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), contentType1.id(),
+                        APILocator.systemHost(), null, UUIDGenerator.generateUuid());
+
+
+        final Contentlet newsOnHost1 = TestDataUtils.getNewsContent(true,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), contentType1.id(), host1,
+                        null, UUIDGenerator.generateUuid());
+
+        final Contentlet newsOnHost2 = TestDataUtils.getNewsContent(true,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), contentType1.id(), host2,
+                        null, UUIDGenerator.generateUuid());
+
+
+        
+        // WORKS : trying where contentlet on the system host and request is on host1 
+        UrlMapContext context = getUrlMapContext(systemUser, host1,
+                        urlPattern.replace("{urlTitle}", newsOnSystemHost.getStringProperty("urlTitle")));
+
+        Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+
+        assertEquals(newsOnSystemHost.getStringProperty("title"), urlMapInfo.getContentlet().getName());
+        assertEquals(pageOnHost1.getURI(), urlMapInfo.getIdentifier().getURI());
+        
+
+        // WORKS :  trying where contentlet on the system host and request is on host2, which also has a detail page in the right place
+        context = getUrlMapContext(systemUser, host2,
+                        urlPattern.replace("{urlTitle}", newsOnSystemHost.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        urlMapInfo = urlMapInfoOptional.get();
+
+        assertEquals(newsOnSystemHost.getStringProperty("title"), urlMapInfo.getContentlet().getName());
+        assertEquals(pageOnHost2.getURI(), urlMapInfo.getIdentifier().getURI());
+        
+        
+        
+        // FAIL : trying where contentlet on the system host and request is on host3, which does not have a detail page
+        context = getUrlMapContext(systemUser, host3,
+                        urlPattern.replace("{urlTitle}", newsOnSystemHost.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        assert(!urlMapInfoOptional.isPresent());
+
+        
+        
+        // WORKS :  trying where contentlet on host1 and request is on host1 
+        context = getUrlMapContext(systemUser, host1,
+                        urlPattern.replace("{urlTitle}", newsOnHost1.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        urlMapInfo = urlMapInfoOptional.get();
+
+        assertEquals(newsOnHost1.getStringProperty("title"), urlMapInfo.getContentlet().getName());
+        assertEquals(pageOnHost1.getURI(), urlMapInfo.getIdentifier().getURI());
+        
+        
+        
+        // FAIL : trying where contentlet on the host1 and request ison host2 
+        context = getUrlMapContext(systemUser, host2,
+                        urlPattern.replace("{urlTitle}", newsOnHost1.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        assert(!urlMapInfoOptional.isPresent());
+        
+        
+        
+        // WORKS : where contentlet on the host2 and request is on host2 
+        context = getUrlMapContext(systemUser, host2,
+                        urlPattern.replace("{urlTitle}", newsOnHost2.getStringProperty("urlTitle")));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsOnHost2.getStringProperty("title"), urlMapInfo.getContentlet().getName());
+        assertEquals(pageOnHost2.getURI(), urlMapInfo.getIdentifier().getURI());
+        
+        
+        
+
+
+    }
+    
+    
+    
+    
+    
+    
+    
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
      * Given Scenario: Process a URL Map url when both the Content Type and Content exists
@@ -93,6 +233,160 @@ public class URLMapAPIImplTest {
         final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
         final UrlMapContext context = getUrlMapContext(systemUser, host,
                 newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals(newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"),
+                urlMapInfo.getContentlet().getStringProperty("urlMap"));
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * Testing {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Multiple Content Types could have the same URLMap pattern,
+     * the {@link URLMapAPIImpl#processURLMap(UrlMapContext)} should be able to handle that case.
+     * On this test both the Content Type and Content exists.
+     * ExpectedResult: Should return a {@link URLMapInfo} with the right content and detail pages
+     */
+    @Test
+    public void test_multiple_content_types_using_same_pattern()
+            throws DotDataException, DotSecurityException {
+
+        // Create two content types using the same URL patterns
+        final String newsPatternPrefix =
+                TEST_PATTERN + System.currentTimeMillis() + "/";
+        final Contentlet newsTestContent1 = createURLMapperContentType(newsPatternPrefix,
+                new Date(), detailPage1);
+        final Contentlet newsTestContent2 = createURLMapperContentType(newsPatternPrefix,
+                new Date(), detailPage2);
+
+        //*************
+        // Looking for the second content
+        UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent2.getStringProperty("urlTitle"));
+
+        Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent2.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals("/news-events2/news2/news-detail2", urlMapInfo.getIdentifier().getURI());
+
+        //*************
+        // Looking for the first content
+        context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent1.getStringProperty("urlTitle"));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent1.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * Testing {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists when
+     * the URLMap pattern is at the root of the URI: /{urlTitle}
+     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content and detail page
+     */
+    @Test
+    public void test_url_map_pattern_at_root()
+            throws DotDataException, DotSecurityException {
+
+        // Create a Content Type with a URLMap pattern at the root of the URI -> /{urlTitle}
+        final String newsPatternPrefix = "/";
+        final Contentlet newsTestContent1 = createURLMapperContentType(newsPatternPrefix,
+                new Date(), detailPage1);
+
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent1.getStringProperty("urlTitle"));
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent1.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * Testing {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists when
+     * the URLMap pattern is at the root of the URI: /{urlTitle} and the url title has slashes on it.
+     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content and detail page
+     */
+    @Test
+    public void test_url_map_pattern_at_root_with_slash_in_url_title()
+            throws DotDataException, DotSecurityException {
+
+        // Create a Content Type with a URLMap pattern at the root of the URI -> /{urlTitle}
+        final String newsPatternPrefix = "/";
+        final Contentlet newsTestContent1 = createURLMapperContentType(newsPatternPrefix,
+                new Date(), detailPage1, "test/title/" + System.currentTimeMillis());
+
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent1.getStringProperty("urlTitle"));
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent1.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * Testing {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists and
+     * the url title has slashes on it.
+     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content and detail page
+     */
+    @Test
+    public void test_url_map_pattern_with_slash_in_url_title()
+            throws DotDataException, DotSecurityException {
+        final String newsPatternPrefix =
+                TEST_PATTERN + System.currentTimeMillis() + "/";
+
+        final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix,
+                new Date(), detailPage1, "test/" + System.currentTimeMillis());
+
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * Testing {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists and
+     * the url title has slashes on it.
+     * This test uses a more complex pattern /something/{urlTitle-with-slashes}/{title-with-spaces-on-it}
+     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content and detail page
+     */
+    @Test
+    public void test_url_map_pattern_with_slash_in_url_title_complex_rul_map_pattern()
+            throws DotDataException, DotSecurityException {
+
+        final String newsPatternPrefix =
+                TEST_PATTERN + System.currentTimeMillis() + "/";
+
+        final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix,
+                new Date(), detailPage1, "test/" + System.currentTimeMillis(),
+                newsPatternPrefix + "{urlTitle}" + "/" + "{title}");
+
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent.getStringProperty("urlTitle")
+                        + "/" + newsTestContent.getStringProperty("title"));
 
         final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
 
@@ -130,7 +424,7 @@ public class URLMapAPIImplTest {
      */
     @Test
     public void shouldNotMatchUrlStaringWithAPI()
-            throws DotDataException {
+            throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
                 "/testpattern" + System.currentTimeMillis() + "/";
         final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
@@ -204,7 +498,7 @@ public class URLMapAPIImplTest {
      * ExpectedResult: Should return false
      */
     @Test
-    public void isUrlPatternWithoutUrlMap() throws DotDataException {
+    public void isUrlPatternWithoutUrlMap() throws DotDataException, DotSecurityException {
         deleteAllUrlMapperContentType();
         final UrlMapContext context = getUrlMapContext(systemUser, host, "/dotAdmin");
         assertFalse(urlMapAPI.isUrlPattern(context));
@@ -244,7 +538,6 @@ public class URLMapAPIImplTest {
     @Test
     public void shouldReturnURLInfoWhenContentExistsInFutureButTimeMachineIsSet()
             throws DotDataException, DotSecurityException {
-
 
         final String newsPatternPrefix =
                 TEST_PATTERN + System.currentTimeMillis() + "/";
@@ -319,17 +612,47 @@ public class URLMapAPIImplTest {
         return createURLMapperContentType(newsPatternPrefix, new Date());
     }
 
-    private static Contentlet createURLMapperContentType(final String newsPatternPrefix, final Date sysPublishDate) {
+    private static Contentlet createURLMapperContentType(final String newsPatternPrefix,
+            final Date sysPublishDate) {
+        return createURLMapperContentType(newsPatternPrefix, sysPublishDate, null);
+    }
+
+    private static Contentlet createURLMapperContentType(final String newsPatternPrefix,
+            final Date sysPublishDate, final HTMLPageAsset detailPageToUse) {
+        return createURLMapperContentType(newsPatternPrefix, sysPublishDate, detailPageToUse, null,
+                null);
+    }
+
+    private static Contentlet createURLMapperContentType(final String newsPatternPrefix,
+            final Date sysPublishDate, final HTMLPageAsset detailPageToUse, final String urlTitle) {
+        return createURLMapperContentType(newsPatternPrefix, sysPublishDate, detailPageToUse,
+                urlTitle, null);
+    }
+
+    private static Contentlet createURLMapperContentType(final String newsPatternPrefix,
+            final Date sysPublishDate, final HTMLPageAsset detailPageToUse, final String urlTitle,
+            final String urlMapPattern) {
+
+        HTMLPageAsset detailPage = detailPage1;
+        if (null != detailPageToUse) {
+            detailPage = detailPageToUse;
+        }
+
+        String urlMapPatternToUse = newsPatternPrefix + "{urlTitle}";
+        if (null != urlMapPattern) {
+            urlMapPatternToUse = urlMapPattern;
+        }
 
         final ContentType newsContentType = getNewsLikeContentType(
                 "News" + System.currentTimeMillis(),
                 host,
                 detailPage.getIdentifier(),
-                newsPatternPrefix + "{urlTitle}");
+                urlMapPatternToUse);
 
         return TestDataUtils
                 .getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                        newsContentType.id(), host, sysPublishDate);
+                        newsContentType.id(), host, sysPublishDate, urlTitle);
+
     }
 
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri, final PageMode pageMode) {

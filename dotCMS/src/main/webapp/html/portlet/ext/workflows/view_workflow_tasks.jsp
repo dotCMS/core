@@ -388,7 +388,7 @@
 					};
 					var pushHandler = new dotcms.dojo.push.PushHandler(
 							'<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
-					pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback);
+					pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback, true);
 				} else {
 					contentAdmin.saveAssign();
 				}
@@ -396,7 +396,7 @@
 		});
 	}
 
-	function getSelectedInodes() {
+	function getTaskSelectedInodes() {
 		var ids = [];
 		dojo.query(".taskCheckBox").forEach(function (node) {
 			let check = dijit.byNode(node);
@@ -421,15 +421,13 @@
 			publishTime:pushPusblishFormData.publishTime,
 			expireDate:pushPusblishFormData.expireDate,
 			expireTime:pushPusblishFormData.expireTime,
-			neverExpire:pushPusblishFormData.neverExpire,
-			forcePush:pushPusblishFormData.forcePush
+			neverExpire:pushPusblishFormData.neverExpire
 		};
 
 		let data = {
 			assignComment:assignComment,
 			pushPublish:pushPublish
 		};
-
 		let fireResult = fireAction(actionId, data);
 		if(fireResult){
 		  doFilter();
@@ -438,11 +436,10 @@
 	}
 
 	function fireAction(actionId, popupData) {
-		let selectedInodes = getSelectedInodes();
+		let selectedInodes = getTaskSelectedInodes();
 		if(!selectedInodes){
 			return;
 		}
-
 		var assignComment = null;
 
 		if((typeof popupData != "undefined") && (typeof popupData.assignComment != "undefined")){

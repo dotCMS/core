@@ -39,11 +39,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -179,14 +175,37 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public Container getLiveContainerByFolderPath(final String path, final Host host, final User user,
 												  final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
-		return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,true, false);
+		final String folderHostId           = host.getIdentifier();
+		final Optional<Host> currentHostOpt = HostUtil.tryToFindCurrentHost(user);
+		boolean includeHostOnPath           = false;
+
+		if (currentHostOpt.isPresent()) {
+
+			includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
+		}
+
+		return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,true, includeHostOnPath);
 	}
 
     @Override
     public Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
                                                      final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+		return getContainerByFolderPath(path, host, user, false, respectFrontEndPermissions);
+	}
 
-        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,false, false);
+	@Override
+	public Container getContainerByFolderPath(final String path, final Host host, final User user, final boolean live,
+													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+		final String folderHostId           = host.getIdentifier();
+		final Optional<Host> currentHostOpt = HostUtil.tryToFindCurrentHost(user);
+		boolean includeHostOnPath           = false;
+
+		if (currentHostOpt.isPresent()) {
+
+			includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
+		}
+
+        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,live, includeHostOnPath);
     }
 
 
@@ -575,8 +594,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		for (final Folder subFolder : subFolders) {
 
 			try {
+
 			    final User      userFinal = null != user? user: APILocator.systemUser();
-				final Container container = this.getContainerByFolder(null != host? host:APILocator.getHostAPI().find(subFolder.getHostId(), user, false),
+				final Container container = this.getContainerByFolder(null != host? host:APILocator.getHostAPI().find(subFolder.getHostId(), user, includeHostOnPath),
 						subFolder, userFinal, false, includeHostOnPath);
 				containers.add(container);
 			} catch (DotSecurityException e) {
@@ -741,9 +761,17 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 					for (final Folder folder: containerFolders) {
 
-						final Host host           = this.hostAPI.find(folder.getHostId(), APILocator.systemUser(), false);
+						final Host host           		    = this.hostAPI.find(folder.getHostId(), APILocator.systemUser(), false);
+						final String folderHostId           = folder.getHostId();
+						final Optional<Host> currentHostOpt = HostUtil.tryToFindCurrentHost(APILocator.systemUser());
+						boolean includeHostOnPath           = false;
+
+						if (currentHostOpt.isPresent()) {
+
+							includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
+						}
 						try {
-							final Container container = this.getContainerByFolder(host, folder, APILocator.systemUser(), false, false);
+							final Container container = this.getContainerByFolder(host, folder, APILocator.systemUser(), false, includeHostOnPath);
 
 							if (null != container) {
 

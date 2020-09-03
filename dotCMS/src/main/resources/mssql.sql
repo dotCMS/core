@@ -2065,21 +2065,6 @@ BEGIN
 fetch next from cur_Inserted into @newFolder,@newHost
 END;
 
-CREATE PROCEDURE load_records_to_index(@server_id NVARCHAR(100), @records_to_fetch INT, @priority_level INT)
-AS
-BEGIN
-WITH cte AS (
-  SELECT TOP(@records_to_fetch) *
-  FROM dist_reindex_journal WITH (ROWLOCK, READPAST, UPDLOCK)
-  WHERE serverid IS NULL
-  AND priority <= @priority_level
-  ORDER BY priority ASC)
-UPDATE cte
-  SET serverid=@server_id
-OUTPUT
-  INSERTED.*
-END;
-
 CREATE Trigger check_content_versions
 ON contentlet
 FOR DELETE AS
@@ -2577,7 +2562,9 @@ create table publishing_bundle(
     name NVARCHAR(255) NOT NULL,
     publish_date DATETIME,
     expire_date DATETIME,
-    owner NVARCHAR(100)
+    owner NVARCHAR(100),
+    force_push tinyint,
+    filter_key NVARCHAR(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
@@ -2605,13 +2592,11 @@ CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
 
-alter table publishing_bundle add force_push tinyint ;
-
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
 --Cluster Tables
 
-CREATE TABLE dot_cluster(cluster_id NVARCHAR(36), PRIMARY KEY (cluster_id) );
+CREATE TABLE dot_cluster(cluster_id NVARCHAR(36), cluster_salt VARCHAR(256) ,PRIMARY KEY (cluster_id) );
 CREATE TABLE cluster_server(server_id NVARCHAR(36) NOT NULL, cluster_id NVARCHAR(36) NOT NULL, name NVARCHAR(100), ip_address NVARCHAR(39) NOT NULL, host NVARCHAR(255), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ NVARCHAR(100), PRIMARY KEY (server_id) );
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id NVARCHAR(36) NOT NULL, server_id NVARCHAR(36) NOT NULL, startup datetime null, heartbeat datetime null, PRIMARY KEY (id) );

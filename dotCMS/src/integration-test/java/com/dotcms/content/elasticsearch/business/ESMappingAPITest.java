@@ -10,37 +10,57 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.contenttype.util.KeyValueFieldUtil;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import java.io.File;
+
 import java.util.ArrayList;
 import java.io.StringWriter;
 import java.util.Collections;
@@ -48,6 +68,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -56,6 +77,9 @@ import org.junit.Test;
  */
 public class ESMappingAPITest {
 
+    private static final String TEMP_FILE = "tempFile";
+    public static final String TXT = "txt";
+    public static final String DOT_TXT = ".txt";
     private static ContentletAPI contentletAPI;
     private static ContentTypeAPI contentTypeAPI;
     private static FieldAPI fieldAPI;
@@ -63,6 +87,7 @@ public class ESMappingAPITest {
     private static Language language;
     private static RelationshipAPI relationshipAPI;
     private static UserAPI userAPI;
+    private static FolderAPI folderAPI;
     private static User user;
 
     @BeforeClass
@@ -75,9 +100,225 @@ public class ESMappingAPITest {
         contentTypeAPI = APILocator.getContentTypeAPI(user);
         contentletAPI = APILocator.getContentletAPI();
         fieldAPI = APILocator.getContentTypeFieldAPI();
+        folderAPI = APILocator.getFolderAPI();
         languageAPI = APILocator.getLanguageAPI();
         language = languageAPI.getDefaultLanguage();
         relationshipAPI = APILocator.getRelationshipAPI();
+    }
+
+    @Test
+    public void test_toMap_fileasset_txt_shouldSuccess() throws Exception {
+
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final String rootFolderName = String.format("lolFolder-%d", System.currentTimeMillis());
+        final Folder root1 = folderAPI.createFolders(rootFolderName, host, user, false);
+        final FileAsset fileAsset = new FileAsset();
+        final ImmutableFileAssetContentType.Builder builder = ImmutableFileAssetContentType.builder();
+        final String contentTypeVariable = "testfa"+System.currentTimeMillis();
+        builder.name("Test").variable(contentTypeVariable);
+        final ContentType fileAssetContentType = builder.build(); //contentTypeAPI.find("FileAsset");
+        final String fileName1 = TEMP_FILE + System.currentTimeMillis();
+        final File tempFile1 = File.createTempFile(fileName1, TXT);
+        final String anyContent = "LOL!";
+        FileUtil.write(tempFile1, anyContent);
+        final String fileNameField1 = fileName1 + DOT_TXT;
+        final String title1 = "Contentlet-1";
+
+        fileAsset.setContentType(contentTypeAPI.save(fileAssetContentType));
+        fileAsset.setFolder(root1.getInode());
+        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, tempFile1);
+        fileAsset.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, root1.getInode());
+        fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, title1);
+        fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileNameField1);
+        fileAsset.setIndexPolicy(IndexPolicy.FORCE);
+
+        // Create a piece of content for the default host
+        final Map<String,Object>  contentletMap = esMappingAPI.toMap(APILocator.getContentletAPI().checkin(fileAsset, user, false));
+
+        assertNotNull(contentletMap);
+        assertEquals(fileNameField1.toLowerCase(), contentletMap.get(contentTypeVariable + ".filename"));
+        assertEquals(contentTypeVariable, contentletMap.get("structurename"));
+        assertEquals("text/plain; charset=iso-8859-1", contentletMap.get("metadata.contenttype").toString().toLowerCase());
+        assertEquals(4, contentletMap.get("metadata.filesize"));
+        assertTrue( contentletMap.get("metadata.content").toString().contains("lol!"));
+
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has a invalid host
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasInvalidHostId(){
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        contentlet.setHost("not_exist_host");
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has a invalid folder
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasInvalidFolderId(){
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        contentlet.setFolder("not_exist_folder");
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has a invalid content type
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasInvalidContentTypeId(){
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        contentlet.setContentTypeId("not_exist_content_type");
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has not {@link com.dotmarketing.beans.Identifier}
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasNotIdentifier() {
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has not {@link ContentletVersionInfo}
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasNotContentletVersionInfo() throws DotDataException {
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
+        APILocator.getVersionableAPI().deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+        esMappingAPI.toMap(contentlet);
+    }
+
+    @Test
+    public void test_toMap_binary_field_shouldSuccess() throws Exception {
+
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+        final FieldAPI         fieldAPI        = APILocator.getContentTypeFieldAPI();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final String varname = "testcontenttypetwobinaryfields" + System.currentTimeMillis();
+
+        ContentType contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                .description("Test ContentType Binary Fields")
+                .host(host.getIdentifier())
+                .name("Test ContentType Binary Fields")
+                .owner("owner")
+                .variable(varname)
+                .build();
+
+        contentType = contentTypeAPI.save(contentType);
+
+        Field textField = ImmutableTextField.builder()
+                .name("Title")
+                .variable("title")
+                .contentTypeId(contentType.id())
+                .dataType(DataTypes.TEXT)
+                .build();
+
+        textField = fieldAPI.save(textField, user);
+
+        //Creating First Binary Field.
+        Field binaryField1 = ImmutableBinaryField.builder()
+                .name("Binary 1")
+                .variable("binary1")
+                .contentTypeId(contentType.id())
+                .build();
+
+        binaryField1 = fieldAPI.save(binaryField1, user);
+
+        //Creating Second Binary Field.
+        Field binaryField2 = ImmutableBinaryField.builder()
+                .name("Binary 2")
+                .variable("binary2")
+                .indexed(true)
+                .searchable(true)
+                .contentTypeId(contentType.id())
+                .build();
+
+        binaryField2 = fieldAPI.save(binaryField2, user);
+
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setContentType(contentType);
+        contentlet.setProperty("title", "binary1");
+
+        final String fileName1 = TEMP_FILE + System.currentTimeMillis();
+        final File binary1 = File.createTempFile(fileName1, TXT);
+        final String anyContent = "LOL!";
+        FileUtil.write(binary1, anyContent);
+        final File binary2 = new File(ESMappingAPITest.class.getClassLoader().getResource("images/test.jpg").getFile());
+
+        Assert.assertTrue(binary2.exists());
+
+        contentlet.setBinary(binaryField1, binary1);
+        contentlet.setBinary(binaryField2, binary2);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+        final Contentlet contentletSaved = APILocator.getContentletAPI().checkin(contentlet, user, false);
+        // Create a piece of content for the default host
+        final Map<String,Object>  contentletMap = esMappingAPI.toMap(contentletSaved);
+
+        assertNotNull(contentletMap);
+        assertEquals(varname, contentletMap.get("structurename"));
+        assertEquals("image/jpeg", contentletMap.get("metadata.contenttype"));
+        assertEquals("320", contentletMap.get("metadata.width"));
+        assertEquals("235", contentletMap.get("metadata.height"));
+        assertTrue( contentletMap.get("metadata.content").toString().trim().isEmpty());
+
     }
 
     @Test
@@ -434,4 +675,83 @@ public class ESMappingAPITest {
 
     }
 
+    /**
+     * General purpose is testing that KeyValue fields are indexed correctly.
+     * Given scenario: We create a Content type that holds a Key value field.
+     * Expected Results: Then we feed data into such field and use an ES query over the KeyValue to verify the results are coming back.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Create_ContentType_With_KeyValue_Field_Test_Query_Expect_Success()
+            throws DotDataException, DotSecurityException {
+
+        final List<Field> fields = new ArrayList<>();
+        final String myKeyValueField = "myKeyValueField";
+        fields.add(
+                new FieldDataGen()
+                        .type(KeyValueField.class)
+                        .name(myKeyValueField)
+                        .velocityVarName(myKeyValueField).indexed(true)
+                        .next()
+        );
+        final String contentTypeName = "myContentTypeWithKeyValues" + System.currentTimeMillis();
+        final ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeName)
+                .fields(fields)
+                .nextPersisted();
+
+        new ContentletDataGen(contentType.id()).setProperty(myKeyValueField,
+                "{\"key\":\"key1\", value:\"val\" }").nextPersisted();
+        final String queryString =  String.format("+%s.%s.key:%s*",contentTypeName, myKeyValueField, "val");
+        Logger.info(ESMappingAPITest.class, () -> String.format(" Query: %s ",queryString));
+        final String wrappedQuery = String.format("{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"%s\""
+                + "     }"
+                + "  }"
+                + "}", queryString);
+
+        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        Assert.assertFalse(searchResults.isEmpty());
+        for (final Object searchResult : searchResults) {
+           final Contentlet contentlet = (Contentlet) searchResult;
+            final String json = (String)contentlet.getMap().get("myKeyValueField");
+            assertNotNull(json);
+            final Map<String, Object> map = KeyValueFieldUtil.JSONValueToHashMap(json);
+            assertTrue(map.containsKey("key"));
+        }
+    }
+
+    /**
+     * General purpose is testing that Metadata fields are indexed correctly can be used as query parameters.
+     * Given scenario: Known that saving a file assets generates metadata into the index. We create a file asset.
+     * Expected Results: Once the file is saved we use an ES query to verify that queries by metadata are functional.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Create_FileAsset_Query_by_MetaData_Expect_Success()
+            throws DotDataException, DotSecurityException {
+
+        final File binary = new File(Thread.currentThread().getContextClassLoader().getResource("images/test.jpg").getFile());
+        final Host site = new SiteDataGen().nextPersisted();
+        final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, binary);
+        fileAssetDataGen.nextPersisted();
+
+        final String queryString =  String.format("+fileasset.filename:%s +metadata.contenttype:image* +metadata.filesize:%d ",binary.getName(), binary.length());
+        Logger.info(ESMappingAPITest.class, () -> String.format(" Query: %s ",queryString));
+        final String wrappedQuery = String.format("{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"%s\""
+                + "     }"
+                + "  }"
+                + "}", queryString);
+
+        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        assertFalse(searchResults.isEmpty());
+    }
 }

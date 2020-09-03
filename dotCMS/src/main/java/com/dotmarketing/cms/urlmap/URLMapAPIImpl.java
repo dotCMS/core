@@ -1,5 +1,16 @@
 package com.dotmarketing.cms.urlmap;
 
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
+import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -9,32 +20,20 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.StructureUtil;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * {@link URLMapAPI} implementation
@@ -43,156 +42,164 @@ import org.jetbrains.annotations.NotNull;
  */
 public class URLMapAPIImpl implements URLMapAPI {
 
-    private volatile Collection<ContentTypeURLPattern> patternsCache;
+    private final Collection<ContentTypeURLPattern> patternsCache= new ArrayList<>();
     private final UserWebAPI wuserAPI = WebAPILocator.getUserWebAPI();
-    private final HostWebAPI whostAPI = WebAPILocator.getHostWebAPI();
-    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();;
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-
-    /**
-     * Return true if any {@link com.dotcms.contenttype.model.type.UrlMapable} matches with
-     * {@link UrlMapContext#getUri()}, otherwise return false
-     *
-     * @param urlMapContext
-     * @return
-     * @throws DotDataException
-     */
-    public boolean isUrlPattern(final UrlMapContext urlMapContext) throws DotDataException {
+    private final ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+    public boolean isUrlPattern(final UrlMapContext urlMapContext)
+            throws DotDataException, DotSecurityException {
         return matchingUrlPattern(urlMapContext.getUri()) && getContentlet(urlMapContext) != null;
     }
 
     public Optional<URLMapInfo> processURLMap(final UrlMapContext context)
             throws DotSecurityException, DotDataException {
 
-        if (this.matchingUrlPattern(context.getUri())) {
-            final Matches matches = this.findPatternChange(context.getUri());
-
-            final Structure structure = CacheLocator.getContentTypeCache()
-                    .getStructureByInode(matches.getPatternChange().getStructureInode());
-
-            final Field hostField = this.findHostField(structure);
-
-            final Contentlet contentlet = this.getContentlet(matches, structure, hostField, context);
-
-            if (contentlet == null) {
-                return Optional.empty();
-            }
-
-            final Identifier pageUriIdentifier = this.getDetailtPageUri(structure);
-
-            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier, context.getUri()));
-        } else {
+        final Contentlet contentlet = getContentlet(context);
+        if (contentlet == null) {
             return Optional.empty();
         }
+
+        final ContentType contentType = contentlet.getContentType();
+        final Optional<Identifier> optDetailIdentifier = this.getDetailPageUri(contentType, context.getHost());
+
+        if(!optDetailIdentifier.isPresent()) {
+            return Optional.empty();
+        }
+        return Optional.of(new URLMapInfo(contentlet, optDetailIdentifier.get(), context.getUri()));
     }
 
     /**
-     * Return the {@link Contentlet} the match the {@link UrlMapContext#getUri()} value,
-     * if not exists any {@link com.dotcms.contenttype.model.type.UrlMapable} matching with the URI
-     * then a {@link DotRuntimeException} is thrown
+     * Return the {@link Contentlet} the match the {@link UrlMapContext#getUri()} value, if not
+     * exists any {@link com.dotcms.contenttype.model.type.UrlMapable} matching with the URI then a
+     * {@link DotRuntimeException} is thrown
      *
      * @param urlMapContext
      * @return
      */
-    private Contentlet getContentlet(final UrlMapContext urlMapContext){
-        final Matches matches = this.findPatternChange(urlMapContext.getUri());
-        final Structure structure = CacheLocator.getContentTypeCache()
-                .getStructureByInode(matches.getPatternChange().getStructureInode());
+    private Contentlet getContentlet(final UrlMapContext urlMapContext) throws DotSecurityException {
 
-        final Field hostField = this.findHostField(structure);
+        Contentlet matchingContentlet = null;
 
         try {
-            return this.getContentlet(matches, structure, hostField, urlMapContext);
-        } catch (DotDataException | DotSecurityException e){
+            // We could have multiple matches as multiple content types could have the same
+            // URLMap pattern and we need to evaluate all until we find content match.
+            final List<Matches> matchesFound = this.findMatch(urlMapContext.getUri());
+            if (!matchesFound.isEmpty()) {
+
+                for (final Matches matches : matchesFound) {
+                    final ContentType contentType = typeAPI.find(matches.getPatternChange().getStructureInode());
+
+                    matchingContentlet = this
+                            .getContentlet(matches, contentType, urlMapContext);
+                    if (null != matchingContentlet) {
+                        break;
+                    }
+                }
+
+            }
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(),
+                    String.format("Error processing URL [%s]", urlMapContext.getUri()), e);
             return null;
         }
+
+        return matchingContentlet;
     }
 
-    private boolean matchingUrlPattern(final String uri) throws DotDataException {
+    private Optional<Identifier> getDetailPageUri(final ContentType contentType, Host currentHost) {
+        if (contentType == null || UtilMethods.isEmpty(contentType.detailPage())) {
+            return Optional.empty();
+        }
+        
+        try {
+            final Identifier identifier = this.identifierAPI.find(contentType.detailPage());
+            if (identifier == null || !UtilMethods.isSet(identifier.getId())) {
+                Logger.info(this.getClass(),
+                        "No valid detail page for structure '" + contentType.name()
+                                + "'. Looking for detail page id=" + contentType
+                                .detailPage());
+                return Optional.empty();
+            }
+            
+            //if the detail page is on this host, send it!
+            if(identifier.getHostId().equals(currentHost.getIdentifier())) {
+                return Optional.of(identifier);
+            }
+            
+            // look for it on the current host
+            final Identifier myHostIdentifier = this.identifierAPI.find(currentHost, identifier.getPath());
+            if (myHostIdentifier == null || !UtilMethods.isSet(myHostIdentifier.getId())) {
+                Logger.info(this.getClass(),
+                        "No valid detail page for structure '" + contentType.name()
+                                + "'. Looking for a detail page=" + identifier.getPath() + " on host " + currentHost.getHostname());
+                return Optional.empty();
+            }
+
+            return Optional.of(myHostIdentifier);
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(), e);
+            return Optional.empty();
+        }
+    } 
+    
+
+    /**
+     * Return all the matches related to a given URI, multiple content types could use the URLMap
+     * pattern and on those cases we need to evaluate all the matches.
+     *
+     * @param uri URI to evaluate for matches
+     * @return List of found matches
+     * @throws DotDataException
+     */
+    private List<Matches> findMatch(final String uri) throws DotDataException {
+
+        // We want to avoid unnecessary lookups for vanity urls when browsing in the backend
+        final boolean filtered = CMSUrlUtil.BACKEND_FILTERED_COLLECTION.stream()
+                .anyMatch(uri::startsWith);
+        if (filtered) {
+            return Collections.emptyList();
+        }
+
         if (this.shouldLoadPatterns()) {
             this.loadPatterns();
         }
 
-        return containsRegEx(uri);
-    }
+        final List<Matches> foundMatches = new ArrayList<>();
 
-    private Identifier getDetailtPageUri(final Structure structure) {
-        if (structure != null && UtilMethods.isSet(structure.getDetailPage())) {
-
-            try {
-
-                final Identifier identifier = this.identifierAPI.find(structure.getDetailPage());
-                if (identifier == null || !UtilMethods.isSet(identifier.getInode())) {
-                    throw new DotRuntimeException(
-                            "No valid detail page for structure '" + structure.getName()
-                                    + "'. Looking for detail page id=" + structure
-                                    .getDetailPage());
-                }
-
-                return identifier;
-            } catch (Exception e) {
-                throw new DotRuntimeException(e);
-            }
-        } else {
-            return null;
-        }
-    }
-
-    private boolean containsRegEx(final String uri) {
-        final String mastRegEx = this.getURLMasterPattern().orElse(null);
-
-        if (mastRegEx == null) {
-            return false;
-        }
-
-        final String url = !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
-        return RegEX.contains(url, mastRegEx);
-    }
-
-    private static Optional<String> getURLMasterPattern() {
-        try {
-            final String mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
-
-            return Optional.ofNullable(mastRegEx);
-        } catch (DotCacheException e) {
-            throw new DotRuntimeException(e);
-        }
-    }
-
-    private Matches findPatternChange(final String uri) {
-        final String url = !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
+        final String url =
+                !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
 
         for (final ContentTypeURLPattern contentTypeURLPattern : this.patternsCache) {
 
-            final List<RegExMatch> matches = RegEX.findForUrlMap(url, contentTypeURLPattern.getRegEx());
+            final List<RegExMatch> matches = RegEX
+                    .findForUrlMap(url, contentTypeURLPattern.getRegEx());
             if (matches != null && !matches.isEmpty()) {
-                return new Matches(contentTypeURLPattern, matches);
+
+                /*
+                We need to make sure we have an exact match, we could have regex too generic, like
+                a regex in the root: "/{urlTitle}" resulting in a regex like "/(.+)/" which basically
+                will match any url.
+                 */
+                for (final RegExMatch regExMatch : matches) {
+                    if (regExMatch.getMatch().equals(url)) {
+                        foundMatches.add(new Matches(contentTypeURLPattern, matches));
+                    }
+                }
+
             }
         }
 
-        throw new DotRuntimeException("Not pattern match found");
+        return foundMatches;
     }
 
-    private Field findHostField(final Structure structure) {
-        return FieldsCache.getFieldsByStructureInode(structure.getInode()).stream()
-                .filter(field -> field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString()))
-                .findFirst()
-                .orElse(null);
+    private boolean matchingUrlPattern(final String uri) throws DotDataException {
+        final List<Matches> foundMatches = findMatch(uri);
+        return !foundMatches.isEmpty();
     }
 
-    private String getHostFilter(final Host host) {
-        try {
-            final Host systemHost = this.whostAPI.findSystemHost(this.wuserAPI.getSystemUser(), true);
-            return String.format("+(conhost: %s conhost: %s)", host.getIdentifier(), systemHost.getIdentifier());
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(URLMapAPIImpl.class, e.getMessage()
-                    + " : Unable to build host in query : ", e);
-            return "";
-        }
-    }
 
-    private String buildFields(final Structure structure,
+    private String buildFields(final ContentType structure,
             final Matches matches) {
 
         final StringBuilder query = new StringBuilder();
@@ -206,9 +213,9 @@ public class URLMapAPIImpl implements URLMapAPI {
             if (value.endsWith("/")) {
                 value = value.substring(0, value.length() - 1);
             }
-            query.append('+').append(structure.getVelocityVarName()).append('.')
+            query.append('+').append(structure.variable()).append('.')
                     .append(fieldMatches.get(counter)).append("_dotRaw").append(':')
-                    .append(QueryParser.escape(value)).append(' ');
+                    .append(ESUtils.escapeExcludingSlashIncludingSpace(value)).append(' ');
             counter++;
         }
 
@@ -217,18 +224,15 @@ public class URLMapAPIImpl implements URLMapAPI {
 
     private Contentlet getContentlet(
             final Matches matches,
-            final Structure structure,
-            final Field hostField,
+            final ContentType contentType,
             final UrlMapContext context)
              throws DotDataException, DotSecurityException {
 
         Contentlet contentlet = null;
 
-        final String query = this.buildContentQuery(matches, structure, hostField, context);
+        final String query = this.buildContentQuery(matches, contentType, context);
         final List<Contentlet> contentletSearches =
-                ContentUtils.pull(query, 0, 2,
-                        (hostField!=null && hostField.isRequired()) ? "conhost, modDate" : "modDate",
-                        this.wuserAPI.getSystemUser(), true);
+                ContentUtils.pull(query, 0, 2, "score",this.wuserAPI.getSystemUser(), true);
 
         if (!contentletSearches.isEmpty()) {
             int idx = 0;
@@ -244,7 +248,9 @@ public class URLMapAPIImpl implements URLMapAPI {
             checkContentPermission(context, contentlet);
         }
 
-        return contentlet;
+       final Contentlet finalContentlet = contentlet;
+       return Try.of(()->new DotTransformerBuilder().
+               defaultOptions().content(finalContentlet).build().hydrate().get(0)).getOrNull();
     }
 
     private void checkContentPermission(final UrlMapContext context, final Contentlet contentlet)
@@ -254,34 +260,40 @@ public class URLMapAPIImpl implements URLMapAPI {
                 contentlet, PermissionLevel.READ.getType(), context.getUser(), context.getMode().respectAnonPerms);
 
         if (!havePermission) {
-            throw new DotSecurityException(String.format("User dont have permission in content: %s", contentlet.getName()));
+            throw new DotSecurityException(String.format("User does not have permission in content: %s", contentlet.getName()));
         }
     }
 
     private String buildContentQuery(
             final Matches matches,
-            final Structure structure,
-            final Field hostField,
+            final ContentType structure,
             final UrlMapContext context) {
 
         final StringBuilder query = new StringBuilder();
 
-        query.append("+structureName:").append(structure.getVelocityVarName())
-             .append(" +deleted:false ");
+        query.append("+contentType:")
+            .append(structure.variable())
+            .append(" +deleted:false ")
+            .append(" +(conhost:")
+                .append(context.getHost().getIdentifier())
+                .append(" OR conhost:")
+                .append(Host.SYSTEM_HOST)
+            .append(")");
+        
 
-        if (context.getMode() == PageMode.PREVIEW_MODE || context.getMode() == PageMode.EDIT_MODE) {
-            query.append("+working:true ");
+        if (context.getMode().showLive) {
+            query.append(" +live:true ");
         } else {
-            query.append("+live:true ");
+            query.append(" +working:true ");
         }
 
-        if (null != hostField && context.getHost() != null) {
-            query.append(this.getHostFilter(context.getHost()));
-        }
+
 
         query.append(" ");
-        query.append(this.buildFields(structure, matches))
-             .append(" +languageId:").append(context.getLanguageId());
+        query.append(this.buildFields(structure, matches));
+        
+        // score the current language higher
+        query.append(" languageId:").append(context.getLanguageId());
 
         return query.toString();
     }
@@ -295,7 +307,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             Logger.error(URLMapAPIImpl.class, e2.getMessage(), e2);
         }
 
-        return mastRegEx == null || patternsCache == null || patternsCache.isEmpty();
+        return mastRegEx == null || patternsCache.isEmpty();
     }
 
     /**
@@ -309,9 +321,14 @@ public class URLMapAPIImpl implements URLMapAPI {
      * @throws DotDataException An error occurred when retrieving information from the database.
      */
     private synchronized void loadPatterns() throws DotDataException {
-        patternsCache = new ArrayList<>();
+        
+        if(!shouldLoadPatterns()) {
+            return;
+        }
+        
+        patternsCache.clear();
 
-        final List<SimpleStructureURLMap> urlMaps = StructureFactory.findStructureURLMapPatterns();
+        final List<SimpleStructureURLMap> urlMaps = typeAPI.findStructureURLMapPatterns();
 
         if (urlMaps != null && !urlMaps.isEmpty()) {
             final StringBuilder masterRegEx = new StringBuilder("^(");
@@ -327,7 +344,7 @@ public class URLMapAPIImpl implements URLMapAPI {
 
                 patternsCache.add(new ContentTypeURLPattern(
                         regEx, urlMap.getInode(),
-                        urlMap.getURLMapPattern(), getFieldMathed(urlMap)
+                        urlMap.getURLMapPattern(), getFieldMatches(urlMap)
                 ));
 
                 if (masterRegEx.length() > startLength) {
@@ -344,10 +361,10 @@ public class URLMapAPIImpl implements URLMapAPI {
     }
 
     @NotNull
-    private List<String> getFieldMathed(final SimpleStructureURLMap urlMap) {
-        final List<RegExMatch> fieldMathed = RegEX.find(urlMap.getURLMapPattern(), "{([^{}]+)}");
+    private List<String> getFieldMatches(final SimpleStructureURLMap urlMap) {
+        final List<RegExMatch> fieldMatches = RegEX.find(urlMap.getURLMapPattern(), "{([^{}]+)}");
         final List<String> fields = new ArrayList<String>();
-        for (final RegExMatch regExMatch : fieldMathed) {
+        for (final RegExMatch regExMatch : fieldMatches) {
             fields.add(regExMatch.getGroups().get(0).getMatch());
         }
         return fields;

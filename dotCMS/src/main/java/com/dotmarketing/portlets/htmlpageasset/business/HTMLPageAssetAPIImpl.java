@@ -27,6 +27,7 @@ import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
@@ -753,7 +754,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         
 
         ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), viewingLang );
-        if(cinfo==null && viewingLang!=languageAPI.getDefaultLanguage().getId() && languageAPI.canDefaultPageToDefaultLanguage()){
+        if((cinfo==null || cinfo.getLiveInode() == null) && viewingLang!=languageAPI.getDefaultLanguage().getId() && languageAPI.canDefaultPageToDefaultLanguage()){
           cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageAPI.getDefaultLanguage().getId() );
         }
         // if we still have nothing.
@@ -906,13 +907,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     languageAPI.getDefaultLanguage().getId(), user, respectFrontEndPermissions);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             } catch(DotStateException e) {
-                throw new ResourceNotFoundException(
-                        "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: "
+                throw new DoesNotExistException(
+                        "Unable to find Page. Identifier: " + identifier + ", Live: " + live + ", Lang: "
                                 + languageAPI.getDefaultLanguage().getId(), e);
             }
         } else {
-            throw new ResourceNotFoundException(
-                    "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: " + providedLang, dse);
+            throw new DoesNotExistException(
+                    "Unable to find Page. Identifier: " + identifier + ", Live: " + live + ", Lang: " + providedLang, dse);
         }
         return htmlPage;
     }

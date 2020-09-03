@@ -9,6 +9,8 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -41,7 +43,10 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
 import com.dotcms.contenttype.model.field.event.FieldSavedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -69,14 +74,15 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.util.*;
+
 import org.apache.commons.lang.StringUtils;
 
 
@@ -95,6 +101,7 @@ public class FieldAPIImpl implements FieldAPI {
   private final UserAPI userAPI;
   private final RelationshipAPI relationshipAPI;
   private final LocalSystemEventsAPI localSystemEventsAPI;
+  private final LanguageVariableAPI languageVariableAPI;
 
   private final FieldFactory fieldFactory = new FieldFactoryImpl();
 
@@ -103,20 +110,23 @@ public class FieldAPIImpl implements FieldAPI {
           APILocator.getContentletAPI(),
           APILocator.getUserAPI(),
           APILocator.getRelationshipAPI(),
-          APILocator.getLocalSystemEventsAPI());
+          APILocator.getLocalSystemEventsAPI(),
+          APILocator.getLanguageVariableAPI());
   }
 
   @VisibleForTesting
   public FieldAPIImpl(final PermissionAPI perAPI,
-                        final ContentletAPI conAPI,
-                        final UserAPI userAPI,
-                        final RelationshipAPI relationshipAPI,
-                        final LocalSystemEventsAPI localSystemEventsAPI) {
+                      final ContentletAPI conAPI,
+                      final UserAPI userAPI,
+                      final RelationshipAPI relationshipAPI,
+                      final LocalSystemEventsAPI localSystemEventsAPI,
+                      final LanguageVariableAPI languageVariableAPI) {
       this.permissionAPI   = perAPI;
       this.contentletAPI   = conAPI;
       this.userAPI         = userAPI;
       this.relationshipAPI = relationshipAPI;
       this.localSystemEventsAPI = localSystemEventsAPI;
+      this.languageVariableAPI = languageVariableAPI;
   }
 
   @WrapInTransaction
@@ -237,6 +247,10 @@ public class FieldAPIImpl implements FieldAPI {
                   String.format("User %s/%s modified field %s to %s Structure.", user.getUserId(), user.getFirstName(),
                           field.name(), structure.getName()));
       } else {
+          //If saving a new indexed field, it should try to set an ES mapping for the field
+          if (result.indexed()) {
+              addESMappingForField(structure, result);
+          }
           ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
                   String.format("User %s/%s added field %s to %s Structure.", user.getUserId(), user.getFirstName(), field.name(),
                           structure.getName()));
@@ -249,6 +263,39 @@ public class FieldAPIImpl implements FieldAPI {
 
       return result;
   }
+
+    /**
+     * This method tries to set an ES mapping for the field.
+     * In case of failure, we just log a warning and continue with the transaction
+     * @param field
+     */
+    private void addESMappingForField(final Structure structure, final Field field) {
+        try {
+            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            if (indiciesInfo != null){
+                if (UtilMethods.isSet(indiciesInfo.getLive())) {
+                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getLive());
+                    Logger.info(this.getClass(), String.format(
+                            "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
+                            field.name(), structure.getName(), APILocator.getESIndexAPI()
+                                    .removeClusterIdFromName(indiciesInfo.getLive())));
+                }
+
+                if (UtilMethods.isSet(indiciesInfo.getWorking())) {
+                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getWorking());
+                    Logger.info(this.getClass(), String.format(
+                            "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
+                            field.name(), structure.getName(), APILocator.getESIndexAPI()
+                                    .removeClusterIdFromName(indiciesInfo.getWorking())));
+                }
+            }
+
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(), String.format(
+                    "Error trying to set Elasticsearch mapping for Field: %s. Content type: %s",
+                    field.name(), structure.getName()), e);
+        }
+    }
 
     /**
      * Validates that properties n a relationship field are set correctly
@@ -776,6 +823,51 @@ public class FieldAPIImpl implements FieldAPI {
     }
   }
 
-  
+    @Override
+    public Map<String, Object> getFieldInternationalization(
+            final ContentType contentType,
+            final ContentTypeInternationalization contentTypeInternationalization,
+            final Map<String, Object> fieldMap
+    )  {
+        return getFieldInternationalization(contentType, contentTypeInternationalization, fieldMap, APILocator.systemUser());
+    }
+
+    @Override
+    public Map<String, Object> getFieldInternationalization(
+            final ContentType contentType,
+            final ContentTypeInternationalization contentTypeInternationalization,
+            final Map<String, Object> fieldMap,
+            final User user
+    )  {
+
+        final long languageId = contentTypeInternationalization.getLanguageId();
+        final boolean live = contentTypeInternationalization.isLive();
+
+        try {
+            final ImmutableMap.Builder<String, Object> builder = new ImmutableMap.Builder<>();
+
+            for (final String propertyName : fieldMap.keySet()) {
+                final String key = String.format("%s.%s.%s", contentType.variable(), fieldMap.get("variable"), propertyName);
+                final String i18nValue = this.languageVariableAPI.getLanguageVariable(
+                        key, languageId, user, live, user == null);
+
+                if (!i18nValue.equals(key) && !i18nValue.equals(fieldMap.get(propertyName).toString())) {
+                    builder.put(propertyName, i18nValue);
+                } else {
+                    builder.put(propertyName, fieldMap.get(propertyName));
+                }
+            }
+
+            return builder.build();
+        } catch (DotRuntimeException e) {
+            if (ExceptionUtil.causedBy(e, ConnectException.class)) {
+               return  new ImmutableMap.Builder<String, Object>().putAll(fieldMap).build();
+            } else {
+                throw e;
+            }
+        }
+
+
+    }
   
 }

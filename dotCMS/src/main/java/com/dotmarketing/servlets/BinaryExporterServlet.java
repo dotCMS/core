@@ -259,6 +259,8 @@ public class BinaryExporterServlet extends HttpServlet {
 						} catch(DotSecurityException e) {
 							if (!mode.respectAnonPerms) {
 								content = getContentletLiveVersion(assetInode, user, lang);
+							} else {
+								throw e;
 							}
 						}
 					}
@@ -375,15 +377,13 @@ public class BinaryExporterServlet extends HttpServlet {
         inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
       }
       
-      final String[] val = params.get("filter");
-      if(val!=null && val[0].contains("Quality")) {
+
+      if(params.get("quality_q")!=null) {
       	final UserAgent userAgent = new UserAgent(req.getHeader("user-agent"));
         if(userAgent.getBrowser() == Browser.SAFARI || userAgent.getOperatingSystem().getGroup() == OperatingSystem.IOS){
-          params.put("filter", new String[] {val[0].replace("Quality","Jpeg")});
           params.put("jpeg_q", params.get("quality_q"));
           params.put("jpeg_p",  new String[] {"1"});
         }else {
-          params.put("filter", new String[] {val[0].replace("Quality","WebP")});
           params.put("webp_q", params.get("quality_q"));
         }
       }
@@ -641,7 +641,9 @@ public class BinaryExporterServlet extends HttpServlet {
 				    req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
 					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 				}else{
-				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, req.getAttribute("javax.servlet.forward.request_uri"));
+					final String requestUri = (String) req.getAttribute("javax.servlet.forward.request_uri");
+					Logger.debug(this, "Setting redirect after login to requested uri: " + requestUri);
+				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestUri);
 					resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
 				}
 			  }

@@ -3,11 +3,11 @@ package com.dotcms.rest.api.v1.temp;
 import com.dotcms.rest.exception.BadRequestException;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -124,10 +125,10 @@ public class TempFileAPI {
   public long maxFileSize(final HttpServletRequest request) {
     
 
-    final long requestedMax = Try.of(()->Long.parseLong(request.getParameter("maxFileLength"))).getOrElse(-1l);
-    final long systemMax =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE, -1l);
-    final long anonMax =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, -1l);
-    final boolean isAnon = PortalUtil.getUserId(request) == null || UserAPI.CMS_ANON_USER_ID.equals(PortalUtil.getUserId(request));
+    final long requestedMax = ConversionUtils.toLongFromByteCountHumanDisplaySize(request.getParameter("maxFileLength"), -1);
+    final long systemMax    =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE, -1l);
+    final long anonMax      =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, -1l);
+    final boolean isAnon    = PortalUtil.getUserId(request) == null || UserAPI.CMS_ANON_USER_ID.equals(PortalUtil.getUserId(request));
     
     List<Long> longs = (isAnon) ? Lists.newArrayList(requestedMax,systemMax,anonMax) : Lists.newArrayList(requestedMax,systemMax);
     longs.removeIf(i-> i < 0);
@@ -157,7 +158,7 @@ public class TempFileAPI {
     final File tempFile = dotTempFile.file;
     final long maxLength = maxFileSize(request);
         
-    try (final OutputStream out = new BoundedOutputStream(maxLength,new FileOutputStream(tempFile))) {
+    try (final OutputStream out = new BoundedOutputStream(maxLength,Files.newOutputStream(tempFile.toPath()))) {
 
 
       int read = 0;
@@ -197,7 +198,7 @@ public class TempFileAPI {
       final File tempFile = dotTempFile.file;
 
       final OutputStream out = new BoundedOutputStream(maxFileSize(request),
-              new FileOutputStream(tempFile));
+                      Files.newOutputStream(tempFile.toPath()));
 
       final CircuitBreakerUrl urlGetter =
               CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url.toString())
@@ -212,22 +213,24 @@ public class TempFileAPI {
   /**
    * This method receives a URL and checks if starts with http or https,
    * and also makes a request to the URL and if returns 200 the URL is valid,
-   * if returns any other response an exception will be thrown
+   * if returns any other response will be false
    * @param url
-   * @return
-   * @throws IOException
+   * @return boolean if the url is valid or not
    */
-  public boolean validUrl(final String url) throws IOException {
+  public boolean validUrl(final String url) {
 
     if(!(url.toLowerCase().startsWith("http://") ||
             url.toLowerCase().startsWith("https://"))){
       Logger.error(this, "URL does not starts with http or https");
       return false;
     }
-
-    final CircuitBreakerUrl urlGetter =
-            CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
-    urlGetter.doString();
+    try {
+      final CircuitBreakerUrl urlGetter =
+              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
+      urlGetter.doString();
+    } catch (IOException | BadRequestException e) {//If response is not 200, CircuitBreakerUrl throws BadRequestException
+      return false;
+    }
 
     return true;
   }

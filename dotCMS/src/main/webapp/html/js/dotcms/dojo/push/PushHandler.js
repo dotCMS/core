@@ -8,6 +8,9 @@ dojo.require("dotcms.dijit.AddToBundleDialog");
 dojo.require("dojox.data.QueryReadStore");
 dojo.require("dojox.data.JsonRestStore");
 dojo.require("dojo.NodeList-traverse");
+
+const LAST_BUNDLE_USED = 'lastSelectedBundle';
+
 dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
     assetIdentifier: "",
@@ -90,19 +93,19 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
         var self = this;
         setTimeout(function() {
-	        self.environmentStore.fetch({
-	    		onComplete:function(items,request) {
+            self.environmentStore.fetch({
+                onComplete:function(items,request) {
                     //Pre-select the environment only if there is one single instance.
                     items = items.filter(item => item.id != '0');
                     if(items.length === 1) {
                         self.addToWhereToSend(items[0].id, items[0].name);
                         self.refreshWhereToSend();
                     }
-	    		}
-	    	})},200);
+                }
+            })},200);
 
     },
-    
+
     showRestrictedDialog: function (assetId, displayDateFilter) {
     	if(this.environmentStore == null) {
     		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
@@ -122,7 +125,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.container = this;
         dialog.restricted = true;
         dialog.show();
-        
+
         var self = this;
         setTimeout(function() {
 	        self.environmentStore.fetch({
@@ -185,9 +188,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 }
             })},200);
     },
-    
-    showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate){
 
+    showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate, isBulk){
         this.assetIdentifier = null;
 
         this.workflow = workflow;
@@ -207,7 +209,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.title = this.title;
         dialog.container = this;
         dialog.workflow = this.workflow;
-        dialog.show();
+        dialog.show(isBulk);
 
         var self = this;
         setTimeout(function() {
@@ -281,7 +283,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
      * It didn't get renamed to avoid backwards compatibility issues
      */
 	remotePublish : function(){
-	    
         var dojoStyle = dojo.require("dojo.dom-style");
 
 		if((dojo.byId("whereToSend") && this.whereToSend.length === 0)) {
@@ -402,7 +403,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 hasCondition:hasCondition,
                 neverExpire:neverExpire
             };
-
             let formData = {
                 assignComment:assignComment,
                 pushPublish:pushPublish
@@ -469,7 +469,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
     addToBundle: function () {
 
-        var lastSelectedBundle = JSON.parse(sessionStorage.getItem("lastSelectedBundle"));
+        var lastSelectedBundle = JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED));
 
         if (dijit.byId("bundleSelect").value == '') {
             showDotCMSSystemMessage(dojo.byId("bundleRequired").value);
@@ -491,8 +491,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             bundleId = dijit.byId("bundleSelect").value;
         }
 
-        if (lastSelectedBundle == undefined || lastSelectedBundle == null || lastSelectedBundle.id == undefined) {
-            lastSelectedBundle = [];
+        if (bundleId !== undefined && bundleId !== null) {
             lastSelectedBundle = {name: bundleName, id: bundleId};
         }
 
@@ -538,7 +537,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         };
         dojo.xhrPost(xhrArgs);
 
-        sessionStorage.setItem("lastSelectedBundle",JSON.stringify(lastSelectedBundle));
+        sessionStorage.setItem(LAST_BUNDLE_USED,JSON.stringify(lastSelectedBundle));
 
     },
 
@@ -666,8 +665,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         return (this.workflow !== null);
     },
 
-    evaluateCondition: function (actionId) {
-
+    /**
+     * Load custom code specified in the workflow and place it in the popup
+     */
+    evaluateCondition: function (actionId, title, eventData) {
         let urlTemplate = "/api/v1/workflow/actions/{actionId}/condition";
         const url = urlTemplate.replace('{actionId}',actionId);
         let dataAsJson = {};
@@ -680,13 +681,16 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 'Content-Type' : 'application/json;charset=utf-8',
             },
             load: function(data) {
-                var html = data.entity;
-                dojox.html.set(dojo.byId("pushPublish-container"), html, {
-                    executeScripts: true,
-                    renderStyles: true,
-                    scriptHasHooks: true,
-                    parseContent: true
+                var customEvent = document.createEvent("CustomEvent");
+                customEvent.initCustomEvent("ng-event", false, false,  {
+                    name: "push-publish",
+                    data: {
+                        customCode: data.entity,
+                        title: title,
+                        ...eventData
+                    }
                 });
+                document.dispatchEvent(customEvent);
             },
             error: function(error){
                 console.error(error);

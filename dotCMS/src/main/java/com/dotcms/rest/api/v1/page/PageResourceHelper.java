@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PersonalizedContentlet;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -97,7 +98,9 @@ public class PageResourceHelper implements Serializable {
 
 
     @WrapInTransaction
-    public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
+    public void saveContent(final String pageId,
+                            final List<PageContainerForm.ContainerEntry> containerEntries,
+                            final Language language) throws DotDataException {
 
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -129,7 +132,7 @@ public class PageResourceHelper implements Serializable {
         for (final String personalization : multiTreesMap.keySet()) {
 
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
-                    multiTreesMap.get(personalization));
+                    multiTreesMap.get(personalization), Optional.ofNullable(language.getId()));
         }
     }
 
@@ -283,7 +286,9 @@ public class PageResourceHelper implements Serializable {
         final Container foundContainer = APILocator.getContainerAPI()
                 .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
         if (foundContainer instanceof FileAssetContainer) {
-            containerPath = FileAssetContainer.class.cast(foundContainer).getPath();
+            containerPath = FileAssetContainerUtil.getInstance().getFullPath(
+                    FileAssetContainer.class.cast(foundContainer)
+            );
         }
 
         if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {

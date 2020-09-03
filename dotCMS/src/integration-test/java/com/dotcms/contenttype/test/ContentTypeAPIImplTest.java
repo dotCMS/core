@@ -5,10 +5,12 @@ import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -33,6 +35,8 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.contenttype.model.type.EnterpriseType;
 import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
@@ -66,8 +70,12 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -78,13 +86,17 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -385,6 +397,47 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				contentTypeApi.delete(newDefaultContentType);
 			}
 		}
+	}
+
+	@Test
+	public void testDotAssetType() throws DotDataException, DotSecurityException, IOException {
+
+		final String variable = "testDotAsset" + System.currentTimeMillis();
+		final ContentType dotAssetContentType = contentTypeApi.save(ContentTypeBuilder.builder(DotAssetContentType.class).folder(
+				FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(variable)
+				.owner(user.getUserId()).build());
+
+		final List<Field> fields = dotAssetContentType.fields();
+
+		assertEquals(dotAssetContentType.baseType(), BaseContentType.DOTASSET);
+		assertEquals(dotAssetContentType.variable().toLowerCase(), variable.toLowerCase());
+		//Check that the defaultType attribute in the new ContentType is set to true
+		assertTrue(!fields.isEmpty());
+		//Check that the default ContentType ID is the same as the new contentType
+		assertEquals(fields.size(), 3);
+		assertTrue(fields.stream().anyMatch(field -> field.variable().equals(DotAssetContentType.SITE_OR_FOLDER_FIELD_VAR)));
+		assertTrue(fields.stream().anyMatch(field -> field.variable().equals(DotAssetContentType.ASSET_FIELD_VAR)));
+		assertTrue(fields.stream().anyMatch(field -> field.variable().equals(DotAssetContentType.TAGS_FIELD_VAR)));
+
+		final File file = FileUtil.createTemporalFile("bin");
+		final String content = "This is a test temporal file";
+		try (final FileWriter fileWriter = new FileWriter(file)) {
+
+			fileWriter.write(content);
+		}
+		final Contentlet dotAssetContentlet = new Contentlet();
+		dotAssetContentlet.setContentType(dotAssetContentType);
+		dotAssetContentlet.setBinary(DotAssetContentType.ASSET_FIELD_VAR, file);
+
+		final Contentlet checkinDotAssetContentlet = APILocator.getContentletAPI().checkin(dotAssetContentlet,
+				new ContentletDependencies.Builder()
+				.modUser(user).indexPolicy(IndexPolicy.FORCE).build());
+
+		assertNotNull(checkinDotAssetContentlet);
+		final String contentRecovery = IOUtils.toString(checkinDotAssetContentlet.getBinaryStream(
+				DotAssetContentType.ASSET_FIELD_VAR), Charset.defaultCharset());
+
+		assertEquals(content, contentRecovery);
 	}
 
 	@Test
@@ -851,6 +904,227 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
             }
         }
     }
+
+	@DataProvider
+	public static Object[] getReservedTypeVariables() {
+		return ContentTypeFactoryImpl.reservedContentTypeVars.toArray();
+	}
+
+	@DataProvider
+	public static Object[] getReservedTypeVariablesExcludingHost() {
+		return ContentTypeFactoryImpl.reservedContentTypeVars.stream()
+				.filter(var->!var.equals("host")).toArray();
+	}
+
+	/**
+	 * Given scenario: Content type with reserved var and not marked as system type
+	 * Expected result: Should throw {@link IllegalArgumentException}
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	@UseDataProvider("getReservedTypeVariables")
+	public void testSave_GivenTypeWithReservedVarAndNotSystem_ShouldThrowException(final String varname)
+			throws DotSecurityException, DotDataException {
+
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable(varname)
+							.name(varname)
+							.system(false) // system false!
+							.owner(user.getUserId())
+							.build());
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+	/**
+	 * Given scenario: Content type with name set with reserved var and not marked as system type
+	 * Expected result: the resulting var should be different from the given name
+	 */
+	@Test
+	@UseDataProvider("getReservedTypeVariablesExcludingHost")
+	public void testSave_GivenTypeWithReservedVarInNameAndNotSystem_ShouldSaveWithDifferentVar(final String varname)
+			throws DotSecurityException, DotDataException {
+
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name(varname) // setting varname as name!
+							.system(false) // system false!
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertNotEquals(varname, type.variable());
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+	/**
+	 * Given scenario: Content type with reserved var and marked as system type
+	 * Expected result: Should save with given variable
+	 *
+	 * Note: not deleting the type in a finally block because system types can't be deleted
+	 */
+	@Test
+	@UseDataProvider("getReservedTypeVariablesExcludingHost")
+	public void testSave_GivenTypeWithReservedVarMarkedAsSystem_ShouldSaveWithGivenVar(final String varname)
+			throws DotSecurityException, DotDataException {
+
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable(varname)
+							.name(varname)
+							.system(true)  // system true!
+							.owner(user.getUserId())
+							.build());
+			Assert.assertEquals(varname, type.variable());
+		} finally {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.from(type)
+							.system(false)  // system false in order to remove!
+							.build());
+			APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+		}
+	}
+
+	/**
+	 * Given scenario: Existing Content type with variable set with reserved var and not marked as system type
+	 * Expected result: should let update the Content Type and keep the same variable
+	 */
+	@Test
+	@UseDataProvider("getReservedTypeVariablesExcludingHost")
+	public void testSave_GivenExistingTypeWithReservedVar_ShouldUpdateAndKeepOriginalVar(final String varname)
+			throws DotSecurityException, DotDataException {
+
+		ContentType type = null;
+		try {
+			// let's first save it as system to bypass the validation
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable(varname) // setting varname as variable!
+							.name(varname) // setting varname as name!
+							.system(true) // system true!
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertEquals(varname, type.variable());
+
+			// now let's try to update the Content type's name and system=false
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.from(type)
+							.name("new name")
+							.system(false) // system false!
+							.build());
+
+			assertEquals("new name", type.name());
+			assertFalse(type.system());
+
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+	/**
+	 * Given scenario: Trying to save a content type whose variable already belongs to an existing type
+	 * but with different case
+	 * Expected result: An exception should be thrown upon attempting to save the content type
+	 */
+
+	@Test(expected = IllegalArgumentException.class)
+	public void test_saveContentTypeWithSameVariableOfExistingTypeButDifferentCase_ShouldThrowException()
+			throws DotSecurityException, DotDataException {
+
+		long time = System.currentTimeMillis();
+		ContentType type = null;
+		ContentType type2 = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable("mivariable" + time)
+							.name("mivariable" + time)
+							.system(false) // system true!
+							.owner(user.getUserId())
+							.build());
+
+			type2 = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable("Mivariable" + time) // same variable different case
+							.name("Mivariable" + time)
+							.system(false) // system true!
+							.owner(user.getUserId())
+							.build());
+
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+
+			if(type2!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type2);
+			}
+		}
+	}
+
+	@DataProvider
+	public static Object[] getReservedTypeNames() {
+		return ContentTypeAPI.reservedStructureNames.toArray();
+	}
+
+	/**
+	 * Given scenario: Content type with reserved name set
+	 * Expected result: {@link IllegalArgumentException} should be thrown
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	@UseDataProvider("getReservedTypeNames")
+	public void testSave_GivenTypeWithReservedNameAndNotSystem_ShouldThrowException(final String name)
+			throws DotSecurityException, DotDataException {
+
+		APILocator.getContentTypeAPI(APILocator.systemUser())
+				.save(ContentTypeBuilder
+						.builder(SimpleContentType.class)
+						.folder(FolderAPI.SYSTEM_FOLDER)
+						.host(Host.SYSTEM_HOST)
+						.name(name) // setting a reserved name
+						.system(false) // system false!
+						.owner(user.getUserId())
+						.build());
+
+	}
+
 
 	@Test
 	@UseDataProvider("testCasesUpdateTypePermissions")
@@ -1875,6 +2149,69 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			}
 		}
 	}
-     
-     
+
+	@DataProvider
+	public static Object[] getReservedContentTypeVars() {
+		return ContentTypeFactoryImpl.reservedContentTypeVars.toArray();
+	}
+
+	/***
+	 * If you try to create a CT with a reserved name, it should alter the variable to avoid
+	 * conflicts. Reserved content type variables: {@link ContentTypeFactoryImpl#reservedContentTypeVars }
+	 *
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	@Test
+	@UseDataProvider("getReservedContentTypeVars")
+	public void testSaveContentTypeWithReservedVar_ShouldUseDifferentVar(final String reservedVar)
+			throws DotSecurityException, DotDataException {
+
+		// Skipping "host" case since it is also a forbidden content type name but will throw exception. com.dotcms.contenttype.business.ContentTypeAPI.reservedStructureNames
+		if(reservedVar.equalsIgnoreCase("host")) return;
+
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name(reservedVar)
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertNotEquals(reservedVar, type.variable());
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+	/**
+	 * Method to rest: {@link ContentTypeAPI#findAllRespectingLicense()}
+	 * Given scenario: No EE license
+	 * Expected result: {@link EnterpriseType}s not included in returned List
+	 */
+	@Test
+	public void test_findAllRespectingLicense_whenCommunity_ExcludeEETypes() throws Exception {
+		runNoLicense(() -> {
+			assertTrue(APILocator.getContentTypeAPI(APILocator.systemUser()).findAllRespectingLicense()
+					.stream().noneMatch((type)->type instanceof EnterpriseType));
+
+		});
+	}
+
+	/**
+	 * Method to rest: {@link ContentTypeAPI#findAllRespectingLicense()}
+	 * Given scenario: Valid EE license
+	 * Expected result: {@link EnterpriseType}s included in returned List
+	 */
+	@Test
+	public void test_findAllRespectingLicense_whenLicense_IncludeEETypes() throws Exception {
+		assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser()).findAllRespectingLicense()
+				.stream().noneMatch((type) -> type instanceof EnterpriseType));
+
+	}
 }
