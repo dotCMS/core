@@ -9,10 +9,8 @@ import graphql.kickstart.servlet.AbstractGraphQLHttpServlet;
 import graphql.kickstart.servlet.GraphQLConfiguration;
 import graphql.kickstart.servlet.input.GraphQLInvocationInputFactory;
 import io.vavr.Function0;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -61,13 +59,6 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
     protected void doPost(final HttpServletRequest request, final HttpServletResponse response) {
         corsHeaders.apply().entrySet().stream().forEach(e -> response.setHeader(e.getKey(), e.getValue()));
         super.doPost(request, response);
-    }
-
-    @Override
-    protected void doOptions(final HttpServletRequest request, final HttpServletResponse response)
-            throws ServletException, IOException {
-        corsHeaders.apply().entrySet().stream().forEach(e -> response.setHeader(e.getKey(), e.getValue()));
-        super.doOptions(request, response);
     }
     
     
