@@ -16,8 +16,8 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { PrimeTemplate, InputSwitchModule } from 'primeng/primeng';
-import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
-import { mockKeyValue } from '../dot-key-value.component.spec';
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+import { mockKeyValue } from '../dot-key-value-ng.component.spec';
 
 @Component({
     selector: 'dot-test-host-component',

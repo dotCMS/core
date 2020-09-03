@@ -1,12 +1,12 @@
 import { Component, Input, SimpleChanges, OnChanges, Output, EventEmitter } from '@angular/core';
 import * as _ from 'lodash';
-import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotKeyValueUtil } from './util/dot-key-value-util';
 
 @Component({
-    selector: 'dot-key-value',
-    styleUrls: ['./dot-key-value.component.scss'],
-    templateUrl: './dot-key-value.component.html'
+    selector: 'dot-key-value-ng',
+    styleUrls: ['./dot-key-value-ng.component.scss'],
+    templateUrl: './dot-key-value-ng.component.html'
 })
 export class DotKeyValueComponent implements OnChanges {
     @Input() autoFocus = true;

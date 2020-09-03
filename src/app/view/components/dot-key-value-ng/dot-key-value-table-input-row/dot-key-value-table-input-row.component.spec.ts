@@ -6,8 +6,8 @@ import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { InputSwitchModule } from 'primeng/primeng';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
-import { mockKeyValue } from '../dot-key-value.component.spec';
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+import { mockKeyValue } from '../dot-key-value-ng.component.spec';
 import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-row.component';
 
 @Component({

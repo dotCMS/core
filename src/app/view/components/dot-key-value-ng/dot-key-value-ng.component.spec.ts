@@ -7,9 +7,9 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { TableModule } from 'primeng/table';
 import * as _ from 'lodash';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotKeyValueTableRowModule } from '@components/dot-key-value/dot-key-value-table-row/dot-key-value-table-row.module';
-import { DotKeyValueComponent } from './dot-key-value.component';
-import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
+import { DotKeyValueTableRowModule } from '@components/dot-key-value-ng/dot-key-value-table-row/dot-key-value-table-row.module';
+import { DotKeyValueComponent } from './dot-key-value-ng.component';
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row/dot-key-value-table-row.component';
 import { DotKeyValueTableInputRowModule } from './dot-key-value-table-input-row/dot-key-value-table-input-row.module';
@@ -29,7 +29,7 @@ export const mockKeyValue = [
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-key-value [showHiddenField]="showHiddenField" [variables]="value"></dot-key-value>
+        <dot-key-value-ng [showHiddenField]="showHiddenField" [variables]="value"></dot-key-value-ng>
     `
 })
 class TestHostComponent {
@@ -73,7 +73,7 @@ describe('DotKeyValueComponent', () => {
         fixtureHost = DOTTestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
-        de = deHost.query(By.css('dot-key-value'));
+        de = deHost.query(By.css('dot-key-value-ng'));
         component = de.componentInstance;
     });
 
