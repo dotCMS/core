@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -162,7 +163,7 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
             final ScheduledTask task = new CronScheduledTask(jobName,
                     groupName, description,
                     jobClass.getCanonicalName(), false,
-                    nextTriggerName, triggerGroup, null, null,
+                    nextTriggerName, triggerGroup, new Date(), null,
                     SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, true, jobProperties,
                     cronString);
             task.setDurability(true); //must be durable to preserve the detail across triggers.

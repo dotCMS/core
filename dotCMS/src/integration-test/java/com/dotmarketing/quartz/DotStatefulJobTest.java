@@ -1,5 +1,9 @@
 package com.dotmarketing.quartz;
 
+import static com.dotmarketing.quartz.DotStatefulJob.getJobDescription;
+import static com.dotmarketing.quartz.DotStatefulJob.getJobGroupName;
+import static com.dotmarketing.quartz.DotStatefulJob.getJobName;
+import static com.dotmarketing.quartz.DotStatefulJob.getTriggerGroupName;
 import static com.dotmarketing.quartz.QuartzUtils.getSequentialScheduler;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertEquals;
@@ -9,10 +13,15 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalTime;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -24,6 +33,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 
 public class DotStatefulJobTest extends IntegrationTestBase {
 
@@ -39,8 +49,8 @@ public class DotStatefulJobTest extends IntegrationTestBase {
      * @throws SchedulerException
      */
     private void removeAnyExistingJob() throws SchedulerException {
-        final String jobName = DotStatefulJob.getJobName(MyStatefulJob.class);
-        final String jobGroupName = DotStatefulJob.getJobGroupName(MyStatefulJob.class);
+        final String jobName = getJobName(MyStatefulJob.class);
+        final String jobGroupName = getJobGroupName(MyStatefulJob.class);
         QuartzUtils.removeJob(jobName, jobGroupName);
     }
 
@@ -98,7 +108,7 @@ public class DotStatefulJobTest extends IntegrationTestBase {
      * @return
      */
     private Optional<JobExecutionContext> getJobExecutionContext(){
-        final String jobName = DotStatefulJob.getJobName(MyStatefulJob.class);
+        final String jobName = getJobName(MyStatefulJob.class);
         try {
             final Scheduler sequentialScheduler = getSequentialScheduler();
             @SuppressWarnings("unchecked")
@@ -155,10 +165,70 @@ public class DotStatefulJobTest extends IntegrationTestBase {
      */
     @Test
     public void Test_Stateful_Job_Utility_Methods(){
-        assertEquals("MyStatefulJob",DotStatefulJob.getJobName(MyStatefulJob.class));
-        assertEquals("MyStatefulJob_Group",DotStatefulJob.getJobGroupName(MyStatefulJob.class));
-        assertEquals("MyStatefulJob_Trigger_Group",DotStatefulJob.getTriggerGroupName(MyStatefulJob.class));
+        assertEquals("MyStatefulJob", getJobName(MyStatefulJob.class));
+        assertEquals("MyStatefulJob_Group", getJobGroupName(MyStatefulJob.class));
+        assertEquals("MyStatefulJob_Trigger_Group", getTriggerGroupName(MyStatefulJob.class));
         assertTrue(DotStatefulJob.nextTriggerName(MyStatefulJob.class).startsWith("MyStatefulJob_Trigger_"));
+    }
+
+    /**
+     * create a ScheduledTask
+     * @param startDate
+     * @return
+     */
+    private ScheduledTask scheduledTask(final Date startDate){
+        final String jobName = getJobName(MyStatefulJob.class);
+        final String groupName = getJobGroupName(MyStatefulJob.class);
+        final String description = getJobDescription(MyStatefulJob.class);
+        final String nextTriggerName = DotStatefulJob.nextTriggerName(MyStatefulJob.class);
+        final String triggerGroup = getTriggerGroupName(MyStatefulJob.class);
+
+        final Map<String, Object> jobProperties = new HashMap<>();
+        //get the job detail so we dont lose any data already saved for other triggers.
+
+        final Calendar calendar = Calendar.getInstance();
+        final String cronString = new SimpleDateFormat("ss mm H d M ? yyyy")
+                .format(calendar.getTime());
+        final ScheduledTask task = new CronScheduledTask(jobName,
+                groupName, description,
+                MyStatefulJob.class.getCanonicalName(), false,
+                nextTriggerName, triggerGroup, startDate, null,
+                SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, true, jobProperties,
+                cronString);
+        task.setDurability(true);
+        return task;
+    }
+
+    /**
+     * Given scenario: The ScheduledTasks is build but then fired too late.
+     * Expected Results: We expect SchedulerException `Based on configured schedule, the given trigger will never fire.`
+     * @throws ParseException
+     * @throws SchedulerException
+     * @throws ClassNotFoundException
+     */
+    @Test(expected = SchedulerException.class)
+    public void Test_Schedule_Task_Make_It_Start_Later_Expect_SchedulerException()
+            throws ParseException, SchedulerException, ClassNotFoundException {
+
+        final ScheduledTask task = scheduledTask(null);
+        DateUtil.sleep(10000);
+        QuartzUtils.scheduleTask(task);
+    }
+
+    /**
+     * Given scenario: The ScheduledTasks is build but then fired too late. But this time we specify a startDate.
+     * Expected Results: The jobs fired normally.
+     * @throws ParseException
+     * @throws SchedulerException
+     * @throws ClassNotFoundException
+     */
+    @Test
+    public void Test_Schedule_Task_Make_It_Start_Later_Expect_No_Exception()
+            throws ParseException, SchedulerException, ClassNotFoundException {
+
+        final ScheduledTask task = scheduledTask(new Date());
+        DateUtil.sleep(10000);
+        QuartzUtils.scheduleTask(task);
     }
 
 }
