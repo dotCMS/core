@@ -1,5 +1,5 @@
 import { of, Observable } from 'rxjs';
-import { async } from '@angular/core/testing';
+import { async, TestBed } from '@angular/core/testing';
 import { DotEditContentHtmlService, DotContentletAction } from './dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
@@ -7,8 +7,7 @@ import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.servic
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { LoggerService, StringUtils } from 'dotcms-js';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { LoggerService, StringUtils, CoreWebService } from 'dotcms-js';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotPageContent } from '../../../../dot-edit-page/shared/models/dot-page-content.model';
 import {
@@ -24,6 +23,10 @@ import { mockUser } from '../../../../../test/login-service.mock';
 import { PageModelChangeEventType } from './models';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 import { DotPageRender, DotPageContainer } from '@portlets/dot-edit-page/shared/models';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { Http, ConnectionBackend, RequestOptions, BaseRequestOptions } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
+import { ConfirmationService } from 'primeng/api';
 
 @Injectable()
 class MockDotLicenseService {
@@ -132,18 +135,26 @@ describe('DotEditContentHtmlService', () => {
     });
 
     beforeEach(async(() => {
-        this.injector = DOTTestBed.resolveAndCreate([
-            DotEditContentHtmlService,
-            DotContainerContentletService,
-            DotEditContentToolbarHtmlService,
-            DotDragDropAPIHtmlService,
-            DotDOMHtmlUtilService,
-            LoggerService,
-            StringUtils,
-            DotAlertConfirmService,
-            { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: DotLicenseService, useClass: MockDotLicenseService }
-        ]);
+        this.injector = TestBed.configureTestingModule({
+            providers: [
+                DotEditContentHtmlService,
+                DotContainerContentletService,
+                DotEditContentToolbarHtmlService,
+                DotDragDropAPIHtmlService,
+                DotDOMHtmlUtilService,
+                LoggerService,
+                StringUtils,
+                DotAlertConfirmService,
+                Http,
+                DotAlertConfirmService,
+                ConfirmationService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: ConnectionBackend, useClass: MockBackend },
+                { provide: RequestOptions, useClass: BaseRequestOptions },
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotLicenseService, useClass: MockDotLicenseService }
+            ]
+        });
         this.dotEditContentHtmlService = <DotEditContentHtmlService>(
             this.injector.get(DotEditContentHtmlService)
         );
@@ -392,6 +403,17 @@ describe('DotEditContentHtmlService', () => {
         });
 
         expect(this.dotEditContentHtmlService.renderRelocatedContentlet).not.toHaveBeenCalled();
+    });
+
+    it('should emit save when edit a piece of content outside a contentlet div', (done) => {
+        this.dotEditContentHtmlService.iframeActions$.subscribe((res) => {
+            expect(res).toEqual({
+                name: 'save'
+            });
+            done();
+        });
+
+        this.dotEditContentHtmlService.renderEditedContentlet(null);
     });
 
     it('should render added contentlet', () => {
