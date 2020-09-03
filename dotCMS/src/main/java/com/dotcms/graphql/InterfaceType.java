@@ -2,6 +2,9 @@ package com.dotcms.graphql;
 
 import static com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import static com.dotcms.graphql.util.TypeUtil.createInterfaceType;
+import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -27,14 +30,20 @@ import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
+import com.dotcms.graphql.datafetcher.ContentMapDataFetcher;
 import com.dotcms.graphql.resolver.ContentResolver;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.util.Logger;
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.PropertyDataFetcher;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 public enum InterfaceType {
     CONTENTLET(SimpleContentType.class),
@@ -74,7 +83,10 @@ public enum InterfaceType {
 
         CONTENT_INTERFACE_FIELDS.addAll(contentFields.keySet());
 
-        interfaceTypes.put("CONTENTLET", createInterfaceType("Contentlet", contentFields, new ContentResolver()));
+        GraphQLInterfaceType contentletInterface = createInterfaceType("Contentlet",
+                contentFields, new ContentResolver());
+
+        interfaceTypes.put("CONTENTLET", contentletInterface);
 
         interfaceTypes.put("CONTENT", createInterfaceType(CONTENT_INTERFACE_NAME, contentFields, new ContentResolver()));
 

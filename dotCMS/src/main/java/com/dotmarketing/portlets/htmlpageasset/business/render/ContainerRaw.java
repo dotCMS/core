@@ -13,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Represents the information of the {@link Container} and its respective {@link ContainerStructure}
@@ -46,6 +48,16 @@ public class ContainerRaw implements Serializable {
         this.contentlets = contentlets;
     }
 
+    @JsonProperty("contentlets")
+    public Map<String, List<Map<String,Object>>> getContentletsMap() {
+        return contentlets.entrySet().stream()
+        .collect(Collectors.toMap(Entry::getKey,
+                e -> e.getValue().stream().map(
+                        Contentlet::getMap
+                ).collect(Collectors.toList())));
+    }
+
+    @JsonIgnore
     public Map<String, List<Contentlet>> getContentlets() {
         return contentlets;
     }
