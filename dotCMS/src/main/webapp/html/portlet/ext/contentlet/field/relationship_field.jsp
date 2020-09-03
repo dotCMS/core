@@ -90,6 +90,9 @@
 		relationName = relationship.getParentRelationName();
         isParent="no";
 	}
+
+	// issue-19204
+	double randomNumber = Math.random();
 	
 %>
     <style type="text/css" media="all">
@@ -693,9 +696,7 @@
              ContentletAjax.getContentletsData ('<%=String.join(",", listOfRelatedInodes)%>', <%= relationJsName %>_addRelationshipCallback);
          }
         );
-
 	</script>
-	
 
 	<div jsId="contentSelector" id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector"
 	     structureInode="<%= targetStructure.getInode() %>" 
@@ -704,10 +705,10 @@
          useRelateContentOnSelect="true"
 		 selectButtonLabel='<%= LanguageUtil.get(pageContext, "Relate")%>'
 	     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
-	     counter_radio="<%= System.currentTimeMillis() %>" 
-	     searchCounter="<%= System.currentTimeMillis() %>" 
+	     counter_radio="<%= randomNumber %>"
+	     searchCounter="<%= randomNumber %>"
 	     contentletLanguageId="<%=contentlet.getLanguageId() %>"
-	     dialogCounter="<%= System.currentTimeMillis() %>">
+	     dialogCounter="<%=randomNumber%>">
 	 </div>
 
 
