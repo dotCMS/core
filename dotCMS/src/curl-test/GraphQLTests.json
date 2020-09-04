@@ -1625,6 +1625,95 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithContentWithTagsAndCats",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d2b9fac1-95f0-48cf-a257-1a20155a1fb6",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-family-cats-tags.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/costa-rica-family-cats-tags.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Content `Costa Rica Family Adventure` with \n`taggie` field with `costa rica` and `winterenthusiast` tags and `cat` field with `All Incluse` and `Tours` categories"
+					},
+					"response": []
+				},
+				{
 					"name": "GivenRequestByURI_ContainersFieldContainsContainerContentlets",
 					"event": [
 						{
@@ -1654,6 +1743,12 @@
 									"    pm.expect(containerContentlets2.uuid, 'FAILED:[containerContentlets2.uuid]').equal(\"uuid-4\");",
 									"    pm.expect(containerContentlets2.contentlets[0].identifier, 'FAILED:[containerContentlets2.contentlets[0]].identifier').equal(\"3e6533b7-c3ba-4ec4-8bca-6a88d54cd037\");",
 									"    pm.expect(containerContentlets2.contentlets[0].title, 'FAILED:[containerContentlets2.contentlets[0]].title').equal(\"Costa Rica Family Adventure\");",
+									"    // tags ",
+									"    pm.expect(containerContentlets2.contentlets[0].taggies, 'FAILED:[containerContentlets2.contentlets[0].taggies]').equal(\"costa rica,winterenthusiast:persona\");",
+									"    // cats ",
+									"    pm.expect(containerContentlets2.contentlets[0].cats, 'FAILED:[containerContentlets2.contentlets[0].cats]').equal(\"[{allInclusive=All Inclusive}, {tours=Tours}]\");",
+									"",
+									"",
 									"",
 									"    var containerContentlets3 = containerContentlets[2];",
 									"    // containerContentlets fields",
@@ -1740,7 +1835,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n        }\n      }\n    }\n      \n  }\n}\n",
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          taggies: map(key:\"taggies\") \n          cats: map(key:\"cats\")\n        }\n      }\n    }\n      \n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -4138,87 +4233,87 @@
 	],
 	"variable": [
 		{
-			"id": "e6977410-87fb-431a-a035-9bbc91878801",
+			"id": "cf74bafc-7782-4b01-b7ca-dad29cb73360",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "0b97929a-df3f-424f-9675-4a54cab6a660",
+			"id": "947352fe-4098-4a09-8eb8-9711bcd1b2e4",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "69cdf292-e5f7-411a-9235-1ff5eb3c09e6",
+			"id": "0729f800-1e17-4089-8352-a678ebb7ce3a",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "2d4ccd4e-49fb-4d4d-a1e9-5435f7bceee9",
+			"id": "06b2c0be-ce46-4aea-93ea-f7647ccd21fa",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "e89e171c-d630-4c6f-a29e-170859d5ff4e",
+			"id": "7ab4c4b4-f1df-48a4-8c7e-42c5c58b469e",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "c1071cb8-ed2c-485a-b628-0bd91a18faf9",
+			"id": "15df81de-a7b0-457c-ae16-ddb5bf4ff063",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "74cc2b25-8013-4545-a751-f383e6b7fd0e",
+			"id": "33afd2fe-9bc3-4b66-b3be-231858246897",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "c48fef96-e5ae-4229-9d3c-d9391580eb75",
+			"id": "03f82136-e276-4e8c-a400-5ac16856e844",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "52c1742d-636e-4975-9cee-c76752b63faf",
+			"id": "e5c98b81-0af8-463f-8f0e-f27adca477aa",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "bebf6755-66a0-4299-ae4e-460679bfc51e",
+			"id": "8cc4ce8d-1eea-495c-b8a6-3bd454979325",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "0b2f98e6-33a8-48f1-8eeb-fa45f62b49cf",
+			"id": "ef7cf940-fd8c-4385-a8dc-2bfb30f7c02c",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "e065a17c-c7d6-4c89-82f9-ffc273b0686d",
+			"id": "2000d97c-a212-469c-94d3-4322725100ad",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "198c978f-bb67-4377-80b3-0ace4f263540",
+			"id": "d773a9b6-5a86-4d11-ad5b-4bcfcf28d712",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "dcb9dfbd-258e-49f4-bf83-c668fd17f729",
+			"id": "8f98a54b-04d6-4959-a52f-e2f904fbff35",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "f1b1cdab-bb44-4cbd-b819-c8d18cde2d7c",
+			"id": "d931733c-f938-43fa-b733-7bb0023c9ec1",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "1cf1d4e9-1a8c-405e-9201-eb010c38a0e4",
+			"id": "3a66588e-73e4-4ecd-bca2-ccd7f1d68564",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "2d714b99-c7a8-42f0-bf99-9c5d3b8818a4",
+			"id": "29784b0f-dabf-4aa3-8b34-ef8b36736f8b",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
