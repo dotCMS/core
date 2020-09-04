@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
@@ -482,6 +483,7 @@ public class ESMappingUtilHelperTest {
         ContentType eventContentType;
         Contentlet event = null;
         try {
+            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
             try {
                 eventContentType = contentTypeAPI.find("calendarEvent");
 
@@ -524,6 +526,7 @@ public class ESMappingUtilHelperTest {
             assertTrue(UtilMethods.isSet(mapping.get("analyzer")));
             assertEquals("my_analyzer", mapping.get("analyzer"));
         }finally {
+            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
             if (event != null){
                 ContentletDataGen.destroy(event);
             }
