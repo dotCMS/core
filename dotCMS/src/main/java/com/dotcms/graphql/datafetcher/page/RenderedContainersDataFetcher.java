@@ -9,7 +9,6 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
-import com.liferay.portal.model.User;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.Map;
@@ -27,10 +26,8 @@ public class RenderedContainersDataFetcher implements DataFetcher<Set<Entry<Stri
     public Set<Entry<String, String>> get(final DataFetchingEnvironment environment) throws Exception {
         try {
             final DotGraphQLContext context = environment.getContext();
-            final User user = context.getUser();
             final ContainerRaw containerRaw = environment.getSource();
             final String pageModeAsString = (String) context.getParam("pageMode");
-            final String languageId = (String) context.getParam("languageId");
 
             final PageMode mode = PageMode.get(pageModeAsString);
             final HttpServletRequest request = context.getHttpServletRequest();
