@@ -255,17 +255,25 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, contentType.variable()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, contentType.variable());
 			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, contentType.baseType().getType()); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE + TEXT, Integer.toString(contentType.baseType().getType())); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.BASE_TYPE, contentType.baseType().getType());
+			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(contentType.baseType().getType()));
 			contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
 			contentletMap.put(ESMappingConstants.INODE, contentlet.getInode());
 			contentletMap.put(ESMappingConstants.MOD_DATE, elasticSearchDateTimeFormat.format(contentlet.getModDate()));
+			contentletMap.put(ESMappingConstants.MOD_DATE + TEXT, datetimeFormat.format(contentlet.getModDate()));
 			contentletMap.put(ESMappingConstants.OWNER, contentlet.getOwner()==null ? "0" : contentlet.getOwner());
 			contentletMap.put(ESMappingConstants.MOD_USER, contentlet.getModUser());
 			contentletMap.put(ESMappingConstants.LIVE, contentlet.isLive());
+			contentletMap.put(ESMappingConstants.LIVE + TEXT, Boolean.toString(contentlet.isLive()));
 			contentletMap.put(ESMappingConstants.WORKING, contentlet.isWorking());
+			contentletMap.put(ESMappingConstants.WORKING + TEXT, Boolean.toString(contentlet.isWorking()));
 			contentletMap.put(ESMappingConstants.LOCKED, contentlet.isLocked());
+			contentletMap.put(ESMappingConstants.LOCKED + TEXT, Boolean.toString(contentlet.isLocked()));
 			contentletMap.put(ESMappingConstants.DELETED, contentlet.isArchived());
+			contentletMap.put(ESMappingConstants.DELETED + TEXT, Boolean.toString(contentlet.isArchived()));
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID, contentlet.getLanguageId());
+			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(contentlet.getLanguageId()));
 			contentletMap.put(ESMappingConstants.IDENTIFIER, contentIdentifier.getId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, contentIdentifier.getHostId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, contentSite.getHostname());
@@ -278,30 +286,29 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			//add workflow to map
 			contentletMap.putAll(getWorkflowInfoForContentlet(contentlet));
 
-            if (UtilMethods.isSet(contentIdentifier.getSysPublishDate())) {
-                contentletMap.put(ESMappingConstants.PUBLISH_DATE,
-                        elasticSearchDateTimeFormat.format(contentIdentifier.getSysPublishDate()));
-            } else {
-                contentletMap.put(ESMappingConstants.PUBLISH_DATE,
-                        elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
-            }
+			if(UtilMethods.isSet(contentIdentifier.getSysPublishDate())) {
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getSysPublishDate()));
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
+						datetimeFormat.format(contentIdentifier.getSysPublishDate()));
+			}else {
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
+						datetimeFormat.format(versionInfo.getVersionTs()));
+			}
 
-            if (UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
-                contentletMap.put(ESMappingConstants.EXPIRE_DATE,
-                        elasticSearchDateTimeFormat.format(contentIdentifier.getSysExpireDate()));
-            } else {
-                contentletMap.put(ESMappingConstants.EXPIRE_DATE,
-                        elasticSearchDateTimeFormat.format(29990101000000L));
-            }
+			if(UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getSysExpireDate()));
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
+						datetimeFormat.format(contentIdentifier.getSysExpireDate()));
+			}else {
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(29990101000000L));
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
+			}
 
 			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.getVersionTs()));
 
-            final Optional<Map<String, Object>> textFields = getTextFieldToMapIfNeeded(contentlet, contentIdentifier, versionInfo, contentType);
-            if (textFields.isPresent()){
-                contentletMap.putAll(textFields.get());
-            }
-
-            String urlMap;
+			String urlMap;
 			try{
 				urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
 				if(urlMap != null){
@@ -334,16 +341,21 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 							mlowered.put(lowerCaseKey + "_dotraw", lowerCaseValue);
 						}
 					}else{
-						mlowered.put(lowerCaseKey.replace(TEXT, "_dotraw"), lowerCaseValue);
+                        mlowered.put(lowerCaseKey.replace(TEXT, "_dotraw"), lowerCaseValue);
 					}
 				}
-
-				mlowered.put(lowerCaseKey, lowerCaseValue);
 
 				//exclude null values and relationships because they where appended on the loadRelationships method
 				if(lowerCaseValue!=null && !(lowerCaseValue instanceof List)) {
 					sw.append(lowerCaseValue.toString()).append(' ');
 				}
+
+                if (lowerCaseKey.endsWith(TEXT) && !Config
+                        .getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
+                    continue;
+                }
+
+                mlowered.put(lowerCaseKey, lowerCaseValue);
 			}
 
 			final Optional<Field> binaryField = this.findFirstBinaryFieldIndexable(contentlet);
@@ -376,63 +388,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             throw new DotMappingException(errorMsg, e);
 		}
 	}
-
-    /**
-     * Fields with suffix _text will be returned if the property `CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS` is on
-     * @param contentlet
-     * @param contentIdentifier
-     * @param versionInfo
-     * @param contentType
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    private Optional<Map<String, Object>> getTextFieldToMapIfNeeded(
-            final Contentlet contentlet, final Identifier contentIdentifier,
-            final ContentletVersionInfo versionInfo, final ContentType contentType)
-            throws DotSecurityException, DotDataException {
-        if (Config.getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
-            final Map<String, Object> textFieldsMap = new HashMap<>();
-            textFieldsMap.put(ESMappingConstants.STRUCTURE_TYPE + TEXT,
-                    Integer.toString(
-                            contentType.baseType().getType())); // marked for DEPRECATION
-            textFieldsMap.put(ESMappingConstants.BASE_TYPE + TEXT,
-                    Integer.toString(contentType.baseType().getType()));
-            textFieldsMap.put(ESMappingConstants.MOD_DATE + TEXT,
-                    datetimeFormat.format(contentlet.getModDate()));
-            textFieldsMap
-                    .put(ESMappingConstants.LIVE + TEXT, Boolean.toString(contentlet.isLive()));
-            textFieldsMap.put(ESMappingConstants.WORKING + TEXT,
-                    Boolean.toString(contentlet.isWorking()));
-            textFieldsMap
-                    .put(ESMappingConstants.LOCKED + TEXT, Boolean.toString(contentlet.isLocked()));
-            textFieldsMap.put(ESMappingConstants.DELETED + TEXT,
-                    Boolean.toString(contentlet.isArchived()));
-            textFieldsMap.put(ESMappingConstants.LANGUAGE_ID + TEXT,
-                    Long.toString(contentlet.getLanguageId()));
-
-            if (UtilMethods.isSet(contentIdentifier.getSysPublishDate())) {
-                textFieldsMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-                        datetimeFormat.format(contentIdentifier.getSysPublishDate()));
-            } else {
-                textFieldsMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-                        datetimeFormat.format(versionInfo.getVersionTs()));
-            }
-
-            if (UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
-                textFieldsMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
-                        datetimeFormat.format(contentIdentifier.getSysExpireDate()));
-            } else {
-                textFieldsMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
-            }
-
-            textFieldsMap.put(ESMappingConstants.VERSION_TS + TEXT,
-                    datetimeFormat.format(versionInfo.getVersionTs()));
-
-            return Optional.of(textFieldsMap);
-        }
-
-        return Optional.empty();
-    }
 
 	private void generateBinaryMetadata(final Contentlet contentlet,
 										final StringWriter stringWriter,
@@ -502,12 +457,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	/**
      * Adds the current workflow task to the contentlet in order to be reindexed.
-     * 
+     *
      * @param contentlet {@link Contentlet}
      * @return {@link Map}
      */
     protected Map<String, Object> getWorkflowInfoForContentlet(final Contentlet contentlet) {
-        
+
         final Map<String, Object> workflowMap = new HashMap<>();
         final WorkflowAPI workflowAPI 		  = APILocator.getWorkflowAPI();
 
@@ -524,12 +479,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 workflowMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
                 workflowMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
                 workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
-                if (Config.getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
-                    workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT,
-                            datetimeFormat.format(task.getModDate()));
-                }
+                workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
             }
-                
+
         } catch (Exception e) {
             Logger.debug(this.getClass(), "No workflow info for contentlet " +  contentlet.getIdentifier());
         }
@@ -548,7 +500,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         stepIds.add(entryStep);
                     }
                 }
-    
+
                 workflowMap.put(ESMappingConstants.WORKFLOW_SCHEME, String.join(" ", schemeWriter));
                 workflowMap.put(ESMappingConstants.WORKFLOW_STEP, stepIds);
 				workflowMap.put(ESMappingConstants.WORKFLOW_CURRENT_STEP, ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE); // multiple steps -> not assigned.
@@ -583,17 +535,17 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 String::toLowerCase).collect(Collectors.toList());
 
         m.put(ESMappingConstants.CATEGORIES, catsVarNames);
-        
+
 
 	    for(final com.dotcms.contenttype.model.field.Field f : catFields){
 	        // I don't think we care if we put all the categories in each field
             m.put(type.variable() + "." + f.variable(), catsVarNames);
-	    
+
 	    }
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void loadPermissions(final Contentlet con, final Map<String,Object> contentletMap) throws DotDataException {
+	protected void loadPermissions(final Contentlet con, final Map<String,Object> m) throws DotDataException {
 		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
 		StringBuilder permissionsSt = new StringBuilder();
@@ -618,16 +570,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			}
 		}
-		contentletMap.put(ESMappingConstants.PERMISSIONS, permissionsSt.toString());
-		contentletMap.put(ESMappingConstants.OWNER_CAN_READ, ownerCanRead);
-		contentletMap.put(ESMappingConstants.OWNER_CAN_WRITE, ownerCanWrite);
-		contentletMap.put(ESMappingConstants.OWNER_CAN_PUBLISH, ownerCanPub);
-
-        if (Config.getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
-            contentletMap.put(ESMappingConstants.OWNER_CAN_READ + TEXT, Boolean.toString(ownerCanRead));
-            contentletMap.put(ESMappingConstants.OWNER_CAN_WRITE + TEXT, Boolean.toString(ownerCanWrite));
-            contentletMap.put(ESMappingConstants.OWNER_CAN_PUBLISH + TEXT, Boolean.toString(ownerCanPub));
-        }
+		m.put(ESMappingConstants.PERMISSIONS, permissionsSt.toString());
+		m.put(ESMappingConstants.OWNER_CAN_READ, ownerCanRead);
+		m.put(ESMappingConstants.OWNER_CAN_READ + TEXT, Boolean.toString(ownerCanRead));
+		m.put(ESMappingConstants.OWNER_CAN_WRITE, ownerCanWrite);
+		m.put(ESMappingConstants.OWNER_CAN_WRITE + TEXT, Boolean.toString(ownerCanWrite));
+		m.put(ESMappingConstants.OWNER_CAN_PUBLISH, ownerCanPub);
+		m.put(ESMappingConstants.OWNER_CAN_PUBLISH + TEXT, Boolean.toString(ownerCanPub));
 	}
 
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");

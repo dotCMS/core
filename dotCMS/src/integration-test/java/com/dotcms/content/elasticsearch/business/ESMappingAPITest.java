@@ -192,28 +192,45 @@ public class ESMappingAPITest {
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
 
         Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
-        final Map<String, Object> contentletMap = esMappingAPI.toMap(TestDataUtils
-                .getNewsContent(true, language.getId(), getNewsLikeContentType().id()));
+        try {
+            final Map<String, Object> contentletMap = esMappingAPI.toMap(TestDataUtils
+                    .getNewsContent(true, language.getId(), getNewsLikeContentType().id()));
 
-        assertNotNull(contentletMap);
+            assertNotNull(contentletMap);
 
-        assertTrue(contentletMap.containsKey((ESMappingConstants.STRUCTURE_TYPE + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.BASE_TYPE + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.MOD_DATE + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.LIVE + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.WORKING + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.LOCKED + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.DELETED + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.LANGUAGE_ID + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.PUBLISH_DATE + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.EXPIRE_DATE + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.VERSION_TS + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.STRUCTURE_TYPE + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.BASE_TYPE + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.MOD_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap.containsKey((ESMappingConstants.LIVE + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.WORKING + TEXT).toLowerCase()));
+            assertTrue(contentletMap.containsKey((ESMappingConstants.LOCKED + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.DELETED + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.LANGUAGE_ID + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.PUBLISH_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.EXPIRE_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.VERSION_TS + TEXT).toLowerCase()));
 
-        assertTrue(contentletMap.containsKey((ESMappingConstants.WORKFLOW_MOD_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.WORKFLOW_MOD_DATE + TEXT).toLowerCase()));
 
-        assertTrue(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_READ + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_WRITE + TEXT).toLowerCase()));
-        assertTrue(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_PUBLISH + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.OWNER_CAN_READ + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.OWNER_CAN_WRITE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.OWNER_CAN_PUBLISH + TEXT).toLowerCase()));
+        } finally {
+            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
+        }
 
     }
 
