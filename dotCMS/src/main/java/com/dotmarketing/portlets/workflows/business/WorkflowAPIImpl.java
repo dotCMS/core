@@ -2111,14 +2111,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			for (final Class<?> clazz : actionletClasses) {
 
-				Logger.debug(this,
+				Logger.info(this,
 						() -> "Adding actionlet class: " + clazz);
 
-				//Prevent dupes
 				final Class<? extends WorkFlowActionlet> actionletClass =
 						(Class<? extends WorkFlowActionlet>)clazz;
-				removeActionlet(actionletClass);
-				this.actionletClasses.add(actionletClass);
+				this.addActionlet(actionletClass);
 			}
 		}
 	}

@@ -4,6 +4,7 @@ package com.dotcms.util;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.reflections.Reflections;
+import org.reflections.vfs.Vfs;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -346,6 +347,15 @@ public class AnnotationUtils {
                                               final Class<? extends Annotation> annotationType) {
 
         return new Reflections(basePackage, classLoader).getTypesAnnotatedWith(annotationType);
+    }
+
+    /**
+     * Adds a urlType for a Reflections lib
+     * @param urlType Object
+     */
+    public static void addUrlType(final Object urlType) {
+
+        Vfs.addDefaultURLTypes((Vfs.UrlType)urlType);
     }
 
 } // E:O:F:AnnotationUtils,
