@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "71acbe90-ceaf-49af-b77e-b69b78c7833a",
+		"_postman_id": "22bb06cd-de6e-4a5c-94f4-d37f96ff55fc",
 		"name": "Push Publish JWT Token Test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fd39cebd-28f2-4743-af2e-0cd2e1e38052",
+								"id": "0a8e3131-f2b8-44f1-bad5-00e235d48808",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -77,7 +77,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "86f2741f-46af-46f7-a2a5-3e51b88d5a5f",
+								"id": "42ac05a3-4362-4566-a7d9-44d30d9b455d",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -110,7 +110,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "80521635-f5c8-46ea-8a40-c6f4c127ebfb",
+								"id": "e945d191-0719-4c12-9b63-27a6e1042924",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -126,7 +126,14 @@
 					],
 					"request": {
 						"auth": {
-							"type": "noauth"
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
 						},
 						"method": "POST",
 						"header": [
@@ -144,11 +151,11 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundlePublisher/publish?AUTH_TOKEN={{token}}",
+							"raw": "{{serverURL}}/api/bundlePublisher/publish",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -156,12 +163,6 @@
 								"api",
 								"bundlePublisher",
 								"publish"
-							],
-							"query": [
-								{
-									"key": "AUTH_TOKEN",
-									"value": "{{token}}"
-								}
 							]
 						}
 					},
@@ -173,7 +174,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5b811387-d81b-4375-8aca-7753c9de6b8e",
+								"id": "751167f1-3418-4e0a-92e8-49f7caca4d4f",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -213,11 +214,19 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1a801ab8-98d0-45a6-9877-b5c844927bf3",
+								"id": "39a14780-626f-48e2-b9ca-031e07ba8dd3",
 								"exec": [
 									"pm.test(\"Status code is 401\", function () {",
 									"    pm.response.to.have.status(401);",
-									"});"
+									"});",
+									"",
+									"pm.test(\"Check WWW-Authenticate header\", function () {",
+									"    expected = 'Bearer realm=\"example\",error=\"invalid_token\",error_key=\"__invalid_token__\",error_description=\"\"';",
+									"",
+									"    pm.response.to.be.header('WWW-Authenticate', expected);",
+									"});",
+									"",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -225,7 +234,14 @@
 					],
 					"request": {
 						"auth": {
-							"type": "noauth"
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "not_valid_token",
+									"type": "string"
+								}
+							]
 						},
 						"method": "POST",
 						"header": [
@@ -243,11 +259,11 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundlePublisher/publish?AUTH_TOKEN=not_valid_token",
+							"raw": "{{serverURL}}/api/bundlePublisher/publish",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -255,12 +271,6 @@
 								"api",
 								"bundlePublisher",
 								"publish"
-							],
-							"query": [
-								{
-									"key": "AUTH_TOKEN",
-									"value": "not_valid_token"
-								}
 							]
 						}
 					},
@@ -278,11 +288,18 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "26a8de54-e8cd-4d9c-9be9-ab87326bed3d",
+								"id": "7d99f2ae-4cc0-4e88-8fff-eccee8c59016",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(401);",
-									"});"
+									"});",
+									"",
+									"pm.test(\"Check WWW-Authenticate header\", function () {",
+									"    expected = 'Bearer realm=\"example\",error=\"invalid_token\",error_key=\"__invalid_token__\",error_description=\"\"';",
+									"",
+									"    pm.response.to.be.header('WWW-Authenticate', expected);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -308,7 +325,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -337,7 +354,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a8e4478a-f8fd-49c3-a0b5-74d9cc1d469f",
+								"id": "e8b2bb8a-adbc-44ee-9c99-ebcb47486d65",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -400,7 +417,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d16a68c9-c286-49ca-bc9d-3d3cb47dbfb5",
+								"id": "6b5a4ead-f1f9-4202-b2e6-5ef183bf584e",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -433,7 +450,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2fcc0618-952f-4af8-af16-361fd56d92dd",
+								"id": "f9d64d8c-114e-4e8e-a0eb-e4e0cb55fea5",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(400);",
@@ -445,7 +462,14 @@
 					],
 					"request": {
 						"auth": {
-							"type": "noauth"
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
 						},
 						"method": "POST",
 						"header": [
@@ -467,7 +491,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundlePublisher/publish?AUTH_TOKEN={{token}}",
+							"raw": "{{serverURL}}/api/bundlePublisher/publish",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -475,12 +499,6 @@
 								"api",
 								"bundlePublisher",
 								"publish"
-							],
-							"query": [
-								{
-									"key": "AUTH_TOKEN",
-									"value": "{{token}}"
-								}
 							]
 						}
 					},
@@ -498,14 +516,16 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d9826004-5e32-4cac-91c8-fa0d0f61963d",
+								"id": "a888be06-630c-475d-a824-553437cf848f",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"    pm.response.to.have.status(401);",
+									"});",
 									"",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.id).to.not.eq(undefined);",
-									"    pm.collectionVariables.set(\"bundle_id\", jsonData.id);",
+									"pm.test(\"Check WWW-Authenticate header\", function () {",
+									"    expected = 'Bearer realm=\"example\",error=\"invalid_token\",error_key=\"__invalid_token__\",error_description=\"\"';",
+									"",
+									"    pm.response.to.be.header('WWW-Authenticate', expected);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -514,7 +534,19 @@
 					],
 					"request": {
 						"auth": {
-							"type": "noauth"
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
 						},
 						"method": "POST",
 						"header": [
@@ -532,14 +564,14 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							},
 							"options": {
 								"file": {}
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundlePublisher/publish?AUTH_TOKEN={{token}}",
+							"raw": "{{serverURL}}/api/bundlePublisher/publish",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -547,12 +579,6 @@
 								"api",
 								"bundlePublisher",
 								"publish"
-							],
-							"query": [
-								{
-									"key": "AUTH_TOKEN",
-									"value": "{{token}}"
-								}
 							]
 						}
 					},
@@ -566,7 +592,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "d73e7144-1eda-410e-9dbe-56c5525b7a11",
+				"id": "4672b9ca-6159-4a6f-878d-c0557df8bf19",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -576,7 +602,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "e165c207-c0eb-4371-9cb8-add36a58d4f7",
+				"id": "7fc5d703-2526-4797-adc1-47f079440c37",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -586,22 +612,19 @@
 	],
 	"variable": [
 		{
-			"id": "d55fcdaf-f172-4420-aca2-7c34e7d788c9",
+			"id": "0de4dcf0-55c3-4083-b6c5-f40f242fed41",
 			"key": "serverURL",
-			"value": "http://localhost:8080",
-			"type": "string"
+			"value": "http://localhost:8080"
 		},
 		{
-			"id": "7a9f7921-bd5e-46be-8c94-a56a01ad6b22",
+			"id": "0a0930a1-b5cc-43b1-9181-3542da558460",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk1YjA3NzhlOC01NmViLTQ3OTYtYjIzZC00NzYzOWNmY2I1ZWYiLCJ4bW9kIjoxNTkyMjI5OTI5MDAwLCJuYmYiOjE1OTIyMjk5MjksImlzcyI6IjZkYzAyYzVhODAiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2ODY4MDEyOTQsImlhdCI6MTU5MjIyOTkyOSwianRpIjoiYTYxOGZmZWUtZGZlMC00NWZlLThmZjUtNGU0MGZiMTE2ZTEyIn0.PsY0oDxvhRB3SE2p5ATXSsLRLZaA0LnC-V6GD0ucQfM",
-			"type": "string"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGlhYmI1ZDcwMS1kNDgwLTRlODYtOGJlNS0wMjE0ZGM3ZmFjNGMiLCJ4bW9kIjoxNTk4OTQ4ODQ4MDAwLCJuYmYiOjE1OTg5NDg4NDgsImlzcyI6IjAxMzFjMDIxYTgiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTM1MjAyMTMsImlhdCI6MTU5ODk0ODg0OCwianRpIjoiMGYzNzA2YzMtYWI1Ny00MDUxLWFkNzgtNzg2NDY3Y2YzNjMzIn0.X8qhwPHGXKDahZE8gpllibdWbrhkGKbgTOrcKiVjiRI"
 		},
 		{
-			"id": "4b7395c3-ab62-4178-9126-282cd6e501e6",
+			"id": "29c8aeac-67d1-4f8d-a09e-f023bcfb2fff",
 			"key": "bundle_id",
-			"value": "bundle_1592003186754",
-			"type": "string"
+			"value": "bundle_1598948729120"
 		}
 	],
 	"protocolProfileBehavior": {}
