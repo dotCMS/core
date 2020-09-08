@@ -286,14 +286,13 @@ public class PageRenderUtil implements Serializable {
 
                     final Contentlet nonHydratedContentlet = this.getContentlet(personalizedContentlet);
 
+                    if (nonHydratedContentlet == null) {
+                        continue;
+                    }
+
                     final DotContentletTransformer transformer = new DotTransformerBuilder()
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
-
-                    if (contentlet == null) {
-
-                        continue;
-                    }
 
                     if (container.getMaxContentlets() < contentletIncludedCount) {
 
