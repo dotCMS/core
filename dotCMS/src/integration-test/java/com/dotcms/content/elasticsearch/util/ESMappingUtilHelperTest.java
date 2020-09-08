@@ -483,7 +483,6 @@ public class ESMappingUtilHelperTest {
         ContentType eventContentType;
         Contentlet event = null;
         try {
-            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
             try {
                 eventContentType = contentTypeAPI.find("calendarEvent");
 
@@ -526,7 +525,6 @@ public class ESMappingUtilHelperTest {
             assertTrue(UtilMethods.isSet(mapping.get("analyzer")));
             assertEquals("my_analyzer", mapping.get("analyzer"));
         }finally {
-            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
             if (event != null){
                 ContentletDataGen.destroy(event);
             }
