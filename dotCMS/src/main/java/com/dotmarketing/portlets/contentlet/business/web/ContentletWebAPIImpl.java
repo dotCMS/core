@@ -309,7 +309,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 	}
 
-	private void saveWebAsset(Map<String, Object> contentletFormData,
+	private void  saveWebAsset(Map<String, Object> contentletFormData,
 			boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
 		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
@@ -317,6 +317,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		// Getting the contentlets variables to work
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+		final Map<String, Object> oldContentletMap = currentContentlet.getMap();
 		//Form doesn't always contain this value upfront. And since populateContentlet sets 0 we better set it upfront
 		contentletFormData.put(Contentlet.IDENTIFIER_KEY, currentContentlet.getIdentifier());
 		final boolean isNew = !InodeUtils.isSet(currentContentlet.getInode());
@@ -347,6 +348,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
+
 		try{
 			populateContent(contentletFormData, user, currentContentlet, isAutoSave);
 			//http://jira.dotmarketing.net/browse/DOTCMS-1450
@@ -482,7 +484,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 			}
 
-			if (UtilMethods.isSet((String) contentletFormData.get("wfActionId"))) {
+			if (shouldUseWorkflow(contentletFormData)) {
 
 				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet,
 						new ContentletDependencies.Builder().respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
@@ -505,13 +507,24 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
 								", without an action.");
-				if (Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
+				if (currentContentlet.isHost()) {
 
 					Logger.info(this, "Saving the Host");
 					currentContentlet.setInode(null);
                     currentContentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 					currentContentlet = this.conAPI.checkin
 							(currentContentlet, contentletRelationships, categories, null, user, false, generateSystemEvent);
+
+					if (!currentContentlet.isNew() &&
+							!currentContentlet.getTitle().equals(oldContentletMap.get(Host.HOST_NAME_KEY))) {
+						UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
+								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
+								currentContentlet.getName()
+						);
+					}
+				} else {
+					Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
+							", without an action is just allow to Host.");
 				}
 			}
 		} catch(DotContentletValidationException ve) {
@@ -560,6 +573,15 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			 */
 			contentletFormData.put(WebKeys.CONTENTLET_DELETED, Boolean.TRUE);
 		}
+	}
+
+	/**
+	 * return true if should use workflow with to save the contentlet
+	 * @param contentletFormData
+	 * @return
+	 */
+	private boolean shouldUseWorkflow(Map<String, Object> contentletFormData) {
+		return UtilMethods.isSet((String) contentletFormData.get("wfActionId"));
 	}
 
 	/**
@@ -845,8 +867,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		} catch (DotContentletStateException e) {
 			throw e;
 		} catch (Exception e) {
-			Logger.error(this, "Unable to populate content. ", e);
-			throw new Exception("Unable to populate content");
+			final String message = String.format("Unable to populate content: %s", e.getMessage());
+			Logger.error(this, message, e);
+			throw new Exception(message, e);
 		}
 
 		return contentlet;

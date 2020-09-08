@@ -16,6 +16,7 @@ import java.security.Key;
 import java.util.ArrayList;
 import java.util.List;
 import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.io.input.CharSequenceInputStream;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -101,14 +102,29 @@ public class AppsUtil {
      */
     static char[] encrypt(final Key key, final char[] chars)
             throws EncryptorException {
+        try {
+            final byte[] decryptedBytes = charsToBytesUTF(chars);
+            final byte[] encryptedBytes = encrypt(key,decryptedBytes);
+            final String encryptedString = Base64.encode(encryptedBytes);
+            return encryptedString.toCharArray();
+        } catch (Exception e) {
+            throw new EncryptorException(e);
+        }
+    }
 
+    /**
+     * byte array encrypt function
+     * @param key
+     * @param decryptedBytes
+     * @return
+     * @throws EncryptorException
+     */
+    static byte[] encrypt(final Key key, final byte[] decryptedBytes)
+            throws EncryptorException {
         try {
             final Cipher cipher = Cipher.getInstance(key.getAlgorithm());
             cipher.init(Cipher.ENCRYPT_MODE, key);
-            final byte[] decryptedBytes = charsToBytesUTF(chars);
-            final byte[] encryptedBytes = cipher.doFinal(decryptedBytes);
-            final String encryptedString = Base64.encode(encryptedBytes);
-            return encryptedString.toCharArray();
+            return cipher.doFinal(decryptedBytes);
         } catch (Exception e) {
             throw new EncryptorException(e);
         }
@@ -119,23 +135,76 @@ public class AppsUtil {
      * The main difference is that this ones does not use a string in the middle to extract the resulting bytes.
      * @see Encryptor#decrypt(Key, String)
      * @param key security Key
-     * @param encryptedString
+     * @param encryptedString encrypted string
      * @return decrypted text as a char array
      * @throws EncryptorException
      */
     static char[] decrypt(final Key key, final String encryptedString)
             throws EncryptorException {
-
         try {
+            final byte[] encryptedBytes = Base64.decode(encryptedString);
             final Cipher cipher = Cipher.getInstance(key.getAlgorithm());
             cipher.init(Cipher.DECRYPT_MODE, key);
-            final byte[] encryptedBytes = Base64.decode(encryptedString);
             final byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
             return bytesToCharArrayUTF(decryptedBytes);
 
         } catch (Exception e) {
             throw new EncryptorException(e);
         }
+    }
+
+    /**
+     * byte array decrypt function
+     * @param key
+     * @param encryptedBytes
+     * @return
+     * @throws EncryptorException
+     */
+    static byte[] decrypt(final Key key, final byte [] encryptedBytes)throws EncryptorException {
+        final Cipher cipher;
+        try {
+            cipher = Cipher.getInstance(key.getAlgorithm());
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            return cipher.doFinal(encryptedBytes);
+        } catch (Exception e) {
+            throw new EncryptorException(e);
+        }
+    }
+
+    /**
+     * Since we're generating a /key out of a given password
+     * We need to adjust the size of the password by adding padding chars
+     * The generated see will be 32 ascii chars long
+     * @param password
+     * @return
+     */
+    static String keySeed(final String password) {
+        final int maxSize = 32;
+        String keySeed = new String(password.getBytes(), StandardCharsets.US_ASCII);
+        if (keySeed.length() > maxSize) {
+            keySeed = keySeed.substring(0, maxSize);
+        } else {
+            final int count = Math.abs(maxSize - keySeed.length());
+            final StringBuilder builder = new StringBuilder(keySeed);
+            if (count > 0) {
+                for (int i = 1; i <= count; i++) {
+                    builder.append((char)i);
+                }
+            }
+            keySeed = builder.toString();
+        }
+        return keySeed;
+    }
+
+    /**
+     * given a seed password this will generate a Security Key
+     * @param password
+     * @return
+     */
+    public static Key generateKey(final String password){
+        final String seed = keySeed(password);
+        final byte [] bytes = seed.getBytes();
+        return new SecretKeySpec(bytes, 0, bytes.length, Encryptor.KEY_ALGORITHM);
     }
 
     /**

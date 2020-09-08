@@ -346,30 +346,9 @@ public class PageRenderUtil implements Serializable {
     }
 
     private Container getContainer(final boolean live, final String containerId) throws DotSecurityException, DotDataException {
-
-        Container container = null;
-        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
-        final ContainerFinderByIdOrPathStrategy workingStrategy = strategy.isPresent() ? strategy.get() : strategyResolver.getDefaultStrategy();
-        final Supplier<Host> resourceHostSupplier = () -> this.site;
-
-        try {
-            if (live) {
-
-                container = this.getLiveContainerById(containerId);
-                if (null == container) {
-                    container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
-                }
-            } else {
-                container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
-            }
-        } catch (NotFoundInDbException | DotRuntimeException e) {
-
-            new ContainerExceptionNotifier(e, containerId).notifyUser();
-            container = null;
-        }
-        return container;
+        final Optional<Container> optionalContainer =
+                APILocator.getContainerAPI().findContainer(containerId, APILocator.systemUser(), live, false);
+        return optionalContainer.isPresent() ? optionalContainer.get() : null;
     }
 
     private void addPermissions(final Container container) throws DotDataException {
@@ -417,16 +396,8 @@ public class PageRenderUtil implements Serializable {
     }
 
     private boolean needParseContainerPrefix(final Container container, final String uniqueId) {
-        String containerIdOrPath = null;
-
-        if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
-            containerIdOrPath = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
-        } else {
-            containerIdOrPath = container.getIdentifier();
-        }
-
         return !ParseContainer.isParserContainerUUID(uniqueId) &&
-                (templateLayout == null || !templateLayout.existsContainer(containerIdOrPath, uniqueId));
+                (templateLayout == null || !templateLayout.existsContainer(container, uniqueId));
     }
 
     private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet) {
