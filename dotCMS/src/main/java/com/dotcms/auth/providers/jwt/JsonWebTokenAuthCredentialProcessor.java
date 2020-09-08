@@ -12,8 +12,7 @@ import java.io.Serializable;
  */
 public interface JsonWebTokenAuthCredentialProcessor extends Serializable {
 
-    String EXPIRED_TOKEN_ERROR_KEY = "__expired_token__";
-    String INVALID_TOKEN_ERROR_KEY = "__invalid_token__";
+
     String BEARER = "Bearer ";
 
     /**

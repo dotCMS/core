@@ -1,18 +1,12 @@
 package com.dotcms.rest;
 
-import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
-import com.dotcms.publisher.business.EndpointDetail;
-import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
-import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
+import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.repackage.com.google.common.cache.Cache;
 import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
@@ -51,13 +45,15 @@ import javax.ws.rs.*;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.IncorrectClaimException;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
@@ -90,8 +86,6 @@ import org.jetbrains.annotations.NotNull;
  */
 @Path("/integrity")
 public class IntegrityResource {
-
-
 
     private final WebResource webResource = new WebResource();
 
@@ -142,39 +136,42 @@ public class IntegrityResource {
     }
 
     private Response postWithEndpointState(
-            final String endpointId,
+            final PublishingEndPoint endpoint,
             final String url,
-            final MediaType mediaType,
-            final String token) {
+            final MediaType mediaType) throws NotEndPointTokenFoundException {
 
-        return postWithEndpointState(endpointId, url, mediaType, token, HTTPMethod.POST, null);
+        return postWithEndpointState(endpoint, url, mediaType, HTTPMethod.POST, null);
     }
 
     private Response postWithEndpointState(
-            final String endpointId,
+            final PublishingEndPoint endpoint,
             final String url,
             final MediaType mediaType,
-            final String token,
-            final HTTPMethod method) {
-        return postWithEndpointState(endpointId, url, mediaType, token, method, null);
+            final HTTPMethod method) throws NotEndPointTokenFoundException {
+        return postWithEndpointState(endpoint, url, mediaType, method, null);
     }
     // https://github.com/dotCMS/core/issues/9067
-    private Response postWithEndpointState(
-            final String endpointId,
+    private Response  postWithEndpointState(
+            final PublishingEndPoint endpoint,
             final String url,
             final MediaType mediaType,
-            final String token,
             final HTTPMethod method,
-            Entity<FormDataMultiPart> entity) {
+            Entity<FormDataMultiPart> entity) throws NotEndPointTokenFoundException {
 
         final Builder requestBuilder = RestClientBuilder.newClient().target(url).request(mediaType);
 
-        applyEndpointState(endpointId, requestBuilder);
+        applyEndpointState(endpoint.getId(), requestBuilder);
 
-        requestBuilder.header("Authorization", JsonWebTokenAuthCredentialProcessor.BEARER +  token);
+        final Optional<String> requestToken = AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint);
+
+        if (!requestToken.isPresent()) {
+            throw new NotEndPointTokenFoundException("No Auth Token set for endpoint");
+        }
+
+        requestBuilder.header("Authorization", requestToken.get());
         final Response response = method == HTTPMethod.POST ? requestBuilder.post(entity) : requestBuilder.delete();
 
-        cacheEndpointState(endpointId, response.getCookies());
+        cacheEndpointState(endpoint.getId(), response.getCookies());
 
         return response;
     }
@@ -189,32 +186,21 @@ public class IntegrityResource {
 
     @POST
     @Path("/_generate")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     public Response generateIntegrityData(@Context HttpServletRequest request)  {
 
-        final User user = JsonWebTokenAuthCredentialProcessorImpl.getInstance().processAuthHeaderFromJWT(request);
-
-        final ResourceResponse responseResource = new ResourceResponse(CollectionsUtils.map("type", "plain"));
-
         String remoteIP = getRemoteIP(request);
 
+        final Optional<Response> responseFromToken = getResponseFromToken(request);
+
+        if (responseFromToken.isPresent()) {
+            return responseFromToken.get();
+        }
+
         try {
-            if (null == user) {
-                Logger.error(this.getClass(), "Invalid token from " + remoteIP + " not permission");
-                return responseResource.responseAuthenticateError("invalid_token",
-                        JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
-            }
-
-            if (!this.isAdmin(user)) {
-                Logger.error(this.getClass(), "Not Admin user " + remoteIP + " not permission");
-                return responseResource.responseUnauthorizedError("admin_scope");
-            }
-
-
             ServletContext servletContext = request.getSession().getServletContext();
 
-            if(servletContext.getAttribute("integrityRunning")!=null && ((Boolean) servletContext.getAttribute("integrityRunning"))) {
+            if (servletContext.getAttribute("integrityRunning") != null && ((Boolean) servletContext.getAttribute("integrityRunning"))) {
                 throw new WebApplicationException(Response.status(HttpStatus.SC_CONFLICT).entity("Already Running").build());
             }
 
@@ -222,13 +208,12 @@ public class IntegrityResource {
             servletContext.setAttribute("integrityDataRequestID", transactionId);
 
             // start data generation process
-            final IntegrityDataGeneratorThread idg = new IntegrityDataGeneratorThread(transactionId, request.getSession().getServletContext() );
+            final IntegrityDataGeneratorThread idg = new IntegrityDataGeneratorThread(transactionId, request.getSession().getServletContext());
             idg.start();
             //Saving the thread on the session context for a later use
-            servletContext.setAttribute( "integrityDataGeneratorThread_" + transactionId, idg );
+            servletContext.setAttribute("integrityDataGeneratorThread_" + transactionId, idg);
 
             return Response.ok(transactionId).build();
-
         } catch (Exception e) {
             Logger.error(IntegrityResource.class, "Error caused by remote call of: "+remoteIP);
             Logger.error(IntegrityResource.class,e.getMessage(),e);
@@ -236,7 +221,6 @@ public class IntegrityResource {
                 throw new ForbiddenException(e);
             }
         }
-
 
         return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 
@@ -254,32 +238,22 @@ public class IntegrityResource {
     @POST
     @Path("/{requestId}/status")
     @Produces("application/zip")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response getIntegrityData(@Context HttpServletRequest request, @PathParam("requestId") final String requestId)  {
-
-        final User user = JsonWebTokenAuthCredentialProcessorImpl.getInstance().processAuthHeaderFromJWT(request);
-
-        final ResourceResponse responseResource = new ResourceResponse(CollectionsUtils.map("type", "plain"));
 
         String remoteIP = getRemoteIP(request);
 
-        try {
+        final Optional<Response> responseFromToken = getResponseFromToken(request);
 
-            if (null == user) {
-                Logger.error(this.getClass(), "Invalid token from " + remoteIP + " not permission");
-                return responseResource.responseAuthenticateError("invalid_token",
-                        JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
-            }
+        if (responseFromToken.isPresent()) {
+            return responseFromToken.get();
+        }
 
-            if (!this.isAdmin(user)) {
-                Logger.error(this.getClass(), "Not Admin user " + remoteIP + " not permission");
-                return responseResource.responseUnauthorizedError("admin_scope");
-            }
-
+        try{
             ServletContext servletContext = request.getSession().getServletContext();
+
             if(!UtilMethods.isSet(servletContext.getAttribute("integrityDataRequestID"))
                     || !((String) servletContext.getAttribute("integrityDataRequestID")).equals(requestId)) {
-                return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
+                return Response.status(HttpStatus.SC_NOT_FOUND).build();
             }
 
             ProcessStatus integrityDataGeneratorStatus = (ProcessStatus) servletContext.getAttribute("integrityDataGenerationStatus");
@@ -408,20 +382,15 @@ public class IntegrityResource {
             setStatus( httpServletRequest, endpointId, ProcessStatus.PROCESSING );
 
             final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
-            final Optional<String> authToken = PushPublisher.retriveEndpointKey(endpoint);
-            if(!authToken.isPresent()) {
-                Logger.warn(IntegrityResource.class, "No Auth Token set for endpoint:" + endpointId);
-                return response("No Auth Token set for endpoint", true);
-            }
 
             //Sending bundle to endpoint
-            Response response = generateIntegrityCheckerRequest(endpoint, authToken);
+            Response response = generateIntegrityCheckerRequest(endpoint);
 
             if(response.getStatus() == HttpStatus.SC_OK) {
                 final String integrityDataRequestID = response.readEntity(String.class);
 
                 Thread integrityDataRequestChecker = new Thread(
-                        new IntegrityDataRequestChecker(loggedUser,  session, endpoint, authToken.get(), integrityDataRequestID)
+                        new IntegrityDataRequestChecker(loggedUser,  session, endpoint, integrityDataRequestID)
                 );
 
                 //Start the integrity check
@@ -457,6 +426,9 @@ public class IntegrityResource {
             setStatus( session, endpointId, ProcessStatus.ERROR, null );
             Logger.error( this.getClass(), "Error initializing the integrity checking process for End Point server: [" + endpointId + "]", e );
             return response( "Error initializing the integrity checking process for End Point server: [" + endpointId + "]" , true );
+        } catch (NotEndPointTokenFoundException e) {
+            Logger.warn(IntegrityResource.class, "No Auth Token set for endpoint:" + endpointId);
+            return response("No Auth Token set for endpoint", true);
         }
 
 
@@ -482,10 +454,10 @@ public class IntegrityResource {
     }
 
     @NotNull
-    private Response generateIntegrityCheckerRequest(final PublishingEndPoint endpoint, final Optional<String> authToken) {
+    private Response generateIntegrityCheckerRequest(final PublishingEndPoint endpoint) throws NotEndPointTokenFoundException {
         String url = endpoint.toURL()+"/api/integrity/_generate";
 
-        return postWithEndpointState(endpoint.getId(), url, MediaType.TEXT_PLAIN_TYPE, authToken.get());
+        return postWithEndpointState(endpoint, url, MediaType.TEXT_PLAIN_TYPE);
     }
 
     /**
@@ -543,13 +515,7 @@ public class IntegrityResource {
 
                     //Find the registered auth token in order to connect to the end point server
                     PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById( endpointId );
-                    Optional<String> authToken = PushPublisher.retriveEndpointKeyDigest(endpoint);
-                    if(!authToken.isPresent()) {
-                        return Response.status( HttpStatus.SC_BAD_REQUEST )
-                                .entity( responseMessage.append( "Error: endpoint requires an authorization key" ) ).build();
-
-                    }
-                    Response response = cancelIntegrityRequest(integrityDataRequestId, endpoint, authToken);
+                    Response response = cancelIntegrityRequest(integrityDataRequestId, endpoint);
 
                     if ( response.getStatus() == HttpStatus.SC_OK ) {
                         //Nothing to do here, we found no process to cancel
@@ -581,19 +547,23 @@ public class IntegrityResource {
                 throw new ForbiddenException(e);
             }
             return response( "Error checking the integrity process status for End Point server: [" + endpointId + "]", true );
+        } catch (NotEndPointTokenFoundException e) {
+            return Response.status( HttpStatus.SC_BAD_REQUEST )
+                        .entity( responseMessage.append( "Error: endpoint requires an authorization key" ) ).build();
         }
 
         return response( responseMessage.toString(), false );
     }
 
     @NotNull
-    private Response cancelIntegrityRequest(String integrityDataRequestId, PublishingEndPoint endpoint, Optional<String> authToken) {
+    private Response cancelIntegrityRequest(String integrityDataRequestId, PublishingEndPoint endpoint)
+            throws NotEndPointTokenFoundException {
         //Prepare the connection
         String url = String.format("%s/api/integrity/%s/", endpoint.toURL(), integrityDataRequestId);
 
         //Execute the call
         return postWithEndpointState(
-                endpoint.getId(), url, MediaType.APPLICATION_JSON_TYPE, authToken.get(), HTTPMethod.DELETE
+                endpoint, url, MediaType.APPLICATION_JSON_TYPE, HTTPMethod.DELETE
         );
     }
 
@@ -606,29 +576,19 @@ public class IntegrityResource {
      */
     @DELETE
     @Path("/{id}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces (MediaType.APPLICATION_JSON)
     public Response cancelIntegrityProcessOnEndpoint (
             @Context HttpServletRequest request,  @PathParam("id") final String requestId ) {
 
-        final User user = JsonWebTokenAuthCredentialProcessorImpl.getInstance().processAuthHeaderFromJWT(request);
-
-        final ResourceResponse responseResource = new ResourceResponse(CollectionsUtils.map("type", "plain"));
-
         String remoteIP = getRemoteIP(request);
+
+        final Optional<Response> responseFromToken = getResponseFromToken(request);
+
+        if (responseFromToken.isPresent()) {
+            return responseFromToken.get();
+        }
+
         try {
-
-            if (null == user) {
-                Logger.error(this.getClass(), "Invalid token from " + remoteIP + " not permission");
-                return responseResource.responseAuthenticateError("invalid_token",
-                        JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
-            }
-
-            if (!this.isAdmin(user)) {
-                Logger.error(this.getClass(), "Not Admin user " + remoteIP + " not permission");
-                return responseResource.responseUnauthorizedError("admin_scope");
-            }
-
             ServletContext servletContext = request.getSession().getServletContext();
             if ( !UtilMethods.isSet( servletContext.getAttribute( "integrityDataRequestID" ) ) || !((String) servletContext.getAttribute( "integrityDataRequestID" )).equals( requestId ) ) {
                 return Response.status( HttpStatus.SC_UNAUTHORIZED ).build();
@@ -936,7 +896,7 @@ public class IntegrityResource {
      * @throws JSONException
      */
     @POST
-    @Path("/fixconflictsfromremote/{params:.*}")
+    @Path("/_fixconflictsfromremote")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     public Response fixConflictsFromRemote ( @Context final HttpServletRequest request,
@@ -944,30 +904,18 @@ public class IntegrityResource {
                                              @FormDataParam("TYPE") String type ) throws JSONException {
 
 
-        final User user = JsonWebTokenAuthCredentialProcessorImpl.getInstance().processAuthHeaderFromJWT(request);
-
-        final ResourceResponse responseResource = new ResourceResponse(CollectionsUtils.map("type", "plain"));
-
         String remoteIP = getRemoteIP(request);
 
+        final Optional<Response> responseFromToken = getResponseFromToken(request);
 
-        if (null == user) {
-            Logger.error(this.getClass(), "Invalid token from " + remoteIP + " not permission");
-            return responseResource.responseAuthenticateError("invalid_token",
-                    JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
-        }
-
-        if (!this.isAdmin(user)) {
-            Logger.error(this.getClass(), "Not Admin user " + remoteIP + " not permission");
-            return responseResource.responseUnauthorizedError("admin_scope");
+        if (responseFromToken.isPresent()) {
+            return responseFromToken.get();
         }
 
         JSONObject jsonResponse = new JSONObject();
         IntegrityUtil integrityUtil = new IntegrityUtil();
 
-
         try {
-
             HibernateUtil.startTransaction();
             integrityUtil.fixConflicts(dataToFix, remoteIP,
                     IntegrityType.valueOf(type.toUpperCase()));
@@ -1002,6 +950,37 @@ public class IntegrityResource {
         jsonResponse.put( "success", true );
         jsonResponse.put( "message", "Conflicts fixed in Remote Endpoint" );
         return response( jsonResponse.toString(), false );
+    }
+
+    private Optional<Response> getResponseFromToken(final HttpServletRequest request) {
+        final ResourceResponse responseResource = new ResourceResponse(CollectionsUtils.map("type", "plain"));
+        final String remoteIP = getRemoteIP(request);
+        Response response = null;
+
+        try {
+            final boolean isTokenValid = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
+
+            if (!isTokenValid) {
+                Logger.error(this.getClass(), "Invalid token from " + remoteIP + " not permission");
+                response = responseResource.responseAuthenticateError("invalid_token",
+                        AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
+            }
+        } catch (DotSecurityException e) {
+            Logger.error(this.getClass(), "Not Admin user " + remoteIP + " not permission");
+            response = responseResource.responseUnauthorizedError("admin_scope");
+        } catch(IncorrectClaimException e){
+            final String claimName = e.getClaimName();
+
+            if (Claims.EXPIRATION.equals(claimName)) {
+                response = responseResource.responseAuthenticateError("invalid_token",
+                        AuthCredentialPushPublishUtil.EXPIRED_TOKEN_ERROR_KEY);
+            } else {
+                response = responseResource.responseAuthenticateError("invalid_token",
+                        AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
+            }
+        }
+
+        return response != null ? Optional.of(response) : Optional.empty() ;
     }
 
     private String getRemoteIP(@Context HttpServletRequest request) {
@@ -1087,20 +1066,13 @@ public class IntegrityResource {
             } else if (whereToFix.equals("remote")) {
                 integrityUtil.generateDataToFixZip(endpointId, integrityTypeToFix);
 
-                final Client client = RestClientBuilder.newClient();
-
                 PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI()
                         .findEndPointById(endpointId);
                 String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
                 File bundle = new File(
                         outputPath + File.separator + INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME);
 
-                Optional<String> authToken = PushPublisher.retriveEndpointKey(endpoint);
-                if ( !authToken.isPresent() ) {
-                    return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'auth key' is a required param." ).build();
-                }
-
-                final Response response = sendFixConflictsRequest(type, endpoint, bundle, authToken);
+                final Response response = sendFixConflictsRequest(type, endpoint, bundle);
 
                 if (response.getStatus() == HttpStatus.SC_OK) {
                     jsonResponse.put("success", true);
@@ -1132,6 +1104,8 @@ public class IntegrityResource {
 
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts for End Point server: [" + endpointId + "]", e );
             return response( "Error fixing conflicts for endpoint: " + endpointId , true );
+        } catch (NotEndPointTokenFoundException e) {
+            return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'auth key' is a required param." ).build();
         } finally {
             try {
                 // Discard conflicts if successful or failed
@@ -1148,17 +1122,19 @@ public class IntegrityResource {
     }
 
     @NotNull
-    private Response sendFixConflictsRequest(String type, PublishingEndPoint endpoint, File bundle, Optional<String> authToken) {
+    private Response sendFixConflictsRequest(String type, PublishingEndPoint endpoint, File bundle)
+            throws NotEndPointTokenFoundException {
+
         FormDataMultiPart form = new FormDataMultiPart();
         form.field("TYPE", type);
         form.bodyPart(new FileDataBodyPart("DATA_TO_FIX", bundle,
                 MediaType.MULTIPART_FORM_DATA_TYPE));
 
-        String url = String.format("%s/api/integrity/fixconflictsfromremote/", endpoint.toURL());
+        String url = String.format("%s/api/integrity/_fixconflictsfromremote/", endpoint.toURL());
 
         return postWithEndpointState(
-                endpoint.getId(), url, MediaType.TEXT_PLAIN_TYPE,
-                authToken.get(), HTTPMethod.POST, Entity.entity(form, form.getMediaType()));
+                endpoint, url, MediaType.TEXT_PLAIN_TYPE,
+                HTTPMethod.POST, Entity.entity(form, form.getMediaType()));
     }
 
     /**
@@ -1289,20 +1265,17 @@ public class IntegrityResource {
         private final User loggedUser;
         private final HttpSession session;
         private final PublishingEndPoint endpoint;
-        private final String authToken;
         private final String integrityDataRequestID;
 
         public IntegrityDataRequestChecker(
                 final User loggedUser,
                 final HttpSession session,
                 final PublishingEndPoint endpoint,
-                final String authToken,
                 final String integrityDataRequestID) {
 
             this.loggedUser = loggedUser;
             this.session = session;
             this.endpoint = endpoint;
-            this.authToken = authToken;
             this.integrityDataRequestID = integrityDataRequestID;
         }
 
@@ -1313,119 +1286,125 @@ public class IntegrityResource {
 
             while(processing) {
 
-                Response response = statusIntegrityCheckerRequest();
+                Response response = null;
+                try {
+                    response = statusIntegrityCheckerRequest();
 
-                if ( response.getStatus() == HttpStatus.SC_OK ) {
+                    if (response.getStatus() == HttpStatus.SC_OK) {
 
-                    processing = false;
+                        processing = false;
 
-                    InputStream zipFile = response.readEntity(InputStream.class);
-                    String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId();
+                        InputStream zipFile = response.readEntity(InputStream.class);
+                        String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId();
 
-                    try {
-
-                        IntegrityUtil.unzipFile(zipFile, outputDir);
-
-                    } catch(Exception e) {
-
-                        //Special handling if the thread was interrupted
-                        if ( e instanceof InterruptedException ) {
-                            //Setting the process status
-                            setStatus( session, endpoint.getId(), ProcessStatus.CANCELED, null );
-                            Logger.debug( IntegrityResource.class, "Requested interruption of the integrity checking process [unzipping Integrity Data] by the user.", e );
-                            throw new RuntimeException( "Requested interruption of the integrity checking process [unzipping Integrity Data] by the user.", e );
-                        }
-
-                        //Setting the process status
-                        setStatus( session, endpoint.getId(), ProcessStatus.ERROR, null );
-                        Logger.error(IntegrityResource.class, "Error while unzipping Integrity Data", e);
-                        throw new RuntimeException("Error while unzipping Integrity Data", e);
-                    }
-
-                    // set session variable
-                    // call IntegrityChecker
-                    boolean conflictPresent = false;
-
-                    IntegrityUtil integrityUtil = new IntegrityUtil();
-                    try {
-                        HibernateUtil.startTransaction();
-                        integrityUtil.completeDiscardConflicts(endpoint.getId());
-                        HibernateUtil.commitTransaction();
-
-                        HibernateUtil.startTransaction();
-                        conflictPresent = integrityUtil.completeCheckIntegrity(endpoint.getId());
-                        HibernateUtil.commitTransaction();
-                    } catch(Exception e) {
                         try {
-                            HibernateUtil.rollbackTransaction();
-                        } catch (DotHibernateException e1) {
-                            Logger.error(IntegrityResource.class, "Error while rolling back transaction", e);
-                        }
 
-                        //Special handling if the thread was interrupted
-                        if ( e instanceof InterruptedException ) {
+                            IntegrityUtil.unzipFile(zipFile, outputDir);
+
+                        } catch (Exception e) {
+
+                            //Special handling if the thread was interrupted
+                            if (e instanceof InterruptedException) {
+                                //Setting the process status
+                                setStatus(session, endpoint.getId(), ProcessStatus.CANCELED, null);
+                                Logger.debug(IntegrityResource.class, "Requested interruption of the integrity checking process [unzipping Integrity Data] by the user.", e);
+                                throw new RuntimeException("Requested interruption of the integrity checking process [unzipping Integrity Data] by the user.", e);
+                            }
+
                             //Setting the process status
-                            setStatus( session, endpoint.getId(), ProcessStatus.CANCELED, null );
-                            Logger.debug( IntegrityResource.class, "Requested interruption of the integrity checking process by the user.", e );
-                            throw new RuntimeException( "Requested interruption of the integrity checking process by the user.", e );
+                            setStatus(session, endpoint.getId(), ProcessStatus.ERROR, null);
+                            Logger.error(IntegrityResource.class, "Error while unzipping Integrity Data", e);
+                            throw new RuntimeException("Error while unzipping Integrity Data", e);
                         }
 
-                        Logger.error(IntegrityResource.class, "Error checking integrity", e);
+                        // set session variable
+                        // call IntegrityChecker
+                        boolean conflictPresent = false;
 
-                        //Setting the process status
-                        setStatus( session, endpoint.getId(), ProcessStatus.ERROR, null );
-                        throw new RuntimeException("Error checking integrity", e);
-                    } finally {
+                        IntegrityUtil integrityUtil = new IntegrityUtil();
                         try {
-                            integrityUtil.dropTempTables(endpoint.getId());
-                            HibernateUtil.closeSession();
-                        } catch (DotHibernateException e) {
-                            Logger.warn(this, e.getMessage(), e);
-                        } catch (DotDataException e) {
-                            Logger.error(IntegrityResource.class, "Error while deleting temp tables", e);
-                        }
-                    }
+                            HibernateUtil.startTransaction();
+                            integrityUtil.completeDiscardConflicts(endpoint.getId());
+                            HibernateUtil.commitTransaction();
 
-                    if(conflictPresent) {
+                            HibernateUtil.startTransaction();
+                            conflictPresent = integrityUtil.completeCheckIntegrity(endpoint.getId());
+                            HibernateUtil.commitTransaction();
+                        } catch (Exception e) {
+                            try {
+                                HibernateUtil.rollbackTransaction();
+                            } catch (DotHibernateException e1) {
+                                Logger.error(IntegrityResource.class, "Error while rolling back transaction", e);
+                            }
+
+                            //Special handling if the thread was interrupted
+                            if (e instanceof InterruptedException) {
+                                //Setting the process status
+                                setStatus(session, endpoint.getId(), ProcessStatus.CANCELED, null);
+                                Logger.debug(IntegrityResource.class, "Requested interruption of the integrity checking process by the user.", e);
+                                throw new RuntimeException("Requested interruption of the integrity checking process by the user.", e);
+                            }
+
+                            Logger.error(IntegrityResource.class, "Error checking integrity", e);
+
+                            //Setting the process status
+                            setStatus(session, endpoint.getId(), ProcessStatus.ERROR, null);
+                            throw new RuntimeException("Error checking integrity", e);
+                        } finally {
+                            try {
+                                integrityUtil.dropTempTables(endpoint.getId());
+                                HibernateUtil.closeSession();
+                            } catch (DotHibernateException e) {
+                                Logger.warn(this, e.getMessage(), e);
+                            } catch (DotDataException e) {
+                                Logger.error(IntegrityResource.class, "Error while deleting temp tables", e);
+                            }
+                        }
+
+                        if (conflictPresent) {
+                            //Setting the process status
+                            setStatus(session, endpoint.getId(), ProcessStatus.FINISHED, null);
+                        } else {
+                            String noConflictMessage;
+                            try {
+                                noConflictMessage = LanguageUtil.get(loggedUser.getLocale(), "push_publish_integrity_conflicts_not_found");
+                            } catch (LanguageException e) {
+                                noConflictMessage = "No Integrity Conflicts found";
+                            }
+                            //Setting the process status
+                            setStatus(session, endpoint.getId(), ProcessStatus.NO_CONFLICTS, noConflictMessage);
+                        }
+
+                    } else if (response.getStatus() == HttpStatus.SC_PROCESSING) {
+
+                        continue;
+                    } else if (response.getStatus() == HttpStatus.SC_RESET_CONTENT) {
+                        processing = false;
                         //Setting the process status
-                        setStatus( session, endpoint.getId(), ProcessStatus.FINISHED, null );
+                        setStatus(session, endpoint.getId(), ProcessStatus.CANCELED, null);
                     } else {
-                        String noConflictMessage;
-                        try {
-                            noConflictMessage = LanguageUtil.get( loggedUser.getLocale(), "push_publish_integrity_conflicts_not_found" );
-                        } catch ( LanguageException e ) {
-                            noConflictMessage = "No Integrity Conflicts found";
-                        }
-                        //Setting the process status
-                        setStatus( session, endpoint.getId(), ProcessStatus.NO_CONFLICTS, noConflictMessage );
+                        setStatus(session, endpoint.getId(), ProcessStatus.ERROR, null);
+                        Logger.error(this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to retrieve the Integrity data from the Endpoint [" + endpoint.getId() + "].");
+                        processing = false;
                     }
-
-                } else if ( response.getStatus() == HttpStatus.SC_PROCESSING ) {
-
-                    continue;
-                } else if ( response.getStatus() == HttpStatus.SC_RESET_CONTENT ) {
-                    processing = false;
-                    //Setting the process status
-                    setStatus( session, endpoint.getId(), ProcessStatus.CANCELED, null );
-                } else {
-                    setStatus( session, endpoint.getId(), ProcessStatus.ERROR, null );
-                    Logger.error( this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to retrieve the Integrity data from the Endpoint [" + endpoint.getId() + "]." );
-                    processing = false;
+                } catch (NotEndPointTokenFoundException e) {
+                    Logger.warn(IntegrityResource.class, "No Auth Token set for endpoint");
+                    setStatus(session, endpoint.getId(), ProcessStatus.ERROR, null);
                 }
             }
         }
 
         @NotNull
-        private Response statusIntegrityCheckerRequest() {
+        private Response statusIntegrityCheckerRequest() throws NotEndPointTokenFoundException {
             String url = String.format("%s/api/integrity/%s/status", endpoint.toURL(), integrityDataRequestID);
 
             return postWithEndpointState(
-                    endpoint.getId(), url, new MediaType("application", "zip"), authToken);
+                    endpoint, url, new MediaType("application", "zip"));
         }
     }
 
-    private boolean isAdmin(final User user) {
-
-        return null != user && user.isBackendUser() && user.isAdmin();
+    private static class NotEndPointTokenFoundException extends Throwable {
+        public NotEndPointTokenFoundException(final String message) {
+        }
     }
 }

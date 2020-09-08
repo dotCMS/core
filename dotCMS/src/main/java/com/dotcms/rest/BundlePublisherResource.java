@@ -11,6 +11,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotcms.publisher.pusher.PushPublisher;
 
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +22,7 @@ import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -79,31 +81,29 @@ public class BundlePublisherResource {
 		}
 
 		try {
-			final User user = JsonWebTokenAuthCredentialProcessorImpl.getInstance().processAuthHeaderFromJWT(request);
+			final boolean isTokenValid = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
-			if (null == user) {
+			if (!isTokenValid) {
 				Logger.error(this.getClass(), "Invalid token from " + remoteIP + " not permission");
 				return responseResource.responseAuthenticateError("invalid_token",
-						JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
-			}
-
-			if (!this.isAdmin(user)) {
-				Logger.error(this.getClass(), "Not Admin user " + remoteIP + " not permission");
-				return responseResource.responseUnauthorizedError("admin_scope");
+						AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
 			}
 
 			final Bundle bundle = this.publishBundle(forcePush, request, remoteIP);
 
 			return Response.ok(bundle).build();
-		}catch(IncorrectClaimException e){
+		} catch (DotSecurityException e) {
+			Logger.error(this.getClass(), "Not Admin user " + remoteIP + " not permission");
+			return responseResource.responseUnauthorizedError("admin_scope");
+		} catch(IncorrectClaimException e){
 			final String claimName = e.getClaimName();
 
 			if (Claims.EXPIRATION.equals(claimName)) {
 				return responseResource.responseAuthenticateError("invalid_token",
-						JsonWebTokenAuthCredentialProcessor.EXPIRED_TOKEN_ERROR_KEY);
+						AuthCredentialPushPublishUtil.EXPIRED_TOKEN_ERROR_KEY);
 			} else {
 				return responseResource.responseAuthenticateError("invalid_token",
-						JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
+						AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
 			}
 		}
 	}

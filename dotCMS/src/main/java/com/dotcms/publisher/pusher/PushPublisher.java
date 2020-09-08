@@ -234,9 +234,7 @@ public class PushPublisher extends Publisher {
 
 							Response response = webTarget.request(MediaType.APPLICATION_JSON)
 									.header("Content-Disposition", contentDisposition)
-									.header("Authorization",
-											JsonWebTokenAuthCredentialProcessor.BEARER +
-													PushPublisher.retriveEndpointKey(endpoint).get())
+									.header("Authorization", AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).get())
 									.post(Entity.entity(bundleStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
 
 							if (response.getStatus() == HttpStatus.SC_OK) {
@@ -263,7 +261,7 @@ public class PushPublisher extends Publisher {
 								failedEnvironment = true;
 							}
 						} else {
-							markAsInValidToken(environment, endpoint, detail, JsonWebTokenAuthCredentialProcessor.INVALID_TOKEN_ERROR_KEY);
+							markAsInValidToken(environment, endpoint, detail, AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
 							failedEnvironment = true;
 							errorCounter++;
 						}
@@ -401,7 +399,7 @@ public class PushPublisher extends Publisher {
 
 		final Optional<String> key = retriveEndpointKey(endpoint);
 
-		return key.isPresent() ? Optional.empty() : Optional.of(PublicEncryptionFactory.digestString(key.get()));
+		return key.isPresent() ? Optional.of(PublicEncryptionFactory.digestString(key.get())) : Optional.empty();
 	}
 
 	public static Optional<String> retriveEndpointKey(final PublishingEndPoint endpoint) throws IOException { // todo: create a method that allows to receives a key and use the com.dotcms.util.security.Encryptor instead PublicEncryptionFactory

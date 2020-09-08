@@ -461,16 +461,16 @@ public class IntegrityUtil {
 	        	case FILEASSETS:
 	                sbInsertTempTable.append(
 	                	" (local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, local_identifier, remote_identifier, "
-	                ).append(type.getFirstDisplayColumnLabel()).append(", remote_ip, language_id) values(?,?,?,?,?,?,?,?,?)");
+	                ).append(type.getFirstDisplayColumnLabel()).append(", endpoint_id, language_id) values(?,?,?,?,?,?,?,?,?)");
 	                break;
             	case FOLDERS:
-                    sbInsertTempTable.append(" (local_inode, remote_inode, local_identifier, remote_identifier, remote_ip) values(?,?,?,?,?)");
+                    sbInsertTempTable.append(" (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)");
                     break;
             	case CMS_ROLES:
-            		sbInsertTempTable.append(" (name, role_key, local_role_id, remote_role_id, local_role_fqn, remote_role_fqn, remote_ip) values(?,?,?,?,?,?,?)");
+            		sbInsertTempTable.append(" (name, role_key, local_role_id, remote_role_id, local_role_fqn, remote_role_fqn, endpoint_id) values(?,?,?,?,?,?,?)");
             		break;
                 default:
-                    sbInsertTempTable.append(" (local_inode, remote_inode, remote_ip) values(?,?,?)");
+                    sbInsertTempTable.append(" (local_inode, remote_inode, endpoint_id) values(?,?,?)");
                 	break;
             }
             final String INSERT_TEMP_TABLE = sbInsertTempTable.toString();
