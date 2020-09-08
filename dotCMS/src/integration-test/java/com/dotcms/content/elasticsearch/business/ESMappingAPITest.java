@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
 import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
@@ -34,6 +35,7 @@ import com.dotcms.contenttype.util.KeyValueFieldUtil;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -59,6 +61,7 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.dotmarketing.util.Config;
 import java.io.File;
 
 import java.util.ArrayList;
@@ -142,6 +145,92 @@ public class ESMappingAPITest {
         assertEquals("text/plain; charset=iso-8859-1", contentletMap.get("metadata.contenttype").toString().toLowerCase());
         assertEquals(4, contentletMap.get("metadata.filesize"));
         assertTrue( contentletMap.get("metadata.content").toString().contains("lol!"));
+
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When the property `CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS` is set to false, _text fields shouldn't be included in the map
+     * ExpectedResult: The result map should not contain any _text field
+     */
+    @Test
+    public void test_toMap_when_textFieldShouldNotBeIncluded(){
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+        Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
+
+        final Map<String, Object> contentletMap = esMappingAPI.toMap(TestDataUtils
+                .getNewsContent(true, language.getId(), getNewsLikeContentType().id()));
+
+        assertNotNull(contentletMap);
+
+        assertFalse(contentletMap.containsKey((ESMappingConstants.STRUCTURE_TYPE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.BASE_TYPE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.MOD_DATE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.LIVE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.WORKING + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.LOCKED + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.DELETED + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.LANGUAGE_ID + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.PUBLISH_DATE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.EXPIRE_DATE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.VERSION_TS + TEXT).toLowerCase()));
+
+        assertFalse(contentletMap.containsKey((ESMappingConstants.WORKFLOW_MOD_DATE + TEXT).toLowerCase()));
+
+        assertFalse(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_READ + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_WRITE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_PUBLISH + TEXT).toLowerCase()));
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When the property `CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS` is set to true, _text fields should be included in the map
+     * ExpectedResult: The result map should contain all _text fields
+     */
+    @Test
+    public void test_toMap_when_textFieldShouldBeIncluded(){
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+
+        Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
+        try {
+            final Map<String, Object> contentletMap = esMappingAPI.toMap(TestDataUtils
+                    .getNewsContent(true, language.getId(), getNewsLikeContentType().id()));
+
+            assertNotNull(contentletMap);
+
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.STRUCTURE_TYPE + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.BASE_TYPE + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.MOD_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap.containsKey((ESMappingConstants.LIVE + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.WORKING + TEXT).toLowerCase()));
+            assertTrue(contentletMap.containsKey((ESMappingConstants.LOCKED + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.DELETED + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.LANGUAGE_ID + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.PUBLISH_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.EXPIRE_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.VERSION_TS + TEXT).toLowerCase()));
+
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.WORKFLOW_MOD_DATE + TEXT).toLowerCase()));
+
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.OWNER_CAN_READ + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.OWNER_CAN_WRITE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.OWNER_CAN_PUBLISH + TEXT).toLowerCase()));
+        } finally {
+            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
+        }
 
     }
 

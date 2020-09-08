@@ -341,16 +341,21 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 							mlowered.put(lowerCaseKey + "_dotraw", lowerCaseValue);
 						}
 					}else{
-						mlowered.put(lowerCaseKey.replace(TEXT, "_dotraw"), lowerCaseValue);
+                        mlowered.put(lowerCaseKey.replace(TEXT, "_dotraw"), lowerCaseValue);
 					}
 				}
-
-				mlowered.put(lowerCaseKey, lowerCaseValue);
 
 				//exclude null values and relationships because they where appended on the loadRelationships method
 				if(lowerCaseValue!=null && !(lowerCaseValue instanceof List)) {
 					sw.append(lowerCaseValue.toString()).append(' ');
 				}
+
+                if (lowerCaseKey.endsWith(TEXT) && !Config
+                        .getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
+                    continue;
+                }
+
+                mlowered.put(lowerCaseKey, lowerCaseValue);
 			}
 
 			final Optional<Field> binaryField = this.findFirstBinaryFieldIndexable(contentlet);
@@ -452,12 +457,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	/**
      * Adds the current workflow task to the contentlet in order to be reindexed.
-     * 
+     *
      * @param contentlet {@link Contentlet}
      * @return {@link Map}
      */
     protected Map<String, Object> getWorkflowInfoForContentlet(final Contentlet contentlet) {
-        
+
         final Map<String, Object> workflowMap = new HashMap<>();
         final WorkflowAPI workflowAPI 		  = APILocator.getWorkflowAPI();
 
@@ -476,7 +481,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
                 workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
             }
-                
+
         } catch (Exception e) {
             Logger.debug(this.getClass(), "No workflow info for contentlet " +  contentlet.getIdentifier());
         }
@@ -495,7 +500,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         stepIds.add(entryStep);
                     }
                 }
-    
+
                 workflowMap.put(ESMappingConstants.WORKFLOW_SCHEME, String.join(" ", schemeWriter));
                 workflowMap.put(ESMappingConstants.WORKFLOW_STEP, stepIds);
 				workflowMap.put(ESMappingConstants.WORKFLOW_CURRENT_STEP, ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE); // multiple steps -> not assigned.
@@ -530,12 +535,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 String::toLowerCase).collect(Collectors.toList());
 
         m.put(ESMappingConstants.CATEGORIES, catsVarNames);
-        
+
 
 	    for(final com.dotcms.contenttype.model.field.Field f : catFields){
 	        // I don't think we care if we put all the categories in each field
             m.put(type.variable() + "." + f.variable(), catsVarNames);
-	    
+
 	    }
 	}
 
