@@ -16,6 +16,7 @@
     .dot-secondary-toolbar__lower {
         display: flex;
         padding: 0 $basic-padding * 2;
+        flex-wrap: wrap;
     }
 
     ::ng-deep {

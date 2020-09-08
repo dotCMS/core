@@ -21,8 +21,9 @@
 }
 
 .layout__main {
-    flex-grow: 1;
     background-color: $gray-bg;
+    width: 100%;
+    overflow: hidden;
 }
 
 .layout__sidebar {

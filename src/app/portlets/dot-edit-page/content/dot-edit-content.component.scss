@@ -18,18 +18,28 @@ dot-whats-changed,
 }
 
 .dot-edit__page-wrapper {
-    align-self: center;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    justify-content: center;
+    height: 100%;
+    max-width: 100%;
+    overflow: scroll;
+    min-width: 100%;
+    width: 100%;
     padding: 0 $basic-padding * 2 $basic-padding * 2;
     width: 100%;
+    &.dot-edit__page-wrapper--deviced {
+        padding: $basic-padding * 4;
+    }
 }
 
 .device-info {
     align-self: center;
     padding: $basic-padding 0;
+}
+
+.dot-edit__page-wrapper:after {
+    content: "";
+    display: block;
+    height: 1px;
+    width: 66.5rem;
 }
 
 .dot-edit__device-wrapper {
@@ -47,7 +57,7 @@ dot-whats-changed,
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
         padding: 0 10px;
-
+        
         &:before {
             content: "";
             display: block;
