@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotFunctionInfo } from '@models/dot-function-info/dot-function-info.model';
 
 @Injectable()
 export class DotIframeService {
-    private _actions: Subject<any> = new Subject();
+    private _actions: Subject<DotFunctionInfo> = new Subject();
 
     constructor(private dotRouterService: DotRouterService) {}
 
@@ -15,52 +16,55 @@ export class DotIframeService {
      * @memberof DotIframeService
      */
     reload(): void {
-        this._actions.next('reload');
+        this._actions.next({ name: 'reload' });
     }
 
     /**
      * Get reload action
      *
-     * @returns Observable<any>
+     * @returns Observable<DotFunctionInfo>
      * @memberof DotIframeService
      */
-    reloaded(): Observable<any> {
-        return this._actions.asObservable().pipe(filter((action: string) => action === 'reload'));
+    reloaded(): Observable<DotFunctionInfo> {
+        return this._actions
+            .asObservable()
+            .pipe(filter((func: DotFunctionInfo) => func.name === 'reload'));
     }
 
     /**
      * Get reload colors action
      *
-     * @returns Observable<any>
+     * @returns Observable<DotFunctionInfo>
      * @memberof DotIframeService
      */
-    reloadedColors(): Observable<any> {
-        return this._actions.asObservable().pipe(filter((action: string) => action === 'colors'));
+    reloadedColors(): Observable<DotFunctionInfo> {
+        return this._actions
+            .asObservable()
+            .pipe(filter((func: DotFunctionInfo) => func.name === 'colors'));
     }
 
     /**
      * Get functions to run in the iframe window
      *
-     * @returns Observable<string>
+     * @returns Observable<DotFunctionInfo>
      * @memberof DotIframeService
      */
-    ran(): Observable<string> {
+    ran(): Observable<DotFunctionInfo> {
         return this._actions.asObservable().pipe(
-            filter((action: any) => !!action.run),
-            map((action: any) => action.run)
+            filter((action: DotFunctionInfo) => {
+                return !!action.name;
+            })
         );
     }
 
     /**
      * Trigger function to run
      *
-     * @param string name
+     * @param DotFunctionInfo func
      * @memberof DotIframeService
      */
-    run(name: string): void {
-        this._actions.next({
-            run: name
-        });
+    run(func: DotFunctionInfo): void {
+        this._actions.next(func);
     }
 
     /**
@@ -83,21 +87,21 @@ export class DotIframeService {
      * @memberof DotIframeService
      */
     reloadColors(): void {
-        this._actions.next('colors');
+        this._actions.next({ name: 'colors' });
     }
 
-    private getFunctionToRefreshIframe(portlet: string): string {
+    private getFunctionToRefreshIframe(portlet: string): DotFunctionInfo {
         const mapOfFunctions = {
-            'content': 'doSearch',
+            content: 'doSearch',
             'site-browser': 'reloadContent',
             'vanity-urls': 'doSearch',
-            'sites': 'refreshHostTable',
-            'calendar': 'initializeCalendar',
-            'workflow': 'doFilter'
+            sites: 'refreshHostTable',
+            calendar: 'initializeCalendar',
+            workflow: 'doFilter'
         };
 
         return this.dotRouterService.isCustomPortlet(portlet)
-            ? mapOfFunctions['content']
-            : mapOfFunctions[portlet];
+            ? { name: mapOfFunctions['content'] }
+            : { name: mapOfFunctions[portlet] };
     }
 }

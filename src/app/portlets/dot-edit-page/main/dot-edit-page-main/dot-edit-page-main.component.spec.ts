@@ -2,7 +2,7 @@ import { of as observableOf, Subject } from 'rxjs';
 import { mockUser } from './../../../../test/login-service.mock';
 import { mockDotRenderedPage } from '../../../../test/dot-page-render.mock';
 import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
-import { async, ComponentFixture } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
@@ -11,7 +11,6 @@ import { By } from '@angular/platform-browser';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ActivatedRoute } from '@angular/router';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 import { PageViewServiceMock } from '../../../../test/page-view.mock';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -22,6 +21,39 @@ import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-re
 import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
+import {
+    ApiRoot,
+    CoreWebService,
+    DotcmsConfigService,
+    DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    LoggerService,
+    LoginService,
+    StringUtils,
+    UserModel
+} from 'dotcms-js';
+import { CoreWebServiceMock } from '../../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
+import { FormatDateService } from '@services/format-date-service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
+import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { ConfirmationService } from 'primeng/api';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -68,7 +100,7 @@ describe('DotEditPageMainComponent', () => {
 
     beforeEach(
         async(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 imports: [
                     RouterTestingModule.withRoutes([
                         {
@@ -76,7 +108,8 @@ describe('DotEditPageMainComponent', () => {
                             path: ''
                         }
                     ]),
-                    DotEditPageNavModule
+                    DotEditPageNavModule,
+                    DotDownloadBundleDialogModule
                 ],
                 declarations: [DotEditPageMainComponent, MockDotEditContentletComponent],
                 providers: [
@@ -101,14 +134,45 @@ describe('DotEditPageMainComponent', () => {
                         useClass: MockDotPageStateService
                     },
                     DotCustomEventHandlerService,
-                    DotLoadingIndicatorService
+                    DotLoadingIndicatorService,
+                    DotWorkflowEventHandlerService,
+                    PushPublishService,
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    { provide: ConnectionBackend, useClass: MockBackend },
+                    { provide: RequestOptions, useClass: BaseRequestOptions },
+                    { provide: DotRouterService, useClass: MockDotRouterService },
+                    { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                    Http,
+                    PushPublishService,
+                    ApiRoot,
+                    FormatDateService,
+                    UserModel,
+                    StringUtils,
+                    DotcmsEventsService,
+                    LoggerService,
+                    DotEventsSocket,
+                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                    DotcmsConfigService,
+                    LoggerService,
+                    DotCurrentUserService,
+                    DotMessageDisplayService,
+                    DotWizardService,
+                    DotHttpErrorManagerService,
+                    DotAlertConfirmService,
+                    ConfirmationService,
+                    DotWorkflowActionsFireService,
+                    DotGlobalMessageService,
+                    DotEventsService,
+                    DotIframeService,
+                    LoginService,
+                    DotLicenseService
                 ]
             });
         })
     );
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotEditPageMainComponent);
+        fixture = TestBed.createComponent(DotEditPageMainComponent);
         component = fixture.debugElement.componentInstance;
         route = fixture.debugElement.injector.get(ActivatedRoute);
         route.data = observableOf({

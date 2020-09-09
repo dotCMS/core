@@ -14,6 +14,6 @@
 <ul class="container-selector__list">
     <li *ngFor="let dotContainerColumnBox of data; let i = index" class="container-selector__list-item">
         <button pButton icon="fa fa-trash" type="button" (click)="removeContainerItem(i)"></button>
-        {{ dotContainerColumnBox.container?.name }}
+        <span>{{ dotContainerColumnBox.container?.name }} ({{ dotContainerColumnBox.container?.parentPermissionable.hostname }})</span>
     </li>
 </ul>

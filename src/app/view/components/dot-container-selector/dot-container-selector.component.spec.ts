@@ -7,11 +7,19 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { async, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TemplateContainersCacheService } from '@portlets/dot-edit-page/template-containers-cache.service';
+import { CommonModule } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { FormsModule } from '@angular/forms';
+import { CoreWebService, ApiRoot, UserModel, LoggerService, StringUtils, BrowserUtil } from 'dotcms-js';
+import { Http, ConnectionBackend, RequestOptions, BaseRequestOptions, } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('ContainerSelectorComponent', () => {
     let comp: DotContainerSelectorComponent;
@@ -26,16 +34,34 @@ describe('ContainerSelectorComponent', () => {
                 addcontainer: 'Add a Container'
             });
 
-            DOTTestBed.configureTestingModule({
+
+            TestBed.configureTestingModule({
                 declarations: [DotContainerSelectorComponent],
-                imports: [SearchableDropDownModule, BrowserAnimationsModule],
+                imports: [
+                    SearchableDropDownModule,
+                    BrowserAnimationsModule,
+                    CommonModule,
+                    FormsModule,
+                    ButtonModule,
+                    DotPipesModule
+                ],
                 providers: [
+                    { provide: ConnectionBackend, useClass: MockBackend },
                     { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: RequestOptions, useClass: BaseRequestOptions },
+                    BrowserUtil,
                     IframeOverlayService,
                     PaginatorService,
-                    TemplateContainersCacheService
+                    TemplateContainersCacheService,
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    ApiRoot,
+                    UserModel,
+                    LoggerService,
+                    StringUtils,
+                    Http
+
                 ]
-            });
+            }).compileComponents();
 
             fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
             comp = fixture.componentInstance;
@@ -52,7 +78,10 @@ describe('ContainerSelectorComponent', () => {
                     identifier: '427c47a4-c380-439f',
                     name: 'Container 1',
                     type: 'Container',
-                    source: CONTAINER_SOURCE.DB
+                    source: CONTAINER_SOURCE.DB,
+                    parentPermissionable: {
+                        hostname: 'demo.dotcms.com'
+                    }
                 },
                 {
                     categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
@@ -62,11 +91,28 @@ describe('ContainerSelectorComponent', () => {
                     name: 'Container 2',
                     type: 'Container',
                     source: CONTAINER_SOURCE.FILE,
-                    path: 'container/path'
+                    path: 'container/path',
+                    parentPermissionable: {
+                        hostname: 'demo.dotcms.com'
+                    }
                 }
             ];
         })
     );
+
+    it('should show the hots name and container name', () => {
+        comp.data = [
+            {
+                container: containers[0],
+                uuid: '1'
+            }
+        ];
+
+        fixture.detectChanges();
+
+        const dataItem = de.query(By.css('.container-selector__list-item span'));
+        expect(dataItem.nativeElement.textContent).toEqual('Container 1 (demo.dotcms.com)')
+    });
 
     it(
         'should change Page',

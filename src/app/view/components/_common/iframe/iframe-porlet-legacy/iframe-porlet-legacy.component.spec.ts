@@ -1,17 +1,52 @@
 import { of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { ComponentFixture, async, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotMenuService } from '@services/dot-menu.service';
 import { IFrameModule } from '../index';
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 import { RouterTestingModule } from '@angular/router/testing';
-import { SiteService, LoginService, DotPushPublishDialogService } from 'dotcms-js';
+import {
+    SiteService,
+    LoginService,
+    DotPushPublishDialogService,
+    CoreWebService,
+    ApiRoot,
+    UserModel,
+    LoggerService,
+    StringUtils,
+    DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    DotcmsConfigService
+} from 'dotcms-js';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { LoginServiceMock } from '@tests/login-service.mock';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { FormatDateService } from '@services/format-date-service';
+import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { ConfirmationService } from 'primeng/api';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 const routeDatamock = {
     canAccessPortlet: true
@@ -42,41 +77,72 @@ describe('IframePortletLegacyComponent', () => {
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let route: ActivatedRoute;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [],
-            imports: [IFrameModule, RouterTestingModule],
-            providers: [
-                DotContentTypeService,
-                DotCustomEventHandlerService,
-                DotPushPublishDialogService,
-                DotMenuService,
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                SiteService,
-                {
-                    provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
-                }
-            ]
-        });
+    beforeEach(
+        async(() => {
+            TestBed.configureTestingModule({
+                declarations: [],
+                imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogModule],
+                providers: [
+                    DotContentTypeService,
+                    DotCustomEventHandlerService,
+                    DotPushPublishDialogService,
+                    DotMenuService,
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
+                    SiteService,
+                    {
+                        provide: ActivatedRoute,
+                        useClass: ActivatedRouteMock
+                    },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    { provide: ConnectionBackend, useClass: MockBackend },
+                    { provide: RequestOptions, useClass: BaseRequestOptions },
+                    { provide: DotRouterService, useClass: MockDotRouterService },
+                    { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                    Http,
+                    DotContentletEditorService,
+                    DotIframeService,
+                    DotWorkflowEventHandlerService,
+                    PushPublishService,
+                    ApiRoot,
+                    UserModel,
+                    LoggerService,
+                    StringUtils,
+                    DotCurrentUserService,
+                    DotMessageDisplayService,
+                    DotcmsEventsService,
+                    DotEventsSocket,
+                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                    DotcmsConfigService,
+                    FormatDateService,
+                    DotWizardService,
+                    DotHttpErrorManagerService,
+                    DotAlertConfirmService,
+                    ConfirmationService,
+                    DotWorkflowActionsFireService,
+                    DotGlobalMessageService,
+                    DotEventsService,
+                    DotLicenseService
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(IframePortletLegacyComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        dotMenuService = de.injector.get(DotMenuService);
-        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
-        route = de.injector.get(ActivatedRoute);
-    }));
+            fixture = TestBed.createComponent(IframePortletLegacyComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            dotMenuService = de.injector.get(DotMenuService);
+            dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
+            route = de.injector.get(ActivatedRoute);
+        })
+    );
 
     it('should set query param url to the dot-iframe src', () => {
         route.queryParams = of({ url: 'hello/world' });
         route.params = of({ id: 'portlet-id' });
 
         let src: string;
-        comp.url.subscribe((url) => {
+        comp.url.subscribe(url => {
             src = url;
         });
 
@@ -93,7 +159,7 @@ describe('IframePortletLegacyComponent', () => {
 
         let src: string;
 
-        comp.url.subscribe((url) => {
+        comp.url.subscribe(url => {
             src = url;
         });
 

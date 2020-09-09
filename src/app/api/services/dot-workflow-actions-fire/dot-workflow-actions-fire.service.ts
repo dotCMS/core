@@ -4,6 +4,8 @@ import { RequestMethod } from '@angular/http';
 import { pluck, take } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js';
 import { DotCMSContentlet } from 'dotcms-models';
+import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
+import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 
 interface DotActionRequestOptions {
     contentType: string;
@@ -29,12 +31,33 @@ export class DotWorkflowActionsFireService {
      * @returns Observable<any> // contentlet
      * @memberof DotWorkflowActionsFireService
      */
-    fireTo(inode: string, actionId: string, data?: { [key: string]: string }): Observable<DotCMSContentlet> {
+    fireTo(
+        inode: string,
+        actionId: string,
+        data?: { [key: string]: string }
+    ): Observable<DotCMSContentlet> {
         return this.coreWebService
             .requestView({
                 body: data,
                 method: RequestMethod.Put,
                 url: `v1/workflow/actions/${actionId}/fire?inode=${inode}`
+            })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Fire a workflow action over a contentlet
+     *
+     * @param {DotActionBulkRequestOptions} data
+     * @returns Observable<any> // contentlet
+     * @memberof DotWorkflowActionsFireService
+     */
+    bulkFire(data: DotActionBulkRequestOptions): Observable<DotActionBulkResult> {
+        return this.coreWebService
+            .requestView({
+                body: data,
+                method: RequestMethod.Put,
+                url: `/api/v1/workflow/contentlet/actions/bulk/fire`
             })
             .pipe(pluck('entity'));
     }
@@ -95,9 +118,6 @@ export class DotWorkflowActionsFireService {
                 url: `v1/workflow/actions/default/fire/${action}`,
                 body: { contentlet: { contentType: contentType, ...data } }
             })
-            .pipe(
-                take(1),
-                pluck('entity')
-            );
+            .pipe(take(1), pluck('entity'));
     }
 }

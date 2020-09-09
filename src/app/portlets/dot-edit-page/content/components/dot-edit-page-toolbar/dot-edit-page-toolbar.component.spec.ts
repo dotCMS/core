@@ -1,7 +1,7 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import {CheckboxModule, ToolbarModule, ButtonModule, ConfirmationService} from 'primeng/primeng';
+import { CheckboxModule, ToolbarModule, ButtonModule, ConfirmationService } from 'primeng/primeng';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { mockDotRenderedPageState } from '@tests/dot-rendered-page-state.mock';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
@@ -22,7 +22,12 @@ import {
     DotEventsSocket,
     DotEventsSocketURL,
     DotcmsEventsService,
-    DotcmsConfigService, CoreWebService, LoggerService, StringUtils, ApiRoot, UserModel
+    DotcmsConfigService,
+    CoreWebService,
+    LoggerService,
+    StringUtils,
+    ApiRoot,
+    UserModel
 } from 'dotcms-js';
 import { SiteServiceMock } from '@tests/site-service.mock';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -34,15 +39,16 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-import {CoreWebServiceMock} from '../../../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
-import {BaseRequestOptions, ConnectionBackend, Http, RequestOptions} from '@angular/http';
-import {MockBackend} from '@angular/http/testing';
-import {DotRouterService} from '@services/dot-router/dot-router.service';
-import {MockDotRouterService} from '@tests/dot-router-service.mock';
-import {DotHttpErrorManagerService} from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import {DotAlertConfirmService} from '@services/dot-alert-confirm';
-import {DotGlobalMessageService} from '@components/_common/dot-global-message/dot-global-message.service';
-import {DotWizardModule} from '@components/_common/dot-wizard/dot-wizard.module';
+import { CoreWebServiceMock } from '../../../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -128,7 +134,8 @@ describe('DotEditPageToolbarComponent', () => {
                     ConfirmationService,
                     DotGlobalMessageService,
                     ApiRoot,
-                    UserModel
+                    UserModel,
+                    DotIframeService
                 ]
             });
         })

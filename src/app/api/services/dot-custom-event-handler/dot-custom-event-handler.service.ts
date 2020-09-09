@@ -7,6 +7,7 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotPushPublishDialogService } from 'dotcms-js';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 /**
  * Handle Custom events
  *
@@ -24,7 +25,8 @@ export class DotCustomEventHandlerService {
         private dotUiColorsService: DotUiColorsService,
         private dotIframeService: DotIframeService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotDownloadBundleDialogService: DotDownloadBundleDialogService
+        private dotDownloadBundleDialogService: DotDownloadBundleDialogService,
+        private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService
     ) {
         if (!this.handlers) {
             this.handlers = {
@@ -34,7 +36,8 @@ export class DotCustomEventHandlerService {
                 'create-contentlet': this.createContentlet.bind(this),
                 'company-info-updated': this.setDotcmsUiColors.bind(this),
                 'push-publish': this.pushPublishDialog.bind(this),
-                'download-bundle': this.downloadBundleDialog.bind(this)
+                'download-bundle': this.downloadBundleDialog.bind(this),
+                'workflow-wizard': this.executeWorkflowWizard.bind(this)
             };
         }
     }
@@ -86,5 +89,9 @@ export class DotCustomEventHandlerService {
 
     private downloadBundleDialog($event: CustomEvent): void {
         this.dotDownloadBundleDialogService.open($event.detail.data);
+    }
+
+    private executeWorkflowWizard($event: CustomEvent): void {
+        this.dotWorkflowEventHandlerService.open($event.detail.data);
     }
 }
