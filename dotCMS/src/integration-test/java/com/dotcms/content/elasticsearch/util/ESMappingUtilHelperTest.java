@@ -112,8 +112,7 @@ public class ESMappingUtilHelperTest {
                 {"textmapping", new String[]{"host.hostname"}, "keyword"},
                 {"strings_as_dates", new String[]{"calendarevent.originalstartdate",
                         "calendarevent.recurrencestart", "calendarevent.recurrenceend"}, "date"},
-                {"permissions", new String[]{"permissions"}, "text"},
-                {"hostname", new String[]{"host.hostname_text"}, "text"}
+                {"permissions", new String[]{"permissions"}, "text"}
         };
     }
 

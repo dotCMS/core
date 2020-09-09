@@ -43,8 +43,6 @@ public class IntegrationTestInitService {
                 FactoryLocator.init();
                 APILocator.init();
 
-                Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
-
                 //Running the always run startup tasks
                 StartupTasksUtil.getInstance().init();
 
