@@ -214,7 +214,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 					Constants.CONTAINER_META_INFO_FILE_NAME);
 		}
         final Identifier identifier = getContainerAsset(host, folder);
-        if(identifier==null) {
+        if(identifier==null) { 
 
             throw new NotFoundInDbException("no container found under: " + folder.getPath() );
         }
@@ -225,15 +225,16 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
         Container container = containerCache.get(inode);
 
-        if(container==null) {
+        if(container==null || !InodeUtils.isSet(container.getInode())) {
 
             synchronized (identifier) {
 
-                if(container==null) {
+                if(container==null || !InodeUtils.isSet(container.getInode())) {
 
                     container = FileAssetContainerUtil.getInstance().fromAssets (host, folder,
 							this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
-                    if(container != null && container.getInode() != null) {
+                    if(container != null && InodeUtils.isSet(container.getInode())) {
+
                         containerCache.add(container);
                     }
                 }
