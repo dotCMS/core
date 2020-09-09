@@ -1,7 +1,5 @@
 package com.dotmarketing.factories;
 
-
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -19,8 +17,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.DbConnectionUtil;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,7 +30,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -42,7 +37,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -51,15 +45,19 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
-import org.apache.bcel.generic.NEW;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 
 /**
  * This class provides utility routines to interact with the Multi-Tree structures in the system. A
@@ -74,8 +72,6 @@ import java.util.stream.Collectors;
  */
 public class MultiTreeAPIImpl implements MultiTreeAPI {
 
-
-
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
     private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ?";
@@ -83,7 +79,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL =
-            "delete from multi_tree where relation_type != ? and personalization = ? and " +
+            "delete from multi_tree where relation_type != ? and personalization = ? and parent1 = ? AND " +
                     "child in (select distinct identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?)";
 
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL =
@@ -98,7 +94,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
     private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? order by tree_order";
-    private static final String SELECT_UNIQUE_PERSONALIZATION_PER_PAGE = "select distinct(personalization) from multi_tree where parent1 = ?";
     private static final String SELECT_UNIQUE_PERSONALIZATION = "select distinct(personalization) from multi_tree";
     private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
@@ -114,7 +109,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @WrapInTransaction
     @Override
     public void deleteMultiTree(final MultiTree mTree) throws DotDataException {
-        Logger.info(this, String.format("Deleting MutiTree: %s", mTree));
+        Logger.info(this, String.format("Deleting MultiTree: %s", mTree));
         _dbDelete(mTree);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
@@ -410,9 +405,14 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             return TransformerLocator.createMultiTreeTransformer(new DotConnect().setSQL(SELECT_BY_PARENTS_AND_RELATIONS)
                     .addParam(htmlPage).addParam(container).addParam(containerInstance).addObject(personalization).loadObjectResults()).asList();
-        } catch (Exception e) {
-            Logger.error(MultiTreeAPIImpl.class, "getMultiTree failed:" + e, e);
-            throw new DotRuntimeException(e);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when retrieving multi-tree data for page with ID" +
+                    " '%s': %s", htmlPage, e.getMessage());
+            final String loggedErrorMsg = String.format("An error occurred when retrieving multi-tree data for page: " +
+                    "'%s' / container: '%s' / containerInstance: '%s' / personalization: '%s': %s", htmlPage,
+                    container, containerInstance, personalization, e.getMessage());
+            Logger.error(MultiTreeAPIImpl.class, loggedErrorMsg, e);
+            throw new DotRuntimeException(errorMsg);
         }
     }
 
@@ -466,16 +466,18 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             return TransformerLocator.createMultiTreeTransformer(dc.loadObjectResults()).asList();
 
-        } catch (DotDataException e) {
-            Logger.error(MultiTreeAPIImpl.class, "getContainerStructureMultiTree failed:" + e, e);
-            throw new DotRuntimeException(e.toString());
+        } catch (final DotDataException e) {
+            final String errorMsg = String.format("An error occurred when retrieving multi-tree data for container " +
+                    "'%s' and Content Type '%s': %s", containerIdentifier, structureInode, e.getMessage());
+            Logger.error(MultiTreeAPIImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg);
         }
     }
 
     @Override
     @WrapInTransaction
     public void saveMultiTree(final MultiTree mTree) throws DotDataException {
-        Logger.debug(this, () -> String.format("Saving MutiTree: %s", mTree));
+        Logger.debug(this, () -> String.format("Saving MultiTree: %s", mTree));
         _reorder(mTree);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
@@ -499,7 +501,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @WrapInTransaction
     public void saveMultiTrees(final List<MultiTree> mTrees) throws DotDataException {
         if (mTrees == null || mTrees.isEmpty()) {
-            throw new DotDataException("empty list passed in");
+            throw new DotDataException("Multi-tree list is empty");
         }
 
         int i = 0;
@@ -549,12 +551,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                                      final Optional<Long> languageIdOpt) throws DotDataException {
 
         Logger.info(this, String.format(
-                "Overriding MutiTrees: pageId -> %s personalization -> %s multiTrees-> %s ",
+                "Overriding MultiTrees: pageId -> %s personalization -> %s multiTrees-> %s ",
                 pageId, personalization, multiTrees));
 
         if (multiTrees == null) {
 
-            throw new DotDataException("empty list passed in");
+            throw new DotDataException("Multi-tree list is empty");
         }
 
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
@@ -567,6 +569,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL)
                         .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
                         .addParam(personalization)
+                        .addParam(pageId)
                         .addParam(pageId)
                         .addParam(languageIdOpt.get())
                         .loadResult();
@@ -663,7 +666,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Logger.debug(this, () -> String
                 .format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, mTrees));
         if (mTrees == null) {
-            throw new DotDataException("empty list passed in");
+            throw new DotDataException("Multi-tree list is empty");
         }
 
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", mTrees));
@@ -721,7 +724,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void _dbInsert(final MultiTree multiTree) throws DotDataException {
 
-        Logger.debug(this, () -> String.format("_dbInsert -> Saving MutiTree: %s", multiTree));
+        Logger.debug(this, () -> String.format("_dbInsert -> Saving MultiTree: %s", multiTree));
 
         new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
                 .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).loadResult();
