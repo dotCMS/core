@@ -1,0 +1,18 @@
+name: Run Tests
+# Run in all PRs and commits to `master` and releases
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - release-*
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: |
+          npm run test-headless
