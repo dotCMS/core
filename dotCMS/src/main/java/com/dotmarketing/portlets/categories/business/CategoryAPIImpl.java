@@ -674,35 +674,31 @@ public class CategoryAPIImpl implements CategoryAPI {
 		return new PaginatedCategories(aux, totalCount);
 	}
 
-	public boolean isParent(Category givenChild, Category givenParent, User user) {
+	public boolean isParent(final Category givenChild, final Category givenParent, final User user) {
 		return isParent(givenChild,givenParent,user,false);
 	}
 
-	public boolean isParent(Category givenChild, Category givenParent, User user, boolean respectFrontendRoles) {
-
-
-		List<Category> parents;
+	@CloseDBIfOpened
+	public boolean isParent(final Category givenChild, final Category givenParent, final User user, final boolean respectFrontendRoles) {
 
 		try {
-			parents = getParents(givenChild, user, respectFrontendRoles);
+            final List<Category> parents = getParents(givenChild, user, respectFrontendRoles);
 
 			if(parents==null || parents.isEmpty()) {
 				return false;
 			}
 
-			for(Category localParent: parents) {
+			for(final Category localParent: parents) {
 				if(localParent.getCategoryId().equals(givenParent.getCategoryId())) {
 					return true;
 				} else {
-					return isParent(localParent, givenParent, user);
+					return isParent(localParent, givenParent, user,respectFrontendRoles);
 				}
 			}
 		} catch (DotDataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+            Logger.warnAndDebug(CategoryAPI.class,e.getMessage(),e);
 		} catch (DotSecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+            Logger.warnAndDebug(CategoryAPI.class,e.getMessage(),e);
 		}
 
 
