@@ -5,13 +5,20 @@ import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.io.UnsupportedEncodingException;
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.Query;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 
@@ -31,6 +38,8 @@ import org.apache.commons.lang.StringUtils;
  *
  */
 public class HttpRequestDataUtil {
+
+	private static String serverPort = null;
 
 	public static final String DEFAULT_REMOTE_ADDRESS = "0.0.0.0";
 
@@ -208,5 +217,30 @@ public class HttpRequestDataUtil {
 		}
 		return hostName;
 	}
+
+	/**
+	 * Convenience method to find out the server port and cache it to use it must likely in logs.
+	 *
+	 * @return String representing the server port
+	 */
+    public static Optional<String> getServerPort() {
+    	if (serverPort == null) {
+			final MBeanServer beanServer = ManagementFactory.getPlatformMBeanServer();
+			Set<ObjectName> objectNames;
+			String port;
+			try {
+				objectNames = beanServer.queryNames(
+						new ObjectName("*:type=Connector,*"),
+						Query.match(Query.attr("protocol"), Query.value("HTTP/1.1")));
+				port = objectNames.iterator().next().getKeyProperty("port");
+			} catch (MalformedObjectNameException e) {
+				port = null;
+			}
+
+			serverPort = port;
+		}
+
+		return Optional.ofNullable(serverPort);
+    }
 
 }

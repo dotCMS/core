@@ -30,14 +30,26 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+<<<<<<< HEAD
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
+=======
+>>>>>>> 3e7f99f163... #18554: Introducing IntegritiGenerationDataJob to support multi node receivers creation of file and query process for status
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+<<<<<<< HEAD
 import org.quartz.Trigger;
+=======
+import org.quartz.Scheduler;
+import org.quartz.SimpleTrigger;
+>>>>>>> 3e7f99f163... #18554: Introducing IntegritiGenerationDataJob to support multi node receivers creation of file and query process for status
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.UUID;
 
 /**
  * Stateful job used to remove content type field references before its deletion
@@ -64,8 +76,14 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
         final Field field = (Field) executionData.get("field");
         final Date deletionDate = (Date) executionData.get("deletionDate");
 
+<<<<<<< HEAD
         Logger.info(CleanUpFieldReferencesJob.class,String.format("CleanUpFieldReferencesJob ::: started for field `%s`.",field.variable()));
 
+=======
+        final User user = (User)jobContext.getJobDetail().getJobDataMap().get("user");
+        final Field field = (Field) jobContext.getJobDetail().getJobDataMap().get("field");
+        final Date deletionDate = (Date) jobContext.getJobDetail().getJobDataMap().get("deletionDate");
+>>>>>>> 3e7f99f163... #18554: Introducing IntegritiGenerationDataJob to support multi node receivers creation of file and query process for status
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -114,15 +132,25 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
     }
 
     public static void triggerCleanUpJob(final Field field, final User user) {
+<<<<<<< HEAD
 
         final Map<String, Serializable> nextExecutionData = ImmutableMap
                 .of("field", field,
                         "deletionDate", Calendar.getInstance().getTime(),
                         "user", user);
+=======
+        final JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put("field", field);
+        jobDataMap.put("deletionDate", Calendar.getInstance().getTime());
+        jobDataMap.put("user", user);
+
+        final String randomID = UUID.randomUUID().toString();
+>>>>>>> 3e7f99f163... #18554: Introducing IntegritiGenerationDataJob to support multi node receivers creation of file and query process for status
 
         HibernateUtil.addCommitListenerNoThrow(Sneaky.sneaked(() -> {
                     enqueueTrigger(nextExecutionData, CleanUpFieldReferencesJob.class);
                 }
         ));
     }
+
 }

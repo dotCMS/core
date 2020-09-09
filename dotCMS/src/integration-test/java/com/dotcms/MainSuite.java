@@ -318,7 +318,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05370AddAppsPortletToLayoutTest.class,
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
-        DotStatefulJobTest.class
+        DotStatefulJobTest.class,
+        FolderFactoryImplTest.class
 })
 public class MainSuite {
 
