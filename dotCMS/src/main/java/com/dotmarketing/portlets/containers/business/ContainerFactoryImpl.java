@@ -225,11 +225,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
         Container container = containerCache.get(inode);
 
-        if(container==null) {
+        if(container==null || !InodeUtils.isSet(container.getInode())) {
 
             synchronized (identifier) {
 
-                if(container==null) {
+                if(container==null || !InodeUtils.isSet(container.getInode())) {
 
                     container = FileAssetContainerUtil.getInstance().fromAssets (host, folder,
 							this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
