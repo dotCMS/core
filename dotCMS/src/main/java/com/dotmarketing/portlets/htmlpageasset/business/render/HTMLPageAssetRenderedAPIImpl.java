@@ -57,13 +57,13 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     public HTMLPageAssetRenderedAPIImpl(){
         this(
-            APILocator.getPermissionAPI(),
-            APILocator.getUserAPI(),
-            WebAPILocator.getHostWebAPI(),
-            APILocator.getLanguageAPI(),
-            APILocator.getHTMLPageAssetAPI(),
-            APILocator.getURLMapAPI(),
-            WebAPILocator.getLanguageWebAPI()
+                APILocator.getPermissionAPI(),
+                APILocator.getUserAPI(),
+                WebAPILocator.getHostWebAPI(),
+                APILocator.getLanguageAPI(),
+                APILocator.getHTMLPageAssetAPI(),
+                APILocator.getURLMapAPI(),
+                WebAPILocator.getLanguageWebAPI()
         );
     }
 
@@ -94,7 +94,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final User user,
             final String uri,
             final PageMode mode)
-                throws DotSecurityException, DotDataException {
+            throws DotSecurityException, DotDataException {
 
         return this.getPageMetadata(
                 PageContextBuilder.builder()
@@ -119,7 +119,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final PageContext context,
             final HttpServletRequest request,
             final HttpServletResponse response)
-                throws DotSecurityException, DotDataException {
+            throws DotSecurityException, DotDataException {
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
@@ -168,7 +168,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final PageContext context,
             final HttpServletRequest request,
             final HttpServletResponse response)
-                throws DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException {
 
         final PageMode mode = context.getPageMode();
 
@@ -180,7 +180,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 : getHtmlPageAsset(context, host, request);
 
         fireRulesOnPage(htmlPageUrl.getHTMLPage(), request, response);
-                
+
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(htmlPageUrl.getHTMLPage())
                 .setUser(context.getUser())
@@ -222,10 +222,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
             final IHTMLPage htmlPageAsset = this.getHtmlPageAsset(
                     PageContextBuilder.builder()
-                        .setPageMode(PageMode.PREVIEW_MODE)
-                        .setPageUri(pageUri)
-                        .setUser(systemUser)
-                        .build(),
+                            .setPageMode(PageMode.PREVIEW_MODE)
+                            .setPageUri(pageUri)
+                            .setUser(systemUser)
+                            .build(),
                     host,
                     request
             ).getHTMLPage();
@@ -260,7 +260,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final PageContext context,
             final HttpServletRequest request,
             final HttpServletResponse response)
-                throws DotSecurityException, DotDataException {
+            throws DotSecurityException, DotDataException {
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
@@ -331,18 +331,18 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final PageContext context,
             final Host host,
             final HttpServletRequest request)
-                throws DotSecurityException, DotDataException {
+            throws DotSecurityException, DotDataException {
 
         final Language language = this.getCurrentLanguage(request);
 
         final Optional<URLMapInfo> urlMapInfoOptional = this.urlMapAPIImpl.processURLMap(
                 UrlMapContextBuilder.builder()
-                    .setHost(host)
-                    .setLanguageId(language.getId())
-                    .setMode(context.getPageMode())
-                    .setUri(context.getPageUri())
-                    .setUser(context.getUser())
-                    .build()
+                        .setHost(host)
+                        .setLanguageId(language.getId())
+                        .setMode(context.getPageMode())
+                        .setUri(context.getPageUri())
+                        .setUser(context.getUser())
+                        .build()
         );
 
         if (urlMapInfoOptional.isPresent()) {
@@ -435,13 +435,13 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
 
     }
-    
+
     private void fireRulesOnPage(IHTMLPage page,  HttpServletRequest request, HttpServletResponse response) {
-      final boolean fireRules =Try.of(()->Boolean.valueOf(request.getParameter("fireRules"))).getOrElse(false);
-      
-      if(fireRules) {
-        RulesEngine.fireRules(request,  response, page, FireOn.EVERY_PAGE);
-      }
+        final boolean fireRules =Try.of(()->Boolean.valueOf(request.getParameter("fireRules"))).getOrElse(false);
+
+        if(fireRules) {
+            RulesEngine.fireRules(request,  response, page, FireOn.EVERY_PAGE);
+        }
     }
 
     private Visitor getVisitor(final HttpServletRequest request) {

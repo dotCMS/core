@@ -31,6 +31,8 @@ import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -266,7 +268,7 @@ public class PageRenderUtil implements Serializable {
             final List<ContainerStructure> containerStructures = APILocator.getContainerAPI().getContainerStructures(container);
             this.addPermissions(container);
 
-            final Map<String, List<Map<String, Object>>> contentMaps = Maps.newLinkedHashMap();
+            final Map<String, List<Contentlet>> contentMaps = Maps.newLinkedHashMap();
             final Map<String, List<String>> containerUuidPersona     = Maps.newHashMap();
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
 
@@ -278,16 +280,19 @@ public class PageRenderUtil implements Serializable {
                 }
 
                 final Collection<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
-                final List<Map<String, Object>> personalizedContentletMap          = Lists.newArrayList();
+                final List<Contentlet> personalizedContentletMap          = Lists.newArrayList();
                 int   contentletIncludedCount = 1;
                 for (final PersonalizedContentlet personalizedContentlet : personalizedContentletSet) {
 
-                    final Contentlet contentlet = this.getContentlet(personalizedContentlet);
+                    final Contentlet nonHydratedContentlet = this.getContentlet(personalizedContentlet);
 
-                    if (contentlet == null) {
-
+                    if (nonHydratedContentlet == null) {
                         continue;
                     }
+
+                    final DotContentletTransformer transformer = new DotTransformerBuilder()
+                            .defaultOptions().content(nonHydratedContentlet).build();
+                    final Contentlet contentlet = transformer.hydrate().get(0);
 
                     if (container.getMaxContentlets() < contentletIncludedCount) {
 
@@ -310,15 +315,8 @@ public class PageRenderUtil implements Serializable {
 
                     if (personalizedContentlet.getPersonalization().equals(includeContentFor)) {
 
-                        final Map<String, Object> contentPrintableMap = Try.of(() -> ContentletUtil.getContentPrintableMap(user, contentlet))
-                                .onFailure(f -> Logger.warn(this.getClass(), f.getMessage())).getOrNull();
-                        if (contentPrintableMap == null) {
-
-                            continue;
-                        }
-
-                        contentPrintableMap.put("contentType", contentlet.getContentType().variable());
-                        personalizedContentletMap.add(contentPrintableMap);
+                        contentlet.getMap().put("contentType", contentlet.getContentType().variable());
+                        personalizedContentletMap.add(contentlet);
                         contentletIncludedCount++;
                     }
                 }
