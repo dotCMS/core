@@ -31,32 +31,32 @@ public interface CategoryAPI {
 	boolean canUseCategory(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
 	
 	/**
-	 * 
+	 *
 	 * @param cat
 	 * @param user
 	 * @param respectFrontendRoles
-	 * @return boolean on whether or not a user can add a child category.  
-	 * @throws DotDataException 
+	 * @return boolean on whether or not a user can add a child category.
+	 * @throws DotDataException
 	 */
 	boolean canAddChildren(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
-	
+
 	/**
-	 * 
+	 *
 	 * @param user
 	 * @return Whether the user can add a category to the top level.  If it is a top parent category.
 	 */
 	boolean canAddToTopLevel(User user);
-	
+
 	/**
-	 * 
+	 *
 	 * @param cat
 	 * @param user
 	 * @param respectFrontendRoles
-	 * @return boolean on whether or not a user can edit a category.  
-	 * @throws DotDataException 
+	 * @return boolean on whether or not a user can edit a category.
+	 * @throws DotDataException
 	 */
 	boolean canEditCategory(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
-	
+
 	/**
 	 * Totally removes a category from the system
 	 * @param object
@@ -167,17 +167,19 @@ public interface CategoryAPI {
 
 	
 	/**
-	 * Saves categories,
+	 * Saves a category
+	 *
 	 * When saving a new category the parent should be passed to the API
 	 * to check if the user has permissions to add children to the parent
-	 * and the parent will be associated to the passed category object
-	 * @param parent Parent can be null if saving an old category
-	 * @param object
-	 * @param user
+	 * and the parent will be associated to the passed category
+	 *
+	 * @param parent Parent can be null if saving an top level category
+	 * @param category Category to be saved
+	 * @param user user that is performing the save
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	void save(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void save(Category parent, Category category, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      * Important: should be use only for Push Publish.
