@@ -71,6 +71,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LuceneQueryUtils;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
@@ -1520,7 +1521,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		return this.fillActionsInfo(this.workflowActionUtils
-                .filterActions(actions.build(), user, RESPECT_FRONTEND_ROLES, permissionable)) ;
+                .filterActions(actions.build(), user, PageMode.get().respectAnonPerms, permissionable)) ;
 	}
 
     private List<WorkflowAction> fillActionsInfo(final List<WorkflowAction> workflowActions) throws DotDataException {

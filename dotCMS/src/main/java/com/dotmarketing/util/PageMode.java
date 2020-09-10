@@ -9,29 +9,29 @@ import javax.servlet.http.HttpSession;
 
 /**
  * Usage:
- * 
+ *
  * PageMode mode = PageMode.get(request);
  * PageMode mode = PageMode.get(session);
- * 
+ *
  * mode.isAdmin ; mode.showLive ; mode.respectAnonPerms ;
- * 
- * 
+ *
+ *
  * if( PageMode.get(request).isAdmin){ doAdminStuff(); }
- * 
+ *
  * contentAPI.find("sad", user, mode.respectAnonPerms);
- * 
+ *
  * contentAPI.findByIdentifier("id", 1, mode.showLive, user, mode.respectAnonPerms);
- * 
+ *
  * PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
- * 
- * 
- * 
+ *
+ *
+ *
  * @author will
  *
  */
 public enum PageMode {
 
-    LIVE(true, false), 
+    LIVE(true, false),
     ADMIN_MODE(true, true, true),
     PREVIEW_MODE(false, true),
     WORKING(false, true),
@@ -60,16 +60,6 @@ public enum PageMode {
         return get(req);
 
     }
-    
-
-    private static PageMode get(final HttpSession ses) {
-
-        PageMode mode = PageMode.isPageModeSet(ses)
-                        ? (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION)
-                        : DEFAULT_PAGE_MODE;
-
-        return mode;
-    }
 
     public static PageMode getWithNavigateMode(final HttpServletRequest req) {
         HttpSession ses = req.getSession(false);
@@ -87,38 +77,33 @@ public enum PageMode {
             return DEFAULT_PAGE_MODE;
         }
 
-        PageMode pageMode = null;
+        final User user = PortalUtil.getUser(request);
 
-        if (null != request.getParameter(WebKeys.PAGE_MODE_PARAMETER)) {
-
-            pageMode = PageMode.get(request.getParameter(WebKeys.PAGE_MODE_PARAMETER));
-            request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, pageMode);
+        // only backend users can see non-live assets
+        if (user == null || !user.isBackendUser()) {
+            return DEFAULT_PAGE_MODE;
         }
 
-        if (null == pageMode && null != request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)) {
+        if (null != request.getParameter(WebKeys.PAGE_MODE_PARAMETER)) {
+            final PageMode pageMode = PageMode.get(request.getParameter(WebKeys.PAGE_MODE_PARAMETER));
+            request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, pageMode);
+            return pageMode;
+        }
 
-            pageMode = (PageMode) request.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
+        if (null != request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)) {
+            return (PageMode) request.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
         }
 
         final HttpSession session = request.getSession(false);
-        if (null == pageMode) {
-            pageMode = get(session);
+        if (null !=session && null != session.getAttribute(WebKeys.PAGE_MODE_SESSION)) {
+            return (PageMode) session.getAttribute(WebKeys.PAGE_MODE_SESSION);
         }
 
-        if (DEFAULT_PAGE_MODE != pageMode) {
+        Logger.debug(PageMode.class,()->String.format("Setting PREVIEW_MODE for uri `%s`", request.getRequestURI()));
 
-            final User user = PortalUtil.getUser(request);
-
-            if (user == null || !user.isBackendUser()) {
-                pageMode = DEFAULT_PAGE_MODE;
-            }
-        }
-        if(Logger.isDebugEnabled(PageMode.class)){
-           Logger.debug(PageMode.class,String.format("PageMode for uri `%s` is `%s`", request.getRequestURI(), pageMode));
-        }
-        return pageMode;
+        return PREVIEW_MODE;
     }
-    
+
     public static PageMode get(final String modeStr) {
         for(final PageMode mode : values()) {
                 if(mode.name().equalsIgnoreCase(modeStr)) {
@@ -129,16 +114,16 @@ public enum PageMode {
     }
 
     public static PageMode setPageMode(final HttpServletRequest request, boolean contentLocked, boolean canLock) {
-        
+
         PageMode mode = PREVIEW_MODE;
         if (contentLocked && canLock) {
             mode=EDIT_MODE;
-        } 
+        }
         return setPageMode(request,mode);
 
     }
-    
-    
+
+
     /**
      * Page mode can only be set for back end users, not for front end users (even logged in Front end users)
      * @param request
@@ -146,14 +131,14 @@ public enum PageMode {
      * @return
      */
     public static PageMode setPageMode(final HttpServletRequest request, final PageMode mode) {
-        
+
         if (DEFAULT_PAGE_MODE != mode) {
             final User user = PortalUtil.getUser(request);
             if (user == null || !user.isBackendUser()) {
                 return DEFAULT_PAGE_MODE;
             }
         }
-        
+
         if(request.getSession(false)!=null) {
             request.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
         }
@@ -183,11 +168,15 @@ public enum PageMode {
         if (user == null || !user.isBackendUser()) {
             return false;
         }
-        
-        
+
+
         return  sessionPageMode != PageMode.LIVE &&
                 request != null &&
                 request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null ;
     }
 
+    @Override
+    public String toString() {
+        return this.name();
+    }
 }

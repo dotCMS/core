@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.test;
 
+import static com.dotmarketing.quartz.DotStatefulJob.EXECUTION_DATA;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.field.Field;
@@ -41,6 +42,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.quartz.job.DeleteFieldJob;
 import com.dotmarketing.quartz.job.TestJobExecutor;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -607,123 +609,180 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 
 			// Save the content
 			contentlet = contentletAPI.checkin(contentlet, user, Boolean.TRUE);
-            
-            // Execute jobs to delete fields
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, checkboxField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, dateField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			// Execute jobs to delete fields
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, checkboxField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user)));
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, timeField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, dateField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, dateTimeField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, timeField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, radioField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, dateTimeField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, selectTextField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, radioField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, selectBooleanField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, selectTextField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, selectDecimalField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, selectBooleanField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, selectWholeNumberField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, selectDecimalField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, multiSelectField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, selectWholeNumberField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, textAreaField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, multiSelectField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, textField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, textAreaField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, textDecimalField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, textField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, textWholeNumberField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, textDecimalField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, wysiwygField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, textWholeNumberField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, fileField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, wysiwygField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, imageField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob,ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, fileField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, tagField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, imageField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, constantField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, tagField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, categoryField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, constantField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, lineDividerField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, categoryField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, tabDividerField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, lineDividerField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, permissionsTabField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, tabDividerField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, relationshipsTabField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, permissionsTabField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, hiddenField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, relationshipsTabField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, binaryField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, hiddenField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, customField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, binaryField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, siteOrFolderField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, customField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
-			TestJobExecutor.execute(deleteFieldJob,
-					CollectionsUtils.map(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
-							DeleteFieldJob.JOB_DATA_MAP_FIELD, keyValueField, DeleteFieldJob.JOB_DATA_MAP_USER, user));
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, siteOrFolderField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
+
+			TestJobExecutor.execute(deleteFieldJob, ImmutableMap.of(EXECUTION_DATA,
+					ImmutableMap.of(DeleteFieldJob.JOB_DATA_MAP_CONTENT_TYPE, contentType,
+							DeleteFieldJob.JOB_DATA_MAP_FIELD, keyValueField,
+							DeleteFieldJob.JOB_DATA_MAP_USER, user))
+			);
 
             contentType = contentTypeApi.find(contentType.inode());
 			fields = contentType.fields();

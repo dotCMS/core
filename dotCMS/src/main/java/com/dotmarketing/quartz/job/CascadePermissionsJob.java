@@ -10,21 +10,6 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.util.I18NMessage;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -35,6 +20,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -44,17 +30,25 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import org.quartz.StatefulJob;
+import com.google.common.collect.ImmutableMap;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 
 /**
  * @author David H Torres
  */
-public class CascadePermissionsJob implements StatefulJob {
+public class CascadePermissionsJob extends DotStatefulJob {
 	
 	/* (non-Javadoc)
 	 * @see org.quartz.Job#execute(org.quartz.JobExecutionContext)
@@ -86,34 +80,21 @@ public class CascadePermissionsJob implements StatefulJob {
 	}
     
 	public static void triggerJobImmediately (Permissionable perm, Role role) {
-		String randomID = UUID.randomUUID().toString();
-		String userId = null;
-		JobDataMap dataMap = new JobDataMap();
-		
-		dataMap.put("permissionableId", perm.getPermissionId());
-		dataMap.put("roleId", role.getId());
-
-		//TODO: For a major release, remove this logic and get userId as parameter
-		if (UtilMethods.isSet(HttpServletRequestThreadLocal.INSTANCE.getRequest())) {
-			userId = WebAPILocator.getUserWebAPI()
-					.getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest())
-					.getUserId();
-		}
-		dataMap.put("userId", userId);
-
-		JobDetail jd = new JobDetail("CascadePermissionsJob-" + randomID, "cascade_permissions_jobs", CascadePermissionsJob.class);
-		jd.setJobDataMap(dataMap);
-		jd.setDurability(false);
-		jd.setVolatility(false);
-		jd.setRequestsRecovery(true);
-		
-		long startTime = System.currentTimeMillis();
-		SimpleTrigger trigger = new SimpleTrigger("permissionsCascadeTrigger-"+randomID, "cascade_permissions_triggers",  new Date(startTime));
-		
 		try {
-			Scheduler sched = QuartzUtils.getSequentialScheduler();
-			sched.scheduleJob(jd, trigger);
-		} catch (SchedulerException e) {
+			String userId = null;
+			if (UtilMethods.isSet(HttpServletRequestThreadLocal.INSTANCE.getRequest())) {
+				userId = WebAPILocator.getUserWebAPI()
+						.getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest())
+						.getUserId();
+			}
+			final ImmutableMap<String, Serializable> nextExecutionData = ImmutableMap
+					.of("permissionableId", perm.getPermissionId(),
+							"roleId", role.getId(),
+							"userId", userId
+					);
+
+			DotStatefulJob.enqueueTrigger(nextExecutionData, CascadePermissionsJob.class);
+		} catch (Exception e) {
 			Logger.error(CascadePermissionsJob.class, "Error scheduling the cascading of permissions", e);
 			throw new DotRuntimeException("Error scheduling the cascading of permissions", e);
 		}
@@ -131,11 +112,12 @@ public class CascadePermissionsJob implements StatefulJob {
 	}
 
 	@CloseDBIfOpened
-	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
+	public void run(final JobExecutionContext jobContext) throws JobExecutionException {
 		
-	    Permissionable permissionable;
-	    
-		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+	    final Permissionable permissionable;
+
+		final Trigger trigger = jobContext.getTrigger();
+		final Map<String, Serializable> map = getExecutionData(trigger, CascadePermissionsJob.class);
 
 		final String permissionableId = (String) map.get("permissionableId");
 		final String roleId = (String) map.get("roleId");
@@ -156,6 +138,7 @@ public class CascadePermissionsJob implements StatefulJob {
 						userAPI.getSystemUser().getLocale()
 				);
 			}
+			Logger.info(CascadePermissionsJob.class,String.format("CascadePermissionsJob ::: finished for role `%s` and user `%s` .",roleId, userId));
 		} catch (DotDataException | DotSecurityException e) {
 			Logger.error(CascadePermissionsJob.class, e.getMessage(), e);
 
