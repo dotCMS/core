@@ -14,7 +14,7 @@ import java.util.concurrent.Future;
  * on file system it could be an specific folder, on db a specific type and on s3 an actual bucket.
  * @author jsanca
  */
-public interface Storage { // todo: try to create a ChainStorage which is basically a asset + db
+public interface StoragePersistenceAPI {
 
     String STORAGE_POOL = "StoragePool";
 
@@ -92,13 +92,13 @@ public interface Storage { // todo: try to create a ChainStorage which is basica
 
     /**
      * Push a file to the storage, it will block until the operation is done
-     * @param bucketName {@link String} the bucket to push
+     * @param groupName {@link String} the bucket to push
      * @param path       {@link String} path to push the file
      * @param file       {@link File}   the actual file
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
-    Future<Object> pushFileAsync(final String bucketName, final String path, final File file, final Map<String, Object> extraMeta);
+    Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Object> extraMeta);
 
     /**
      * Push a stream to the storage, it will block until the operation is done

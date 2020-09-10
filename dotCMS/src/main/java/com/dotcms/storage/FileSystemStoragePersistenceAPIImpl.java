@@ -5,7 +5,11 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
 import com.liferay.util.FileUtil;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -17,24 +21,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
- * Represents a Storage on the file system
- * The groups here are folder previously defined, you can subscribe more by using {@link #addGroupMapping(String, File)}
- * @author jsanca 
+ * Represents a Storage on the file system The groups here are folder previously defined, you can
+ * subscribe more by using {@link #addGroupMapping(String, File)}
+ *
+ * @author jsanca
  */
-public class FileSystemStorage implements Storage {
+public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAPI {
+
+    private static final String DEFAULT_ROOT = "root";
 
     private final Map<String, File> groups = new ConcurrentHashMap<>();
 
+    public FileSystemStoragePersistenceAPIImpl() {
+       groups.put(getRootGroupKey(), new File(System.getProperty("user.home")));
+    }
+
     /**
      * Adds a mapping between a bucket name and a file
-     * @param bucketName {@link String} bucket name
+     *
+     * @param groupName {@link String} bucket name
      * @param file {@link File}
      */
-    public void addGroupMapping(final String bucketName, final File file) {
+    public void addGroupMapping(final String groupName, final File file) {
 
-        this.groups.put(bucketName, file);
+        this.groups.put(groupName, file);
     }
 
     @Override
@@ -46,30 +59,41 @@ public class FileSystemStorage implements Storage {
     @Override
     public boolean existsObject(final String groupName, final String objectPath) {
 
-        return this.existsGroup(groupName) && new File(this.groups.get(groupName), objectPath).exists();
+        return this.existsGroup(groupName) && new File(this.groups.get(groupName), objectPath)
+                .exists();
     }
 
     @Override
     public boolean createGroup(final String groupName) {
-
-        throw new UnsupportedOperationException("On FileSystemStorage can not create buckets, they have to be previously defined");
+        return this.createGroup(groupName, ImmutableMap.of());
     }
 
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) {
-
-        throw new UnsupportedOperationException("On FileSystemStorage can not create buckets, they have to be previously defined");
+        final File rootGroup = this.groups.get(getRootGroupKey());
+        final File destBucketFile = new File(rootGroup, groupName);
+        final boolean mkdirs = destBucketFile.mkdirs();
+        if(mkdirs) {
+           this.groups.put(groupName, destBucketFile);
+        }
+        return mkdirs;
     }
 
     @Override
     public int deleteGroup(final String groupName) {
-
-        throw new UnsupportedOperationException("On FileSystemStorage can not delete buckets");
+        final File rootGroup = this.groups.get(getRootGroupKey());
+        final File destBucketFile = new File(rootGroup, groupName);
+        if (!rootGroup.equals(destBucketFile)) {
+            final int count = countFiles(destBucketFile);
+            FileUtil.deltree(destBucketFile, true);
+            return count;
+        }
+        return 0;
     }
 
-    public boolean deleteObject(final String bucket, final String path) {
+    public boolean deleteObject(final String groupName, final String path) {
 
-        return new File(this.groups.get(bucket), path).delete();
+        return new File(this.groups.get(groupName), path).delete();
     }
 
     @Override
@@ -80,13 +104,13 @@ public class FileSystemStorage implements Storage {
 
     @Override
     public Object pushFile(final String groupName,
-                       final String path,
-                       final File file,
-                       final Map<String, Object> extraMeta) {
+            final String path,
+            final File file,
+            final Map<String, Object> extraMeta) {
 
         if (!this.existsGroup(groupName)) {
 
-            throw new IllegalArgumentException("The bucketName: " + groupName +
+            throw new IllegalArgumentException("The groupName: " + groupName +
                     ", does not have any file mapped");
         }
 
@@ -106,17 +130,17 @@ public class FileSystemStorage implements Storage {
         } else {
 
             throw new IllegalArgumentException("The file: " + file +
-                    ", is null, not exists or can not read. Also the bucket: " + groupName +
-                    " could not write");
+                    ", is null, does not exist can not be read or bucket: " + groupName +
+                    " could not be written");
         }
 
         return true;
     }
 
     @Override
-    public Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate,
-                             final Serializable object, final Map<String, Object> extraMeta) {
-
+    public Object pushObject(final String groupName, final String path,
+            final ObjectWriterDelegate writerDelegate,
+            final Serializable object, final Map<String, Object> extraMeta) {
 
         if (!this.existsGroup(groupName)) {
 
@@ -124,17 +148,19 @@ public class FileSystemStorage implements Storage {
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.groups.get(groupName);
+        final File groupFile = this.groups.get(groupName);
 
-        if (bucketFile.canWrite()) {
+        if (groupFile.canWrite()) {
 
             try {
 
-                final File destBucketFile = new File(bucketFile, path);
-                final String compressor   = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                final File destBucketFile = new File(groupFile, path);
+                final String compressor = Config
+                        .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
                 this.prepareParent(destBucketFile);
 
-                try (OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
+                try (OutputStream outputStream = FileUtil
+                        .createOutputStream(destBucketFile.toPath(), compressor)) {
 
                     writerDelegate.write(outputStream, object);
                     outputStream.flush();
@@ -161,20 +187,20 @@ public class FileSystemStorage implements Storage {
     }
 
     @Override
-    public Future<Object> pushFileAsync(final String bucketName, final String path,
-                                        final File file, final Map<String, Object> extraMeta) {
+    public Future<Object> pushFileAsync(final String groupName, final String path,
+            final File file, final Map<String, Object> extraMeta) {
         return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
-                ()-> this.pushFile(bucketName, path, file, extraMeta)
+                () -> this.pushFile(groupName, path, file, extraMeta)
         );
     }
 
     @Override
     public Future<Object> pushObjectAsync(final String bucketName, final String path,
-                                          final ObjectWriterDelegate writerDelegate, final Serializable object,
-                                          final Map<String, Object> extraMeta) {
+            final ObjectWriterDelegate writerDelegate, final Serializable object,
+            final Map<String, Object> extraMeta) {
 
         return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
-                ()-> this.pushObject(bucketName, path, writerDelegate, object, extraMeta)
+                () -> this.pushObject(bucketName, path, writerDelegate, object, extraMeta)
         );
     }
 
@@ -210,7 +236,8 @@ public class FileSystemStorage implements Storage {
     }
 
     @Override
-    public Object pullObject (final String groupName, final String path, final ObjectReaderDelegate readerDelegate) {
+    public Object pullObject(final String groupName, final String path,
+            final ObjectReaderDelegate readerDelegate) {
 
         Object object = null;
         if (!this.existsGroup(groupName)) {
@@ -227,7 +254,8 @@ public class FileSystemStorage implements Storage {
 
             if (file.exists()) {
 
-                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                final String compressor = Config
+                        .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
                 try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
 
                     object = readerDelegate.read(input);
@@ -252,15 +280,38 @@ public class FileSystemStorage implements Storage {
     public Future<File> pullFileAsync(final String groupName, final String path) {
 
         return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
-                ()-> this.pullFile(groupName, path)
+                () -> this.pullFile(groupName, path)
         );
     }
 
     @Override
-    public Future<Object> pullObjectAsync (final String groupName, final String path, final ObjectReaderDelegate readerDelegate) {
+    public Future<Object> pullObjectAsync(final String groupName, final String path,
+            final ObjectReaderDelegate readerDelegate) {
 
         return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
-                ()-> this.pullObject(groupName, path, readerDelegate)
+                () -> this.pullObject(groupName, path, readerDelegate)
         );
+    }
+
+    private String getRootGroupKey(){
+        return Config.getStringProperty("ROOT_GROUP_NAME", DEFAULT_ROOT);
+    }
+
+    private int countFiles(final File dirPath) {
+        final MutableInt count = new MutableInt(0);
+        countFiles(dirPath, count);
+        return count.intValue();
+    }
+
+    private void countFiles(final File dirPath, MutableInt count) {
+        final File[] files = dirPath.listFiles();
+        if (files != null) {
+            for (final File value : files) {
+                count.increment();
+                if (value.isDirectory()) {
+                    countFiles(value, count);
+                }
+            }
+        }
     }
 }

@@ -54,8 +54,8 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                                                          final Set<String> basicBinaryFieldNameSet,
                                                          final Set<String> fullBinaryFieldNameSet) throws IOException {
 
-        final ImmutableMap.Builder<String, Map<String, Object>> fullMetadataMap  = new ImmutableMap.Builder();
-        final ImmutableMap.Builder<String, Map<String, Object>> basicMetadataMap = new ImmutableMap.Builder();
+        final ImmutableMap.Builder<String, Map<String, Object>> fullMetadataMap  = new ImmutableMap.Builder<>();
+        final ImmutableMap.Builder<String, Map<String, Object>> basicMetadataMap = new ImmutableMap.Builder<>();
         final  Map<String, Field>  fieldMap   = contentlet.getContentType().fieldMap();
         /*
 		Verify if it is enabled the option to always regenerate metadata files on reindex,
@@ -171,7 +171,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
         final Optional<FieldVariable> customIndexMetaDataFieldsOpt =
                 Try.of(()->FactoryLocator.getFieldFactory().byFieldVariableKey(fieldIdentifier, BinaryField.INDEX_METADATA_FIELDS)).getOrElse(Optional.empty());
 
-        final Set<java.lang.String> metadataFields = customIndexMetaDataFieldsOpt.isPresent()?
+        final Set<String> metadataFields = customIndexMetaDataFieldsOpt.isPresent()?
                 new HashSet<>(Arrays.asList(customIndexMetaDataFieldsOpt.get().value().split(StringPool.COMMA))):
                 this.getConfiguredMetadataFields();
 
@@ -182,7 +182,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
      * Reads INDEX_METADATA_FIELDS from configuration
      * @return
      */
-    private Set<java.lang.String> getConfiguredMetadataFields(){
+    private Set<String> getConfiguredMetadataFields(){
 
         final java.lang.String configFields = Config.getStringProperty("INDEX_METADATA_FIELDS", null);
 
@@ -221,17 +221,22 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
     }
 
     @Override
-    public Map<String, Object> getMetadataNoCache(final Contentlet contentlet,final  String fieldVariableName) {
+    public Map<String, Object> getMetadataNoCache(final Contentlet contentlet,
+            final String fieldVariableName) {
 
-        final String storageType        = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
-        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
-        final String metadataPath       = this.getFileName(contentlet, fieldVariableName);
+        final String storageType = Config
+                .getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        final String metadataBucketName = Config
+                .getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
+        final String metadataPath = this.getFileName(contentlet, fieldVariableName);
 
         return this.fileStorageAPI.retrieveMetaData(
                 new RequestMetaData.Builder()
                         .cache(false)
-                        .wrapMetadataMapForCache(this::wrapMetadataMapForCache)
-                        .storageKey(new StorageKey.Builder().group(metadataBucketName).key(metadataPath).storage(storageType).build())
+                        .wrapMetadataMapForCache(this::wrapMetadataMapForCache) // why is it needed for the non-cached version??
+                        .storageKey(
+                                new StorageKey.Builder().group(metadataBucketName).key(metadataPath)
+                                        .storage(storageType).build())
                         .build()
         );
     }
@@ -239,7 +244,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
     private Map<String, Object> wrapMetadataMapForCache (final Map<String, Object> originalMap) {
 
         final ImmutableMap.Builder<String, Object> reduceMap = new ImmutableMap.Builder<>();
-
+//wouldn't put All do te same?
         for (final String key : originalMap.keySet()) {
 
             if (FileStorageAPI.TITLE_META_KEY.equals(key)) {
@@ -278,7 +283,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
 
     private Tuple2<Set<String>, Set<String>> findBinaryFields(final Contentlet contentlet) {
 
-        final List<Field> binaryFields = contentlet.getContentType().fields(BinaryField.class);
+        final List<Field> binaryFields = contentlet.getContentType().fields(BinaryField.class); //This doesn't take into account an image field
         final Set<String> basicBinaryFieldNameSet = new HashSet<>();
         final Set<String> fullBinaryFieldNameSet  = new HashSet<>();
 

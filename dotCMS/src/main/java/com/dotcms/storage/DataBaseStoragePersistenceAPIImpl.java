@@ -49,31 +49,34 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 
 /**
- * Represents a Storage on the database
- * It supports big files since provides the ability to split fat object in smaller pieces,
- * see {@link FileByteSplitter} and {@link com.dotcms.util.FileJoiner} to get more details about the process
+ * Represents a Storage on the database It supports big files since provides the ability to split
+ * fat object in smaller pieces, see {@link FileByteSplitter} and {@link com.dotcms.util.FileJoiner}
+ * to get more details about the process
+ *
  * @author jsanca
  */
-public class DataBaseStorage implements Storage {
+public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    protected Connection getConnection () {
+    protected Connection getConnection() {
 
-        final String jdbcPool        = Config.getStringProperty("DATABASE_STORAGE_JDBC_POOL_NAME", StringPool.BLANK);
+        final String jdbcPool = Config
+                .getStringProperty("DATABASE_STORAGE_JDBC_POOL_NAME", StringPool.BLANK);
         final boolean isExternalPool = UtilMethods.isSet(jdbcPool);
 
-        return isExternalPool?
-                DbConnectionFactory.getConnection(jdbcPool):
+        return isExternalPool ?
+                DbConnectionFactory.getConnection(jdbcPool) :
                 DbConnectionFactory.getConnection();
     }
 
-    protected void wrapCloseConnection (final VoidDelegate voidDelegate) {
+    protected void wrapCloseConnection(final VoidDelegate voidDelegate) {
 
-        final String  jdbcPool       = Config.getStringProperty("DATABASE_STORAGE_JDBC_POOL_NAME", StringPool.BLANK);
+        final String jdbcPool = Config
+                .getStringProperty("DATABASE_STORAGE_JDBC_POOL_NAME", StringPool.BLANK);
         final boolean isExternalPool = UtilMethods.isSet(jdbcPool);
 
-        if(isExternalPool) {
+        if (isExternalPool) {
 
             wrapExternalCloseConnection(voidDelegate, jdbcPool);
         } else {
@@ -89,7 +92,7 @@ public class DataBaseStorage implements Storage {
         try {
 
             voidDelegate.execute();
-        }  catch (DotSecurityException | DotDataException e) {
+        } catch (DotSecurityException | DotDataException e) {
 
             Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);
@@ -102,7 +105,8 @@ public class DataBaseStorage implements Storage {
         }
     }
 
-    private void wrapExternalCloseConnection(final VoidDelegate voidDelegate, final String jdbcPool) {
+    private void wrapExternalCloseConnection(final VoidDelegate voidDelegate,
+            final String jdbcPool) {
 
         Connection connection = null;
         try {
@@ -119,12 +123,13 @@ public class DataBaseStorage implements Storage {
         }
     }
 
-    protected  <T> T wrapInTransaction (final ReturnableDelegate<T> delegate) {
+    protected <T> T wrapInTransaction(final ReturnableDelegate<T> delegate) {
 
-        final String  jdbcPool       = Config.getStringProperty("DATABASE_STORAGE_JDBC_POOL_NAME", StringPool.BLANK);
+        final String jdbcPool = Config
+                .getStringProperty("DATABASE_STORAGE_JDBC_POOL_NAME", StringPool.BLANK);
         final boolean isExternalPool = UtilMethods.isSet(jdbcPool);
 
-        if(isExternalPool) {
+        if (isExternalPool) {
 
             return this.wrapInExternalTransaction(delegate, jdbcPool);
         } else {
@@ -140,11 +145,12 @@ public class DataBaseStorage implements Storage {
         }
     }
 
-    private <T> T wrapInExternalTransaction(final ReturnableDelegate<T> delegate, final String jdbcPool) {
+    private <T> T wrapInExternalTransaction(final ReturnableDelegate<T> delegate,
+            final String jdbcPool) {
 
         T result = null;
         Connection connection = null;
-        boolean    autocommit = false;
+        boolean autocommit = false;
 
         try {
 
@@ -172,7 +178,6 @@ public class DataBaseStorage implements Storage {
 
             if (null != connection) {
 
-
                 try {
                     connection.setAutoCommit(autocommit);
                 } catch (SQLException e) {
@@ -193,10 +198,12 @@ public class DataBaseStorage implements Storage {
 
         final MutableBoolean result = new MutableBoolean(false);
 
-        this.wrapCloseConnection(()-> {
+        this.wrapCloseConnection(() -> {
 
-            final List results = Try.of(() -> new DotConnect().setSQL("select * from storage where storage_group = ?")
-                    .addParam(groupName).loadObjectResults(this.getConnection())).getOrElse(() -> Collections.emptyList());
+            final List results = Try.of(() -> new DotConnect()
+                    .setSQL("SELECT * FROM storage_group WHERE group_name = ?")
+                    .addParam(groupName).loadObjectResults(this.getConnection())).getOrElse(
+                    Collections::emptyList);
             result.setValue(!results.isEmpty());
         });
 
@@ -208,11 +215,12 @@ public class DataBaseStorage implements Storage {
 
         final MutableBoolean result = new MutableBoolean(false);
 
-        this.wrapCloseConnection(()-> {
+        this.wrapCloseConnection(() -> {
 
-            final List results = Try.of(()->new DotConnect().setSQL("select * from storage where storage_group = ? and key = ?")
+            final List results = Try.of(() -> new DotConnect()
+                    .setSQL("SELECT * FROM storage WHERE group_name = ? AND path = ?")
                     .addParam(groupName).addParam(objectPath)
-                    .loadObjectResults(this.getConnection())).getOrElse(()-> Collections.emptyList());
+                    .loadObjectResults(this.getConnection())).getOrElse(Collections::emptyList);
             result.setValue(!results.isEmpty());
         });
 
@@ -221,33 +229,48 @@ public class DataBaseStorage implements Storage {
 
     @Override
     public boolean createGroup(final String groupName) {
-
-        return true; // bucket here are dynamic
+        return createGroup(groupName, ImmutableMap.of());
     }
 
     @Override
-    public boolean createGroup(final  String groupName, final Map<String, Object> extraOptions) {
+    public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) {
 
-        return  true; // bucket here are dynamic;
+        return this.wrapInTransaction(() ->
+                Try.of(() -> {
+                    new DotConnect().setSQL(" INSERT INTO storage_group (group_name) VALUES (?) ")
+                            .addParam(groupName).loadResult(
+                            this.getConnection());
+                    return true;
+                }).getOrElseGet(throwable -> false)
+        );
     }
 
     @Override
     public int deleteGroup(final String groupName) {
+        return this.wrapInTransaction(() -> {
+            final DotConnect dotConnect = new DotConnect();
+            final int entriesCount = dotConnect.executeUpdate(this.getConnection(),
+                    "DELETE FROM storage WHERE group_name = ?", groupName);
 
-        return this.wrapInTransaction(()->
-                new DotConnect()
-                        .executeUpdate(this.getConnection(),
-                                "delete from storage where storage_group = ?", groupName));
+            final int groupsCount = dotConnect.executeUpdate(this.getConnection(),
+                    "DELETE FROM storage_group WHERE group_name = ?", groupName);
+
+            Logger.info(this, () -> String
+                    .format("total of `%d` objects removed for `%d` group ", entriesCount,
+                            groupsCount
+                    ));
+            return entriesCount;
+        });
 
     }
 
     @Override
     public boolean deleteObject(final String groupName, final String path) {
 
-        return this.wrapInTransaction(()->
-                new DotConnect()
-                        .executeUpdate(this.getConnection(),
-                                "delete from storage where storage_group = ? and key = ?", groupName, path) > 0);
+        return this.wrapInTransaction(() -> new DotConnect()
+                .executeUpdate(this.getConnection(),
+                        "DELETE FROM storage WHERE group_name = ? AND path = ?",
+                        groupName, path) > 0);
     }
 
     @Override
@@ -255,12 +278,14 @@ public class DataBaseStorage implements Storage {
 
         final MutableObject<List<Object>> result = new MutableObject<>(Collections.emptyList());
 
-        this.wrapCloseConnection(()-> {
+        this.wrapCloseConnection(() -> {
 
-            final List<Map<String, Object>> results = Try.of(()->new DotConnect().setSQL("select storage_group from storage")
-                    .loadObjectResults()).getOrElse(()-> Collections.emptyList());
+            final List<Map<String, Object>> results = Try
+                    .of(() -> new DotConnect().setSQL("SELECT group_name FROM storage_group")
+                            .loadObjectResults()).getOrElse(Collections::emptyList);
 
-            result.setValue(results.stream().map(map -> map.get("storage_group")).collect(CollectionsUtils.toImmutableList()));
+            result.setValue(results.stream().map(map -> map.get("group_name"))
+                    .collect(CollectionsUtils.toImmutableList()));
         });
 
         return result.getValue();
@@ -268,37 +293,46 @@ public class DataBaseStorage implements Storage {
 
     @Override
     public Object pushFile(final String groupName, final String path,
-                           final File file, final Map<String, Object> extraMeta) {
+            final File file, final Map<String, Object> extraMeta) {
 
         // 1. generate metadata
         // 2. see if the sha-256 exists
         // 2.1 if exists only insert on the reference
         // 2.2 if does not exists, insert a new one
-        final Map<String, Object> metaData = processMetadata (file, extraMeta);
-        final String fileHash              = (String)metaData.get(FileStorageAPI.SHA226_META_KEY);
+        final Map<String, Object> metaData = processMetadata(file, extraMeta);
+        final String fileHash = (String) metaData.get(FileStorageAPI.SHA226_META_KEY);
 
         return this.wrapInTransaction(
-                ()->this.existsHash(fileHash)?
-                    this.pushFileReference(groupName, path, metaData, fileHash):
-                    this.pushNewFile(groupName, path, file, metaData));
+                () -> {
+                    if (!existsGroup(groupName)) {
+                        throw new IllegalArgumentException("The groupName: " + groupName +
+                                ", does not exist.");
+                    }
+                    return this.existsHash(fileHash) ?
+                            this.pushFileReference(groupName, path, metaData, fileHash) :
+                            this.pushNewFile(groupName, path, file, metaData);
+                });
     }
 
     private boolean existsHash(final String fileHash) {
 
         final MutableBoolean exists = new MutableBoolean(false);
 
-        this.wrapCloseConnection(()-> {
+        this.wrapCloseConnection(() -> {
 
-            final List results = Try.of(()->new DotConnect().setSQL("select * from storage where hash = ?")
-                    .addParam(fileHash)
-                    .loadObjectResults(this.getConnection())).getOrElse(()-> Collections.emptyList());
+            final List results = Try
+                    .of(() -> new DotConnect().setSQL("SELECT * FROM storage WHERE hash = ?")
+                            .addParam(fileHash)
+                            .loadObjectResults(this.getConnection()))
+                    .getOrElse(Collections::emptyList);
             exists.setValue(!results.isEmpty());
         });
 
         return exists.getValue();
     }
 
-    private Map<String, Object> processMetadata(final File file, final Map<String, Object> extraMeta) {
+    private Map<String, Object> processMetadata(final File file,
+            final Map<String, Object> extraMeta) {
 
         if (UtilMethods.isSet(extraMeta) && extraMeta.containsKey(FileStorageAPI.SHA226_META_KEY)) {
 
@@ -318,13 +352,13 @@ public class DataBaseStorage implements Storage {
     }
 
     private Object pushFileReference(final String groupName, final String path,
-                                     final Map<String, Object> extraMeta, final String objectHash) {
+            final Map<String, Object> extraMeta, final String objectHash) {
 
         try {
             final StringWriter metaDataJsonWriter = new StringWriter();
             this.objectMapper.writeValue(metaDataJsonWriter, extraMeta);
             new DotConnect().executeUpdate(this.getConnection(),
-                    "insert into storage(hash, key, storage_group, metadata) values (?, ?, ?, ?)",
+                    "INSERT INTO storage(hash, path, group_name, metadata) VALUES (?, ?, ?, ?)",
                     objectHash, path, groupName, metaDataJsonWriter.toString());
             return true;
         } catch (DotDataException | IOException e) {
@@ -334,37 +368,41 @@ public class DataBaseStorage implements Storage {
         }
     }
 
-    private Object pushNewFile(final String groupName, final String path, final File file, final Map<String, Object> extraMeta) {
+    private Object pushNewFile(final String groupName, final String path, final File file,
+            final Map<String, Object> extraMeta) {
 
         try (final FileByteSplitter fileSplitter = new FileByteSplitter(file)) {
 
             final HashBuilder objectHashBuilder = Encryptor.Hashing.sha256();
-            final List<String> chuckHashes      = new ArrayList<>();
+            final List<String> chunkHashes = new ArrayList<>();
 
             for (final Tuple2<byte[], Integer> bytesRead : fileSplitter) {
 
                 objectHashBuilder.append(bytesRead._1(), bytesRead._2());
-                final String chuckHash = Encryptor.Hashing.sha256().append
+                final String chunkHash = Encryptor.Hashing.sha256().append
                         (bytesRead._1(), bytesRead._2()).buildUnixHash();
-                chuckHashes.add(chuckHash);
-                new DotConnect().executeUpdate(this.getConnection(), "insert into storage_data(hash_id, data) values (?, ?)", // todo: this could be an upsert
-                        chuckHash,
-                                    bytesRead._1().length == bytesRead._2()?
-                                        bytesRead._1(): this.chuckBytes (bytesRead._2(), bytesRead._1()));
+                chunkHashes.add(chunkHash);
+                new DotConnect().executeUpdate(this.getConnection(),
+                        "INSERT INTO storage_data(hash_id, data) VALUES (?, ?)",
+                        // todo: this could be an upsert
+                        chunkHash,
+                        bytesRead._1().length == bytesRead._2() ?
+                                bytesRead._1() : this.chunkBytes(bytesRead._2(), bytesRead._1()));
             }
 
-            final String objectHash               = objectHashBuilder.buildUnixHash();
+            final String objectHash = objectHashBuilder.buildUnixHash();
             final StringWriter metaDataJsonWriter = new StringWriter();
             this.objectMapper.writeValue(metaDataJsonWriter, extraMeta);
             new DotConnect().executeUpdate(this.getConnection(),
-                    "insert into storage(hash, key, storage_group, metadata) values (?, ?, ?, ?)",
+                    "INSERT INTO storage(hash, path, group_name, metadata) VALUES (?, ?, ?, ?)",
                     objectHash, path, groupName, metaDataJsonWriter.toString());
 
             int order = 1;
-            for (final String chuckHash : chuckHashes) {
+            for (final String chunkHash : chunkHashes) {
 
-                new DotConnect().executeUpdate(this.getConnection(),"insert into storage_x_data(storage_hash, data_hash, data_order) values (?, ?, ?)",
-                        objectHash, chuckHash, order++);
+                new DotConnect().executeUpdate(this.getConnection(),
+                        "INSERT INTO storage_x_data(storage_hash, data_hash, data_order) VALUES (?, ?, ?)",
+                        objectHash, chunkHash, order++);
             }
 
             return true;
@@ -375,7 +413,7 @@ public class DataBaseStorage implements Storage {
         }
     }
 
-    private  byte[]  chuckBytes(final int bytesLength, final byte[] bytes) {
+    private byte[] chunkBytes(final int bytesLength, final byte[] bytes) {
 
         final byte[] chunkedArray = new byte[bytesLength];
 
@@ -386,16 +424,17 @@ public class DataBaseStorage implements Storage {
 
     private byte[] fileToBytes(final File file) {
 
-        try (InputStream input = com.liferay.util.FileUtil.createInputStream(file.toPath(), "none")) {
+        try (InputStream input = com.liferay.util.FileUtil
+                .createInputStream(file.toPath(), "none")) {
 
             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             final byte[] buffer = new byte[1024];
-            for (int readNum; (readNum = input.read(buffer)) != -1;) {
+            for (int readNum; (readNum = input.read(buffer)) != -1; ) {
 
                 byteArrayOutputStream.write(buffer, 0, readNum);
             }
 
-            return  byteArrayOutputStream.toByteArray();
+            return byteArrayOutputStream.toByteArray();
         } catch (IOException e) {
 
             Logger.error(this, e.getMessage(), e);
@@ -405,13 +444,13 @@ public class DataBaseStorage implements Storage {
 
     @Override
     public Object pushObject(final String groupName, final String path,
-                             final ObjectWriterDelegate writerDelegate,
-                             final Serializable object, final Map<String, Object> extraMeta) {
+            final ObjectWriterDelegate writerDelegate,
+            final Serializable object, final Map<String, Object> extraMeta) {
 
         try {
 
-            final File file                     = FileUtil.createTemporalFile("object-storage", ".tmp");
-            final byte[] objectBytes            = this.objectToBytes (writerDelegate, object);
+            final File file = FileUtil.createTemporalFile("object-storage", ".tmp");
+            final byte[] objectBytes = this.objectToBytes(writerDelegate, object);
             FileUtils.writeByteArrayToFile(file, objectBytes);
 
             return this.pushFile(groupName, path, file, extraMeta);
@@ -423,27 +462,29 @@ public class DataBaseStorage implements Storage {
     }
 
     private byte[] objectToBytes(final ObjectWriterDelegate writerDelegate,
-                                 final Serializable object) {
+            final Serializable object) {
 
         final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         writerDelegate.write(byteArrayOutputStream, object);
-        return  byteArrayOutputStream.toByteArray();
+        return byteArrayOutputStream.toByteArray();
     }
 
     @Override
-    public Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Object> extraMeta) {
+    public Future<Object> pushFileAsync(final String groupName, final String path, final File file,
+            final Map<String, Object> extraMeta) {
 
         return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
-                ()-> this.pushFile(groupName, path, file, extraMeta)
+                () -> this.pushFile(groupName, path, file, extraMeta)
         );
     }
 
     @Override
-    public Future<Object> pushObjectAsync(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate,
-                                          final Serializable object, final Map<String, Object> extraMeta) {
+    public Future<Object> pushObjectAsync(final String bucketName, final String path,
+            final ObjectWriterDelegate writerDelegate,
+            final Serializable object, final Map<String, Object> extraMeta) {
 
         return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
-                ()-> this.pushObject(bucketName, path, writerDelegate, object, extraMeta)
+                () -> this.pushObject(bucketName, path, writerDelegate, object, extraMeta)
         );
     }
 
@@ -452,16 +493,19 @@ public class DataBaseStorage implements Storage {
 
         final MutableObject<File> file = new MutableObject<>(null);
 
-        this.wrapCloseConnection( ()-> {
-             try {
+        this.wrapCloseConnection(() -> {
+            try {
 
                 final List<Map<String, Object>> storageResult = Try.of(() ->
-                        new DotConnect().setSQL("select hash from storage where storage_group = ? and key = ?")
-                            .addParam(groupName).addParam(path).loadObjectResults()).getOrElse(() -> Collections.emptyList());
+                        new DotConnect()
+                                .setSQL("SELECT hash FROM storage WHERE group_name = ? AND path = ?")
+                                .addParam(groupName).addParam(path).loadObjectResults()).getOrElse(
+                        Collections::emptyList);
 
                 if (!storageResult.isEmpty()) {
 
-                    final Optional<Object> objectOpt = storageResult.stream().map(map -> map.get("hash")).findFirst();
+                    final Optional<Object> objectOpt = storageResult.stream()
+                            .map(map -> map.get("hash")).findFirst();
                     if (objectOpt.isPresent()) {
 
                         final String objectHash = (String) objectOpt.get();
@@ -472,7 +516,9 @@ public class DataBaseStorage implements Storage {
                     }
                 } else {
 
-                    throw new DoesNotExistException("The storage, group: " + groupName + ", path: " + path + " does not exists");
+                    throw new DoesNotExistException(
+                            "The storage, group: " + groupName + ", path: " + path
+                                    + " does not exists");
                 }
             } catch (IOException e) {
 
@@ -489,18 +535,24 @@ public class DataBaseStorage implements Storage {
         final File file = FileUtil.createTemporalFile("dotdbstorage-recovery", ".tmp");
         try (final FileJoiner fileJoiner = new FileJoiner(file)) {
 
-            final HashBuilder fileHashBuilder = Try.of(()-> Encryptor.Hashing.sha256()).getOrElseThrow(DotRuntimeException::new);
+            final HashBuilder fileHashBuilder = Try.of(() -> Encryptor.Hashing.sha256())
+                    .getOrElseThrow(DotRuntimeException::new);
             final List<Map<String, Object>> hashes = Try.of(() -> new DotConnect().setSQL(
-                    "select storage_data.hash_id as hash, storage_data.data as data from storage_data , storage_x_data " +
-                            "where storage_x_data.data_hash  =  storage_data.hash_id " +
-                            "and storage_x_data.storage_hash = ? order by data_order asc")
-                    .setFetchSize(1).addParam(hashId).loadObjectResults(this.getConnection())).getOrElse(() -> Collections.emptyList());
+                    "SELECT storage_data.hash_id AS hash, storage_data.data AS data FROM storage_data , storage_x_data "
+                            +
+                            "WHERE storage_x_data.data_hash  =  storage_data.hash_id " +
+                            "AND storage_x_data.storage_hash = ? order by data_order ASC")
+                    .setFetchSize(1).addParam(hashId).loadObjectResults(this.getConnection()))
+                    .getOrElse(() -> Collections.emptyList());
 
             for (final Map<String, Object> hashMap : hashes) {
 
-                final String hash        = (String) hashMap.get("hash");
-                final byte[] bytes       = (byte[]) hashMap.get("data"); // todo: this could be a getInputStream: must
-                final String recoverHash = Try.of(() -> Encryptor.Hashing.sha256().append(bytes).buildUnixHash()).getOrElseThrow(DotRuntimeException::new);
+                final String hash = (String) hashMap.get("hash");
+                final byte[] bytes = (byte[]) hashMap
+                        .get("data"); // todo: this could be a getInputStream: must
+                final String recoverHash = Try
+                        .of(() -> Encryptor.Hashing.sha256().append(bytes).buildUnixHash())
+                        .getOrElseThrow(DotRuntimeException::new);
 
                 if (hash.equals(recoverHash)) {
 
@@ -523,14 +575,15 @@ public class DataBaseStorage implements Storage {
     }
 
     @Override
-    public Object pullObject(final String groupName, final String path, final ObjectReaderDelegate readerDelegate) {
+    public Object pullObject(final String groupName, final String path,
+            final ObjectReaderDelegate readerDelegate) {
 
-        Object object   = null;
+        Object object = null;
         final File file = pullFile(groupName, path);
 
         if (null != file) {
 
-            object = Try.of(()->readerDelegate.read(
+            object = Try.of(() -> readerDelegate.read(
                     new ByteArrayInputStream(FileUtils.readFileToByteArray(file)))).getOrNull();
         }
 
@@ -541,16 +594,16 @@ public class DataBaseStorage implements Storage {
     public Future<File> pullFileAsync(final String groupName, final String path) {
 
         return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
-                ()-> this.pullFile(groupName, path)
+                () -> this.pullFile(groupName, path)
         );
     }
 
     @Override
     public Future<Object> pullObjectAsync(final String groupName, final String path,
-                                          final ObjectReaderDelegate readerDelegate) {
+            final ObjectReaderDelegate readerDelegate) {
 
         return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
-                ()-> this.pullObject(groupName, path, readerDelegate)
+                () -> this.pullObject(groupName, path, readerDelegate)
         );
     }
 }

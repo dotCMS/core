@@ -4,7 +4,6 @@ import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
 import com.dotcms.publishing.PushPublishFiltersInitializer;
 import com.dotcms.rendering.velocity.events.ExceptionHandlersInitializer;
-import com.dotcms.storage.StorageProviderInitializer;
 import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
@@ -113,7 +112,6 @@ public class DotInitializationService implements Serializable {
                 new LocalSystemEventSubscribersInitializer(),
                 (DotInitializer)APILocator.getPersonaAPI(),
                 new ExceptionHandlersInitializer(),
-                new StorageProviderInitializer(),
                 new PushPublishFiltersInitializer());
     } // getInternalInitializers.
 

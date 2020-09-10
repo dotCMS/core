@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.storage;
 
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.InitDataObject;
@@ -8,22 +7,24 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
+import com.dotcms.storage.ContentletMetadata;
 import com.dotcms.storage.ContentletMetadataAPI;
 import com.dotcms.storage.FileStorageAPI;
+import com.dotcms.storage.StoragePersistenceProvider;
 import com.dotcms.storage.StorageType;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import io.vavr.Tuple2;
+import javax.validation.Valid;
 import org.apache.commons.io.FilenameUtils;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
@@ -48,7 +49,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -61,29 +61,32 @@ import java.util.zip.ZipOutputStream;
 @Path("/v1/storage")
 public class ContentStorageResource {
 
-    private final WebResource    webResource;
+    private final WebResource webResource;
     private final FileStorageAPI fileStorageAPI;
     private final MultiPartUtils multiPartUtils;
-    private final ContentStorageHelper  contentStorageHelper;
+    private final ContentStorageHelper helper;
     private final ContentletMetadataAPI contentletMetadataAPI;
+    private final LanguageWebAPI languageWebAPI;
 
     @VisibleForTesting
-    protected ContentStorageResource(final FileStorageAPI fileStorageAPI,
-                                     final WebResource webResource,
-                                     final MultiPartUtils multiPartUtils,
-                                     final ContentStorageHelper  contentStorageHelper,
-                                     final ContentletMetadataAPI contentletMetadataAPI) {
+    ContentStorageResource(final FileStorageAPI fileStorageAPI,
+            final WebResource webResource,
+            final MultiPartUtils multiPartUtils,
+            final ContentStorageHelper helper,
+            final ContentletMetadataAPI contentletMetadataAPI, final LanguageWebAPI languageWebAPI) {
 
         this.fileStorageAPI = fileStorageAPI;
         this.webResource    = webResource;
         this.multiPartUtils = multiPartUtils;
-        this.contentStorageHelper  = contentStorageHelper;
+        this.helper = helper;
         this.contentletMetadataAPI = contentletMetadataAPI;
+        this.languageWebAPI = languageWebAPI;
     }
 
     public ContentStorageResource() {
         this(APILocator.getFileStorageAPI(), new WebResource(),
-                new MultiPartUtils(), new ContentStorageHelper(), APILocator.getContentletMetadataAPI());
+                new MultiPartUtils(), new ContentStorageHelper(),
+                APILocator.getContentletMetadataAPI(), WebAPILocator.getLanguageWebAPI());
     }
 
     @GET
@@ -94,12 +97,7 @@ public class ContentStorageResource {
                                            @Context final HttpServletResponse response,
                                            @QueryParam("path") final String path) {
 
-
-        final String storageType = Config.getStringProperty("DEFAULT_STORAGE_TYPE", StorageType.FILE_SYSTEM.name());
-
-        Logger.debug(this, ()-> "Getting the file: " + path + " from the storage: " + storageType);
-
-        final File   file        = this.fileStorageAPI.getStorageProvider().getStorage(storageType).pullFile("files", path);
+        final File   file        = StoragePersistenceProvider.INSTANCE.get().getStorage().pullFile("files", path);
         final String fileName    = FilenameUtils.getName(path);
 
         return Response.ok(
@@ -141,23 +139,12 @@ public class ContentStorageResource {
                                            final FormDataMultiPart multipart) throws IOException, JSONException {
 
         final Tuple2<Map<String,Object>, List<File>> bodyAndBinaries =
-                this.multiPartUtils.getBodyMapAndBinariesFromMultipart(multipart);
-        final List<File> files            = bodyAndBinaries._2();
-
-        final ImmutableMap.Builder<File, Object> bodyResultBuilder = new ImmutableMap.Builder<>();
+                multiPartUtils.getBodyMapAndBinariesFromMultipart(multipart);
+        final List<File> files = bodyAndBinaries._2();
         if (!UtilMethods.isSet(files)) {
-
-            throw new BadRequestException("Must send files");
+            throw new BadRequestException("No files found on the multi-part request.");
         }
-
-        for (final File file : files) {
-
-            final String storageType = Config.getStringProperty("DEFAULT_STORAGE_TYPE", StorageType.FILE_SYSTEM.name());
-            bodyResultBuilder.put(file, this.fileStorageAPI.getStorageProvider().getStorage(storageType)
-                    .pushFile("files", File.separator + file.getName(), file, Collections.emptyMap()));
-        }
-
-        return Response.ok(new ResponseEntityView(bodyResultBuilder.build())).build();
+        return Response.ok(new ResponseEntityView(helper.push(files))).build();
     }
 
     @PUT
@@ -166,45 +153,11 @@ public class ContentStorageResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response generateContentletMetadata(@Context final HttpServletRequest request,
-                                               @Context final HttpServletResponse response,
-                                               @QueryParam("inode")                        final String inode,
-                                               @QueryParam("identifier")                   final String identifier,
-                                               @DefaultValue("-1") @QueryParam("language") final String language)
+            @Context final HttpServletResponse response,
+            @QueryParam("inode") final String inode,
+            @QueryParam("identifier") final String identifier,
+            @DefaultValue("-1") @QueryParam("language") final String language)
             throws IOException, DotSecurityException, DotDataException {
-
-        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
-                                                        .requestAndResponse(request, response)
-                                                        .rejectWhenNoUser(true)
-                                                        .requiredBackendUser(true).init();
-
-        if (!UtilMethods.isSet(identifier) && !UtilMethods.isSet(inode)) {
-
-            throw new BadRequestException("Must send identifier or inode");
-        }
-
-        final long languageId = UtilMethods.isSet(language) && !"-1".equals(language)?
-                LanguageUtil.getLanguageId(language):-1;
-
-        Logger.debug(this, ()-> "Generating the metadata for: " + (null != inode? inode: identifier));
-
-        final Contentlet contentlet = this.contentStorageHelper.getContentlet(inode, identifier, languageId,
-                ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initDataObject, PageMode.get(request));
-
-        return Response.ok(new ResponseEntityView(this.contentletMetadataAPI.generateContentletMetadata(contentlet))).build();
-    }
-
-    @PUT
-    @Path("/metadata/content/_get")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getContentMetadata(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
-                                     @QueryParam("inode")                        final String inode,
-                                     @QueryParam("identifier")                   final String identifier,
-                                     @DefaultValue("-1") @QueryParam("language") final String language,
-                                     final MetadataForm metadataForm)
-            throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
@@ -216,29 +169,50 @@ public class ContentStorageResource {
             throw new BadRequestException("Must send identifier or inode");
         }
 
-        if (!UtilMethods.isSet(metadataForm.getField())) {
+        final long languageId = UtilMethods.isSet(language) && !"-1".equals(language) ?
+                LanguageUtil.getLanguageId(language) : -1;
 
-            throw new BadRequestException("Must send field");
+        Logger.debug(this,
+                () -> "Generating the metadata for: " + (null != inode ? inode : identifier));
+
+        final ContentletMetadata metadata = helper
+                .generateContentletMetadata(inode, identifier, languageId,
+                        () -> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                        initDataObject.getUser(), PageMode.get(request));
+
+        return Response.ok(new ResponseEntityView(metadata)).build();
+    }
+
+    @PUT
+    @Path("/metadata/content/_get")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getContentMetadata(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("inode") final String inode,
+            @QueryParam("identifier") final String identifier,
+            @DefaultValue("-1") @QueryParam("language") final String language,
+            @Valid final MetadataForm metadataForm)
+            throws DotSecurityException, DotDataException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true).init();
+
+        if (!UtilMethods.isSet(identifier) && !UtilMethods.isSet(inode)) {
+            throw new BadRequestException("Must send identifier or inode");
         }
 
         final long languageId = UtilMethods.isSet(language) && !"-1".equals(language)?
                 LanguageUtil.getLanguageId(language):-1;
 
-        Logger.debug(this, ()-> "Generating the metadata for: " + (null != inode? inode: identifier) + ", " + metadataForm);
-
-        final Contentlet contentlet = this.contentStorageHelper.getContentlet(inode, identifier, languageId,
-                ()-> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), initDataObject, PageMode.get(request));
-
-        final Map<String, Field> fieldMap = contentlet.getContentType().fieldMap();
-
-        if (!fieldMap.containsKey(metadataForm.getField())) {
-            throw new BadRequestException("Field variable sent, is not valid for the contentlet: " + contentlet.getIdentifier());
-        }
-
-        return Response.ok(new ResponseEntityView(
-                !metadataForm.isCache()?
-                        this.contentletMetadataAPI.getMetadataNoCache(contentlet, metadataForm.getField()):
-                        this.contentletMetadataAPI.getMetadata(contentlet, metadataForm.getField()))).build();
+        final Map<String, Object> metadata = helper
+                .getMetadata(inode, identifier, languageId,
+                        () -> languageWebAPI.getLanguage(request).getId(), initDataObject.getUser(),
+                        PageMode.get(request), metadataForm);
+        return Response.ok(new ResponseEntityView(metadata)).build();
     }
 
 }

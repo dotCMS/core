@@ -1,11 +1,14 @@
 package com.dotcms.rest.api.v1.storage;
 
+import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import javax.validation.constraints.NotNull;
 
 @JsonDeserialize(builder = MetadataForm.Builder.class)
-public class MetadataForm {
+public class MetadataForm extends Validated {
 
+    @NotNull
     private final String  field;
     private final boolean cache;
 

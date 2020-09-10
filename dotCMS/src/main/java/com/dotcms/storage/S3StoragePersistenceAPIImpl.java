@@ -1,6 +1,6 @@
 package com.dotcms.storage;
 
-public class S3Storage {
+public class S3StoragePersistenceAPIImpl {
 
 }
 /*

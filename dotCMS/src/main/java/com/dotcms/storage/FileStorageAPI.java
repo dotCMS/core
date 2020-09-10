@@ -1,10 +1,8 @@
 package com.dotcms.storage;
 
-import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.util.Config;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -32,12 +30,6 @@ public interface FileStorageAPI {
         return Config.getLongProperty("META_DATA_MAX_SIZE",
                 FileStorageAPI.DEFAULT_META_DATA_MAX_SIZE) * FileStorageAPI.SIZE;
     }
-
-    /**
-     * Returns the storage provider
-     * @return StorageProvider
-     */
-    StorageProvider getStorageProvider();
 
     /**
      * Gets the basic metadata from the binary, this method returns the raw metadata, does not stores anything on cache or disk neither filter anything
@@ -90,23 +82,5 @@ public interface FileStorageAPI {
      * @return  Map with the metadata
      */
     Map<String, Object> retrieveMetaData(RequestMetaData requestMetaData);
-
-    /**
-     * Set metadata generator. There is one for default based on Tika, however if you want to override it just implement the {@link MetadataGenerator} and set it, instead of the default one.
-     * @param metadataGenerator {@link MetadataGenerator}
-     */
-    void setMetadataGenerator   (final MetadataGenerator metadataGenerator);
-
-    /**
-     * Metadata object are recovered from json, in case you are storing something else, override this one to support the unmarshal
-     * @param objectReaderDelegate {@link ObjectReaderDelegate}
-     */
-    void setObjectReaderDelegate(final ObjectReaderDelegate objectReaderDelegate);
-
-    /**
-     * Metadata object are stored as a json, in case you want to transform to different thing
-     * @param objectWriterDelegate {@link ObjectWriterDelegate}
-     */
-    void setObjectWriterDelegate(final ObjectWriterDelegate objectWriterDelegate);
 
 }
