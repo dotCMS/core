@@ -90,7 +90,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     @Override
     public void printSchema() {
-        if (Config.getBooleanProperty("PRINT_GRAPHQL_SCHEMA", false)) {
+        if (Config.getBooleanProperty("GRAPHQL_PRINT_SCHEMA", false)) {
             SchemaPrinter printer = new SchemaPrinter();
             try {
                 File graphqlDirectory = new File(ConfigUtils.getGraphqlPath());

@@ -8,6 +8,10 @@ import graphql.schema.GraphQLSchema;
 import java.util.Arrays;
 import java.util.Optional;
 
+/**
+ * Cache implementation used to store the generated {@link GraphQLSchema}
+ */
+
 public class GraphQLSchemaCache implements Cachable {
     private final static String GRAPHQL_SCHEMA_GROUP = GraphQLSchemaCache.class.getSimpleName().toLowerCase();
 
