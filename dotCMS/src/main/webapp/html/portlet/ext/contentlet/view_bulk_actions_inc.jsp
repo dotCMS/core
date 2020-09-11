@@ -357,8 +357,8 @@
     }
 
     function bulkWorkflowActionCallback(data) {
-        if(data){
-            var summary = actionsExecutionSummarytMarkup(data);
+        if(data && data.entity){
+            var summary = actionsExecutionSummarytMarkup(data.entity);
             dojo.byId('bulkActionsContainer').innerHTML = summary;
         } else {
             showDotCMSSystemMessage(`<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`, true);
