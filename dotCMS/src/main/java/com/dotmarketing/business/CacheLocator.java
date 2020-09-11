@@ -5,6 +5,7 @@ import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
 import com.dotcms.cache.KeyValueCacheImpl;
 
+import com.dotcms.graphql.business.GraphQLSchemaCache;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
 import com.dotcms.content.elasticsearch.ESQueryCache;
@@ -313,6 +314,13 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	/**
+	 * This will get you an instance of the singleton GraphQL Schema cache.
+	 * @return
+	 */
+	public static GraphQLSchemaCache getGraphQLSchemaCache() {
+		return (GraphQLSchemaCache) getInstance(CacheIndex.GraphQLSchemaCache);
+	}
+	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
 	 * @return
@@ -412,7 +420,8 @@ enum CacheIndex
 	PortletCache("PortletCache"),
 	ESQueryCache("ESQueryCache"),
 	KeyValueCache("Key/Value Cache"),
-	AppsCache("Apps");
+	AppsCache("Apps"),
+	GraphQLSchemaCache("GraphQLSchemaCache");
 
 	Cachable create() {
 		switch(this) {
@@ -461,7 +470,8 @@ enum CacheIndex
 	      	case PortletCache : return new PortletCache();
 			case AppsCache: return new AppsCacheImpl();
 	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
-	      	
+	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
+
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
