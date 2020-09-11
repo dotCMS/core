@@ -5,6 +5,7 @@ import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLList.list;
 
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
@@ -157,8 +158,12 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         viewAsFields.put("mode", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ViewAsPageStatus, String>)
                         (viewAs)->viewAs.getPageMode().name())));
-        viewAsFields.put("persona", new TypeFetcher(GraphQLTypeReference.typeRef("PersonaBaseType"),
-                new PropertyDataFetcher<ViewAsPageStatus>("persona")));
+        if(LicenseManager.getInstance().isEnterprise()) {
+            viewAsFields
+                    .put("persona", new TypeFetcher(GraphQLTypeReference.typeRef("PersonaBaseType"),
+                            new PropertyDataFetcher<ViewAsPageStatus>("persona")));
+        }
+
 
         typeMap.put("ViewAs", TypeUtil.createObjectType("ViewAs", viewAsFields));
 
@@ -176,8 +181,11 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new TypeFetcher(list(GraphQLTypeReference.typeRef("WeightedPersona")),
                 PropertyDataFetcher.fetching((Function<Visitor, Set>)
                         (visitor)->visitor.getWeightedPersonas().entrySet())));
-        visitorFields.put("persona", new TypeFetcher(GraphQLTypeReference.typeRef("PersonaBaseType"),
-                new PropertyDataFetcher<Visitor>("persona")));
+        if(LicenseManager.getInstance().isEnterprise()) {
+            visitorFields
+                    .put("persona", new TypeFetcher(GraphQLTypeReference.typeRef("PersonaBaseType"),
+                            new PropertyDataFetcher<Visitor>("persona")));
+        }
         visitorFields.put("geo", new TypeFetcher(GraphQLTypeReference.typeRef("Geolocation"),
                 new PropertyDataFetcher<Visitor>("geo")));
 
