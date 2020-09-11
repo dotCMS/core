@@ -18,44 +18,18 @@ import java.util.List;
  *
  */
 public interface CategoryAPI {
-	
-	/**
-	 * 
-	 * @param cat
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return boolean on whether or not a user can use a category.  
-	 * @throws DotDataException 
-	 */
-	
-	boolean canUseCategory(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
-	
-	/**
-	 *
-	 * @param cat
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return boolean on whether or not a user can add a child category.
-	 * @throws DotDataException
-	 */
-	boolean canAddChildren(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
 
 	/**
+	 * Checks if a user has permissions to view a category
 	 *
-	 * @param user
-	 * @return Whether the user can add a category to the top level.  If it is a top parent category.
-	 */
-	boolean canAddToTopLevel(User user);
-
-	/**
-	 *
-	 * @param cat
-	 * @param user
+	 * @param category Category to check permissions
+	 * @param user user making the request
 	 * @param respectFrontendRoles
-	 * @return boolean on whether or not a user can edit a category.
+	 * @return boolean on whether or not a user can read/view a category.
 	 * @throws DotDataException
 	 */
-	boolean canEditCategory(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
+	
+	boolean canUseCategory(Category category, User user, boolean respectFrontendRoles) throws DotDataException;
 
 	/**
 	 * Totally removes a category from the system
@@ -117,12 +91,6 @@ public interface CategoryAPI {
 	List<Category> findAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Deletes the top level categories
-	 * @return
-	 */
-	
-	void deleteTopLevelCategories(User user) throws DotSecurityException, DotDataException ;
-	/**
 	 * Retrieves the list of all top level categories in the system
 	 * @return
 	 * @throws DotDataException
@@ -150,14 +118,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 */
 	PaginatedCategories findChildren(User user, String inode, boolean respectFrontendRoles, int start, int count, String filter, String sort) throws DotDataException, DotSecurityException;
-	
-	/**
-	 * Deletes all the children of a given parent inode
-	 * @return
-	 * @deprecated this will mess up with your transaction. Use removeXXXX methods instead
-	 */
-	
-	void deleteChilren(String inode);
+
 	/**
 	 * Retrieves the list of all top level categories in the system
 	 * @return

@@ -50,55 +50,17 @@ public class CategoryAPIImpl implements CategoryAPI {
 	}
 
 	/**
+	 * Checks if a user has permissions to view a category
 	 *
-	 * @param category
-	 * @param user
+	 * @param category Category to check permissions
+	 * @param user user making the request
 	 * @param respectFrontendRoles
-	 * @return boolean on whether or not a user can use a category.
+	 * @return boolean on whether or not a user can read/view a category.
 	 * @throws DotDataException
 	 */
 	public boolean canUseCategory(final Category category, final User user,
 								  final boolean respectFrontendRoles) throws DotDataException {
-		return permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_USE, user, respectFrontendRoles);
-	}
-	/**
-	 *
-	 * @param category
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return boolean on whether or not a user can add a child category.
-	 * @throws DotDataException
-	 */
-	public boolean canAddChildren(final Category category, final User user,
-								  final boolean respectFrontendRoles) throws DotDataException {
-		return permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles);
-	}
-
-	/**
-	 *
-	 * @param user
-	 * @return Whether the user can add a category to the top level.  If it is a top parent category.
-	 */
-	public boolean canAddToTopLevel(User user){
-		try {
-			return com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
-		} catch (DotDataException e) {
-			Logger.error(CategoryAPIImpl.class,e.getMessage(),e);
-			return false;
-		}
-
-	}
-
-	/**
-	 *
-	 * @param cat
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return boolean on whether or not a user can edit a category.
-	 * @throws DotDataException
-	 */
-	public boolean canEditCategory(Category cat, User user, boolean respectFrontendRoles) throws DotDataException{
-		return permissionAPI.doesUserHavePermission(cat, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles);
+		return permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles);
 	}
 
 	@WrapInTransaction
@@ -122,15 +84,12 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 	}
 
-	/*public Category find(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		return find(Long.parseLong(id), user, respectFrontendRoles);
-	}*/
 	@CloseDBIfOpened
 	public Category find(final String id, final User user,
 						 final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		final Category category = categoryFactory.find(id);
-		if(category != null && !permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_USE, user, respectFrontendRoles))
+		if(category != null && !permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to read the category = " + category.getInode());
 		return category;
 
@@ -230,7 +189,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 						 final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to save this category = " +
 					child.getInode() + " having as parent the category = " + parent.getCategoryId());
 
@@ -244,7 +203,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 						 final String relationType, final User user,
 						 final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to save this category = " +
 					child.getInode() + " having as parent the category = " + parent.getCategoryId());
 
@@ -257,7 +216,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 						  final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to save this category = " +
 					child.getCategoryId() + " having as parent the category = " + parent.getInode());
 
@@ -273,7 +232,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 		if(!InodeUtils.isSet(category.getCategoryId()))
 			return null;
 
-		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_USE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to save this category = " +
 					category.getInode() + " having as parent the category = " + category.getInode());
 
@@ -289,21 +248,11 @@ public class CategoryAPIImpl implements CategoryAPI {
 		if(category == null)
 			return null;
 
-		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_USE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to save this category = " +
 					category.getInode() + " having as parent the category = " + category.getInode());
 
 		return category;
-	}
-
-	@WrapInTransaction
-	public void deleteTopLevelCategories(final User user) throws DotSecurityException, DotDataException {
-
-		if(!com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole().getId())){
-			throw new DotSecurityException("User doesn't have permission to edit Top Level Categories ");
-		}
-
-		categoryFactory.deleteTopLevelCategories();
 	}
 
 	@CloseDBIfOpened
@@ -328,11 +277,6 @@ public class CategoryAPIImpl implements CategoryAPI {
 		List<Category> categories = categoryFactory.findTopLevelCategoriesByFilter(filter, sort);
 		categories = permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 		return getCategoriesSubList(start, count, categories, filter);
-	}
-
-	@WrapInTransaction
-	public void deleteChilren(final String inode) {
-		categoryFactory.deleteChildren(inode);
 	}
 
 	@CloseDBIfOpened
@@ -469,7 +413,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 							final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to save this category = " +
 					child.getInode() + " having as parent the inode = " + parent.getCategoryId());
 
@@ -482,7 +426,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 							final String relationType, final User user,
 							final boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to save this category = " +
 					child.getInode() + " having as parent the inode = " + parent.getCategoryId());
 
@@ -494,7 +438,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 							   final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to edit this inode = " +
 					parent.getCategoryId());
 
@@ -507,7 +451,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 							 final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to save this inoe = " +
 					child.getCategoryId() + " having as parent the category = " + parent.getInode());
 
@@ -519,7 +463,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 	public void removeParents(final Categorizable child, final User user,
 							  final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to save this inode = " +
 					child.getCategoryId() + " having as parent the category = " + child.getCategoryId());
 
@@ -531,7 +475,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 							final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permission to edit this inode = " +
 					parent.getCategoryId());
 
@@ -543,9 +487,9 @@ public class CategoryAPIImpl implements CategoryAPI {
 	public void setParents(Categorizable child, List<Category> parents, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)){
+		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
 			List<Role> rolesPublish = permissionAPI.getRoles(child.getCategoryId(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-			List<Role> rolesWrite = permissionAPI.getRoles(child.getCategoryId(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1);
+			List<Role> rolesWrite = permissionAPI.getRoles(child.getCategoryId(), PermissionAPI.PERMISSION_EDIT, "CMS Owner", 0, -1);
 
 			Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
 			boolean isCMSOwner = false;
@@ -832,7 +776,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 			return null;
 		}
 
-		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_USE, user, respectFrontendRoles)) {
+		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 			throw new DotSecurityException("User doesn't have permission to use this category = " +
 					category.getInode());
 		}
