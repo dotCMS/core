@@ -341,7 +341,7 @@
                 'Content-Type' : 'application/json;charset=utf-8',
             },
             load: function(data) {
-                bulkWorkflowActionCallback(data);
+                const entity = data ? data.entity : null; bulkWorkflowActionCallback(entity);
             },
             error: function(error){
                 dojo.byId('bulkActionsContainer').innerHTML = `<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`;
