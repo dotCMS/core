@@ -19,11 +19,14 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -54,6 +57,7 @@ public class CategoryAPITest extends IntegrationTestBase {
     private static User user;
     private static Host defaultHost;
     private static ContentTypeAPIImpl contentTypeApi;
+    private static CategoryAPI categoryAPI;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -67,6 +71,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         user = APILocator.getUserAPI().getSystemUser();
         defaultHost = hostAPI.findDefaultHost( user, false );
         contentTypeApi  = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
+        categoryAPI = APILocator.getCategoryAPI();
     }
 
 
@@ -79,8 +84,6 @@ public class CategoryAPITest extends IntegrationTestBase {
      */
     @Test
     public void findTopLevelCategories() throws DotSecurityException, DotDataException {
-
-        CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 
         //***************************************************************
         int start = 0;
@@ -158,8 +161,6 @@ public class CategoryAPITest extends IntegrationTestBase {
         final Category root = rootCategoryDataGen.children(child1, child2).nextPersisted();
         System.out.println(root);
 
-        CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-
         //Find a parent category
         PaginatedCategories categories = categoryAPI.findTopLevelCategories(user, false, 0, 10, "bike", null);
 
@@ -232,7 +233,6 @@ public class CategoryAPITest extends IntegrationTestBase {
 
         Long time = new Date().getTime();
 
-        CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
@@ -368,7 +368,6 @@ public class CategoryAPITest extends IntegrationTestBase {
 
         Long time = new Date().getTime();
 
-        CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         CategoryCache categoryCache = CacheLocator.getCategoryCache();
 
         List<Category> categories = new ArrayList<Category>();
@@ -558,7 +557,6 @@ public class CategoryAPITest extends IntegrationTestBase {
     @Test
     public void testSortChildren() {
 
-        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         final CategoryCache categoryCache = CacheLocator.getCategoryCache();
 
         final String categoryAKey = "categoryA";
@@ -717,8 +715,6 @@ public class CategoryAPITest extends IntegrationTestBase {
     @Test
     public void testDuplicatedCategories() {
 
-        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-
         Category category = null;
 
         try {
@@ -778,7 +774,6 @@ public class CategoryAPITest extends IntegrationTestBase {
 
     @Test
     public void getCategoryTreeUp_hierarchyLevelThree_Success(){
-        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 
         List<Category> categoriesToDelete = Lists.newArrayList();
 
@@ -854,7 +849,6 @@ public class CategoryAPITest extends IntegrationTestBase {
      */
     @Test
     public void checkUniqueKey_severalCases_Success() {
-        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 
         List<Category> categoriesToDelete = Lists.newArrayList();
 
@@ -964,7 +958,6 @@ public class CategoryAPITest extends IntegrationTestBase {
     public void test_Find_Categories_Within_ContentType() throws Exception {
         ContentType contentType = null;
         List<Category> categoriesToDelete = Lists.newArrayList();
-        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         try {
             //Create Parent Category.
             Category parentCategory = new Category();
@@ -1083,5 +1076,191 @@ public class CategoryAPITest extends IntegrationTestBase {
         APILocator.getContentTypeFieldAPI().save(catField, user);
 
         return APILocator.getContentTypeAPI(user).find(type.inode());
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: As a admin user create a top level category
+     * ExpectedResult: Category created successfully
+     */
+    @Test
+    public void test_save_createTopLevelCategory_asAdmin_success()
+            throws DotSecurityException, DotDataException {
+        //Create new Top Level Category
+        final String categoryName = "newCategory" + System.currentTimeMillis();
+        final Category newCategory = new CategoryDataGen().setCategoryName(categoryName)
+                .setCategoryVelocityVarName(categoryName).setKey(categoryName).nextPersisted();
+        //Find created Category
+        final Category getCategory = categoryAPI.findByKey(categoryName,user,false);
+        //Check that the category obtained is the same as the created
+        assertNotNull(getCategory);
+        assertEquals(categoryName,getCategory.getCategoryName());
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: As a admin user create a top level category and a subcategory of it
+     * ExpectedResult: Categories created successfully
+     */
+    @Test
+    public void test_save_createSubCategory_asAdmin_success()
+            throws DotSecurityException, DotDataException {
+        final String parentCategoryName = "newParentCategory" + System.currentTimeMillis();
+        final String childCategoryName = "newChildCategory" + System.currentTimeMillis();
+        //Create Child Category
+        final Category newChildCategory = new CategoryDataGen().setCategoryName(childCategoryName)
+                .setCategoryVelocityVarName(childCategoryName).setKey(childCategoryName).next();
+        //Create Parent Category
+        final Category newParentCategory = new CategoryDataGen().setCategoryName(parentCategoryName)
+                .setCategoryVelocityVarName(parentCategoryName).setKey(parentCategoryName).children(newChildCategory).nextPersisted();
+        //Find Parent Category
+        final Category getParentCategory = categoryAPI.findByKey(parentCategoryName,user,false);
+        //Check that was created successfully
+        assertNotNull(getParentCategory);
+        assertEquals(parentCategoryName,getParentCategory.getCategoryName());
+        //Find Child Category
+        final Category getChildCategory = categoryAPI.findByKey(childCategoryName,user,false);
+        //Check was created successfully
+        assertNotNull(getChildCategory);
+        assertEquals(childCategoryName,getChildCategory.getCategoryName());
+        assertTrue(categoryAPI.isParent(getChildCategory,getParentCategory,user));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: As a limited user, with the required permissions (can add children, edit categories), create a top level category
+     * ExpectedResult: Category created successfully
+     */
+    @Test
+    public void test_save_createTopLevelCategory_asLimitedUser_success()
+            throws DotSecurityException, DotDataException {
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+        //Give Permissions Over the SystemHost Can Add children
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                APILocator.systemHost().getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, true);
+        APILocator.getPermissionAPI().save(permissions, APILocator.systemHost(), user, false);
+        //Give Permissions Over the Categories
+        permissions = new Permission(PermissionableType.CATEGORY.getCanonicalName(),
+                APILocator.systemHost().getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        APILocator.getPermissionAPI().save(permissions, APILocator.systemHost(), user, false);
+        //Create new top level Category as limited user
+        final String categoryName = "newCategory" + System.currentTimeMillis();
+        final Category newCategory = new Category();
+        newCategory.setCategoryName(categoryName);
+        newCategory.setCategoryVelocityVarName(categoryName);
+        newCategory.setKey(categoryName);
+
+        categoryAPI.save(null,newCategory,limitedUser,false);
+        //Find the new Category using the limited user
+        final Category getCategory = categoryAPI.findByKey(categoryName,limitedUser,false);
+        assertNotNull(getCategory);
+        assertEquals(categoryName,getCategory.getCategoryName());
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: As a limited user, without the required permission, create a top level category
+     * ExpectedResult: Fail to create a top level category
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_save_createTopLevelCategory_asLimitedUser_withoutPermissions_throwDotSecurityException()
+            throws DotSecurityException, DotDataException {
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+        //Create new top level Category as limited user
+        final String categoryName = "newCategory" + System.currentTimeMillis();
+        final Category newCategory = new Category();
+        newCategory.setCategoryName(categoryName);
+        newCategory.setCategoryVelocityVarName(categoryName);
+        newCategory.setKey(categoryName);
+
+        categoryAPI.save(null,newCategory,limitedUser,false);
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: As a limited user, with the required permissions, create a top level category
+     * and a subcategory of the new top level category
+     * ExpectedResult: Categories created successfully
+     */
+    @Test
+    public void test_save_createSubCategory_asLimitedUser_success()
+            throws DotSecurityException, DotDataException {
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        //Create new top level Category as admin user
+        final String parentCategoryName = "newParentCategory" + System.currentTimeMillis();
+        final Category newParentCategory = new Category();
+        newParentCategory.setCategoryName(parentCategoryName);
+        newParentCategory.setCategoryVelocityVarName(parentCategoryName);
+        newParentCategory.setKey(parentCategoryName);
+
+        categoryAPI.save(null,newParentCategory,user,false);
+        //Find the new Category using the admin user
+        final Category getParentCategory = categoryAPI.findByKey(parentCategoryName,user,false);
+        assertNotNull(getParentCategory);
+        assertEquals(parentCategoryName,getParentCategory.getCategoryName());
+
+        //Give Permissions Over the Category
+        final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                getParentCategory.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        APILocator.getPermissionAPI().save(permissions, getParentCategory, user, false);
+
+        //Create new sub Category as limited user
+        final String childCategoryName = "newChildCategory" + System.currentTimeMillis();
+        final Category newChildCategory = new Category();
+        newChildCategory.setCategoryName(childCategoryName);
+        newChildCategory.setCategoryVelocityVarName(childCategoryName);
+        newChildCategory.setKey(childCategoryName);
+
+        categoryAPI.save(getParentCategory,newChildCategory,limitedUser,false);
+        //Find the new Category using the limited user
+        final Category getChildCategory = categoryAPI.findByKey(childCategoryName,limitedUser,false);
+        assertNotNull(getChildCategory);
+        assertEquals(childCategoryName,getChildCategory.getCategoryName());
+        assertTrue(categoryAPI.isParent(getChildCategory,getParentCategory,limitedUser));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: As a limited user, with the required permissions, create a top level category
+     * and a subcategory of the new top level category
+     * ExpectedResult: Categories created successfully
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_save_createSubCategory_asLimitedUser_withoutPermissions_throwDotSecurityException()
+            throws DotSecurityException, DotDataException {
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        //Create new top level Category as admin user
+        final String parentCategoryName = "newParentCategory" + System.currentTimeMillis();
+        final Category newParentCategory = new Category();
+        newParentCategory.setCategoryName(parentCategoryName);
+        newParentCategory.setCategoryVelocityVarName(parentCategoryName);
+        newParentCategory.setKey(parentCategoryName);
+
+        categoryAPI.save(null,newParentCategory,user,false);
+        //Find the new Category using the admin user
+        final Category getParentCategory = categoryAPI.findByKey(parentCategoryName,user,false);
+        assertNotNull(getParentCategory);
+        assertEquals(parentCategoryName,getParentCategory.getCategoryName());
+
+        //Create new sub Category as limited user
+        final String childCategoryName = "newChildCategory" + System.currentTimeMillis();
+        final Category newChildCategory = new Category();
+        newChildCategory.setCategoryName(childCategoryName);
+        newChildCategory.setCategoryVelocityVarName(childCategoryName);
+        newChildCategory.setKey(childCategoryName);
+
+        categoryAPI.save(getParentCategory,newChildCategory,limitedUser,false);
     }
 }
