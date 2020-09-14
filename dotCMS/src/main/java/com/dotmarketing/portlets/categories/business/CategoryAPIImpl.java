@@ -232,9 +232,10 @@ public class CategoryAPIImpl implements CategoryAPI {
 		if(!InodeUtils.isSet(category.getCategoryId()))
 			return null;
 
-		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
-			throw new DotSecurityException("User doesn't have permission to save this category = " +
-					category.getInode() + " having as parent the category = " + category.getInode());
+		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+			throw new DotSecurityException("User" + user.getUserId() + " doesn't have permission to read this category = " +
+					category.getKey());
+		}
 
 		return category;
 	}
@@ -248,9 +249,10 @@ public class CategoryAPIImpl implements CategoryAPI {
 		if(category == null)
 			return null;
 
-		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
-			throw new DotSecurityException("User doesn't have permission to save this category = " +
-					category.getInode() + " having as parent the category = " + category.getInode());
+		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+			throw new DotSecurityException("User" + user.getUserId() + " doesn't have permission to read this category = " +
+					category.getCategoryName());
+		}
 
 		return category;
 	}
