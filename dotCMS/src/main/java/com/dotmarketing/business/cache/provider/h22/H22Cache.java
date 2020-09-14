@@ -262,9 +262,7 @@ public class H22Cache extends CacheProvider {
      * @return
      */
     boolean shouldAsync() {
-       synchronized (H22Cache.class) {
 		   return shouldAsync && isAllocationWithinTolerance();
-	   }
 	}
 
     void removeAsync(final Fqn fqn) {
