@@ -43,7 +43,7 @@ public class H22Cache extends CacheProvider {
 
 
     private static final long serialVersionUID = 1L;
-    final int numberOfAsyncThreads=Config.getIntProperty("cache_h22_async_threads", 10);
+    final int numberOfAsyncThreads=Config.getIntProperty("cache_h22_async_threads", 5);
     final int asyncTaskQueueSize = Config.getIntProperty("cache_h22_async_task_queue", 10000);
 	final float threadAllocationTolerance = Config.getFloatProperty("cache_h22_async_tolerance",0.98F);
     final boolean shouldAsync=Config.getBooleanProperty("cache_h22_async", true);
