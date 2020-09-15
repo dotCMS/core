@@ -1860,6 +1860,268 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithCostaRicaPageAndRule",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "63944a3e-4ff3-472b-b58b-c7ad0008b659",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-page-and-rule.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/costa-rica-page-and-rule.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_FireRulesTrue_PREVIEW_MODE_pageRuleShouldFire",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f8e9a9c0-b8f4-407a-aa02-5cd2f280e6fc",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var persona = jsonData.data.page.viewAs.persona;",
+									"",
+									"    pm.expect(persona.name, 'FAILED:[persona.name').equal(\"Eco Enthusiast\");",
+									"",
+									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
+									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(\"true\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: true) {\n    title\n    viewAs {\n      persona {\n        name\n      }\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_FireRulesFALSE_PREVIEW_MODE_pageRuleShouldNOTFire",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6ec045de-e014-4084-a5b3-78cd87b3f513",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var persona = jsonData.data.page.viewAs.persona;",
+									"",
+									"    pm.expect(persona.name, 'FAILED:[persona.name').equal(\"Eco Enthusiast\");",
+									"",
+									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
+									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(undefined);",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: false) {\n    title\n    viewAs {\n      persona {\n        name\n      }\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -4241,87 +4503,87 @@
 	],
 	"variable": [
 		{
-			"id": "24ca8bb2-81d3-4e6d-a5be-3f427b03cf75",
+			"id": "e84ee755-5694-4474-8198-c3dcd31f02fa",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "e74308ad-20ce-4080-a642-be4f543508d0",
+			"id": "2c9ec4ad-6075-4a5a-9dbb-17656c17cf7b",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "97fa05d8-9688-4441-8ac0-a3179f1bd569",
+			"id": "df6cabcc-526f-4f63-9302-03f7ed797f68",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "cb06dd15-a51e-4016-a43d-03f874c5b779",
+			"id": "67c8e86a-d17f-41af-844e-b8098b003d5d",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "8790583b-862a-410b-bfe7-7b2f9f757254",
+			"id": "87c24621-7e13-4e47-a1d0-f8c15187371c",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "f100e128-eaf5-41b2-a1df-fcb055072502",
+			"id": "f6efaf47-3a0a-4513-82af-daadbac640db",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "eb822cb8-ce01-416e-848d-38020a73104d",
+			"id": "6e23c959-3255-41c6-89df-f8bfdba3e5bf",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "1a28505b-5576-4d26-87af-611395cc412b",
+			"id": "e0717a9f-5d70-484a-bd57-f88597ba7d26",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "6ea51e72-683d-4991-b9b0-a085963d841a",
+			"id": "248f7911-b8b3-466d-9335-7a97d027f1a9",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "2919ad50-f967-476d-8610-aabf5949188e",
+			"id": "1f4c007c-7b7e-4801-b7ae-fd2b13b4effb",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "db58baaf-26ef-4180-a1d5-59b7257c74fa",
+			"id": "15f51ffe-f619-4909-870a-d9e149b82de3",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "46d727d7-9ca2-430d-87f6-efe3e91c53c7",
+			"id": "55b0b0e3-4caa-469c-b81d-342982dc1968",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "51eb0004-772f-496c-ae02-dafd96845872",
+			"id": "be63fadd-c9f0-46b1-8c3a-1f00bdeb004f",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "c7902ca0-7472-4b68-8bec-45607b531087",
+			"id": "dc28c16e-3ec8-43f6-9dd4-1ccda80deb7f",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "4763219d-6bd0-433f-b907-5e272eb59358",
+			"id": "0a3b6ccd-fdb7-4430-af3e-60aa5ba214cf",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "23179193-e513-44cd-9aaf-151ee23409dd",
+			"id": "9a887537-d218-442e-a008-f538a8726ac1",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "a6dbbd5a-0a07-4115-b83d-29e4d0a75746",
+			"id": "dd40ec29-9ce9-4a73-b747-a80aa3a1a6fd",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

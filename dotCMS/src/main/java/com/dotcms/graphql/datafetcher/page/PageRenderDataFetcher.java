@@ -5,8 +5,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.rules.business.RulesEngine;
-import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
