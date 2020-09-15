@@ -257,24 +257,24 @@ public class IntegrityUtil {
     }
 
     /**
-     * Creates a String representing the integrity data path based on provided endpointId.
+     * Resolves the integrity data path based on provided endpoint id.
      *
      * @param endpointId endpoint if
-     * @return integrity data path
+     * @return integrity data path as a string
      */
     public static String getIntegrityDataPath(final String endpointId) {
         return ConfigUtils.getIntegrityPath() + File.separator + endpointId;
     }
 
     /**
-     * Creates a String representing the integrity data file path based on provided endpointId and the file name.
+     * Generated the integrity data file path based on provided endpointId and the file name.
      * File names to be used: DataToCheck.zip, DataToFix.zip and DataStatus.properties.
      *
      * @param endpointId endpoint gid
      * @param dataFile data filename
      * @return path to filename
      */
-    public static String getIntegrityDataFile(final String endpointId, final String dataFile) {
+    public static String getIntegrityDataFilePath(final String endpointId, final String dataFile) {
         return getIntegrityDataPath(endpointId) + File.separator + dataFile;
     }
 
@@ -286,7 +286,7 @@ public class IntegrityUtil {
      * @return path to filename
      */
     public static boolean doesIntegrityDataFileExist(final String endpointId, final String dataFile) {
-        return new File(getIntegrityDataFile(endpointId, dataFile)).exists();
+        return new File(getIntegrityDataFilePath(endpointId, dataFile)).exists();
     }
 
     /**
@@ -297,7 +297,7 @@ public class IntegrityUtil {
      * @return Optional wrapping the integrity generation  metadata
      */
     public static Optional<IntegrityDataExecutionMetadata> getIntegrityMetadata(final String endpointId) {
-        final File statusFile = new File(getIntegrityDataFile(endpointId, INTEGRITY_DATA_STATUS_FILENAME));
+        final File statusFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_STATUS_FILENAME));
         if (!statusFile.exists()) {
             return Optional.empty();
         }
@@ -321,6 +321,24 @@ public class IntegrityUtil {
     }
 
     /**
+     * Removes any file leftovers from other integrity checks at the location based on the endpoint id.
+     * That will be any data check and status files.
+     *
+     * @param endpointId endpoint id
+     */
+    public static void cleanUpIntegrityData(String endpointId) {
+        final BiConsumer<String, String> resetConsumer = (id, filename) -> {
+            final File file = new File(getIntegrityDataFilePath(id, filename));
+            if (file.exists()) {
+                file.delete();
+            }
+        };
+
+        resetConsumer.accept(endpointId, INTEGRITY_DATA_STATUS_FILENAME);
+        resetConsumer.accept(endpointId, INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME);
+    }
+
+    /**
      * Saves a integrity data generation metadata in a to-be-discovered location so it can be read by concurrent parts
      * that need to know what is the status of the integrity data generation.
      * The data is saved as {@link Properties} file.
@@ -334,10 +352,10 @@ public class IntegrityUtil {
             integrityDir.mkdir();
         }
 
-        final File statusFile = new File(getIntegrityDataFile(endpointId, INTEGRITY_DATA_STATUS_FILENAME));
-        if (statusFile.exists()) {
+        final File statusFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_STATUS_FILENAME));
+        /*if (statusFile.exists()) {
             statusFile.delete();
-        }
+        }*/
 
         final Properties statusData = new Properties();
         final BiConsumer<String, String> addData = (data, name) -> {
@@ -418,16 +436,16 @@ public class IntegrityUtil {
                 dir.mkdir();
             }
 
-            zipFile = new File(getIntegrityDataFile(endpointId, INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME));
-            try(final OutputStream os = Files.newOutputStream(zipFile.toPath());
-                final ZipOutputStream zos = new ZipOutputStream(os)) {
+            zipFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME));
+            try(OutputStream outputStream = Files.newOutputStream(zipFile.toPath());
+                ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
                 final IntegrityType[] types = IntegrityType.values();
                 for (IntegrityType integrityType : types) {
                     File fileToCheckCsvFile = null;
 
                     try {
                         fileToCheckCsvFile = integrityType.getIntegrityChecker().generateCSVFile(outputPath);
-                        addToZipFile(fileToCheckCsvFile.getAbsolutePath(), zos, integrityType.getDataToCheckCSVName());
+                        addToZipFile(fileToCheckCsvFile.getAbsolutePath(), zipOutputStream, integrityType.getDataToCheckCSVName());
                     } finally {
                         if (fileToCheckCsvFile != null && fileToCheckCsvFile.exists()) {
                             fileToCheckCsvFile.delete();
@@ -459,7 +477,7 @@ public class IntegrityUtil {
                 dir.mkdir();
             }
 
-            zipFile = new File(getIntegrityDataFile(endpointId, INTEGRITY_DATA_TO_FIX_ZIP_FILENAME));
+            zipFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_TO_FIX_ZIP_FILENAME));
             try (OutputStream outputStream = Files.newOutputStream(zipFile.toPath());
                  ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
                 // create Folders CSV
@@ -477,7 +495,7 @@ public class IntegrityUtil {
         }
     }
 
-    public void dropTempTables(final String endpointId) throws DotDataException {
+    public static void dropTempTables(final String endpointId) throws DotDataException {
         DotConnect dc = new DotConnect();
         try {
             IntegrityType[] types = IntegrityType.values();
@@ -495,7 +513,7 @@ public class IntegrityUtil {
             	}
             }
         } catch (SQLException e) {
-            Logger.error(getClass(), "Error dropping Temp tables");
+            Logger.error(IntegrityResource.class, "Error dropping Temp tables");
             throw new DotDataException("Error dropping Temp tables", e);
         }
     }
@@ -677,7 +695,7 @@ public class IntegrityUtil {
         return conflictsDataExist;
     }
 
-    private boolean doesTableExist(String tableName) throws DotDataException {
+    private static boolean doesTableExist(String tableName) throws DotDataException {
         DotConnect dc = new DotConnect();
 
         if (DbConnectionFactory.isOracle()) {
@@ -744,7 +762,7 @@ public class IntegrityUtil {
      * @throws DotDataException
      * @throws Exception
      */
-    public void completeDiscardConflicts(final String endpointId) throws DotDataException {
+    public static void completeDiscardConflicts(final String endpointId) throws DotDataException {
         IntegrityType[] types = IntegrityType.values();
         for (IntegrityType integrityType : types) {
             integrityType.getIntegrityChecker().discardConflicts(endpointId);
@@ -760,7 +778,7 @@ public class IntegrityUtil {
      * @return is there is at least one conflict returns true, otherwise false
      * @throws Exception
      */
-    public boolean completeCheckIntegrity(final String endpointId) throws Exception {
+    public static boolean completeCheckIntegrity(final String endpointId) throws Exception {
         boolean existConflicts = false;
 
         IntegrityType[] types = IntegrityType.values();

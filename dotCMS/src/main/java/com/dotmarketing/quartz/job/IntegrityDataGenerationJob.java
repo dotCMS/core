@@ -53,8 +53,10 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
         final JobDataMap jobDataMap = this.jobContext.getJobDetail().getJobDataMap();
         final PublishingEndPoint requesterEndPoint =
                 (PublishingEndPoint) jobDataMap.get(IntegrityUtil.REQUESTER_ENDPOINT);
-        final String requestId = (String) jobDataMap.get(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID);
 
+        IntegrityUtil.cleanUpIntegrityData(requesterEndPoint.getId());
+
+        final String requestId = (String) jobDataMap.get(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID);
         IntegrityUtil.saveIntegrityDataStatus(
                 requesterEndPoint.getId(),
                 requestId,

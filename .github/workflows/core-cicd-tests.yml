@@ -137,12 +137,6 @@ jobs:
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         if: env.jobRun == 'true'
-      - name: Build Tests Base Image
-        run: |
-          dotcicd/library/pipeline.sh buildTestsBase
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == 'true'
       - name: Run Curl Tests - postgres
         run: |
           dotcicd/library/pipeline.sh runCurl
