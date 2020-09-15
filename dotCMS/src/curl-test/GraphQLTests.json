@@ -1964,12 +1964,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"'Page' includes all properties\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    var persona = jsonData.data.page.viewAs.persona;",
-									"",
-									"    pm.expect(persona.name, 'FAILED:[persona.name').equal(\"Eco Enthusiast\");",
-									"",
+									"pm.test(\"Rule fired\", function () {",
 									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
 									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(\"true\");",
 									"    ",
@@ -2051,12 +2046,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"'Page' includes all properties\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    var persona = jsonData.data.page.viewAs.persona;",
-									"",
-									"    pm.expect(persona.name, 'FAILED:[persona.name').equal(\"Eco Enthusiast\");",
-									"",
+									"pm.test(\"Rule NOT fired\", function () {",
 									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
 									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(undefined);",
 									"    ",
@@ -4503,87 +4493,87 @@
 	],
 	"variable": [
 		{
-			"id": "e84ee755-5694-4474-8198-c3dcd31f02fa",
+			"id": "94f2150f-97d1-4f98-a55d-4ffa669d004a",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "2c9ec4ad-6075-4a5a-9dbb-17656c17cf7b",
+			"id": "5911e594-c4e9-4689-a6fd-f608bbbf758d",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "df6cabcc-526f-4f63-9302-03f7ed797f68",
+			"id": "2436ef1a-c995-45a9-a462-30336ebf0523",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "67c8e86a-d17f-41af-844e-b8098b003d5d",
+			"id": "08b18c3a-72c5-4c80-b046-d6309e6882db",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "87c24621-7e13-4e47-a1d0-f8c15187371c",
+			"id": "99c0ba18-f888-4b05-bd75-0dfe3b0d59e7",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "f6efaf47-3a0a-4513-82af-daadbac640db",
+			"id": "a61a6465-0a95-4c90-9b4f-844e68a36e8b",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "6e23c959-3255-41c6-89df-f8bfdba3e5bf",
+			"id": "50c97d12-1795-48f9-adb2-dffdb174966a",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "e0717a9f-5d70-484a-bd57-f88597ba7d26",
+			"id": "4b0bd8dc-d18b-407b-9939-54e754e16a15",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "248f7911-b8b3-466d-9335-7a97d027f1a9",
+			"id": "33feb259-f453-400d-9c79-d456017581bd",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "1f4c007c-7b7e-4801-b7ae-fd2b13b4effb",
+			"id": "577b3d81-ae2c-4e22-9369-d230c6eb61f7",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "15f51ffe-f619-4909-870a-d9e149b82de3",
+			"id": "86d99885-3ea2-4cb7-93da-f2e85a858f47",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "55b0b0e3-4caa-469c-b81d-342982dc1968",
+			"id": "023b80d7-7eed-4bc0-aa5b-6da3a56857ba",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "be63fadd-c9f0-46b1-8c3a-1f00bdeb004f",
+			"id": "1f75cfe5-6f39-4de4-ba64-b6dd7c3196c0",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "dc28c16e-3ec8-43f6-9dd4-1ccda80deb7f",
+			"id": "20197bb6-a578-46d4-88f1-c65ba84f6c7e",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "0a3b6ccd-fdb7-4430-af3e-60aa5ba214cf",
+			"id": "4ad1309d-275a-4931-bbf1-ac7712ee7162",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "9a887537-d218-442e-a008-f538a8726ac1",
+			"id": "988f2f6c-f61c-4bf4-84c5-8e9debe95861",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "dd40ec29-9ce9-4a73-b747-a80aa3a1a6fd",
+			"id": "908879f1-10d2-4168-8842-9f19e5a0b20c",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
