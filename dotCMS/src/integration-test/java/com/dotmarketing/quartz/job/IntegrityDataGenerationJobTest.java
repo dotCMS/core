@@ -17,7 +17,6 @@ import org.junit.runner.RunWith;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.quartz.SchedulerException;
 
 import java.io.File;
@@ -112,7 +111,7 @@ public class IntegrityDataGenerationJobTest extends IntegrationTestBase {
     public void test_interrupt() throws Exception {
         integrityDataGenerationJob = new IntegrityDataGenerationJob() {
             @Override
-            public void run(JobExecutionContext jobContext) throws JobExecutionException {
+            public void run(JobExecutionContext jobContext) {
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {}
@@ -151,15 +150,15 @@ public class IntegrityDataGenerationJobTest extends IntegrationTestBase {
         jobDataMap.put(IntegrityUtil.REQUESTER_ENDPOINT, endpoint);
         jobDataMap.put(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID, requestId);
 
-        final JobDetail jd = new JobDetail(
+        final JobDetail jobDetail = new JobDetail(
                 IntegrityDataGenerationJob.JOB_NAME,
                 IntegrityDataGenerationJob.JOB_GROUP, IntegrityDataGenerationJob.class);
-        jd.setJobDataMap(jobDataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
+        jobDetail.setJobDataMap(jobDataMap);
+        jobDetail.setDurability(false);
+        jobDetail.setVolatility(false);
+        jobDetail.setRequestsRecovery(true);
 
-        return jd;
+        return jobDetail;
     }
 
     private void assertStatus(String status) throws IOException {

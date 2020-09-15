@@ -1,6 +1,7 @@
 package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.http.DotExecutionException;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rest.IntegrityResource;
@@ -47,7 +48,7 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
      */
     @Override
     @CloseDBIfOpened
-    public void run(final JobExecutionContext jobContext) throws JobExecutionException {
+    public void run(final JobExecutionContext jobContext) {
         this.jobContext = jobContext;
         final JobDataMap jobDataMap = this.jobContext.getJobDetail().getJobDataMap();
         final PublishingEndPoint requesterEndPoint =
@@ -70,7 +71,7 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
             Logger.info(
                     IntegrityDataGenerationJob.class,
                     String.format("Job execution for endpoint %s has finished", requesterEndPoint.getId()));
-        } catch (Exception e) {
+        } catch (DotExecutionException e) {
             // Error has happened while generating integrity data
             Logger.error(IntegrityDataGenerationJob.class, "Error generating data to check", e);
             IntegrityUtil.saveIntegrityDataStatus(
@@ -119,18 +120,18 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
         jobDataMap.put(IntegrityUtil.REQUESTER_ENDPOINT, requesterEndpoint);
         jobDataMap.put(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID, integrityDataRequestId);
 
-        final JobDetail jd = new JobDetail(JOB_NAME, JOB_GROUP, IntegrityDataGenerationJob.class);
-        jd.setJobDataMap(jobDataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
+        final JobDetail jobDetail = new JobDetail(JOB_NAME, JOB_GROUP, IntegrityDataGenerationJob.class);
+        jobDetail.setJobDataMap(jobDataMap);
+        jobDetail.setDurability(false);
+        jobDetail.setVolatility(false);
+        jobDetail.setRequestsRecovery(true);
 
         final SimpleTrigger trigger = new SimpleTrigger(
                 TRIGGER_NAME,
                 TRIGGER_GROUP,
                 new Date(System.currentTimeMillis()));
         HibernateUtil.addCommitListenerNoThrow(Sneaky.sneaked(() -> {
-           getJobScheduler().scheduleJob(jd, trigger);
+           getJobScheduler().scheduleJob(jobDetail, trigger);
         }));
     }
 

@@ -399,7 +399,7 @@ public class IntegrityUtil {
      * @param endpointId
      * @throws Exception
      */
-    public static void generateDataToCheckZip(final String endpointId) throws Exception {
+    public static void generateDataToCheckZip(final String endpointId) {
         if (!UtilMethods.isSet(endpointId)) {
             Logger.error(IntegrityUtil.class, "Endpoint was not provided");
             return;
@@ -440,7 +440,7 @@ public class IntegrityUtil {
                 zipFile.delete();
             }
 
-            throw new Exception(e);
+            throw new DotExecutionException(e);
         }
     }
 
@@ -460,12 +460,12 @@ public class IntegrityUtil {
             }
 
             zipFile = new File(getIntegrityDataFile(endpointId, INTEGRITY_DATA_TO_FIX_ZIP_FILENAME));
-            try (final OutputStream os = Files.newOutputStream(zipFile.toPath());
-                 final ZipOutputStream zos = new ZipOutputStream(os)) {
+            try (OutputStream outputStream = Files.newOutputStream(zipFile.toPath());
+                 ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
                 // create Folders CSV
                 dataToFixCsvFile = generateDataToFixCSV(outputPath, endpointId, type);
 
-                addToZipFile(dataToFixCsvFile.getAbsolutePath(), zos, type.getDataToFixCSVName());
+                addToZipFile(dataToFixCsvFile.getAbsolutePath(), zipOutputStream, type.getDataToFixCSVName());
             }
         } catch (Exception e) {
             Logger.error(getClass(), "Error generating fix for remote", e);

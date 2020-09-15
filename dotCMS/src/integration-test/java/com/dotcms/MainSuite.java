@@ -46,6 +46,7 @@ import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
+import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
 import com.dotmarketing.startup.runonce.*;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.TestConfig;
@@ -319,7 +320,9 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
         DotStatefulJobTest.class,
-        FolderFactoryImplTest.class
+        FolderFactoryImplTest.class,
+        FolderFactoryImplTest.class,
+        IntegrityDataGenerationJob.class
 })
 public class MainSuite {
 

@@ -39,7 +39,7 @@ import org.apache.commons.lang.StringUtils;
  */
 public class HttpRequestDataUtil {
 
-	private static String serverPort = null;
+	public static final String SERVER_PORT = createServerPort();
 
 	public static final String DEFAULT_REMOTE_ADDRESS = "0.0.0.0";
 
@@ -219,28 +219,29 @@ public class HttpRequestDataUtil {
 	}
 
 	/**
-	 * Convenience method to find out the server port and cache it to use it must likely in logs.
+	 * Convenience method to create the server port and cache it to use it must likely in logs.
 	 *
 	 * @return String representing the server port
 	 */
-    public static Optional<String> getServerPort() {
-    	if (serverPort == null) {
-			final MBeanServer beanServer = ManagementFactory.getPlatformMBeanServer();
-			Set<ObjectName> objectNames;
-			String port;
-			try {
-				objectNames = beanServer.queryNames(
-						new ObjectName("*:type=Connector,*"),
-						Query.match(Query.attr("protocol"), Query.value("HTTP/1.1")));
-				port = objectNames.iterator().next().getKeyProperty("port");
-			} catch (MalformedObjectNameException e) {
-				port = null;
-			}
-
-			serverPort = port;
+    private static String createServerPort() {
+		final MBeanServer beanServer = ManagementFactory.getPlatformMBeanServer();
+		Set<ObjectName> objectNames;
+		try {
+			objectNames = beanServer.queryNames(
+					new ObjectName("*:type=Connector,*"),
+					Query.match(Query.attr("protocol"), Query.value("HTTP/1.1")));
+			return objectNames.iterator().next().getKeyProperty("port");
+		} catch (MalformedObjectNameException e) {
+			return null;
 		}
-
-		return Optional.ofNullable(serverPort);
     }
 
+	/**
+	 * Convenience method to get the server port and cache it to use it must likely in logs.
+	 *
+	 * @return String representing the server port
+	 */
+	public static Optional<String> getServerPort() {
+		return Optional.ofNullable(SERVER_PORT);
+	}
 }

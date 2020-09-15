@@ -159,11 +159,16 @@ public class IntegrityResource {
         return !UtilMethods.isSet(remoteIP) ? remoteIP : request.getRemoteAddr();
     }
 
+    /**
+     * Tries to get the local address plus the port in a "host:port" format
+     * @param request http servlet request
+     * @return a string representing the address plus the port
+     */
     private static String getFullLocalIp(@Context final HttpServletRequest request) {
         final String localIp = request.getLocalName();
-        Optional<String> port = HttpRequestDataUtil.getServerPort();
+        final Optional<String> port = HttpRequestDataUtil.getServerPort();
         return (!UtilMethods.isSet(localIp) ? localIp : request.getLocalName())
-                + ':' + port.orElse(request.getLocalPort() + "");
+                + ':' + port.orElse(String.valueOf(request.getLocalPort()));
     }
 
     /**
@@ -331,20 +336,19 @@ public class IntegrityResource {
                         requesterEndpoint.getId(),
                         IntegrityUtil.INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME);
                 final StreamingOutput output = so -> {
-                    final InputStream is = Files.newInputStream(Paths.get(zipFilePath));
+                    final InputStream inputStream = Files.newInputStream(Paths.get(zipFilePath));
                     final byte[] buffer = new byte[1024];
                     int bytesRead;
                     //read from is to buffer
-                    while((bytesRead = is.read(buffer)) != -1){
+                    while((bytesRead = inputStream.read(buffer)) != -1){
                         so.write(buffer, 0, bytesRead);
                     }
 
-                    is.close();
+                    inputStream.close();
                     //flush OutputStream to write any buffered data to file
                     so.flush();
                     so.close();
                 };
-
 
                 Logger.info(
                         IntegrityResource.class,
