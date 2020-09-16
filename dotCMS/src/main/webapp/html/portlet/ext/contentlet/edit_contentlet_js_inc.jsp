@@ -32,6 +32,8 @@
         id:"assignToDialog"
     });
 
+    var lastWorkflowAction = null;
+
 
     //Tabs manipulation
     function displayProperties(id) {
@@ -327,7 +329,7 @@
             }
 
         }
-
+        console.log(formData)
         return formData;
 
     }
@@ -346,7 +348,7 @@
 
 
     function persistContent(isAutoSave, publish){
-
+        debugger;
         window.onbeforeunload=true;
         var isAjaxFileUploading = false;
         var alertFileAssetSize = false;
@@ -409,6 +411,7 @@
         }else {
             isContentSaving = true;
         }
+        debugger;
         ContentletAjax.saveContent(fmData,isAutoSave,isCheckin,publish,saveContentCallback);
     }
 
@@ -528,6 +531,7 @@
 
 
     function saveContentCallback(data){
+        debugger;
         isContentAutoSaving = false;
         dojo.byId("subcmd").value= "";
 
@@ -678,6 +682,12 @@
         var customEvent = document.createEvent('CustomEvent');
         customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
         document.dispatchEvent(customEvent);
+        debugger;
+        if (lastWorkflowAction && false ) {
+            var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
+            pushHandler.showWorkflowEnabledDialog(lastWorkflowAction, saveAssignCallBack);
+            lastWorkflowAction = null;
+        }
 
     }
 
@@ -783,7 +793,9 @@
         },
 
         executeWfAction: function(wfId, popupable, showpush){
+            debugger;
             this.wfActionId = wfId;
+
             if(popupable){
 
                 var inode = (currentContentletInode != undefined && currentContentletInode.length > 0)
@@ -802,11 +814,13 @@
                     structInode:structInode
                 };
 
-                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
-                pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);
-                return;
-
+<%--                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');--%>
+<%--                pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);--%>
+                    lastWorkflowAction = workflow;
+                dojo.byId("wfActionId").value=wfId;
+                saveContent(false);
             } else{
+                lastWorkflowAction = null;
                 dojo.byId("wfActionId").value=wfId;
                 saveContent(false);
             }
@@ -816,6 +830,8 @@
 
 
     function saveAssignCallBack(actionId, formData) {
+        debugger;
+        console.log('saveAssignCallBack');
         var pushPublish = formData.pushPublish;
         var assignComment = formData.assignComment;
 

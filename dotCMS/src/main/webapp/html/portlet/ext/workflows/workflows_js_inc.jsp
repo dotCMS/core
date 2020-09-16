@@ -103,7 +103,7 @@
 	    	},
 
 	    	executeWfAction: function(wfId, assignable, commentable, inode, showpush){
-	    		
+	    		debugger;
 	    		this.wfActionId = wfId;
 	    		
 	    		if(assignable || commentable || showpush){
@@ -188,6 +188,7 @@
 	}
 
 	function fileActionCallbackFromAngular() {
+		debugger;
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
 		executeEditTaskExecutedWorkflowEvent();
 	}

@@ -263,7 +263,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             callback: 'angularWorkflowEventCallback',
             inode: this.workflow.inode,
         };
-        if (typeof getSelectedInodes === "function") {
+        if (typeof getSelectedInodes === "function" && getSelectedInodes().length) {
             data['selectedInodes'] = getSelectedInodes();
             data.callback = 'bulkWorkflowActionCallback';
         }
