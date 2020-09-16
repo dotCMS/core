@@ -6,11 +6,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,7 +27,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -46,13 +43,15 @@ public class H22Cache extends CacheProvider {
 
 
     private static final long serialVersionUID = 1L;
-    final int numberOfAsyncThreads=Config.getIntProperty("cache_h22_async_threads", 10);
-    
+    final int numberOfAsyncThreads=Config.getIntProperty("cache_h22_async_threads", 5);
+    final int asyncTaskQueueSize = Config.getIntProperty("cache_h22_async_task_queue", 10000);
+	final float threadAllocationTolerance = Config.getFloatProperty("cache_h22_async_tolerance",0.98F);
     final boolean shouldAsync=Config.getBooleanProperty("cache_h22_async", true);
 
 
     final ThreadFactory namedThreadFactory =  new ThreadFactoryBuilder().setNameFormat("H22-ASYNC-COMMIT-%d").build();
-    final private ExecutorService executorService = new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(10000),namedThreadFactory);
+    final private LinkedBlockingQueue<Runnable> asyncTaskQueue = new LinkedBlockingQueue<>();
+    final private ExecutorService executorService = new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10, TimeUnit.SECONDS, asyncTaskQueue ,namedThreadFactory);
 
     
 	private Boolean isInitialized = false;
@@ -134,7 +133,7 @@ public class H22Cache extends CacheProvider {
             return;
         }
 		DONT_CACHE_ME.put(fqn.id, fqn.toString());
-		if(shouldAsync) {
+		if(shouldAsync()) {
 		    putAsync(fqn, content);
 		    return;
 		}
@@ -227,7 +226,7 @@ public class H22Cache extends CacheProvider {
         
 		final Fqn fqn = new Fqn(group, key);
         DONT_CACHE_ME.put(fqn.id, fqn.toString());
-        if(shouldAsync) {
+        if(shouldAsync()) {
             removeAsync(fqn);
             return;
         }
@@ -243,10 +242,30 @@ public class H22Cache extends CacheProvider {
 		
 	}
 
+	/**
+	 * Calculates the thread allocation % for a given queue size.
+	 * Then determines if that allocation % exceeds or not a tolerance.
+	 * @return
+	 */
+	boolean isAllocationWithinTolerance() {
+		final int size = asyncTaskQueue.size();
+		final float allocation = (float) size / (float) asyncTaskQueueSize;
+		Logger.debug(H22Cache.class,
+				() -> " size is " + size + ", allocation is " + allocation + ", tolerance is :"
+						+ threadAllocationTolerance);
+		return allocation < threadAllocationTolerance;
+	}
+
+    /**
+     * returns true if async set to true and the task queue is < than a given tolerance % full.
+     *
+     * @return
+     */
+    boolean shouldAsync() {
+		   return shouldAsync && isAllocationWithinTolerance();
+	}
 
     void removeAsync(final Fqn fqn) {
-
-
 
         executorService.submit(()-> {
             try {

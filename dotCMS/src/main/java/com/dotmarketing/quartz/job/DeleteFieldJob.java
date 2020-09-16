@@ -1,7 +1,11 @@
 package com.dotmarketing.quartz.job;
 
+import com.google.common.collect.ImmutableMap;
+import java.io.Serializable;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 import org.quartz.JobDataMap;
@@ -36,6 +40,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
+import org.quartz.Trigger;
 
 /**
  * @deprecated This job was replaced by {@link FieldAPI#delete(com.dotcms.contenttype.model.field.Field)}
@@ -132,27 +137,15 @@ public class DeleteFieldJob extends DotStatefulJob {
         Preconditions.checkNotNull(field, "Field can't be null");
         Preconditions.checkNotNull(user, "User can't be null");
 
-        JobDataMap dataMap = new JobDataMap();
-        dataMap.put(JOB_DATA_MAP_CONTENT_TYPE, contentType);
-        dataMap.put("fieldInode", field.getInode());
-        dataMap.put("user", user);
-
-        String randomID = UUID.randomUUID().toString();
-
-        JobDetail jd = new JobDetail("DeleteFieldJob-" + randomID, "delete_field_jobs", DeleteFieldJob.class);
-        jd.setJobDataMap(dataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
-
-        long startTime = System.currentTimeMillis();
-        SimpleTrigger trigger = new SimpleTrigger("deleteFieldTrigger-"+randomID, "delete_field_triggers",
-                new Date(startTime));
+        final Map<String, Serializable> nextExecutionData = ImmutableMap
+                .of(JOB_DATA_MAP_CONTENT_TYPE, contentType,
+                        "fieldInode", field.getInode(),
+                        "user", user);
 
         try {
-            Scheduler sched = QuartzUtils.getSequentialScheduler();
-            sched.scheduleJob(jd, trigger);
-        } catch (SchedulerException e) {
+           DotStatefulJob.enqueueTrigger(nextExecutionData, DeleteFieldJob.class);
+
+        } catch (ParseException | SchedulerException | ClassNotFoundException e) {
             Logger.error(DeleteFieldJob.class, "Error scheduling DeleteFieldJob", e);
             throw new DotRuntimeException("Error scheduling DeleteFieldJob", e);
         }
@@ -176,7 +169,15 @@ public class DeleteFieldJob extends DotStatefulJob {
 	 */
 	@Override
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
-		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+        final JobDataMap jobDataMap = jobContext.getJobDetail().getJobDataMap();
+        final Map<String, Serializable> map;
+        if (jobDataMap.containsKey(EXECUTION_DATA)) {
+            //This bit is here to continue to support the integration-tests
+            map = (Map<String, Serializable>) jobDataMap.get(EXECUTION_DATA);
+        } else {
+            final Trigger trigger = jobContext.getTrigger();
+            map = getExecutionData(trigger, DeleteFieldJob.class);
+        }
 		Structure contentType = null;
 		if (map.get(JOB_DATA_MAP_CONTENT_TYPE) instanceof Structure) {
 			contentType = Structure.class.cast(map.get(JOB_DATA_MAP_CONTENT_TYPE));
@@ -185,7 +186,7 @@ public class DeleteFieldJob extends DotStatefulJob {
 		}
 		Field field = null;
 		if (map.containsKey("fieldInode")) {
-			field = FieldFactory.getFieldByInode(map.getString("fieldInode"));
+			field = FieldFactory.getFieldByInode((String) map.get("fieldInode"));
 		} else {
 			if (map.get(JOB_DATA_MAP_FIELD) instanceof Field) {
 				field = Field.class.cast(map.get(JOB_DATA_MAP_FIELD));
