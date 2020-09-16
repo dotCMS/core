@@ -33,7 +33,6 @@
     });
 
 
-
     //Tabs manipulation
     function displayProperties(id) {
 
@@ -328,7 +327,6 @@
             }
 
         }
-        console.log(formData)
         return formData;
 
     }
@@ -347,7 +345,7 @@
 
 
     function persistContent(isAutoSave, publish){
-        debugger;
+
         window.onbeforeunload=true;
         var isAjaxFileUploading = false;
         var alertFileAssetSize = false;
@@ -410,7 +408,6 @@
         }else {
             isContentSaving = true;
         }
-        debugger;
         ContentletAjax.saveContent(fmData,isAutoSave,isCheckin,publish,saveContentCallback);
     }
 
@@ -530,7 +527,6 @@
 
 
     function saveContentCallback(data){
-        debugger;
         isContentAutoSaving = false;
         dojo.byId("subcmd").value= "";
 
@@ -677,7 +673,6 @@
                 });
             }
         }
-        debugger;
         var customEvent = document.createEvent('CustomEvent');
         customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
         document.dispatchEvent(customEvent);
@@ -786,9 +781,7 @@
         },
 
         executeWfAction: function(wfId, popupable, showpush){
-            debugger;
             this.wfActionId = wfId;
-
             if(popupable){
 
                 var inode = (currentContentletInode != undefined && currentContentletInode.length > 0)
@@ -818,7 +811,6 @@
     });
 
     function saveAssignCallBackAngular (actionId, formData) {
-        debugger;
         // END: PUSH PUBLISHING ACTIONLET
         dojo.byId("wfActionAssign").value = formData.assign;
         dojo.byId("wfActionComments").value = formData.comments;
@@ -839,8 +831,6 @@
 
 
     function saveAssignCallBack(actionId, formData) {
-        debugger;
-        console.log('saveAssignCallBack');
         var pushPublish = formData.pushPublish;
         var assignComment = formData.assignComment;
 

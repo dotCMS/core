@@ -188,7 +188,6 @@
 	}
 
 	function fileActionCallbackFromAngular() {
-		debugger;
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
 		executeEditTaskExecutedWorkflowEvent();
 	}
