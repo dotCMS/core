@@ -78,7 +78,7 @@ public class ConfigurationResource implements Serializable {
 	}
 
 	/**
-	 * Set value to config proeprties
+	 * Set value to config properties in runtime
 	 *
 	 * @param request
 	 * @return
@@ -96,6 +96,7 @@ public class ConfigurationResource implements Serializable {
 				.InitBuilder(request, response)
 				.requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
 				.requiredPortlet("maintenance")
+				.rejectWhenNoUser(true)
 				.init();
 
 		for (Map.Entry<String, String> entry : properties.entrySet()) {
