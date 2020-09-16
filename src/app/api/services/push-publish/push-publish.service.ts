@@ -23,8 +23,10 @@ export class PushPublishService {
         TODO: I had to do this because this line concat'api/' into the URL
         https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
     */
-    private publishUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
-    private publishBundleURL = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle`;
+    private publishUrl = `${this._apiRoot
+        .baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
+    private publishBundleURL = `${this._apiRoot
+        .baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle`;
 
     constructor(
         public _apiRoot: ApiRoot,
@@ -77,20 +79,15 @@ export class PushPublishService {
 
     private getPublishEnvironmentData(
         assetIdentifier: string,
-        {
-            publishDate,
-            expireDate,
-            pushActionSelected,
-            environment,
-            filterKey
-        }: DotPushPublishData
+        { publishDate, expireDate, pushActionSelected, environment, filterKey }: DotPushPublishData
     ): string {
+        // TODO: find a way to deal with moment(undefined), since will be deprecated eventually
         let result = '';
         result += `assetIdentifier=${assetIdentifier}`;
-        result += `&remotePublishDate=${moment(new Date(publishDate)).format('YYYY-MM-DD')}`;
-        result += `&remotePublishTime=${moment(new Date(publishDate)).format('HH-mm')}`;
-        result += `&remotePublishExpireDate=${moment(new Date(expireDate)).format('YYYY-MM-DD')}`;
-        result += `&remotePublishExpireTime=${moment(new Date(expireDate)).format('HH-mm')}`;
+        result += `&remotePublishDate=${moment(publishDate).format('YYYY-MM-DD')}`;
+        result += `&remotePublishTime=${moment(publishDate).format('HH-mm')}`;
+        result += `&remotePublishExpireDate=${moment(expireDate).format('YYYY-MM-DD')}`;
+        result += `&remotePublishExpireTime=${moment(expireDate).format('HH-mm')}`;
         result += `&iWantTo=${pushActionSelected}`;
         result += `&whoToSend=${environment}`;
         result += '&bundleName=';
