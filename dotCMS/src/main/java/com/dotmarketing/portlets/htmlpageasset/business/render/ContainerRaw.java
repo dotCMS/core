@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Represents the information of the {@link Container} and its respective {@link ContainerStructure}
@@ -28,7 +31,7 @@ public class ContainerRaw implements Serializable {
 
     private final Container container;
     private final List<ContainerStructure> containerStructures;
-    private final Map<String, List<Map<String,Object>>> contentlets;
+    private final Map<String, List<Contentlet>> contentlets;
 
     /**
      * Creates a new instance of the ContainerRendered.
@@ -39,13 +42,23 @@ public class ContainerRaw implements Serializable {
     public ContainerRaw(
             final Container container,
             final List<ContainerStructure> containerStructures,
-            final Map<String, List<Map<String,Object>>> contentlets) {
+            final Map<String, List<Contentlet>> contentlets) {
         this.container = container;
         this.containerStructures =  (containerStructures != null)  ?  ImmutableList.copyOf(containerStructures) :  ImmutableList.of();
         this.contentlets = contentlets;
     }
 
-    public Map<String, List<Map<String,Object>>> getContentlets() {
+    @JsonProperty("contentlets")
+    public Map<String, List<Map<String,Object>>> getContentletsMap() {
+        return contentlets.entrySet().stream()
+        .collect(Collectors.toMap(Entry::getKey,
+                e -> e.getValue().stream().map(
+                        Contentlet::getMap
+                ).collect(Collectors.toList())));
+    }
+
+    @JsonIgnore
+    public Map<String, List<Contentlet>> getContentlets() {
         return contentlets;
     }
 

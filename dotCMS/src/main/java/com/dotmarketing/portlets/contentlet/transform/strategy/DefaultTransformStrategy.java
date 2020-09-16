@@ -24,6 +24,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILTER_BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
@@ -88,6 +89,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         addConstants(contentlet, map, options);
         addBinaries(contentlet, map, options);
         addCategories(contentlet, map, options, user);
+        addTags(contentlet, map, options, user);
         return map;
     }
 
@@ -272,6 +274,22 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             } catch (DotDataException | DotSecurityException e) {
                 Logger.warn(DefaultTransformStrategy.class,
                         "Unable to get categories from content with id ");
+            }
+        }
+    }
+
+    /**
+     * add tags to the given contentlet
+     */
+    private void addTags(final Contentlet contentlet, final Map<String, Object> map,
+            final Set<TransformOptions> options, final User user) {
+        final boolean includeTags = options.contains(TAGS);
+        if (includeTags) {
+            try {
+                contentlet.setTags();
+            } catch (DotDataException e) {
+                Logger.warn(DefaultTransformStrategy.class,
+                        "Unable to get tags from content with id: " + contentlet.getIdentifier());
             }
         }
     }

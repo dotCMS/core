@@ -23,6 +23,7 @@ public class DeleteSecretForm extends Validated {
 
     @JsonCreator
     public DeleteSecretForm(@JsonProperty("key") final String key, @JsonProperty("siteId") final String siteId, @JsonProperty("params") final Set<String> params) {
+        super();
         this.key = key;
         this.siteId = siteId;
         this.params = params;

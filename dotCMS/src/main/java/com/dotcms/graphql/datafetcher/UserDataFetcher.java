@@ -5,6 +5,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -52,15 +53,17 @@ public class UserDataFetcher implements DataFetcher<Map<String, String>> {
     }
 
     private String getUserId(final DataFetchingEnvironment environment) {
-        String userId;
-        try {
-            final Contentlet contentlet = environment.getSource();
-            userId = contentlet.getStringProperty(environment.getField().getName());
-        } catch (ClassCastException e) {
-            final Map<Object, Object> map = environment.getSource();
-            userId = (String) map.get(environment.getField().getName());
+        String userId = null;
+        if(environment.getSource() instanceof  Contentlet) {
+            userId = ((Contentlet)environment.getSource()).getStringProperty(environment.getField().getName());
+        } else if(environment.getSource() instanceof Map) {
+            userId = (String) ((Map<Object, Object>)environment.getSource())
+                    .get(environment.getField().getName());
+        } else if(environment.getSource() instanceof ContainerRaw && environment.getField().getName().equals("modUser")) {
+            userId = ((ContainerRaw)environment.getSource()).getContainer().getModUser();
+        } else if(environment.getSource() instanceof ContainerRaw && environment.getField().getName().equals("owner")) {
+            userId = ((ContainerRaw)environment.getSource()).getContainer().getOwner();
         }
-
         return userId;
     }
 }

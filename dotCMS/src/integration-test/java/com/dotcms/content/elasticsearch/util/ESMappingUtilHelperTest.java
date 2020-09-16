@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
@@ -111,8 +112,7 @@ public class ESMappingUtilHelperTest {
                 {"textmapping", new String[]{"host.hostname"}, "keyword"},
                 {"strings_as_dates", new String[]{"calendarevent.originalstartdate",
                         "calendarevent.recurrencestart", "calendarevent.recurrenceend"}, "date"},
-                {"permissions", new String[]{"permissions"}, "text"},
-                {"hostname", new String[]{"host.hostname_text"}, "text"}
+                {"permissions", new String[]{"permissions"}, "text"}
         };
     }
 
