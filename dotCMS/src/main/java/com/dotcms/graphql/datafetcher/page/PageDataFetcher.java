@@ -80,6 +80,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             pageAsset.getMap().put("URLMapContent", pageUrl.getUrlMapInfo());
 
             if(fireRules) {
+                Logger.info(this, "Rules will be fired");
                 final HTMLPageAsset page = (HTMLPageAsset) context.getParam("page");
                 RulesEngine.fireRules(request, response, page, FireOn.EVERY_PAGE);
             }

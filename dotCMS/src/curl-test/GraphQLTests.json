@@ -1444,7 +1444,11 @@
 									"    var jsonData = pm.response.json();",
 									"    var containers = jsonData.data.page.containers;",
 									"",
+									"    pm.expect(containers.length, 'FAILED:[containers.length]').equal(2);",
+									"",
 									"    var container1rendered = containers[0].rendered;",
+									"",
+									"    pm.expect(container1rendered.length, 'FAILED:[container1rendered.length]').equal(9);",
 									"    // rendered fields",
 									"    pm.expect(container1rendered[0].uuid, 'FAILED:[container1rendered[0].uuid]').equal(\"uuid-1\");",
 									"    pm.expect(container1rendered[0].render, 'FAILED:[container1rendered[0].render]').equal(\"\\n    <!-- Container Code: /application/containers/activity.vtl -->\\n\\n<a class=\\\"box-info\\\" href=\\\"/activities/hiking\\\">\\n\\t<img class=\\\"box-info-img\\\" src=\\\"/dA/6bbead53-3908-471c-966d-9e76c5dd9eba/image/270w/50q/hiking.jpg\\\" alt=\\\"Hiking\\\" width=\\\"270\\\" height=\\\"270\\\">\\n\\t<div class=\\\"box-info-body\\\">\\n\\t\\t<h4 class=\\\"box-info-title\\\">Hiking</h4>\\n\\t\\t<p class=\\\"box-info-text\\\">Guided hiking tours where our guides use their training as naturalists to point out animals, unique plants and nature ...</p>\\n\\t</div>\\n</a><div></div>\");",
@@ -1553,7 +1557,14 @@
 									"",
 									"pm.test(\"'Page' includes all properties\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    var containerStructure = jsonData.data.page.containers[0].containerStructures[0];",
+									"",
+									"    pm.expect(jsonData.data.page.containers.length, 'FAILED:[jsonData.data.page.containers.length]').equal(2);",
+									"",
+									"    var containerStructuresFirstContainer = jsonData.data.page.containers[0].containerStructures;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer.length, 'FAILED:[containerStructuresFirstContainer.length]').equal(9);",
+									"",
+									"    var containerStructure = containerStructuresFirstContainer[0];",
 									"",
 									"    // containerStructure fields",
 									"    pm.expect(containerStructure.id, 'FAILED:[containerStructure.id]').equal(\"86a06a2e-ba40-43d4-a3ad-3a870d43bfc1\");",
@@ -4493,87 +4504,87 @@
 	],
 	"variable": [
 		{
-			"id": "d5c1657a-6a54-48d9-b11a-7cb1d8821852",
+			"id": "a0fc9375-0983-4099-878f-8607ef6ca76b",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "2d548fea-8bcf-4820-ab9c-b6b4b6e52cf2",
+			"id": "d0c600d8-45da-4933-aa5b-5c559dfb7e38",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "aa353efb-0403-4e5f-9f8a-4a9ddaf6de1d",
+			"id": "2dbd9280-d107-4617-a317-35f31086a0f2",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "407d11d8-9f88-4685-a8fc-c1e1e908c052",
+			"id": "88642367-99e4-41d8-9d6c-b2e9e3644bfb",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "844e17c5-4427-4d5f-a84c-22f684692821",
+			"id": "4b3aaefb-16e6-49f0-86cf-da1c02753655",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "ac58a590-05a0-4482-abc9-782626a1c4d3",
+			"id": "be996212-9670-48fa-8a76-5ce8bfa22a1e",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "24835dec-45d1-4839-b953-c8b9ba4e1cd5",
+			"id": "6ea0d732-42c9-482b-9ab0-2a0b04b326c4",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "fba60af3-e419-4742-ae42-026d0b39c7c2",
+			"id": "e0d3ee7e-5c01-450b-8043-1ccdf5a8563e",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "8a6930f8-e776-47f9-98c3-164219e7e369",
+			"id": "3a29f5fd-d7ac-4bbd-86f9-0b6287c4f181",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "307419ce-6dbe-4b3a-ad4a-e1456da97a76",
+			"id": "1983e98d-a9c0-4d13-a652-99b702ff3f58",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "8de240fd-3927-4789-aafd-0b9d5c54d8d3",
+			"id": "34d1bc2d-d78e-466a-a125-7f428fa37f43",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "e4233217-2063-4234-acc9-982697f4550c",
+			"id": "094b7388-dd75-4a0d-9aaf-bbd02ae58d62",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "e669bf62-dd3a-4e4f-b412-ee962c73db74",
+			"id": "c788d454-e073-4ec9-8b55-141d90515b43",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "33b7edd9-f766-4f3d-a472-966505b1bbb2",
+			"id": "48c56187-3001-4cf2-b69e-00c36b47a903",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "005bb82e-77bc-4585-b0dd-11c22d9fd961",
+			"id": "d2698018-0f6e-4b47-9461-01f6e132e78a",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "7bfd467a-660e-42c9-a63f-f6aa01dac81f",
+			"id": "e2aa7aca-8de7-4c3e-8eb9-fe586de92354",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "012aa302-21b0-4ab7-b493-62e9f6c3fcd7",
+			"id": "c499f75f-e85f-468a-b4d8-703e55ae7963",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

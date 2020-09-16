@@ -206,9 +206,12 @@ public final class RulesEngine {
 					fireOn);
             for (Rule rule : rules) {
                 try {
+                	Logger.info(RulesEngine.class, "Executing rule: " + rule.getName());
                 	long before = System.currentTimeMillis();
                     rule.checkValid(); // @todo ggranum: this should actually be done on writing to the DB, or at worst reading from.
                     boolean evaled = rule.evaluate(req, res);
+
+                    Logger.info(RulesEngine.class, "Evaled:" + evaled);
 
                     if(res.isCommitted()) {
                       return;
