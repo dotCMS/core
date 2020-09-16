@@ -425,11 +425,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}
 		 }
 
-		if (categoriesList != null && categoriesList.size() > 0) {
-			for (final Iterator iterator = categoriesList.iterator(); iterator.hasNext();) {
-
-				final String tmpString = (String) iterator.next();
-				categories.add(catAPI.find(tmpString, user, false));
+		if (UtilMethods.isSet(categoriesList)) {
+			for (final Iterator<String> iterator = categoriesList.iterator(); iterator.hasNext();) {
+				final String categoryId = iterator.next();
+				if (UtilMethods.isSet(categoryId)) {
+					categories.add(catAPI.find(categoryId, user, PageMode.get().respectAnonPerms));
+				}
 			}
 		}
 

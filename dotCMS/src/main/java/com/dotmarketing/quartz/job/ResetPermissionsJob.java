@@ -8,8 +8,11 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.quartz.DotStatefulJob;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
@@ -42,6 +45,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import org.quartz.StatefulJob;
+import org.quartz.Trigger;
 
 /**
  * This job is called when the permissions on a given {@link Permissionable} have changed. A
@@ -50,7 +54,7 @@ import org.quartz.StatefulJob;
  * 
  * @author David H Torres
  */
-public class ResetPermissionsJob implements StatefulJob {
+public class ResetPermissionsJob extends DotStatefulJob {
 
 	private final UserAPI userAPI;
 	private final NotificationAPI notificationAPI;
@@ -70,12 +74,7 @@ public class ResetPermissionsJob implements StatefulJob {
      *        Page, etc.
      */
 	public static void triggerJobImmediately (final Permissionable perm) {
-		final String randomID = UUID.randomUUID().toString();
-		final JobDataMap dataMap = new JobDataMap();
-
 		String userId = null;
-		
-		dataMap.put("permissionableId", perm.getPermissionId());
 
 		//TODO: For a major release, remove this logic and get userId as parameter
 		if (UtilMethods.isSet(HttpServletRequestThreadLocal.INSTANCE.getRequest())) {
@@ -83,22 +82,15 @@ public class ResetPermissionsJob implements StatefulJob {
 					.getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest())
 					.getUserId();
 		}
-		dataMap.put("userId", userId);
-
-		final JobDetail jd = new JobDetail("ResetPermissionsJob-" + randomID, "dotcms_jobs", ResetPermissionsJob.class);
-		jd.setJobDataMap(dataMap);
-		jd.setDurability(false);
-		jd.setVolatility(false);
-		jd.setRequestsRecovery(true);
-		
-		final long startTime = System.currentTimeMillis();
-		final SimpleTrigger trigger = new SimpleTrigger("permissionsResetTrigger-"+randomID, "dotcms_triggers",  new Date(startTime));
+		final Map<String, Serializable> nextExecutionData = ImmutableMap
+				.of(
+						"permissionableId", perm.getPermissionId(),
+						"userId", userId);
 		
 		try {
+			DotStatefulJob.enqueueTrigger(nextExecutionData, ResetPermissionsJob.class);
 
-			final Scheduler sched = QuartzUtils.getSequentialScheduler();
-			sched.scheduleJob(jd, trigger);
-		} catch (SchedulerException e) {
+		} catch (Exception e) {
 			Logger.error(ResetPermissionsJob.class, "Error scheduling the reset of permissions", e);
 			throw new DotRuntimeException("Error scheduling the reset of permissions", e);
 		}
@@ -112,9 +104,10 @@ public class ResetPermissionsJob implements StatefulJob {
      *        parameters of the job.
      */
 	@WrapInTransaction
-	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
-		
-		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+	public void run(final JobExecutionContext jobContext) throws JobExecutionException {
+
+		final Trigger trigger = jobContext.getTrigger();
+		final Map<String, Serializable> map = getExecutionData(trigger, ResetPermissionsJob.class);
 
 		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		

@@ -1475,6 +1475,15 @@ public class FieldAPITest extends IntegrationTestBase {
                                     .toLowerCase()).get(field.variable());
             assertTrue(UtilMethods.isSet(mapping.get("type")));
             assertEquals("date", mapping.get("type"));
+
+            //validate _dotraw fields
+            mapping = (Map<String, String>) mappingAPI
+                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                            (type.variable() + StringPool.PERIOD + field.variable() + "_dotraw")
+                                    .toLowerCase()).get(field.variable() + "_dotraw");
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("keyword", mapping.get("type"));
+
         }finally{
             ContentTypeDataGen.remove(type);
         }

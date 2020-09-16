@@ -231,6 +231,7 @@ public class ESMappingUtilHelperTest {
             workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(
                     IndexType.WORKING.getPrefix() + "_" + timestamp);
 
+            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
             //Create a working index
             boolean result = contentletIndexAPI.createContentIndex(workingIndex);
             //Validate
@@ -248,10 +249,27 @@ public class ESMappingUtilHelperTest {
                                             .toLowerCase()).get(field.toLowerCase());
                     assertTrue(UtilMethods.isSet(mapping.get("type")));
                     assertEquals(expectedResult, mapping.get("type"));
+
+                    //validate _dotraw fields
+                    mapping = (Map<String, String>) esMappingAPI
+                            .getFieldMappingAsMap(workingIndex,
+                                    (contentType.variable() + StringPool.PERIOD + field)
+                                            .toLowerCase() + "_dotraw").get(field.toLowerCase() + "_dotraw");
+                    assertTrue(UtilMethods.isSet(mapping.get("type")));
+                    assertEquals("keyword", mapping.get("type"));
+
+                    //validate _text fields
+                    mapping = (Map<String, String>) esMappingAPI
+                            .getFieldMappingAsMap(workingIndex,
+                                    (contentType.variable() + StringPool.PERIOD + field)
+                                            .toLowerCase() + ESMappingAPIImpl.TEXT).get(field.toLowerCase() + ESMappingAPIImpl.TEXT);
+                    assertTrue(UtilMethods.isSet(mapping.get("type")));
+                    assertEquals("text", mapping.get("type"));
                 }
             }
 
         } finally {
+            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
             if (workingIndex != null) {
                 contentletIndexAPI.delete(workingIndex);
             }

@@ -685,6 +685,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 .collect(Collectors.toList());
     }
 
+    @Test
     @UseDataProvider("dataProviderEEBaseTypes")
     public void testGetSchema_GivenNoEELicense_EnterpriseBaseTypeCollectionsShouldNOTBeAvailableInSchema(
             final BaseContentType baseType)
