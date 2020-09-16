@@ -450,7 +450,9 @@ public class IntegrityResource {
         setStatus( session, endpoint.getId(), ProcessStatus.ERROR, null );
         Logger.error( this.getClass(), message);
 
-        return response( String.format("%s. Please check Auth Token. Endpoint Id:", message, endpoint.getId()), true );
+        return response(
+                String.format("%s. Please check Auth Token. Endpoint Id: %s", message, endpoint.getId()),
+                HttpStatus.SC_UNAUTHORIZED);
     }
 
     @NotNull
@@ -1254,10 +1256,14 @@ public class IntegrityResource {
      */
     private Response response ( String response, Boolean error, String contentType ) {
         if ( error ) {
-            return Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR ).entity( response ).build();
+            return response(response, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } else {
             return Response.ok( response, contentType ).build();
         }
+    }
+
+    private Response response ( String response, int status ) {
+        return Response.status( status ).entity( response ).build();
     }
 
     private class IntegrityDataRequestChecker implements Runnable{

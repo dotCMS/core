@@ -1,17 +1,24 @@
 package com.dotcms.rest.api.v1.system;
 
 import java.io.Serializable;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.dotcms.rest.WebResource;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.util.Config;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import oracle.jdbc.proxy.annotation.Post;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
@@ -70,4 +77,31 @@ public class ConfigurationResource implements Serializable {
 		}
 	}
 
+	/**
+	 * Set value to config proeprties
+	 *
+	 * @param request
+	 * @return
+	 */
+	@PUT
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response set(
+			@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			Map<String, String> properties) {
+
+		new WebResource
+				.InitBuilder(request, response)
+				.requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+				.requiredPortlet("maintenance")
+				.init();
+
+		for (Map.Entry<String, String> entry : properties.entrySet()) {
+			Config.setProperty(entry.getKey(), entry.getValue());
+		}
+
+		return Response.ok().build();
+	}
 }
