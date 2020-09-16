@@ -30,6 +30,8 @@ enum DotActionInputs {
     COMMENTANDASSIGN = 'commentAndAssign'
 }
 
+const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
+
 @Injectable()
 export class DotWorkflowEventHandlerService {
     private workflowStepMap = {
@@ -53,7 +55,7 @@ export class DotWorkflowEventHandlerService {
      * @param {DotCMSWorkflowActionEvent} event
      * @memberof DotWorkflowEventHandlerService
      */
-     open(event: DotCMSWorkflowActionEvent): void {
+    open(event: DotCMSWorkflowActionEvent): void {
         if (this.containsPushPublish(event.workflow.actionInputs)) {
             this.checkPublishEnvironments()
                 .pipe(take(1))
@@ -188,7 +190,7 @@ export class DotWorkflowEventHandlerService {
         event: DotCMSWorkflowActionEvent,
         data?: { [key: string]: any }
     ): void {
-        if (event.selectedInodes && event.selectedInodes.length) {
+        if (this.isBulkAction(event)) {
             this.dotIframeService.run({ name: 'fireActionLoadingIndicator' });
             this.dotWorkflowActionsFireService
                 .bulkFire(this.processBulkData(event, data))
@@ -203,23 +205,38 @@ export class DotWorkflowEventHandlerService {
                     this.dotIframeService.run({ name: event.callback, args: [response] });
                 });
         } else {
-            this.dotWorkflowActionsFireService
-                .fireTo(
-                    event.inode,
-                    event.workflow.id,
-                    this.processWorkflowPayload(data, event.workflow.actionInputs)
-                )
-                .pipe(
-                    catchError(error => {
-                        return this.httpErrorManagerService.handle(error);
-                    }),
-                    take(1)
-                )
-                .subscribe(() => {
-                    this.displayNotification(event.workflow.name);
-                    this.dotIframeService.run({ name: event.callback });
+            if (event.callback === EDIT_CONTENT_CALLBACK_FUNCTION) {
+                // path for create or edit content since we don't have the iNode.
+                this.dotIframeService.run({
+                    name: event.callback,
+                    args: [
+                        event.workflow.id,
+                        this.processWorkflowPayload(data, event.workflow.actionInputs)
+                    ]
                 });
+            } else {
+                this.dotWorkflowActionsFireService
+                    .fireTo(
+                        event.inode,
+                        event.workflow.id,
+                        this.processWorkflowPayload(data, event.workflow.actionInputs)
+                    )
+                    .pipe(
+                        catchError(error => {
+                            return this.httpErrorManagerService.handle(error);
+                        }),
+                        take(1)
+                    )
+                    .subscribe(() => {
+                        this.displayNotification(event.workflow.name);
+                        this.dotIframeService.run({ name: event.callback });
+                    });
+            }
         }
+    }
+
+    private isBulkAction(event: DotCMSWorkflowActionEvent): boolean {
+        return !!(event.selectedInodes && event.selectedInodes.length);
     }
 
     private displayNotification(name: string): void {

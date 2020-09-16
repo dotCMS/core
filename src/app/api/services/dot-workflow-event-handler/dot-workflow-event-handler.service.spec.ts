@@ -184,6 +184,20 @@ describe('DotWorkflowEventHandlerService', () => {
             expect(dotIframeService.run).toHaveBeenCalledWith({ name: mockWAEvent.callback });
         });
 
+        it('should run iframe function for legacy call', () => {
+            spyOn(dotIframeService, 'run');
+            dotWorkflowEventHandlerService.open({
+                ...mockWAEvent,
+                callback: 'saveAssignCallBackAngular'
+            });
+            dotWizardService.output$({ ...mockWizardOutputData });
+
+            expect(dotIframeService.run).toHaveBeenCalledWith({
+                name: 'saveAssignCallBackAngular',
+                args: [mockWAEvent.workflow.id, mockWizardOutputTransformedData]
+            });
+        });
+
         it('should fire BULK action with the correct data, execute the callback and send a message on output', () => {
             const mockBulkResponse: DotActionBulkResult = {
                 skippedCount: 1,
