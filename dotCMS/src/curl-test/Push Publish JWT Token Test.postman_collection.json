@@ -206,6 +206,186 @@
 			"protocolProfileBehavior": {}
 		},
 		{
+			"name": "expired_token",
+			"item": [
+				{
+					"name": "request_token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5e50fabd-4ee6-4432-a503-8cce3612c5ce",
+								"exec": [
+									"wait = (ms) => {",
+									"   var start = new Date().getTime();",
+									"   var end = start;",
+									"   while(end < start + ms) {",
+									"     end = new Date().getTime();",
+									"  }",
+									"};",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.expect(jsonData.entity).to.not.eq(undefined);",
+									"    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
+									"    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
+									"",
+									"    wait(2000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 1,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "74b070c5-3173-4d5e-be9a-f47a6bbea2f6",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "request_pp",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1d620684-1f81-4b98-96b4-6fba9efc5646",
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Check WWW-Authenticate header\", function () {",
+									"    expected = 'Bearer realm=\"example\",error=\"invalid_token\",error_key=\"__invalid_token__\",error_description=\"\"';",
+									"",
+									"    pm.response.to.be.header('WWW-Authenticate', expected);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundlePublisher/publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundlePublisher",
+								"publish"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "fail_not_valid_token",
 			"item": [
 				{
@@ -612,17 +792,17 @@
 	],
 	"variable": [
 		{
-			"id": "0de4dcf0-55c3-4083-b6c5-f40f242fed41",
+			"id": "0288f532-e3dc-4589-b095-11fe96a56e1c",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "0a0930a1-b5cc-43b1-9181-3542da558460",
+			"id": "2c19ae47-80bb-4a09-b680-617b0e496062",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGlhYmI1ZDcwMS1kNDgwLTRlODYtOGJlNS0wMjE0ZGM3ZmFjNGMiLCJ4bW9kIjoxNTk4OTQ4ODQ4MDAwLCJuYmYiOjE1OTg5NDg4NDgsImlzcyI6IjAxMzFjMDIxYTgiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTM1MjAyMTMsImlhdCI6MTU5ODk0ODg0OCwianRpIjoiMGYzNzA2YzMtYWI1Ny00MDUxLWFkNzgtNzg2NDY3Y2YzNjMzIn0.X8qhwPHGXKDahZE8gpllibdWbrhkGKbgTOrcKiVjiRI"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk0MjI2YjE0Yy1iMGQ3LTRmNmUtYTQ1ZC0wMmNjOGVkZDBkYWEiLCJ4bW9kIjoxNjAwMjAxMjUyMDAwLCJuYmYiOjE2MDAyMDEyNTIsImlzcyI6ImMyOTJhMWYyYWQiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2MDAyMDEyNTMsImlhdCI6MTYwMDIwMTI1MiwianRpIjoiNDVlYWNjNGQtNWQ4ZS00NDA0LWIzNzEtYTgwYTBhZjgzMjkzIn0._BFWPMWBhPCLlteq3rr4Bst0h6y6Mea8etnAksJnWGg"
 		},
 		{
-			"id": "29c8aeac-67d1-4f8d-a09e-f023bcfb2fff",
+			"id": "07068927-39d7-45aa-98d8-e9bb0617dee7",
 			"key": "bundle_id",
 			"value": "bundle_1598948729120"
 		}
