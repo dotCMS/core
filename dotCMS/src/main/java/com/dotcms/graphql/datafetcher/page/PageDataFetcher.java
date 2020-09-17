@@ -81,8 +81,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
 
             if(fireRules) {
                 Logger.info(this, "Rules will be fired");
-                final HTMLPageAsset page = (HTMLPageAsset) context.getParam("page");
-                RulesEngine.fireRules(request, response, page, FireOn.EVERY_PAGE);
+                RulesEngine.fireRules(request, response, pageAsset, FireOn.EVERY_PAGE);
             }
 
             final DotContentletTransformer transformer = new DotTransformerBuilder()

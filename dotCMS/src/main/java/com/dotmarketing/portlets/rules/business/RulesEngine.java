@@ -162,18 +162,22 @@ public final class RulesEngine {
 	public static void fireRules(HttpServletRequest req, HttpServletResponse res, Ruleable parent, Rule.FireOn fireOn) {
 
         //Check for the proper license level, the rules engine is an enterprise feature only
+		Logger.info(RulesEngine.class, "LicenseUtil.getLevel(): " + LicenseUtil.getLevel());
         if ( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level ) {
             return;
         }
+		Logger.info(RulesEngine.class, "res.isCommitted(): " + res.isCommitted());
         if(res.isCommitted()) {
           return;
         }
+		Logger.info(RulesEngine.class, "UtilMethods.isSet(req): " + UtilMethods.isSet(req));
         if (!UtilMethods.isSet(req)) {
         	throw new DotRuntimeException("ERROR: HttpServletRequest is null");
         }
         
         // do not run rules in admin mode
         PageMode mode= PageMode.get(req);
+		Logger.info(RulesEngine.class, "mode: " + mode);
         if(mode.isAdmin) {
           final boolean fireRules =Try.of(()->Boolean.valueOf(req.getParameter("fireRules"))).getOrElse(false);
           if(!fireRules) {
@@ -204,6 +208,7 @@ public final class RulesEngine {
 
 			Set<Rule> rules = APILocator.getRulesAPI().getRulesByParentFireOn(parent.getIdentifier(), systemUser, false,
 					fireOn);
+			Logger.info(RulesEngine.class, "rules: " + rules);
             for (Rule rule : rules) {
                 try {
                 	Logger.info(RulesEngine.class, "Executing rule: " + rule.getName());
