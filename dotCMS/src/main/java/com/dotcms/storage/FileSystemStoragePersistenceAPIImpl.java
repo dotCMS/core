@@ -6,9 +6,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Files;
 import com.liferay.util.FileUtil;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.apache.commons.io.FileUtils;
 
@@ -24,9 +22,10 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
- * Represents a Storage on the file system The groups here are folder previously defined, you can
+ * Represents a Storage on the file system The groups here are folder previously registered, you can
  * subscribe more by using {@link #addGroupMapping(String, File)}
- *
+ * By default the API loads up and maps a root folder. Which can be override by a property.
+ * Any new group created will result in a new folder under that root folder.
  * @author jsanca
  */
 public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAPI {
@@ -35,24 +34,38 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     private final Map<String, File> groups = new ConcurrentHashMap<>();
 
-    public FileSystemStoragePersistenceAPIImpl() {
-       groups.put(getRootGroupKey(), new File(System.getProperty("user.home")));
+    /**
+     * default constructor
+     */
+    FileSystemStoragePersistenceAPIImpl() {
+        final String rootGroupKey = getRootGroupKey();
+        final File rootFolder = getRootFolder();
+        groups.put(rootGroupKey, rootFolder);
+        Logger.info(FileSystemStoragePersistenceAPIImpl.class, () -> String
+                .format("Default group key is `%s` currently mapped to folder `%s` ", rootGroupKey,
+                        rootFolder));
     }
+
+
 
     /**
      * Adds a mapping between a bucket name and a file
      *
      * @param groupName {@link String} bucket name
-     * @param file {@link File}
+     * @param folder {@link File}
      */
-    public void addGroupMapping(final String groupName, final File file) {
-
-        this.groups.put(groupName, file);
+    void addGroupMapping(final String groupName, final File folder) {
+        if (!folder.isDirectory() || !folder.exists() || !folder.canWrite()) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid attempt of mapping an non existing or writable folder. Argument`%s` must be a valid. ",
+                    folder));
+        }
+        this.groups.put(groupName, folder);
+        Logger.info(FileSystemStoragePersistenceAPIImpl.class, () -> String.format("Registering New Group with key is `%s` mapped to folder `%s` ",groupName, folder));
     }
 
     @Override
     public boolean existsGroup(final String groupName) {
-
         return this.groups.containsKey(groupName) && this.groups.get(groupName).exists();
     }
 
@@ -92,14 +105,13 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     }
 
     public boolean deleteObject(final String groupName, final String path) {
-
         return new File(this.groups.get(groupName), path).delete();
     }
 
     @Override
-    public List<Object> listGroups() {
+    public List<String> listGroups() {
 
-        return new ImmutableList.Builder<>().addAll(this.groups.keySet()).build();
+        return new ImmutableList.Builder<String>().addAll(this.groups.keySet()).build();
     }
 
     @Override
@@ -295,6 +307,17 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     private String getRootGroupKey(){
         return Config.getStringProperty("ROOT_GROUP_NAME", DEFAULT_ROOT);
+    }
+
+    private File getRootFolder() {
+        final String rootFolderPath = Config.getStringProperty("ROOT_GROUP_FOLDER_PATH",
+                Paths.get(System.getProperty("user.home") + File.separator + "storage")
+                        .normalize().toString());
+        final File rootFolder = new File(rootFolderPath);
+        if(!rootFolder.exists()){
+          rootFolder.mkdirs();
+        }
+        return rootFolder;
     }
 
     private int countFiles(final File dirPath) {

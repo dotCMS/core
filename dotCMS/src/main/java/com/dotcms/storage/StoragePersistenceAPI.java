@@ -67,7 +67,7 @@ public interface StoragePersistenceAPI {
      * List the groups, the returns a list of object since the return would depend on the implementation.
      * @return List
      */
-    List<Object> listGroups();
+    List<String> listGroups();
 
     /**
      * Push a file to the storage, it will block until the operation is done

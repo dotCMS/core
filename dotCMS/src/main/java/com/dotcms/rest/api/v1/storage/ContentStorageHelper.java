@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.ws.rs.BadRequestException;
+import org.apache.commons.lang.RandomStringUtils;
 
 /**
  * Helper for the {@link ContentStorageResource}
@@ -62,6 +63,9 @@ class ContentStorageHelper {
        final ImmutableMap.Builder<String, Object> bodyResultBuilder = new ImmutableMap.Builder<>();
        final StoragePersistenceProvider storagePersistenceProvider = INSTANCE.get();
        final StoragePersistenceAPI storage = storagePersistenceProvider.getStorage();
+       if(!storage.existsGroup("files")){
+         storage.createGroup("files");
+       }
        for (final File file : files) {
            bodyResultBuilder.put(file.getName(),
                    storage.pushFile("files", File.separator + file.getName(), file, Collections.emptyMap()));

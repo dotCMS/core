@@ -248,18 +248,29 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     @Override
     public int deleteGroup(final String groupName) {
         return this.wrapInTransaction(() -> {
+            final Connection connection = this.getConnection();
             final DotConnect dotConnect = new DotConnect();
-            final int entriesCount = dotConnect.executeUpdate(this.getConnection(),
+
+            final String hash = dotConnect
+                    .setSQL("SELECT hash FROM storage WHERE group_name = ?").addParam(groupName)
+                    .getString("hash");
+
+            final int dataPiecesCount = dotConnect.executeUpdate(connection,
+                    "DELETE FROM storage_x_data WHERE data_hash = ?", hash);
+
+            final int storageDataCount = dotConnect.executeUpdate(connection,
+                    "DELETE FROM storage_data WHERE hash_id = ?", hash);
+
+            final int storageEntriesCount = dotConnect.executeUpdate(connection,
                     "DELETE FROM storage WHERE group_name = ?", groupName);
 
-            final int groupsCount = dotConnect.executeUpdate(this.getConnection(),
+            final int groupsCount = dotConnect.executeUpdate(connection,
                     "DELETE FROM storage_group WHERE group_name = ?", groupName);
 
             Logger.info(this, () -> String
-                    .format("total of `%d` objects removed for `%d` group ", entriesCount,
-                            groupsCount
-                    ));
-            return entriesCount;
+                    .format("total of `%d` objects allocated in `%d` and split in `%d` removed for `%d` group. ",
+                            storageEntriesCount, storageDataCount, dataPiecesCount, groupsCount));
+            return storageEntriesCount;
         });
 
     }
@@ -274,17 +285,17 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
-    public List<Object> listGroups() {
+    public List<String> listGroups() {
 
-        final MutableObject<List<Object>> result = new MutableObject<>(Collections.emptyList());
+        final MutableObject<List<String>> result = new MutableObject<>(Collections.emptyList());
 
         this.wrapCloseConnection(() -> {
 
             final List<Map<String, Object>> results = Try
                     .of(() -> new DotConnect().setSQL("SELECT group_name FROM storage_group")
-                            .loadObjectResults()).getOrElse(Collections::emptyList);
+                            .loadObjectResults(this.getConnection())).getOrElse(Collections::emptyList);
 
-            result.setValue(results.stream().map(map -> map.get("group_name"))
+            result.setValue(results.stream().map(map -> map.get("group_name").toString())
                     .collect(CollectionsUtils.toImmutableList()));
         });
 
@@ -308,24 +319,36 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                         throw new IllegalArgumentException("The groupName: " + groupName +
                                 ", does not exist.");
                     }
+                    if (this.existsObject(groupName, path)) {
+                        Logger.warn(DataBaseStoragePersistenceAPIImpl.class,
+                                String.format("Attempt to override entry `%s/%s` ", groupName,
+                                        path));
+                        return false;
+                    }
                     return this.existsHash(fileHash) ?
                             this.pushFileReference(groupName, path, metaData, fileHash) :
                             this.pushNewFile(groupName, path, file, metaData);
                 });
     }
 
+    /**
+     * Selects directly on storage-data since hash is the primary key there.
+     * @param fileHash
+     * @return
+     */
     private boolean existsHash(final String fileHash) {
-
         final MutableBoolean exists = new MutableBoolean(false);
-
         this.wrapCloseConnection(() -> {
-
-            final List results = Try
-                    .of(() -> new DotConnect().setSQL("SELECT * FROM storage WHERE hash = ?")
-                            .addParam(fileHash)
-                            .loadObjectResults(this.getConnection()))
-                    .getOrElse(Collections::emptyList);
-            exists.setValue(!results.isEmpty());
+            final Integer results = Try
+                    .of(() -> {
+                                final List<Map<String, Object>> result = new DotConnect()
+                                        .setSQL("SELECT count(*) as x FROM storage_data WHERE hash_id = ?")
+                                        .addParam(fileHash)
+                                        .loadObjectResults(this.getConnection());
+                                return (int) result.get(0).get("x");
+                            }
+                    ).getOrElse(0);
+            exists.setValue(results > 0);
         });
 
         return exists.getValue();

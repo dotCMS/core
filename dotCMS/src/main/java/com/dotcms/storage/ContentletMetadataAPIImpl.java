@@ -281,9 +281,9 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
         return reduceMap.build();
     }
 
-    private Tuple2<Set<String>, Set<String>> findBinaryFields(final Contentlet contentlet) {
+    Tuple2<Set<String>, Set<String>> findBinaryFields(final Contentlet contentlet) {
 
-        final List<Field> binaryFields = contentlet.getContentType().fields(BinaryField.class); //This doesn't take into account an image field
+        final List<Field> binaryFields = contentlet.getContentType().fields(BinaryField.class);
         final Set<String> basicBinaryFieldNameSet = new HashSet<>();
         final Set<String> fullBinaryFieldNameSet  = new HashSet<>();
 
