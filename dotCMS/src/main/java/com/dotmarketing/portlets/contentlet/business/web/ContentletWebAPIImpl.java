@@ -485,7 +485,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			if (UtilMethods.isSet((String) contentletFormData.get("wfActionId"))) {
 
-				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet,
+				final ContentletDependencies.Builder contentletDependencies =
 						new ContentletDependencies.Builder().respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
 								.modUser(user)
 								.relationships(contentletRelationships)
@@ -493,15 +493,26 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								.workflowActionComments((String) contentletFormData.get("wfActionComments"))
 								.workflowAssignKey((String) contentletFormData.get("wfActionAssign"))
 								.categories(categories)
-                                .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
-								.generateSystemEvent(generateSystemEvent).build());
+								.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
+								.generateSystemEvent(generateSystemEvent);
+
+				if (UtilMethods.isSet((String) contentletFormData.get("wfFilterKey"))) {
+
+					contentletDependencies.workflowFilterKey((String) contentletFormData.get("wfFilterKey"));
+				}
+
+				if (UtilMethods.isSet((String) contentletFormData.get("wfiWantTo"))) {
+
+					contentletDependencies.workflowIWantTo((String) contentletFormData.get("wfiWantTo"));
+				}
+
+				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet, contentletDependencies.build());
 
 				if (hasPushPublishActionlet(APILocator.getWorkflowAPI().findAction((String) contentletFormData.get("wfActionId"), user))) {
 					final String whoToSendTmp = (String)currentContentlet.get(Contentlet.WHERE_TO_SEND);
 					final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
 					request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + user.getUserId(), envsToSendTo );
 				}
-
 			} else {
 
 				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +

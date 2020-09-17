@@ -103,7 +103,7 @@
 	    	},
 
 	    	executeWfAction: function(wfId, assignable, commentable, inode, showpush){
-	    		
+
 	    		this.wfActionId = wfId;
 	    		
 	    		if(assignable || commentable || showpush){

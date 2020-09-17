@@ -220,6 +220,8 @@
 	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 	<input name="whereToSend" id="wfWhereToSend" type="hidden" value="">
+	<input name="wfiWantTo" id="wfiWantTo" type="hidden" value="">
+	<input name="wfFilterKey" id="wfFilterKey" type="hidden" value="">
 
 
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image" sortBy="modDate" sortByDesc="true" dojoType="dotcms.dijit.FileBrowserDialog"></div>

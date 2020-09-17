@@ -22,7 +22,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         structInode:null
     },
 
-    show: function (isBulk) {
+    show: function (isBulk, isEdit) {
         var self = this;
         //Required clean up as these modals has duplicated widgets and collide without a clean up
 
@@ -150,8 +150,8 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
         if (this._hasWorkflow()) {
             this._getWorkFLow(this.workflow.actionId).then((action) => {
-                if ( action.assignable || action.commentable || isBulk){
-                    this._dispatchAngularWorkflowEvent(action);
+                if (!!(action.actionInputs && action.actionInputs.length) || isBulk){
+                    this._dispatchAngularWorkflowEvent(action, isEdit);
                 } else {
                     this._dispatchAngularDialogEvent();
                 }
@@ -257,13 +257,13 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         }
     },
 
-    _dispatchAngularWorkflowEvent: function (workflow) {
+    _dispatchAngularWorkflowEvent: function (workflow, isEdit) {
         const data = {
             workflow: workflow,
-            callback: 'angularWorkflowEventCallback',
-            inode: this.workflow.inode,
+            callback: isEdit ?  'saveAssignCallBackAngular' : 'angularWorkflowEventCallback',
+            inode: this.workflow.inode
         };
-        if (typeof getSelectedInodes === "function") {
+        if (typeof getSelectedInodes === "function" && getSelectedInodes().length) {
             data['selectedInodes'] = getSelectedInodes();
             data.callback = 'bulkWorkflowActionCallback';
         }
