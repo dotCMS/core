@@ -373,7 +373,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @throws KeyStoreException
      * @throws DotCacheException
      */
-    private synchronized void putInCache(final String key, final char[] val)
+    private void putInCache(final String key, final char[] val)
             throws KeyStoreException, DotCacheException {
         cache.putSecret(key, val);
         putInCache(key);
@@ -385,7 +385,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @throws KeyStoreException
      * @throws DotCacheException
      */
-    private synchronized void putInCache(final String key) throws KeyStoreException, DotCacheException{
+    private void putInCache(final String key) throws KeyStoreException, DotCacheException{
          final Set <String> keys = getKeysFromCache();
          keys.add(key);
          cache.putKeys(keys);

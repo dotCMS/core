@@ -4,6 +4,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,16 +94,23 @@ public class AppsCacheImpl extends AppsCache {
     public Map<String, AppDescriptor> getAppDescriptorsMap(final Supplier<List<AppDescriptor>> supplier) {
         Map<String, AppDescriptor> descriptorsByKey = (Map<String, AppDescriptor>) cache.getNoThrow(
                 DESCRIPTORS_MAPPED_BY_KEY, DESCRIPTORS_CACHE_GROUP);
-        if (!UtilMethods.isSet(descriptorsByKey) && null != supplier) {
-            synchronized (AppsCacheImpl.class) {
-                descriptorsByKey = getAppDescriptorsMeta(supplier).stream().collect(
-                        Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
-                                        .getKey().toLowerCase(), Function.identity(),
-                                (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
-
-                putDescriptorsByKey(descriptorsByKey);
-            }
+        
+        if(descriptorsByKey!=null) {
+            return descriptorsByKey;
         }
+        if(null==supplier) {
+            return ImmutableMap.of();
+        }
+
+        synchronized (AppsCacheImpl.class) {
+            descriptorsByKey = getAppDescriptorsMeta(supplier).stream().collect(
+                    Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
+                                    .getKey().toLowerCase(), Function.identity(),
+                            (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
+
+            putDescriptorsByKey(descriptorsByKey);
+        }
+        
         return descriptorsByKey;
     }
 
@@ -130,14 +139,24 @@ public class AppsCacheImpl extends AppsCache {
      */
     public Set<String> getKeysFromCache(final Supplier<Set<String>> supplier)
             throws DotCacheException {
+        
+        Set<String> keys = (Set<String>) cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+        if (keys!=null) {
+            return keys;
+        }
+        if(null ==supplier) {
+            return ImmutableSet.of();
+        }
+        // try again
         synchronized (AppsCacheImpl.class) {
-            Set<String> keys = (Set<String>) cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
-            if (!UtilMethods.isSet(keys) && null != supplier) {
+            keys = (Set<String>) cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+            if(keys==null) {
                 keys = supplier.get();
                 putKeys(keys);
             }
-            return keys;
         }
+        return keys;
+        
     }
 
     /**
@@ -157,14 +176,28 @@ public class AppsCacheImpl extends AppsCache {
      * @return encrypted secret from cache.
      */
     public char[] getFromCache(final String key, final Supplier<char[]> supplier) {
+
+        char[] retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
+        
+        if(retVal!=null) {
+            return retVal;
+        }
+        
+        if (null == supplier) {
+            return new char[0];
+        }
+        
+        // try again
         synchronized (AppsCacheImpl.class) {
-            char[] retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
-            if (retVal == null && null != supplier) {
+            retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
+            if (retVal == null) {
                 retVal = supplier.get();
                 putSecret(key, retVal);
             }
-            return retVal;
         }
+        
+        return retVal;
+        
     }
 
     /**
