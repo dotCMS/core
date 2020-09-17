@@ -1,9 +1,14 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -13,6 +18,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -54,13 +60,41 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
         if (null != pageView.getUrlContent()) {
 
-            final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(pageView.getUrlContent()).build();
-            final Map<String, Object>   urlContentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
-            pageViewMap.put("urlContentMap", urlContentletMap);
+            this.createObjectMapUrlContent(pageView.getUrlContent(), pageViewMap);
         }
 
         return pageViewMap;
     }
+
+    protected void createObjectMapUrlContent(final Contentlet urlContent, final Map<String, Object> pageViewMap) {
+
+        final DotContentletTransformer transformer   = new DotTransformerBuilder().defaultOptions().content(urlContent).build();
+        final Map<String, Object>   urlContentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
+        this.createObjectMapKeyValue(urlContent, urlContent.getContentType(), urlContentletMap);
+
+        pageViewMap.put("urlContentMap", urlContentletMap);
+    }
+
+    /**
+     * Get all key value fields into the contentlet (if any) and put as an object into the contentMap (returns it)
+     * @param contentlet    {@link Contentlet}
+     * @param contentType   {@link ContentType}
+     * @param contentletMap {@link Map}
+     * @return Map
+     */
+    protected Map<String, Object> createObjectMapKeyValue(final Contentlet contentlet, final ContentType contentType, final Map<String, Object> contentletMap) {
+
+        final List<Field> urlContentFields           = contentType.fields(KeyValueField.class);
+
+        if (UtilMethods.isSet(urlContentFields)) {
+
+            urlContentFields.forEach(field ->
+                    contentletMap.put(field.variable(), contentlet.getKeyValueProperty(field.variable())));
+        }
+
+        return contentletMap;
+    }
+
 
     private Map<Object, Object> asPageMap(final PageView pageView)  {
         final Map<Object, Object> pageMap = this.asMap(pageView.getPage());
