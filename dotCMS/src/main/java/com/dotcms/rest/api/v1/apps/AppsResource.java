@@ -433,4 +433,78 @@ public class AppsResource {
         }
     }
 
+    /**
+     * Secrets export
+     * @param request
+     * @param response
+     * @param exportSecretForm
+     * @return
+     */
+    @POST
+    @Path("/export")
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public final Response exportSecrets(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final ExportSecretForm exportSecretForm
+    ) {
+        exportSecretForm.checkValid();
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            //no need to close i'll get closed upon writing the response
+            return Response.ok(helper.exportSecrets(exportSecretForm, user), MediaType.APPLICATION_OCTET_STREAM)
+                    .header("content-disposition", "attachment; filename=appSecrets.export")
+                    .build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),"Exception exporting secrets.", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    /**
+     * Secrets import
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     */
+    @POST
+    @Path("/import")
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response importSecrets(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final FormDataMultiPart form
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            helper.importSecrets(form, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),"Exception importing secrets.", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
 }

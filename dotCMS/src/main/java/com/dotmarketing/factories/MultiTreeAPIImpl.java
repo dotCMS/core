@@ -83,11 +83,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL =
-            "delete from multi_tree where relation_type != ? and personalization = ? and " +
+            "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and " +
                     "child in (select distinct identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?)";
 
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL =
-            "delete from multi_tree where relation_type != ? and personalization = ? and child in (%s)";
+            "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and child in (%s)";
     private static final String SELECT_MULTI_TREE_BY_LANG =
             "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?";
 
@@ -568,6 +568,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
                         .addParam(personalization)
                         .addParam(pageId)
+                        .addParam(pageId)
                         .addParam(languageIdOpt.get())
                         .loadResult();
             }
@@ -617,6 +618,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             db.setSQL(String.format(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL, Utility.joinList(",", multiTreesId)))
                     .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
                     .addParam(personalization)
+                    .addParam(pageId)
                     .loadResult();
         }
     }

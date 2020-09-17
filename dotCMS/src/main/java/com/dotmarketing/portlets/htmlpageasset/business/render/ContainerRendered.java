@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ public class ContainerRendered extends ContainerRaw {
      *                           the browser.
      */
     public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures,
-                             final Map<String, String> rendered, final Map<String,List<Map<String,Object>>> contentlets) {
+                             final Map<String, String> rendered, final Map<String,List<Contentlet>> contentlets) {
         super(container, containerStructures, contentlets);
 
         this.rendered = rendered;

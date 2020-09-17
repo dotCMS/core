@@ -40,6 +40,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import com.liferay.util.EncryptorException;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -48,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.security.Key;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1021,4 +1023,55 @@ public class AppsAPIImplTest {
         //The one from the system-folder takes precedence.
         assertEquals("system-app", impl.getDescription());
     }
+
+    /**
+     * Given Scenario: This test creates secrets then exports them Then re-imports the file with the generated secrets.
+     * Expected Result: The test should be Able to recreate the secrets from the generated file.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws EncryptorException
+     * @throws ClassNotFoundException
+     */
+    @Test
+    public void Test_Create_Secrets_Then_Export_Them_Then_Import_Then_Save()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException, ClassNotFoundException {
+        final User admin = TestUserUtils.getAdminUser();
+        final Host site = new SiteDataGen().nextPersisted();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final String appKey = "appKey-1-Host-1";
+        final AppSecrets secrets = builder1.withKey(appKey)
+                .withHiddenSecret("test:secret1", "secret-1")
+                .withHiddenSecret("test:secret2", "secret-2")
+                .withHiddenSecret("test:secret3", "secret3")
+                .withHiddenSecret("test:secret4", "secret-4")
+                .build();
+        //Save it
+        api.saveSecrets(secrets, site, admin);
+        final Optional<AppSecrets> secretsOptional = api.getSecrets(appKey, site, admin);
+        final AppSecrets appSecretsPostSave = secretsOptional.get();
+
+        //AES only supports key sizes of 16, 24 or 32 bytes.
+        final String password = RandomStringUtils.randomAlphanumeric(32);
+        final Key key = AppsUtil.generateKey(password);
+        final Path exportSecretsFile = api.exportSecrets(key, true, null, admin);
+        assertTrue(exportSecretsFile.toFile().exists());
+
+        //Remove so we can re import them.
+        api.deleteSecrets(appKey, site, admin);
+
+        final Map<String, List<AppSecrets>> secretAppsBySiteId = api.importSecrets(exportSecretsFile, key, admin);
+        assertFalse(secretAppsBySiteId.isEmpty());
+        assertTrue(secretAppsBySiteId.containsKey(site.getIdentifier()));
+        final List<AppSecrets> appSecretsBySite = secretAppsBySiteId.get(site.getIdentifier());
+        assertFalse(appSecretsBySite.isEmpty());
+        final AppSecrets importedSecrets = appSecretsBySite.get(0);
+        assertEquals(importedSecrets, appSecretsPostSave);
+
+        api.saveSecrets(importedSecrets, site, admin);
+        final Optional<AppSecrets> secretsOptionalPostImport = api.getSecrets(appKey, site, admin);
+        assertTrue(secretsOptionalPostImport.isPresent());
+    }
+
 }

@@ -74,7 +74,10 @@ public enum InterfaceType {
 
         CONTENT_INTERFACE_FIELDS.addAll(contentFields.keySet());
 
-        interfaceTypes.put("CONTENTLET", createInterfaceType("Contentlet", contentFields, new ContentResolver()));
+        GraphQLInterfaceType contentletInterface = createInterfaceType("Contentlet",
+                contentFields, new ContentResolver());
+
+        interfaceTypes.put("CONTENTLET", contentletInterface);
 
         interfaceTypes.put("CONTENT", createInterfaceType(CONTENT_INTERFACE_NAME, contentFields, new ContentResolver()));
 

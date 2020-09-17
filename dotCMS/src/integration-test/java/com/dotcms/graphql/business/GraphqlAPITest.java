@@ -23,6 +23,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -683,6 +685,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 .collect(Collectors.toList());
     }
 
+    @Test
     @UseDataProvider("dataProviderEEBaseTypes")
     public void testGetSchema_GivenNoEELicense_EnterpriseBaseTypeCollectionsShouldNOTBeAvailableInSchema(
             final BaseContentType baseType)
@@ -799,6 +802,40 @@ public class GraphqlAPITest extends IntegrationTestBase {
             ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(
                     new GraphQLFieldGeneratorFactory());
         }
+    }
+
+    /**
+     * Method to rest: {@link GraphqlAPI#getSchema()}
+     * Given scenario: empty schema cache
+     * Expected result: cache miss, generation of the schema takes place
+     */
+    @Test
+    public void testGetSchema_GivenEmptyCache_SchemaShouldGenerate()
+            throws DotDataException {
+        GraphqlAPIImpl api =
+                Mockito.spy(new GraphqlAPIImpl());
+
+        api.invalidateSchema();
+        api.getSchema();
+        verify(api, times(1)).generateSchema();
+    }
+
+    /**
+     * Method to rest: {@link GraphqlAPI#getSchema()}
+     * Given scenario: schema in cache
+     * Expected result: cache hit, generation of the schema should not happen
+     */
+    @Test
+    public void testGetSchema_GivenFilledCache_SchemaShouldNotGenerate()
+            throws DotDataException {
+        GraphqlAPIImpl api =
+                Mockito.spy(new GraphqlAPIImpl());
+
+        api.invalidateSchema();
+        final GraphQLSchema nonCachedSchema = api.getSchema(); // generate schema is called
+        final GraphQLSchema cachedSchema = api.getSchema(); // got from cache - generate schema is NOT called
+        verify(api, times(1)).generateSchema();
+        assertEquals(nonCachedSchema, cachedSchema);
     }
 
     @NotNull

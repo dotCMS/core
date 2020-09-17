@@ -7,15 +7,21 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -26,6 +32,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -34,6 +41,8 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -182,6 +191,82 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
                                                 .equals(identifier)));
             }
         }
+    }
+
+    /**
+     * Method to test: {@link ESContentResourcePortlet#search(HttpServletRequest, HttpServletResponse, String, String, boolean, boolean)}
+     * Given scenario: Create a Category with 3 levels of depth:
+     *          Parent Category
+     *                  Child Category
+     *                          Grand Child Category
+     *
+     *                  Create a Content Type with a Category field, and a contentlet of it. To
+     *                  the contentlet add the Grand Child Category.
+     * Expected result: json response must include the grand child category info
+     */
+    @Test
+    public void test_search_includeGrandChildCategory_success()
+            throws Exception {
+        final long currentTime = System.currentTimeMillis();
+        //Create Parent Category.
+        final Category parentCategory = new CategoryDataGen()
+                .setCategoryName("CT-Category-Parent"+currentTime)
+                .setKey("parent"+currentTime)
+                .setCategoryVelocityVarName("parent"+currentTime)
+                .nextPersisted();
+
+        //Create First Child Category.
+        final Category childCategoryA = new CategoryDataGen()
+                .setCategoryName("CT-Category-A"+currentTime)
+                .setKey("categoryA"+currentTime)
+                .setCategoryVelocityVarName("categoryA"+currentTime)
+                .next();
+
+        //Second Level Category.
+        final Category childCategoryA_1 = new CategoryDataGen()
+                .setCategoryName("CT-Category-A-1"+currentTime)
+                .setKey("categoryA-1"+currentTime)
+                .setCategoryVelocityVarName("categoryA-1"+currentTime)
+                .next();
+
+        APILocator.getCategoryAPI().save(parentCategory, childCategoryA, user, false);
+        APILocator.getCategoryAPI().save(childCategoryA, childCategoryA_1, user, false);
+
+        // Content Type with category field
+        final List<Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+        fields.add(new FieldDataGen().type(CategoryField.class)
+                .name(parentCategory.getCategoryName()).velocityVarName(parentCategory.getCategoryVelocityVarName())
+                .values(parentCategory.getInode()).next());
+        final ContentType contentType = new ContentTypeDataGen().fields(fields).nextPersisted();
+
+        // Save content with grand child category
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "Test Contentlet"+currentTime)
+                .addCategory(childCategoryA_1)
+                .nextPersisted();
+
+        //Call resource
+        final String jsonQuery = "{\n"
+                + "    \"query\": {\n"
+                + "        \"bool\": {\n"
+                + "            \"must\": {\n"
+                + "                \"term\": {\n"
+                + "                    \"contenttype\": " + contentType.variable() + "\n"
+                + "                }\n"
+                + "            }\n"
+                + "        }\n"
+                + "    }\n"
+                + "}";
+        final Response responseResource = new ESContentResourcePortlet().search(createHttpRequest(false),new MockHttpResponse(),jsonQuery,"0",false,false);
+
+        // Verify result
+        assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+        // Verify JSON result
+        final JSONObject json = new JSONObject(responseResource.getEntity().toString());
+        final JSONArray contentlets = json.getJSONArray("contentlets");
+        assertTrue(contentlets.toString().contains(childCategoryA_1.getCategoryName()));
+
     }
 
     private HttpServletRequest createHttpRequest(final boolean anonymous) throws Exception{

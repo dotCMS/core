@@ -18,4 +18,5 @@ public interface GraphqlAPI {
 
     void invalidateSchema();
 
+    void printSchema();
 }
