@@ -186,14 +186,17 @@ public final class RulesEngine {
         }
         
         final Set<String> alreadyFiredRulesFor =req.getAttribute(DOT_RULES_FIRED_ALREADY)!=null?(Set<String>)req.getAttribute(DOT_RULES_FIRED_ALREADY):new HashSet<String>();
+        Logger.info(RulesEngine.class, "alreadyFiredRulesFor: " + alreadyFiredRulesFor);
         final String ruleRunKey = parent.getIdentifier() +"_"+ fireOn.name();
+		Logger.info(RulesEngine.class, "ruleRunKey: " + ruleRunKey);
         if(alreadyFiredRulesFor.contains(ruleRunKey)) {
           Logger.warn(RulesEngine.class, "we have already run the rules for:" + ruleRunKey);
           return;
         }
         alreadyFiredRulesFor.add(ruleRunKey);
         req.setAttribute(DOT_RULES_FIRED_ALREADY,alreadyFiredRulesFor);
-        
+
+        Logger.info(RulesEngine.class, "req.getParameter(WebKeys.RULES_ENGINE_PARAM):" + req.getParameter(WebKeys.RULES_ENGINE_PARAM) );
 		if (SKIP_RULES_EXECUTION.equalsIgnoreCase(req.getParameter(WebKeys.RULES_ENGINE_PARAM))
 				|| SKIP_RULES_EXECUTION.equalsIgnoreCase(String.valueOf(req.getParameter(WebKeys.RULES_ENGINE_PARAM)))) {
 			return;
