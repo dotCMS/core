@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.transform.IdentifierTransformer;
 import com.dotmarketing.beans.transform.MultiTreeTransformer;
 import com.dotmarketing.beans.transform.TreeTransformer;
+import com.dotmarketing.business.ContentletVersionInfoTransformer;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.transform.ContainerTransformer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -213,5 +214,15 @@ public class TransformerLocator {
     public static HostVariableTransformer createHostVariableTransformer(List<Map<String, Object>> initList) {
 
         return new HostVariableTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for {@link com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo} objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static ContentletVersionInfoTransformer createContentletVersionInfoTransformer(
+            List<Map<String, Object>> initList) {
+        return new ContentletVersionInfoTransformer(initList);
     }
 }

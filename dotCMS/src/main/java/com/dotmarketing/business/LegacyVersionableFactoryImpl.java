@@ -1,33 +1,26 @@
 package com.dotmarketing.business;
 
-import static com.dotcms.util.CollectionsUtils.set;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import org.apache.commons.beanutils.BeanUtils;
+
+import java.util.*;
+
+import static com.dotcms.util.CollectionsUtils.set;
 
 /**
  * Implementation class for the {@link VersionableFactory} class.
@@ -37,7 +30,7 @@ import org.apache.commons.beanutils.BeanUtils;
  * @since Mar 22, 2012
  *
  */
-public class VersionableFactoryImpl extends VersionableFactory {
+public class LegacyVersionableFactoryImpl extends VersionableFactory {
 
 	private final String fourOhFour = "NOTFOUND";
 
@@ -50,13 +43,13 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	/**
 	 * Default class constructor.
 	 */
-	public VersionableFactoryImpl() {
+	public LegacyVersionableFactoryImpl() {
 		this(APILocator.getIdentifierAPI(), CacheLocator.getIdentifierCache(), APILocator.getUserAPI(),
 				APILocator.getContainerAPI(), APILocator.getTemplateAPI());
 	}
 
 	@VisibleForTesting
-	public VersionableFactoryImpl(IdentifierAPI identifierApi, IdentifierCache identifierCache, UserAPI userApi,
+	public LegacyVersionableFactoryImpl(IdentifierAPI identifierApi, IdentifierCache identifierCache, UserAPI userApi,
 			ContainerAPI containerApi, TemplateAPI templateApi) {
 		this.iapi = identifierApi;
 		this.icache = identifierCache;
@@ -313,15 +306,14 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected ContentletVersionInfo findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
-		final DotConnect dotConnect = new DotConnect()
-				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=? AND lang=?")
-				.addParam(identifier)
-				.addParam(lang);
-
-		List<ContentletVersionInfo> versionInfos = TransformerLocator
-				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
-
-		return !versionInfos.isEmpty() ? versionInfos.get(0) : null;
+    	ContentletVersionInfo contv = null;
+    	 HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
+         dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? and lang=?");
+         dh.setParam(identifier);
+         dh.setParam(lang);
+         Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
+         contv = (ContentletVersionInfo)dh.load();
+         return contv;
     }
     @Override
     protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)throws DotDataException, DotStateException {
