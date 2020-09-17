@@ -150,7 +150,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
         if (this._hasWorkflow()) {
             this._getWorkFLow(this.workflow.actionId).then((action) => {
-                if ( action.assignable || action.commentable || isBulk){
+                if (!!(action.actionInputs && action.actionInputs.length) || isBulk){
                     this._dispatchAngularWorkflowEvent(action, isEdit);
                 } else {
                     this._dispatchAngularDialogEvent();
