@@ -1,5 +1,17 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import com.dotcms.publisher.ajax.RemotePublishAjaxAction;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -14,20 +26,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Actionlet(pushPublish = true)
 public class PushPublishActionlet extends WorkFlowActionlet implements BatchAction <String>  {
@@ -105,7 +104,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 		 try {
 			 doPushPublish(pushPublishBatchData.getData(), pushPublishBatchData.getIdentifiers(), user);
 		 }catch (Exception e){
-			 Logger.debug(PushPublishActionlet.class, e.getMessage());
+			 Logger.warnAndDebug(PushPublishActionlet.class, e.getMessage(), e);
 		 	 throw new WorkflowActionFailureException(e.getMessage(), e);
 		 }
 	}
@@ -143,6 +142,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			
 			if(envsToSendTo.isEmpty()) {
 			    Logger.warn(this.getClass(), "There are no valid environments to sent to - looking for:" + whoToSendTmp);
+			    return;
 			}
 			
 			
@@ -187,7 +187,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 
 	public static List<Environment> getEnvironmentsToSendTo(final String whoToSendTo){
 	    if(whoToSendTo==null) {
-	        return ImmutableList.of();
+	        return Collections.emptyList();
 	    }
 		final String[] whereToSend = whoToSendTo.split(",");
 		return Stream.of(whereToSend).map(id -> {
