@@ -162,33 +162,31 @@ public final class RulesEngine {
 	public static void fireRules(HttpServletRequest req, HttpServletResponse res, Ruleable parent, Rule.FireOn fireOn) {
 
         //Check for the proper license level, the rules engine is an enterprise feature only
-		Logger.info(RulesEngine.class, "LicenseUtil.getLevel(): " + LicenseUtil.getLevel());
         if ( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level ) {
             return;
         }
-		Logger.info(RulesEngine.class, "res.isCommitted(): " + res.isCommitted());
         if(res.isCommitted()) {
           return;
         }
-		Logger.info(RulesEngine.class, "UtilMethods.isSet(req): " + UtilMethods.isSet(req));
         if (!UtilMethods.isSet(req)) {
         	throw new DotRuntimeException("ERROR: HttpServletRequest is null");
         }
         
         // do not run rules in admin mode
         PageMode mode= PageMode.get(req);
-		Logger.info(RulesEngine.class, "mode: " + mode);
         if(mode.isAdmin) {
-          final boolean fireRules =Try.of(()->Boolean.valueOf(req.getParameter("fireRules"))).getOrElse(false);
-          if(!fireRules) {
+          final boolean fireRulesFromParameter =Try.of(()->Boolean.valueOf
+				  (req.getParameter("fireRules"))).getOrElse(false);
+          final boolean fireRulesFromAttribute =Try.of(()-> (Boolean)
+				  req.getAttribute("fireRules")).getOrElse(false);
+
+          if(!fireRulesFromParameter && !fireRulesFromAttribute) {
             return;
           }
         }
         
         final Set<String> alreadyFiredRulesFor =req.getAttribute(DOT_RULES_FIRED_ALREADY)!=null?(Set<String>)req.getAttribute(DOT_RULES_FIRED_ALREADY):new HashSet<String>();
-        Logger.info(RulesEngine.class, "alreadyFiredRulesFor: " + alreadyFiredRulesFor);
         final String ruleRunKey = parent.getIdentifier() +"_"+ fireOn.name();
-		Logger.info(RulesEngine.class, "ruleRunKey: " + ruleRunKey);
         if(alreadyFiredRulesFor.contains(ruleRunKey)) {
           Logger.warn(RulesEngine.class, "we have already run the rules for:" + ruleRunKey);
           return;
@@ -196,7 +194,6 @@ public final class RulesEngine {
         alreadyFiredRulesFor.add(ruleRunKey);
         req.setAttribute(DOT_RULES_FIRED_ALREADY,alreadyFiredRulesFor);
 
-        Logger.info(RulesEngine.class, "req.getParameter(WebKeys.RULES_ENGINE_PARAM):" + req.getParameter(WebKeys.RULES_ENGINE_PARAM) );
 		if (SKIP_RULES_EXECUTION.equalsIgnoreCase(req.getParameter(WebKeys.RULES_ENGINE_PARAM))
 				|| SKIP_RULES_EXECUTION.equalsIgnoreCase(String.valueOf(req.getParameter(WebKeys.RULES_ENGINE_PARAM)))) {
 			return;
@@ -211,15 +208,11 @@ public final class RulesEngine {
 
 			Set<Rule> rules = APILocator.getRulesAPI().getRulesByParentFireOn(parent.getIdentifier(), systemUser, false,
 					fireOn);
-			Logger.info(RulesEngine.class, "rules: " + rules);
             for (Rule rule : rules) {
                 try {
-                	Logger.info(RulesEngine.class, "Executing rule: " + rule.getName());
                 	long before = System.currentTimeMillis();
                     rule.checkValid(); // @todo ggranum: this should actually be done on writing to the DB, or at worst reading from.
                     boolean evaled = rule.evaluate(req, res);
-
-                    Logger.info(RulesEngine.class, "Evaled:" + evaled);
 
                     if(res.isCommitted()) {
                       return;

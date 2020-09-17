@@ -53,6 +53,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             context.addParam("fireRules", fireRules);
 
             final PageMode mode = PageMode.get(pageModeAsString);
+            request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, mode);
 
             // we need to set the language to the request
             if(UtilMethods.isSet(languageId)) {
@@ -81,6 +82,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
 
             if(fireRules) {
                 Logger.info(this, "Rules will be fired");
+                request.setAttribute("fireRules", true);
                 RulesEngine.fireRules(request, response, pageAsset, FireOn.EVERY_PAGE);
             }
 
