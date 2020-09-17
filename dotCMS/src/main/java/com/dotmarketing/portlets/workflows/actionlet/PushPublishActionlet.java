@@ -140,7 +140,13 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			final String iWantTo = pushPublishData.get(Contentlet.I_WANT_TO);
 			final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
 			final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
-
+			
+			if(envsToSendTo.isEmpty()) {
+			    Logger.warn(this.getClass(), "There are no valid environments to sent to - looking for:" + whoToSendTmp);
+			}
+			
+			
+			
 			final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 			final Date publishDate = dateFormat
 					.parse(contentPushPublishDate + "-" + contentPushPublishTime);
