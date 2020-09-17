@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -144,13 +145,13 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			final Date publishDate = dateFormat
 					.parse(contentPushPublishDate + "-" + contentPushPublishTime);
 
-		if ( iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
+		if ( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH.equals( iWantTo ) || RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE.equals( iWantTo ) ) {
 			final Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,
 					filterKey);
 			APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 			publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
 		}
-		if ( iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE ) || iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
+		if ( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE.equals( iWantTo ) || RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE.equals( iWantTo ) ) {
 			if (!contentPushNeverExpire && (!"".equals(contentPushExpireDate.trim()) && !""
 					.equals(contentPushExpireTime.trim()))) {
 				final Date expireDate = dateFormat
@@ -179,6 +180,9 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 	}
 
 	public static List<Environment> getEnvironmentsToSendTo(final String whoToSendTo){
+	    if(whoToSendTo==null) {
+	        return ImmutableList.of();
+	    }
 		final String[] whereToSend = whoToSendTo.split(",");
 		return Stream.of(whereToSend).map(id -> {
 			try {
