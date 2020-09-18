@@ -323,7 +323,7 @@ enum FactoryIndex
             case CONTAINER_FACTORY : return new ContainerFactoryImpl();
             case DASHBOARD_FACTORY : return DashboardProxy.getDashboardFactory();
             case IDENTIFIER_FACTORY : return new IdentifierFactoryImpl();
-            case VERSIONABLE_FACTORY : return new LegacyVersionableFactoryImpl();
+            case VERSIONABLE_FACTORY : return new VersionableFactoryImpl();
             case FOLDER_FACTORY : return new FolderFactoryImpl();
             case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
             case INDICIES_FACTORY: return new IndiciesFactory();
