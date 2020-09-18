@@ -177,8 +177,8 @@ public final class RulesEngine {
         if(mode.isAdmin) {
           final boolean fireRulesFromParameter =Try.of(()->Boolean.valueOf
 				  (req.getParameter("fireRules"))).getOrElse(false);
-          final boolean fireRulesFromAttribute =Try.of(()-> (Boolean)
-				  req.getAttribute("fireRules")).getOrElse(false);
+          final boolean fireRulesFromAttribute =Try.of(()-> Boolean.valueOf((Boolean)
+				  req.getAttribute("fireRules"))).getOrElse(false);
 
           if(!fireRulesFromParameter && !fireRulesFromAttribute) {
             return;
