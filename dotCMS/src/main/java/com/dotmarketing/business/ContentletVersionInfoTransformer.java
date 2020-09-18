@@ -41,7 +41,7 @@ public class ContentletVersionInfoTransformer implements DBTransformer<Contentle
         versionInfo.setWorkingInode(String.valueOf(map.get("working_inode")));
         versionInfo.setLiveInode(String.valueOf(map.get("live_inode")));
         versionInfo.setDeleted(ConversionUtils.toBooleanFromDb(map.get("deleted")));
-        versionInfo.setLockedBy(String.valueOf(map.get("locked_by")));
+        versionInfo.setLockedBy((String) map.get("locked_by"));
         versionInfo.setLockedOn((Date) map.get("locked_on"));
         versionInfo.setVersionTs((Date) map.get("version_ts"));
         return versionInfo;
