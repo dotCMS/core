@@ -148,13 +148,13 @@ public class AppsCacheImpl extends AppsCache {
             return ImmutableSet.of();
         }
         // try again
-        synchronized (AppsCacheImpl.class) {
+
             keys = (Set<String>) cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
             if(keys==null) {
                 keys = supplier.get();
                 putKeys(keys);
             }
-        }
+
         return keys;
         
     }
@@ -188,12 +188,10 @@ public class AppsCacheImpl extends AppsCache {
         }
         
         // try again
-        synchronized (AppsCacheImpl.class) {
-            retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
-            if (retVal == null) {
-                retVal = supplier.get();
-                putSecret(key, retVal);
-            }
+        retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
+        if (retVal == null) {
+            retVal = supplier.get();
+            putSecret(key, retVal);
         }
         
         return retVal;
@@ -223,10 +221,8 @@ public class AppsCacheImpl extends AppsCache {
      * All Secrets flush.
      */
     public  void flushSecret() {
-        synchronized (AppsCacheImpl.class) {
            cache.flushGroup(SECRETS_CACHE_GROUP);
            cache.flushGroup(SECRETS_CACHE_KEYS_GROUP);
-        }
     }
 
     /**
@@ -235,14 +231,15 @@ public class AppsCacheImpl extends AppsCache {
      * @throws DotCacheException
      */
     public void flushSecret(final String key) throws DotCacheException {
-        synchronized (AppsCacheImpl.class) {
-            cache.remove(key, SECRETS_CACHE_GROUP);
-            final Set<String> keys = (Set<String>)cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
-            if(UtilMethods.isSet(keys)){
-                keys.remove(key);
-                putKeys(keys);
-            }
+
+        cache.remove(key, SECRETS_CACHE_GROUP);
+        final Set<String> keys = (Set<String>) cache
+                .get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+        if (UtilMethods.isSet(keys)) {
+            keys.remove(key);
+            putKeys(keys);
         }
+
     }
 
     /**

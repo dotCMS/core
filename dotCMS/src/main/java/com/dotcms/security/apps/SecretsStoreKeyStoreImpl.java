@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -401,7 +402,9 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         return cache.getKeysFromCache(() -> {
             final KeyStore keyStore = getSecretsStore();
             try {
-                return new HashSet<>(Collections.list(keyStore.aliases()));
+                final Set<String> keySet = ConcurrentHashMap.newKeySet();
+                keySet.addAll(Collections.list(keyStore.aliases()));
+                return keySet;
             } catch (KeyStoreException e) {
                 Logger.warn(SecretsStoreKeyStoreImpl.class, "Error building keystore keys cache. ", e);
                 throw new DotRuntimeException(e);
