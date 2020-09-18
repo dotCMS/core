@@ -1,2 +1,2 @@
 # Override values
-#export DOT_CICD_BRANCH="master"
+export DOT_CICD_BRANCH="one-image-for-curl"

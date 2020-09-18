@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -225,12 +226,13 @@ public class HttpRequestDataUtil {
 	 */
     private static String createServerPort() {
 		final MBeanServer beanServer = ManagementFactory.getPlatformMBeanServer();
-		Set<ObjectName> objectNames;
+
 		try {
-			objectNames = beanServer.queryNames(
+			final Set<ObjectName> objectNames = beanServer.queryNames(
 					new ObjectName("*:type=Connector,*"),
 					Query.match(Query.attr("protocol"), Query.value("HTTP/1.1")));
-			return objectNames.iterator().next().getKeyProperty("port");
+			final Iterator<ObjectName> iterator = objectNames.iterator();
+			return iterator.hasNext() ? objectNames.iterator().next().getKeyProperty("port") : null;
 		} catch (MalformedObjectNameException e) {
 			return null;
 		}
