@@ -14,9 +14,10 @@ var removeContainerMSG;
 var countAddContainerLinks;
 var countContainersAdded;
 var containersAdded = [];
+var containersUUID = {};
 
-
-function drawDefault(overrideBody, addContainer, removeContainer,containersStr,containersLen){
+function drawDefault(overrideBody, addContainer, removeContainer,containersStr,containersLen, maxUUID){
+    containersUUID = maxUUID;
 	addContainerMSG = addContainer;
 	removeContainerMSG = removeContainer;
 	countAddContainerLinks = document.getElementById("countAddContainerLinks");
@@ -367,9 +368,15 @@ function removeGrid(yuiBId){
 }
 
 function getUUID (container) {
-
-    return Date.now();
+    if (container.source == "<%=Source.FILE%>") {
+        containersUUID[container.path] = !!containersUUID[container.path] ? containersUUID[container.path] + 1 : 1;
+        return containersUUID[container.path];
+    } else {
+        containersUUID[container.id] = !!containersUUID[container.id] ? containersUUID[container.id] + 1 : 1;
+        return containersUUID[container.id];
+    }
 }
+
 /**
  * This function add a container into a div in the design template phase.
  *
@@ -380,7 +387,7 @@ function getUUID (container) {
 function addDrawedContainer(idDiv, container, value, error_msg, container_exist){
 	var div_container  = document.getElementById(idDiv.value+"_div_"+value);
 	var span_container = document.getElementById(idDiv.value+"_span_"+value);
-	var uuid           = getUUID (span_container);
+	var uuid           = getUUID (container);
 
 	// now, adding the ability to add repeated containers.
 
@@ -405,8 +412,7 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
     const currentHost = '<%=currentHostName%>';
 
 	if (container.source == "<%=Source.FILE%>") {
-        const path = currentHost === container.hostName ? container.path : `//${container.hostName}${container.path}`;
-        containerDivHidden.innerHTML='#parseContainer(\'' + path + '\',\''+uuid+'\')\n';
+        containerDivHidden.innerHTML='#parseContainer(\'' + container.path + '\',\''+uuid+'\')\n';
     } else {
         containerDivHidden.innerHTML='#parseContainer(\'' + value + '\',\''+uuid+'\')\n';
     }

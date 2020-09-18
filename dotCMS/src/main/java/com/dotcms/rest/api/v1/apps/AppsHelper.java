@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.util.UtilMethods.isSet;
 
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
@@ -9,6 +11,7 @@ import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.Type;
@@ -29,9 +32,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.liferay.util.EncryptorException;
 import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -698,6 +705,74 @@ class AppsHelper {
             }
          }
          return true;
+    }
+
+    /**
+     * Secrets export
+     * @param form
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws DotDataException
+     */
+    InputStream exportSecrets(final ExportSecretForm form, final User user)
+            throws DotSecurityException, IOException, DotDataException {
+
+        Logger.info(AppsHelper.class,"Secrets export: "+form);
+
+        if(isNotSet(form.getPassword())){
+           throw new DotDataException("Unable to locate password param.");
+        }
+        final String password = form.getPassword();
+        final Key key = AppsUtil.generateKey(password);
+            return  Files.newInputStream(appsAPI
+                    .exportSecrets(key, form.isExportAll(), form.getAppKeysBySite(), user));
+    }
+
+    /**
+     * Secrets import
+     * @param multipart
+     * @param user
+     * @throws IOException
+     * @throws DotDataException
+     * @throws JSONException
+     * @throws DotSecurityException
+     * @throws EncryptorException
+     * @throws ClassNotFoundException
+     */
+    void importSecrets(final FormDataMultiPart multipart, final User user)
+            throws IOException, DotDataException, JSONException, DotSecurityException, EncryptorException, ClassNotFoundException {
+        final MultiPartUtils multiPartUtils = new MultiPartUtils();
+        final List<File> files = multiPartUtils.getBinariesFromMultipart(multipart);
+        if(!UtilMethods.isSet(files)){
+            throw new DotDataException("Unable to extract any files from multi-part request.");
+        }
+
+        final Map<String, Object> bodyMapFromMultipart = multiPartUtils
+                .getBodyMapFromMultipart(multipart);
+        final Object object = bodyMapFromMultipart.get("password");
+
+        if(null == object){
+            throw new DotDataException("Unable to locate password param.");
+        }
+
+        final String password = object.toString();
+        final Key key = AppsUtil.generateKey(password);
+        final Map<String, List<AppSecrets>> importedSecretsBySiteId = appsAPI
+                .importSecrets(files.get(0).toPath(), key, user);
+        Logger.info(AppsHelper.class,"Number of secrets found: "+importedSecretsBySiteId.size());
+        for (final Entry<String, List<AppSecrets>> entry : importedSecretsBySiteId.entrySet()) {
+            final String siteId = entry.getKey();
+            final List<AppSecrets> secrets = entry.getValue();
+            final Host site = hostAPI.find(siteId, user, false);
+            if(null != site && isSet(site.getIdentifier())){
+                for (final AppSecrets appSecrets : secrets) {
+                    Logger.info(AppsHelper.class,String.format("Importing secret `%s` ",appSecrets));
+                    appsAPI.saveSecrets(appSecrets, site, user);
+                }
+            }
+        }
     }
 
 }

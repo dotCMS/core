@@ -34,12 +34,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
+import com.liferay.util.EncryptorException;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -47,6 +50,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -140,7 +144,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     private boolean userDoesNotHaveAccess(final User user) throws DotDataException {
-        return !userAPI.isCMSAdmin(user) && !layoutAPI
+        return !user.isAdmin() && !layoutAPI
                 .doesUserHaveAccessToPortlet(APPS_PORTLET_ID, user);
     }
 
@@ -751,7 +755,7 @@ public class AppsAPIImpl implements AppsAPI {
 
     private static DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
 
-        private static final String ignorePrefix = "_ignore_me_";
+        private static final String ignorePrefix = "_ignore_";
         private static final String yml = "yml";
         private static final String yaml = "yaml";
 
@@ -1005,6 +1009,153 @@ public class AppsAPIImpl implements AppsAPI {
        secretsStore.backupAndRemoveKeyStore();
        //Clear cache forces reloading the yml app descriptors.
        appsCache.clearCache();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param key
+     * @param paramAppKeysBySite
+     * @return
+     */
+    public Path exportSecrets(final Key key, final boolean exportAll,
+            final Map<String, Set<String>> paramAppKeysBySite, final User user)
+            throws DotDataException, DotSecurityException, IOException {
+
+        if(!user.isAdmin()){
+            throw new DotSecurityException("Only Admins are allowed to perform an export operation.");
+        }
+
+        final AppsSecretsImportExport exportedSecrets;
+        if (exportAll) {
+            exportedSecrets = collectSecretsForExport(appKeysByHost(), user);
+        } else {
+            exportedSecrets = collectSecretsForExport(paramAppKeysBySite, user);
+        }
+
+        Logger.info(AppsAPIImpl.class," exporting : "+exportedSecrets);
+
+        final File tempFile = File.createTempFile("secretsExport", ".tmp");
+        try {
+            writeObject(exportedSecrets, tempFile.toPath());
+            final byte[] bytes = Files.readAllBytes(tempFile.toPath());
+            try {
+                final File file = File.createTempFile("secrets", ".export");
+                file.deleteOnExit();
+                final byte[] encrypted = AppsUtil.encrypt(key, bytes);
+                final Path path = file.toPath();
+                try (OutputStream outputStream = Files.newOutputStream(path)) {
+                    outputStream.write(encrypted);
+                    return path;
+                }
+            } catch (EncryptorException e) {
+                throw new DotDataException(e);
+            }
+        } finally {
+            tempFile.delete();
+        }
+    }
+
+    /**
+     * constructs the Import export object
+     * @param paramAppKeysBySite selection
+     * @param user user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private AppsSecretsImportExport collectSecretsForExport(final Map<String, Set<String>> paramAppKeysBySite, final User user)
+            throws DotDataException, DotSecurityException {
+        final Map<String, List<AppSecrets>> exportedSecrets = new HashMap<>();
+        final Map<String, Set<String>> keysByHost = appKeysByHost();
+        keysByHost.forEach((siteId, appKeys) -> {
+            try {
+                final Host site = hostAPI.find(siteId, user, false);
+                if (null != site) {
+
+                    final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
+                    if (isSet(appKeysBySiteId)) {
+                        for (final String appKey : appKeysBySiteId) {
+                            final Optional<AppSecrets> optional = getSecrets(appKey, site, user);
+                            if (optional.isPresent()) {
+                                final AppSecrets appSecrets = optional.get();
+                                exportedSecrets
+                                        .computeIfAbsent(siteId, list -> new LinkedList<>())
+                                        .add(appSecrets);
+                            }
+                        }
+                    }
+                } else {
+                    Logger.warn(AppsAPIImpl.class,
+                            String.format("Unable to find site `%s` ", siteId));
+                }
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.warn(AppsAPIImpl.class, "An exception occurred collecting the secrets for export", e);
+            }
+        });
+        return new AppsSecretsImportExport(
+                exportedSecrets);
+    }
+
+    /**
+     * Takes a wrapping object that encapsulates all entries an write'em out ino a stream
+     * @param bean
+     * @param file
+     * @throws IOException
+     */
+    private void writeObject(final AppsSecretsImportExport bean, final Path file)
+            throws IOException {
+        try (OutputStream outputStream = Files.newOutputStream(file)) {
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
+                objectOutputStream.writeObject(bean);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param incomingFile
+     * @param key
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws EncryptorException
+     */
+   public Map<String, List<AppSecrets>> importSecrets(final Path incomingFile, final Key key, final User user)
+            throws DotDataException, DotSecurityException, IOException, EncryptorException {
+        if(!user.isAdmin()){
+            throw new DotSecurityException("Only Admins are allowed to perform an export operation.");
+        }
+
+        final byte[] encryptedBytes = Files.readAllBytes(incomingFile);
+        final byte[] decryptedBytes = AppsUtil.decrypt(key, encryptedBytes);
+        final File importFile = File.createTempFile("secrets", "export");
+        try (OutputStream outputStream = Files.newOutputStream(importFile.toPath())) {
+            outputStream.write(decryptedBytes);
+        }
+       final AppsSecretsImportExport importExport;
+       try {
+           importExport = readObject(importFile.toPath());
+           return importExport.getSecrets();
+       } catch (ClassNotFoundException e) {
+           throw new DotDataException(e);
+       }
+    }
+
+    /**
+     * Reads the exported file stream
+     * and returns a wrapper that contains all entries.
+     * @param importFile
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    private AppsSecretsImportExport readObject(final Path importFile)
+            throws IOException, ClassNotFoundException {
+        try(InputStream inputStream = Files.newInputStream(importFile)){
+            return (AppsSecretsImportExport)new ObjectInputStream(inputStream).readObject();
+        }
     }
 
 }

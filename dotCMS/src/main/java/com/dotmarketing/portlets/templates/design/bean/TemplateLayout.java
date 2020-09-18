@@ -14,14 +14,17 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_RIGHT_CLASS_T6;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -182,11 +185,75 @@ public class TemplateLayout implements Serializable {
         }
     }
 
-    public boolean existsContainer(final String identifier, final String uuid){
-        return this.getContainers().stream()
-                .anyMatch(containerUUID ->
-                        containerUUID.getIdentifier().equals(identifier) && isTheSameUUID(containerUUID.getUUID(), uuid)
-                );
+    /**
+     * Return true if the container exists into the TemplateLayout
+     *
+     * @param container container
+     * @param uuid Container uuid into the TemplateLayout
+     * @return
+     */
+    public boolean existsContainer(final Container container, final String uuid){
+        final FileAssetContainerUtil instance = FileAssetContainerUtil.getInstance();
+        if (instance.isFileAssetContainer(container)) {
+            final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
+            final String containerPath = fileAssetContainer.getPath();
+
+            return this.getContainers().stream()
+                    .anyMatch((ContainerUUID containerUUID) -> {
+                        final String relativePath = instance.isFullPath(containerUUID.getIdentifier()) ?
+                                instance.getRelativePath(containerUUID.getIdentifier()) :
+                                containerUUID.getIdentifier();
+
+                        return relativePath.equals(containerPath)
+                                    && isTheSameUUID(containerUUID.getUUID(), uuid);
+                    }
+                    );
+        } else {
+            return this.getContainers().stream()
+                    .anyMatch(containerUUID ->
+                            containerUUID.getIdentifier().equals(container.getIdentifier())
+                                    && isTheSameUUID(containerUUID.getUUID(), uuid)
+                    );
+        }
+
+
+    }
+
+    @JsonIgnore
+    public Set<String> getContainersIdentifierOrPath() {
+
+        final Set<String> containersIdOrPath = this.getBody()
+                .getRows()
+                .stream()
+                .flatMap(row -> row.getColumns().stream())
+                .flatMap(column -> column.getContainers().stream())
+                .map(ContainerUUID::getIdentifier)
+                .collect(Collectors.toSet());
+
+        if (null != layout && null != this.getSidebar()) {
+            containersIdOrPath.addAll(this.getSidebar().getContainers().stream()
+                    .map(ContainerUUID::toString)
+                    .collect(Collectors.toSet()));
+        }
+
+        return containersIdOrPath;
+    }
+
+    @JsonIgnore
+    public Set<ContainerUUID> getContainersUUID() {
+
+        final Set<ContainerUUID> uuids = this.getBody()
+                .getRows()
+                .stream()
+                .flatMap(row -> row.getColumns().stream())
+                .flatMap(column -> column.getContainers().stream())
+                .collect(Collectors.toSet());
+
+        if (null != layout && null != this.getSidebar()) {
+            uuids.addAll(this.getSidebar().getContainers());
+        }
+
+        return uuids;
     }
 
     private boolean isTheSameUUID(final String uuid1, final String uuid2) {

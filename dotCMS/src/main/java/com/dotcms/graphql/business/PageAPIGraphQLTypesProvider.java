@@ -1,6 +1,10 @@
 package com.dotcms.graphql.business;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
 import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLList.list;
@@ -10,8 +14,10 @@ import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
+import com.dotcms.graphql.datafetcher.page.ContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
+import com.dotcms.graphql.datafetcher.page.RenderedContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
@@ -19,8 +25,15 @@ import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import com.dotcms.visitor.domain.Geolocation;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
 import com.dotmarketing.portlets.templates.design.bean.ContainerHolder;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
@@ -36,7 +49,9 @@ import graphql.schema.PropertyDataFetcher;
 import io.vavr.control.Try;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -109,6 +124,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         pageFields.put("layout", new TypeFetcher(GraphQLTypeReference.typeRef("Layout"),
                 new LayoutDataFetcher()));
+        pageFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef("Container")),
+                new ContainersDataFetcher()));
 
         typeMap.put("Page", TypeUtil.createObjectType("Page", pageFields));
 
@@ -345,6 +362,208 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         typeMap.put("ContainerUUID", TypeUtil.createObjectType("ContainerUUID",
                 containerUUIDFields));
+
+        // Container type
+        final Map<String, TypeFetcher> containerFields = new HashMap<>();
+        containerFields.put(ARCHIVED_KEY, new TypeFetcher(GraphQLBoolean,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Boolean>)
+                        (containerRaw)->Try.of(()->containerRaw.getContainer().isArchived())
+                                .getOrElse(false))));
+        containerFields.put("categoryId", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getCategoryId())));
+        containerFields.put("identifier", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getIdentifier())));
+        containerFields.put("deleted", new TypeFetcher(GraphQLBoolean,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Boolean>)
+                        (containerRaw)->Try.of(()->containerRaw.getContainer().isDeleted())
+                                .getOrElse(false))));
+        containerFields.put("friendlyName", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getFriendlyName())));
+        containerFields.put("host", new TypeFetcher(GraphQLTypeReference.typeRef("Site"),
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Host>)
+                        (containerRaw)-> {
+                            final Container container = containerRaw.getContainer();
+                            if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
+                                final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
+                                return fileAssetContainer.getHost();
+                            } else {
+                                return null;
+                            }
+                        })));
+        containerFields.put("iDate", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getiDate().toString())));
+        containerFields.put("idate", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getIDate().toString())));
+        containerFields.put("inode", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getInode())));
+        containerFields.put("languageId", new TypeFetcher(GraphQLLong,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Long>)
+                        (containerRaw)-> {
+                            final Container container = containerRaw.getContainer();
+                            if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
+                                final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
+                                return fileAssetContainer.getLanguageId();
+                            } else {
+                                return 0L;
+                            }
+                        })));
+        containerFields.put("live", new TypeFetcher(GraphQLBoolean,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Boolean>)
+                        (containerRaw)->Try.of(()->containerRaw.getContainer().isLive())
+                                .getOrElse(false))));
+        containerFields.put("locked", new TypeFetcher(GraphQLBoolean,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Boolean>)
+                        (containerRaw)->Try.of(()->containerRaw.getContainer().isLocked())
+                                .getOrElse(false))));
+        containerFields.put("luceneQuery", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getLuceneQuery())));
+        containerFields.put("maxContentlets", new TypeFetcher(GraphQLInt,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Integer>)
+                        (containerRaw)->containerRaw.getContainer().getMaxContentlets())));
+        containerFields.put("modDate", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getModDate().toString())));
+        containerFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"),
+                new UserDataFetcher()));
+        containerFields.put("name", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getName())));
+        containerFields.put("new", new TypeFetcher(GraphQLBoolean,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Boolean>)
+                        (containerRaw)->Try.of(()->containerRaw.getContainer().isNew())
+                                .getOrElse(false))));
+        containerFields.put("notes", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getNotes())));
+        containerFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"),
+                new UserDataFetcher()));
+        containerFields.put("parentPermissionable", new TypeFetcher(
+                GraphQLTypeReference.typeRef("Site"),
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Host>)
+                        (containerRaw)-> (Host) Try.of(()->
+                                containerRaw.getContainer().getParentPermissionable())
+                                .getOrElse((Permissionable) null))));
+        containerFields.put("path", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)-> {
+                            final Container container = containerRaw.getContainer();
+                            if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
+                                final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
+
+                                return FileAssetContainerUtil.getInstance().getFullPath(fileAssetContainer);
+                            } else {
+                                return null;
+                            }
+                        })));
+        containerFields.put("permissionId", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getPermissionId())));
+        containerFields.put("permissionType", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getPermissionType())));
+        containerFields.put("postLoop", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getPostLoop())));
+        containerFields.put("preLoop", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getPreLoop())));
+        containerFields.put("showOnMenu", new TypeFetcher(GraphQLBoolean,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Boolean>)
+                        (containerRaw)->Try.of(()->containerRaw.getContainer().isShowOnMenu())
+                                .getOrElse(false))));
+        containerFields.put("sortOrder", new TypeFetcher(GraphQLInt,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Integer>)
+                        (containerRaw)->containerRaw.getContainer().getSortOrder())));
+        containerFields.put("source", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getSource().name())));
+        containerFields.put("staticify", new TypeFetcher(GraphQLBoolean,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Boolean>)
+                        (containerRaw)->Try.of(()->containerRaw.getContainer().isStaticify())
+                                .getOrElse(false))));
+        containerFields.put("title", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getTitle())));
+        containerFields.put("type", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getType())));
+        containerFields.put("useDiv", new TypeFetcher(GraphQLBoolean,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Boolean>)
+                        (containerRaw)->Try.of(()->containerRaw.getContainer().isUseDiv())
+                                .getOrElse(false))));
+        containerFields.put("versionId", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getVersionId())));
+        containerFields.put("versionType", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
+                        (containerRaw)->containerRaw.getContainer().getVersionType())));
+        containerFields.put("working", new TypeFetcher(GraphQLBoolean,
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Boolean>)
+                        (containerRaw)->Try.of(()->containerRaw.getContainer().isWorking())
+                                .getOrElse(false))));
+
+        containerFields.put("rendered", new TypeFetcher(list(GraphQLTypeReference.typeRef("RenderedContainer"))
+                , new RenderedContainersDataFetcher()));
+
+        containerFields.put("containerStructures", new TypeFetcher(
+                list(GraphQLTypeReference.typeRef("ContainerStructure")),
+                PropertyDataFetcher.fetching(ContainerRaw::getContainerStructures)));
+
+        containerFields.put("containerContentlets", new TypeFetcher(
+                list(GraphQLTypeReference.typeRef("ContainerContentlets")),
+                PropertyDataFetcher.fetching((Function<ContainerRaw, Set<Entry<String, List<Contentlet>>>>)
+                        (containerRaw)->containerRaw.getContentlets().entrySet())));
+
+        // RenderedContainer type
+        final Map<String, TypeFetcher> renderedContainerFields = new HashMap<>();
+        renderedContainerFields.put("uuid", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<Entry<String, String>, String>)
+                        Entry::getKey)));
+        renderedContainerFields.put("render", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<Entry<String, String>, String>)
+                        Entry::getValue)));
+
+        typeMap.put("RenderedContainer", TypeUtil.createObjectType("RenderedContainer",
+                renderedContainerFields));
+
+        // ContainerStructure type
+        final Map<String, TypeFetcher> containerStructureFields = new HashMap<>();
+        containerStructureFields.put("id", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getId)));
+        containerStructureFields.put("structureId", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getStructureId)));
+        containerStructureFields.put("containerInode", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getContainerInode)));
+        containerStructureFields.put("containerId", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getContainerId)));
+        containerStructureFields.put("code", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getCode)));
+
+        typeMap.put("ContainerStructure", TypeUtil.createObjectType("ContainerStructure",
+                containerStructureFields));
+
+        // ContainerContentlets type
+        final Map<String, TypeFetcher> containerContentletsFields = new HashMap<>();
+        containerContentletsFields.put("uuid", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching((Function<Entry<String, List<Contentlet>>, String>)
+                        Entry::getKey)));
+        containerContentletsFields.put("contentlets", new TypeFetcher(
+                list(GraphQLTypeReference.typeRef("Contentlet")),
+                PropertyDataFetcher.fetching((Function<Entry<String, List<Contentlet>>, List<Contentlet>>)
+                        Entry::getValue)));
+
+        typeMap.put("ContainerContentlets", TypeUtil.createObjectType("ContainerContentlets",
+                containerContentletsFields));
+
+        typeMap.put("Container", TypeUtil.createObjectType("Container",
+                containerFields));
 
         return typeMap.values();
 

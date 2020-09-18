@@ -190,7 +190,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
     @Override
     public Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
                                                      final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+		return getContainerByFolderPath(path, host, user, false, respectFrontEndPermissions);
+	}
 
+	@Override
+	public Container getContainerByFolderPath(final String path, final Host host, final User user, final boolean live,
+													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 		final String folderHostId           = host.getIdentifier();
 		final Optional<Host> currentHostOpt = HostUtil.tryToFindCurrentHost(user);
 		boolean includeHostOnPath           = false;
@@ -200,7 +205,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
 		}
 
-        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,false, includeHostOnPath);
+        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,live, includeHostOnPath);
     }
 
 

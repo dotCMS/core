@@ -47,6 +47,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     private static final TemplateAPI templateAPI = APILocator.getTemplateAPI();
     private static final String type = "template";
+    private boolean setBodyAsNull = false;
 
     /**
      * Sets body property to the TemplateDataGen instance. This will be used when a new {@link
@@ -80,6 +81,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
             throw new DotRuntimeException(e);
         }
 
+        return this;
+    }
+
+    public TemplateDataGen drawedBody(final String drawedBody) {
+        this.drawedBody = drawedBody;
         return this;
     }
 
@@ -262,7 +268,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     @Override
     public Template persist(Template template) {
 
-        if (Strings.isNullOrEmpty(body)) {
+        if (Strings.isNullOrEmpty(body) && !setBodyAsNull) {
 
             if (containers.isEmpty()) {
                 withContainer(new ContainerDataGen().nextPersisted().getIdentifier());
@@ -289,13 +295,17 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
 
         try {
-            final Template savedTemplate = templateAPI.saveTemplate(template, host, user, false);
+            final Template savedTemplate = save(template);
             APILocator.getVersionableAPI().setLive(savedTemplate);
 
             return savedTemplate;
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Template save(final Template template) throws DotDataException, DotSecurityException {
+        return templateAPI.saveTemplate(template, host, user, false);
     }
 
     @WrapInTransaction
@@ -312,5 +322,10 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
             throws DotSecurityException, WebAssetException, DotDataException {
         PublishFactory.publishAsset(template, APILocator.systemUser(),
                 false, false);
+    }
+
+    public TemplateDataGen setBodyAsNull() {
+        this.setBodyAsNull = true;
+        return this;
     }
 }
