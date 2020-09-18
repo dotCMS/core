@@ -30,13 +30,13 @@
             ></dot-apps-configuration-detail-form>
             <div *ngIf="apps.allowExtraParams">
                 <h5>{{ 'apps.custom.properties' | dm }}</h5>
-                <dot-key-value
+                <dot-key-value-ng
                     [autoFocus]="false"
                     [showHiddenField]="true"
                     [variables]="dynamicVariables"
                     (delete)="deleteDynamicVariable($event)"
                     (save)="saveDynamicVariable($event)"
-                ></dot-key-value>
+                ></dot-key-value-ng>
             </div>
         </div>
     </div>

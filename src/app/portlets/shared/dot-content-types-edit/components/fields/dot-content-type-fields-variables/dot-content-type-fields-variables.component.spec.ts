@@ -15,7 +15,7 @@ import * as _ from 'lodash';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCMSContentTypeField } from 'dotcms-models';
-import { DotKeyValueModule } from '@components/dot-key-value/dot-key-value.module';
+import { DotKeyValueModule } from '@components/dot-key-value-ng/dot-key-value-ng.module';
 import { DotFieldVariable } from './models/dot-field-variable.interface';
 
 @Component({
@@ -73,7 +73,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         fixtureHost.detectChanges();
 
-        const dotKeyValue = de.query(By.css('dot-key-value')).componentInstance;
+        const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
         dotKeyValue.save.emit(response);
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(
             comp.field,
@@ -90,7 +90,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         );
         fixtureHost.detectChanges();
 
-        const dotKeyValue = de.query(By.css('dot-key-value')).componentInstance;
+        const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
         dotKeyValue.delete.emit(variableToDelete);
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);

@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 @Component({
     providers: [],
@@ -17,7 +18,8 @@ export class DotWorkflowTaskComponent implements OnInit {
         private dotMessageService: DotMessageService,
         private dotRouterService: DotRouterService,
         private route: ActivatedRoute,
-        private dotIframeService: DotIframeService
+        private dotIframeService: DotIframeService,
+        private dotCustomEventHandlerService: DotCustomEventHandlerService
     ) {}
 
     ngOnInit() {
@@ -46,6 +48,9 @@ export class DotWorkflowTaskComponent implements OnInit {
     onCustomEvent($event: CustomEvent): void {
         if (['edit-task-executed-workflow', 'close'].includes($event.detail.name)) {
             this.onCloseWorkflowTaskEditor();
+        } else {
+            $event.detail.data.callback = 'fileActionCallbackFromAngular';
+            this.dotCustomEventHandlerService.handle($event);
         }
     }
 }

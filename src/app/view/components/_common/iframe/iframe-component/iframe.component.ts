@@ -20,6 +20,7 @@ import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotFunctionInfo } from '@models/dot-function-info/dot-function-info.model';
 
 @Component({
     selector: 'dot-iframe',
@@ -72,9 +73,12 @@ export class IframeComponent implements OnInit, OnDestroy {
         this.dotIframeService
             .ran()
             .pipe(takeUntil(this.destroy$))
-            .subscribe((func: string) => {
-                if (this.getIframeWindow() && typeof this.getIframeWindow()[func] === 'function') {
-                    this.getIframeWindow()[func]();
+            .subscribe((func: DotFunctionInfo) => {
+                if (
+                    this.getIframeWindow() &&
+                    typeof this.getIframeWindow()[func.name] === 'function'
+                ) {
+                    this.getIframeWindow()[func.name](...this.setArgs(func.args));
                 }
             });
 
@@ -206,7 +210,7 @@ export class IframeComponent implements OnInit, OnDestroy {
     private handleErrors(error: number): void {
         const errorMapHandler = {
             401: () => {
-                this.loginService.logOutUser().subscribe((_data) => {});
+                this.loginService.logOutUser().subscribe(_data => {});
             }
         };
 
@@ -241,5 +245,9 @@ export class IframeComponent implements OnInit, OnDestroy {
             this.iframeElement &&
             this.iframeElement.nativeElement.contentWindow.document.body.innerHTML.length
         );
+    }
+
+    private setArgs(args: any[]): any[] {
+        return args ? args : [];
     }
 }

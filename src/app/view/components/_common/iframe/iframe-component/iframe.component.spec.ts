@@ -4,14 +4,18 @@ import { DotLoadingIndicatorService } from './../dot-loading-indicator/dot-loadi
 import { ComponentFixture, async } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DOTTestBed, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeComponent } from './iframe.component';
-import { LoginService, DotcmsEventsService } from 'dotcms-js';
+import { LoginService, DotcmsEventsService, LoggerService, StringUtils } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotcmsEventsServiceMock } from '@tests/dotcms-events-service.mock';
+import { TestBed } from '@angular/core/testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
 
 const fakeHtmlEl = {
     hello: 'html'
@@ -35,24 +39,25 @@ describe('IframeComponent', () => {
 
     dotcmsEventsService = new DotcmsEventsServiceMock();
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
-            imports: [RouterTestingModule, DotOverlayMaskModule],
-            providers: [
-                DotLoadingIndicatorService,
-                IframeOverlayService,
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotcmsEventsService,
-                    useValue: dotcmsEventsService
-                }
-            ]
-        });
-    }));
+    beforeEach(
+        async(() => {
+            TestBed.configureTestingModule({
+                declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
+                imports: [RouterTestingModule, DotOverlayMaskModule, DotPipesModule],
+                providers: [
+                    DotLoadingIndicatorService,
+                    IframeOverlayService,
+                    DotIframeService,
+                    { provide: LoginService, useClass: LoginServiceMock },
+                    { provide: DotcmsEventsService, useValue: dotcmsEventsService },
+                    { provide: DotRouterService, useClass: MockDotRouterService },
+                    { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                    LoggerService,
+                    StringUtils
+                ]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(IframeComponent);
@@ -152,7 +157,7 @@ describe('IframeComponent', () => {
             }
         };
 
-        dotIframeService.run('fakeFunction');
+        dotIframeService.run({ name: 'fakeFunction' });
 
         expect(comp.iframeElement.nativeElement.contentWindow.fakeFunction).toHaveBeenCalledTimes(
             1
@@ -176,7 +181,6 @@ describe('IframeComponent', () => {
     });
 
     describe('bind iframe events', () => {
-        let fakeHtmlEl;
 
         beforeEach(() => {
             comp.iframeElement.nativeElement = {

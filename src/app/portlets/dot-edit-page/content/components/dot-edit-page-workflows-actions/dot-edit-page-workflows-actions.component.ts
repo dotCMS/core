@@ -1,20 +1,17 @@
 import { Observable } from 'rxjs';
 import { Component, Input, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
-import { DotCMSWorkflowAction, DotCMSWorkflowInput } from 'dotcms-models';
+import { DotCMSWorkflowAction } from 'dotcms-models';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotPage } from '../../../shared/models/dot-page.model';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import * as moment from 'moment';
 
 import { tap, map, mergeMap, catchError, pluck, take } from 'rxjs/operators';
 import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
 import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 
 @Component({
     selector: 'dot-edit-page-workflows-actions',
@@ -36,8 +33,7 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotWizardService: DotWizardService,
-        private pushPublishService: PushPublishService,
-        private dotMessageDisplayService: DotMessageDisplayService
+        private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService
     ) {}
 
     ngOnChanges(changes: SimpleChanges) {
@@ -63,22 +59,17 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
                 label: workflow.name,
                 command: () => {
                     if (workflow.actionInputs.length) {
-                        if (this.containsPushPublish(workflow.actionInputs)) {
-                            this.pushPublishService
-                                .getEnvironments()
+                        if (
+                            this.dotWorkflowEventHandlerService.containsPushPublish(
+                                workflow.actionInputs
+                            )
+                        ) {
+                            this.dotWorkflowEventHandlerService
+                                .checkPublishEnvironments()
                                 .pipe(take(1))
-                                .subscribe(environments => {
-                                    if (environments.length) {
+                                .subscribe((hasEnviroments: boolean) => {
+                                    if (hasEnviroments) {
                                         this.openWizard(workflow);
-                                    } else {
-                                        this.dotMessageDisplayService.push({
-                                            life: 3000,
-                                            message: this.dotMessageService.get(
-                                                'editpage.actions.fire.error.add.environment'
-                                            ),
-                                            severity: DotMessageSeverity.ERROR,
-                                            type: DotMessageType.SIMPLE_MESSAGE
-                                        });
                                     }
                                 });
                         } else {
@@ -95,7 +86,7 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
     private openWizard(workflow: DotCMSWorkflowAction): void {
         this.dotWizardService
             .open(
-                this.dotWorkflowsActionsService.setWizardInput(
+                this.dotWorkflowEventHandlerService.setWizardInput(
                     workflow,
                     this.dotMessageService.get('Workflow-Action')
                 )
@@ -104,7 +95,10 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
             .subscribe((data: { [key: string]: any }) => {
                 this.fireWorkflowAction(
                     workflow,
-                    this.processWorkflowPayload(data, workflow.actionInputs)
+                    this.dotWorkflowEventHandlerService.processWorkflowPayload(
+                        data,
+                        workflow.actionInputs
+                    )
                 );
             });
     }
@@ -136,26 +130,5 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
                     return currentMenuActions;
                 })
             );
-    }
-
-    private processWorkflowPayload(
-        data: { [key: string]: any },
-        inputs: DotCMSWorkflowInput[]
-    ): { [key: string]: any } {
-        if (this.containsPushPublish(inputs)) {
-            data['whereToSend'] = data.environment.join();
-            data['iWantTo'] = data.pushActionSelected;
-            data['publishTime'] = moment(data.publishDate).format('HH-mm');
-            data['publishDate'] = moment(data.publishDate).format('YYYY-MM-DD');
-            data['expireTime'] = moment(data.expireDate).format('HH-mm');
-            data['expireDate'] = moment(data.expireDate).format('YYYY-MM-DD');
-            delete data.environment;
-            delete data.pushActionSelected;
-        }
-        return data;
-    }
-
-    private containsPushPublish(inputs: DotCMSWorkflowInput[]): boolean {
-        return inputs.some(input => input.id === 'pushPublish');
     }
 }

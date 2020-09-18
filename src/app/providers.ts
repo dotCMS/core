@@ -29,6 +29,9 @@ import { DotContentTypeService } from '@services/dot-content-type/dot-content-ty
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotPushPublishDialogService } from 'dotcms-js';
+import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
@@ -63,7 +66,10 @@ const PROVIDERS: any[] = [
     StringPixels,
     DotLoginPageResolver,
     DotLoginPageStateService,
-    DotPushPublishDialogService
+    DotPushPublishDialogService,
+    DotWorkflowEventHandlerService,
+    DotWorkflowActionsFireService,
+    DotGlobalMessageService
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];

@@ -148,17 +148,17 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     renderEditedContentlet(contentlet: DotPageContent): void {
-        const doc = this.getEditPageDocument();
-        const currentContentlets: HTMLElement[] = Array.from(
-            doc.querySelectorAll(
-                `[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
-            )
-        );
-        if (this.remoteRendered) {
+        if (this.remoteRendered || !contentlet) {
             this.iframeActions$.next({
                 name: 'save'
             });
         } else {
+            const doc = this.getEditPageDocument();
+            const currentContentlets: HTMLElement[] = Array.from(
+                doc.querySelectorAll(
+                    `[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
+                )
+            );
             currentContentlets.forEach((currentContentlet: HTMLElement) => {
                 contentlet.type = currentContentlet.dataset.dotType;
                 const containerEl = <HTMLElement>currentContentlet.parentNode;
@@ -332,8 +332,10 @@ export class DotEditContentHtmlService {
 
     private updateContainerToolbar(dotIdentifier: string) {
         const doc = this.getEditPageDocument();
-        const target = <HTMLElement>doc.querySelector(
-            `[data-dot-object="container"][data-dot-identifier="${dotIdentifier}"]`
+        const target = <HTMLElement>(
+            doc.querySelector(
+                `[data-dot-object="container"][data-dot-identifier="${dotIdentifier}"]`
+            )
         );
         this.dotEditContentToolbarHtmlService.updateContainerToolbar(target);
     }
@@ -376,13 +378,17 @@ export class DotEditContentHtmlService {
     }
 
     private getCurrentContentlet(target: HTMLElement): DotPageContent {
-        const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
-        return {
-            identifier: contentlet.dataset.dotIdentifier,
-            inode: contentlet.dataset.dotInode,
-            type: contentlet.dataset.dotType,
-            baseType: contentlet.dataset.dotBasetype
-        };
+        try {
+            const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
+            return {
+                identifier: contentlet.dataset.dotIdentifier,
+                inode: contentlet.dataset.dotInode,
+                type: contentlet.dataset.dotType,
+                baseType: contentlet.dataset.dotBasetype
+            };
+        } catch {
+            return null;
+        }
     }
 
     private setGlobalClickHandlers(): void {

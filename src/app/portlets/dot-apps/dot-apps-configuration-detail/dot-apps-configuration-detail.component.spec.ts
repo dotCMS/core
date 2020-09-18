@@ -18,7 +18,7 @@ import { ButtonModule } from 'primeng/button';
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 import { By } from '@angular/platform-browser';
 import { DotAppsSaveData } from '@shared/models/dot-apps/dot-apps.model';
-import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 
 const messages = {
@@ -102,7 +102,7 @@ class MockDotAppsService {
 }
 
 @Component({
-    selector: 'dot-key-value',
+    selector: 'dot-key-value-ng',
     template: ''
 })
 class MockDotKeyValueComponent {
@@ -190,7 +190,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 fixture.debugElement.query(By.css('.dot-apps-configuration-detail__host-name'))
                     .nativeElement.textContent
             ).toContain(component.apps.sites[0].name);
-            expect(fixture.debugElement.query(By.css('dot-key-value'))).toBeFalsy();
+            expect(fixture.debugElement.query(By.css('dot-key-value-ng'))).toBeFalsy();
         });
 
         it('should set Save button disabled to false with valid form', () => {
@@ -290,7 +290,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
         });
 
         it('should show DotKeyValue component with right values', () => {
-            const keyValue = fixture.debugElement.query(By.css('dot-key-value'));
+            const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
             expect(keyValue).toBeTruthy();
             expect(keyValue.componentInstance.autoFocus).toBe(false);
             expect(keyValue.componentInstance.showHiddenField).toBe(true);
@@ -301,7 +301,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
         it('should update local collection with saved value', () => {
             const variableEmitted = { key: 'custom', hidden: false, value: 'changed' };
-            const keyValue = fixture.debugElement.query(By.css('dot-key-value'));
+            const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
             keyValue.componentInstance.save.emit(variableEmitted);
             expect(component.dynamicVariables[0]).toEqual(variableEmitted);
             expect(component.dynamicVariables.length).toEqual(1);
@@ -309,7 +309,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
         it('should delete from local collection', () => {
             const variableEmitted = { key: 'custom', hidden: false, value: 'test' };
-            const keyValue = fixture.debugElement.query(By.css('dot-key-value'));
+            const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
             keyValue.componentInstance.delete.emit(variableEmitted);
             expect(component.dynamicVariables.length).toEqual(0);
         });

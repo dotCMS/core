@@ -43,6 +43,8 @@ import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.ser
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
+import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -65,6 +67,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
     let workflowActionComponent: DotEditPageWorkflowsActionsComponent;
     let dotGlobalMessageService: DotGlobalMessageService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
+    let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
     const messageServiceMock = new MockDotMessageService({
         'editpage.actions.fire.confirmation': 'The action "{0}" was executed correctly',
         'editpage.actions.fire.error.add.environment': 'place holder text',
@@ -112,7 +115,9 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                     DotcmsConfigService,
                     LoggerService,
-                    StringUtils
+                    StringUtils,
+                    DotWorkflowEventHandlerService,
+                    DotIframeService
                 ]
             });
         })
@@ -223,14 +228,17 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                         dotWizardService = de.injector.get(DotWizardService);
                         pushPublishService = de.injector.get(PushPublishService);
                         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
+                        dotWorkflowEventHandlerService = de.injector.get(
+                            DotWorkflowEventHandlerService
+                        );
                     });
 
                     it('should fire actions after wizard data was collected', () => {
-                        spyOn(dotWorkflowsActionsService, 'setWizardInput');
+                        spyOn(dotWorkflowEventHandlerService, 'setWizardInput');
                         firstButton.click();
                         dotWizardService.output$(mockData);
 
-                        expect(dotWorkflowsActionsService.setWizardInput).toHaveBeenCalledWith(
+                        expect(dotWorkflowEventHandlerService.setWizardInput).toHaveBeenCalledWith(
                             mockWorkflowsActions[0],
                             'Workflow Action'
                         );

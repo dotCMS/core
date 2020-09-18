@@ -6,7 +6,7 @@ import { ResponseView } from 'dotcms-js';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
 import { DotCMSContentTypeField } from 'dotcms-models';
-import { DotKeyValue } from '@shared/models/dot-key-value/dot-key-value.model';
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 @Component({
     selector: 'dot-content-type-fields-variables',

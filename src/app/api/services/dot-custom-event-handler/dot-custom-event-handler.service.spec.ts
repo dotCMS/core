@@ -1,13 +1,42 @@
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotPushPublishDialogService } from 'dotcms-js';
+import {
+    ApiRoot,
+    CoreWebService,
+    DotcmsConfigService,
+    DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    DotPushPublishDialogService,
+    LoggerService, LoginService,
+    StringUtils,
+    UserModel
+} from 'dotcms-js';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { TestBed } from '@angular/core/testing';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
+import { FormatDateService } from '@services/format-date-service';
+import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { ConfirmationService } from 'primeng/api';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;
@@ -17,26 +46,59 @@ describe('DotCustomEventHandlerService', () => {
     let dotContentletEditorService: DotContentletEditorService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let dotDownloadBundleDialogService: DotDownloadBundleDialogService;
-    let injector;
+    let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
 
     beforeEach(() => {
-        injector = DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotCustomEventHandlerService,
                 DotLoadingIndicatorService,
                 DotMenuService,
-                DotPushPublishDialogService
+                DotPushPublishDialogService,
+                DotWorkflowEventHandlerService,
+                DotRouterService,
+                DotContentletEditorService,
+                PushPublishService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: ConnectionBackend, useClass: MockBackend },
+                { provide: RequestOptions, useClass: BaseRequestOptions },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                Http,
+                ApiRoot,
+                FormatDateService,
+                UserModel,
+                StringUtils,
+                DotcmsEventsService,
+                LoggerService,
+                DotEventsSocket,
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                DotcmsConfigService,
+                LoggerService,
+                DotCurrentUserService,
+                DotMessageDisplayService,
+                DotWizardService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotWorkflowActionsFireService,
+                DotGlobalMessageService,
+                DotEventsService,
+                DotIframeService,
+                DotDownloadBundleDialogService,
+                LoginService
             ],
             imports: [RouterTestingModule]
         });
 
-        service = injector.get(DotCustomEventHandlerService);
-        dotLoadingIndicatorService = injector.get(DotLoadingIndicatorService);
-        dotRouterService = injector.get(DotRouterService);
-        dotUiColorsService = injector.get(DotUiColorsService);
-        dotContentletEditorService = injector.get(DotContentletEditorService);
-        dotPushPublishDialogService = injector.get(DotPushPublishDialogService);
-        dotDownloadBundleDialogService = injector.get(DotDownloadBundleDialogService);
+        service = TestBed.get(DotCustomEventHandlerService);
+        dotLoadingIndicatorService = TestBed.get(DotLoadingIndicatorService);
+        dotRouterService = TestBed.get(DotRouterService);
+        dotUiColorsService = TestBed.get(DotUiColorsService);
+        dotContentletEditorService = TestBed.get(DotContentletEditorService);
+        dotPushPublishDialogService = TestBed.get(DotPushPublishDialogService);
+        dotDownloadBundleDialogService = TestBed.get(DotDownloadBundleDialogService);
+        dotWorkflowEventHandlerService = TestBed.get(DotWorkflowEventHandlerService);
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
@@ -169,5 +231,18 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotDownloadBundleDialogService.open).toHaveBeenCalledWith('testID');
+    });
+
+    it('should notify to open download bundle dialog', () => {
+        spyOn(dotWorkflowEventHandlerService, 'open');
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'workflow-wizard',
+                    data: 'testData'
+                }
+            })
+        );
+        expect(dotWorkflowEventHandlerService.open).toHaveBeenCalledWith('testData');
     });
 });

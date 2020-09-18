@@ -1,5 +1,12 @@
 import { DotCMSContentType } from '../dot-content-types';
 
+export interface DotCMSWorkflowActionEvent {
+    workflow: DotCMSWorkflowAction;
+    callback: string;
+    inode: string;
+    selectedInodes: string | string [];
+}
+
 export interface DotCMSWorkflowAction {
     assignable: boolean;
     commentable: boolean;
