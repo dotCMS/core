@@ -24,6 +24,8 @@
         dojo.require("dojo.aspect");
 
         const DOTCMS_DATAVIEW_MODE = 'dotcms.dataview.mode';
+        const DOTCMS_DEFAULT_CONTENT_SORT_BY = "score,modDate desc";
+        
         var state = {
           data: [],
           view: localStorage.getItem(DOTCMS_DATAVIEW_MODE) || 'list',
@@ -45,7 +47,7 @@
         var structureInode;
         var currentStructureFields;
         var currentPage = 1;
-        var currentSortBy = "score,modDate desc";
+        var currentSortBy = DOTCMS_DEFAULT_CONTENT_SORT_BY;
         var setDotFieldTypeStr = "";
         var DOT_FIELD_TYPE = "dotFieldType";
         var cbContentInodeList = new Array();
@@ -1626,7 +1628,7 @@
                 document.getElementById('fieldsValues').value = fieldsValues;
                 document.getElementById('categoriesValues').value = categoriesValues;
                 document.getElementById('showDeleted').value = showDeleted;
-                document.getElementById('currentSortBy').value = currentSortBy;
+               // document.getElementById('currentSortBy').value = currentSortBy;
                 document.getElementById('filterSystemHost').value = filterSystemHost;
                 document.getElementById('filterLocked').value = filterLocked;
                 document.getElementById('filterUnpublish').value = filterUnpublish;
@@ -2147,7 +2149,7 @@
 
         function clearSearch () {
 
-
+                document.getElementById('currentSortBy').value=DOTCMS_DEFAULT_CONTENT_SORT_BY;
                 dijit.byId("scheme_id").set("value",'catchall');
      			dijit.byId("showingSelect").set("value", "all");
      			dijit.byId("allFieldTB").set("value", "");
@@ -2284,7 +2286,7 @@
 
 
 	        hideMatchingResults ();
-
+            doSearch(1, DOTCMS_DEFAULT_CONTENT_SORT_BY);
 
         }
 

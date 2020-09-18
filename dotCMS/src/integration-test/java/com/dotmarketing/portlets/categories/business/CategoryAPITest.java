@@ -45,6 +45,7 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -1262,5 +1263,152 @@ public class CategoryAPITest extends IntegrationTestBase {
         newChildCategory.setKey(childCategoryName);
 
         categoryAPI.save(getParentCategory,newChildCategory,limitedUser,false);
+    }
+
+  /**
+     * Method to test: {@link CategoryAPI#isParent(Category, Category, User, boolean)}
+     * Given scenario: Create a Category with 3 levels of depth:
+     *          Parent Category
+     *                  Child Category
+     *                          Grand Child Category
+     *
+     *                  And check if the grand child category belongs to the parent category
+     * Expected result: true, since the grand child category is a sub sub category
+     */
+    @Test
+    public void test_isParent_givenGrandChildCategoryBelongsToParentCategory_returnTrue()
+            throws DotSecurityException, DotDataException {
+        final List<Category> categoriesToDelete = Lists.newArrayList();
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        try {
+            //Create Parent Category.
+            final Category parentCategory = new CategoryDataGen()
+                    .setCategoryName("CT-Category-Parent")
+                    .setKey("parent")
+                    .setCategoryVelocityVarName("parent")
+                    .nextPersisted();
+
+            categoriesToDelete.add(parentCategory);
+
+            //Create First Child Category.
+            final Category childCategoryA = new CategoryDataGen()
+                    .setCategoryName("CT-Category-A")
+                    .setKey("categoryA")
+                    .setCategoryVelocityVarName("categoryA")
+                    .next();
+
+            categoriesToDelete.add(childCategoryA);
+
+            //Second Level Category.
+            Category childCategoryA_1 = new CategoryDataGen()
+                    .setCategoryName("CT-Category-A-1")
+                    .setKey("categoryA-1")
+                    .setCategoryVelocityVarName("categoryA-1")
+                    .next();
+
+            categoriesToDelete.add(childCategoryA_1);
+
+            categoryAPI.save(parentCategory, childCategoryA, user, false);
+            categoryAPI.save(childCategoryA, childCategoryA_1, user, false);
+
+            Assert.assertTrue(categoryAPI.isParent(childCategoryA_1,parentCategory,user,true));
+
+
+        }finally {
+            for (final Category category : categoriesToDelete) {
+                categoryAPI.delete(category, user, false);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#isParent(Category, Category, User, boolean)}
+     * Given scenario: Create a Category with 3 levels of depth:
+     *          Parent Category
+     *                  Child Category
+     *                          Grand Child Category
+     *
+     *           Parent Category 2
+     *      *                  Child Category 2
+     *      *                          Grand Child Category 2
+     *
+     *                  And check if the grand child category 2 belongs to the parent category
+     * Expected result: false
+     */
+    @Test
+    public void test_isParent_givenGrandChildCategoryThatNoBelongsToParentCategory_returnFalse()
+            throws DotSecurityException, DotDataException {
+        List<Category> categoriesToDelete = Lists.newArrayList();
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        try {
+            //Create Parent Category.
+            final Category parentCategory = new CategoryDataGen()
+                    .setCategoryName("CT-Category-Parent")
+                    .setKey("parent")
+                    .setCategoryVelocityVarName("parent")
+                    .nextPersisted();
+
+            categoriesToDelete.add(parentCategory);
+
+            //Create First Child Category.
+            final Category childCategoryA = new CategoryDataGen()
+                    .setCategoryName("CT-Category-A")
+                    .setKey("categoryA")
+                    .setCategoryVelocityVarName("categoryA")
+                    .next();
+
+            categoriesToDelete.add(childCategoryA);
+
+            //Second Level Category.
+            Category childCategoryA_1 = new CategoryDataGen()
+                    .setCategoryName("CT-Category-A-1")
+                    .setKey("categoryA-1")
+                    .setCategoryVelocityVarName("categoryA-1")
+                    .next();
+
+            categoriesToDelete.add(childCategoryA_1);
+
+            categoryAPI.save(parentCategory, childCategoryA, user, false);
+            categoryAPI.save(childCategoryA, childCategoryA_1, user, false);
+
+            //Create Parent Category 2.
+            final Category parentCategory2 = new CategoryDataGen()
+                    .setCategoryName("CT-Category-Parent2")
+                    .setKey("parent2")
+                    .setCategoryVelocityVarName("parent2")
+                    .nextPersisted();
+
+            categoriesToDelete.add(parentCategory2);
+
+            //Create First Child Category 2.
+            final Category childCategoryA2 = new CategoryDataGen()
+                    .setCategoryName("CT-Category-A2")
+                    .setKey("categoryA2")
+                    .setCategoryVelocityVarName("categoryA2")
+                    .next();
+
+            categoriesToDelete.add(childCategoryA2);
+
+            //Second Level Category 2.
+            Category childCategoryA_2 = new CategoryDataGen()
+                    .setCategoryName("CT-Category-A-2")
+                    .setKey("categoryA-2")
+                    .setCategoryVelocityVarName("categoryA-2")
+                    .next();
+
+            categoriesToDelete.add(childCategoryA_2);
+
+            categoryAPI.save(parentCategory2, childCategoryA2, user, false);
+            categoryAPI.save(childCategoryA2, childCategoryA_2, user, false);
+
+            Assert.assertFalse(categoryAPI.isParent(childCategoryA_2,parentCategory,user,true));
+
+
+        }finally {
+            for (final Category category : categoriesToDelete) {
+                categoryAPI.delete(category, user, false);
+            }
+        }
+
     }
 }

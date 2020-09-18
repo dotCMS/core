@@ -60,7 +60,7 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
             
             if (UtilMethods.isSet(relatedContent)) {
                 final DotContentletTransformer transformer = new DotTransformerBuilder()
-                        .defaultOptions().content(relatedContent).build();
+                        .graphQLDataFetchOptions().content(relatedContent).build();
                 objectToReturn = records.doesAllowOnlyOne()
                     ? transformer.hydrate().get(0)
                     : transformer.hydrate();

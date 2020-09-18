@@ -13,7 +13,6 @@ import com.dotcms.contenttype.model.field.PermissionTabField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.TabDividerField;
-import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -23,26 +22,22 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.quartz.DotStatefulJob;
-import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.UUID;
+import java.util.Map;
 import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 
 /**
  * Stateful job used to remove content type field references before its deletion
@@ -52,11 +47,24 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
 
     @Override
     @WrapInTransaction
-    public void run(JobExecutionContext jobContext) throws JobExecutionException {
+    public void run(final JobExecutionContext jobContext) throws JobExecutionException {
+        final Map<String, Serializable> executionData;
+        final JobDataMap jobDataMap = jobContext.getJobDetail().getJobDataMap();
 
-        final User user = (User)jobContext.getJobDetail().getJobDataMap().get("user");
-        final Field field = (Field) jobContext.getJobDetail().getJobDataMap().get("field");
-        final Date deletionDate = (Date) jobContext.getJobDetail().getJobDataMap().get("deletionDate");
+        if (jobDataMap.containsKey(EXECUTION_DATA)) {
+          //This bit is here to continue to support the integration-tests
+            executionData = (Map<String, Serializable>) jobDataMap.get(EXECUTION_DATA);
+        } else {
+          //But the `executionData` must be grabbed frm the persisted job detail. Through the trigger name.
+            final Trigger trigger = jobContext.getTrigger();
+            executionData = getExecutionData(trigger, CleanUpFieldReferencesJob.class);
+        }
+
+        final User user = (User) executionData.get("user");
+        final Field field = (Field) executionData.get("field");
+        final Date deletionDate = (Date) executionData.get("deletionDate");
+
+        Logger.info(CleanUpFieldReferencesJob.class,String.format("CleanUpFieldReferencesJob ::: started for field `%s`.",field.variable()));
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
@@ -101,34 +109,20 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
             Logger.error(CleanUpFieldReferencesJob.class,
                     "Error cleaning up field references. Field velocity var: " + field.variable(), e);
         }
+        Logger.info(CleanUpFieldReferencesJob.class,String.format("CleanUpFieldReferencesJob ::: finished for field `%s`.",field.variable()));
+
     }
 
-    
-    
     public static void triggerCleanUpJob(final Field field, final User user) {
 
-        final JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put("field", field);
-        jobDataMap.put("deletionDate", Calendar.getInstance().getTime());
-        jobDataMap.put("user", user);
+        final Map<String, Serializable> nextExecutionData = ImmutableMap
+                .of("field", field,
+                        "deletionDate", Calendar.getInstance().getTime(),
+                        "user", user);
 
-        final String randomID = UUID.randomUUID().toString();
-
-        final JobDetail jd = new JobDetail("CleanUpFieldReferencesJob-" + randomID, "clean_up_field_reference_jobs",
-                        CleanUpFieldReferencesJob.class);
-        jd.setJobDataMap(jobDataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
-
-        long startTime = System.currentTimeMillis();
-        final SimpleTrigger trigger = new SimpleTrigger("deleteFieldStatefulTrigger-" + randomID,
-                        "clean_up_field_reference_job_triggers", new Date(startTime));
-
-        HibernateUtil.addCommitListenerNoThrow(Sneaky.sneaked(()-> {
-                Scheduler sched = QuartzUtils.getSequentialScheduler();
-                sched.scheduleJob(jd, trigger);
-            }
+        HibernateUtil.addCommitListenerNoThrow(Sneaky.sneaked(() -> {
+                    enqueueTrigger(nextExecutionData, CleanUpFieldReferencesJob.class);
+                }
         ));
     }
 }
