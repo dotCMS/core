@@ -6,7 +6,7 @@ import java.util.Date;
 
 
 /**
- * Publish Audit status POJO
+ * Push Publish status
  * @author alberto
  *
  */
@@ -76,21 +76,6 @@ public class PublishAuditStatus implements Serializable {
 		this.statusUpdated = new Date();
 		this.createDate = origin.createDate;
 		this.statusPojo = origin.getStatusPojo(); //TODO manage status POJO
-	}
-
-	/**
-	 * Return true if  any of the endpoint has the {@link Status#INVALID_TOKEN}
-	 * @return
-	 */
-	public boolean isAnyEndPointInvalidTokenStatus() {
-		if (this.getStatusPojo() == null) {
-			return false;
-		}
-
-		return  this.getStatusPojo().getEndpointsMap()
-				.values().stream()
-				.flatMap(entryMap -> entryMap.values().stream())
-				.anyMatch(endpointDetail -> endpointDetail.getStatus() == Status.INVALID_TOKEN.getCode());
 	}
 
 	public static String getStatusByCode(int code) {

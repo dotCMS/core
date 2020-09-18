@@ -1,7 +1,6 @@
 package com.dotcms.rest;
 
-import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 
@@ -10,9 +9,7 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
-import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
-import com.dotcms.publisher.pusher.PushPublisher;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
@@ -22,17 +19,13 @@ import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.IncorrectClaimException;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Optional;
@@ -59,7 +52,7 @@ public class BundlePublisherResource {
 	 * @see PublishThread
 	 */
 	@POST
-	@Path ("/publish")
+	@Path("/publish")
 	@Consumes(MediaType.APPLICATION_OCTET_STREAM)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response publish(
@@ -74,38 +67,23 @@ public class BundlePublisherResource {
 		final String remoteIP = UtilMethods.isSet(request.getRemoteHost())?
 				request.getRemoteHost() : request.getRemoteAddr();
 
-
 		if (request.getInputStream().isFinished()) {
 			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " bundle expected");
 			return responseResource.responseError(HttpStatus.SC_BAD_REQUEST);
 		}
 
-		try {
-			final boolean isTokenValid = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
+		final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
+				= AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
-			if (!isTokenValid) {
-				Logger.error(this.getClass(), "Invalid token from " + remoteIP + " not permission");
-				return responseResource.responseAuthenticateError("invalid_token",
-						AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
-			}
+		final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(remoteIP, pushPublishAuthenticationToken);
 
-			final Bundle bundle = this.publishBundle(forcePush, request, remoteIP);
-
-			return Response.ok(bundle).build();
-		} catch (DotSecurityException e) {
-			Logger.error(this.getClass(), "Not Admin user " + remoteIP + " not permission");
-			return responseResource.responseUnauthorizedError("admin_scope");
-		} catch(IncorrectClaimException e){
-			final String claimName = e.getClaimName();
-
-			if (Claims.EXPIRATION.equals(claimName)) {
-				return responseResource.responseAuthenticateError("invalid_token",
-						AuthCredentialPushPublishUtil.EXPIRED_TOKEN_ERROR_KEY);
-			} else {
-				return responseResource.responseAuthenticateError("invalid_token",
-						AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
-			}
+		if (failResponse.isPresent()) {
+			return failResponse.get();
 		}
+
+		final Bundle bundle = this.publishBundle(forcePush, request, remoteIP);
+
+		return Response.ok(bundle).build();
 	}
 
 	@WrapInTransaction
@@ -182,21 +160,4 @@ public class BundlePublisherResource {
 
 		return null != user && user.isBackendUser() && user.isAdmin();
 	}
-
-	/**
-	 * Validates a received token
-	 *
-	 * @param token    Token to validate
-	 * @param publishingEndPoint   Current end point
-	 * @return True if valid
-	 * @throws IOException If fails reading the security token
-	 */
-	public static boolean isValidToken (final String token,
-										final PublishingEndPoint publishingEndPoint) throws IOException {
-
-		//My key
-		final  Optional<String> endpointKeyDigest = PushPublisher.retriveEndpointKeyDigest(publishingEndPoint);
-		return endpointKeyDigest.isPresent()? token.equals( endpointKeyDigest.get() ): false;
-	}
-
 }

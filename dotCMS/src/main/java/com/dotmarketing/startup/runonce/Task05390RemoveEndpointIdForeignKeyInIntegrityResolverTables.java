@@ -1,11 +1,8 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.startup.StartupTask;
 
 import java.util.Map;

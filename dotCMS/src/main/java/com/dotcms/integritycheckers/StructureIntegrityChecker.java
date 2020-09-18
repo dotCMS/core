@@ -169,18 +169,18 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
     /**
      * Fixes structures inconsistencies for a given server id
      *
-     * @param remoteIP
+     * @param key
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Override
-    public void executeFix(String remoteIP) throws DotDataException, DotSecurityException {
+    public void executeFix(String key) throws DotDataException, DotSecurityException {
         DotConnect dc = new DotConnect();
 
         try {
             dc.setSQL("select local_inode, remote_inode from "
                     + getIntegrityType().getResultsTableName() + " where endpoint_id = ?");
-            dc.addParam(remoteIP);
+            dc.addParam(key);
             List<Map<String, Object>> results = dc.loadObjectResults();
             User systemUser = APILocator.getUserAPI().getSystemUser();
             

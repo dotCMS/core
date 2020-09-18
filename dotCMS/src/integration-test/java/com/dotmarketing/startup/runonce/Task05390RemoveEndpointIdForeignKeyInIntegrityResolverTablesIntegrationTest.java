@@ -121,22 +121,22 @@ public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegra
 
     private void insertFileAssetIntegrityResolver(final String remoteIP) throws DotDataException {
 
-        DotConnect dc = new DotConnect();
-        dc.setSQL("INSERT INTO fileassets_ir " +
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("INSERT INTO fileassets_ir " +
                 "(local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, local_identifier, remote_identifier, file_name, endpoint_id, language_id) " +
                 "values(?,?,?,?,?,?,?,?,?)");
 
-        dc.addParam("local_working_inode" + System.currentTimeMillis());
-        dc.addParam("remote_working_inode" + System.currentTimeMillis());
-        dc.addParam("local_live_inode" + System.currentTimeMillis());
-        dc.addParam("remote_live_inode" + System.currentTimeMillis());
-        dc.addParam("local_identifier" + System.currentTimeMillis());
-        dc.addParam("remote_identifier" + System.currentTimeMillis());
-        dc.addParam("file_name" + System.currentTimeMillis());
-        dc.addParam(remoteIP);
-        dc.addParam(new Long(1));
+        dotConnect.addParam("local_working_inode" + System.currentTimeMillis());
+        dotConnect.addParam("remote_working_inode" + System.currentTimeMillis());
+        dotConnect.addParam("local_live_inode" + System.currentTimeMillis());
+        dotConnect.addParam("remote_live_inode" + System.currentTimeMillis());
+        dotConnect.addParam("local_identifier" + System.currentTimeMillis());
+        dotConnect.addParam("remote_identifier" + System.currentTimeMillis());
+        dotConnect.addParam("file_name" + System.currentTimeMillis());
+        dotConnect.addParam(remoteIP);
+        dotConnect.addParam(Long.valueOf(1));
 
-        dc.loadResult();
+        dotConnect.loadResult();
     }
 
     private void insertRolesIntegrityResolver(final String remoteIP) throws DotDataException {

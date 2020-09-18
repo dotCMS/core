@@ -567,10 +567,10 @@ public class PublisherQueueJob implements StatefulJob {
 					StaticPublisher.class);
 
 			//Fill protocolPublisherMap with protocol -> publisher.
-			for (Class publisher : publishers) {
-				Publisher p = (Publisher)publisher.newInstance();
-				for (String protocol : p.getProtocols()) {
-					protocolPublisherMap.put(protocol, publisher);
+			for (final Class publisherClass : publishers) {
+				final Publisher publisher = (Publisher) publisherClass.newInstance();
+				for (String protocol : publisher.getProtocols()) {
+					protocolPublisherMap.put(protocol, publisherClass);
 				}
 			}
 

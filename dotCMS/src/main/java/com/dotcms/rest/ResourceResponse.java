@@ -4,10 +4,8 @@ import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.language.LanguageUtil;
 
 import java.util.HashMap;
 import java.util.Map;

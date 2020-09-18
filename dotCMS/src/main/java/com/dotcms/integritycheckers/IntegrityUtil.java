@@ -1,5 +1,6 @@
 package com.dotcms.integritycheckers;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource;
@@ -382,7 +383,7 @@ public class IntegrityUtil {
 	 * 
 	 * @param dataToFix
 	 *            - The {@link InputStream} containing the data to fix.
-	 * @param endpointId
+	 * @param key
 	 *            - The ID of the end point where the data will be fixed.
 	 * @param type
 	 *            - The type of object (Content Page, Folder, Content Type,
@@ -391,16 +392,17 @@ public class IntegrityUtil {
 	 *             An error occurred during the integrity fix process. The
 	 *             results table must be wiped out.
 	 */
-    public void fixConflicts(InputStream dataToFix, String remoteIP, IntegrityType type)
+	@WrapInTransaction
+    public void fixConflicts(InputStream dataToFix, String key, IntegrityType type)
             throws Exception {
-        final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + remoteIP;
+        final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + key;
 
         // lets first unzip the given file
         unzipFile(dataToFix, outputDir);
 
         // lets generate the tables with the data to be fixed
-        generateDataToFixTable(remoteIP, type);
-        fixConflicts(remoteIP, type);
+        generateDataToFixTable(key, type);
+        fixConflicts(key, type);
 
         HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             @Override
@@ -433,7 +435,7 @@ public class IntegrityUtil {
 	 * which indicates what records <b>MUST</b> be changed in the specified end
 	 * point.
 	 * 
-	 * @param endpointId
+	 * @param key
 	 *            - The ID of the end point where the data will be fixed.
 	 * @param type
 	 *            - The type of object (Content Page, Folder, Content Type,
@@ -441,11 +443,11 @@ public class IntegrityUtil {
 	 * @throws Exception
 	 *             An error occurred during the integrity fix process.
 	 */
-    public void generateDataToFixTable(String remoteIP, IntegrityType type) throws Exception {
+    public void generateDataToFixTable(String key, IntegrityType type) throws Exception {
 
         try {
             CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
-                    + remoteIP + File.separator + type.getDataToFixCSVName(), '|',
+                    + key + File.separator + type.getDataToFixCSVName(), '|',
                     Charset.forName("UTF-8"));
 
             final String resultsTable = type.getResultsTableName();
@@ -503,7 +505,7 @@ public class IntegrityUtil {
 	                }
                 }
 
-                dc.addParam(remoteIP);
+                dc.addParam(key);
 
                 if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
                     dc.addParam(new Long(csvFile.get(7))); // languageId
@@ -561,7 +563,7 @@ public class IntegrityUtil {
 	/**
 	 * Executes the integrity fix process according to the specified type.
 	 * 
-	 * @param endpointId
+	 * @param key
 	 *            - The ID of the end point where the data will be fixed.
 	 * @param type
 	 *            - The type of object (Content Page, Folder, Content Type,
@@ -572,9 +574,10 @@ public class IntegrityUtil {
 	 *             The specified user does not have permissions to perform the
 	 *             action.
 	 */
-    public void fixConflicts(final String remoteIP, IntegrityType type) throws DotDataException,
+	@WrapInTransaction
+    public void fixConflicts(final String key, IntegrityType type) throws DotDataException,
             DotSecurityException {
-        type.getIntegrityChecker().executeFix(remoteIP);
+        type.getIntegrityChecker().executeFix(key);
     }
 
     /**
@@ -598,6 +601,7 @@ public class IntegrityUtil {
      * @throws DotDataException
      * @throws Exception
      */
+    @WrapInTransaction
     public void completeDiscardConflicts(final String endpointId) throws DotDataException {
         IntegrityType[] types = IntegrityType.values();
         for (IntegrityType integrityType : types) {

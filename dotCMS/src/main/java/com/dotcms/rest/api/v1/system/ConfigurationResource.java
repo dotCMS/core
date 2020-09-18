@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.system;
 
 import java.io.Serializable;
-import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
 
@@ -16,9 +15,6 @@ import javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Config;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import oracle.jdbc.proxy.annotation.Post;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;

@@ -187,13 +187,13 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
      * @throws DotSecurityException
      */
     @Override
-    public void executeFix(final String remoteIP) throws DotDataException, DotSecurityException {
+    public void executeFix(final String key) throws DotDataException, DotSecurityException {
         
         DotConnect dc = new DotConnect();
 
         dc.setSQL("select name, local_role_id, remote_role_id from "+ getIntegrityType().getResultsTableName() +
             	 " where endpoint_id = ? order by name asc");
-        dc.addParam(remoteIP);
+        dc.addParam(key);
 
         for (Map<String, Object> result : dc.loadObjectResults()) {
         	String oldRoleId = (String) result.get("local_role_id");

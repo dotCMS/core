@@ -1,26 +1,29 @@
 package com.dotcms.publisher.pusher;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.IncorrectClaimException;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.ContainerRequest;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 
+/**
+ * Singleton class to provide util method to Push Publish authentication, it support two authentication methods:
+ * JWToken and Auth key set in the {@link com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint},
+ * if the config property 'USE_JWT_TOKEN_IN_PUSH_PUBLISH' is set to true (default value)
+ * it is going to use JWT token, but if the config property is set to false or the JWT token fails then auth key is going to use
+ * */
 public enum AuthCredentialPushPublishUtil {
     INSTANCE;
 
@@ -52,39 +55,78 @@ public enum AuthCredentialPushPublishUtil {
         return Config.getBooleanProperty("USE_JWT_TOKEN_IN_PUSH_PUBLISH", true);
     }
 
-    public boolean processAuthHeader(final HttpServletRequest request) throws DotSecurityException{
+    /**
+     * Proceess the request to Authenticate a Push publish request
+     *
+     * @param request
+     * @return If the token is invalid {@link PushPublishAuthenticationToken#INVALID_TOKEN} or {@link PushPublishAuthenticationToken#EXPIRE_TOKEN}
+     * otherwise return a different {@link PushPublishAuthenticationToken} instance
+     */
+    public PushPublishAuthenticationToken processAuthHeader(final HttpServletRequest request) {
         final boolean useJWTToken = isJWTAvailable();
 
-        try {
+        try{
             if (useJWTToken) {
-                final User user = JsonWebTokenAuthCredentialProcessorImpl.getInstance().processAuthHeaderFromJWT(request);
+                final PushPublishAuthenticationToken pushPublishAuthenticationToken = getFromJWTToken(request);
 
-                if (!APILocator.getUserAPI().isCMSAdmin(user)){
-                    throw new DotSecurityException("Operation jus allow o admin user");
+                if (pushPublishAuthenticationToken == PushPublishAuthenticationToken.INVALID_TOKEN) {
+                    return getFromEndPointAuthKey(request);
+                } else {
+                    return pushPublishAuthenticationToken;
                 }
-
-                return true;
             } else {
-                return isValidDotCMSToken(request);
+                return getFromEndPointAuthKey(request);
             }
-        }catch (DotDataException | IOException | DotSecurityException exception) {
-            return false;
+        } catch (DotDataException | IOException e) {
+            return PushPublishAuthenticationToken.INVALID_TOKEN;
+        }
+
+    }
+
+    private PushPublishAuthenticationToken getFromEndPointAuthKey(HttpServletRequest request) throws DotDataException, IOException {
+        final Optional<PublishingEndPoint> publishingEndPointOptional = getPublishingEndPointDotCMSToken(request);
+        return publishingEndPointOptional.isPresent() ?
+                new PushPublishAuthenticationToken(publishingEndPointOptional.get()) :
+                PushPublishAuthenticationToken.INVALID_TOKEN;
+    }
+
+    private PushPublishAuthenticationToken getFromJWTToken(HttpServletRequest request) {
+        try {
+            final Optional<JWToken> jwTokenOptional =
+                    JsonWebTokenAuthCredentialProcessorImpl.getInstance().processJWTAuthHeader(request);
+
+            if (!jwTokenOptional.isPresent()){
+                return PushPublishAuthenticationToken.INVALID_TOKEN;
+            }
+
+            final Optional<User> optionalUser = jwTokenOptional.get().getActiveUser();
+            if (!optionalUser.isPresent()){
+                return PushPublishAuthenticationToken.INVALID_TOKEN;
+            }
+
+            return new PushPublishAuthenticationToken(jwTokenOptional.get());
+        } catch(IncorrectClaimException e){
+            final String claimName = e.getClaimName();
+
+            return Claims.EXPIRATION.equals(claimName) ? PushPublishAuthenticationToken.EXPIRE_TOKEN :
+                    PushPublishAuthenticationToken.INVALID_TOKEN;
         }
     }
 
-    private boolean isValidDotCMSToken(final HttpServletRequest request) throws DotDataException, IOException {
+    private Optional<PublishingEndPoint> getPublishingEndPointDotCMSToken(final HttpServletRequest request)
+            throws DotDataException, IOException {
         final String remoteIP = request.getRemoteHost();
         final PublishingEndPoint publishingEndPoint =
                 APILocator.getPublisherEndPointAPI().findEnabledSendingEndPointByAddress(remoteIP);
 
         Optional<String> key = PushPublisher.retriveEndpointKeyDigest(publishingEndPoint);
         if(!key.isPresent()) {
-            return false;
+            return Optional.empty();
         }
 
         final String token = getTokenFromRequest(request);
 
-        return token.equals( key.get() );
+        return token.equals( key.get() ) ? Optional.of(publishingEndPoint) : Optional.empty();
     }
 
     private String getTokenFromRequest(final HttpServletRequest request) {
@@ -99,9 +141,61 @@ public enum AuthCredentialPushPublishUtil {
         }
     }
 
-    @NotNull
     private Optional<String> getJWTToken(final PublishingEndPoint endpoint) throws IOException {
         return PushPublisher.retriveEndpointKey(endpoint);
+    }
+
+    public static class PushPublishAuthenticationToken {
+
+        public static final PushPublishAuthenticationToken EXPIRE_TOKEN = new PushPublishAuthenticationToken(true, false);
+        public static final PushPublishAuthenticationToken INVALID_TOKEN = new PushPublishAuthenticationToken(false, true);
+        private final boolean tokenExpired;
+        private final boolean tokenInvalid;
+
+        private boolean usingJWTTokenWay = false;
+        private JWToken token;
+        private PublishingEndPoint publishingEndPoint;
+
+        private PushPublishAuthenticationToken(boolean tokenExprired, boolean tokenInvalid) {
+            this(null, null, tokenExprired, tokenInvalid);
+        }
+
+        public PushPublishAuthenticationToken(final JWToken token) {
+            this(token, null, false, false);
+        }
+
+        public PushPublishAuthenticationToken(final PublishingEndPoint publishingEndPoint) {
+            this(null, publishingEndPoint, false, false);
+        }
+
+        private PushPublishAuthenticationToken(final JWToken token, final PublishingEndPoint publishingEndPoint,
+                boolean tokenExpired, boolean tokenInvalid) {
+            this.token = token;
+            this.publishingEndPoint = publishingEndPoint;
+            this.tokenExpired = tokenExpired;
+            this.tokenInvalid = tokenInvalid;
+        }
+
+        public JWToken getToken() {
+            return token;
+        }
+
+        public PublishingEndPoint getPublishingEndPoint() {
+            return publishingEndPoint;
+        }
+
+        public boolean isJWTTokenWay(){
+            return this.token != null;
+        }
+
+        public boolean isTokenExpired() {
+            return tokenExpired;
+        }
+
+        public boolean isTokenInvalid() {
+            return tokenInvalid;
+        }
+
     }
 
 }

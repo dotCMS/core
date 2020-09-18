@@ -1,6 +1,5 @@
 package com.dotcms.publisher.endpoint.bean;
 
-import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
 import com.dotmarketing.util.UtilMethods;
@@ -165,13 +164,13 @@ public abstract class PublishingEndPoint implements Serializable {
     }
 
     public boolean isTokenExpired() {
-        final StringBuilder authKey = getAuthKey();
+        final String authKey = getAuthKey().toString();
 
-        if (UtilMethods.isEmpty(authKey.toString())) {
+        if (UtilMethods.isEmpty(authKey)) {
             return false;
         }
 
-        final String authKeyString = authKey.toString();
+        final String authKeyString = authKey;
         return authKeyString.equals(AuthCredentialPushPublishUtil.EXPIRED_TOKEN_ERROR_KEY);
     }
 

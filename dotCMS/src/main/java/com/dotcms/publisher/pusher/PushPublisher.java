@@ -1,6 +1,5 @@
 package com.dotcms.publisher.pusher;
 
-import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
@@ -51,7 +50,6 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import org.apache.logging.log4j.ThreadContext;
@@ -147,12 +145,12 @@ public class PushPublisher extends Publisher {
 			File bundleRoot = BundlerUtil.getBundleRoot(this.config);
 			ArrayList<File> list = new ArrayList<File>(1);
 			list.add(bundleRoot);
-			File bundle = new File(bundleRoot+File.separator+".."+File.separator+this.config.getId()+".tar.gz");
+			File bundleFile = new File(bundleRoot+File.separator+".."+File.separator+this.config.getId()+".tar.gz");
 
 			// If the tar.gz doesn't exist or if it the first try to push bundle
 			// we need to compress the bundle folder into the tar.gz file.
-			if (!bundle.exists() || !pubAuditAPI.isPublishRetry(config.getId())) {
-				PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
+			if (!bundleFile.exists() || !pubAuditAPI.isPublishRetry(config.getId())) {
+				PushUtils.compressFiles(list, bundleFile, bundleRoot.getAbsolutePath());
 			} else {
 				Logger.info(this, "Retrying bundle: " + config.getId()
 						+ ", we don't need to compress bundle again");
@@ -164,7 +162,7 @@ public class PushPublisher extends Publisher {
 			client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");
 			client.property(ClientProperties.CHUNKED_ENCODING_SIZE, 1024);
 
-			String contentDisposition = "attachment; filename=\"" + bundle.getName() + "\"";
+			String contentDisposition = "attachment; filename=\"" + bundleFile.getName() + "\"";
 
 			//Updating audit table
 			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
@@ -217,20 +215,20 @@ public class PushPublisher extends Publisher {
 				for (PublishingEndPoint endpoint : endpoints) {
 					EndpointDetail detail = new EndpointDetail();
 
-					InputStream bundleStream = new BufferedInputStream(Files.newInputStream(bundle.toPath()));
+					InputStream bundleStream = new BufferedInputStream(Files.newInputStream(bundleFile.toPath()));
 
 					try {
-						Bundle b = APILocator.getBundleAPI().getBundleById(this.config.getId());
+						Bundle bundle = APILocator.getBundleAPI().getBundleById(this.config.getId());
 
 						//For logging purpose
 						ThreadContext.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
-						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
+						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + bundle.getName());
 
 						if (endpoint.hasAuthKey()) {
 							PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 
 							WebTarget webTarget = client.target(endpoint.toURL() + "/api/bundlePublisher/publish")
-									.queryParam("FORCE_PUSH", b.isForcePush());
+									.queryParam("FORCE_PUSH", bundle.isForcePush());
 
 							Response response = webTarget.request(MediaType.APPLICATION_JSON)
 									.header("Content-Disposition", contentDisposition)

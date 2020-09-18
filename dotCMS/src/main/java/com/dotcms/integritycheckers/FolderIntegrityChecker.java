@@ -221,7 +221,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
      * @throws DotSecurityException
      */
     @Override
-    public void executeFix(final String remoteIP) throws DotDataException, DotSecurityException {
+    public void executeFix(final String key) throws DotDataException, DotSecurityException {
 
         DotConnect dc = new DotConnect();
 
@@ -230,7 +230,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             // folder
             dc.setSQL("select local_inode, remote_inode, local_identifier, remote_identifier from "
                     + getIntegrityType().getResultsTableName() + " where endpoint_id = ?");
-            dc.addParam(remoteIP);
+            dc.addParam(key);
             List<Map<String, Object>> results = dc.loadObjectResults();
 
             for (Map<String, Object> result : results) {

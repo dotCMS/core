@@ -116,7 +116,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
      * changed, which will cause an issue.</li>
      * </ol>
      *
-     * @param serverId
+     * @param key
      *            - The ID of the endpoint where the data will be fixed.
      * @throws DotDataException
      *             An error occurred when interacting with the database.
@@ -125,12 +125,12 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
      *             action.
      */
     @Override
-    public void executeFix(final String remoteIP) throws DotDataException, DotSecurityException {
+    public void executeFix(final String key) throws DotDataException, DotSecurityException {
         // Get the information of the IR.
         DotConnect dc = new DotConnect();
         dc.setSQL("SELECT " + getIntegrityType().getFirstDisplayColumnLabel() + ", local_identifier, remote_identifier, local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, language_id FROM "
                 + getIntegrityType().getResultsTableName() + " WHERE endpoint_id = ? ORDER BY " + getIntegrityType().getFirstDisplayColumnLabel());
-        dc.addParam(remoteIP);
+        dc.addParam(key);
         List<Map<String, Object>> results = dc.loadObjectResults();
 
         // We need to load the map with the affected identifiers, inodes and languages

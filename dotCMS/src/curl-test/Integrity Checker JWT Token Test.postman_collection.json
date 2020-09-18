@@ -144,14 +144,14 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/_generate",
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"integrity",
-										"_generate"
+										"_generateintegritydata"
 									]
 								}
 							},
@@ -341,14 +341,14 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/_generate",
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"integrity",
-										"_generate"
+										"_generateintegritydata"
 									]
 								}
 							},
@@ -414,14 +414,14 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/_generate",
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"integrity",
-										"_generate"
+										"_generateintegritydata"
 									]
 								}
 							},
@@ -573,14 +573,14 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/_generate",
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"integrity",
-										"_generate"
+										"_generateintegritydata"
 									]
 								}
 							},
@@ -832,14 +832,14 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/_generate",
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"integrity",
-										"_generate"
+										"_generateintegritydata"
 									]
 								}
 							},
@@ -1038,14 +1038,14 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/_generate",
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"integrity",
-										"_generate"
+										"_generateintegritydata"
 									]
 								}
 							},
@@ -1095,14 +1095,14 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/_generate",
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"integrity",
-										"_generate"
+										"_generateintegritydata"
 									]
 								}
 							},
@@ -1248,14 +1248,14 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/_generate",
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"integrity",
-										"_generate"
+										"_generateintegritydata"
 									]
 								}
 							},
@@ -1301,14 +1301,14 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/_generate",
+									"raw": "{{serverURL}}/api/integrity/_generateintegritydata",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"integrity",
-										"_generate"
+										"_generateintegritydata"
 									]
 								}
 							},
