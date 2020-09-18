@@ -189,7 +189,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             })},200);
     },
 
-    showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate, isBulk){
+    showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate, isBulk, isEdit){
         this.assetIdentifier = null;
 
         this.workflow = workflow;
@@ -209,7 +209,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.title = this.title;
         dialog.container = this;
         dialog.workflow = this.workflow;
-        dialog.show(isBulk);
+        dialog.show(isBulk, isEdit);
 
         var self = this;
         setTimeout(function() {
