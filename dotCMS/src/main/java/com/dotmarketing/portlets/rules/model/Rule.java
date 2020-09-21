@@ -294,6 +294,7 @@ public class Rule implements Permissionable, Serializable {
     private void evaluateActions(HttpServletRequest req, HttpServletResponse res, List<RuleAction> actions) {
         for (RuleAction action : actions) {
             try {
+                Logger.info(this, "Evaluating action: " + action.getActionlet());
                 action.evaluate(req, res);
             } catch (Exception e) {
                 Logger.warn(this.getClass(),

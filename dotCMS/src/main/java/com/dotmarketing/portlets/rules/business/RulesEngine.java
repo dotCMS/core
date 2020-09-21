@@ -175,8 +175,12 @@ public final class RulesEngine {
         // do not run rules in admin mode
         PageMode mode= PageMode.get(req);
         if(mode.isAdmin) {
-          final boolean fireRules =Try.of(()->Boolean.valueOf(req.getParameter("fireRules"))).getOrElse(false);
-          if(!fireRules) {
+          final boolean fireRulesFromParameter =Try.of(()->Boolean.valueOf
+				  (req.getParameter("fireRules"))).getOrElse(false);
+          final boolean fireRulesFromAttribute =Try.of(()-> Boolean.valueOf((Boolean)
+				  req.getAttribute("fireRules"))).getOrElse(false);
+
+          if(!fireRulesFromParameter && !fireRulesFromAttribute) {
             return;
           }
         }
@@ -189,7 +193,7 @@ public final class RulesEngine {
         }
         alreadyFiredRulesFor.add(ruleRunKey);
         req.setAttribute(DOT_RULES_FIRED_ALREADY,alreadyFiredRulesFor);
-        
+
 		if (SKIP_RULES_EXECUTION.equalsIgnoreCase(req.getParameter(WebKeys.RULES_ENGINE_PARAM))
 				|| SKIP_RULES_EXECUTION.equalsIgnoreCase(String.valueOf(req.getParameter(WebKeys.RULES_ENGINE_PARAM)))) {
 			return;
