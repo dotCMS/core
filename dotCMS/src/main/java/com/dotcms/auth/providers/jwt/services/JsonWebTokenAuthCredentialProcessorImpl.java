@@ -125,7 +125,8 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
-        final User user = jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null;
+        final User user = jwToken.isPresent()  && jwToken.get().getActiveUser().isPresent() ?
+                jwToken.get().getActiveUser().get() : null;
 
         if(user != null) {
 

@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 import javax.ws.rs.core.Response;
 import java.util.Optional;
@@ -32,10 +33,12 @@ public class PushPublishResourceUtil {
         }
 
         if (pushPublishAuthenticationToken.isJWTTokenWay()) {
-            return pushPublishAuthenticationToken.getToken().getActiveUser().isPresent() ?
+
+            final Optional<User> optionalUser = pushPublishAuthenticationToken.getToken().getActiveUser();
+            return optionalUser.isPresent() && optionalUser.get().isAdmin() ?
+                    Optional.empty() :
                     Optional.of(responseResource.responseAuthenticateError("invalid_token",
-                            AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY )) :
-                    Optional.empty();
+                            AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY ));
         } else {
             return Optional.empty();
         }

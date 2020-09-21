@@ -5,12 +5,12 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.IncorrectClaimException;
+import io.jsonwebtoken.*;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.ContainerRequest;
 
@@ -33,21 +33,28 @@ public enum AuthCredentialPushPublishUtil {
     public static String INVALID_TOKEN_ERROR_KEY = "__invalid_token__";
 
     public Optional<String> getRequestToken(final PublishingEndPoint endpoint)  {
+        final boolean useJWTToken = isJWTAvailable();
+
         try {
-            final boolean useJWTToken = isJWTAvailable();
-            final Optional<String> tokenOptional = useJWTToken ?
-                    getJWTToken(endpoint) :
-                    PushPublisher.retriveEndpointKeyDigest(endpoint);
+            String token;
 
-            if (!tokenOptional.isPresent()) {
-                return tokenOptional;
+            if (useJWTToken) {
+                final Optional<String> optionalToken = PushPublisher.retriveEndpointKey(endpoint);
+
+                if (optionalToken.isPresent() && APILocator.getApiTokenAPI().isWellFormedToken(optionalToken.get())) {
+                    token = optionalToken.get();
+                } else {
+                    return Optional.of(PushPublisher.retriveEndpointKeyDigest(endpoint).get());
+                }
+
+            } else {
+                token = PushPublisher.retriveEndpointKeyDigest(endpoint).get();
+
             }
-
-            final String token = tokenOptional.get();
 
             return Optional.of(JsonWebTokenAuthCredentialProcessor.BEARER + token);
         } catch (IOException e) {
-            throw new DotRuntimeException(e);
+            return Optional.empty();
         }
     }
 
@@ -84,6 +91,7 @@ public enum AuthCredentialPushPublishUtil {
     }
 
     private PushPublishAuthenticationToken getFromEndPointAuthKey(HttpServletRequest request) throws DotDataException, IOException {
+
         final Optional<PublishingEndPoint> publishingEndPointOptional = getPublishingEndPointDotCMSToken(request);
         return publishingEndPointOptional.isPresent() ?
                 new PushPublishAuthenticationToken(publishingEndPointOptional.get()) :
@@ -139,10 +147,6 @@ public enum AuthCredentialPushPublishUtil {
         } else {
             throw new IllegalArgumentException("Bearer Authorization header expected");
         }
-    }
-
-    private Optional<String> getJWTToken(final PublishingEndPoint endpoint) throws IOException {
-        return PushPublisher.retriveEndpointKey(endpoint);
     }
 
     public static class PushPublishAuthenticationToken {
