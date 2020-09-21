@@ -3,20 +3,18 @@ package com.dotmarketing.servlets;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
+import com.liferay.portal.util.PortalUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -239,12 +237,12 @@ public class BinaryExporterServlet extends HttpServlet {
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
 
-			User user = userWebAPI.getLoggedInUser(req);
+			final User user = PortalUtil.getUser(req);
 
-			PageMode mode = PageMode.get(req);
+			final PageMode mode = PageMode.get(req);
 
 			String downloadName = "file_asset";
-			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
+			final long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
 
 			if (isContent){
@@ -265,12 +263,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						}
 					}
 				} else {
-				    boolean live=userWebAPI.isLoggedToFrontend(req);
-
-					//GIT-4506
-					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-					    live = mode.showLive;
-					}
+				    boolean live=mode.showLive;
 
 				    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
 				        live=true;

@@ -375,7 +375,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
      */
     private boolean isLiveContentlet(Permissionable permissionable) {
         return permissionable!=null && permissionable instanceof Contentlet
-                && Sneaky.sneak(()->((Contentlet) permissionable).isLive());
+                && Try.of(()->((Contentlet) permissionable).isLive()).getOrElse(false);
     }
 
     @WrapInTransaction

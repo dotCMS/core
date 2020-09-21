@@ -90,7 +90,9 @@
 		relationName = relationship.getParentRelationName();
         isParent="no";
 	}
-	
+
+	// issue-19204
+	double randomNumber = Math.random();
 %>
     <style type="text/css" media="all">
         @import url(/html/portlet/ext/contentlet/field/relationship_field.css);
@@ -704,10 +706,10 @@
          useRelateContentOnSelect="true"
 		 selectButtonLabel='<%= LanguageUtil.get(pageContext, "Relate")%>'
 	     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
-	     counter_radio="<%= System.currentTimeMillis() %>" 
-	     searchCounter="<%= System.currentTimeMillis() %>" 
+	     counter_radio="<%= randomNumber %>"
+	     searchCounter="<%= randomNumber %>"
 	     contentletLanguageId="<%=contentlet.getLanguageId() %>"
-	     dialogCounter="<%= System.currentTimeMillis() %>">
+	     dialogCounter="<%= randomNumber %>">
 	 </div>
 
 
