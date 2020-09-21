@@ -17,9 +17,11 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -46,6 +48,10 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	UserAPI userApi = null;
 	ContainerAPI containerApi = null;
 	TemplateAPI templateApi = null;
+
+	private static final String CREATE_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, deleted, locked_by, locked_on, version_ts) VALUES (?,?,?,?,?,?,?)";
+	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) VALUES (?,?,?,?,?,?,?,?)";
+	private static final String UPDATE_CONTENTLET_VERSION_INFO_SQL = "UPDATE contentlet_version_info SET working_inode=?, live_inode=?, deleted=?, locked_by=?, locked_on=?, version_ts=? WHERE identifier=? AND lang=?";
 
 	/**
 	 * Default class constructor.
@@ -336,42 +342,67 @@ public class VersionableFactoryImpl extends VersionableFactory {
     }
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo, boolean updateVersionTS) throws DotDataException, DotStateException {
-    	Identifier ident = this.iapi.find(cvInfo.getIdentifier());
-    	ContentletVersionInfo vi= null;
-    	if(ident!=null && InodeUtils.isSet(ident.getId())){
-    		vi= findContentletVersionInfoInDB(ident.getId(), cvInfo.getLang());
-    	}
-    	boolean isNew = vi==null || !InodeUtils.isSet(vi.getIdentifier());
-        try {
-			BeanUtils.copyProperties(vi, cvInfo);
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(),e);
+		boolean isNew = true;
+		if (UtilMethods.isSet(cvInfo.getIdentifier())) {
+			try {
+				final ContentletVersionInfo fromDB =
+						findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
+				if (fromDB != null) {
+					isNew = false;
+				}
+			} catch (final Exception e) {
+				Logger.debug(this.getClass(), e.getMessage(), e);
+			}
+		} else {
+			cvInfo.setIdentifier(UUIDGenerator.generateUuid());
 		}
-        if(updateVersionTS){
-        	vi.setVersionTs(new Date());
-        }
+
+		if(updateVersionTS){
+			cvInfo.setVersionTs(new Date());
+		}
+
+		final DotConnect db = new DotConnect();
+
     	if(isNew) {
-            HibernateUtil.save(vi);
-        }
-        else {
-            HibernateUtil.saveOrUpdate(vi);
+			db.setSQL(INSERT_CONTENTLET_VERSION_INFO_SQL);
+			db.addParam(cvInfo.getIdentifier());
+			db.addParam(cvInfo.getLang());
+			db.addParam(cvInfo.getWorkingInode());
+			db.addParam(cvInfo.getLiveInode());
+			db.addParam(cvInfo.isDeleted());
+			db.addParam(cvInfo.getLockedBy());
+			db.addParam(cvInfo.getLockedOn());
+			db.addParam(cvInfo.getVersionTs());
+			db.loadResult();
+        } else {
+			db.setSQL(UPDATE_CONTENTLET_VERSION_INFO_SQL);
+			db.addParam(cvInfo.getWorkingInode());
+			db.addParam(cvInfo.getLiveInode());
+			db.addParam(cvInfo.isDeleted());
+			db.addParam(cvInfo.getLockedBy());
+			db.addParam(cvInfo.getLockedOn());
+			db.addParam(cvInfo.getVersionTs());
+			db.addParam(cvInfo.getIdentifier());
+			db.addParam(cvInfo.getLang());
+			db.loadResult();
         }
     	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
     }
 
     @Override
     protected ContentletVersionInfo createContentletVersionInfo(Identifier identifier, long lang, String workingInode) throws DotStateException, DotDataException {
-        ContentletVersionInfo cVer=new ContentletVersionInfo();
-        cVer.setDeleted(false);
-        cVer.setLockedBy(null);
-        cVer.setLockedOn(new Date());
-        cVer.setIdentifier(identifier.getId());
-        cVer.setLang(lang);
-        cVer.setWorkingInode(workingInode);
-        cVer.setVersionTs(new Date());
+		DotConnect dotConnect = new DotConnect();
+		dotConnect.setSQL(CREATE_CONTENTLET_VERSION_INFO_SQL);
+		dotConnect.addParam(identifier.getId());
+		dotConnect.addParam(lang);
+		dotConnect.addParam(workingInode);
+		dotConnect.addParam(false);
+		dotConnect.addParam((String) null);
+		dotConnect.addParam(new Date());
+		dotConnect.addParam(new Date());
+		dotConnect.loadResult();
 
-        HibernateUtil.save(cVer); 
-        return cVer;
+		return findContentletVersionInfoInDB(identifier.getId(), lang);
     }
 
     @Override
