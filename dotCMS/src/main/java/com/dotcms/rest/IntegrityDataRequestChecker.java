@@ -100,23 +100,9 @@ public class IntegrityDataRequestChecker implements Runnable {
                 // call IntegrityChecker
                 boolean conflictPresent ;
                 try {
-                    HibernateUtil.startTransaction();
                     IntegrityUtil.completeDiscardConflicts(endpointId);
-                    HibernateUtil.commitTransaction();
-
-                    HibernateUtil.startTransaction();
                     conflictPresent = IntegrityUtil.completeCheckIntegrity(endpointId);
-                    HibernateUtil.commitTransaction();
                 } catch(Exception e) {
-                    try {
-                        HibernateUtil.rollbackTransaction();
-                    } catch (DotHibernateException e1) {
-                        Logger.error(
-                                IntegrityResource.class,
-                                "Error while rolling back transaction",
-                                e);
-                    }
-
                     //Special handling if the thread was interrupted
                     if (e instanceof InterruptedException) {
                         //Setting the process status
@@ -132,7 +118,6 @@ public class IntegrityDataRequestChecker implements Runnable {
                     }
 
                     Logger.error(IntegrityResource.class, "Error checking integrity", e);
-
                     //Setting the process status
                     IntegrityResource.setStatus(session, endpointId, IntegrityResource.ProcessStatus.ERROR, null);
                     throw new RuntimeException("Error checking integrity", e);
