@@ -1,5 +1,6 @@
 package com.dotcms.integritycheckers;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.http.DotExecutionException;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
@@ -762,6 +763,7 @@ public class IntegrityUtil {
      * @throws DotDataException
      * @throws Exception
      */
+    @WrapInTransaction
     public static void completeDiscardConflicts(final String endpointId) throws DotDataException {
         IntegrityType[] types = IntegrityType.values();
         for (IntegrityType integrityType : types) {
@@ -778,6 +780,7 @@ public class IntegrityUtil {
      * @return is there is at least one conflict returns true, otherwise false
      * @throws Exception
      */
+    @WrapInTransaction
     public static boolean completeCheckIntegrity(final String endpointId) throws Exception {
         boolean existConflicts = false;
 
