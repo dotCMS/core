@@ -1642,6 +1642,24 @@ dd.leftdl {
         <img style="display:none;" id="loggedUsersProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
 
+
+
+
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- START SYSTEM_JOBS -->
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <div id="system_jobs" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "scheduler.system.jobs") %>">      
+        
+    
+        <%@ include file="/html/portlet/ext/cmsmaintenance/system_jobs.jsp" %>
+    
+    
+    
+    </div>
+
+
+
+
 </div>
 </div>
 
