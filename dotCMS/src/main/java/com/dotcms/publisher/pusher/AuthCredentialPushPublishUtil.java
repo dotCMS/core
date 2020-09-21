@@ -44,7 +44,7 @@ public enum AuthCredentialPushPublishUtil {
                 if (optionalToken.isPresent() && APILocator.getApiTokenAPI().isWellFormedToken(optionalToken.get())) {
                     token = optionalToken.get();
                 } else {
-                    return Optional.of(PushPublisher.retriveEndpointKeyDigest(endpoint).get());
+                    token = PushPublisher.retriveEndpointKeyDigest(endpoint).get();
                 }
 
             } else {
