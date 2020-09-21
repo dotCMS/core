@@ -1,18 +1,11 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotcms.enterprise.license.bouncycastle.util.BigIntegers;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertFalse;
 
 
 public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest {
