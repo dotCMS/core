@@ -23,7 +23,8 @@ import java.io.IOException;
 public class CasAutoLoginWebInterceptor implements WebInterceptor {
 
     private final LoginServiceAPI loginServiceAPI;
-
+    final boolean useCasFilter =
+                    Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON", false);
     public CasAutoLoginWebInterceptor() {
         this(APILocator.getLoginServiceAPI());
     }
@@ -37,8 +38,7 @@ public class CasAutoLoginWebInterceptor implements WebInterceptor {
                             final HttpServletResponse response) throws IOException {
 
         final HttpSession session  = request.getSession(false);
-        final boolean useCasFilter =
-                Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON", false);
+
         Result result = Result.NEXT;
 
         if (useCasFilter && null != session) {

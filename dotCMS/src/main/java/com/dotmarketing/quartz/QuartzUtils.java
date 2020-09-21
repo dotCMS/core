@@ -1,17 +1,13 @@
 package com.dotmarketing.quartz;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
-
 import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -20,7 +16,8 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
-
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 
 /**
@@ -40,29 +37,7 @@ public class QuartzUtils {
 	
 	private static Map<String, TaskRuntimeValues> runtimeTaskValues = new HashMap<String, TaskRuntimeValues>();
 	
-	/**
-	 * 
-	 * Lists all jobs scheduled through the sequential scheduler, the sequential scheduler
-	 * let you run only one job at a time
-	 * 
-	 * @return
-	 */
-	public static List<ScheduledTask> getSequentialScheduledTasks() throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		return getScheduledTasks(sched, true, null);
-	}
-	
-	/**
-	 * 
-	 * Lists all jobs scheduled through the standard scheduler, the standard scheduler
-	 * let you run multiple jobs in parallel
-	 * 
-	 * @return
-	 */
-	public static List<ScheduledTask> getStandardScheduledTasks() throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
-		return getScheduledTasks(sched, false, null);
-	}
+
 
 	/**
 	 * 
@@ -72,24 +47,24 @@ public class QuartzUtils {
 	 * @return
 	 */
 	public static List<ScheduledTask> getScheduledTasks() throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
+		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		List<ScheduledTask> jobs = getScheduledTasks(sched, true, null);
-		sched = DotSchedulerFactory.getInstance().getScheduler();
-		jobs.addAll(getScheduledTasks(sched, false, null));
 		return jobs;
 	}
 
-
-	/**
-	 *
-	 * Lists all jobs scheduled through the sequential scheduler that belong to the given group
-	 * 
-	 * @return
-	 */
-	public static List<ScheduledTask> getSequentialScheduledTasks(String group) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		return getScheduledTasks(sched, true, group);
+	
+	public static Scheduler getScheduler() {
+	    try {
+	    return DotSchedulerFactory.getInstance().getScheduler();
+	    }
+	    catch(Exception e) {
+	        Logger.warnAndDebug(QuartzUtils.class, e);
+	        throw new DotRuntimeException(e);
+	    }
 	}
+
+	
+	
 	
 	/**
 	 * 
@@ -97,22 +72,10 @@ public class QuartzUtils {
 	 * 
 	 * @return
 	 */
-	public static List<ScheduledTask> getStandardScheduledTasks(String group) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
-		return getScheduledTasks(sched, false, group);
-	}
-
-	/**
-	 * 
-	 * Lists all jobs scheduled through the standard scheduler that belong to the given group
-	 * 
-	 * @return
-	 */
 	public static List<ScheduledTask> getScheduledTasks(String group) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
+		Scheduler sched =DotSchedulerFactory.getInstance().getScheduler();
 		List<ScheduledTask> jobs = getScheduledTasks(sched, true, group);
-		sched = DotSchedulerFactory.getInstance().getScheduler();
-		jobs.addAll(getScheduledTasks(sched, false, group));
+
 		return jobs;
 	}
 	
@@ -181,8 +144,7 @@ public class QuartzUtils {
 	public static List<ScheduledTask> getScheduledTask(String jobName, String jobGroup) throws SchedulerException {
 		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		List<ScheduledTask> jobs = getScheduledTask(jobName, jobGroup, sched, false);
-		sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		jobs.addAll(getScheduledTask(jobName, jobGroup, sched, true));
+
 		return jobs;
 	}
 	
@@ -203,23 +165,7 @@ public class QuartzUtils {
 		return getScheduledTask(jobName, jobGroup, sched, false);
 	}
 	
-	/**
-	 * This methods checks all jobs configured either in the sequential scheduler that match
-	 * the given jobName and jobGroup
-	 * 
-	 * This method could return a list with multiple instances
-	 * because the same job could be configured with multiple triggers.
-	 * 
-	 * @param jobName
-	 * @param jobGroup
-	 * @return
-	 * @throws SchedulerException
-	 */
-	public static List<ScheduledTask> getSequentialScheduledTask(String jobName, String jobGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		return getScheduledTask(jobName, jobGroup, sched, true);
-	}
-	
+
 	@SuppressWarnings("unchecked")
 	private static List<ScheduledTask> getScheduledTask(String jobName, String jobGroup, Scheduler sched, boolean sequential) throws SchedulerException {
 		List<ScheduledTask> result = new ArrayList<ScheduledTask>(1);
@@ -283,8 +229,8 @@ public class QuartzUtils {
 	 * @throws SchedulerException
 	 */
 	public static boolean isJobSequentiallyScheduled(String jobName, String jobGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		return isJobScheduled(jobName, jobGroup, sched);
+
+		return false;
 	}
 	
 	private static boolean isJobScheduled(String jobName, String jobGroup, Scheduler sched) throws SchedulerException {
@@ -432,11 +378,7 @@ public class QuartzUtils {
 	 */
 	public static void scheduleTask(ScheduledTask job) throws SchedulerException, ParseException, ClassNotFoundException {
 
-		Scheduler sched;
-		if (job.isSequentialScheduled())
-			sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		else
-			sched = DotSchedulerFactory.getInstance().getScheduler();
+		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 
 		JobDetail jobDetail;
 		Trigger trigger;
@@ -502,11 +444,10 @@ public class QuartzUtils {
 	 * 
 	 */
 	public static boolean removeJob(String jobName, String jobGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
+		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		boolean result1 = removeJob(jobName, jobGroup, sched);
-		sched = DotSchedulerFactory.getInstance().getScheduler();
-		boolean result2 = removeJob(jobName, jobGroup, sched);
-		return result1 | result2;
+
+		return result1 ;
 	}
 
 	/**
@@ -553,8 +494,8 @@ public class QuartzUtils {
 	public static void pauseJob(String jobName, String jobGroup) throws SchedulerException {
 		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		pauseJob(jobName, jobGroup, sched);
-		sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		pauseJob(jobName, jobGroup, sched);
+
+
 	}
 	
 	/**
@@ -564,23 +505,7 @@ public class QuartzUtils {
 	 * @return
 	 * @throws SchedulerException 
 	 */
-	public static void pauseStandardJob(String jobName, String jobGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
-		pauseJob(jobName, jobGroup, sched);
-	}
-	
-	/**
-	 * Pauses a job and all it associated triggers from the sequential schedulers
-	 * @param jobName
-	 * @param jobGroup
-	 * @return
-	 * @throws SchedulerException 
-	 */
-	public static void pauseSequentialJob(String jobName, String jobGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		pauseJob(jobName, jobGroup, sched);
-	}
-	
+
 	private static void pauseJob(String jobName, String jobGroup, Scheduler sched) throws SchedulerException {
 		sched.pauseJob(jobName, jobGroup);
 	}
@@ -597,33 +522,11 @@ public class QuartzUtils {
 	public static void resumeJob(String jobName, String jobGroup) throws SchedulerException {
 		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		resumeJob(jobName, jobGroup, sched);
-		sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		resumeJob(jobName, jobGroup, sched);
+
 	}
+
 	
-	/**
-	 * Pauses a job and all it associated triggers from the standard schedulers
-	 * @param jobName
-	 * @param jobGroup
-	 * @return
-	 * @throws SchedulerException 
-	 */
-	public static void resumeStandardJob(String jobName, String jobGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
-		resumeJob(jobName, jobGroup, sched);
-	}
-	
-	/**
-	 * Pauses a job and all it associated triggers from the sequential schedulers
-	 * @param jobName
-	 * @param jobGroup
-	 * @return
-	 * @throws SchedulerException 
-	 */
-	public static void resumeSequentialJob(String jobName, String jobGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		resumeJob(jobName, jobGroup, sched);
-	}
+
 	
 	private static void resumeJob(String jobName, String jobGroup, Scheduler sched) throws SchedulerException {
 		sched.resumeJob(jobName, jobGroup);
@@ -639,33 +542,12 @@ public class QuartzUtils {
 	public static void pauseTrigger(String triggerName, String triggerGroup) throws SchedulerException {
 		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		pauseTrigger(triggerName, triggerGroup, sched);
-		sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		pauseTrigger(triggerName, triggerGroup, sched);
+
 	}
 	
-	/**
-	 * Pauses a trigger from the standard scheduler
-	 * @param triggerName
-	 * @param triggerGroup
-	 * @return
-	 * @throws SchedulerException 
-	 */
-	public static void pauseStandardTrigger(String triggerName, String triggerGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
-		pauseTrigger(triggerName, triggerGroup, sched);
-	}
+
 	
-	/**
-	 * Pauses a trigger from the sequential scheduler
-	 * @param triggerName
-	 * @param triggerGroup
-	 * @return
-	 * @throws SchedulerException 
-	 */
-	public static void pauseSequentialTrigger(String triggerName, String triggerGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		pauseTrigger(triggerName, triggerGroup, sched);
-	}
+
 	
 	private static void pauseTrigger(String triggerName, String triggerGroup, Scheduler sched) throws SchedulerException {
 		sched.pauseTrigger(triggerName, triggerGroup);
@@ -679,11 +561,8 @@ public class QuartzUtils {
 	 * @throws SchedulerException
 	 */
 	public static Trigger getTrigger(String triggerName, String triggerGroup) throws SchedulerException {
-		Trigger t = getSequentialScheduler ().getTrigger(triggerName, triggerGroup);
-		if(t==null){
-			t = getStandardScheduler () .getTrigger(triggerName, triggerGroup);
-			
-		}
+		Trigger t = t = DotSchedulerFactory.getInstance().getScheduler() .getTrigger(triggerName, triggerGroup);
+
 		return t;
 	}
 	
@@ -697,33 +576,12 @@ public class QuartzUtils {
 	public static void resumeTrigger(String triggerName, String triggerGroup) throws SchedulerException {
 		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		resumeTrigger(triggerName, triggerGroup, sched);
-		sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		resumeTrigger(triggerName, triggerGroup, sched);
+
 	}
 	
-	/**
-	 * Resumes a trigger from the standard scheduler
-	 * @param triggerName
-	 * @param triggerGroup
-	 * @return
-	 * @throws SchedulerException 
-	 */
-	public static void resumeStandardTrigger(String triggerName, String triggerGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
-		resumeTrigger(triggerName, triggerGroup, sched);
-	}
+
 	
-	/**
-	 * Resumes a trigger from the sequential scheduler
-	 * @param triggerName
-	 * @param triggerGroup
-	 * @return
-	 * @throws SchedulerException 
-	 */
-	public static void resumeSequentialTrigger(String triggerName, String triggerGroup) throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		resumeTrigger(triggerName, triggerGroup, sched);
-	}
+
 	
 	private static void resumeTrigger(String triggerName, String triggerGroup, Scheduler sched) throws SchedulerException {
 		sched.resumeTrigger(triggerName, triggerGroup);
@@ -736,8 +594,7 @@ public class QuartzUtils {
 	public static void pauseSchedulers () throws SchedulerException {
 		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		sched.standby();
-		sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		sched.standby();
+
 	}
 	
 	/**
@@ -749,23 +606,7 @@ public class QuartzUtils {
 		sched.standby();
 	}
 
-	/**
-	 * Temporarily pauses all schedulers from executing future triggers
-	 * @throws SchedulerException 
-	 */
-	public static void pauseSequentialSchedulers () throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		sched.standby();
-	}
 
-    /**
-     * Temporarily pauses the local scheduler from executing future triggers
-     * @throws SchedulerException
-     */
-    public static void pauseLocalScheduler () throws SchedulerException {
-        Scheduler localScheduler = DotSchedulerFactory.getInstance().getLocalScheduler();
-        localScheduler.standby();
-    }
 
 	/**
 	 * Temporarily pauses all schedulers from executing future triggers
@@ -775,79 +616,21 @@ public class QuartzUtils {
 		long start = System.currentTimeMillis();
 		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		sched.start();
-		sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		sched.start();
+
 		System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_QUARTZ, String.valueOf(System.currentTimeMillis() - start));
 	}
 	
-	/**
-	 * Temporarily pauses all schedulers from executing future triggers
-	 * @throws SchedulerException 
-	 */
-	public static void startStandardSchedulers () throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
-		sched.start();
-	}
 
-	/**
-	 * Temporarily pauses all schedulers from executing future triggers
-	 * @throws SchedulerException 
-	 */
-	public static void startSequentialSchedulers () throws SchedulerException {
-		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
-		sched.start();
-	}
 
-    /**
-     * Starts the local quartz scheduler
-     *
-     * @throws SchedulerException
-     */
-    public static void startLocalScheduler () throws SchedulerException {
-        Scheduler localScheduler = DotSchedulerFactory.getInstance().getLocalScheduler();
-        localScheduler.start();
-    }
-
-	/**
-	 * Returns you the standard quartz scheduler class that let have more control over jobs and triggers
-	 * @return
-	 * @throws SchedulerException 
-	 */
-	public static Scheduler getStandardScheduler () throws SchedulerException {
-		return DotSchedulerFactory.getInstance().getScheduler();
-	}
-
-	
-	/**
-	 * Returns you the sequential quartz scheduler class that let have more control over jobs and triggers
-	 * @return
-	 * @throws SchedulerException 
-	 */
-	public static Scheduler getSequentialScheduler () throws SchedulerException {
-		return DotSchedulerFactory.getInstance().getSequentialScheduler();
-	}
-
-    /**
-     * Returns the local quartz scheduler
-     *
-     * @return
-     * @throws SchedulerException
-     */
-    public static Scheduler getLocalScheduler () throws SchedulerException {
-        return DotSchedulerFactory.getInstance().getLocalScheduler();
-    }
 	
 	public static boolean isJobRunning(String jobName, String jobGroup) throws SchedulerException{
 		
 		List<JobExecutionContext> currentlyExecutingJobs = new ArrayList<JobExecutionContext>();
-		currentlyExecutingJobs.addAll(getSequentialScheduler().getCurrentlyExecutingJobs());
-		currentlyExecutingJobs.addAll(getStandardScheduler().getCurrentlyExecutingJobs());
+		currentlyExecutingJobs.addAll(DotSchedulerFactory.getInstance().getScheduler().getCurrentlyExecutingJobs());
 
-		JobDetail existingJobDetail = getSequentialScheduler().getJobDetail(jobName, jobGroup);
 
-		if (existingJobDetail == null) {
-			existingJobDetail = getStandardScheduler().getJobDetail(jobName, jobGroup);
-		}
+		JobDetail existingJobDetail = DotSchedulerFactory.getInstance().getScheduler().getJobDetail(jobName, jobGroup);
+
 		if (existingJobDetail != null) {
 	        for (JobExecutionContext jec : currentlyExecutingJobs) {
 	        	JobDetail runningJobDetail = jec.getJobDetail();

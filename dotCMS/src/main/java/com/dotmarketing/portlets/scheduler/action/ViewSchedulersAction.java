@@ -29,6 +29,7 @@ import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotmarketing.quartz.DotSchedulerFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
@@ -61,14 +62,14 @@ public class ViewSchedulersAction extends PortletAction {
 			String group2 = "Recurrent Campaign";
 			Map<String,List<String>> results = new HashMap<String,List<String>>();
 			List<String> list = new ArrayList<String>();
-			String[] tasks =  QuartzUtils.getStandardScheduler().getJobNames(group);
+			String[] tasks =  DotSchedulerFactory.getInstance().getScheduler().getJobNames(group);
 			for(String task : tasks){
 				list.add(task);
 			}
 			results.put(group, list);
 			
 			List<String> list2 = new ArrayList<String>();
-			String[] tasks2 =  QuartzUtils.getStandardScheduler().getJobNames(group2);
+			String[] tasks2 =  DotSchedulerFactory.getInstance().getScheduler().getJobNames(group2);
 			for(String task : tasks2){
 				list2.add(task);
 			}

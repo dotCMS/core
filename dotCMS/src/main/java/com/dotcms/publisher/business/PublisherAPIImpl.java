@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.DotSchedulerFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -308,7 +309,7 @@ public class PublisherAPIImpl extends PublisherAPI{
     @Override
     public void firePublisherQueueNow(Map<String, Object> dataMap){
 		try {
-		    Scheduler sched = QuartzUtils.getStandardScheduler();
+		    Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		    JobDetail job = sched.getJobDetail("PublishQueueJob"  , "dotcms_jobs");
 			if(job==null) {
 				return;

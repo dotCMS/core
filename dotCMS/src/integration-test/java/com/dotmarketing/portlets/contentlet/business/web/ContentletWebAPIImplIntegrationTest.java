@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.quartz.DotSchedulerFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
@@ -67,8 +68,8 @@ public class ContentletWebAPIImplIntegrationTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        if (!QuartzUtils.getSequentialScheduler().isStarted()) {
-            QuartzUtils.getSequentialScheduler().start();
+        if (!QuartzUtils.getScheduler().isStarted()) {
+            QuartzUtils.getScheduler().start();
         }
     }
 
@@ -239,11 +240,11 @@ public class ContentletWebAPIImplIntegrationTest {
         Thread.sleep(500);
 
         while(true){
-            final String[] jobGroupNames = QuartzUtils.getSequentialScheduler().getJobGroupNames();
+            final String[] jobGroupNames = QuartzUtils.getScheduler().getJobGroupNames();
 
             if ((jobGroupNames.length > 0 &&
                     Arrays.asList(jobGroupNames).contains("update_containers_paths_job")) &&
-                    !QuartzUtils.getSequentialScheduler().getCurrentlyExecutingJobs().isEmpty()){
+                    !QuartzUtils.getScheduler().getCurrentlyExecutingJobs().isEmpty()){
                 Thread.sleep(500);
             } else {
                 break;
@@ -274,7 +275,7 @@ public class ContentletWebAPIImplIntegrationTest {
 
         contentletWebAPI.saveContent(hostMap, false, false, user);
 
-        final String[] jobGroupNames = QuartzUtils.getSequentialScheduler().getJobGroupNames();
+        final String[] jobGroupNames = QuartzUtils.getScheduler().getJobGroupNames();
 
         assertFalse(jobGroupNames.length > 0 &&
                 Arrays.asList(jobGroupNames).contains("update_containers_paths_job"));

@@ -104,7 +104,7 @@ public class CascadePermissionsJob extends DotStatefulJob {
 	
 	public static List<ScheduledTask> getCurrentScheduledJobs () {
 		try {
-			return QuartzUtils.getSequentialScheduledTasks("cascade_permissions_jobs");
+			return QuartzUtils.getScheduledTasks("cascade_permissions_jobs");
 		} catch (SchedulerException e) {
 			Logger.error(CascadePermissionsJob.class, "Unable to retrieve jobs info");
 			throw new DotRuntimeException(e.getMessage(), e);

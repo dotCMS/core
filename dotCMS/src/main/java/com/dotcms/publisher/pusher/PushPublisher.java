@@ -49,6 +49,7 @@ import com.dotcms.system.event.local.type.pushpublish.SinglePushPublishEndpointF
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.quartz.DotSchedulerFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -460,7 +461,7 @@ public class PushPublisher extends Publisher {
 	 */
 	private void updateJobDataMap(DeliveryStrategy deliveryStrategy) {
 		try {
-			Scheduler sched = QuartzUtils.getStandardScheduler();
+			Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 			JobDetail job = sched.getJobDetail("PublishQueueJob", "dotcms_jobs");
 			if (job == null) {
 				return;

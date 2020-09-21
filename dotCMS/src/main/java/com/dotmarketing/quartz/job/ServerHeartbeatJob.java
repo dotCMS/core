@@ -3,19 +3,17 @@
  */
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.CloseDB;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cluster.common.ClusterServerActionThread;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseManager;
-
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
-
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 
 /**
  * This job will register the current date (db date) into db every configured period of time.
@@ -28,14 +26,13 @@ public class ServerHeartbeatJob implements Job {
 
 
 
-
+    @CloseDBIfOpened
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 
+	    Logger.debug(this.getClass(), ()-> "Running ServerHeartbeatJob");
 		try{
 
 			LicenseManager.getInstance().takeLicenseFromRepoIfNeeded();
-
-
 
 
 			LicenseUtil.updateLicenseHeartbeat();

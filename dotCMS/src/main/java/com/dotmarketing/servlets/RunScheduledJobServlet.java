@@ -18,6 +18,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.quartz.DotSchedulerFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -77,7 +78,7 @@ public class RunScheduledJobServlet extends HttpServlet {
                 return;
             }
             try {
-                Scheduler sched = QuartzUtils.getStandardScheduler();
+                Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
                 JobDetail job = new JobDetail(runClass + System.currentTimeMillis(), null, clazz);
                 Trigger trigger = TriggerUtils.makeImmediateTrigger(0, 1);
                 trigger.setName(runClass + System.currentTimeMillis());

@@ -33,6 +33,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.quartz.DotSchedulerFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
@@ -178,7 +179,7 @@ public class IdentifierDateJob implements Job {
 		SimpleTrigger trigger = new SimpleTrigger("IdentifierDateTrigger-" + randomID, "identifier_data_triggers",  new Date(startTime));
 		
 		try {
-			Scheduler sched = QuartzUtils.getSequentialScheduler();
+			Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 			sched.scheduleJob(jd, trigger);
 		} catch (SchedulerException e) {
 			Logger.error(IdentifierDateJob.class, "Error scheduling the Identifier Date Job", e);
