@@ -24,7 +24,7 @@
 <table class="listingTable">
     <tr>
         <th><%= LanguageUtil.get(pageContext, "scheduler.job.class") %></th>
-        <th><%= LanguageUtil.get(pageContext, "scheduler.job.group") %></th>
+        <th><%= LanguageUtil.get(pageContext, "group") %></th>
         <th><%= LanguageUtil.get(pageContext, "scheduler.job.durable") %></th>
         <th><%= LanguageUtil.get(pageContext, "scheduler.job.stateful") %></th>
         <th><%= LanguageUtil.get(pageContext, "scheduler.job.sequential") %></th>
@@ -35,7 +35,6 @@
 <%for(String myGroup : groups) {%>
 	<%String[] tasks =  QuartzUtils.getScheduler().getJobNames(myGroup);%>
     <%if(tasks.length==0){continue;}%>
-    <%if(QuartzUtils.getScheduler().getTriggersOfJob(tasks[0], myGroup).length==0)continue;%>
 
 
 	<%for(String t : tasks){%>
@@ -76,13 +75,9 @@
       					<%}%>
       				<%} %>
       			</td>
-      
-      
-      
-      
       		</tr>
 		<%}catch(Exception e){%>
-		<tr><td><%=t%></td><td colspan="4" class="red"><%=LanguageUtil.get(pageContext, "an-unexpected-error-occurred")+"<br/>"+e.getMessage() %></td>
+		<tr><td><%=t%></td><td colspan="10" class="red"><%=LanguageUtil.get(pageContext, "an-unexpected-error-occurred")+"<br/>"+e.getMessage() %></td>
 		</tr>
 		<%} %>
 	<%} %>
