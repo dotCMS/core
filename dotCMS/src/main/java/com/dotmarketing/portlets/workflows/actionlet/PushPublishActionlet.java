@@ -1,5 +1,17 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import com.dotcms.publisher.ajax.RemotePublishAjaxAction;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -15,18 +27,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Actionlet(pushPublish = true)
 public class PushPublishActionlet extends WorkFlowActionlet implements BatchAction <String>  {
@@ -104,7 +104,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 		 try {
 			 doPushPublish(pushPublishBatchData.getData(), pushPublishBatchData.getIdentifiers(), user);
 		 }catch (Exception e){
-			 Logger.debug(PushPublishActionlet.class, e.getMessage());
+			 Logger.warnAndDebug(PushPublishActionlet.class, e.getMessage(), e);
 		 	 throw new WorkflowActionFailureException(e.getMessage(), e);
 		 }
 	}
@@ -139,18 +139,25 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			final String iWantTo = pushPublishData.get(Contentlet.I_WANT_TO);
 			final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
 			final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
-
+			
+			if(envsToSendTo.isEmpty()) {
+			    Logger.warn(this.getClass(), "There are no valid environments to sent to - looking for:" + whoToSendTmp);
+			    return;
+			}
+			
+			
+			
 			final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 			final Date publishDate = dateFormat
 					.parse(contentPushPublishDate + "-" + contentPushPublishTime);
 
-		if ( iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
+		if ( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH.equals( iWantTo ) || RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE.equals( iWantTo ) ) {
 			final Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,
 					filterKey);
 			APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 			publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
 		}
-		if ( iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE ) || iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
+		if ( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE.equals( iWantTo ) || RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE.equals( iWantTo ) ) {
 			if (!contentPushNeverExpire && (!"".equals(contentPushExpireDate.trim()) && !""
 					.equals(contentPushExpireTime.trim()))) {
 				final Date expireDate = dateFormat
@@ -179,6 +186,9 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 	}
 
 	public static List<Environment> getEnvironmentsToSendTo(final String whoToSendTo){
+	    if(whoToSendTo==null) {
+	        return Collections.emptyList();
+	    }
 		final String[] whereToSend = whoToSendTo.split(",");
 		return Stream.of(whereToSend).map(id -> {
 			try {

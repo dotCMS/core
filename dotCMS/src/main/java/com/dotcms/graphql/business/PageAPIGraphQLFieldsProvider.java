@@ -1,5 +1,6 @@
 package com.dotcms.graphql.business;
 
+import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
@@ -38,6 +39,11 @@ public enum PageAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
                 .argument(GraphQLArgument.newArgument()
                         .name("persona")
                         .type(GraphQLString)
+                        .build())
+                .argument(GraphQLArgument.newArgument()
+                        .name("fireRules")
+                        .type(GraphQLBoolean)
+                        .defaultValue(false)
                         .build())
                 .type(PageAPIGraphQLTypesProvider.INSTANCE.getTypesMap().get("Page"))
                 .dataFetcher(new PageDataFetcher()).build());
