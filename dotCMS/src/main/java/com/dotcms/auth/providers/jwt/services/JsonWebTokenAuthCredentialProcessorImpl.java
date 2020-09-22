@@ -82,7 +82,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
         }
 
-        return null;
+        return Optional.empty();
     }
 
     @Override
