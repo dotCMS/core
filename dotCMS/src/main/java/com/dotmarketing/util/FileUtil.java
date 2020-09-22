@@ -1,8 +1,10 @@
 package com.dotmarketing.util;
 
 import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.APILocator;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
+import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.BufferedInputStream;
@@ -276,6 +278,21 @@ public class FileUtil {
 
 		return sha256Builder.buildUnixHash();
 	} // sha256toUnixHash.
+
+	/**
+	 * Given an absolute path this will figure out if it exists under the real assets and return the relative piece
+	 * @param file
+	 * @return
+	 */
+	public static Optional <String> getRealAssetsPathRelativePiece(final File file) {
+		final String absolutePath = file.getAbsolutePath().toLowerCase();
+		final String realAssetsRootPath = APILocator.getFileAssetAPI().getRealAssetsRootPath()
+				.toLowerCase();
+		if (absolutePath.startsWith(realAssetsRootPath)) {
+			return Optional.of(absolutePath.substring(realAssetsRootPath.length()-1));
+		}
+		return Optional.empty();
+	}
 }
 
 final class PNGFileNameFilter implements FilenameFilter {

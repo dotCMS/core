@@ -8,7 +8,7 @@ import java.util.function.Supplier;
  *
  * @author jsanca
  */
-public class GenerateMetaDataConfiguration {
+public class GenerateMetadataConfig {
 
     /**
      * Provides the key for the storage
@@ -53,7 +53,7 @@ public class GenerateMetaDataConfiguration {
      */
     private final boolean full;
 
-    private GenerateMetaDataConfiguration(final Builder builder) {
+    private GenerateMetadataConfig(final Builder builder) {
 
         this.cache = builder.cache;
         this.cacheKeySupplier = builder.cacheKeySupplier;
@@ -195,8 +195,8 @@ public class GenerateMetaDataConfiguration {
             return this;
         }
 
-        public GenerateMetaDataConfiguration build() {
-            return new GenerateMetaDataConfiguration(this);
+        public GenerateMetadataConfig build() {
+            return new GenerateMetadataConfig(this);
         }
     }
 }

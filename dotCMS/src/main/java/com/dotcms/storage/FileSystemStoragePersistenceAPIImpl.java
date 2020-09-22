@@ -149,6 +149,9 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object pushObject(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate,
@@ -198,6 +201,9 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Future<Object> pushFileAsync(final String groupName, final String path,
             final File file, final Map<String, Object> extraMeta) {

@@ -1,8 +1,6 @@
 package com.dotcms.storage;
 
-import java.io.File;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -11,7 +9,7 @@ import java.util.function.Supplier;
  * it could be by cache or file system
  * @author jsanca
  */
-public class RequestMetaData {
+public class RequestMetadata {
 
     /**
      * Provides the key for the storage
@@ -34,7 +32,7 @@ public class RequestMetaData {
      */
     private final Function<Map<String, Object>, Map<String, Object>> wrapMetadataMapForCache;
 
-    private RequestMetaData(final Builder builder) {
+    private RequestMetadata(final Builder builder) {
 
         this.cache                   = builder.cache;
         this.cacheKeySupplier        = builder.cacheKeySupplier;
@@ -106,8 +104,8 @@ public class RequestMetaData {
             return this;
         }
 
-        public RequestMetaData build() {
-            return new RequestMetaData(this);
+        public RequestMetadata build() {
+            return new RequestMetadata(this);
         }
     }
 }

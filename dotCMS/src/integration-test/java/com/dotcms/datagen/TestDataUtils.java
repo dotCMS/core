@@ -50,6 +50,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Jonathan Gamba 2019-04-16
@@ -965,7 +967,8 @@ public class TestDataUtils {
         GIF("com/dotmarketing/portlets/contentlet/business/test_files/test.gif"),
         PNG("com/dotmarketing/portlets/contentlet/business/test_files/test_image2.png"),
         SVG("com/dotmarketing/portlets/contentlet/business/test_files/test_image.svg"),
-        TEXT("com/dotmarketing/portlets/contentlet/business/test_files/test.txt");
+        TEXT("com/dotmarketing/portlets/contentlet/business/test_files/test.txt"),
+        PDF("com/dotmarketing/portlets/contentlet/business/test_files/test.pdf");
 
         private final String filePath;
 
@@ -1794,6 +1797,14 @@ public class TestDataUtils {
         return getMultipleBinariesContentType("MultipleBinaries" + System.currentTimeMillis(), APILocator.systemHost(),null);
     }
 
+    /**
+     * This will give you a CT that has 3 non-required binaries.
+     * The default metadata generated gets removed.
+     * @param contentTypeName
+     * @param site
+     * @param workflowIds
+     * @return
+     */
     @WrapInTransaction
     public static ContentType getMultipleBinariesContentType(final String contentTypeName,
             final Host site,
@@ -1836,11 +1847,11 @@ public class TestDataUtils {
                                 .name("fileAsset1")
                                 .velocityVarName("fileAsset1")
                                 .sortOrder(3)
-                                .indexed(false)
+                                //The only way we can guarantee a field won't be indexed is by setting all these to false
+                                .indexed(false).searchable(false).listed(false).unique(false)
                                 .type(BinaryField.class)
                                 .next()
                 );
-
 
                 fields.add(
                         new FieldDataGen()
@@ -1852,6 +1863,15 @@ public class TestDataUtils {
                                 .next()
                 );
 
+                fields.add(
+                        new FieldDataGen()
+                                .name("fileAsset3")
+                                .velocityVarName("fileAsset3")
+                                .sortOrder(5)
+                                .indexed(true)
+                                .type(BinaryField.class)
+                                .next()
+                );
 
                 fields.add(
                         new FieldDataGen()
@@ -1899,11 +1919,22 @@ public class TestDataUtils {
                     .languageId(languageId)
                     .setProperty("title", "blah")
                     .setProperty("fileAsset1", nextBinaryFile(TestFile.JPG))
-                    .setProperty("fileAsset2", nextBinaryFile(TestFile.TEXT))
+                    .setProperty("fileAsset2", nextBinaryFile(TestFile.PNG))
                     .setProperty("image1", fileAssetJpgContent.getIdentifier());
 
             if (persist) {
-                return contentletDataGen.nextPersisted();
+                final Contentlet persisted = contentletDataGen.nextPersisted();
+
+                final File fileAsset2 = (File) persisted.get("fileAsset2");
+                final File immediateParent = new File(fileAsset2.getParent());
+                //delete any previously generated json
+                final File[] files = new File(immediateParent.getParent()).listFiles();
+                if(null != files){
+                    final List<File> jsonFiles = Stream.of(files).filter(file -> file.getName().endsWith("json"))
+                            .collect(Collectors.toList());
+                    jsonFiles.forEach(file -> file.delete());
+                }
+                return persisted;
             } else {
                 return contentletDataGen.next();
             }
@@ -1913,7 +1944,7 @@ public class TestDataUtils {
     }
 
     /**
-     *
+     * This will use one of the internal test-files to generate a temp copy
      * @param testFile
      * @return
      * @throws IOException

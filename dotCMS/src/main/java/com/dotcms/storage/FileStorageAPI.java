@@ -69,18 +69,18 @@ public interface FileStorageAPI {
      * full|basic metadata, stores or not in the File System (even reuse or overrides it), stores or not in the cache, etc.
      *
      * @param binary {@link File} file to get the information
-     * @param generateMetaDataConfiguration {@link GenerateMetaDataConfiguration}
+     * @param configuration {@link GenerateMetadataConfig}
      * @return Map with the metadata
      */
-    Map<String, Object> generateMetaData(final File binary, GenerateMetaDataConfiguration generateMetaDataConfiguration);
+    Map<String, Object> generateMetaData(final File binary, final GenerateMetadataConfig configuration);
 
     //Map<String, Object> generateAsyncMetaData(final File binary, GenerateMetaDataConfiguration generateMetaDataConfiguration);
 
     /**
      * Retrieve the metadata
-     * @param requestMetaData {@link RequestMetaData}
+     * @param requestMetaData {@link RequestMetadata}
      * @return  Map with the metadata
      */
-    Map<String, Object> retrieveMetaData(RequestMetaData requestMetaData);
+    Map<String, Object> retrieveMetaData(RequestMetadata requestMetaData);
 
 }

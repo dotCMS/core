@@ -407,7 +407,6 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 chunkHashes.add(chunkHash);
                 new DotConnect().executeUpdate(this.getConnection(),
                         "INSERT INTO storage_data(hash_id, data) VALUES (?, ?)",
-                        // todo: this could be an upsert
                         chunkHash,
                         bytesRead._1().length == bytesRead._2() ?
                                 bytesRead._1() : this.chunkBytes(bytesRead._2(), bytesRead._1()));

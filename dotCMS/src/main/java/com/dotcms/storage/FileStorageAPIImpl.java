@@ -17,6 +17,8 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
@@ -36,6 +38,13 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private volatile MetadataGenerator metadataGenerator;
     private final StoragePersistenceProvider persistenceProvider;
 
+    /**
+     * Testing constructor
+     * @param objectReaderDelegate
+     * @param objectWriterDelegate
+     * @param metadataGenerator
+     * @param persistenceProvider
+     */
     @VisibleForTesting
     FileStorageAPIImpl(final ObjectReaderDelegate objectReaderDelegate,
             final ObjectWriterDelegate objectWriterDelegate,
@@ -47,6 +56,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         this.persistenceProvider = persistenceProvider;
     }
 
+    /**
+     * Default constructor
+     */
     public FileStorageAPIImpl() {
         this(new JsonReaderDelegate<>(Map.class), new JsonWriterDelegate(),
                 new TikaMetadataGenerator(), StoragePersistenceProvider.INSTANCE.get());
@@ -73,13 +85,19 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         if (this.validBinary(binary)) {
 
-            if (metaDataKeyFilter.test(TITLE_META_KEY)) {
+            //if (metaDataKeyFilter.test(TITLE_META_KEY)) {
                 mapBuilder.put(TITLE_META_KEY, binary.getName());
-            }
+            //}
 
-            if (metaDataKeyFilter.test(PATH_META_KEY)) {
-                mapBuilder.put(PATH_META_KEY, binary.getAbsolutePath());
-            }
+            //if (metaDataKeyFilter.test(PATH_META_KEY)) {
+
+                final Optional<String> optional = FileUtil.getRealAssetsPathRelativePiece(binary);
+                if (optional.isPresent()) {
+                    mapBuilder.put(PATH_META_KEY, optional.get());
+                } else {
+                    mapBuilder.put(PATH_META_KEY, binary.getAbsolutePath());
+                }
+            //}
 
             if (metaDataKeyFilter.test(LENGTH_META_KEY)) {
                 mapBuilder.put(LENGTH_META_KEY, binary.length());
@@ -96,6 +114,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         return mapBuilder.build();
     }
+
 
     @Override
     public Map<String, Object> generateFullMetaData(final File binary,
@@ -128,42 +147,48 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 .putAll(metadataMap).build();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Map<String, Object> generateMetaData(final File binary,
-            final GenerateMetaDataConfiguration generateMetaDataConfiguration) {
+            final GenerateMetadataConfig configuration) {
 
-        Map<String, Object> metadataMap = Collections.emptyMap();
-        final StorageKey storageKey = generateMetaDataConfiguration.getStorageKey();
+        final Map<String, Object> metadataMap;
+        final StorageKey storageKey = configuration.getStorageKey();
         final StorageType storageType = this.getStorageType(storageKey);
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageType);
 
-        this.checkBucket(storageKey, storage);  // todo: see if you want to remove this
-        this.checkOverride(storage, generateMetaDataConfiguration);
-
+        this.checkBucket(storageKey, storage);  //if the group/bucket doesn't exist create it.
+        this.checkOverride(storage, configuration); //if config states we need to remove and force regen
+        //if the entry isn't already there skip and simply store in cache.
         if (!storage.existsObject(storageKey.getGroup(), storageKey.getKey())) {
-
             if (this.validBinary(binary)) {
-
-                final long maxLength = generateMetaDataConfiguration.getMaxLength();
-                metadataMap = generateMetaDataConfiguration.isFull() ?
+                Logger.warn(FileStorageAPIImpl.class, String.format(
+                        "Object identified by `/%s/%s` didn't exist in storage %s will be generated.",
+                        storageKey.getGroup(), storageKey,
+                        configuration.isFull() ? "full-metadata" : "basic-metadata"));
+                final long maxLength = configuration.getMaxLength();
+                metadataMap = configuration.isFull() ?
                         this.generateFullMetaData(binary,
-                                generateMetaDataConfiguration.getMetaDataKeyFilter(), maxLength) :
+                                configuration.getMetaDataKeyFilter(), maxLength) :
                         this.generateBasicMetaData(binary,
-                                generateMetaDataConfiguration.getMetaDataKeyFilter());
+                                configuration.getMetaDataKeyFilter());
 
-                if (generateMetaDataConfiguration.isStore()) {
-
+                if (configuration.isStore()) {
                     this.storeMetadata(storageKey, storage, metadataMap, binary);
                 }
+
+            } else {
+               throw new IllegalArgumentException(String.format("the binary `%s` isn't accessible ", binary != null ? binary.getName() : "unknown"));
             }
         } else {
-
             metadataMap = this.retrieveMetadata(storageKey, storage);
         }
 
-        if (generateMetaDataConfiguration.isCache()) {
+        if (configuration.isCache()) {
 
-            this.putIntoCache(generateMetaDataConfiguration.getCacheKeySupplier().get(),
+            this.putIntoCache(configuration.getCacheKeySupplier().get(),
                     metadataMap);
         }
 
@@ -214,24 +239,51 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             final Map<String, Object> metadataMap, final File binary) {
 
         try {
-
+            //Commenting this rawBasic Metadata that basically brings everythig
+            //final Map<String, Object> extraMeta = generateRawBasicMetaData(binary);
+            //printInfo(metadataMap, extraMeta);
             storage.pushObject(storageKey.getGroup(), storageKey.getKey(),
-                    this.objectWriterDelegate, (Serializable) metadataMap,
-                    this.generateRawBasicMetaData(binary));
+                    this.objectWriterDelegate, (Serializable) metadataMap, metadataMap);
             Logger.info(this, "Metadata wrote on: " + storageKey.getKey());
         } catch (Exception e) {
-
             Logger.error(this, e.getMessage(), e);
         }
     }
 
+    /**
+     * debug utility
+     * @param meta
+     * @param extraMeta
+     */
+    private void printInfo( final Map<String, Object> meta, final Map<String, Object> extraMeta ){
+        //if (!Logger.isDebugEnabled(FileStorageAPIImpl.class)){ return;  }
+        Logger.warn(FileStorageAPIImpl.class," basic meta:  ");
+        for (Entry<String, Object> entry : meta.entrySet()) {
+            Logger.info(FileStorageAPIImpl.class,entry.getKey() + " " + entry.getValue());
+        }
+        Logger.warn(FileStorageAPIImpl.class," extra meta:  ");
+        for (Entry<String, Object> entry : extraMeta.entrySet()) {
+            Logger.info(FileStorageAPIImpl.class,entry.getKey() + " " + entry.getValue());
+        }
+    }
+
+    /**
+     * Check's file is readable and valid
+     * @param binary
+     * @return
+     */
     private boolean validBinary(final File binary) {
 
         return null != binary && binary.exists() && binary.canRead();
     }
 
+    /**
+     * if the given configuration states we must override the previously existing file will be deleted before re-generating.
+     * @param storage
+     * @param generateMetaDataConfiguration
+     */
     private void checkOverride(final StoragePersistenceAPI storage,
-            final GenerateMetaDataConfiguration generateMetaDataConfiguration) {
+            final GenerateMetadataConfig generateMetaDataConfiguration) {
 
         final StorageKey storageKey = generateMetaDataConfiguration.getStorageKey();
         if (generateMetaDataConfiguration.isOverride() && storage
@@ -250,7 +302,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     } // checkOverride.
 
     @Override
-    public Map<String, Object> retrieveMetaData(final RequestMetaData requestMetaData) {
+    public Map<String, Object> retrieveMetaData(final RequestMetadata requestMetaData) {
 
         Map<String, Object> metadataMap = Collections.emptyMap();
 
