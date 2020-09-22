@@ -1,18 +1,64 @@
-name: Run Tests
-# Run in all PRs and commits to `master` and releases
+name: DotCMS/core-web Tests
 on:
   pull_request:
   push:
     branches:
       - master
-      - release-*
+      - release-*     
 jobs:
   build:
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_USER_TOKEN }}
+      GITHUB_CONTEXT: ${{ toJson(github) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Install dependencies
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/cache@v2
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}      
+      - name: Setting Node.js 10.x
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: '10.15.3'
+      - name: Installing dependencies
         run: npm install
-      - name: Run tests
+      - name: Building Libs
+        run: npm run build:libs
+      - name: Building for production
+        run: npm run build:prod
+      - name: Running tests
+        id: test_run
         run: |
-          npm run test-headless
+          if ! (npm run test -- dotcms-ui --watch=false --reporters=html,progress) then
+            echo "::set-output name=status::failure";
+            echo "::set-output name=color::#ff2400";
+            exit 1;  
+          else 
+            echo "::set-output name=status::success";
+            echo "::set-output name=color::#5E7D00";
+          fi
+      - name: Push Tests to GitHub
+        id: persist_results
+        if: success() || failure()
+        run: |
+          chmod +x .cicd/github.sh && source .cicd/github.sh
+          persistResults
+          echo "::set-output name=message::$(logResults)";
+      - name: Slack Notification
+        if: success() || failure()
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_USERNAME: core-web
+          SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
+          SLACK_COLOR: ${{ steps.test_run.outputs.color }}
+          SLACK_TITLE: 'Report: (${{ steps.test_run.outputs.status }})'
+          SLACK_MESSAGE: ${{ steps.persist_results.outputs.message }}
+          SLACK_FOOTER: ""
