@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.folder;
 
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -240,20 +241,20 @@ public class FolderResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
 
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
         //Give Permissions Over the Host
         final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                 newHost.getPermissionId(),
-                TestUserUtils.getOrCreatePublisherRole(newHost).getId(),
-                (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT_PERMISSIONS), true);
-        APILocator.getPermissionAPI().save(permissions, newHost, adminUser, false);
-
-        final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
-        final String password = "admin";
-        chrisUser.setPassword(password);
-        APILocator.getUserAPI().save(chrisUser,APILocator.systemUser(),false);
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, newHost, APILocator.systemUser(), false);
 
         //Get all the folders and subfolders using the limited user
-        resource.loadFolderAndSubFoldersByPath(getHttpRequest(chrisUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
+        resource.loadFolderAndSubFoldersByPath(getHttpRequest(limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
     }
 
     /**
@@ -276,13 +277,13 @@ public class FolderResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
 
-        final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        chrisUser.setPassword(password);
-        APILocator.getUserAPI().save(chrisUser,APILocator.systemUser(),false);
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
 
         //Get all the folders and subfolders using the limited user
-        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(chrisUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
+        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
 
     }
 
@@ -314,26 +315,27 @@ public class FolderResourceTest {
         FolderView responseFolderView = FolderView.class.cast(responseEntityView.getEntity());
         final Folder folder = folderAPI.find(responseFolderView.getIdentifier(),adminUser,false);
 
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
         //Give Permissions Over the Host
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                 newHost.getPermissionId(),
-                TestUserUtils.getOrCreatePublisherRole(newHost).getId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
                 PermissionAPI.PERMISSION_READ, true);
-        APILocator.getPermissionAPI().save(permissions, newHost, adminUser, false);
+        APILocator.getPermissionAPI().save(permissions, newHost, APILocator.systemUser(), false);
+
         //Give Permissions Over the Folder
         permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                 folder.getPermissionId(),
-                TestUserUtils.getOrCreatePublisherRole(newHost).getId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
                 PermissionAPI.PERMISSION_READ, true);
-        APILocator.getPermissionAPI().save(permissions, folder, adminUser, false);
-
-        final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
-        final String password = "admin";
-        chrisUser.setPassword(password);
-        APILocator.getUserAPI().save(chrisUser,APILocator.systemUser(),false);
+        APILocator.getPermissionAPI().save(permissions, folder, APILocator.systemUser(), false);
 
         //Get all the folders and subfolders using the limited user
-        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(chrisUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
+        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
 
         //Check Results
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());

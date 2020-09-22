@@ -854,7 +854,7 @@
 									"    var render = jsonData.data.page.render;",
 									"",
 									"    // mode",
-									"    pm.expect(render, 'FAILED:[rendered]').equal(\"<!doctype html>\\n<html lang=\\\"en\\\">\\n\\n    <head>\\n\\n        \\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, height=device-height, initial-scale=1.0, maximum-scale=5.0, user-scalable=1\\\">\\n<meta http-equiv=\\\"X-UA-Compatible\\\" content=\\\"IE=edge\\\">\\n<meta charset=\\\"utf-8\\\">\\n<link rel=\\\"icon\\\" href=\\\"/application/themes/travel/images/favicon.ico\\\" type=\\\"image/x-icon\\\">\\n<title>Costa Rica Rain Forest</title>\\n<meta name=\\\"description\\\" content=\\\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\\\">\\n<meta name=\\\"language\\\" content=\\\"english\\\">\\n<meta name=\\\"author\\\" content=\\\"dotCMS\\\">\\n<meta name=\\\"copyright\\\" content=\\\"dotCMS LLC, Miami Florida, US\\\">\\n<meta property=\\\"og:title\\\" content=\\\"Costa Rica Rain Forest\\\">\\n<meta property=\\\"og:url\\\" content=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n<meta property=\\\"og:image\\\" content=\\\"/images/default.png\\\">\\n<link rel=\\\"canonical\\\" href=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n\\n<!-- CSS -->\\n<link rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"//fonts.googleapis.com/css?family=Oswald:500,600,700%7CRoboto:300,300i,700%7CCondiment%7CDella+Respira\\\">\\n<link rel=\\\"stylesheet\\\" href=\\\"/application/themes/travel/css/styles.dotsass\\\">\\n\\n</head>\\n\\n<body id=\\\"costa-rica-rain-forest\\\" >\\n\\n            <header>\\n\\n  <!-- RD Navbar-->\\n  <div class=\\\"rd-navbar-wrap\\\">\\n    <nav class=\\\"rd-navbar rd-navbar-static rd-navbar-classic\\\" data-layout=\\\"rd-navbar-fixed\\\" data-sm-layout=\\\"rd-navbar-fixed\\\" data-md-layout=\\\"rd-navbar-fixed\\\" data-md-device-layout=\\\"rd-navbar-fixed\\\" data-lg-layout=\\\"rd-navbar-static\\\" data-lg-device-layout=\\\"rd-navbar-static\\\" data-xl-layout=\\\"rd-navbar-static\\\" data-xl-device-layout=\\\"rd-navbar-static\\\" data-lg-stick-up-offset=\\\"78px\\\" data-xl-stick-up-offset=\\\"98px\\\" data-xxl-stick-up-offset=\\\"118px\\\" data-lg-stick-up=\\\"true\\\" data-xl-stick-up=\\\"true\\\" data-xxl-stick-up=\\\"true\\\">\\n      <div class=\\\"rd-navbar-collapse-toggle rd-navbar-fixed-element-1\\\" data-rd-navbar-toggle=\\\".rd-navbar-collapse\\\"><span></span></div>\\n      \\n      <div class=\\\"rd-navbar-aside-outer rd-navbar-collapse bg-default\\\">\\n        <div class=\\\"rd-navbar-aside\\\">\\n\\n          <!-- CONTACT INFO -->\\n          <ul class=\\\"list-inline list-inline-xxl\\\">\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-map-marker\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"#\\\">3059 Grand Avenue, Suite 300 Miami, FL, 33133 USA</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-cellphone-android\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"tel:+1-888-404-6185\\\">+1-888-404-6185</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-email-outline\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"mailto: info@dotcms.com\\\">info@dotcms.com</a></div>\\n              </div>\\n            </li>\\n          </ul>\\n\\n          <div>\\n            <!-- CART -->\\n            <a class=\\\"basket\\\" href=\\\"/store/cart\\\"><span class=\\\"icon mdi mdi-cart-outline\\\"></span><span class=\\\"basket-count\\\">3</span></a>\\n\\n            <!-- My Account -->\\n            <a href=\\\"/login/profile\\\" class=\\\"ml-3\\\">\\n                                <img src=\\\"/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/42w/50q/mountain-persona.jpg\\\" alt=\\\"Winter Enthusiast Persona\\\" class=\\\"img-circles border\\\">\\n                          </a>\\n          </div>\\n        </div>\\n      </div>\\n\\n      <div class=\\\"rd-navbar-main-outer\\\">\\n        <div class=\\\"rd-navbar-main\\\">\\n\\n          <div class=\\\"rd-navbar-panel\\\">\\n            <button class=\\\"rd-navbar-toggle\\\" data-rd-navbar-toggle=\\\".rd-navbar-nav-wrap\\\" aria-label=\\\"Toggle Menu\\\"><span></span></button>\\n            <div class=\\\"rd-navbar-brand\\\"><a class=\\\"brand\\\" href=\\\"/\\\" aria-label=\\\"TravelLux Home\\\"><img class=\\\"brand-logo-dark\\\" src=\\\"/application/themes/travel/images/logo.png\\\" width=\\\"195\\\" height=\\\"40\\\" alt=\\\"TravelLux Home\\\"></a></div>\\n          </div>\\n\\n          <!-- NAV BAR -->\\n\\n          <div class=\\\"rd-navbar-main-element\\\">\\n\\n            <div class=\\\"rd-navbar-nav-wrap\\\">\\n            \\n                        \\n              <ul class=\\\"rd-navbar-nav\\\">\\n                <li class=\\\"rd-nav-item  \\\"><a class=\\\"rd-nav-link\\\" href='/'>Home</a></li>\\n                                                                      <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/blog' target='_self'>Travel Blog</a></li>\\n                                                                        <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/destinations' target='_self'>Destinations</a></li>\\n                                                </ul>\\n            </div>\\n\\n            <!-- RD Navbar Search-->\\n            <div class=\\\"rd-navbar-search\\\">\\n              <button class=\\\"rd-navbar-search-toggle rd-navbar-fixed-element-2\\\" data-rd-navbar-toggle=\\\".rd-navbar-search\\\" aria-label=\\\"Search Box Toggle\\\"><span></span></button>\\n              <form class=\\\"rd-search\\\" action=\\\"/search/\\\" method=\\\"GET\\\">\\n                <div class=\\\"form-wrap\\\">\\n                  <label class=\\\"form-label search-label\\\" for=\\\"site-search\\\">Search...</label>\\n                  <input class=\\\"rd-navbar-search-form-input form-input site-search\\\" type=\\\"text\\\" name=\\\"q\\\" autocomplete=\\\"off\\\">\\n                </div>\\n                <button class=\\\"rd-search-form-submit fa-search\\\" type=\\\"submit\\\" aria-label=\\\"Submit\\\"></button>\\n              </form>\\n            </div>\\n            \\n          </div>\\n        </div>\\n      </div>\\n    </nav>\\n  </div>\\n\\n</header>\\n    \\n    <div class=\\\"body-wrapper\\\">\\n    \\n            \\n            \\n                \\n                        \\n    \\n                                                            \\n                                                \\n                                                                                                                        \\n                        <section id=\\\"section-1\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-2\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-3\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-4\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-10 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-5\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-6\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-5  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                            \\n                                                    </div><!-- /body-wrapper -->\\n\\n            <!-- Page Footer-->\\n\\n\\n\\n\\n<footer class=\\\"footer-classic bg-footer bg-overlay-80 context-dark\\\" style=\\\"background-image: url('/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/WebP/1200w/footer-image.jpg')\\\" >\\n  <div class=\\\"section-xxl\\\">\\n    <div class=\\\"container\\\">\\n      <div class=\\\"row row-50 justify-content-center\\\">\\n        <div class=\\\"col-lg-4\\\">\\n          <h2>About us</h2>\\n          <p class=\\\"max-width-xl-90 text-gray-400\\\">We are TravelLux, a community of dedicated travel experts, journalists, and bloggers. Our aim is to offer you the best insight on where to go for your travel as well as to give you amazing opportunities with free benefits and bonuses for registered clients.</p>\\n          <a class=\\\"footer-brand\\\" href=\\\"./\\\"><img src=\\\"/application/themes/travel/images/logo-inverse.png\\\" alt=\\\"TravelLux Home\\\" height=\\\"40\\\"/></a>\\n        </div>\\n\\n\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Latest blog posts</h2>\\n          \\n          <!-- Latest Blogs -->\\n                    \\n        </div>\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Get in touch</h2>\\n          <form class=\\\"rd-form form-sm rd-mailform\\\" data-form-output=\\\"form-output-global\\\" data-form-type=\\\"contact\\\" method=\\\"post\\\" action=\\\"\\\">\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-name\\\" type=\\\"text\\\" name=\\\"name\\\" data-constraints=\\\"@Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-name\\\">Name</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-email\\\" type=\\\"email\\\" name=\\\"email\\\" data-constraints=\\\"@Email @Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-email\\\">E-mail</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-message\\\">Message</label>\\n              <textarea class=\\\"form-input\\\" id=\\\"footer-form-message\\\" name=\\\"message\\\" data-constraints=\\\"@Required\\\"></textarea>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <button class=\\\"button button-md button-primary\\\" type=\\\"submit\\\">Send</button>\\n            </div>\\n          </form>\\n        </div>\\n      </div>\\n    </div>\\n  </div>\\n  <div class=\\\"container\\\">\\n    <!-- Rights-->\\n    <p class=\\\"rights mb-0\\\"><span>&copy;2012 - 2020 All Rights Reserved</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Terms of Use</a> <span>and</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Privacy Policy</a></p>\\n  </div>\\n</footer>\\n\\n<!-- Javascript-->\\n<script src=\\\"/application/themes/travel/js/core.min.js\\\"></script>\\n<script src=\\\"/application/themes/travel/js/script.js\\\"></script>\\n\\n    \\n</body>\\n</html>\");",
+									"    pm.expect(render, 'FAILED:[rendered]').equal(\"<!doctype html>\\n<html lang=\\\"en\\\">\\n\\n    <head>\\n\\n        \\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, height=device-height, initial-scale=1.0, maximum-scale=5.0, user-scalable=1\\\">\\n<meta http-equiv=\\\"X-UA-Compatible\\\" content=\\\"IE=edge\\\">\\n<meta charset=\\\"utf-8\\\">\\n<link rel=\\\"icon\\\" href=\\\"/application/themes/travel/images/favicon.ico\\\" type=\\\"image/x-icon\\\">\\n<title>Costa Rica Rain Forest</title>\\n<meta name=\\\"description\\\" content=\\\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\\\">\\n<meta name=\\\"language\\\" content=\\\"english\\\">\\n<meta name=\\\"author\\\" content=\\\"dotCMS\\\">\\n<meta name=\\\"copyright\\\" content=\\\"dotCMS LLC, Miami Florida, US\\\">\\n<meta property=\\\"og:title\\\" content=\\\"Costa Rica Rain Forest\\\">\\n<meta property=\\\"og:url\\\" content=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n<meta property=\\\"og:image\\\" content=\\\"/images/default.png\\\">\\n<link rel=\\\"canonical\\\" href=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n\\n<!-- CSS -->\\n<link rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"//fonts.googleapis.com/css?family=Oswald:500,600,700%7CRoboto:300,300i,700%7CCondiment%7CDella+Respira\\\">\\n<link rel=\\\"stylesheet\\\" href=\\\"/application/themes/travel/css/styles.dotsass\\\">\\n\\n</head>\\n\\n<body id=\\\"costa-rica-rain-forest\\\" >\\n\\n            <header>\\n\\n  <!-- RD Navbar-->\\n  <div class=\\\"rd-navbar-wrap\\\">\\n    <nav class=\\\"rd-navbar rd-navbar-static rd-navbar-classic\\\" data-layout=\\\"rd-navbar-fixed\\\" data-sm-layout=\\\"rd-navbar-fixed\\\" data-md-layout=\\\"rd-navbar-fixed\\\" data-md-device-layout=\\\"rd-navbar-fixed\\\" data-lg-layout=\\\"rd-navbar-static\\\" data-lg-device-layout=\\\"rd-navbar-static\\\" data-xl-layout=\\\"rd-navbar-static\\\" data-xl-device-layout=\\\"rd-navbar-static\\\" data-lg-stick-up-offset=\\\"78px\\\" data-xl-stick-up-offset=\\\"98px\\\" data-xxl-stick-up-offset=\\\"118px\\\" data-lg-stick-up=\\\"true\\\" data-xl-stick-up=\\\"true\\\" data-xxl-stick-up=\\\"true\\\">\\n      <div class=\\\"rd-navbar-collapse-toggle rd-navbar-fixed-element-1\\\" data-rd-navbar-toggle=\\\".rd-navbar-collapse\\\"><span></span></div>\\n      \\n      <div class=\\\"rd-navbar-aside-outer rd-navbar-collapse bg-default\\\">\\n        <div class=\\\"rd-navbar-aside\\\">\\n\\n          <!-- CONTACT INFO -->\\n          <ul class=\\\"list-inline list-inline-xxl\\\">\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-map-marker\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"#\\\">3059 Grand Avenue, Suite 300 Miami, FL, 33133 USA</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-cellphone-android\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"tel:+1-888-404-6185\\\">+1-888-404-6185</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-email-outline\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"mailto: info@dotcms.com\\\">info@dotcms.com</a></div>\\n              </div>\\n            </li>\\n          </ul>\\n\\n          <div>\\n            <!-- CART -->\\n            <a class=\\\"basket\\\" href=\\\"/store/cart\\\"><span class=\\\"icon mdi mdi-cart-outline\\\"></span><span class=\\\"basket-count\\\">3</span></a>\\n\\n            <!-- My Account -->\\n            <a href=\\\"/login/profile\\\" class=\\\"ml-3\\\">\\n                                <img src=\\\"/dA/0ed8e71a-47c7-4b30-a6f2-3796aa71ba49/photo/42w/50q/hiking-profile.jpg\\\" alt=\\\"Eco Enthusiast Persona\\\" class=\\\"img-circles border\\\">\\n                          </a>\\n          </div>\\n        </div>\\n      </div>\\n\\n      <div class=\\\"rd-navbar-main-outer\\\">\\n        <div class=\\\"rd-navbar-main\\\">\\n\\n          <div class=\\\"rd-navbar-panel\\\">\\n            <button class=\\\"rd-navbar-toggle\\\" data-rd-navbar-toggle=\\\".rd-navbar-nav-wrap\\\" aria-label=\\\"Toggle Menu\\\"><span></span></button>\\n            <div class=\\\"rd-navbar-brand\\\"><a class=\\\"brand\\\" href=\\\"/\\\" aria-label=\\\"TravelLux Home\\\"><img class=\\\"brand-logo-dark\\\" src=\\\"/application/themes/travel/images/logo.png\\\" width=\\\"195\\\" height=\\\"40\\\" alt=\\\"TravelLux Home\\\"></a></div>\\n          </div>\\n\\n          <!-- NAV BAR -->\\n\\n          <div class=\\\"rd-navbar-main-element\\\">\\n\\n            <div class=\\\"rd-navbar-nav-wrap\\\">\\n            \\n                        \\n              <ul class=\\\"rd-navbar-nav\\\">\\n                <li class=\\\"rd-nav-item  \\\"><a class=\\\"rd-nav-link\\\" href='/'>Home</a></li>\\n                                                                      <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/blog' target='_self'>Travel Blog</a></li>\\n                                                                        <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/destinations' target='_self'>Destinations</a></li>\\n                                                </ul>\\n            </div>\\n\\n            <!-- RD Navbar Search-->\\n            <div class=\\\"rd-navbar-search\\\">\\n              <button class=\\\"rd-navbar-search-toggle rd-navbar-fixed-element-2\\\" data-rd-navbar-toggle=\\\".rd-navbar-search\\\" aria-label=\\\"Search Box Toggle\\\"><span></span></button>\\n              <form class=\\\"rd-search\\\" action=\\\"/search/\\\" method=\\\"GET\\\">\\n                <div class=\\\"form-wrap\\\">\\n                  <label class=\\\"form-label search-label\\\" for=\\\"site-search\\\">Search...</label>\\n                  <input class=\\\"rd-navbar-search-form-input form-input site-search\\\" type=\\\"text\\\" name=\\\"q\\\" autocomplete=\\\"off\\\">\\n                </div>\\n                <button class=\\\"rd-search-form-submit fa-search\\\" type=\\\"submit\\\" aria-label=\\\"Submit\\\"></button>\\n              </form>\\n            </div>\\n            \\n          </div>\\n        </div>\\n      </div>\\n    </nav>\\n  </div>\\n\\n</header>\\n    \\n    <div class=\\\"body-wrapper\\\">\\n    \\n            \\n            \\n                \\n                        \\n    \\n                                                            \\n                                                \\n                                                                                                                        \\n                        <section id=\\\"section-1\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n<!-- Container Code: /application/containers/defualt/banner.vtl -->\\n\\n    <div class=\\\"banner bg-image-full bg-overlay-30 context-dark\\\" style=\\\"background-image: url('/dA/d4ed1990-b151-42ca-9bca-0725b07260de/image/1200w/50q/scenic-view-of-the-mountains-733092.jpg');\\\">\\n        <div class=\\\"container\\\">\\n            <div class=\\\"row justify-content-lg-center\\\">\\n                <div class=\\\"col-lg-9 text-center\\\">\\n                    <p class=\\\"banner-title\\\">Costa Rica</p>\\n                    <h2 class=\\\"text-decoration-lines-2\\\">\\n                        <span>\\n                            Sanctuary For The Senses\\n                            <span class=\\\"text-decoration-line text-decoration-line-left\\\"></span>\\n                            <span class=\\\"text-decoration-line text-decoration-line-right\\\"></span>\\n                        </span>\\n                    </h2>\\n                    \\n                                    </div>\\n            </div>\\n        </div>\\n    </div>\\n\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-2\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<h2>Custom Packages</h2>\\n<p>Are you looking for the ultimate in Costa Rica vacations? Our team oat TravelLux will design your custom vacation package. We do not sell cookie-cutter trips. Instead, we take the time to get to know your unique &ldquo;travel personality&rdquo;. Then we match you with a hand-picked selection of housing, tours &amp; transportation options. The result is a tailor-made Costa Rica journey that will fit you like a glove.</p>\\n<p>We email you a detailed travel itinerary filled with info, pictures and videos. Your TravelLux agent will work with you to adjust your vacation package until you are 100% satisfied. This makes for a seamless, worry-free experience that allows you to relax &amp; enjoy the voyage.</p>\\n<p><a href=\\\"/contact-us/\\\" class=\\\"btn btn-primary\\\">Book Now</a></p>\\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/2400w/50q/ski_holidays.png 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/600w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433//1200w/50q/ski_holidays.png 2x\\\">\\n            <img src=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/480w/50q/ski_holidays.png\\\" alt=\\\"With over 400\\\" of snow fall a year we have the longest season in the Continental US\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Over 400\\\" of snow a year</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">With over 400\\\" of snow fall a year we have the longest season in the Continental US</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/1200w/50q/ski_holidays.png\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<!-- Container Code: /application/containers/video.vtl -->\\n\\n<a class=\\\"video-cover bg-overlay-30 mb-5\\\" data-lightbox=\\\"iframe\\\" href=\\\"https://www.youtube.com/watch?v=1qw4ayRc1t8\\\">\\n  <div class=\\\"video-img\\\" style=\\\"background-image: url(https://i.ytimg.com/vi/1qw4ayRc1t8/hqdefault.jpg);\\\"></div>\\n  <span class=\\\"icon mdi mdi-play video-cover-icon\\\"></span>\\n</a><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-3\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n\\r\\n<h1 class=\\\"text-center\\\">Featured Activities</h1>\\n<div class=\\\"row justify-content-center\\\">\\n            <div class=\\\"col-lg-3 col-md-4 col-sm-6 col-xs-6 mb-3\\\">\\n            <a class=\\\"box-info\\\" href=\\\"/activities/hiking\\\">\\n                <img class=\\\"box-info-img\\\" src=\\\"/dA/6bbead53-3908-471c-966d-9e76c5dd9eba/image/270w/50q/hiking.jpg\\\" alt=\\\"Hiking\\\" width=\\\"270\\\" height=\\\"270\\\">\\n                <div class=\\\"box-info-body\\\">\\n                    <h4 class=\\\"box-info-title\\\">\\n                        Hiking\\n                    </h4>\\n                    <p class=\\\"box-info-text\\\">Guided hiking tours where our guides use their training as naturalists to point out animals, unique plants and nature ...</p>\\n                </div>\\n                                    </a>\\n        </div>\\n            <div class=\\\"col-lg-3 col-md-4 col-sm-6 col-xs-6 mb-3\\\">\\n            <a class=\\\"box-info\\\" href=\\\"/activities/zip-lining\\\">\\n                <img class=\\\"box-info-img\\\" src=\\\"/dA/50757fb4-75df-4e2c-8335-35d36bdb944b/image/270w/50q/zip-line.jpg\\\" alt=\\\"Zip-Lining\\\" width=\\\"270\\\" height=\\\"270\\\">\\n                <div class=\\\"box-info-body\\\">\\n                    <h4 class=\\\"box-info-title\\\">\\n                        Zip-Lining\\n                    </h4>\\n                    <p class=\\\"box-info-text\\\">Ever wondered what it is like to fly through the forest canopy? Zip-lining ais the best way to explore the forest canopy...</p>\\n                </div>\\n                                    </a>\\n        </div>\\n            <div class=\\\"col-lg-3 col-md-4 col-sm-6 col-xs-6 mb-3\\\">\\n            <a class=\\\"box-info\\\" href=\\\"/activities/white-water-rafting\\\">\\n                <img class=\\\"box-info-img\\\" src=\\\"/dA/0e9340f8-08d2-46e3-ae25-be0137c575d0/image/270w/50q/white-water-raft-2.jpg\\\" alt=\\\"White Water Rafting\\\" width=\\\"270\\\" height=\\\"270\\\">\\n                <div class=\\\"box-info-body\\\">\\n                    <h4 class=\\\"box-info-title\\\">\\n                        White Water Rafting\\n                    </h4>\\n                    <p class=\\\"box-info-text\\\">For those looking for a thrill, we offer some of the worlds bets white water rafting. Class II - IV rivers.</p>\\n                </div>\\n                                    </a>\\n        </div>\\n    </div>\\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-4\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-10 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<h2>Costa Rica Family Adventure</h2>\\n<p>Tropical rainforests, zip lines, monkey sightings and waterfall swims make for the most unforgettable vacation&mdash;and photos.</p>\\n<p>Abundance abounds in Costa Rica: beautiful beaches, friendly people and endless adventures to embark upon. We dabble in it all with a family-friendly itinerary that will get everyone&rsquo;s heart pumping. Jump right in to adventure life in Costa Rica at Arenal Volcano where we zip along the treetops, get a glimpse of rural Tico life on a local farm, rappel down a canyon waterfall that lies deep in the tropical rainforest, and soak in thermal hot springs.</p>\\n<p>Journey south, crossing Lake Arenal by boat, and dive deep into the Monteverde cloud forest. Your hotel is located in the reserve, home to eight different biological zones and thousands of plants and animals. Keep your eyes peeled for monkeys and quetzals during the day and embark on night walks with your guide to experience a whole different world after dark. Spend a unique day exploring the forest giants from the ground up&mdash;climbing up specially outfitted trees and then exploring the forest on foot with your naturalist guide.</p><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-5\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<h3>Adventure travel done right</h3>\\n<p>Wherever you want to go, whatever you want to get into, we&rsquo;ve got a trip that&rsquo;ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that&rsquo;s more your thing).<strong><br /></strong></p><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<h3>Experience the world with us</h3>\\n<p>We practice Leave No Trace principles on all our trips and work with local people and businesses as often as possible.Our expert guides don&rsquo;t just know these places&mdash;they call them home. Their local knowledge unveils worlds few get to see. Hike, bike, swim and paddle with like-minded travelers who share your passion for adventure and the outdoors.</p><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-6\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-5  \\\"><!-- Column -->\\n                                                                                \\n\\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/2400w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/600w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca//1200w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <img src=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/480w/50q/waterfall-costa-rica.jpg\\\" alt=\\\"From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Fall into Costa Rica</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/1200w/50q/waterfall-costa-rica.jpg\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                            \\n                                                    </div><!-- /body-wrapper -->\\n\\n            <!-- Page Footer-->\\n\\n\\n\\n\\n<footer class=\\\"footer-classic bg-footer bg-overlay-80 context-dark\\\" style=\\\"background-image: url('/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/WebP/1200w/footer-image.jpg')\\\" >\\n  <div class=\\\"section-xxl\\\">\\n    <div class=\\\"container\\\">\\n      <div class=\\\"row row-50 justify-content-center\\\">\\n        <div class=\\\"col-lg-4\\\">\\n          <h2>About us</h2>\\n          <p class=\\\"max-width-xl-90 text-gray-400\\\">We are TravelLux, a community of dedicated travel experts, journalists, and bloggers. Our aim is to offer you the best insight on where to go for your travel as well as to give you amazing opportunities with free benefits and bonuses for registered clients.</p>\\n          <a class=\\\"footer-brand\\\" href=\\\"./\\\"><img src=\\\"/application/themes/travel/images/logo-inverse.png\\\" alt=\\\"TravelLux Home\\\" height=\\\"40\\\"/></a>\\n        </div>\\n\\n\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Latest blog posts</h2>\\n          \\n          <!-- Latest Blogs -->\\n                    \\n        </div>\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Get in touch</h2>\\n          <form class=\\\"rd-form form-sm rd-mailform\\\" data-form-output=\\\"form-output-global\\\" data-form-type=\\\"contact\\\" method=\\\"post\\\" action=\\\"\\\">\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-name\\\" type=\\\"text\\\" name=\\\"name\\\" data-constraints=\\\"@Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-name\\\">Name</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-email\\\" type=\\\"email\\\" name=\\\"email\\\" data-constraints=\\\"@Email @Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-email\\\">E-mail</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-message\\\">Message</label>\\n              <textarea class=\\\"form-input\\\" id=\\\"footer-form-message\\\" name=\\\"message\\\" data-constraints=\\\"@Required\\\"></textarea>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <button class=\\\"button button-md button-primary\\\" type=\\\"submit\\\">Send</button>\\n            </div>\\n          </form>\\n        </div>\\n      </div>\\n    </div>\\n  </div>\\n  <div class=\\\"container\\\">\\n    <!-- Rights-->\\n    <p class=\\\"rights mb-0\\\"><span>&copy;2012 - 2020 All Rights Reserved</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Terms of Use</a> <span>and</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Privacy Policy</a></p>\\n  </div>\\n</footer>\\n\\n<!-- Javascript-->\\n<script src=\\\"/application/themes/travel/js/core.min.js\\\"></script>\\n<script src=\\\"/application/themes/travel/js/script.js\\\"></script>\\n\\n    \\n</body>\\n</html>\");",
 									"",
 									"});",
 									""
@@ -1286,6 +1286,827 @@
 							"mode": "graphql",
 							"graphql": {
 								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     layout {\n      footer\n      width\n      header\n      title\n      body {\n        rows {\n          styleClass\n          columns {\n            preview\n            width\n            widthPercent\n            left\n            leftOffset\n            styleClass\n            containers {\n              identifier\n              uuid\n            } \n          }\n        } \n      }\n      sidebar {\n        preview\n        width\n        widthPercent\n        location\n        containers {\n            identifier\n            uuid\n          } \n      }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsFirstLevelFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6a1e31db-9d14-4334-b68d-ed3fc9c921a0",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containers = jsonData.data.page.containers;",
+									"",
+									"    var container1 = containers[0];",
+									"",
+									"    // containers fields",
+									"    pm.expect(container1.archived, 'FAILED:[container1.archived]').equal(false);",
+									"    pm.expect(container1.categoryId, 'FAILED:[container1.categoryId]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.deleted, 'FAILED:[container1.deleted]').equal(false);",
+									"    pm.expect(container1.friendlyName, 'FAILED:[container1.friendlyName]').equal(\"container\");",
+									"    pm.expect(container1.host.hostName, 'FAILED:[container1.host.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.iDate, 'FAILED:[container1.iDate]').not.null;",
+									"    pm.expect(container1.idate, 'FAILED:[container1.idate]').not.null;",
+									"    pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.inode, 'FAILED:[container1.inode]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.languageId, 'FAILED:[container1.languageId]').equal(1);",
+									"    pm.expect(container1.live, 'FAILED:[container1.live]').equal(true);",
+									"    pm.expect(container1.locked, 'FAILED:[container1.locked]').equal(false);",
+									"    pm.expect(container1.maxContentlets, 'FAILED:[container1.maxContentlets]').equal(25);",
+									"    pm.expect(container1.modDate, 'FAILED:[container1.modDate]').not.null;",
+									"    pm.expect(container1.modUser.userId, 'FAILED:[container1.modUser.userId]').equal(\"system\");",
+									"    pm.expect(container1.name, 'FAILED:[container1.name]').equal(\"Default\");",
+									"    pm.expect(container1.new, 'FAILED:[container1.new]').equal(false);",
+									"    pm.expect(container1.notes, 'FAILED:[container1.notes]').equal(\"New File Container\");",
+									"    pm.expect(container1.owner.userId, 'FAILED:[container1.owner.userId]').equal(\"dotcms.org.1\");",
+									"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
+									"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
+									"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
+									"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
+									"    pm.expect(container1.sortOrder, 'FAILED:[container1.sortOrder]').equal(0);",
+									"    pm.expect(container1.source, 'FAILED:[container1.source]').equal(\"FILE\");",
+									"    pm.expect(container1.staticify, 'FAILED:[container1.staticify]').equal(false);",
+									"    pm.expect(container1.title, 'FAILED:[container1.source]').equal(\"Default\");",
+									"    pm.expect(container1.type, 'FAILED:[container1.type]').equal(\"containers\");",
+									"    pm.expect(container1.useDiv, 'FAILED:[container1.useDiv]').equal(false);",
+									"    pm.expect(container1.versionId, 'FAILED:[container1.versionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.versionType, 'FAILED:[container1.versionType]').equal(\"containers\");",
+									"    pm.expect(container1.working, 'FAILED:[container1.working]').equal(true);",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      archived\n      categoryId\n      deleted\n      friendlyName\n      host {\n        hostName\n      }\n      iDate\n      idate\n      identifier\n      inode\n      languageId\n      live\n      locked\n      maxContentlets\n      modDate\n      modUser {\n        userId\n      }\n      name\n      new\n      notes\n      owner {\n        userId\n      }\n      parentPermissionable {\n        hostName\n      }\n      path\n      permissionId\n      permissionType\n      postLoop\n      preLoop\n      showOnMenu\n      sortOrder\n      source\n      staticify\n      title\n      type\n      useDiv\n      versionId\n      versionType\n      working\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsRendered",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4bc167b7-fc5f-4022-b3d4-4753fc350d7c",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containers = jsonData.data.page.containers;",
+									"",
+									"    pm.expect(containers.length, 'FAILED:[containers.length]').equal(2);",
+									"",
+									"    var container1rendered = containers[0].rendered;",
+									"",
+									"    pm.expect(container1rendered.length, 'FAILED:[container1rendered.length]').equal(9);",
+									"    // rendered fields",
+									"    pm.expect(container1rendered[0].uuid, 'FAILED:[container1rendered[0].uuid]').equal(\"uuid-1\");",
+									"    pm.expect(container1rendered[0].render, 'FAILED:[container1rendered[0].render]').equal(\"\\n    <!-- Container Code: /application/containers/activity.vtl -->\\n\\n<a class=\\\"box-info\\\" href=\\\"/activities/hiking\\\">\\n\\t<img class=\\\"box-info-img\\\" src=\\\"/dA/6bbead53-3908-471c-966d-9e76c5dd9eba/image/270w/50q/hiking.jpg\\\" alt=\\\"Hiking\\\" width=\\\"270\\\" height=\\\"270\\\">\\n\\t<div class=\\\"box-info-body\\\">\\n\\t\\t<h4 class=\\\"box-info-title\\\">Hiking</h4>\\n\\t\\t<p class=\\\"box-info-text\\\">Guided hiking tours where our guides use their training as naturalists to point out animals, unique plants and nature ...</p>\\n\\t</div>\\n</a><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[1].uuid, 'FAILED:[container1rendered[1].uuid]').equal(\"uuid-2\");",
+									"    pm.expect(container1rendered[1].render, 'FAILED:[container1rendered[1].render]').equal(\"\\n    <h2>Custom Packages</h2>\\n<p>Are you looking for the ultimate in Costa Rica vacations? Our team oat TravelLux will design your custom vacation package. We do not sell cookie-cutter trips. Instead, we take the time to get to know your unique &ldquo;travel personality&rdquo;. Then we match you with a hand-picked selection of housing, tours &amp; transportation options. The result is a tailor-made Costa Rica journey that will fit you like a glove.</p>\\n<p>We email you a detailed travel itinerary filled with info, pictures and videos. Your TravelLux agent will work with you to adjust your vacation package until you are 100% satisfied. This makes for a seamless, worry-free experience that allows you to relax &amp; enjoy the voyage.</p>\\n<p><a href=\\\"/contact-us/\\\" class=\\\"btn btn-primary\\\">Book Now</a></p>\\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/2400w/50q/ski_holidays.png 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/600w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433//1200w/50q/ski_holidays.png 2x\\\">\\n            <img src=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/480w/50q/ski_holidays.png\\\" alt=\\\"With over 400\\\" of snow fall a year we have the longest season in the Continental US\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Over 400\\\" of snow a year</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">With over 400\\\" of snow fall a year we have the longest season in the Continental US</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/1200w/50q/ski_holidays.png\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\");",
+									"",
+									"    pm.expect(container1rendered[2].uuid, 'FAILED:[container1rendered[2].uuid]').equal(\"uuid-3\");",
+									"    pm.expect(container1rendered[2].render, 'FAILED:[container1rendered[2].render]').equal(\"\\n    <!-- Container Code: /application/containers/video.vtl -->\\n\\n<a class=\\\"video-cover bg-overlay-30 mb-5\\\" data-lightbox=\\\"iframe\\\" href=\\\"https://www.youtube.com/watch?v=1qw4ayRc1t8\\\">\\n  <div class=\\\"video-img\\\" style=\\\"background-image: url(https://i.ytimg.com/vi/1qw4ayRc1t8/hqdefault.jpg);\\\"></div>\\n  <span class=\\\"icon mdi mdi-play video-cover-icon\\\"></span>\\n</a><div></div>\");",
+									"    ",
+									"    pm.expect(container1rendered[3].uuid, 'FAILED:[container1rendered[3].uuid]').equal(\"uuid-4\");",
+									"    pm.expect(container1rendered[3].render, 'FAILED:[container1rendered[3].render]').equal(\"\\n    \\r\\n<h1 class=\\\"text-center\\\">Featured Activities</h1>\\n<div class=\\\"row justify-content-center\\\">\\n    </div>\\n<div></div>\");",
+									"",
+									"    pm.expect(container1rendered[4].uuid, 'FAILED:[container1rendered[4].uuid]').equal(\"uuid-5\");",
+									"    pm.expect(container1rendered[4].render, 'FAILED:[container1rendered[4].render]').equal(\"\\n    <h2>Costa Rica Family Adventure</h2>\\n<p>Tropical rainforests, zip lines, monkey sightings and waterfall swims make for the most unforgettable vacation&mdash;and photos.</p>\\n<p>Abundance abounds in Costa Rica: beautiful beaches, friendly people and endless adventures to embark upon. We dabble in it all with a family-friendly itinerary that will get everyone&rsquo;s heart pumping. Jump right in to adventure life in Costa Rica at Arenal Volcano where we zip along the treetops, get a glimpse of rural Tico life on a local farm, rappel down a canyon waterfall that lies deep in the tropical rainforest, and soak in thermal hot springs.</p>\\n<p>Journey south, crossing Lake Arenal by boat, and dive deep into the Monteverde cloud forest. Your hotel is located in the reserve, home to eight different biological zones and thousands of plants and animals. Keep your eyes peeled for monkeys and quetzals during the day and embark on night walks with your guide to experience a whole different world after dark. Spend a unique day exploring the forest giants from the ground up&mdash;climbing up specially outfitted trees and then exploring the forest on foot with your naturalist guide.</p><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[5].uuid, 'FAILED:[container1rendered[5].uuid]').equal(\"uuid-6\");",
+									"    pm.expect(container1rendered[5].render, 'FAILED:[container1rendered[5].render]').equal(\"\\n    <h3>Adventure travel done right</h3>\\n<p>Wherever you want to go, whatever you want to get into, we&rsquo;ve got a trip that&rsquo;ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that&rsquo;s more your thing).<strong><br /></strong></p><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[6].uuid, 'FAILED:[container1rendered[6].uuid]').equal(\"uuid-7\");",
+									"    pm.expect(container1rendered[6].render, 'FAILED:[container1rendered[6].render]').equal(\"\\n    <h3>Experience the world with us</h3>\\n<p>We practice Leave No Trace principles on all our trips and work with local people and businesses as often as possible.Our expert guides don&rsquo;t just know these places&mdash;they call them home. Their local knowledge unveils worlds few get to see. Hike, bike, swim and paddle with like-minded travelers who share your passion for adventure and the outdoors.</p><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[7].uuid, 'FAILED:[container1rendered[7].uuid]').equal(\"uuid-8\");",
+									"    pm.expect(container1rendered[7].render, 'FAILED:[container1rendered[7].render]').equal(\"\\n    \\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/2400w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/600w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca//1200w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <img src=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/480w/50q/waterfall-costa-rica.jpg\\\" alt=\\\"From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Fall into Costa Rica</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/1200w/50q/waterfall-costa-rica.jpg\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\");",
+									"",
+									"    pm.expect(container1rendered[8].uuid, 'FAILED:[container1rendered[8].uuid]').equal(\"uuid-9\");",
+									"    pm.expect(container1rendered[8].render, 'FAILED:[container1rendered[8].render]').equal(\"\\n    <div></div>\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      rendered {\n        uuid\n        render\n      }\n    }\n      \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsContainerStructure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "81e885fb-9c24-4249-b80a-d3fab80927b7",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.data.page.containers.length, 'FAILED:[jsonData.data.page.containers.length]').equal(2);",
+									"",
+									"    var containerStructuresFirstContainer = jsonData.data.page.containers[0].containerStructures;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer.length, 'FAILED:[containerStructuresFirstContainer.length]').equal(9);",
+									"",
+									"    var containerStructure = containerStructuresFirstContainer[0];",
+									"",
+									"    // containerStructure fields",
+									"    pm.expect(containerStructure.id, 'FAILED:[containerStructure.id]').equal(\"86a06a2e-ba40-43d4-a3ad-3a870d43bfc1\");",
+									"    pm.expect(containerStructure.structureId, 'FAILED:[containerStructure.structureId]').equal(\"799f176a-d32e-4844-a07c-1b5fcd107578\");",
+									"    pm.expect(containerStructure.containerInode, 'FAILED:[containerStructure.containerInode]').equal(\"61f070f0-8def-4858-ab76-f22bcb6feaaa\");",
+									"    pm.expect(containerStructure.containerId, 'FAILED:[containerStructure.containerId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(containerStructure.code, 'FAILED:[containerStructure.code]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/blog.vtl\\\")\");",
+									"",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerStructures {\n        id\n        structureId\n        containerInode\n        containerId\n        code\n      }\n    }\n      \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithContentWithTagsAndCats",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d2b9fac1-95f0-48cf-a257-1a20155a1fb6",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-family-cats-tags.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/costa-rica-family-cats-tags.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Content `Costa Rica Family Adventure` with \n`taggie` field with `costa rica` and `winterenthusiast` tags and `cat` field with `All Incluse` and `Tours` categories"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsContainerContentlets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d38eb470-9084-4546-9048-740c9c9fac7c",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containerContentlets = jsonData.data.page.containers[0].containerContentlets;",
+									"",
+									"    var containerContentlets1 = containerContentlets[0];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets1.uuid, 'FAILED:[containerContentlets1.uuid]').equal(\"uuid-9\");",
+									"    pm.expect(containerContentlets1.contentlets[0].identifier, 'FAILED:[containerContentlets1.contentlets[0]].identifier').equal(\"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\");",
+									"    pm.expect(containerContentlets1.contentlets[0].title, 'FAILED:[containerContentlets1.contentlets[0]].title').equal(\"Costa Rica FAQ\");",
+									"",
+									"    var containerContentlets2 = containerContentlets[1];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets2.uuid, 'FAILED:[containerContentlets2.uuid]').equal(\"uuid-1\");",
+									"    pm.expect(containerContentlets2.contentlets[0].identifier, 'FAILED:[containerContentlets2.contentlets[0]].identifier').equal(\"6bbead53-3908-471c-966d-9e76c5dd9eba\");",
+									"    pm.expect(containerContentlets2.contentlets[0].title, 'FAILED:[containerContentlets2.contentlets[0]].title').equal(\"Hiking\");",
+									"",
+									"    var containerContentlets3 = containerContentlets[2];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets3.uuid, 'FAILED:[containerContentlets3.uuid]').equal(\"uuid-3\");",
+									"    pm.expect(containerContentlets3.contentlets[0].identifier, 'FAILED:[containerContentlets3.contentlets[0]].identifier').equal(\"f40c6030-3532-4e75-9ca8-0d92261264e3\");",
+									"    pm.expect(containerContentlets3.contentlets[0].title, 'FAILED:[containerContentlets3.contentlets[0]].title').equal(\"Nat Geo Top Rated Eco Lodge, Episode 2 of 4\");",
+									"",
+									"    var containerContentlets4 = containerContentlets[3];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets4.uuid, 'FAILED:[containerContentlets4.uuid]').equal(\"uuid-4\");",
+									"    pm.expect(containerContentlets4.contentlets[0].identifier, 'FAILED:[containerContentlets4.contentlets[0]].identifier').equal(\"fb6a06da-8c0f-4828-99c5-91b03b17eaf7\");",
+									"    pm.expect(containerContentlets4.contentlets[0].title, 'FAILED:[containerContentlets4.contentlets[0]].title').equal(\"Destination Related Activities\");",
+									"",
+									"    var containerContentlets5 = containerContentlets[4];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets5.uuid, 'FAILED:[containerContentlets5.uuid]').equal(\"uuid-5\");",
+									"    pm.expect(containerContentlets5.contentlets[0].identifier, 'FAILED:[containerContentlets5.contentlets[0]].identifier').equal(\"3e6533b7-c3ba-4ec4-8bca-6a88d54cd037\");",
+									"    pm.expect(containerContentlets5.contentlets[0].title, 'FAILED:[containerContentlets5.contentlets[0]].title').equal(\"Costa Rica Family Adventure\");",
+									"    // tags ",
+									"    pm.expect(containerContentlets5.contentlets[0].taggies, 'FAILED:[containerContentlets5.contentlets[0].taggies]').equal(\"costa rica,winterenthusiast:persona\");",
+									"    // cats ",
+									"    pm.expect(containerContentlets5.contentlets[0].cats, 'FAILED:[containerContentlets5.contentlets[0].cats]').equal(\"[{allInclusive=All Inclusive}, {tours=Tours}]\");",
+									"",
+									"",
+									"    var containerContentlets6 = containerContentlets[5];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets6.uuid, 'FAILED:[containerContentlets6.uuid]').equal(\"uuid-6\");",
+									"    pm.expect(containerContentlets6.contentlets[0].identifier, 'FAILED:[containerContentlets6.contentlets[0]].identifier').equal(\"57abf7cc-8b91-4cb9-8e5d-bc7f0ff54665\");",
+									"    pm.expect(containerContentlets6.contentlets[0].title, 'FAILED:[containerContentlets6.contentlets[0]].title').equal(\"Adventure travel done right\");",
+									"",
+									"    var containerContentlets7 = containerContentlets[6];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets7.uuid, 'FAILED:[containerContentlets7.uuid]').equal(\"uuid-7\");",
+									"    pm.expect(containerContentlets7.contentlets[0].identifier, 'FAILED:[containerContentlets7.contentlets[0]].identifier').equal(\"5a4e4ef3-884f-4258-9009-f8fa83236242\");",
+									"    pm.expect(containerContentlets7.contentlets[0].title, 'FAILED:[containerContentlets7.contentlets[0]].title').equal(\"Experience the world with us\");",
+									"",
+									"    var containerContentlets8 = containerContentlets[7];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets8.uuid, 'FAILED:[containerContentlets8.uuid]').equal(\"uuid-8\");",
+									"    pm.expect(containerContentlets8.contentlets[0].identifier, 'FAILED:[containerContentlets8.contentlets[0]].identifier').equal(\"bfee8f08-a6d1-4fd7-8f70-476e62663eca\");",
+									"    pm.expect(containerContentlets8.contentlets[0].title, 'FAILED:[containerContentlets8.contentlets[0]].title').equal(\"Fall into Costa Rica\");",
+									"",
+									"    var containerContentlets9 = containerContentlets[8];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets9.uuid, 'FAILED:[containerContentlets9.uuid]').equal(\"uuid-2\");",
+									"    pm.expect(containerContentlets9.contentlets[0].identifier, 'FAILED:[containerContentlets9.contentlets[0]].identifier').equal(\"f827c41a-5689-4733-b4d7-916d3a31c9c6\");",
+									"    pm.expect(containerContentlets9.contentlets[0].title, 'FAILED:[containerContentlets9.contentlets[0]].title').equal(\"Costa Rica Intro\");",
+									"",
+									"    pm.expect(containerContentlets9.contentlets[1].identifier, 'FAILED:[containerContentlets9.contentlets[0]].identifier').equal(\"7b4ba67a-1793-4daf-bed9-f8ce054f1433\");",
+									"    pm.expect(containerContentlets9.contentlets[1].title, 'FAILED:[containerContentlets9.contentlets[0]].title').equal(\"Over 400\\\" of snow a year\");",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          taggies: map(key:\"taggies\") \n          cats: map(key:\"cats\")\n        }\n      }\n    }\n      \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithMexicoPageAndRule",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "63944a3e-4ff3-472b-b58b-c7ad0008b659",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"mexico-pageasset.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/mexico-pageasset.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_FireRulesTrue_PREVIEW_MODE_pageRuleShouldFire",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f8e9a9c0-b8f4-407a-aa02-5cd2f280e6fc",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Rule fired\", function () {",
+									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
+									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(\"true\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/mexico\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: true) {\n    title\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_FireRulesFALSE_PREVIEW_MODE_pageRuleShouldNOTFire",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6ec045de-e014-4084-a5b3-78cd87b3f513",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Rule NOT fired\", function () {",
+									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
+									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(undefined);",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: false) {\n    title\n    viewAs {\n      persona {\n        name\n      }\n    }\n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -3683,87 +4504,87 @@
 	],
 	"variable": [
 		{
-			"id": "16acbba9-2597-4be2-9efb-a49ef05e684f",
+			"id": "dd31fbc5-8c36-4c8a-b13d-906a124230ca",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "de1be12b-269e-44b7-bb23-ac4bca9ea7db",
+			"id": "1e41caa2-ed88-4fc2-833e-b916fee9488e",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "abe08a03-a2a2-4058-baca-4543dbefb483",
+			"id": "f5d52420-cf17-4f6e-922b-16ba0371efe0",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "c402b9c9-9f3b-40a6-9af7-8f1e7f5d2d9f",
+			"id": "f957965d-2016-4f2d-a32f-446be57840f0",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "d9ca3e29-84c9-4501-8103-816a79960c6d",
+			"id": "c1dd6d87-be5e-4639-b32d-546a1bd0b7b3",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "0f938161-d161-45f2-b9a7-85e6944eec44",
+			"id": "0d164387-1836-4fa1-8759-416cef14f497",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "a21e0513-bd8f-4020-bb18-8243717aab3e",
+			"id": "0fbbe0c1-8607-45e5-b5c4-768bfd120d7d",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "d7e52160-e900-495c-ac20-5034dd3c7cdd",
+			"id": "8dec6289-2ce9-40d9-837e-8ef42a9d53ad",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "7b22de2c-86d8-4c12-8294-0c96fd3042df",
+			"id": "1de3de59-2edd-4ce8-b615-321544b2720b",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "ea2d16b6-194e-438e-b950-38ecfe6215b6",
+			"id": "70f058da-1ccd-4ad2-a6f0-325a3859ae68",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "5e930148-2643-4514-98de-bf8af2fa4e34",
+			"id": "be967554-b004-47d6-b013-42c7ccd54bf6",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "d22b5bbd-c0a8-4096-8fc2-9a838976a333",
+			"id": "3518c31f-7c8e-4cd7-b901-c75b9a562649",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "3939ec8e-09ce-4eb8-8b4d-0bb7f8749a5b",
+			"id": "9f7f05a2-16c8-4e81-a2a0-fc3c6cc80d98",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "9beb1284-309b-4056-b9af-ea9be8169335",
+			"id": "9c16ca70-6f94-4894-b247-b415ecf6fc6e",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "6c71d02c-7323-40f6-b1c0-c4ce25c556f1",
+			"id": "8bc8816e-583b-46a1-ac63-cf5f5c113591",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "cc50683e-f7d7-448f-ad7f-91ae133f3242",
+			"id": "fbdd03fa-bc82-4fd8-8b3a-2059cf105119",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "b6c592b4-b3e8-42b0-afd1-648fc8ad7b2a",
+			"id": "a90210cb-0915-4165-ac0e-cadc549d551d",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}

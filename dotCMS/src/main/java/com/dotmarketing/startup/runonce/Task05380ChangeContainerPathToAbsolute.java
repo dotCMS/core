@@ -20,11 +20,12 @@ import java.util.stream.Collectors;
  */
 public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
-    final String GET_TEMPLATES_QUERY = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.drawed_body, template.body " +
-            "FROM ((identifier " +
-                "INNER JOIN template ON identifier.id = template.identifier) " +
-                "INNER JOIN contentlet ON contentlet.identifier = identifier.host_inode) " +
-            "where template.drawed_body is not null";
+    final static String GET_TEMPLATES_QUERY = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.identifier, template.drawed_body, template.body " +
+        "FROM identifier " +
+            "INNER JOIN template ON identifier.id = template.identifier " +
+            "INNER JOIN contentlet_version_info cvi on identifier.host_inode = cvi.identifier " +
+            "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
+        "WHERE template.drawed_body is not null order by template.inode";
 
 
     @Override

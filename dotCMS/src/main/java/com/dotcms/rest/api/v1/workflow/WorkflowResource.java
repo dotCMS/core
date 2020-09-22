@@ -545,7 +545,7 @@ public class WorkflowResource {
         try {
             Logger.debug(this, ()->"Finding the workflow action " + actionId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(action)).build(); // 200
+            return Response.ok(new ResponseEntityView(this.toWorkflowActionView(action))).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +

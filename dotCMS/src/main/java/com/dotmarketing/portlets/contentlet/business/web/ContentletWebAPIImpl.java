@@ -425,11 +425,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}
 		 }
 
-		if (categoriesList != null && categoriesList.size() > 0) {
-			for (final Iterator iterator = categoriesList.iterator(); iterator.hasNext();) {
-
-				final String tmpString = (String) iterator.next();
-				categories.add(catAPI.find(tmpString, user, false));
+		if (UtilMethods.isSet(categoriesList)) {
+			for (final Iterator<String> iterator = categoriesList.iterator(); iterator.hasNext();) {
+				final String categoryId = iterator.next();
+				if (UtilMethods.isSet(categoryId)) {
+					categories.add(catAPI.find(categoryId, user, PageMode.get().respectAnonPerms));
+				}
 			}
 		}
 
@@ -486,7 +487,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			if (shouldUseWorkflow(contentletFormData)) {
 
-				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet,
+				final ContentletDependencies.Builder contentletDependencies =
 						new ContentletDependencies.Builder().respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
 								.modUser(user)
 								.relationships(contentletRelationships)
@@ -494,15 +495,26 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								.workflowActionComments((String) contentletFormData.get("wfActionComments"))
 								.workflowAssignKey((String) contentletFormData.get("wfActionAssign"))
 								.categories(categories)
-                                .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
-								.generateSystemEvent(generateSystemEvent).build());
+								.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
+								.generateSystemEvent(generateSystemEvent);
+
+				if (UtilMethods.isSet((String) contentletFormData.get("wfFilterKey"))) {
+
+					contentletDependencies.workflowFilterKey((String) contentletFormData.get("wfFilterKey"));
+				}
+
+				if (UtilMethods.isSet((String) contentletFormData.get("wfiWantTo"))) {
+
+					contentletDependencies.workflowIWantTo((String) contentletFormData.get("wfiWantTo"));
+				}
+
+				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet, contentletDependencies.build());
 
 				if (hasPushPublishActionlet(APILocator.getWorkflowAPI().findAction((String) contentletFormData.get("wfActionId"), user))) {
 					final String whoToSendTmp = (String)currentContentlet.get(Contentlet.WHERE_TO_SEND);
 					final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
 					request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + user.getUserId(), envsToSendTo );
 				}
-
 			} else {
 
 				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +

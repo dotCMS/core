@@ -13,6 +13,7 @@ public enum TransformOptions {
     FILTER_BINARIES(true), //This one is used to simply prevent the binaries from making it into the final resulting map.
     CATEGORIES_NAME(true), //This instructs to render only the category name (key=name)
     CATEGORIES_INFO(true), //This instructs rendering much more info.
+    TAGS(true), //This instructs rendering much more info.
     USE_ALIAS(true),  //This will include stuff like ('live' and 'isLive')
 
     LOAD_META, // If this is on meta data will be included for FileAssets.

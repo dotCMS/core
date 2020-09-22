@@ -3,13 +3,13 @@ dependencies {
 
     def eeType = dotcmsReleaseVersion.equals("master") ? '-SNAPSHOT' : ''
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: '5.3.9', changing: true
 
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.3.2'
     compile ('io.jsonwebtoken:jjwt:0.6.0'){
         transitive = false
     }
-    compile group: 'com.dotcms.lib', name: 'dot.webp-imageio-core', version:'0.1.4'
+    compile group: 'com.dotcms.lib', name: 'dot.webp-imageio-core', version:'0.1.5'
     compile group: 'org.scijava', name: 'native-lib-loader', version: '2.3.2'
     compile group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
     compile group: 'com.dotcms.lib', name: 'dot.asm', version:'3.1_2'
@@ -469,7 +469,7 @@ dependencies {
     compile 'org.immutables:gson:2.3.3'
 
     compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
-    compile group: 'io.bit3', name: 'jsass', version: '5.7.1'
+    compile group: 'io.bit3', name: 'jsass', version: '5.10.3'
 
     //XML Tool dependency
     compile group: 'jaxen', name: 'jaxen', version: '1.1.6'
