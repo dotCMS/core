@@ -36,10 +36,10 @@ public class ContentletVersionInfoTransformer implements DBTransformer<Contentle
     @NotNull
     private static ContentletVersionInfo transform(Map<String, Object> map)  {
         final ContentletVersionInfo versionInfo = new ContentletVersionInfo();
-        versionInfo.setIdentifier(String.valueOf(map.get("identifier")));
+        versionInfo.setIdentifier((String) map.get("identifier"));
         versionInfo.setLang(ConversionUtils.toLong(map.get("lang"), 0L));
-        versionInfo.setWorkingInode(String.valueOf(map.get("working_inode")));
-        versionInfo.setLiveInode(String.valueOf(map.get("live_inode")));
+        versionInfo.setWorkingInode((String) map.get("working_inode"));
+        versionInfo.setLiveInode((String) map.get("live_inode"));
         versionInfo.setDeleted(ConversionUtils.toBooleanFromDb(map.get("deleted")));
         versionInfo.setLockedBy((String) map.get("locked_by"));
         versionInfo.setLockedOn((Date) map.get("locked_on"));
