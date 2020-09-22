@@ -73,25 +73,9 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
         final DotContentletTransformer transformer   = new DotTransformerBuilder().defaultOptions().content(urlContent).build();
         final Map<String, Object>   urlContentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
-        this.createObjectMapKeyValue(urlContent, urlContentletMap);
 
         pageViewMap.put("urlContentMap", urlContentletMap);
     }
-
-    /**
-     * Get all key value fields into the contentlet (if any) and put as an object into the contentMap (returns it)
-     * @param contentlet    {@link Contentlet}
-     * @param contentType   {@link ContentType}
-     * @param contentletMap {@link Map}
-     * @return Map
-     */
-    protected Map<String, Object> createObjectMapKeyValue(final Contentlet contentlet,
-                                                          final Map<String, Object> contentletMap) {
-
-        new KeyValueViewStrategy(null).apply(contentlet, contentletMap, null, null);
-        return contentletMap;
-    }
-
 
     private Map<Object, Object> asPageMap(final PageView pageView)  {
         final Map<Object, Object> pageMap = this.asMap(pageView.getPage());
