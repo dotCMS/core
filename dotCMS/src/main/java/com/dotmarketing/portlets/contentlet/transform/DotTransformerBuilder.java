@@ -8,6 +8,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
@@ -111,6 +112,16 @@ public class DotTransformerBuilder {
     public DotTransformerBuilder categoryToMapTransformer(){
         optionsHolder.clear();
         optionsHolder.addAll(EnumSet.of(CATEGORIES_VIEW));
+        return this;
+    }
+
+    /**
+     * KeyValue to Map Transformer
+     * @return
+     */
+    public DotTransformerBuilder keyValueToMapTransformer(){
+        optionsHolder.clear();
+        optionsHolder.addAll(EnumSet.of(KEY_VALUE_VIEW));
         return this;
     }
 
