@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "39e90c47-63ec-48a6-84bf-b57bbd5b6c80",
+		"_postman_id": "22b0a63d-525f-46d8-849e-52d8ab735940",
 		"name": "Integrity Checker From Sender",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -64,7 +64,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "12e085f6-093a-4be8-8801-12fc42ba3987",
+												"id": "4ea7a3c6-b27c-495c-aee6-3a21504af2f3",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -121,14 +121,8 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "ae60c0b9-52c3-40ab-beab-d1e640417d12",
+												"id": "21e2edf9-3c61-425e-969b-e8f15a42414b",
 												"exec": [
-													"serverURL = pm.environment.get(\"serverURL\");",
-													"",
-													"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-													"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-													"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-													"pm.collectionVariables.set(\"origin\", hostName);",
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -140,7 +134,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "c202477e-0558-4b3b-9368-89a8afecc511",
+												"id": "1b80dfe0-75dd-4a3b-9c40-d7baaf700c9a",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -220,7 +214,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "6f28e0fb-f09c-4e2f-83f0-e263964b3d00",
+												"id": "12be9de1-6301-4b98-b93f-5a9b7c67cb8e",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -232,7 +226,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "fd9858b7-7e83-4d0a-9d1f-b4cf5e330e77",
+												"id": "0043830d-0afd-44e8-9e74-468207760cb3",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -328,7 +322,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "02b3899e-1fca-4094-a828-de9f052cbcbc",
+												"id": "541567fe-4319-432a-9de6-c7340a872a2b",
 												"exec": [
 													"receiverName = 'receiverName-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"receiverName\", receiverName);",
@@ -340,7 +334,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "1f6a0864-b692-4ba2-b9f6-378fc8e371b7",
+												"id": "a279d916-5a29-41b8-b828-78e2145d4da4",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -425,7 +419,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "72d35eb8-dec9-4cec-ad1f-c4474fd1b13e",
+												"id": "53d23de8-d273-49a7-b34f-943128b06f43",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -494,7 +488,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "10a7b08f-7b82-4a43-9985-93c7f3c273f7",
+												"id": "96a5c7aa-beb2-41ea-a862-33668e7b20c1",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -608,7 +602,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "5a23745c-e508-418d-a166-69c764c69321",
+												"id": "b2676961-01c3-4713-a2cb-4f198b65cff8",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -665,14 +659,8 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "5b075672-497c-4dcd-9f59-122bbcc4199d",
+												"id": "568c8c22-513f-47f4-bfee-d9b5f509af01",
 												"exec": [
-													"serverURL = pm.environment.get(\"serverURL\");",
-													"",
-													"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-													"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-													"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-													"pm.collectionVariables.set(\"origin\", hostName);",
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -684,7 +672,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "aa45b079-7bdc-4563-b677-c7d4dbe0cc36",
+												"id": "95a24783-479f-4653-bcc1-770d2e6d1ea4",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -764,7 +752,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "2def3eaa-dec7-469c-bc54-afeb0ab2fece",
+												"id": "979d6dde-3fe4-4e5e-a31f-a99e873a67bc",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -776,7 +764,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "f615f012-f379-4f2a-8ba4-1f3fbe4ae3a1",
+												"id": "cd79e3df-8419-4b83-a38c-96ac9407f0b4",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -872,7 +860,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "4d9c3839-6126-4587-b1de-48dd3092095e",
+												"id": "21436084-f70d-491b-bdce-53399e80ac0b",
 												"exec": [
 													"receiverName = 'receiverName-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"receiverName\", receiverName);",
@@ -884,7 +872,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "c79ee8ba-c787-490e-9bc9-e0f8b00fbb1a",
+												"id": "3be8bb49-8015-45ae-88ae-204de07136b8",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -969,7 +957,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "02d374cb-ae0b-496c-b92b-a7d753d501cf",
+												"id": "785531ee-a1e6-41d9-a7ea-cd5741b01e0c",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
@@ -1050,7 +1038,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "e2ac281c-b3bb-4570-a58b-92b666b91acf",
+												"id": "489b8966-63c5-46bd-bfee-b8557694ecbf",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1113,14 +1101,8 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "69c9ac96-3d3d-438c-81cc-d3cbe44433a9",
+												"id": "3d2f6477-2b75-4c45-a637-7f61f026b85d",
 												"exec": [
-													"serverURL = pm.environment.get(\"serverURL\");",
-													"",
-													"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-													"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-													"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-													"pm.collectionVariables.set(\"origin\", hostName);",
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -1132,7 +1114,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "c4c4d403-a504-4733-8716-40471049c9b9",
+												"id": "d6adea39-839c-44d1-aee2-1f72b2b261e1",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1212,7 +1194,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "c9f584c0-0ce7-4728-9e9e-8828a06f26e2",
+												"id": "d0e3fc34-7237-4f1a-80b2-f2bf7929f41e",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -1224,7 +1206,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "887e3fd1-e0de-417b-b283-bf64e03719b6",
+												"id": "f9f8203a-b0d8-4f5c-b122-ed54bc812df4",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1320,7 +1302,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "92385f49-a481-43be-a8e7-987f217012d9",
+												"id": "e819d05f-4986-4508-a7d8-33c1e141a049",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1367,7 +1349,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "5d620b8c-1aa5-4836-a6b8-44e3f3c79915",
+												"id": "98455b25-0842-494c-b98d-52458b0ea4e1",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1424,14 +1406,8 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "51ff1a8b-8890-4550-9c6b-a69d6b2b1b10",
+												"id": "473564a2-6bb0-4b64-9fe7-0282523bfc4b",
 												"exec": [
-													"serverURL = pm.environment.get(\"serverURL\");",
-													"",
-													"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-													"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-													"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-													"pm.collectionVariables.set(\"origin\", hostName);",
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -1443,7 +1419,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "8ece9be0-e0ab-4461-b207-596ca9d3bc20",
+												"id": "5a17d4f8-bcda-4c96-a501-edec789cc349",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1523,7 +1499,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "109df43a-9255-47ff-a2be-007ffe7a4366",
+												"id": "6fd9edd3-be54-40f6-b47a-e6d37c47b71e",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -1535,7 +1511,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "c94d01e3-1328-4f1e-a34c-2c848a6ea137",
+												"id": "75c9d1a4-6bcb-4032-b675-dd495b4a9a65",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1631,7 +1607,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "26b7c497-82e0-477d-ae49-5c5cae5b1f9f",
+												"id": "3f9c9298-b6ec-4618-97ff-bd4b257fb95d",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
@@ -1676,7 +1652,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "aad80809-5420-4e03-be0a-d70ef6f24164",
+												"id": "85dca0a8-10ef-4035-b8d8-d8da558bf895",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1741,14 +1717,8 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "ef1413d9-617e-4ecf-b9dd-fdea89ab86e2",
+												"id": "a7faa8f9-c33b-409a-a20e-f51d3a9ed99f",
 												"exec": [
-													"serverURL = pm.environment.get(\"serverURL\");",
-													"",
-													"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-													"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-													"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-													"pm.collectionVariables.set(\"origin\", hostName);",
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -1760,7 +1730,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "758b4b0c-b998-4e35-96ea-8c33443eb5b5",
+												"id": "d61b6eb4-6ba2-4ec5-8e1a-00a3340f4161",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1840,7 +1810,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "ca753530-2583-4dd8-b498-3b416d68483a",
+												"id": "97804fab-01f5-4ea3-9377-4618083f072a",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -1852,7 +1822,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "9d335ec5-e0a1-4942-a8db-ebbf3aade2b0",
+												"id": "cf631d87-6a19-42b8-be3e-51ac293dee3d",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1948,7 +1918,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "d00fa902-cd72-49d6-91b9-084a2ab20340",
+												"id": "956a03ea-0b45-4040-a5c6-ddba3a096020",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
@@ -1996,7 +1966,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "5df2a33e-2dd4-4a63-ab5f-e57cad08538b",
+				"id": "36d6a615-b27b-4da0-af9d-33e7761dec9d",
 				"type": "text/javascript",
 				"exec": [
 					"wait = (ms) => {",
@@ -2007,14 +1977,22 @@
 					"  }",
 					"};",
 					"",
-					"pm.collectionVariables.set(\"wait\", wait.toString());"
+					"pm.collectionVariables.set(\"wait\", wait.toString());",
+					"",
+					"serverURL = pm.environment.get(\"serverURL\");",
+					"",
+					"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
+					"hostNamaeEndIndex =  serverURL.indexOf(\":\", hostNamaeStartIndex);",
+					"hostName = serverURL.substring(hostNamaeStartIndex + 2, hostNamaeEndIndex);",
+					"",
+					"pm.collectionVariables.set(\"origin\", hostName);"
 				]
 			}
 		},
 		{
 			"listen": "test",
 			"script": {
-				"id": "4bfe85a9-3257-4a8d-990c-b0718e30b344",
+				"id": "31363f84-ae3e-465e-b2f0-f0407ec01333",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -2024,42 +2002,42 @@
 	],
 	"variable": [
 		{
-			"id": "35dd8f6c-52ae-46d4-bd43-48702896c7e7",
+			"id": "aafd3156-c790-4cbb-9e6b-609c236a52fc",
 			"key": "endpointName",
-			"value": "endpoint-42"
+			"value": "endpoint-570"
 		},
 		{
-			"id": "0e14628e-4815-49b2-b87b-7ef806eb219c",
+			"id": "3f461a5f-7ee1-41f6-94ac-042c3d4669f9",
 			"key": "environmentName",
-			"value": "environment-856"
+			"value": "environment-886"
 		},
 		{
-			"id": "580d843e-9ae1-4649-aaae-557dcf4ae68a",
+			"id": "e2b1014b-0728-4acf-bd5f-4f3c2b5d99f2",
 			"key": "origin",
 			"value": "localhost"
 		},
 		{
-			"id": "ea08755c-bfb2-4e8c-92a9-6b656c0e2ac9",
+			"id": "d1a0ebf3-846d-44c0-a5f2-0ba5e168166b",
 			"key": "environmentId",
-			"value": "90fa0c64-f66b-40bd-a126-83bef2d13155"
+			"value": "35f2da2c-b9c4-403a-84e7-5b3815db6605"
 		},
 		{
-			"id": "d4dd3386-9439-4215-b456-d9b107eac26a",
+			"id": "506a8a9f-93b0-4b5f-b31e-f68dd05f2a6a",
 			"key": "endpintId",
-			"value": "05fd9355-9bbe-41b4-970d-73b6c5aea067"
+			"value": "8e1b0743-54ac-4912-b64e-a9f4717eb1b7"
 		},
 		{
-			"id": "e80bb0ca-775c-45a0-aea1-4f6110334bbd",
+			"id": "1d739235-918c-408d-8e5a-752bc7e66269",
 			"key": "receiverName",
 			"value": "receiverName-729"
 		},
 		{
-			"id": "f514d72e-9f8c-44be-b870-396fc7652980",
+			"id": "686ef994-7957-49ac-96f0-f277cf202b00",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk1MTIwYzQxOS0yMmNmLTQxYmYtYjAwMS1mYmEyYmIxZjYxNDgiLCJ4bW9kIjoxNjAwMjEwOTQ0MDAwLCJuYmYiOjE2MDAyMTA5NDQsImlzcyI6IjIzY2EzMjcyNTgiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTQ3ODIzMDksImlhdCI6MTYwMDIxMDk0NCwianRpIjoiMzNhMTdhNDgtYjJkNi00MjZlLWI0ZDYtOTUxOGNiNTIwZGM0In0.T473vMCXyaykqTd8A6d2SLV6xcwq6_5GHjHH8QrHmrk"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkxYzkyNjYwNC0xYTRjLTQ4MGEtYTkzZC05ZjRhMmUwNGMxYjciLCJ4bW9kIjoxNjAwNzkwMjc1MDAwLCJuYmYiOjE2MDA3OTAyNzUsImlzcyI6IjY4ZGMyODUxMjciLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTUzNjE2NDAsImlhdCI6MTYwMDc5MDI3NSwianRpIjoiYjBkYzM3ZGUtZGI4NC00MmI5LWFkOGQtYWM2YzhhZjI2NTEzIn0.FpL3RB5a9JwvpDGyn6vWpcgkwRVHS14SHWyzl-04vWI"
 		},
 		{
-			"id": "00393292-08b6-4f2f-9c20-e5d0ba588e8d",
+			"id": "6bb75c2a-e385-426d-939a-f09ff3a4e17a",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}

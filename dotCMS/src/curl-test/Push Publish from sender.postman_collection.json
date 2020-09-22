@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "c3b94044-79c5-4165-9ed3-b941dc8ad61b",
+		"_postman_id": "35a4a747-5bc1-4ee3-b576-47fb3f138b75",
 		"name": "Push Publish from sender",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -61,7 +61,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d9dae49b-3e41-4ac7-b836-c40c9e2e13da",
+										"id": "82ba9803-4f90-42a5-85e6-9224038615e1",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -118,14 +118,9 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "40857d11-3fbe-4f3e-a388-5a23dbf0cd89",
+										"id": "ff271a51-c586-4987-b1ae-06d957eaa18b",
 										"exec": [
-											"serverURL = pm.environment.get(\"serverURL\");",
 											"",
-											"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-											"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-											"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-											"pm.collectionVariables.set(\"origin\", hostName);",
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -137,7 +132,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a635c3da-5821-48a8-9115-9e965970f4b5",
+										"id": "9114fe00-de56-41cc-8efb-9eba30f16d54",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -217,7 +212,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "085909ad-6228-41ae-955d-5cad212b30e0",
+										"id": "f963d9df-79cb-4b16-94a9-fbf3b5ea07b9",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -229,7 +224,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "7118e3a0-a60a-4e12-911d-cec93a59f0a2",
+										"id": "9551aef3-709f-47ed-97f8-d887e627a19e",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -323,7 +318,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "aac3ee0e-9be4-4da5-8b70-821b36e89f67",
+										"id": "f1f5f9cb-c32f-4e52-a630-46d312d2787a",
 										"exec": [
 											"receiverName = 'receiverName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"receiverName\", receiverName);",
@@ -335,7 +330,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "58dff97b-cb03-400a-9272-56966e812c22",
+										"id": "f53f898d-b229-4f41-9854-bbd2c265cdde",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -420,7 +415,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "7a1b8065-6a8e-40d4-9014-94e617b88ba1",
+										"id": "990c9bf6-c5d0-423a-98cc-3fcfbebeab0c",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -494,7 +489,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "3f50ed22-2f96-489d-8750-7d81a6c9bec6",
+										"id": "b2872d46-c933-4874-8bc1-5b38fdce6586",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -506,7 +501,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "bec0cff4-c25a-4e1d-bd88-4b0f3994796f",
+										"id": "f42aba42-78f2-4df2-b7de-0997a1ac2195",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -578,7 +573,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "1a600677-5595-436f-a2f8-7b66b5875034",
+										"id": "0a57d99b-e983-4064-9289-61fdefcc67e1",
 										"exec": [
 											""
 										],
@@ -588,7 +583,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "fdecaeb7-cf5f-48a5-9a59-a5282c60b4cd",
+										"id": "8c5b9d60-cb21-423e-9d7b-ef4dae5b4997",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -669,7 +664,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "a522f9d7-5f9d-4a18-a3a8-f863c4b1a399",
+										"id": "c0433b11-0473-413f-a6ed-bd3a2d26745b",
 										"exec": [
 											"",
 											""
@@ -680,7 +675,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b9e2ab87-b51b-4649-bb8c-60bcf2bd29d6",
+										"id": "50b214fe-79ce-4773-bd5d-09ddc5a837a0",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -817,7 +812,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "0ea125fc-f6e6-4da4-bd48-6dd41ea6dcd1",
+										"id": "9b956e2e-beb0-4af7-ac53-fc1e96afe4c3",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -874,14 +869,8 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "c38ef571-4dc7-4ced-b413-42beeaa3457c",
+										"id": "26d6fd11-70e1-4c71-8b78-32eb530eb478",
 										"exec": [
-											"serverURL = pm.environment.get(\"serverURL\");",
-											"",
-											"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-											"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-											"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-											"pm.collectionVariables.set(\"origin\", hostName);",
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -893,7 +882,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5b97e247-9580-4801-945b-6a63c6e69ffd",
+										"id": "fefed186-0153-407a-a695-d704aa23689a",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -973,7 +962,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "4d51f6ff-1f56-4b34-b416-106545f96f4d",
+										"id": "51a4983f-9262-4167-90e9-53e7a6e3a139",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -1066,7 +1055,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "8820af16-017b-40f5-a7e0-a75e6240b9ef",
+										"id": "a421f755-d1e2-4fd7-8aed-9d648ce5fd32",
 										"exec": [
 											"receiverName = 'receiverName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"receiverName\", receiverName);",
@@ -1078,7 +1067,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5ec0d2f2-89d3-4a67-9a27-d58efca17aff",
+										"id": "65da5026-d2d0-49b1-98f1-5eab73e0935d",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1163,7 +1152,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "65eecdc2-fbed-4eea-b033-90ff0ed86ea2",
+										"id": "383e22da-dc69-406a-adc3-d0589fbdc9ff",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1237,7 +1226,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "d4d6db22-a2c3-4e18-9b8d-624dd9bdf0ce",
+										"id": "c1628952-e0d7-452d-b862-a10acaa6ce2a",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -1249,7 +1238,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "241cac88-5397-479a-945f-4da5c3804a5e",
+										"id": "9da1c32d-fd61-4523-994d-78f839f12bde",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1321,7 +1310,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "c4f9cded-c1e4-4f39-9968-4a85f97660a3",
+										"id": "1fd6bf0d-a91f-4147-aa34-d51c13308073",
 										"exec": [
 											""
 										],
@@ -1331,7 +1320,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "71c40a7f-0379-4fa2-94ae-70992a7900a8",
+										"id": "c355b173-74ff-4939-b175-f93564b550ed",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1412,7 +1401,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "00a40e0e-0595-4c3b-abb1-2b33fa483ff1",
+										"id": "bfcb410a-45c7-4039-89b4-372e2cbb8687",
 										"exec": [
 											"",
 											""
@@ -1423,7 +1412,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e4f64666-90d1-4753-b3d2-c546d9ec7f78",
+										"id": "a787e769-3a67-4951-b0ad-835f21d0f14a",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -1528,7 +1517,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "66ff61b1-4224-4792-ae6a-3ada21947688",
+						"id": "84f77071-9205-487e-9b6b-742a8d99d5cd",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1538,7 +1527,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "d93bd65a-a694-4286-8a4b-003c11f6fbc6",
+						"id": "7ca26eef-ec4a-45e3-86dd-fd20fa9311c7",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1560,7 +1549,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8519e4ef-8cb0-4573-9235-de83378b11ea",
+										"id": "3d00bdbe-c8f9-434c-b919-86da3f61f6ff",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1623,14 +1612,8 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "360d8867-d90d-4b4c-9505-06d1fa293432",
+										"id": "67bbcad8-cfde-40b7-a49d-6a87d12f1b71",
 										"exec": [
-											"serverURL = pm.environment.get(\"serverURL\");",
-											"",
-											"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-											"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-											"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-											"pm.collectionVariables.set(\"origin\", hostName);",
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -1642,7 +1625,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8075f3dd-8cdc-46ac-b5bd-2c160ef7ddac",
+										"id": "cffa3a12-70d1-4ca3-ae2e-9f85cf29580c",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1722,7 +1705,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "2243ab6c-c21b-43f8-ad14-e4c11e9acc2f",
+										"id": "b67cbb01-78c1-411a-8455-80d95f9fa62f",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -1734,7 +1717,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9f087a97-509f-4578-b75e-ee1342027d41",
+										"id": "1eff9cf9-ac94-4fd6-b2e4-0fed477974d8",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1828,7 +1811,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3906b28f-0c11-430f-90f7-9a13b60990c9",
+										"id": "b8572887-cd56-4078-b185-5f23e33ec152",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1902,7 +1885,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "7455e42c-e87e-42da-973a-75d643da145f",
+										"id": "85c6568b-7b2a-4d7d-ae7a-b5d7dcb94118",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -1914,7 +1897,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a22f1bde-8920-4913-8528-1673b344a165",
+										"id": "228167ac-6e60-4e01-aaab-766ffe7614f8",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1986,7 +1969,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "f46fa1e4-857b-49c7-bf32-b5f1d52cca81",
+										"id": "cc6b172b-7002-480b-a3cd-29c6ff5cc1e7",
 										"exec": [
 											""
 										],
@@ -2065,7 +2048,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "63b30f48-8d92-4a05-bbf3-02e3326eb35f",
+										"id": "731bab78-b92c-4553-aeef-4f53eae45c6d",
 										"exec": [
 											"",
 											""
@@ -2076,7 +2059,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "188b0f6a-12ed-4813-a46e-24f1c4dac82b",
+										"id": "30dfb5b6-9155-4b76-9a32-fffba2e3a8d7",
 										"exec": [
 											"",
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
@@ -2156,7 +2139,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "74745af8-9b3b-49e1-a063-0c5743486234",
+										"id": "756a1030-4d4e-4f08-9556-ac53e8fc2e16",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2221,14 +2204,8 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "c55cd67b-8e3e-4523-841c-e7e729f63425",
+										"id": "7cea20c8-2de0-4aa7-a127-9e27839f17da",
 										"exec": [
-											"serverURL = pm.environment.get(\"serverURL\");",
-											"",
-											"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-											"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-											"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-											"pm.collectionVariables.set(\"origin\", hostName);",
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -2240,7 +2217,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "54aede23-c488-44aa-8df9-5c77713912f4",
+										"id": "9217a6e9-2b4f-44e1-8fcb-2621d12fb51d",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2320,7 +2297,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "0040bbf4-b7aa-4697-a859-6c5a022510f4",
+										"id": "bb82675b-d11d-45f4-a720-4d59b111263d",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -2332,7 +2309,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2f7ba484-3f55-4e75-8f67-9c53bc5a7730",
+										"id": "6e21e7a8-7042-4b83-a6f3-29f1176ed51a",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2426,7 +2403,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ca45214a-dc10-40f8-b5ff-90463b10833b",
+										"id": "9d5d5cc8-7e4c-4d7a-9008-f0ebd5828e8f",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2500,7 +2477,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "da94631a-9dbc-4240-ae7f-1c097b6a55a0",
+										"id": "08555de6-5de1-4e75-9514-64db01e7055e",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -2512,7 +2489,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "61b301fc-2f07-4c97-b62f-893672479f39",
+										"id": "48f6f2d8-f36c-446b-8ff2-43452fe0cb70",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2584,7 +2561,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "3ca30ef7-4fdc-42cd-ba19-753fa258346c",
+										"id": "ede89797-7b2a-4440-bd40-ef063575ece7",
 										"exec": [
 											""
 										],
@@ -2663,7 +2640,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "5b86570f-f0ec-47bb-8ab1-dd0bf3c325ed",
+										"id": "1f77b553-f9f8-4069-9895-7b5403a46721",
 										"exec": [
 											"",
 											""
@@ -2674,7 +2651,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f45a8dee-2efb-4f4f-9133-947e39bb1765",
+										"id": "aa6a1c69-89ad-481c-8652-743175f012d0",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -2754,14 +2731,8 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "7ca67f6d-787d-44c3-87a2-7792836f2661",
+										"id": "1bb72a44-9d02-4ac4-a55d-40147a21a89f",
 										"exec": [
-											"serverURL = pm.environment.get(\"serverURL\");",
-											"",
-											"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-											"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-											"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-											"pm.collectionVariables.set(\"origin\", hostName);",
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -2773,7 +2744,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b4c8a4a0-326f-412c-8682-dad4ae38de8e",
+										"id": "db2adee4-4f97-4d39-988d-57d3df012703",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2853,7 +2824,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "81fc3cf0-7805-48e5-96d5-66d0f95dca10",
+										"id": "f028c808-0c95-4ff6-bae0-cc438c419fe8",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -2865,7 +2836,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "16dac434-70bc-4ac9-8655-e500ee4ba521",
+										"id": "472d34e3-c4ff-4fce-abf3-55b133843ae4",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2959,7 +2930,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a23ed8ec-688c-4690-ad01-9739745383af",
+										"id": "c98ac543-35eb-44bb-8484-712d7398deab",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3033,7 +3004,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "cda0ff9b-f23c-4112-97ae-576e1f8cce93",
+										"id": "1d44e6b4-8f9f-4666-8c88-eb23fb95f5f9",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -3045,7 +3016,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4557b79c-3d19-46de-a3b4-c1b7d513a488",
+										"id": "86e3144a-01cf-4348-a8e3-5151ad0ac764",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3117,7 +3088,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "58ce824d-1fc7-45ef-8788-7dd01c8c7c6f",
+										"id": "0ae484ca-1fe1-496b-9470-e9e7716c6d61",
 										"exec": [
 											""
 										],
@@ -3196,7 +3167,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "82bff8ca-c64e-4aa0-9697-82a45aa4ccbd",
+										"id": "6ffea582-690b-4d13-a276-c81aad20ca8e",
 										"exec": [
 											"",
 											""
@@ -3207,7 +3178,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6b03d0c8-05ca-428f-a0ee-8e80c27be52a",
+										"id": "9bbf9ab7-b2ae-4bd8-85c7-5acc1e4994b2",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -3279,7 +3250,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "7ab97f91-8ec3-4dac-aaef-3fc14c0f41ea",
+								"id": "7be79f0b-b2f0-4c6a-8932-53855ec92256",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -3289,7 +3260,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "245e161e-2fa6-4b3f-afc5-c6bfab9fb5b4",
+								"id": "10f66bab-59d3-475b-9c38-6039bb59a120",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -3309,7 +3280,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "fc5fa203-11e8-4b6f-b782-0d4b9df4b73e",
+										"id": "1a65a6f8-1769-4d12-bbb4-14435b598ea1",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3366,14 +3337,8 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "794c5efc-78db-465b-868a-0d233f935599",
+										"id": "cc302be7-562e-4e03-ad9b-b2287c62d536",
 										"exec": [
-											"serverURL = pm.environment.get(\"serverURL\");",
-											"",
-											"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-											"hostNamaeEndIndex =  serverURL.indexOf(\":\");",
-											"hostName = serverURL.substring(hostNamaeStartIndex, hostNamaeEndIndex);",
-											"pm.collectionVariables.set(\"origin\", hostName);",
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"environmentName\", environmentName);",
@@ -3385,7 +3350,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "80b274a9-e4a5-45a7-8213-06319261d37c",
+										"id": "4c572ba4-9686-4f19-a795-eadaaa4690e0",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3465,7 +3430,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "72ccf35e-f09c-4e9f-ad94-fecfbe69de36",
+										"id": "cc7d4421-fd0f-477a-8d89-6b885c48e5cf",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -3477,7 +3442,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "356a286e-afc0-4cf2-ae42-5518630c5974",
+										"id": "469c32f6-5666-41d4-96fa-40301b2ab612",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3571,7 +3536,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "c3067517-6c8c-4020-b1b0-8db12cf731bd",
+										"id": "b804b2ce-3fa4-46f6-9b63-06693cb2eb00",
 										"exec": [
 											"receiverName = 'receiverName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"receiverName\", receiverName);",
@@ -3583,7 +3548,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "82395648-c763-4a4b-9c04-22188497a656",
+										"id": "d3f427fc-b95c-436a-b533-a8cd324389aa",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3668,7 +3633,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f3017b8d-1579-4af4-8ddc-1ad62ca008e3",
+										"id": "6f801785-e06e-407c-8df8-92e53e2d94f2",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3742,7 +3707,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "a18e284d-89f2-4b63-a868-92795451480e",
+										"id": "cddc8e4f-f5b1-464b-bc03-d1bbf3362696",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -3754,7 +3719,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9247d8d3-266c-4561-88e6-085947cc3f74",
+										"id": "e599bc34-d859-4ae3-8ed6-b049cf49d47f",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3826,7 +3791,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "165ac3f7-6c80-4c4c-87a7-26825396c413",
+										"id": "5421c1ce-6b3e-4ddf-a151-5fef5a51cba2",
 										"exec": [
 											""
 										],
@@ -3836,7 +3801,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "224c93f5-2115-423a-a0c3-e0bd924636ac",
+										"id": "635b72bd-86f1-4a49-8436-b0226acd9bb6",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3917,7 +3882,7 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "292f3061-396c-4943-b15f-2f850d57c305",
+										"id": "10b388dd-8aaa-495f-b05b-435b83fbabc8",
 										"exec": [
 											"",
 											""
@@ -3928,7 +3893,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "fcacd488-3064-4441-99ad-4199afcee923",
+										"id": "28413824-9572-4a84-913c-394f86ceb540",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -4006,7 +3971,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "19596195-75f9-401f-b3d0-e04745fcce28",
+				"id": "3501ff01-f411-49f9-a9fe-a131c1bbc604",
 				"type": "text/javascript",
 				"exec": [
 					"checkBundleStatus = (responseBody, casesToTest, requestToRepeat) => {",
@@ -4032,6 +3997,14 @@
 					"",
 					"    }",
 					"};",
+					"",
+					"serverURL = pm.environment.get(\"serverURL\");",
+					"",
+					"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
+					"hostNamaeEndIndex =  serverURL.indexOf(\":\", hostNamaeStartIndex);",
+					"hostName = serverURL.substring(hostNamaeStartIndex + 2, hostNamaeEndIndex);",
+					"",
+					"pm.collectionVariables.set(\"origin\", hostName);",
 					"",
 					"pm.collectionVariables.set(\"checkBundleStatus\", checkBundleStatus.toString());",
 					"",
@@ -4065,7 +4038,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "251e769c-638c-4204-b2f9-6b1911e2bc73",
+				"id": "e2482450-b135-4769-a312-eb8f8468a25a",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -4075,92 +4048,92 @@
 	],
 	"variable": [
 		{
-			"id": "8a542560-f26d-4a2d-bda2-4d59a3da3f00",
+			"id": "dab4c724-a1cc-4126-a6f5-458f2afac075",
 			"key": "origin",
 			"value": "localhost"
 		},
 		{
-			"id": "bd205baf-22fe-4bc4-8c79-6cb6d16636ab",
+			"id": "1e63f76b-1860-41c4-8694-04d7c4186e63",
 			"key": "environmentName",
-			"value": "environment-861"
+			"value": "environment-530"
 		},
 		{
-			"id": "84a9a803-7a36-495f-928c-ee8e6396c5ec",
+			"id": "19679dad-b9a9-49b2-a2ba-0a98a24c8068",
 			"key": "endpointName",
-			"value": "endpoint-162"
+			"value": "endpoint-728"
 		},
 		{
-			"id": "4ad668dc-0842-48db-a2b4-cd14adb50f7b",
+			"id": "78e5180d-0a1a-4871-b643-beefb1f77be9",
 			"key": "environmentId",
-			"value": "8bac68e3-2090-4f71-a7a5-43bf408d5e8c"
+			"value": "6431d5cd-215d-414b-a31b-69baa343be88"
 		},
 		{
-			"id": "da78abc3-1446-44a8-a3c8-efaf9971bcfc",
+			"id": "4ab7ddb8-3a8c-4f78-8f37-21c1c1ef79e7",
 			"key": "receiverName",
-			"value": "receiverName-478"
+			"value": "receiverName-11"
 		},
 		{
-			"id": "99d58456-1f37-4a49-a305-ebca08e604fb",
+			"id": "9207ba7d-dd78-42fe-a23e-cd45aadfc564",
 			"key": "bundleName",
 			"value": "bundleName-178"
 		},
 		{
-			"id": "332cc780-255b-4c12-adea-efc9039cd63c",
+			"id": "a1da3dce-9eb9-4033-82c4-3bc4359a37ed",
 			"key": "bundleID",
 			"value": null
 		},
 		{
-			"id": "dbd08d68-57e9-4c1b-bcd7-f2a18d635218",
+			"id": "6c97fe30-be27-4ec9-978a-eb10187a295c",
 			"key": "bundleId",
 			"value": "01EJH1Q0WNBEPHEFYY2D3FR52T"
 		},
 		{
-			"id": "96e52809-961e-4e76-b9f7-5cc326218ed6",
+			"id": "5e8bda5c-dae5-4622-95e0-992374be6f86",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGlkNGI3MWYxMi0wYzRhLTRlMzMtYjFmZi01YTY2YTJjODZjM2QiLCJ4bW9kIjoxNjAwNDQ3NTMxMDAwLCJuYmYiOjE2MDA0NDc1MzEsImlzcyI6IjE3YzcyZjkzYWUiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTUwMTg4OTYsImlhdCI6MTYwMDQ0NzUzMSwianRpIjoiZTY4N2IzMjQtODkxMC00MjU0LWJmNWYtNjMwNzBhNTM5YTRlIn0.6jvVTwgWqlcMiCa_svPvbNtFZRdk1wmAwvTiuge9xMc"
 		},
 		{
-			"id": "19eda1a8-bac7-4979-8efc-639073043799",
+			"id": "c94fc018-f31a-4d55-b66e-7d4e14179837",
 			"key": "bundleSuccessExpected",
 			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ecc9df87-02ad-4f58-afaf-f27ae4fb2c57</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "6fc990c3-84d3-4136-82a1-75178aef8914",
+			"id": "36c6ff71-8af6-499b-88f7-fe48d830bbd5",
 			"key": "bundleFailedExpected",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "5a2e7142-e826-4b56-86cf-440a7de6e427",
+			"id": "75cdd7e4-bcbe-4044-9cc8-ed305f2d789a",
 			"key": "endpointInvalidtoken",
 			"value": "<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t"
 		},
 		{
-			"id": "ddc86bdb-c1d6-4f0d-a547-f65151c9ed03",
+			"id": "3bcdb99e-17c4-4dcd-9637-27ede6082e92",
 			"key": "endpointSuccess",
 			"value": "<td valign=\"top\">Success</td>\t\t\t\t        <td valign=\"top\">Everything ok</td>"
 		},
 		{
-			"id": "c4b0f18c-9b61-4a10-84ee-030572377600",
+			"id": "8ecca255-f201-44dc-a8be-2762322635fb",
 			"key": "bundleFailed",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "24426686-2eb0-434d-8eb6-c2cc76e63a98",
+			"id": "cafcf64a-822f-4668-8053-87b642ee5a2f",
 			"key": "bundleSuccess",
 			"value": "<th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "fbf4c08c-1d67-41f9-a0a1-5bbd81ea197d",
+			"id": "c99f1762-a7d8-46ec-a271-09c8161d3011",
 			"key": "bundleWaitingPublish",
 			"value": "<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>"
 		},
 		{
-			"id": "5dc34394-364c-4802-848e-e635a662e94b",
+			"id": "6a37c15f-3077-4936-aecb-5dfbe9869680",
 			"key": "checkBundleStatus",
 			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log('response', responseBody.trim().length, typeof responseBody, parseInt(responseBody));\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    }\n\n    const $ = cheerio.load(responseBody);\n\n    bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n    htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n    if (htmlWithoutSpace.includes(bundleWaitingPublish)) {\n        console.log('AGAIN');\n        postman.setNextRequest(\"check success status\");\n    } else {\n        casesToTest.forEach((caseToTest) => {\n            expectedInclude = pm.collectionVariables.get(caseToTest);\n            pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n        });\n\n    }\n}"
 		},
 		{
-			"id": "ac7bbcb5-00ca-4dd9-ae92-c73b3586052e",
+			"id": "b8d41f3f-2dd0-499a-ba7d-5dccfd845eed",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
