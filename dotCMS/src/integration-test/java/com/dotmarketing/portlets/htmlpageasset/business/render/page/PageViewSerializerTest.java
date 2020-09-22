@@ -3,10 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -18,7 +15,6 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,14 +41,15 @@ public class PageViewSerializerTest {
 
         final PageViewSerializer pageViewSerializer = new PageViewSerializer();
         final Map<String, Object> pageViewMap       = new HashMap<>();
-        final Contentlet urlContent                 = new Contentlet();
+        final Contentlet baseContent                = new Contentlet();
+        final Contentlet urlContent                 = mock(Contentlet.class);
         final String     keyValue                   = "{\"key1\":\"value1\", \"key2\":\"value2\"}";
-        urlContent.getMap().put("title", "Test");
-        urlContent.getMap().put("keyValue", keyValue);
+        baseContent.getMap().put("keyValue", keyValue);
         final ContentType contentType               = mock(ContentType.class);
-        urlContent.setContentType(contentType);
+        when(urlContent.getContentType()).thenReturn(contentType);
+        when(urlContent.get("keyValue")).thenReturn(keyValue);
         when(contentType.fields(KeyValueField.class)).thenReturn(new ArrayList<>());
-        pageViewSerializer.createObjectMapKeyValue(urlContent, contentType, pageViewMap);
+        pageViewSerializer.createObjectMapKeyValue(urlContent, pageViewMap);
 
         assertTrue(pageViewMap.isEmpty());
     }
@@ -67,16 +64,18 @@ public class PageViewSerializerTest {
 
         final PageViewSerializer pageViewSerializer = new PageViewSerializer();
         final Map<String, Object> pageViewMap       = new HashMap<>();
-        final Contentlet urlContent                 = new Contentlet();
+        final Contentlet baseContent                = new Contentlet();
+        final Contentlet urlContent                 = mock(Contentlet.class);
         final String     keyValue                   = "{\"key1\":\"value1\", \"key2\":\"value2\"}";
-        urlContent.getMap().put("title", "Test");
-        urlContent.getMap().put("keyValue", keyValue);
+        baseContent.getMap().put("keyValue", keyValue);
         final ContentType contentType               = mock(ContentType.class);
-        final KeyValueField keyValueField               = mock(KeyValueField.class);
-        urlContent.setContentType(contentType);
+        final KeyValueField keyValueField           = mock(KeyValueField.class);
+        when(urlContent.getContentType()).thenReturn(contentType);
+        when(urlContent.get("keyValue")).thenReturn(keyValue);
         when(contentType.fields(KeyValueField.class)).thenReturn(Arrays.asList(keyValueField));
         when(keyValueField.variable()).thenReturn("keyValue");
-        pageViewSerializer.createObjectMapKeyValue(urlContent, contentType, pageViewMap);
+        when(urlContent.getKeyValueProperty("keyValue")).thenReturn(baseContent.getKeyValueProperty("keyValue"));
+        pageViewSerializer.createObjectMapKeyValue(urlContent, pageViewMap);
 
         assertFalse(pageViewMap.isEmpty());
         assertEquals(1, pageViewMap.size());

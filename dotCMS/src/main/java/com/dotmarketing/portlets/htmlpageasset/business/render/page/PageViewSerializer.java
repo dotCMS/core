@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
+import com.dotmarketing.portlets.contentlet.transform.strategy.KeyValueViewStrategy;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+
+import static java.util.Collections.emptyMap;
 
 /**
  * JsonSerializer of {@link PageView}
@@ -70,7 +73,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
         final DotContentletTransformer transformer   = new DotTransformerBuilder().defaultOptions().content(urlContent).build();
         final Map<String, Object>   urlContentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
-        this.createObjectMapKeyValue(urlContent, urlContent.getContentType(), urlContentletMap);
+        this.createObjectMapKeyValue(urlContent, urlContentletMap);
 
         pageViewMap.put("urlContentMap", urlContentletMap);
     }
@@ -82,16 +85,10 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
      * @param contentletMap {@link Map}
      * @return Map
      */
-    protected Map<String, Object> createObjectMapKeyValue(final Contentlet contentlet, final ContentType contentType, final Map<String, Object> contentletMap) {
+    protected Map<String, Object> createObjectMapKeyValue(final Contentlet contentlet,
+                                                          final Map<String, Object> contentletMap) {
 
-        final List<Field> urlContentFields           = contentType.fields(KeyValueField.class);
-
-        if (UtilMethods.isSet(urlContentFields)) {
-
-            urlContentFields.forEach(field ->
-                    contentletMap.put(field.variable(), contentlet.getKeyValueProperty(field.variable())));
-        }
-
+        new KeyValueViewStrategy(null).apply(contentlet, contentletMap, null, null);
         return contentletMap;
     }
 
