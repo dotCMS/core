@@ -23,6 +23,7 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaServletProvider {
     @Override
     public GraphQLSchema getSchema() {
         try {
+            APILocator.getGraphqlAPI().printSchema();
             return APILocator.getGraphqlAPI().getSchema();
         } catch(DotDataException e) {
             Logger.error(this, "Error with Schema retrieval/generation", e);

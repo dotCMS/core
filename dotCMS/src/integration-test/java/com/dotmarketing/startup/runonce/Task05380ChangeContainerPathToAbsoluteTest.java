@@ -8,6 +8,7 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -21,9 +22,10 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class Task05380ChangeContainerPathToAbsoluteTest {
     final String body =
@@ -458,5 +460,58 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
 
     private void checkTemplateLayout(final String layout) throws IOException {
         DotTemplateTool.getTemplateLayoutFromJSON(layout);
+    }
+
+    /**
+     * Method to Test: {@link Task05380ChangeContainerPathToAbsolute#executeUpgrade()}
+     * When: A site change the name before run the {@link Task05380ChangeContainerPathToAbsolute}
+     * Should: Should use the last name
+     */
+    @Test
+    public void whenSiteChangeNameBeforeRunUT() throws IOException, DotDataException, DotSecurityException {
+
+        final String layout = String.format(jsonDrawBody, "");
+        final String testBody = String.format(body, "");
+        final Host host = new SiteDataGen().nextPersisted();
+        final String oldName = host.getHostname();
+
+        host.setHostname(String.format("new_host_name_%s", System.currentTimeMillis()));
+        APILocator.getHostAPI().save(host, APILocator.systemUser(), false);
+
+        checkTemplateLayout(layout);
+        final Contentlet theme = new ThemeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .title("template_test_" + System.currentTimeMillis())
+                .theme(theme)
+                .drawedBody(layout)
+                .body(testBody)
+                .host(host)
+                .nextPersisted();
+
+        final Task05380ChangeContainerPathToAbsolute task05380ChangeContainerPathToAbsolute =
+                new Task05380ChangeContainerPathToAbsolute();
+
+        task05380ChangeContainerPathToAbsolute.executeUpgrade();
+
+        checkTemplateFromDataBase(host, template);
+
+        final boolean anyMatchWithOldName = new DotConnect()
+                .setSQL(Task05380ChangeContainerPathToAbsolute.GET_TEMPLATES_QUERY)
+                .loadObjectResults()
+                .stream()
+                .map(templateMap -> templateMap.get("host_name"))
+                .anyMatch(title -> title.equals(oldName));
+
+        assertFalse(anyMatchWithOldName);
+
+        final long count = new DotConnect()
+                .setSQL(Task05380ChangeContainerPathToAbsolute.GET_TEMPLATES_QUERY)
+                .loadObjectResults()
+                .stream()
+                .map(templateMap -> templateMap.get("inode"))
+                .filter(inode -> inode.equals(template.getInode()))
+                .count();
+
+        assertEquals(count, 1);
     }
 }

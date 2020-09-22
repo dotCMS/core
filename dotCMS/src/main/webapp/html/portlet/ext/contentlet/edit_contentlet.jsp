@@ -179,11 +179,11 @@
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
-            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
             && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
     
     boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user)
-            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
             && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user);
 
     Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
@@ -220,6 +220,8 @@
 	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 	<input name="whereToSend" id="wfWhereToSend" type="hidden" value="">
+	<input name="wfiWantTo" id="wfiWantTo" type="hidden" value="">
+	<input name="wfFilterKey" id="wfFilterKey" type="hidden" value="">
 
 
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image" sortBy="modDate" sortByDesc="true" dojoType="dotcms.dijit.FileBrowserDialog"></div>

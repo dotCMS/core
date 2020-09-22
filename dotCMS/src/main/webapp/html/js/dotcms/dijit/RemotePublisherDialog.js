@@ -22,7 +22,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         structInode:null
     },
 
-    show: function (isBulk) {
+    show: function (isBulk, isEdit) {
         var self = this;
         //Required clean up as these modals has duplicated widgets and collide without a clean up
 
@@ -150,9 +150,8 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
         if (this._hasWorkflow()) {
             this._getWorkFLow(this.workflow.actionId).then((action) => {
-                if ( action.assignable || action.commentable || isBulk){
-                    dia.set(url);
-                    dia.show();
+                if (!!(action.actionInputs && action.actionInputs.length) || isBulk){
+                    this._dispatchAngularWorkflowEvent(action, isEdit);
                 } else {
                     this._dispatchAngularDialogEvent();
                 }
@@ -249,13 +248,32 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         if (this.workflow && this.workflow.actionId) {
             this.container.evaluateCondition(this.workflow.actionId, this.title, eventData);
         } else {
-            var customEvent = document.createEvent("CustomEvent");
+            const customEvent = document.createEvent("CustomEvent");
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "push-publish",
                 data: eventData
             });
             document.dispatchEvent(customEvent);
         }
+    },
+
+    _dispatchAngularWorkflowEvent: function (workflow, isEdit) {
+        const data = {
+            workflow: workflow,
+            callback: isEdit ?  'saveAssignCallBackAngular' : 'angularWorkflowEventCallback',
+            inode: this.workflow.inode
+        };
+        if (typeof getSelectedInodes === "function" && getSelectedInodes().length) {
+            data['selectedInodes'] = getSelectedInodes();
+            data.callback = 'bulkWorkflowActionCallback';
+        }
+
+        const customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "workflow-wizard",
+            data: data
+        });
+        document.dispatchEvent(customEvent);
     }
 
 

@@ -103,7 +103,7 @@
 	    	},
 
 	    	executeWfAction: function(wfId, assignable, commentable, inode, showpush){
-	    		
+
 	    		this.wfActionId = wfId;
 	    		
 	    		if(assignable || commentable || showpush){
@@ -178,18 +178,26 @@
 	function fileActionCallback (response) {
 		if (response.status == "success") {
 			showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
-
-			var customEvent = document.createEvent("CustomEvent");
-			customEvent.initCustomEvent("ng-event", false, false,  {
-				name: "edit-task-executed-workflow"
-			});
-			document.dispatchEvent(customEvent);
+			executeEditTaskExecutedWorkflowEvent()
 			return;
 		}
 
 		// An error happened
 		showDotCMSErrorMessage(response.message);
 		dijit.byId('savingContentDialog').hide();
+	}
+
+	function fileActionCallbackFromAngular() {
+		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
+		executeEditTaskExecutedWorkflowEvent();
+	}
+
+	function executeEditTaskExecutedWorkflowEvent() {
+		var customEvent = document.createEvent("CustomEvent");
+		customEvent.initCustomEvent("ng-event", false, false,  {
+			name: "edit-task-executed-workflow"
+		});
+		document.dispatchEvent(customEvent);
 	}
 	    
 	var contentAdmin = new dotcms.dijit.contentlet.ContentAdmin();

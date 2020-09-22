@@ -1,5 +1,7 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -9,22 +11,26 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import org.quartz.*;
-
+import java.io.Serializable;
 import java.text.MessageFormat;
-import java.util.Date;
-import java.util.UUID;
+import java.text.ParseException;
+import java.util.Map;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 
 /**
  * Created by nollymar on 7/19/16.
  */
-public class DeleteUserJob implements StatefulJob {
+public class DeleteUserJob extends DotStatefulJob {
 
     private final UserAPI uAPI;
     private final NotificationAPI notfAPI;
@@ -34,47 +40,41 @@ public class DeleteUserJob implements StatefulJob {
         notfAPI = APILocator.getNotificationAPI();
     }
 
-    public static void triggerDeleteUserJob(User userToDelete, User replacementUser, User user,
-                                            boolean respectFrontEndRoles) {
-        JobDataMap dataMap = new JobDataMap();
-        dataMap.put("userToDelete", userToDelete);
-        dataMap.put("replacementUser", replacementUser);
-        dataMap.put("user", user);
-        dataMap.put("respectFrontEndRoles", respectFrontEndRoles);
+    public static void triggerDeleteUserJob(final User userToDelete, final User replacementUser, final User user,
+                                           final boolean respectFrontEndRoles) {
 
-        String randomID = UUID.randomUUID().toString();
+        final Map<String, Serializable> nextExecutionData = ImmutableMap
+                .of("userToDelete", userToDelete,
+                        "replacementUser", replacementUser,
+                        "user", user,
+                        "respectFrontEndRoles", respectFrontEndRoles);
 
-        JobDetail jd = new JobDetail("DeleteUserJob-" + randomID, "delete_user_jobs", DeleteUserJob.class);
-        jd.setJobDataMap(dataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
-
-        long startTime = System.currentTimeMillis();
-        SimpleTrigger trigger = new SimpleTrigger("deleteUserTrigger-" + randomID, "delete_user_triggers",
-            new Date(startTime));
 
         try {
-            Scheduler sched = QuartzUtils.getSequentialScheduler();
-            UserAPI userAPI = APILocator.getUserAPI();
-            NotificationAPI notAPI = APILocator.getNotificationAPI();
+            final UserAPI userAPI = APILocator.getUserAPI();
+            final NotificationAPI notAPI = APILocator.getNotificationAPI();
 
-            String deleteInProgress = MessageFormat.format(LanguageUtil.get(user,
+            final String deleteInProgress = MessageFormat.format(LanguageUtil.get(user,
                 "com.dotmarketing.business.UserAPI.delete.inProgress"),
                 userToDelete.getUserId() + "/" + userToDelete.getFullName());
 
-            synchronized (userToDelete.getUserId().intern()) {
-                User freshUser = userAPI.loadUserById(userToDelete.getUserId());
-                if(! freshUser.isDeleteInProgress()) {
+            final IdentifierStripedLock lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
+            lockManager.tryLock(userToDelete.getUserId(), () -> {
+                final User freshUser = userAPI.loadUserById(userToDelete.getUserId());
+                if (!freshUser.isDeleteInProgress()) {
                     userAPI.markToDelete(userToDelete);
-                    sched.scheduleJob(jd, trigger);
+                    try {
+                        DotStatefulJob.enqueueTrigger(nextExecutionData, DeleteUserJob.class);
+                    }catch (ParseException | SchedulerException | ClassNotFoundException e){
+                        Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
+                        throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
+                    }
                 } else {
                     notAPI.info(deleteInProgress, user.getUserId());
                 }
-            }
+            });
 
-
-        } catch (SchedulerException e) {
+        } catch (Throwable e) {
             Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
 
             //Rolling back of user status (deleteInProgress)
@@ -87,9 +87,6 @@ public class DeleteUserJob implements StatefulJob {
             }
 
             throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
-        } catch (Exception e) {
-            Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
-            throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
         }
 
         AdminLogger.log(DeleteUserJob.class, "triggerJobImmediately",
@@ -98,9 +95,10 @@ public class DeleteUserJob implements StatefulJob {
     }
 
     @Override
-    public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+    public void run(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
-        JobDataMap map = jobExecutionContext.getJobDetail().getJobDataMap();
+        final Trigger trigger = jobExecutionContext.getTrigger();
+        final Map<String, Serializable> map = getExecutionData(trigger, DeleteUserJob.class);
         User userToDelete = (User) map.get("userToDelete");
         User replacementUser = (User) map.get("replacementUser");
         User user = (User) map.get("user");

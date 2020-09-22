@@ -172,7 +172,7 @@ dependencies {
 
     starter group: 'com.dotcms', name: 'starter', version: 'empty_20200818', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
-    //starter group: 'com.dotcms', name: 'starter', version: '20200818', ext: 'zip'
+    //starter group: 'com.dotcms', name: 'starter', version: '20200909', ext: 'zip'
     testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20200818', ext: 'zip'
 
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
@@ -1042,7 +1042,6 @@ task cleanDotCmsWebComponents {
     delete './src/main/webapp/dotcms-webcomponents/package'
     delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.js'
     delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.esm.js'
-    delete './src/main/webapp/dotcms-webcomponents/index.esm.js'
 }
 
 task copyDotCmsUi(type: Copy) {
