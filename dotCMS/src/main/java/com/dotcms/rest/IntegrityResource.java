@@ -5,18 +5,23 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotcms.repackage.com.google.common.cache.Cache;
 import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.*;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -24,9 +29,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -47,7 +50,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
@@ -86,12 +89,8 @@ public class IntegrityResource {
             CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build();
 
     public enum ProcessStatus {
-        PROCESSING, ERROR, FINISHED, NO_CONFLICTS, CANCELED
+        PROCESSING, ERROR, FINISHED, NO_CONFLICTS, CANCELLED
     }
-
-    public static final String INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME = "DataToCheck.zip";
-    public static final String INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME = "DataToFix.zip";
-
 
     private static class EndpointState {
         private final Map<String, Cookie> cookies = new ConcurrentHashMap<String, Cookie>();
@@ -105,7 +104,7 @@ public class IntegrityResource {
         }
     }
 
-    private void cacheEndpointState(String endpointId, Map<String, NewCookie> cookiesMap) {
+    private static void cacheEndpointState(String endpointId, Map<String, NewCookie> cookiesMap) {
 
         EndpointState endpointState = endpointStateCache.getIfPresent(endpointId);
         if (endpointState == null) {
@@ -117,7 +116,7 @@ public class IntegrityResource {
         }
     }
 
-    private void applyEndpointState(String endpointId, Builder requestBuilder) {
+    private static void applyEndpointState(String endpointId, Builder requestBuilder) {
 
         final EndpointState endpointState = endpointStateCache.getIfPresent(endpointId);
 
@@ -143,7 +142,7 @@ public class IntegrityResource {
             final HTTPMethod method) {
         return postWithEndpointState(endpoint, url, mediaType, method, null);
     }
-    // https://github.com/dotCMS/core/issues/9067
+
     private Response  postWithEndpointState(
             final PublishingEndPoint endpoint,
             final String url,
@@ -170,57 +169,66 @@ public class IntegrityResource {
         return response;
     }
 
-
     /**
      * <p>Returns a zip with data from structures and folders for integrity check
-     *
-     * Usage: /getdata
-     *
      */
-
     @POST
     @Path("/_generateintegritydata")
     @Produces("text/plain")
     public Response generateIntegrityData(@Context HttpServletRequest request)  {
 
-        String remoteIP = getRemoteIP(request);
+        final String localAddress = RestEndPointIPUtil.getFullLocalIp(request);
+        final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
 
         final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
                 = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
-        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(remoteIP, pushPublishAuthenticationToken);
+        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(request, pushPublishAuthenticationToken);
 
         if (failResponse.isPresent()) {
             return failResponse.get();
         }
 
         try {
-            ServletContext servletContext = request.getSession().getServletContext();
-
-            if (servletContext.getAttribute("integrityRunning") != null && ((Boolean) servletContext.getAttribute("integrityRunning"))) {
-                throw new WebApplicationException(Response.status(HttpStatus.SC_CONFLICT).entity("Already Running").build());
+            if (QuartzUtils.isJobRunning(
+                    IntegrityDataGenerationJob.JOB_NAME,
+                    IntegrityDataGenerationJob.JOB_GROUP)) {
+                Logger.error(
+                        IntegrityResource.class,
+                        String.format(
+                                "Receiver at %s:> job is already running for remote ip: %s, so aborting generation",
+                                localAddress, remoteIp));
+                throw new WebApplicationException(
+                        Response.status(HttpStatus.SC_CONFLICT)
+                                .entity("Already Running")
+                                .build());
             }
 
-            String transactionId = UUIDGenerator.generateUuid();
-            servletContext.setAttribute("integrityDataRequestID", transactionId);
-
-            // start data generation process
-            final IntegrityDataGeneratorThread idg = new IntegrityDataGeneratorThread(transactionId, request.getSession().getServletContext());
-            idg.start();
-            //Saving the thread on the session context for a later use
-            servletContext.setAttribute("integrityDataGeneratorThread_" + transactionId, idg);
+            final String transactionId = UUIDGenerator.generateUuid();
+            IntegrityDataGenerationJob.triggerIntegrityDataGeneration(pushPublishAuthenticationToken.getKey(), transactionId);
+            Logger.info(
+                    IntegrityResource.class,
+                    String.format(
+                            "Receiver at %s:> job triggered for endpoint id: %s and requester id: %s",
+                            localAddress, remoteIp, transactionId));
 
             return Response.ok(transactionId).build();
         } catch (Exception e) {
-            Logger.error(IntegrityResource.class, "Error caused by remote call of: "+remoteIP);
-            Logger.error(IntegrityResource.class,e.getMessage(),e);
+            Logger.error(
+                    IntegrityResource.class,
+                    String.format("Receiver at %s:> Error caused by remote call of: %s", localAddress, remoteIp));
+
+            Logger.error(
+                    IntegrityResource.class,
+                    String.format("Receiver at %s:> %s", localAddress, e.getMessage()),
+                    e);
+
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
+            } else {
+                return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
             }
         }
-
-        return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
-
     }
 
     /**
@@ -237,75 +245,129 @@ public class IntegrityResource {
     @Produces("application/zip")
     public Response getIntegrityData(@Context HttpServletRequest request, @PathParam("requestId") final String requestId)  {
 
-        String remoteIP = getRemoteIP(request);
+        final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
+        final String localAddress = RestEndPointIPUtil.getFullLocalIp(request);
 
         final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
                 = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
-        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(remoteIP, pushPublishAuthenticationToken);
+        try {
+            final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(request, pushPublishAuthenticationToken);
 
-        if (failResponse.isPresent()) {
-            return failResponse.get();
-        }
-
-        try{
-            ServletContext servletContext = request.getSession().getServletContext();
-
-            if(!UtilMethods.isSet(servletContext.getAttribute("integrityDataRequestID"))
-                    || !((String) servletContext.getAttribute("integrityDataRequestID")).equals(requestId)) {
-                return Response.status(HttpStatus.SC_NOT_FOUND).build();
+            if (failResponse.isPresent()) {
+                return failResponse.get();
             }
 
-            ProcessStatus integrityDataGeneratorStatus = (ProcessStatus) servletContext.getAttribute("integrityDataGenerationStatus");
-
-            if(UtilMethods.isSet( integrityDataGeneratorStatus )) {
-                switch (integrityDataGeneratorStatus) {
-                    case PROCESSING:
-                        return Response.status(HttpStatus.SC_PROCESSING).build();
-                    case FINISHED:
-                        StreamingOutput output = new StreamingOutput() {
-                            public void write(OutputStream output) throws IOException, WebApplicationException {
-                                InputStream is = Files.newInputStream(Paths.get(
-                                        ConfigUtils.getIntegrityPath() + File.separator
-                                                + requestId + File.separator
-                                                + INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME));
-
-                                byte[] buffer = new byte[1024];
-                                int bytesRead;
-                                //read from is to buffer
-                                while((bytesRead = is.read(buffer)) !=-1){
-                                    output.write(buffer, 0, bytesRead);
-                                }
-                                is.close();
-                                //flush OutputStream to write any buffered data to file
-                                output.flush();
-                                output.close();
-
-                            }
-                        };
-                        return Response.ok(output).build();
-
-                    case CANCELED:
-                        return Response.status( HttpStatus.SC_RESET_CONTENT ).entity( servletContext.getAttribute( "integrityDataGenerationError" ) ).build();
-
-                    case ERROR:
-                        return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(servletContext.getAttribute("integrityDataGenerationError")).build();
-
-                    default:
-                        break;
-                }
+            if (QuartzUtils.isJobRunning(
+                    IntegrityDataGenerationJob.JOB_NAME,
+                    IntegrityDataGenerationJob.JOB_GROUP)) {
+                Logger.error(
+                        IntegrityResource.class,
+                        String.format(
+                                "Receiver at %s:> job is already running for endpoint id: %s, therefore it's not ready and need to wait",
+                                localAddress,
+                                pushPublishAuthenticationToken.getKey()));
+                return Response.status(HttpStatus.SC_PROCESSING).build();
             }
 
+            final Optional<IntegrityUtil.IntegrityDataExecutionMetadata> integrityMetadata =
+                    IntegrityUtil.getIntegrityMetadata(pushPublishAuthenticationToken.getKey());
+            if (!integrityMetadata.isPresent()) {
+                Logger.error(
+                        IntegrityResource.class,
+                        String.format(
+                                "Receiver at %s:> integrity data generation metadata for endpoint id %s is not found ",
+                                localAddress,
+                                pushPublishAuthenticationToken.getKey()));
+                return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
+            }
+
+            if (!requestId.equals(integrityMetadata.get().getRequestId())) {
+                Logger.error(
+                        IntegrityResource.class,
+                        String.format(
+                                "Receiver at %s:> integrity data generation metadata for endpoint id %s has a request id %s which does not match the provided %s",
+                                localAddress,
+                                pushPublishAuthenticationToken.getKey(),
+                                integrityMetadata.get().getRequestId(),
+                                requestId));
+                return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
+            }
+
+            if (integrityMetadata.get().getProcessStatus() == ProcessStatus.PROCESSING) {
+                Logger.info(
+                        IntegrityResource.class,
+                        String.format(
+                                "Receiver at %s:> integrity data generation for endpoint id %s still ongoing therefore it's not ready and need to wait",
+                                localAddress,
+                                pushPublishAuthenticationToken.getKey()));
+                return Response.status(HttpStatus.SC_PROCESSING).build();
+            } else if (integrityMetadata.get().getProcessStatus() == ProcessStatus.FINISHED &&
+                    IntegrityUtil.doesIntegrityDataFileExist(
+                            pushPublishAuthenticationToken.getKey(),
+                            IntegrityUtil.INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME)) {
+                final String zipFilePath = IntegrityUtil.getIntegrityDataFilePath(
+                        pushPublishAuthenticationToken.getKey(),
+                        IntegrityUtil.INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME);
+                final StreamingOutput output = so -> {
+                    final InputStream inputStream = Files.newInputStream(Paths.get(zipFilePath));
+                    final byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    //read from is to buffer
+                    while((bytesRead = inputStream.read(buffer)) != -1){
+                        so.write(buffer, 0, bytesRead);
+                    }
+
+                    inputStream.close();
+                    //flush OutputStream to write any buffered data to file
+                    so.flush();
+                    so.close();
+                };
+
+                Logger.info(
+                        IntegrityResource.class,
+                        String.format(
+                                "Receiver at %s:> integrity data generation for endpoint id %s has finished and saved at %s",
+                                localAddress,
+                                pushPublishAuthenticationToken.getKey(),
+                                zipFilePath));
+                return Response.ok(output).build();
+            } else if (integrityMetadata.get().getProcessStatus() == ProcessStatus.CANCELLED) {
+                Logger.error(
+                        IntegrityResource.class,
+                        String.format(
+                                "Receiver at %s:> integrity data generation for endpoint id %s is cancelled",
+                                localAddress,
+                                pushPublishAuthenticationToken.getKey()));
+                return Response
+                        .status(HttpStatus.SC_RESET_CONTENT)
+                        .entity(integrityMetadata.get().getErrorMessage())
+                        .build();
+            } else if (integrityMetadata.get().getProcessStatus() == ProcessStatus.ERROR) {
+                final String message = StringUtils.defaultString(
+                        String.format(" due to '%s'", integrityMetadata.get().getErrorMessage()),
+                        "");
+                Logger.error(
+                        IntegrityResource.class,
+                        String.format(
+                                "Receiver at %s:> integrity data generation for endpoint id %s has failed%s",
+                                localAddress,
+                                pushPublishAuthenticationToken.getKey(),
+                                message));
+                return Response
+                        .status(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+                        .entity(integrityMetadata.get().getErrorMessage())
+                        .build();
+            }
         } catch (Exception e) {
-            Logger.error(IntegrityResource.class, "Error caused by remote call of: "+remoteIP, e);
+            Logger.error(IntegrityResource.class, "Error caused by remote call of: " + remoteIp, e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
             }
             return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
 
-        return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
-
+       return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
     }
 
     /**
@@ -335,38 +397,37 @@ public class IntegrityResource {
     @GET
     @Path("/checkintegrity/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response checkIntegrity(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params)  {
-        InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
-
-        Map<String, String> paramsMap = initData.getParamsMap();
-
+    public Response checkIntegrity(@Context final HttpServletRequest httpServletRequest,
+                                   @Context final HttpServletResponse httpServletResponse,
+                                   @PathParam("params") final String params)  {
+        final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        final Map<String, String> paramsMap = initData.getParamsMap();
         final HttpSession session = httpServletRequest.getSession();
         final User loggedUser = initData.getUser();
-
-        JSONObject jsonResponse = new JSONObject();
+        final JSONObject jsonResponse = new JSONObject();
 
         //Validate the parameters
-        final String endpointId = paramsMap.get( "endpoint" );
-        if ( !UtilMethods.isSet( endpointId ) ) {
-            return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: endpoint is a required Field.").build();
+        final String endpointId = paramsMap.get("endpoint");
+        if (!UtilMethods.isSet(endpointId)) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("Error: endpoint is a required Field.").build();
         }
 
         // return if we already have the data
+        final IntegrityUtil integrityUtil = new IntegrityUtil();
         try {
-            IntegrityUtil integrityUtil = new IntegrityUtil();
-
-            if(integrityUtil.doesIntegrityConflictsDataExist(endpointId)) {
-
-                jsonResponse.put( "success", true );
-                jsonResponse.put( "message", "Integrity Checking Initialized..." );
+            if (integrityUtil.doesIntegrityConflictsDataExist(endpointId)) {
+                jsonResponse.put("success", true );
+                jsonResponse.put("message", "Integrity Checking Initialized...");
 
                 //Setting the process status
-                setStatus( httpServletRequest, endpointId, ProcessStatus.FINISHED );
+                setStatus(httpServletRequest, endpointId, ProcessStatus.FINISHED);
 
-                return response( jsonResponse.toString(), false );
+                return response(jsonResponse.toString(), false);
             }
         } catch(JSONException e) {
-            Logger.error(IntegrityResource.class, "Error setting return message in JSON response",
+            Logger.error(
+                    IntegrityResource.class,
+                    "Error setting return message in JSON response",
                     e);
             return response("Error setting return message in JSON response", true);
         } catch (DotSecurityException e) {
@@ -376,60 +437,65 @@ public class IntegrityResource {
             return response( "Error checking existence of integrity data" , true );
         }
 
+        //Setting the process status
+        setStatus(httpServletRequest, endpointId, ProcessStatus.PROCESSING);
+
         try {
-
-            //Setting the process status
-            setStatus( httpServletRequest, endpointId, ProcessStatus.PROCESSING );
-
             final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
-
             //Sending bundle to endpoint
             Response response = generateIntegrityCheckerRequest(endpoint);
 
-            if(response.getStatus() == HttpStatus.SC_OK) {
-                final String integrityDataRequestID = response.readEntity(String.class);
-
+            if (response.getStatus() == HttpStatus.SC_OK) {
+                final String integrityDataRequestId = response.readEntity(String.class);
                 Thread integrityDataRequestChecker = new Thread(
-                        new IntegrityDataRequestChecker(loggedUser,  session, endpoint, integrityDataRequestID)
+                        new IntegrityDataRequestChecker(loggedUser,  session, endpoint, integrityDataRequestId)
                 );
-
                 //Start the integrity check
                 integrityDataRequestChecker.start();
-                addThreadToSession( session, integrityDataRequestChecker, endpointId,   integrityDataRequestID );
-
-            } else if ( response.getStatus() == HttpStatus.SC_UNAUTHORIZED ) {
+                addThreadToSession(session, integrityDataRequestChecker, endpointId, integrityDataRequestId);
+            } else if (response.getStatus() == HttpStatus.SC_UNAUTHORIZED) {
                 return handleInvalidTokenResponse(endpoint, response, session);
+
             } else {
-                setStatus( session, endpointId, ProcessStatus.ERROR, null );
-                Logger.error( this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: " + endpointId );
-                return response( "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: " + endpointId, true );
+                setStatus(session, endpointId, ProcessStatus.ERROR, null);
+                final String message = "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " ("
+                        + response.getStatus()
+                        + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: "
+                        + endpointId;
+                Logger.error(this.getClass(), message);
+                return response(message, true);
             }
 
-            jsonResponse.put( "success", true );
-            jsonResponse.put( "message", "Integrity Checking Initialized..." );
-
+            jsonResponse.put("success", true);
+            jsonResponse.put("message", "Integrity Checking Initialized...");
         } catch(Exception e) {
-
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
             }
 
             //Special handling if the thread was interrupted
-            if ( e instanceof InterruptedException || e.getCause() instanceof InterruptedException ) {
+            if (e.getCause() instanceof InterruptedException) {
                 //Setting the process status
-                setStatus( session, endpointId, ProcessStatus.CANCELED, null );
-                Logger.debug( IntegrityResource.class, "Requested interruption of the integrity checking process by the user.", e );
-                return response( "Requested interruption of the integrity checking process by the user for End Point server: [" + endpointId + "]" , true );
+                setStatus(session, endpointId, ProcessStatus.CANCELLED, null);
+                Logger.debug(
+                        IntegrityResource.class,
+                        "Requested interruption of the integrity checking process by the user.",
+                        e);
+                return response(
+                        "Requested interruption of the integrity checking process by the user for End Point server: ["
+                                + endpointId + "]",
+                        true );
             }
 
             //Setting the process status
-            setStatus( session, endpointId, ProcessStatus.ERROR, null );
-            Logger.error( this.getClass(), "Error initializing the integrity checking process for End Point server: [" + endpointId + "]", e );
-            return response( "Error initializing the integrity checking process for End Point server: [" + endpointId + "]" , true );
+            setStatus(session, endpointId, ProcessStatus.ERROR, null);
+            final String message = "Error initializing the integrity checking process for End Point server: ["
+                    + endpointId + "]";
+            Logger.error(this.getClass(), message, e);
+            return response(message, true);
         }
 
         return response( jsonResponse.toString(), false );
-
     }
 
     private Response handleInvalidTokenResponse(
@@ -440,14 +506,20 @@ public class IntegrityResource {
         final Map<String, String> wwwAuthenticateHeader = ResourceResponse.getWWWAuthenticateHeader(response);
         final String errorKey = wwwAuthenticateHeader.get("error_key").replaceAll("\"", "");
 
-        final String message = LanguageUtil.get(String.format("push_publish.end_point.%s_message", errorKey));
+        final String message =
+                String.format(
+                        "%s Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: %s",
+                        LanguageUtil.get(String.format("push_publish.end_point.%s_message", errorKey)),
+                        endpoint.getId()
+                );
+
         PushPublishLogger.log(this.getClass(), message);
 
         setStatus( session, endpoint.getId(), ProcessStatus.ERROR, null );
         Logger.error( this.getClass(), message);
 
         return response(
-                String.format("%s. Please check Auth Token. Endpoint Id: %s", message, endpoint.getId()),
+                message,
                 HttpStatus.SC_UNAUTHORIZED);
     }
 
@@ -468,82 +540,85 @@ public class IntegrityResource {
     @GET
     @Path ("/cancelIntegrityProcess/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response cancelIntegrityProcess ( @Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam ("params") String params ) throws JSONException {
-
-        StringBuilder responseMessage = new StringBuilder();
-
-        InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
-        Map<String, String> paramsMap = initData.getParamsMap();
+    public Response cancelIntegrityProcess(@Context final HttpServletRequest httpServletRequest,
+                                           @Context final HttpServletResponse httpServletResponse,
+                                           @PathParam("params") final String params ) {
+        final StringBuilder responseMessage = new StringBuilder();
+        final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        final Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
-        String endpointId = paramsMap.get( "endpoint" );
-        if ( !UtilMethods.isSet( endpointId ) ) {
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
-            responseBuilder.entity( responseMessage.append( "Error: " ).append( "endpoint" ).append( " is a required Field." ) );
-
+        final String endpointId = paramsMap.get("endpoint");
+        if (!UtilMethods.isSet(endpointId)) {
+            final Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
+            responseBuilder.entity(responseMessage.append("Error: endpoint is a required Field."));
             return responseBuilder.build();
         }
 
         try {
-            JSONObject jsonResponse = new JSONObject();
+            final JSONObject jsonResponse = new JSONObject();
+            final HttpSession session = httpServletRequest.getSession();
 
-            HttpSession session = httpServletRequest.getSession();
             //Verify if we have something set on the session
             if ( session.getAttribute( "integrityCheck_" + endpointId ) == null ) {
                 //And prepare the response
-                jsonResponse.put( "success", false );
-                jsonResponse.put( "message", "No checking process found for End point server [" + endpointId + "]" );
-            } else if ( session.getAttribute( "integrityThread_" + endpointId ) == null ) {
+                jsonResponse.put("success", false);
+                jsonResponse.put("message", "No checking process found for End point server [" + endpointId + "]");
+            } else if (session.getAttribute("integrityThread_" + endpointId) == null) {
                 //And prepare the response
-                jsonResponse.put( "success", false );
-                jsonResponse.put( "message", "No checking process found for End point server [" + endpointId + "]" );
+                jsonResponse.put("success", false);
+                jsonResponse.put("message", "No checking process found for End point server [" + endpointId + "]");
             } else {
-
                 //Search for the status on session
-                ProcessStatus status = (ProcessStatus) session.getAttribute( "integrityCheck_" + endpointId );
+                final ProcessStatus status = (ProcessStatus) session.getAttribute("integrityCheck_" + endpointId);
 
                 //And prepare the response
-                jsonResponse.put( "endPoint", endpointId );
-                if ( status == ProcessStatus.PROCESSING ) {
-
-                    //Get the thread associated to this endpoint and the integrity request id
-                    Thread runningThread = (Thread) session.getAttribute( "integrityThread_" + endpointId );
-                    String integrityDataRequestId = (String) session.getAttribute( "integrityDataRequest_" + endpointId );
-
-                    //Find the registered auth token in order to connect to the end point server
-                    PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById( endpointId );
+                jsonResponse.put("endPoint", endpointId);
+                if (status == ProcessStatus.PROCESSING) {
+                    final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
+                    final String integrityDataRequestId = (String) session.getAttribute( "integrityDataRequest_" + endpointId );
                     Response response = cancelIntegrityRequest(integrityDataRequestId, endpoint);
 
-                    if ( response.getStatus() == HttpStatus.SC_OK ) {
+                    if (response.getStatus() == HttpStatus.SC_OK) {
                         //Nothing to do here, we found no process to cancel
-                    } else if ( response.getStatus() == HttpStatus.SC_RESET_CONTENT ) {
+                    } else if (response.getStatus() == HttpStatus.SC_RESET_CONTENT) {
                         //Expected return status if a cancel was made on the end point server
                     } else {
-                        Logger.error( this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to interrupt the running process on the Endpoint [ " + endpointId + "]." );
+                        Logger.error(
+                                this.getClass(),
+                                "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " ("
+                                        + response.getStatus()
+                                        + ") Error trying to interrupt the running process on the Endpoint [ "
+                                        + endpointId + "].");
                     }
 
+                    //Get the thread associated to this endpoint and the integrity request id
+                    final Thread runningThread = (Thread) session.getAttribute( "integrityThread_" + endpointId );
                     //Interrupt the Thread process
                     runningThread.interrupt();
-
                     //Remove the thread from the session
-                    clearThreadInSession( httpServletRequest, endpointId );
+                    clearThreadInSession(httpServletRequest, endpointId);
 
-                    jsonResponse.put( "success", true );
-                    jsonResponse.put( "message", LanguageUtil.get( initData.getUser().getLocale(), "IntegrityCheckingCanceled" ) );
-                } else {
-                    jsonResponse.put( "success", false );
-                    jsonResponse.put( "message", "The integrity process for End Point server: [" + endpointId + "] was already stopped." );
+                    jsonResponse.put("success", true);
+                    jsonResponse.put(
+                            "message",
+                            LanguageUtil.get(initData.getUser().getLocale(), "IntegrityCheckingCanceled"));
                 }
             }
 
-            responseMessage.append( jsonResponse.toString() );
-
-        } catch ( Exception e ) {
-            Logger.error( this.getClass(), "Error checking the integrity process status for End Point server: [" + endpointId + "]", e );
+            responseMessage.append(jsonResponse.toString());
+        } catch (Exception e) {
+            Logger.error(
+                    this.getClass(),
+                    "Error checking the integrity process status for End Point server: [" + endpointId + "]",
+                    e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
             }
-            return response( "Error checking the integrity process status for End Point server: [" + endpointId + "]", true );
+
+            return response(
+                    "Error checking the integrity process status for End Point server: [" + endpointId + "]",
+                    true);
         }
 
         return response( responseMessage.toString(), false );
@@ -572,53 +647,50 @@ public class IntegrityResource {
     public Response cancelIntegrityProcessOnEndpoint (
             @Context HttpServletRequest request,  @PathParam("id") final String requestId ) {
 
-        String remoteIP = getRemoteIP(request);
+        final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
 
         final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
                 = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
-        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(remoteIP, pushPublishAuthenticationToken);
+        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(request, pushPublishAuthenticationToken);
 
         if (failResponse.isPresent()) {
             return failResponse.get();
         }
 
+
         try {
-            ServletContext servletContext = request.getSession().getServletContext();
-            if ( !UtilMethods.isSet( servletContext.getAttribute( "integrityDataRequestID" ) ) || !((String) servletContext.getAttribute( "integrityDataRequestID" )).equals( requestId ) ) {
+            if (!QuartzUtils.isJobRunning(
+                    IntegrityDataGenerationJob.JOB_NAME,
+                    IntegrityDataGenerationJob.JOB_GROUP)) {
+                return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
+            }
+
+            final Optional<IntegrityUtil.IntegrityDataExecutionMetadata> controlOpt =
+                    IntegrityUtil.getIntegrityMetadata(pushPublishAuthenticationToken.getKey());
+            if (!controlOpt.isPresent() || !requestId.equals(controlOpt.get().getRequestId())) {
                 return Response.status( HttpStatus.SC_UNAUTHORIZED ).build();
             }
 
-            //Verify the status and if the process it is still running we will interrupt it
-            ProcessStatus integrityDataGeneratorStatus = (ProcessStatus) servletContext.getAttribute( "integrityDataGenerationStatus" );
-            if ( UtilMethods.isSet( integrityDataGeneratorStatus ) ) {
-                switch ( integrityDataGeneratorStatus ) {
-                    case PROCESSING:
-
-                        //Verify if the thread is on the session for this given request id
-                        if ( servletContext.getAttribute( "integrityDataGeneratorThread_" + requestId ) != null ) {
-
-                            //If found interrupt the process
-                            IntegrityDataGeneratorThread integrityDataGeneratorThread = (IntegrityDataGeneratorThread) servletContext.getAttribute( "integrityDataGeneratorThread_" + requestId );
-                            integrityDataGeneratorThread.interrupt();
-                            servletContext.removeAttribute( "integrityDataGeneratorThread_" + requestId );
-
-                            return Response.status( HttpStatus.SC_RESET_CONTENT ).entity( "Interrupted checking process on End Point server ( " + remoteIP + ")." ).build();
-                        }
-                    default:
-                        break;
-                }
+            final ProcessStatus processStatus = controlOpt.get().getProcessStatus();
+            if (processStatus == ProcessStatus.PROCESSING) {
+                IntegrityDataGenerationJob.getJobScheduler().interrupt(
+                        IntegrityDataGenerationJob.JOB_NAME,
+                        IntegrityDataGenerationJob.JOB_GROUP);
+                return Response
+                        .status(HttpStatus.SC_RESET_CONTENT)
+                        .entity("Interrupted checking process on End Point server ( " + remoteIp + ").")
+                        .build();
             }
-
         } catch ( Exception e ) {
-            Logger.error( IntegrityResource.class, "Error caused by remote call of: " + remoteIP, e );
+            Logger.error( IntegrityResource.class, "Error caused by remote call of: " + remoteIp, e );
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
             }
-            return response( "Error interrupting checking process on End Point server ( " + remoteIP + "). [" + e.getMessage() + "]", true );
+            return response( "Error interrupting checking process on End Point server ( " + remoteIp + "). [" + e.getMessage() + "]", true );
         }
 
-        return response( "Interrupted checking process on End Point server ( " + remoteIP + ").", false );
+        return response( "Interrupted checking process on End Point server ( " + remoteIp + ").", false );
     }
 
     /**
@@ -676,7 +748,7 @@ public class IntegrityResource {
                     jsonResponse.put( "status", "noConflicts" );
                     jsonResponse.put( "message", session.getAttribute( "integrityCheck_message_" + endpointId ) );
                     clearStatus( request, endpointId );
-                } else if ( status == ProcessStatus.CANCELED) {
+                } else if ( status == ProcessStatus.CANCELLED) {
                     jsonResponse.put( "status", "canceled" );
                     jsonResponse.put( "message", LanguageUtil.get( initData.getUser().getLocale(), "IntegrityCheckingCanceled" ) );
                     clearStatus( request, endpointId );
@@ -898,13 +970,10 @@ public class IntegrityResource {
                                              @FormDataParam("DATA_TO_FIX") InputStream dataToFix,
                                              @FormDataParam("TYPE") String type ) throws JSONException {
 
-
-        String remoteIP = getRemoteIP(request);
-
         final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
                 = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
-        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(remoteIP, pushPublishAuthenticationToken);
+        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(request, pushPublishAuthenticationToken);
 
         if (failResponse.isPresent()) {
             return failResponse.get();
@@ -925,16 +994,18 @@ public class IntegrityResource {
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts from remote", e );
             return response( "Error fixing "+type+" conflicts from remote" , true );
         } finally {
+            final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
+
             try {
-                if (remoteIP != null) {
+                if (remoteIp != null) {
                     // Discard conflicts if successful or failed
-                    integrityUtil.discardConflicts(remoteIP,
+                    integrityUtil.discardConflicts(remoteIp,
                             IntegrityType.valueOf(type.toUpperCase()));
                 }
             } catch (DotDataException e) {
                 Logger.error(this.getClass(), "ERROR: Table "
                         + IntegrityType.valueOf(type.toUpperCase()).getResultsTableName()
-                        + " could not be cleared on request id [" + remoteIP
+                        + " could not be cleared on request id [" + remoteIp
                         + "]. Please truncate the table data manually.", e);
             }
         }
@@ -1026,9 +1097,10 @@ public class IntegrityResource {
 
                 PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI()
                         .findEndPointById(endpointId);
-                String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
-                File bundle = new File(
-                        outputPath + File.separator + INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME);
+
+                final File bundle = new File(IntegrityUtil.getIntegrityDataFilePath(
+                        endpointId,
+                        IntegrityUtil.INTEGRITY_DATA_TO_FIX_ZIP_FILENAME));
 
                 final Response response = sendFixConflictsRequest(type, endpoint, bundle);
 
@@ -1086,7 +1158,7 @@ public class IntegrityResource {
     }
 
     /**
-     * Removes the status for the checking integrity process of a given enpoint from session
+     * Removes the status for the checking integrity process of a given endpoint from session
      *
      * @param request
      * @param endpointId
@@ -1096,7 +1168,7 @@ public class IntegrityResource {
     }
 
     /**
-     * Removes the status for the checking integrity process of a given enpoint from session
+     * Removes the status for the checking integrity process of a given endpoint from session
      *
      * @param session
      * @param endpointId
@@ -1108,37 +1180,37 @@ public class IntegrityResource {
     }
 
     /**
-     * Sets the status for the checking integrity process of a given enpoint in session
+     * Sets the status for the checking integrity process of a given endpoint in session
      *
      * @param request
      * @param endpointId
      * @param status
      */
-    private void setStatus ( HttpServletRequest request, String endpointId, ProcessStatus status ) {
+    private static void setStatus ( HttpServletRequest request, String endpointId, ProcessStatus status ) {
         setStatus( request, endpointId, status, null );
     }
 
     /**
-     * Sets the status for the checking integrity process of a given enpoint in session
+     * Sets the status for the checking integrity process of a given endpoint in session
      *
      * @param request
      * @param endpointId
      * @param status
      * @param message
      */
-    private void setStatus ( HttpServletRequest request, String endpointId, ProcessStatus status, String message ) {
+    private static void setStatus ( HttpServletRequest request, String endpointId, ProcessStatus status, String message ) {
         setStatus( request.getSession(), endpointId, status, message );
     }
 
     /**
-     * Sets the status for the checking integrity process of a given enpoint in session
+     * Sets the status for the checking integrity process of a given endpoint in session
      *
      * @param session
      * @param endpointId
      * @param status
      * @param message
      */
-    private void setStatus ( HttpSession session, String endpointId, ProcessStatus status, String message ) {
+    public static void setStatus ( HttpSession session, String endpointId, ProcessStatus status, String message ) {
         session.setAttribute( "integrityCheck_" + endpointId, status );
         if ( message != null ) {
             session.setAttribute( "integrityCheck_message_" + endpointId, message );
@@ -1258,7 +1330,7 @@ public class IntegrityResource {
                         //Special handling if the thread was interrupted
                         if (e instanceof InterruptedException) {
                             //Setting the process status
-                            setStatus(session, endpoint.getId(), ProcessStatus.CANCELED, null);
+                            setStatus(session, endpoint.getId(), ProcessStatus.CANCELLED, null);
                             Logger.debug(IntegrityResource.class, "Requested interruption of the integrity checking process [unzipping Integrity Data] by the user.", e);
                             throw new RuntimeException("Requested interruption of the integrity checking process [unzipping Integrity Data] by the user.", e);
                         }
@@ -1281,7 +1353,7 @@ public class IntegrityResource {
                         //Special handling if the thread was interrupted
                         if (e instanceof InterruptedException) {
                             //Setting the process status
-                            setStatus(session, endpoint.getId(), ProcessStatus.CANCELED, null);
+                            setStatus(session, endpoint.getId(), ProcessStatus.CANCELLED, null);
                             Logger.debug(IntegrityResource.class, "Requested interruption of the integrity checking process by the user.", e);
                             throw new RuntimeException("Requested interruption of the integrity checking process by the user.", e);
                         }
@@ -1321,7 +1393,7 @@ public class IntegrityResource {
                 } else if (response.getStatus() == HttpStatus.SC_RESET_CONTENT) {
                     processing = false;
                     //Setting the process status
-                    setStatus(session, endpoint.getId(), ProcessStatus.CANCELED, null);
+                    setStatus(session, endpoint.getId(), ProcessStatus.CANCELLED, null);
                 } else {
                     setStatus(session, endpoint.getId(), ProcessStatus.ERROR, null);
                     Logger.error(this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to retrieve the Integrity data from the Endpoint [" + endpoint.getId() + "].");

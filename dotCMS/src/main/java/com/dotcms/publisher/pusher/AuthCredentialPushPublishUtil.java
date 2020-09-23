@@ -156,7 +156,6 @@ public enum AuthCredentialPushPublishUtil {
         private final boolean tokenExpired;
         private final boolean tokenInvalid;
 
-        private boolean usingJWTTokenWay = false;
         private JWToken token;
         private PublishingEndPoint publishingEndPoint;
 
@@ -198,6 +197,10 @@ public enum AuthCredentialPushPublishUtil {
 
         public boolean isTokenInvalid() {
             return tokenInvalid;
+        }
+
+        public String getKey(){
+            return isJWTTokenWay() ? getToken().getId() : getPublishingEndPoint().getId();
         }
 
     }

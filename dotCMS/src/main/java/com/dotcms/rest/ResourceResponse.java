@@ -152,13 +152,13 @@ public class ResourceResponse {
     }
 
 
-    public Response responseAuthenticateError ( final String errorCode, final String errorKey ) {
-        return responseWithWWWAuthenticate(HttpStatus.SC_UNAUTHORIZED, errorCode, errorKey);
+    public Response responseAuthenticateError ( final String message, final String errorCode, final String errorKey ) {
+        return responseWithWWWAuthenticate(message, HttpStatus.SC_UNAUTHORIZED, errorCode, errorKey);
     }
 
-    public Response responseWithWWWAuthenticate ( final int status, final String errorCode, final String errorKey ) {
+    public Response responseWithWWWAuthenticate ( final String message, final int status, final String errorCode, final String errorKey ) {
         return responseError(
-                null,
+                message,
                 status,
                 map("WWW-Authenticate",
                         String.format("Bearer realm=\"example\",error=\"%s\",error_key=\"%s\",error_description=\"\"", errorCode, errorKey)
@@ -189,7 +189,7 @@ public class ResourceResponse {
     }
 
     public Response responseUnauthorizedError(final String errorKey) {
-        return responseWithWWWAuthenticate(HttpStatus.SC_FORBIDDEN, "insufficient_scope", errorKey);
+        return responseWithWWWAuthenticate(null, HttpStatus.SC_FORBIDDEN, "insufficient_scope", errorKey);
     }
 
     public static Map<String, String> getWWWAuthenticateHeader(final Response response) {

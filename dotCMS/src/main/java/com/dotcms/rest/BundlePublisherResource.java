@@ -75,7 +75,7 @@ public class BundlePublisherResource {
 		final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
 				= AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
-		final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(remoteIP, pushPublishAuthenticationToken);
+		final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(request, pushPublishAuthenticationToken);
 
 		if (failResponse.isPresent()) {
 			return failResponse.get();

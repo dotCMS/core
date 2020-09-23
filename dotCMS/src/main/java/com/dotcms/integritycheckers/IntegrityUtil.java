@@ -1,6 +1,7 @@
 package com.dotcms.integritycheckers;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.http.DotExecutionException;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource;
@@ -15,6 +16,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -28,6 +30,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.function.BiConsumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -57,6 +62,14 @@ import java.util.zip.ZipOutputStream;
  *
  */
 public class IntegrityUtil {
+
+    public static final String INTEGRITY_DATA_STATUS = "status";
+    public static final String INTEGRITY_DATA_ERROR_MESSAGE = "error_message";
+    public static final String INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME = "DataToCheck.zip";
+    public static final String INTEGRITY_DATA_TO_FIX_ZIP_FILENAME = "DataToFix.zip";
+    public static final String INTEGRITY_DATA_STATUS_FILENAME = "DataStatus.properties";
+    public static final String REQUESTER_KEY = "requesterKey";
+    public static final String INTEGRITY_DATA_REQUEST_ID = "integrityDataRequestId";
 
     private File generateDataToFixCSV(String outputPath, String endpointId, IntegrityType type)
             throws DotDataException, IOException {
@@ -245,82 +258,233 @@ public class IntegrityUtil {
     }
 
     /**
+     * Resolves the integrity data path based on provided endpoint id.
+     *
+     * @param endpointId endpoint if
+     * @return integrity data path as a string
+     */
+    public static String getIntegrityDataPath(final String endpointId) {
+        return ConfigUtils.getIntegrityPath() + File.separator + endpointId;
+    }
+
+    /**
+     * Generated the integrity data file path based on provided endpointId and the file name.
+     * File names to be used: DataToCheck.zip, DataToFix.zip and DataStatus.properties.
+     *
+     * @param endpointId endpoint gid
+     * @param dataFile data filename
+     * @return path to filename
+     */
+    public static String getIntegrityDataFilePath(final String endpointId, final String dataFile) {
+        return getIntegrityDataPath(endpointId) + File.separator + dataFile;
+    }
+
+    /**
+     * Tells whether a integrity file exists based on provided endpointId and the file name.
+     *
+     * @param endpointId endpoint id
+     * @param dataFile data filename
+     * @return path to filename
+     */
+    public static boolean doesIntegrityDataFileExist(final String endpointId, final String dataFile) {
+        return new File(getIntegrityDataFilePath(endpointId, dataFile)).exists();
+    }
+
+    /**
+     * Gets a {@link IntegrityDataExecutionMetadata} instance based on provided endpoint id which contains metadata of the
+     * integrity data generation execution.
+     *
+     * @param requesterKey endpoint id
+     * @return Optional wrapping the integrity generation  metadata
+     */
+    public static Optional<IntegrityDataExecutionMetadata> getIntegrityMetadata(final String requesterKey) {
+        final File statusFile = new File(getIntegrityDataFilePath(requesterKey, INTEGRITY_DATA_STATUS_FILENAME));
+        if (!statusFile.exists()) {
+            return Optional.empty();
+        }
+
+        final Properties statusData = new Properties();
+        try {
+            statusData.load(new FileInputStream(statusFile));
+        } catch (IOException e) {
+            Logger.error(
+                    IntegrityUtil.class,
+                    String.format("Could load status from %s", statusFile.getAbsolutePath()),
+                    e);
+            return Optional.empty();
+        }
+
+        return Optional.of(new IntegrityDataExecutionMetadata(
+                statusData.getProperty(REQUESTER_KEY),
+                statusData.getProperty(INTEGRITY_DATA_REQUEST_ID),
+                statusData.getProperty(INTEGRITY_DATA_STATUS),
+                statusData.getProperty(INTEGRITY_DATA_ERROR_MESSAGE)));
+    }
+
+    /**
+     * Removes any file leftovers from other integrity checks at the location based on the endpoint id.
+     * That will be any data check and status files.
+     *
+     * @param endpointId endpoint id
+     */
+    public static void cleanUpIntegrityData(String endpointId) {
+        final BiConsumer<String, String> resetConsumer = (id, filename) -> {
+            final File file = new File(getIntegrityDataFilePath(id, filename));
+            if (file.exists()) {
+                file.delete();
+            }
+        };
+
+        resetConsumer.accept(endpointId, INTEGRITY_DATA_STATUS_FILENAME);
+        resetConsumer.accept(endpointId, INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME);
+    }
+
+    /**
+     * Saves a integrity data generation metadata in a to-be-discovered location so it can be read by concurrent parts
+     * that need to know what is the status of the integrity data generation.
+     * The data is saved as {@link Properties} file.
+     *
+     * @param integrityDataExecutionMetadata execution metadata
+     */
+    private static void saveIntegrityDataStatus(IntegrityDataExecutionMetadata integrityDataExecutionMetadata) {
+        final String endpointId = integrityDataExecutionMetadata.getEndpointId();
+        final File integrityDir = new File(getIntegrityDataPath(endpointId));
+        if (!integrityDir.exists()) {
+            integrityDir.mkdir();
+        }
+
+        final File statusFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_STATUS_FILENAME));
+        /*if (statusFile.exists()) {
+            statusFile.delete();
+        }*/
+
+        final Properties statusData = new Properties();
+        final BiConsumer<String, String> addData = (data, name) -> {
+            if (StringUtils.isNotBlank(data)) {
+                statusData.setProperty(name, data);
+            }
+        };
+
+        addData.accept(endpointId, REQUESTER_KEY);
+        addData.accept(integrityDataExecutionMetadata.getRequestId(), INTEGRITY_DATA_REQUEST_ID);
+        statusData.setProperty(INTEGRITY_DATA_STATUS, integrityDataExecutionMetadata.getProcessStatus().toString().toUpperCase());
+        addData.accept(integrityDataExecutionMetadata.getErrorMessage(), INTEGRITY_DATA_ERROR_MESSAGE);
+
+        try (FileOutputStream output = new FileOutputStream(statusFile)) {
+            statusData.store(output, null);
+        } catch (IOException e) {
+            throw new DotExecutionException(
+                    String.format("Could not save status to %s", statusFile.getAbsolutePath()),
+                    e);
+        }
+    }
+
+    /**
+     * Saves a integrity data generation metadata in a to-be-discovered location so it can be read by concurrent parts
+     * that need to know what is the status of the integrity data generation.
+     * Individual parameters are used to create a {@link IntegrityDataExecutionMetadata}.
+     *
+     * @param endpointId endpoint id
+     * @param requestId request id
+     * @param processStatus {@link IntegrityResource.ProcessStatus} instance to reflect the current status
+     * @param errorMessage error message associated to detected error
+     */
+    public static void saveIntegrityDataStatus(final String endpointId,
+                                               final String requestId,
+                                               final IntegrityResource.ProcessStatus processStatus,
+                                               final String errorMessage) {
+        saveIntegrityDataStatus(new IntegrityDataExecutionMetadata(endpointId, requestId, processStatus, errorMessage));
+    }
+
+    /**
+     * Saves a integrity data generation metadata in a to-be-discovered location so it can be read by concurrent parts
+     * that need to know what is the status of the integrity data generation.
+     * Individual parameters are used to create a {@link IntegrityDataExecutionMetadata}.
+     *
+     * @param endpointId endpoint id
+     * @param requestId request id
+     * @param processStatus {@link IntegrityResource.ProcessStatus} instance to reflect the current status
+     */
+    public static void saveIntegrityDataStatus(final String endpointId,
+                                               final String requestId,
+                                               final IntegrityResource.ProcessStatus processStatus) {
+        saveIntegrityDataStatus(endpointId, requestId, processStatus, null);
+    }
+
+    /**
      * Creates all the CSV from End Point database table and store them inside
      * zip file.
      *
      * @param endpointId
      * @throws Exception
      */
-    public void generateDataToCheckZip(String endpointId) throws Exception {
+    public static void generateDataToCheckZip(final String endpointId) {
+        if (!UtilMethods.isSet(endpointId)) {
+            Logger.error(IntegrityUtil.class, "Endpoint was not provided");
+            return;
+        }
+
+        Logger.info(
+                IntegrityUtil.class,
+                String.format("Starting integrity data generation job for endpoint %s", endpointId));
+
         File zipFile = null;
-
         try {
-            if (!UtilMethods.isSet(endpointId))
-                return;
-
-            final String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
-
-            File dir = new File(outputPath);
-
+            final String outputPath = getIntegrityDataPath(endpointId);
+            final File dir = new File(outputPath);
             // if file doesn't exist, create it
             if (!dir.exists()) {
                 dir.mkdir();
             }
 
-            zipFile = new File(outputPath + File.separator
-                    + IntegrityResource.INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME);
-
-            try (OutputStream os = Files.newOutputStream(zipFile.toPath());
-                    ZipOutputStream zos = new ZipOutputStream(os)) {
-                IntegrityType[] types = IntegrityType.values();
+            zipFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME));
+            try(OutputStream outputStream = Files.newOutputStream(zipFile.toPath());
+                ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+                final IntegrityType[] types = IntegrityType.values();
                 for (IntegrityType integrityType : types) {
                     File fileToCheckCsvFile = null;
 
                     try {
-                        fileToCheckCsvFile = integrityType.getIntegrityChecker()
-                        		.generateCSVFile(outputPath);
-
-                        addToZipFile(fileToCheckCsvFile.getAbsolutePath(), zos,
-                                integrityType.getDataToCheckCSVName());
+                        fileToCheckCsvFile = integrityType.getIntegrityChecker().generateCSVFile(outputPath);
+                        addToZipFile(fileToCheckCsvFile.getAbsolutePath(), zipOutputStream, integrityType.getDataToCheckCSVName());
                     } finally {
-                        if (fileToCheckCsvFile != null && fileToCheckCsvFile.exists())
+                        if (fileToCheckCsvFile != null && fileToCheckCsvFile.exists()) {
                             fileToCheckCsvFile.delete();
+                        }
                     }
                 }
             }
         } catch (Exception e) {
-            if (zipFile != null && zipFile.exists())
+            if (zipFile != null && zipFile.exists()) {
                 zipFile.delete();
+            }
 
-            throw new Exception(e);
+            throw new DotExecutionException(e);
         }
     }
 
-    public void generateDataToFixZip(String endpointId, IntegrityType type) {
+    public void generateDataToFixZip(final String endpointId, final IntegrityType type) {
+        if (!UtilMethods.isSet(endpointId)) {
+            return;
+        }
+
         File dataToFixCsvFile = null;
         File zipFile = null;
-
         try {
-            if (!UtilMethods.isSet(endpointId))
-                return;
-
-            final String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
-
-            File dir = new File(outputPath);
-
+            final String outputPath = getIntegrityDataPath(endpointId);
+            final File dir = new File(outputPath);
             // if file doesn't exist, create it
             if (!dir.exists()) {
                 dir.mkdir();
             }
 
-            zipFile = new File(outputPath + File.separator
-                    + IntegrityResource.INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME);
-            try (OutputStream os = Files.newOutputStream(zipFile.toPath());
-                    ZipOutputStream zos = new ZipOutputStream(os)) {
+            zipFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_TO_FIX_ZIP_FILENAME));
+            try (OutputStream outputStream = Files.newOutputStream(zipFile.toPath());
+                 ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
                 // create Folders CSV
                 dataToFixCsvFile = generateDataToFixCSV(outputPath, endpointId, type);
 
-                addToZipFile(dataToFixCsvFile.getAbsolutePath(), zos, type.getDataToFixCSVName());
+                addToZipFile(dataToFixCsvFile.getAbsolutePath(), zipOutputStream, type.getDataToFixCSVName());
             }
         } catch (Exception e) {
             Logger.error(getClass(), "Error generating fix for remote", e);
@@ -332,7 +496,7 @@ public class IntegrityUtil {
         }
     }
 
-    public void dropTempTables(final String endpointId) throws DotDataException {
+    public static void dropTempTables(final String endpointId) throws DotDataException {
         DotConnect dc = new DotConnect();
         try {
             IntegrityType[] types = IntegrityType.values();
@@ -350,7 +514,7 @@ public class IntegrityUtil {
             	}
             }
         } catch (SQLException e) {
-            Logger.error(getClass(), "Error dropping Temp tables");
+            Logger.error(IntegrityResource.class, "Error dropping Temp tables");
             throw new DotDataException("Error dropping Temp tables", e);
         }
     }
@@ -533,7 +697,7 @@ public class IntegrityUtil {
         return conflictsDataExist;
     }
 
-    private boolean doesTableExist(String tableName) throws DotDataException {
+    private static boolean doesTableExist(String tableName) throws DotDataException {
         DotConnect dc = new DotConnect();
 
         if (DbConnectionFactory.isOracle()) {
@@ -602,7 +766,8 @@ public class IntegrityUtil {
      * @throws Exception
      */
     @WrapInTransaction
-    public void completeDiscardConflicts(final String endpointId) throws DotDataException {
+    public static void completeDiscardConflicts(final String endpointId) throws DotDataException {
+
         IntegrityType[] types = IntegrityType.values();
         for (IntegrityType integrityType : types) {
             integrityType.getIntegrityChecker().discardConflicts(endpointId);
@@ -618,7 +783,8 @@ public class IntegrityUtil {
      * @return is there is at least one conflict returns true, otherwise false
      * @throws Exception
      */
-    public boolean completeCheckIntegrity(final String endpointId) throws Exception {
+    @WrapInTransaction
+    public static boolean completeCheckIntegrity(final String endpointId) throws Exception {
         boolean existConflicts = false;
 
         IntegrityType[] types = IntegrityType.values();
@@ -629,4 +795,50 @@ public class IntegrityUtil {
 
         return existConflicts;
     }
+
+    /**
+     * Integrity data generation metadata bean to be saved.
+     */
+    public static class IntegrityDataExecutionMetadata implements Serializable {
+
+        private final String endpointId;
+        private final String requestId;
+        private final IntegrityResource.ProcessStatus processStatus;
+        private final String errorMessage;
+
+        public IntegrityDataExecutionMetadata(String endpointId,
+                                              String requestId,
+                                              IntegrityResource.ProcessStatus processStatus,
+                                              String errorMessage) {
+            this.endpointId = endpointId;
+            this.requestId = requestId;
+            this.processStatus = processStatus;
+            this.errorMessage = errorMessage;
+        }
+
+        public IntegrityDataExecutionMetadata(String endpointId,
+                                              String requestId,
+                                              String status,
+                                              String errorMessage) {
+            this(endpointId, requestId, IntegrityResource.ProcessStatus.valueOf(status.toUpperCase()), errorMessage);
+        }
+
+        public String getEndpointId() {
+            return endpointId;
+        }
+
+        public String getRequestId() {
+            return requestId;
+        }
+
+        public IntegrityResource.ProcessStatus getProcessStatus() {
+            return processStatus;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
+
+    }
+
 }

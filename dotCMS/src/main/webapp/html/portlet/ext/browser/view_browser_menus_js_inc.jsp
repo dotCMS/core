@@ -620,7 +620,7 @@
 	// HTMLPage popup
 	function showHTMLPagePopUp(page, cmsAdminUser, origReferer, e) {
 		var objId = page.inode;
-        var pageURI = page.inode;
+        var pageURI = page.pageURI;
 		var objIden = page.identifier;
 		var referer = encodeURIComponent(origReferer);
 
