@@ -1,10 +1,7 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.util.InodeUtils"%>
-<%@page import="com.dotmarketing.portlets.categories.model.Category"%>
 <%@page import="com.dotmarketing.business.LayoutAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
-<%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
@@ -19,7 +16,7 @@
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
     boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
-    
+
     final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 
     boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user);
@@ -527,12 +524,15 @@
         var velVar = grid.store.getValue(grid.getItem(index), 'category_velocity_var_name');
         var key = grid.store.getValue(grid.getItem(index), 'category_key');
         var keywords = grid.store.getValue(grid.getItem(index), 'keywords');
+        var permissionsTab = dojo.byId("TabThree");
 
         prepareCrumbs(inode, name);
         dojo.byId("propertiesNA").style.display = "none";
         dojo.byId("propertiesDiv").style.display = "block";
-        dojo.byId("permissionNA").style.display = "none";
-        dojo.byId("permissionDiv").style.display = "block";
+        if(permissionsTab) {
+			dojo.byId("permissionNA").style.display = "none";
+			dojo.byId("permissionDiv").style.display = "block";
+		}
 
         currentCatName = name;
 
@@ -553,17 +553,22 @@
         actions = "breadcrums";
 
         prepareCrumbs(inode, name);
+		var permissionsTab = dojo.byId("TabThree");
 
         if(currentInodeOrIdentifier == "" || currentInodeOrIdentifier == "0"){
             dojo.byId("propertiesNA").style.display = "block";
             dojo.byId("propertiesDiv").style.display = "none";
-            dojo.byId("permissionNA").style.display = "block";
-            dojo.byId("permissionDiv").style.display = "none";
+            if(permissionsTab) {
+				dojo.byId("permissionNA").style.display = "block";
+				dojo.byId("permissionDiv").style.display = "none";
+			}
         }else{
             dojo.byId("propertiesNA").style.display = "none";
             dojo.byId("propertiesDiv").style.display = "block";
-            dojo.byId("permissionNA").style.display = "none";
-            dojo.byId("permissionDiv").style.display = "block";
+			if(permissionsTab) {
+				dojo.byId("permissionNA").style.display = "none";
+				dojo.byId("permissionDiv").style.display = "block";
+			}
         }
 
         CategoryAjax.getCategoryMap(inode,getCategoryMapCallback);
@@ -701,7 +706,9 @@
                         message = `<%= LanguageUtil.get(pageContext, "message.category.permission.error") %>`;
                         messageStyle = "color:red; font-size:11px;";
                         error = true;
-                        clearAddDialog();
+						if(!save) {
+							showDotCMSSystemMessage(message);
+						}
                         break;
                     case 2:
                         message = `<%= LanguageUtil.get(pageContext, "error.category.folder.taken") %>`;
