@@ -3,7 +3,6 @@ package com.dotmarketing.business;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.templates.model.Template;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
