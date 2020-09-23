@@ -143,7 +143,9 @@ jobs:
   run-integration-tests-job:
     name: Integration Tests
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
         databaseType: [ postgres, mysql, oracle, mssql ]
     env:
