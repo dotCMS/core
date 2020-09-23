@@ -1981,11 +1981,8 @@
 					"",
 					"serverURL = pm.environment.get(\"serverURL\");",
 					"",
-					"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
-					"hostNamaeEndIndex =  serverURL.indexOf(\":\", hostNamaeStartIndex);",
-					"hostName = serverURL.substring(hostNamaeStartIndex + 1, hostNamaeEndIndex);",
-					"",
-					"pm.collectionVariables.set(\"origin\", hostName);"
+					"console.log('hostName', serverURL);",
+					"pm.collectionVariables.set(\"origin\", serverURL);"
 				]
 			}
 		},
@@ -2002,42 +1999,42 @@
 	],
 	"variable": [
 		{
-			"id": "c21d5632-e649-4e80-a72e-5a3f546b1e6a",
+			"id": "c93c2f21-58a5-47de-865c-9ed7c2790e34",
 			"key": "endpointName",
 			"value": "endpoint-570"
 		},
 		{
-			"id": "33763f50-f372-4f24-af05-bb4bda0f61b7",
+			"id": "3e65fde9-faf3-4473-b633-abb6583cc4b0",
 			"key": "environmentName",
-			"value": "environment-886"
+			"value": "environment-170"
 		},
 		{
-			"id": "031280ea-6f92-4c56-85d7-e3eaa27506a5",
+			"id": "e608c78f-d940-4c10-a020-4dc88ae94d83",
 			"key": "origin",
-			"value": "localhost"
+			"value": "http://localhost:8080"
 		},
 		{
-			"id": "58af1c20-7ea1-46b5-a799-00e18f495267",
+			"id": "80a771c9-3c10-4c38-9ff7-b445f82ebd6c",
 			"key": "environmentId",
-			"value": "35f2da2c-b9c4-403a-84e7-5b3815db6605"
+			"value": "f3bbac1c-8e56-4e04-897e-3d50bf0ef843"
 		},
 		{
-			"id": "009fdfaa-684a-4cad-97b6-d758b016c3ab",
+			"id": "f084893f-0a8c-4e97-bea0-80bbfa580e10",
 			"key": "endpintId",
 			"value": "8e1b0743-54ac-4912-b64e-a9f4717eb1b7"
 		},
 		{
-			"id": "3e136a81-1b19-4151-904c-0181df711997",
+			"id": "c73e3912-0e24-435e-aa1d-4a903a70584b",
 			"key": "receiverName",
 			"value": "receiverName-729"
 		},
 		{
-			"id": "67bd3fe6-5f6a-44e4-8e75-a7de922f7398",
+			"id": "a0aebfee-f47b-4d12-9d1f-5b2d160a1c28",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkxYzkyNjYwNC0xYTRjLTQ4MGEtYTkzZC05ZjRhMmUwNGMxYjciLCJ4bW9kIjoxNjAwNzkwMjc1MDAwLCJuYmYiOjE2MDA3OTAyNzUsImlzcyI6IjY4ZGMyODUxMjciLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTUzNjE2NDAsImlhdCI6MTYwMDc5MDI3NSwianRpIjoiYjBkYzM3ZGUtZGI4NC00MmI5LWFkOGQtYWM2YzhhZjI2NTEzIn0.FpL3RB5a9JwvpDGyn6vWpcgkwRVHS14SHWyzl-04vWI"
 		},
 		{
-			"id": "d27c03a4-151e-499b-8fde-f6a141070ff7",
+			"id": "ac425d54-d3b8-437e-8cb3-955d793a2cb0",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
