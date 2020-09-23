@@ -3975,8 +3975,9 @@
 				"type": "text/javascript",
 				"exec": [
 					"checkBundleStatus = (responseBody, casesToTest, requestToRepeat) => {",
-					"    console.log('response', responseBody.trim().length, typeof responseBody, parseInt(responseBody));",
+					"    console.log(responseBody.trim().length, responseBody.trim().length === 0);",
 					"    if (responseBody.trim().length === 0){",
+					"        console.log('AGAIN 1');",
 					"        postman.setNextRequest(requestToRepeat);",
 					"    } else {",
 					"",
@@ -4002,7 +4003,7 @@
 					"",
 					"hostNamaeStartIndex =  serverURL.indexOf(\"//\");",
 					"hostNamaeEndIndex =  serverURL.indexOf(\":\", hostNamaeStartIndex);",
-					"hostName = serverURL.substring(hostNamaeStartIndex + 1, hostNamaeEndIndex);",
+					"hostName = serverURL.substring(hostNamaeStartIndex + 2, hostNamaeEndIndex);",
 					"console.log('hostName', hostName);",
 					"pm.collectionVariables.set(\"origin\", hostName);",
 					"",
@@ -4048,92 +4049,92 @@
 	],
 	"variable": [
 		{
-			"id": "6150908f-0bb7-42c3-98b0-5302a26a1da7",
+			"id": "50cb16c1-1b67-4c45-adf2-9dedbdb98d45",
 			"key": "origin",
 			"value": "localhost"
 		},
 		{
-			"id": "31cab652-04c3-49ce-b62e-40cf610a6c4e",
+			"id": "02fc88fc-ebf4-4260-a64b-479889883957",
 			"key": "environmentName",
-			"value": "environment-537"
+			"value": "environment-941"
 		},
 		{
-			"id": "eab28104-9437-431f-8829-ec1fcc9112f6",
+			"id": "bbda8192-4d48-4870-afd4-6cc1f0dbd3fe",
 			"key": "endpointName",
-			"value": "endpoint-126"
+			"value": "endpoint-684"
 		},
 		{
-			"id": "db1b7321-ad65-457c-b664-1e0de144c4a6",
+			"id": "14347892-a722-48be-80aa-164f9983b958",
 			"key": "environmentId",
-			"value": "6262fd15-86cf-4df8-a442-e811b31f79f6"
+			"value": "6751c0ff-0a6d-4a6e-9c21-c333e2d4ce8c"
 		},
 		{
-			"id": "af079f42-60f4-4c24-8b39-3eae157a8606",
+			"id": "af6ab101-164c-4d15-9764-df0595a9a25e",
 			"key": "receiverName",
 			"value": "receiverName-11"
 		},
 		{
-			"id": "ee0747a5-2292-4630-8e86-7f8c2c41ed2a",
+			"id": "01e6bffc-f9db-43f9-bedf-b538d7f905a6",
 			"key": "bundleName",
-			"value": "bundleName-438"
+			"value": "bundleName-640"
 		},
 		{
-			"id": "f25a3cd7-8711-4e76-8378-72d2a0ec9474",
+			"id": "502fe7e2-6469-42c9-a82a-c2b280576d35",
 			"key": "bundleID",
 			"value": null
 		},
 		{
-			"id": "1a02aa3f-d008-4403-a20f-3776545ef132",
+			"id": "18cb1fc4-f6e5-40ee-9b2b-e271d134e618",
 			"key": "bundleId",
-			"value": "01EJY7D0PZJXP4244TEC7SEJCD"
+			"value": "01EJYDH0CEFDGBV95ZR3D74FZA"
 		},
 		{
-			"id": "2a146277-5ec3-4abd-938d-097d0e67e78a",
+			"id": "bd8ded08-f031-4fd8-947c-668e682a1a5c",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkyODM4MDIwMi0wMjI2LTQ1YjMtOTBmYS01MWM4MDgyZjUxNWMiLCJ4bW9kIjoxNjAwODg5NjgyMDAwLCJuYmYiOjE2MDA4ODk2ODIsImlzcyI6IjViNDQzMWEyZjgiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU0NjEwNDcsImlhdCI6MTYwMDg4OTY4MiwianRpIjoiMDEzZTlhYzctYjAzNy00OTU0LWI0M2MtMDg0Njg3ZDg0YjY4In0.998QNIblDpSj-svTYyLgubK5o7cfm4padlHaxOs7DaU"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk5MGY5MzgwZS03MGE0LTRlYmMtOGQ1Yy1hYjY2ZTc2NjI2NjkiLCJ4bW9kIjoxNjAwODk1ODY1MDAwLCJuYmYiOjE2MDA4OTU4NjUsImlzcyI6Ijc1MzI4OGMwODYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU0NjcyMzAsImlhdCI6MTYwMDg5NTg2NSwianRpIjoiNmNjOTUxYzctMTIyNi00NzkxLTk4NzMtNDA1OTdjMWNhM2VmIn0.DNcI9_MIorM1HVWN3dERS5TAfjY72DfxQlhZ7s6lcik"
 		},
 		{
-			"id": "d0d19e06-1f92-483d-9376-da5819537eb0",
+			"id": "845ae11b-ba61-44e5-b227-0b9f2362de0b",
 			"key": "bundleSuccessExpected",
 			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ecc9df87-02ad-4f58-afaf-f27ae4fb2c57</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "7a5ce313-c7d6-4780-8226-84f8dbc732ea",
+			"id": "f2113597-c3a8-4c33-8cb1-72a886b4d958",
 			"key": "bundleFailedExpected",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "d4acbe25-9e77-479e-914b-65652462a06f",
+			"id": "eb77330e-26d0-4e6d-bad7-1e08b46225cc",
 			"key": "endpointInvalidtoken",
 			"value": "<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t"
 		},
 		{
-			"id": "13a1f551-315e-44e4-ac5c-8a5e2777c8ea",
+			"id": "735e7113-8d63-4f28-9947-0c7eb0642a96",
 			"key": "endpointSuccess",
 			"value": "<td valign=\"top\">Success</td>\t\t\t\t        <td valign=\"top\">Everything ok</td>"
 		},
 		{
-			"id": "aea01cfb-9098-4896-b491-21c96fcdabba",
+			"id": "0cba66fc-afaf-40f9-9326-1598a3fe6a6d",
 			"key": "bundleFailed",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "69e9cb90-cdfe-40db-ae96-d45fbd5f728e",
+			"id": "954eb5ea-86a1-40e0-8e67-bc50e5ac55e5",
 			"key": "bundleSuccess",
 			"value": "<th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "1464125a-939e-485c-8d27-62b136bba12d",
+			"id": "21620f52-6d6f-4b94-94cc-8705840721a4",
 			"key": "bundleWaitingPublish",
 			"value": "<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>"
 		},
 		{
-			"id": "d0150136-6a5c-463c-8656-09d05138b2c7",
+			"id": "63341e6e-ba77-4ab1-95b1-ef3ce7e03481",
 			"key": "checkBundleStatus",
-			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log('response', responseBody.trim().length, typeof responseBody, parseInt(responseBody));\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    }\n\n    const $ = cheerio.load(responseBody);\n\n    bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n    htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n    if (htmlWithoutSpace.includes(bundleWaitingPublish)) {\n        console.log('AGAIN');\n        postman.setNextRequest(\"check success status\");\n    } else {\n        casesToTest.forEach((caseToTest) => {\n            expectedInclude = pm.collectionVariables.get(caseToTest);\n            pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n        });\n\n    }\n}"
+			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log(responseBody.trim().length, responseBody.trim().length === 0);\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    } else {\n\n        const $ = cheerio.load(responseBody);\n\n        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n        if (htmlWithoutSpace.includes(bundleWaitingPublish)) {\n            console.log('AGAIN');\n            postman.setNextRequest(\"check success status\");\n        } else {\n            casesToTest.forEach((caseToTest) => {\n                expectedInclude = pm.collectionVariables.get(caseToTest);\n                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n            });\n\n        }\n    }\n}"
 		},
 		{
-			"id": "50e415b0-1f63-443f-92cc-a8412bea9ba1",
+			"id": "79cd4f12-cf35-4ab3-9389-5d1902d55729",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
