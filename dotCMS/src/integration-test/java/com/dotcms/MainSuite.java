@@ -31,6 +31,7 @@ import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -278,6 +279,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
         AppsResourceTest.class,
+        AppsCacheImplTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,

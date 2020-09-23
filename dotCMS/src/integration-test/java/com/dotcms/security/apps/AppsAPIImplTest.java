@@ -728,7 +728,7 @@ public class AppsAPIImplTest {
 
     }
 
-    private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(APILocator.getUserAPI(),
+    private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(
             APILocator.getLayoutAPI(),
             APILocator.getHostAPI(), APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
             CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
