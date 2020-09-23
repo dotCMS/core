@@ -291,7 +291,7 @@ function doShutdownDotcms(){
         return;
     }
     
-    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-shutdown-dotcms?"))%>")){
+    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "shutdown.dotcms.confirmation"))%>")){
         return;
     }
 
