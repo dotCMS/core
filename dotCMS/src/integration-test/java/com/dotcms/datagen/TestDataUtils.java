@@ -954,8 +954,8 @@ public class TestDataUtils {
             final Folder folder = new FolderDataGen().nextPersisted();
 
             //Test file
-            final String testImagePath = testFile.filePath;
-            return createFileAsset(testImagePath, folder, languageId, persist);
+            final String testFilePath = testFile.filePath;
+            return createFileAsset(testFilePath, folder, languageId, persist);
         } catch (Exception e) {
             throw new DotRuntimeException(e);
         }
@@ -1925,15 +1925,11 @@ public class TestDataUtils {
             if (persist) {
                 final Contentlet persisted = contentletDataGen.nextPersisted();
 
+                final File fileAsset1 = (File) persisted.get("fileAsset1");
+                removeAnyMetadata(fileAsset1);
                 final File fileAsset2 = (File) persisted.get("fileAsset2");
-                final File immediateParent = new File(fileAsset2.getParent());
-                //delete any previously generated json
-                final File[] files = new File(immediateParent.getParent()).listFiles();
-                if(null != files){
-                    final List<File> jsonFiles = Stream.of(files).filter(file -> file.getName().endsWith("json"))
-                            .collect(Collectors.toList());
-                    jsonFiles.forEach(file -> file.delete());
-                }
+                removeAnyMetadata(fileAsset2);
+
                 return persisted;
             } else {
                 return contentletDataGen.next();
@@ -1959,5 +1955,21 @@ public class TestDataUtils {
                 "test_binary" + System.currentTimeMillis() + "." + ext);
         FileUtil.copyFile(originalTestImage, testImage);
         return testImage;
+    }
+
+    /**
+     * Test data's generated with medata. This removes it.
+     * For the new Api to be able to generate new
+     * @param binary
+     */
+    public static void removeAnyMetadata(final File binary){
+        final File immediateParent = new File(binary.getParent());
+        //delete any previously generated json
+        final File[] files = new File(immediateParent.getParent()).listFiles();
+        if(null != files){
+            final List<File> jsonFiles = Stream.of(files).filter(file -> file.getName().endsWith("json"))
+                    .collect(Collectors.toList());
+            jsonFiles.forEach(file -> file.delete());
+        }
     }
 }

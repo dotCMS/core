@@ -153,7 +153,7 @@ public class StoragePersistenceAPITest {
     @UseDataProvider("getDupeBinaryTestCases")
     public void Test_Attempt_Push_Same_Binary_Twice(final TestCase testCase) {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
-
+       // storage.deleteObject(testCase.groupName, testCase.path);
         assertTrue(storage.createGroup(testCase.groupName));
         final Object object = storage
                 .pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
@@ -188,7 +188,7 @@ public class StoragePersistenceAPITest {
 
     @Test
     @UseDataProvider("getRandomTestCases")
-    public void Test_Pull_File_Different_Casing(final TestCase testCase) throws Exception{
+    public void Test_Pull_File_Different_Casing(final TestCase testCase) {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
         if(!storage.existsGroup(testCase.groupName)){
            assertTrue(storage.createGroup(testCase.groupName));
@@ -199,7 +199,7 @@ public class StoragePersistenceAPITest {
 
         final String randomCaseGroupName = upperCaseRandom(testCase.groupName, testCase.groupName.length());
         assertTrue(storage.existsGroup(randomCaseGroupName));
-        final String randomCasePath = upperCaseRandom(testCase.groupName, testCase.groupName.length());
+        final String randomCasePath = upperCaseRandom(testCase.path, testCase.path.length());
         final File file = storage.pullFile(randomCaseGroupName, randomCasePath);
         assertNotNull(file);
 

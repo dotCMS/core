@@ -195,14 +195,14 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public boolean existsGroup(final String groupName) {
-
+        final String groupNameLC = groupName.toLowerCase();
         final MutableBoolean result = new MutableBoolean(false);
 
         this.wrapCloseConnection(() -> {
 
             final List results = Try.of(() -> new DotConnect()
                     .setSQL("SELECT * FROM storage_group WHERE group_name = ?")
-                    .addParam(groupName).loadObjectResults(this.getConnection())).getOrElse(
+                    .addParam(groupNameLC).loadObjectResults(this.getConnection())).getOrElse(
                     Collections::emptyList);
             result.setValue(!results.isEmpty());
         });
@@ -212,14 +212,15 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public boolean existsObject(final String groupName, final String objectPath) {
-
+        final String groupNameLC = groupName.toLowerCase();
+        final String objectPathLC = objectPath.toLowerCase();
         final MutableBoolean result = new MutableBoolean(false);
 
         this.wrapCloseConnection(() -> {
 
             final List results = Try.of(() -> new DotConnect()
                     .setSQL("SELECT * FROM storage WHERE group_name = ? AND path = ?")
-                    .addParam(groupName).addParam(objectPath)
+                    .addParam(groupNameLC).addParam(objectPathLC)
                     .loadObjectResults(this.getConnection())).getOrElse(Collections::emptyList);
             result.setValue(!results.isEmpty());
         });
@@ -234,11 +235,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) {
-
+        final String groupNameLC = groupName.toLowerCase();
         return this.wrapInTransaction(() ->
                 Try.of(() -> {
                     new DotConnect().setSQL(" INSERT INTO storage_group (group_name) VALUES (?) ")
-                            .addParam(groupName).loadResult(
+                            .addParam(groupNameLC).loadResult(
                             this.getConnection());
                     return true;
                 }).getOrElseGet(throwable -> false)
@@ -247,12 +248,13 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public int deleteGroup(final String groupName) {
+        final String groupNameLC = groupName.toLowerCase();
         return this.wrapInTransaction(() -> {
             final Connection connection = this.getConnection();
             final DotConnect dotConnect = new DotConnect();
 
             final String hash = dotConnect
-                    .setSQL("SELECT hash FROM storage WHERE group_name = ?").addParam(groupName)
+                    .setSQL("SELECT hash FROM storage WHERE group_name = ?").addParam(groupNameLC)
                     .getString("hash");
 
             final int dataPiecesCount = dotConnect.executeUpdate(connection,
@@ -262,10 +264,10 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                     "DELETE FROM storage_data WHERE hash_id = ?", hash);
 
             final int storageEntriesCount = dotConnect.executeUpdate(connection,
-                    "DELETE FROM storage WHERE group_name = ?", groupName);
+                    "DELETE FROM storage WHERE group_name = ?", groupNameLC);
 
             final int groupsCount = dotConnect.executeUpdate(connection,
-                    "DELETE FROM storage_group WHERE group_name = ?", groupName);
+                    "DELETE FROM storage_group WHERE group_name = ?", groupNameLC);
 
             Logger.info(this, () -> String
                     .format("total of `%d` objects allocated in `%d` and split in `%d` removed for `%d` group. ",
@@ -277,11 +279,18 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public boolean deleteObject(final String groupName, final String path) {
-
-        return this.wrapInTransaction(() -> new DotConnect()
-                .executeUpdate(this.getConnection(),
-                        "DELETE FROM storage WHERE group_name = ? AND path = ?",
-                        groupName, path) > 0);
+        final String groupNameLC = groupName.toLowerCase();
+        final String pathLC = path.toLowerCase();
+        //TODO: Delete other objects in cascade
+        return this.wrapInTransaction(() -> {
+            final Connection connection = this.getConnection();
+            final DotConnect dotConnect = new DotConnect();
+            final int count = dotConnect
+                    .executeUpdate(connection,
+                    "DELETE FROM storage WHERE group_name = ? AND path = ?",
+                            groupNameLC, pathLC);
+            return count > 0;
+        });
     }
 
     @Override
@@ -339,16 +348,16 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private boolean existsHash(final String fileHash) {
         final MutableBoolean exists = new MutableBoolean(false);
         this.wrapCloseConnection(() -> {
-            final Integer results = Try
+            final Number results = Try
                     .of(() -> {
                                 final List<Map<String, Object>> result = new DotConnect()
                                         .setSQL("SELECT count(*) as x FROM storage_data WHERE hash_id = ?")
                                         .addParam(fileHash)
                                         .loadObjectResults(this.getConnection());
-                                return (int) result.get(0).get("x");
+                                return (Number) result.get(0).get("x");
                             }
                     ).getOrElse(0);
-            exists.setValue(results > 0);
+            exists.setValue(results.intValue() > 0);
         });
 
         return exists.getValue();
@@ -376,13 +385,14 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     private Object pushFileReference(final String groupName, final String path,
             final Map<String, Object> extraMeta, final String objectHash) {
-
+        final String groupNameLC = groupName.toLowerCase();
+        final String pathLC = path.toLowerCase();
         try {
             final StringWriter metaDataJsonWriter = new StringWriter();
             this.objectMapper.writeValue(metaDataJsonWriter, extraMeta);
             new DotConnect().executeUpdate(this.getConnection(),
                     "INSERT INTO storage(hash, path, group_name, metadata) VALUES (?, ?, ?, ?)",
-                    objectHash, path, groupName, metaDataJsonWriter.toString());
+                    objectHash, pathLC, groupNameLC, metaDataJsonWriter.toString());
             return true;
         } catch (DotDataException | IOException e) {
 
@@ -393,7 +403,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     private Object pushNewFile(final String groupName, final String path, final File file,
             final Map<String, Object> extraMeta) {
-
+        final String groupNameLC = groupName.toLowerCase();
+        final String pathLC = path.toLowerCase();
         try (final FileByteSplitter fileSplitter = new FileByteSplitter(file)) {
 
             final HashBuilder objectHashBuilder = Encryptor.Hashing.sha256();
@@ -417,7 +428,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             this.objectMapper.writeValue(metaDataJsonWriter, extraMeta);
             new DotConnect().executeUpdate(this.getConnection(),
                     "INSERT INTO storage(hash, path, group_name, metadata) VALUES (?, ?, ?, ?)",
-                    objectHash, path, groupName, metaDataJsonWriter.toString());
+                    objectHash, pathLC, groupNameLC, metaDataJsonWriter.toString());
 
             int order = 1;
             for (final String chunkHash : chunkHashes) {
@@ -442,26 +453,6 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         System.arraycopy(bytes, 0, chunkedArray, 0, bytesLength);
 
         return chunkedArray;
-    }
-
-    private byte[] fileToBytes(final File file) {
-
-        try (InputStream input = com.liferay.util.FileUtil
-                .createInputStream(file.toPath(), "none")) {
-
-            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            final byte[] buffer = new byte[1024];
-            for (int readNum; (readNum = input.read(buffer)) != -1; ) {
-
-                byteArrayOutputStream.write(buffer, 0, readNum);
-            }
-
-            return byteArrayOutputStream.toByteArray();
-        } catch (IOException e) {
-
-            Logger.error(this, e.getMessage(), e);
-            throw new DotRuntimeException(e);
-        }
     }
 
     @Override
@@ -512,7 +503,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public File pullFile(final String groupName, final String path) {
-
+        final String groupNameLC = groupName.toLowerCase();
+        final String pathLC = path.toLowerCase();
         final MutableObject<File> file = new MutableObject<>(null);
 
         this.wrapCloseConnection(() -> {
@@ -521,7 +513,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 final List<Map<String, Object>> storageResult = Try.of(() ->
                         new DotConnect()
                                 .setSQL("SELECT hash FROM storage WHERE group_name = ? AND path = ?")
-                                .addParam(groupName).addParam(path).loadObjectResults()).getOrElse(
+                                .addParam(groupNameLC).addParam(pathLC).loadObjectResults()).getOrElse(
                         Collections::emptyList);
 
                 if (!storageResult.isEmpty()) {

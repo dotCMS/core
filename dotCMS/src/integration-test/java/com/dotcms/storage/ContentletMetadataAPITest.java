@@ -18,9 +18,11 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
+import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.io.FilenameUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,14 +31,11 @@ import org.junit.runner.RunWith;
 public class ContentletMetadataAPITest {
 
     private static ContentletMetadataAPI contentletMetadataAPI;
-    private static long langId;
 
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
-
         contentletMetadataAPI = APILocator.getContentletMetadataAPI();
-        langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
     }
 
@@ -49,23 +48,32 @@ public class ContentletMetadataAPITest {
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws IOException {
 
-        Config.setProperty(DEFAULT_STORAGE_TYPE, testCase.storageType.name());
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        try {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, testCase.storageType.name());
 
-        final ContentletMetadata metadata = contentletMetadataAPI
-                .generateContentletMetadata(testCase.fileAssetContent);
+            //Remove any previously generated metadata by the checkin process
+            TestDataUtils.removeAnyMetadata((File)testCase.fileAssetContent.get("fileAsset"));
 
-        assertNotNull(metadata);
+            final ContentletMetadata metadata = contentletMetadataAPI
+                    .generateContentletMetadata(testCase.fileAssetContent);
 
-        assertNotNull(metadata.getBasicMetadataMap());
-        assertNotNull(metadata.getFullMetadataMap());
+            assertNotNull(metadata);
 
-        validateBasic(metadata.getBasicMetadataMap().get("fileAsset"));
-        validateFull(metadata.getFullMetadataMap().get("fileAsset"), testCase.testFile);
+            assertNotNull(metadata.getBasicMetadataMap());
+            assertNotNull(metadata.getFullMetadataMap());
 
+            validateBasic(metadata.getBasicMetadataMap().get("fileAsset"));
+            validateFull(metadata.getFullMetadataMap().get("fileAsset"), testCase.testFile);
+        }finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE,stringProperty);
+        }
 
     }
 
-    public Object[] getFileAssetMetadataTestCases() {
+    @DataProvider
+    public static Object[] getFileAssetMetadataTestCases() {
+        final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         return new Object[]{
                 new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.JPG,
                         TestDataUtils.getFileAssetContent(true, langId, TestFile.JPG)),
@@ -103,6 +111,16 @@ public class ContentletMetadataAPITest {
             this.storageType = storageType;
             this.testFile = testFile;
             this.fileAssetContent = fileAssetContent;
+        }
+
+        @Override
+        public String toString() {
+            return "TestCase{" +
+                    "langId=" + langId +
+                    ", storageType=" + storageType +
+                    ", testFile=" + FilenameUtils.getName(testFile.getFilePath()) +
+                    ", fileAssetContent=" + fileAssetContent +
+                    '}';
         }
     }
 
@@ -157,40 +175,45 @@ public class ContentletMetadataAPITest {
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Generate_Metadata_From_ContentType_With_Multiple_Binary_Fields(final StorageType storageType) throws IOException {
+        final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        try {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
 
-        Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
-        //Multiple binary fields
-        final Contentlet multipleBinariesContent = TestDataUtils
-                .getMultipleBinariesContent(true, langId, null);
+            //Multiple binary fields
+            final Contentlet multipleBinariesContent = TestDataUtils
+                    .getMultipleBinariesContent(true, langId, null);
 
-        //Multiple binary fields
-        final ContentletMetadata multiBinaryMetadata = contentletMetadataAPI
-                .generateContentletMetadata(multipleBinariesContent);
-         assertNotNull(multiBinaryMetadata);
+            //Multiple binary fields
+            final ContentletMetadata multiBinaryMetadata = contentletMetadataAPI
+                    .generateContentletMetadata(multipleBinariesContent);
+            assertNotNull(multiBinaryMetadata);
 
-        final Map<String, Map<String, Object>> fullMetadataMap = multiBinaryMetadata
-                .getFullMetadataMap();
-        assertNotNull(fullMetadataMap);
+            final Map<String, Map<String, Object>> fullMetadataMap = multiBinaryMetadata
+                    .getFullMetadataMap();
+            assertNotNull(fullMetadataMap);
 
-        final Map<String, Map<String, Object>> basicMetadataMap = multiBinaryMetadata
-                .getBasicMetadataMap();
-        assertNotNull(basicMetadataMap);
+            final Map<String, Map<String, Object>> basicMetadataMap = multiBinaryMetadata
+                    .getBasicMetadataMap();
+            assertNotNull(basicMetadataMap);
 
-       //the filed is set as the first one according to the sortOrder prop. This is the only that has to have full metadata
-        final Map<String, Object> fileAsset2FullMeta = fullMetadataMap.get("fileAsset2");
-        assertNotNull(fileAsset2FullMeta);
+            //the filed is set as the first one according to the sortOrder prop. This is the only that has to have full metadata
+            final Map<String, Object> fileAsset2FullMeta = fullMetadataMap.get("fileAsset2");
+            assertNotNull(fileAsset2FullMeta);
 
-        //These are all the non-null binaries
-        final Map<String, Object> fileAsset1BasicMeta = basicMetadataMap.get("fileAsset1");
-        assertNotNull(fileAsset1BasicMeta);
+            //These are all the non-null binaries
+            final Map<String, Object> fileAsset1BasicMeta = basicMetadataMap.get("fileAsset1");
+            assertNotNull(fileAsset1BasicMeta);
 
-        final Map<String, Object> fileAsset2BasicMeta = basicMetadataMap.get("fileAsset2");
-        assertNotNull(fileAsset2BasicMeta);
+            final Map<String, Object> fileAsset2BasicMeta = basicMetadataMap.get("fileAsset2");
+            assertNotNull(fileAsset2BasicMeta);
 
-         //the filed does exist but it was not set
-        final Map<String, Object> fileAsset3BasicMeta = basicMetadataMap.get("fileAsset3");
-        assertNull(fileAsset3BasicMeta);
-
+            //the filed does exist but it was not set
+            final Map<String, Object> fileAsset3BasicMeta = basicMetadataMap.get("fileAsset3");
+            assertNull(fileAsset3BasicMeta);
+        }finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+        }
     }
 
     /**
@@ -200,7 +223,7 @@ public class ContentletMetadataAPITest {
      */
     @Test
     public void Test_Get_First_Indexed_Binary_Field() {
-
+        final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         final Contentlet multipleBinariesContent = TestDataUtils
                 .getMultipleBinariesContent(true, langId, null);
 

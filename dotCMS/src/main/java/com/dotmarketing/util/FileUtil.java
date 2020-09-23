@@ -2,9 +2,11 @@ package com.dotmarketing.util;
 
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.BufferedInputStream;
@@ -284,14 +286,25 @@ public class FileUtil {
 	 * @param file
 	 * @return
 	 */
-	public static Optional <String> getRealAssetsPathRelativePiece(final File file) {
-		final String absolutePath = file.getAbsolutePath().toLowerCase();
-		final String realAssetsRootPath = APILocator.getFileAssetAPI().getRealAssetsRootPath()
-				.toLowerCase();
-		if (absolutePath.startsWith(realAssetsRootPath)) {
-			return Optional.of(absolutePath.substring(realAssetsRootPath.length()-1));
+	@VisibleForTesting
+	static Optional <String> getRealAssetsPathRelativePiece(final File file, final Supplier<String> realAssetsRootPathSupplier) {
+		final String absolutePathLC = file.getAbsolutePath().toLowerCase();
+		final String realAssetsRootPath = realAssetsRootPathSupplier.get();
+		if (absolutePathLC.startsWith(realAssetsRootPath.toLowerCase())) {
+			return Optional.of(file.getAbsolutePath().substring(realAssetsRootPath.length()));
 		}
 		return Optional.empty();
+	}
+
+	/**
+	 * Default realAssets path is provided here
+	 * @param file
+	 * @return
+	 */
+	public static Optional <String> getRealAssetsPathRelativePiece(final File file) {
+		final String realAssetsRootPath = APILocator.getFileAssetAPI().getRealAssetsRootPath()
+				.toLowerCase();
+		return getRealAssetsPathRelativePiece(file, ()->realAssetsRootPath);
 	}
 }
 

@@ -85,19 +85,15 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         if (this.validBinary(binary)) {
 
-            //if (metaDataKeyFilter.test(TITLE_META_KEY)) {
-                mapBuilder.put(TITLE_META_KEY, binary.getName());
-            //}
 
-            //if (metaDataKeyFilter.test(PATH_META_KEY)) {
+            mapBuilder.put(TITLE_META_KEY, binary.getName());
 
-                final Optional<String> optional = FileUtil.getRealAssetsPathRelativePiece(binary);
-                if (optional.isPresent()) {
-                    mapBuilder.put(PATH_META_KEY, optional.get());
-                } else {
-                    mapBuilder.put(PATH_META_KEY, binary.getAbsolutePath());
-                }
-            //}
+            final Optional<String> optional = FileUtil.getRealAssetsPathRelativePiece(binary);
+            if (optional.isPresent()) {
+                mapBuilder.put(PATH_META_KEY, optional.get());
+            } else {
+                mapBuilder.put(PATH_META_KEY, binary.getAbsolutePath());
+            }
 
             if (metaDataKeyFilter.test(LENGTH_META_KEY)) {
                 mapBuilder.put(LENGTH_META_KEY, binary.length());
@@ -124,19 +120,16 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         final TreeMap<String, Object> metadataMap = new TreeMap<>(Comparator.naturalOrder());
 
         try {
-
-            metadataMap.putAll(this.generateBasicMetaData(binary, metaDataKeyFilter));
-            final Map<String, Object> fullMetaDataMap = this.metadataGenerator
-                    .generate(binary, maxLength);
+            final Map<String, Object> fullMetaDataMap = this.metadataGenerator.generate(binary, maxLength);
             if (UtilMethods.isSet(fullMetaDataMap)) {
                 for (final Map.Entry<String, Object> entry : fullMetaDataMap.entrySet()) {
-
                     if (metaDataKeyFilter.test(entry.getKey())) {
-
                         metadataMap.put(entry.getKey(), entry.getValue());
                     }
                 }
             }
+            //basic meta data should override any previous value that might have exist already.
+            metadataMap.putAll(this.generateBasicMetaData(binary, metaDataKeyFilter));
         } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);
