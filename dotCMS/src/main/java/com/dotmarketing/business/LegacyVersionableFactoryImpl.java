@@ -23,6 +23,8 @@ import java.util.*;
 import static com.dotcms.util.CollectionsUtils.set;
 
 /**
+ * @deprecated on 09-23-2020. Replaced by {@link VersionableFactoryImpl}
+ *
  * Implementation class for the {@link VersionableFactory} class.
  *
  * @author Will Ezell
@@ -30,6 +32,8 @@ import static com.dotcms.util.CollectionsUtils.set;
  * @since Mar 22, 2012
  *
  */
+
+@Deprecated
 public class LegacyVersionableFactoryImpl extends VersionableFactory {
 
 	private final String fourOhFour = "NOTFOUND";
