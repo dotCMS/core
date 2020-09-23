@@ -327,7 +327,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		List<ContentletVersionInfo> versionInfos = TransformerLocator
 				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
 
-		return !versionInfos.isEmpty() ? versionInfos.get(0) : null;
+		return !versionInfos.isEmpty() ? versionInfos.get(0) : new ContentletVersionInfo();
     }
     @Override
     protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)throws DotDataException, DotStateException {
