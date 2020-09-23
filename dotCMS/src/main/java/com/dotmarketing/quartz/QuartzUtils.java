@@ -624,26 +624,24 @@ public class QuartzUtils {
 
 	
 	public static boolean isJobRunning(String jobName, String jobGroup) throws SchedulerException{
-		
+
 		List<JobExecutionContext> currentlyExecutingJobs = new ArrayList<JobExecutionContext>();
 		currentlyExecutingJobs.addAll(DotSchedulerFactory.getInstance().getScheduler().getCurrentlyExecutingJobs());
 
 
 		JobDetail existingJobDetail = DotSchedulerFactory.getInstance().getScheduler().getJobDetail(jobName, jobGroup);
 
+
 		if (existingJobDetail != null) {
 	        for (JobExecutionContext jec : currentlyExecutingJobs) {
-	        	JobDetail runningJobDetail = jec.getJobDetail();
-	            if(existingJobDetail.equals(runningJobDetail) || isSameJob(existingJobDetail, runningJobDetail)) {
+	        	final JobDetail runningJobDetail = jec.getJobDetail();
+	            if (existingJobDetail.equals(runningJobDetail) || isSameJob(existingJobDetail, runningJobDetail)) {
 	                return true;
 	            }
 	        }
 		}
 
-
 		return false;
-		
-
 	}
 	
 	/**
