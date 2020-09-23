@@ -10,7 +10,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * DBTransformer that converts DB objects into Template instances
+ * DBTransformer that converts DB objects into {@link ContentletVersionInfo} instances
  */
 public class ContentletVersionInfoTransformer implements DBTransformer<ContentletVersionInfo> {
     final List<ContentletVersionInfo> list;
