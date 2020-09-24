@@ -3984,9 +3984,10 @@
 					"        const $ = cheerio.load(responseBody);",
 					"",
 					"        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");",
+					"        pendingStatus = pm.collectionVariables.get(\"pendingStatus\");",
 					"        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");",
 					"",
-					"        if (htmlWithoutSpace.includes(bundleWaitingPublish)) {",
+					"        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus)) {",
 					"            console.log('AGAIN');",
 					"            postman.setNextRequest(\"check success status\");",
 					"        } else {",
@@ -4029,7 +4030,11 @@
 					"pm.collectionVariables.set(\"endpointInvalidtoken\", endpointInvalidtoken);",
 					"",
 					"bundleWaitingPublish = \"<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>\";",
-					"pm.collectionVariables.set(\"bundleWaitingPublish\", bundleWaitingPublish);"
+					"pm.collectionVariables.set(\"bundleWaitingPublish\", bundleWaitingPublish);",
+					"",
+					"pendingStatus = \"th>Status:</th>        <td> Pending</td\";",
+					"pm.collectionVariables.set(\"pendingStatus\", pendingStatus);",
+					""
 				]
 			}
 		},
@@ -4046,92 +4051,92 @@
 	],
 	"variable": [
 		{
-			"id": "ff43f47f-1d72-445d-82ce-4ba4e92785b2",
+			"id": "e87e11bf-4c8e-4fe7-8389-13fd606ee3a3",
 			"key": "origin",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "f035d755-4f05-4403-99f7-82874f918482",
+			"id": "6a42c38d-a63a-422c-b7cf-47804ef3e98a",
 			"key": "environmentName",
 			"value": "environment-353"
 		},
 		{
-			"id": "e958d010-136d-43b6-8090-5aca63eee4ee",
+			"id": "6c5f39da-2f1e-46a0-a21a-96b8984b2d3f",
 			"key": "endpointName",
 			"value": "endpoint-496"
 		},
 		{
-			"id": "83b3579c-924f-4d3a-b448-342379a2a25b",
+			"id": "11c9d80d-65a6-436f-87b0-807e9bdce0e6",
 			"key": "environmentId",
 			"value": "a4d2cc7a-1566-4b0d-9c31-b22d84814506"
 		},
 		{
-			"id": "f55e4e6b-7979-4674-bd9c-dfa74ea26f7c",
+			"id": "d63cbcea-7f21-4da4-a8c0-809d6352de56",
 			"key": "receiverName",
 			"value": "receiverName-976"
 		},
 		{
-			"id": "293baa1c-1318-4bd5-9cd8-a8fdcdfd645c",
+			"id": "530e2811-10d0-4971-9d68-45caf8f52ffe",
 			"key": "bundleName",
 			"value": "bundleName-461"
 		},
 		{
-			"id": "c099f30b-450d-431a-b51e-76746f947c8f",
+			"id": "49496ecc-7231-4340-a9a2-c645a9c242d7",
 			"key": "bundleID",
 			"value": null
 		},
 		{
-			"id": "cec1713e-f323-464a-8d91-436bcbc77dbf",
+			"id": "0d049b45-d78d-4802-9e61-d9a3de987cff",
 			"key": "bundleId",
 			"value": "01EK0WTHC89J1KJKSD1SY418QQ"
 		},
 		{
-			"id": "7abf5a46-9e4d-4d00-b36f-b290eecafba9",
+			"id": "5cb723c0-1ac3-45a1-b5ee-7bb92570ca05",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk5MGY5MzgwZS03MGE0LTRlYmMtOGQ1Yy1hYjY2ZTc2NjI2NjkiLCJ4bW9kIjoxNjAwODk1ODY1MDAwLCJuYmYiOjE2MDA4OTU4NjUsImlzcyI6Ijc1MzI4OGMwODYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU0NjcyMzAsImlhdCI6MTYwMDg5NTg2NSwianRpIjoiNmNjOTUxYzctMTIyNi00NzkxLTk4NzMtNDA1OTdjMWNhM2VmIn0.DNcI9_MIorM1HVWN3dERS5TAfjY72DfxQlhZ7s6lcik"
 		},
 		{
-			"id": "a0548fe2-b1e3-4602-b42f-b2b5a9b14281",
+			"id": "6203d309-996b-4488-897b-6c25484a17a7",
 			"key": "bundleSuccessExpected",
 			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ecc9df87-02ad-4f58-afaf-f27ae4fb2c57</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "a31c2f16-f1f4-4773-99da-ee661577ee1b",
+			"id": "453dea5f-0db5-40f7-8611-cdf4cbeb965d",
 			"key": "bundleFailedExpected",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "3687e5bd-991e-46e9-b0a5-98f8c5ec38bd",
+			"id": "37932dc1-aebf-4d5d-9fa3-4e14059bf982",
 			"key": "endpointInvalidtoken",
 			"value": "<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t"
 		},
 		{
-			"id": "a87f4515-d644-479f-9607-21603fc8a9da",
+			"id": "257f14ab-0c0c-434e-bab7-231e72ec0fc7",
 			"key": "endpointSuccess",
 			"value": "<td valign=\"top\">Success</td>\t\t\t\t        <td valign=\"top\">Everything ok</td>"
 		},
 		{
-			"id": "f75d56f1-060d-4875-9495-1791cc6a6fb5",
+			"id": "a123198c-9e47-4f11-a1e5-7213ebfeb83c",
 			"key": "bundleFailed",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "862c4a3d-879f-49f2-b2c5-6f6029e5cf37",
+			"id": "c1ee557e-0a36-4f6c-ad87-a4f6c29ed9a9",
 			"key": "bundleSuccess",
 			"value": "<th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "4855cf1b-07ff-4760-9ced-89963a46adce",
+			"id": "f1182f0e-35ae-40e3-8685-255c0ef84e0a",
 			"key": "bundleWaitingPublish",
 			"value": "<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>"
 		},
 		{
-			"id": "c9bdb073-4d50-46fd-8e72-e7ee93614ba3",
+			"id": "03f04452-b2d9-4b91-80ce-83363704ed98",
 			"key": "checkBundleStatus",
 			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log(responseBody.trim().length, responseBody.trim().length === 0);\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    } else {\n\n        const $ = cheerio.load(responseBody);\n\n        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n        if (htmlWithoutSpace.includes(bundleWaitingPublish)) {\n            console.log('AGAIN');\n            postman.setNextRequest(\"check success status\");\n        } else {\n            casesToTest.forEach((caseToTest) => {\n                expectedInclude = pm.collectionVariables.get(caseToTest);\n                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n            });\n\n        }\n    }\n}"
 		},
 		{
-			"id": "45e38a67-0414-4820-80d0-b49c1bf8d671",
+			"id": "d0eb4f23-efcc-494b-9453-0c67dfbb104c",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
