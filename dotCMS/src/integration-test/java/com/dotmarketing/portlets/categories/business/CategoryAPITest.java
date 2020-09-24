@@ -1411,4 +1411,130 @@ public class CategoryAPITest extends IntegrationTestBase {
         }
 
     }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: As a limited user, with the required permissions (edit over the category), edit a category
+     * ExpectedResult: Categories edited successfully
+     */
+    @Test
+    public void test_save_editCategory_asLimitedUser_success()
+            throws DotSecurityException, DotDataException {
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        //Create new top level Category as admin user
+        final String parentCategoryName = "newParentCategory" + System.currentTimeMillis();
+        final Category newParentCategory = new Category();
+        newParentCategory.setCategoryName(parentCategoryName);
+        newParentCategory.setCategoryVelocityVarName(parentCategoryName);
+        newParentCategory.setKey(parentCategoryName);
+
+        categoryAPI.save(null, newParentCategory, user, false);
+        //Find the new Category using the admin user
+        final Category getCategory = categoryAPI.findByKey(parentCategoryName, user, false);
+        assertNotNull(getCategory);
+        assertEquals(parentCategoryName, getCategory.getCategoryName());
+
+        //Give Permissions Over the Category
+        final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                getCategory.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        APILocator.getPermissionAPI().save(permissions, getCategory, user, false);
+
+        //Make some changes over the category
+        final String editedCategoryName = "editedCategory" +  System.currentTimeMillis();
+        getCategory.setCategoryName(editedCategoryName);
+        getCategory.setKey(editedCategoryName);
+        getCategory.setKeywords(editedCategoryName);
+        categoryAPI.save(null,getCategory,limitedUser,false);
+
+        final Category getEditedCategory = categoryAPI.findByKey(editedCategoryName, user, false);
+        assertNotNull(getEditedCategory);
+        assertEquals(editedCategoryName, getEditedCategory.getCategoryName());
+
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: As a limited user, with the required permissions (edit over the category), edit a category
+     * ExpectedResult: Failed to edit Category, DotSecurityException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_save_editCategory_asLimitedUser_withoutPermissions_throwDotSecurityException()
+            throws DotSecurityException, DotDataException {
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        //Create new top level Category as admin user
+        final String parentCategoryName = "newParentCategory" + System.currentTimeMillis();
+        final Category newParentCategory = new Category();
+        newParentCategory.setCategoryName(parentCategoryName);
+        newParentCategory.setCategoryVelocityVarName(parentCategoryName);
+        newParentCategory.setKey(parentCategoryName);
+
+        categoryAPI.save(null, newParentCategory, user, false);
+        //Find the new Category using the admin user
+        final Category getCategory = categoryAPI.findByKey(parentCategoryName, user, false);
+        assertNotNull(getCategory);
+        assertEquals(parentCategoryName, getCategory.getCategoryName());
+
+        //Make some changes over the category
+        final String editedCategoryName = "editedCategory" +  System.currentTimeMillis();
+        getCategory.setCategoryName(editedCategoryName);
+        getCategory.setKey(editedCategoryName);
+        getCategory.setKeywords(editedCategoryName);
+        categoryAPI.save(null,getCategory,limitedUser,false);
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: As an admin create a top level category and give a limited user permissions
+     * to edit it. Also give Add Children permissions over the System Host.
+     * Try to add a new top level category using the limited user.
+     * ExpectedResult: Category created failed because lack of permissions (no Edit over Category under System Host).
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_save_createTopLevelCategory_asLimitedUser_fail()
+            throws DotSecurityException, DotDataException {
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        //Create new top level Category as admin user
+        final String parentCategoryName = "newParentCategory" + System.currentTimeMillis();
+        final Category newParentCategory = new Category();
+        newParentCategory.setCategoryName(parentCategoryName);
+        newParentCategory.setCategoryVelocityVarName(parentCategoryName);
+        newParentCategory.setKey(parentCategoryName);
+
+        categoryAPI.save(null, newParentCategory, user, false);
+        //Find the new Category using the admin user
+        final Category getCategory = categoryAPI.findByKey(parentCategoryName, user, false);
+        assertNotNull(getCategory);
+        assertEquals(parentCategoryName, getCategory.getCategoryName());
+
+        //Give Permissions Over the Category
+        Permission permissions = new Permission(PermissionableType.CATEGORY.getCanonicalName(),
+                getCategory.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        APILocator.getPermissionAPI().save(permissions, getCategory, user, false);
+
+        //Give Permissions Over the SystemHost Can Add children
+        permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                APILocator.systemHost().getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, true);
+        APILocator.getPermissionAPI().save(permissions, APILocator.systemHost(), user, false);
+
+        //Create new top level Category as limited user
+        final String categoryName = "newCategory" + System.currentTimeMillis();
+        final Category newCategory = new Category();
+        newCategory.setCategoryName(categoryName);
+        newCategory.setCategoryVelocityVarName(categoryName);
+        newCategory.setKey(categoryName);
+
+        categoryAPI.save(null, newCategory, limitedUser, false);
+    }
 }
