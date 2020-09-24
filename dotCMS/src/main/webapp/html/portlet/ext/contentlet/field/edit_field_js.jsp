@@ -512,6 +512,8 @@ var cmsfile=null;
             cmsFileBrowserImage.show();
         } else {
             cmsFileBrowserFile.show()
+            dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' })
+		    dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' })
         }
 
 	}
