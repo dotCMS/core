@@ -8798,9 +8798,6 @@ a.category_higlighted, a.tag_higlighted {
 .file-selector-tree .portlet-main {
   overflow-y: inherit; }
 
-.file-selector-tree {
-  /* TinyMCE z-index link and edit image dialog is 65536 */
-  z-index: 68000 !important; }
   .file-selector-tree.dijitDialog {
     height: 90vh;
     width: 90vw; }
