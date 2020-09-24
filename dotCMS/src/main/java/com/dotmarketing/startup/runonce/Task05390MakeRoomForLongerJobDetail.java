@@ -27,7 +27,7 @@ public class Task05390MakeRoomForLongerJobDetail implements StartupTask {
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
         }
-        final Set<String> jobDetailTables = ImmutableSet.of("qrtz_excl_job_details","qrtz_job_details");
+        final Set<String> jobDetailTables = ImmutableSet.of("qrtz_excl_job_details","qrtz_job_details","qrtz_triggers","qrtz_excl_triggers");
         final DotConnect dotConnect = new DotConnect();
 
         for (final String tableName : jobDetailTables) {
