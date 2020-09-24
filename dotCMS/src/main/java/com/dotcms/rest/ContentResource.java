@@ -131,7 +131,7 @@ public class ContentResource {
      *       	 "sort":"modDate",
      *       	 "limit":20,
      *       	 "offset":0,
-     *           "userId":"admin@dotcms.com"
+     *           "userId":"dotcms.org.1"
      * }'
      *
      * @param request {@link HttpServletRequest} object
