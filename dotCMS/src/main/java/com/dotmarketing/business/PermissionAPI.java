@@ -771,19 +771,24 @@ public interface PermissionAPI {
 	 */
 	boolean doesUserHavePermissions(Permissionable permissionable, String requiredPermissions, User user, boolean respectFrontendRoles) throws DotDataException;
 
+	/**
+	 * Returns true if the user has the requiredPermissions over the specific object type and asset.
+	 * E.g: check if the user has permissions over Category type under System Host.
+	 * @param assetId asset identifier to check permissions over it
+	 * @param permType Permissionable Type object to check
+	 * @param permissionType level of permissions
+	 * @param user user to check permissions
+	 * @return boolean t
+	 * @throws DotDataException
+	 */
 	boolean doesUserHavePermissions(final String assetId, final PermissionableType permType, final int permissionType, final User user) throws DotDataException;
 
 	/**
-	 * Returns true if the user has the requiredPermissions over the specified objectType
-	 * this method is meant to be used to check multiple parent & children permissions on Hosts/Folders.
-	 * @param objectyType
-	 * @param requiredPermissions a comma separated list of permissions of the form TYPE:PERMISSION, where TYPE is the permission type
-	 * to match the permission against the permissions under the given permissionable host or folder.If no children permissionable are given
-	 * the TYPE should be set to PARENT i.e : PARENT:1, this will check for READ permissions on the given permissionable while a value of
-	 * PARENT:1, STRUCTURES:4 will check for READ permissions on the given permissionable AND publish permission on structures under the
-	 * given permissionable.
-	 * @param user
-	 * @return
+	 * Returns true if the user has the requiredPermissions over the specific object type, regardless the asset.
+	 * E.g: check if the user has permissions over Category type, but does not take in account the asset, so could be under any asset the permissions.
+	 * @param permType Permissionable Type object to check
+	 * @param user user to check permissions
+	 * @return boolean t
 	 * @throws DotDataException
 	 */
 	boolean doesUserHavePermissions(PermissionableType permType, int permissionType, User user) throws DotDataException;
