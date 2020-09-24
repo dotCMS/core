@@ -1,8 +1,5 @@
 package com.dotcms.rest;
 
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
-
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -18,6 +15,7 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.FireActionForm;
@@ -47,6 +45,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -55,28 +54,10 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.file.Files;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -91,10 +72,34 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.ContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.jetbrains.annotations.NotNull;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
 
 @Path("/content")
 public class ContentResource {
@@ -112,6 +117,85 @@ public class ContentResource {
 
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
+
+    /**
+     *
+     * Do a search, parameter are received by post and returns the json with the search info and contentlet results
+     * curl -XGET http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0
+     * Example call using curl: curl -X POST http://localhost:8080/api/content/_search
+     * -F 'json={
+     * 	 "query": "+structurename:webpagecontent",
+     * 	 "sort":"modDate",
+     * 	 "limit:20,
+     * 	 offset:0
+     * };type=application/json'
+     *
+     * @param request request object
+     * @param response response obecjt
+     * @return json array of objects. each object with inode and identifier
+     */
+    @POST
+    @Path("/_search")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response search(@Context HttpServletRequest request,
+                           @Context final HttpServletResponse response,
+                           final SearchForm searchForm) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = this.webResource.init
+                (null, request, response, false, null);
+
+        final User   user    = initData.getUser();
+        final String query   = searchForm.getQuery(); // ""
+        final String sort    = searchForm.getSort(); // ""
+        final int    limit   = searchForm.getLimit();  // 20
+        final int    offset  = searchForm.getOffset(); // 0
+        final PageMode pageMode   = PageMode.get(request);
+        final String userToPullID = searchForm.getUserId();
+        final String tmDate = (String) request.getSession().getAttribute("tm_date");
+        User   userForPull        = null;
+        List<ContentletSearch> contentletSearches = Collections.emptyList();
+        List<Contentlet>       contentlets        = Collections.emptyList();
+        long startAPISearchPull = 0;
+        long afterAPISearchPull = 0;
+        long startAPIPull = 0;
+        long afterAPIPull = 0;
+
+
+        if(null != user && user.isAdmin()){
+
+            if(UtilMethods.isSet(userToPullID)) {
+
+                userForPull = APILocator.getUserAPI().loadUserById(userToPullID, APILocator.systemUser(),true);
+            }
+        }
+
+        if (UtilMethods.isSet(query)) {
+
+            startAPISearchPull = Calendar.getInstance().getTimeInMillis();
+            contentletSearches = APILocator.getContentletAPI().searchIndex(query, limit, offset, sort, userForPull, pageMode.respectAnonPerms);
+            afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
+
+            startAPIPull       = Calendar.getInstance().getTimeInMillis();
+            contentlets        = ContentUtils.pull(processQuery(query), offset, limit, sort, user, tmDate, pageMode.respectAnonPerms)
+                                    .stream().map(this.contentHelper::hydrateContentlet).collect(Collectors.toList());
+            afterAPIPull       = Calendar.getInstance().getTimeInMillis();
+        }
+
+        final int  resultsSize   = contentletSearches.size();
+        final long queryTook     = afterAPISearchPull-startAPISearchPull;
+        final long contentTook   = afterAPIPull-startAPIPull;
+        final Map<String, Object> resultMap = new LinkedHashMap<>();
+        final Map<String, Object> summaryMap = new LinkedHashMap<>();
+        summaryMap.put("resultsSize", resultsSize);
+        summaryMap.put("queryTook", queryTook);
+        summaryMap.put("contentTook", contentTook);
+        resultMap.put("summaryMap", summaryMap);
+        resultMap.put("contentletSearches", contentletSearches);
+        resultMap.put("contentlets", contentlets);
+        return Response.ok(new ResponseEntityView(resultMap)).build();
+    }
+
+
 
     /**
      * performs a call to APILocator.getContentletAPI().searchIndex() with the specified parameters.
@@ -586,7 +670,6 @@ public class ContentResource {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @NotNull
     private List<Contentlet> getPullRelated(User user, int limit,
             String orderBy, String tmDate, String luceneQuery, String relationshipValue, long language, boolean live)
             throws DotSecurityException, DotDataException {
