@@ -20,6 +20,10 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.util.Map;
 
 /**
  * @author Jason Tesser
@@ -78,7 +82,11 @@ public class ContentletCacheImpl extends ContentletCache {
 		if(st!=null && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
 			Field f=st.getFieldVar(FileAssetAPI.META_DATA_FIELD);
 			if(f!=null && UtilMethods.isSet(f.getInode())) {
-				String metadata=(String)content.get(FileAssetAPI.META_DATA_FIELD);
+
+				final String metadata = content.get(FileAssetAPI.META_DATA_FIELD) instanceof Map?
+					new GsonBuilder().disableHtmlEscaping().create().toJson(content.get(FileAssetAPI.META_DATA_FIELD)):
+						(String)content.get(FileAssetAPI.META_DATA_FIELD);
+
 				addMetadata(key, metadata);
 				content.setStringProperty(FileAssetAPI.META_DATA_FIELD, ContentletCache.CACHED_METADATA);
 			}

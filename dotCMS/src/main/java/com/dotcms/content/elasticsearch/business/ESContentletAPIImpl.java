@@ -5800,7 +5800,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 new StringBuilder(" (COPY_")
                                         .append(System.currentTimeMillis()).append(')').toString();
                         }
-                        contentlet.setStringProperty(conVariable, value != null ? (String)value : null);
+
+                        if (value instanceof CharSequence) {
+                            contentlet.setStringProperty(conVariable, value != null ? value.toString() : null);
+                        } else {
+                            contentlet.setProperty(conVariable, value);
+                        }
                     }else if(isFieldTypeBoolean(field)){
                         contentlet.setBoolProperty(conVariable, value != null ? (Boolean)value : null);
                     }else if(isFieldTypeFloat(field)){
