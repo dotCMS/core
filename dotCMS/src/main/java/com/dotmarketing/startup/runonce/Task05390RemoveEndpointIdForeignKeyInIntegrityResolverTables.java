@@ -11,7 +11,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Remove the foreign key with the publishing_end_point table to all the Integrity Resolver tables and rename the column
- * endpoint_id to remote IP.
+ * endpoint_id to remote IP, Also change the endpoint_id column size.
  *
  * The Integrity Resolver tables are:
  *
@@ -41,6 +41,7 @@ public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables implem
         for (Map.Entry<String, String> entry : tables.entrySet()) {
             try {
                 dropConstraint(entry.getKey(), entry.getValue());
+                alterColumn(entry.getKey());
             }catch (DotDataException e) {
                 continue;
             }
@@ -53,4 +54,12 @@ public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables implem
         dc.setSQL(String.format("ALTER TABLE %s DROP CONSTRAINT %s", tableName, constraintName));
         dc.loadResult();
     }
+
+    private void alterColumn(final String tableName) throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL(String.format("ALTER TABLE %s ALTER COLUMN endpoint_id TYPE VARCHAR (40)", tableName));
+        dc.loadResult();
+    }
+
+
 }

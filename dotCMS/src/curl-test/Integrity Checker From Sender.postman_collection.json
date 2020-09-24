@@ -962,7 +962,7 @@
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
 													"    endPoint = pm.collectionVariables.get(\"endpintId\");",
-													"    pm.expect(pm.response.text()).to.equals(\"Invalid token. Please check Auth Token. Endpoint Id: \" + endPoint);",
+													"    pm.expect(pm.response.text()).to.equals(\"Invalid token Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: \" + endPoint);",
 													"",
 													"});"
 												],
@@ -1612,7 +1612,7 @@
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
 													"    endPoint = pm.collectionVariables.get(\"endpintId\");",
-													"    pm.expect(pm.response.text()).to.equals(\"Invalid token. Please check Auth Token. Endpoint Id: \" + endPoint);",
+													"    pm.expect(pm.response.text()).to.equals(\"Invalid token Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: \" + endPoint);",
 													"",
 													"});"
 												],
@@ -1923,7 +1923,7 @@
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
 													"    endPoint = pm.collectionVariables.get(\"endpintId\");",
-													"    pm.expect(pm.response.text()).to.equals(\"Invalid token. Please check Auth Token. Endpoint Id: \" + endPoint);",
+													"    pm.expect(pm.response.text()).to.equals(\"Invalid token Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: \" + endPoint);",
 													"",
 													"});"
 												],
