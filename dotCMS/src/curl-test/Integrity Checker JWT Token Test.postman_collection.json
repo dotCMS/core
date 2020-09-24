@@ -746,6 +746,21 @@
 								}
 							],
 							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -798,22 +813,22 @@
 	],
 	"variable": [
 		{
-			"id": "f8f1c6b6-768a-477d-ab9a-0ba2789c85a7",
+			"id": "81a21cd1-affe-4e42-914a-894e7ffde1e9",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "19a9bd30-063a-4f47-999b-83b372a10253",
+			"id": "547ffe1c-a555-4e44-903f-c80060dccb1c",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkwNDc3YzRhYi02NjQ3LTRlZGEtODFlNi0wNmI0NmY0NWVmODMiLCJ4bW9kIjoxNjAwOTY1ODE4MDAwLCJuYmYiOjE2MDA5NjU4MTgsImlzcyI6IjJhZTgwNmNmMTEiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU1MzcxODMsImlhdCI6MTYwMDk2NTgxOCwianRpIjoiMjMzZWJjOTktYTMzYy00NjdmLWJhNGUtN2I5ZjVlZWY3YWE5In0.TRib2Vu1xLyUS5M6ZfL4WT64xYQO_1sMOS2CdkDIbqY"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk1MGY1N2RlNi02MjJhLTQyMWYtYThjYy0wZTY0ZDIwOGY3NTgiLCJ4bW9kIjoxNjAwOTgwMTYyMDAwLCJuYmYiOjE2MDA5ODAxNjIsImlzcyI6IjZmZWRmNjBhMTYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU1NTE1MjcsImlhdCI6MTYwMDk4MDE2MiwianRpIjoiZjAwYjcyZmItNDQ0YS00MGUzLWI1MzItMDBiZDk4NzFmMTk3In0.S3W8wZV8SAtTxPwlxoB1nzd301wvNDZDEFzVis-UdfA"
 		},
 		{
-			"id": "033ae09d-056c-44bb-98cb-775f70ea62be",
+			"id": "1f57fb71-9bc1-4a31-b3b4-4ab44647f181",
 			"key": "bundle_id",
 			"value": "bundle_1598948729120"
 		},
 		{
-			"id": "185e38cb-bc54-42a1-b9bd-373205849b92",
+			"id": "b4166b36-71b9-4cc9-ab25-4514b88e07c7",
 			"key": "transactionId",
 			"value": "48db03da-d303-47cc-af29-9be490e99648"
 		}

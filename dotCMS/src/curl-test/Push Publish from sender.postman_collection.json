@@ -3901,7 +3901,7 @@
 											"",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    checkBundleStatus(pm.response.text(), [\"bundleSuccess\", \"endpointSuccess\"], \"check success status\");",
+											"    checkBundleStatus(pm.response.text(), [\"endpointSuccess\"], \"check success status\");",
 											"});"
 										],
 										"type": "text/javascript"
@@ -4046,92 +4046,92 @@
 	],
 	"variable": [
 		{
-			"id": "7758a4b7-b3f6-4a14-9c6d-9509dab7247c",
+			"id": "ff43f47f-1d72-445d-82ce-4ba4e92785b2",
 			"key": "origin",
-			"value": "localhost"
+			"value": "http://localhost:8080"
 		},
 		{
-			"id": "c782a78b-2426-4d21-812e-6d0009fadd48",
+			"id": "f035d755-4f05-4403-99f7-82874f918482",
 			"key": "environmentName",
-			"value": "environment-941"
+			"value": "environment-353"
 		},
 		{
-			"id": "5e4591fa-8de3-4d01-8e02-fa84af405de8",
+			"id": "e958d010-136d-43b6-8090-5aca63eee4ee",
 			"key": "endpointName",
-			"value": "endpoint-684"
+			"value": "endpoint-496"
 		},
 		{
-			"id": "3aa310d4-584b-4c78-82d1-421d3ba7e667",
+			"id": "83b3579c-924f-4d3a-b448-342379a2a25b",
 			"key": "environmentId",
-			"value": "6751c0ff-0a6d-4a6e-9c21-c333e2d4ce8c"
+			"value": "a4d2cc7a-1566-4b0d-9c31-b22d84814506"
 		},
 		{
-			"id": "ac92ceb3-7295-4256-b125-09928eacbfc4",
+			"id": "f55e4e6b-7979-4674-bd9c-dfa74ea26f7c",
 			"key": "receiverName",
-			"value": "receiverName-11"
+			"value": "receiverName-976"
 		},
 		{
-			"id": "8efd404a-c38e-4376-83e9-65b30b23a474",
+			"id": "293baa1c-1318-4bd5-9cd8-a8fdcdfd645c",
 			"key": "bundleName",
-			"value": "bundleName-640"
+			"value": "bundleName-461"
 		},
 		{
-			"id": "064ac0a0-37a2-4f24-bdfa-3b321198428d",
+			"id": "c099f30b-450d-431a-b51e-76746f947c8f",
 			"key": "bundleID",
 			"value": null
 		},
 		{
-			"id": "d89ab88f-1126-4380-87d4-48147aabf369",
+			"id": "cec1713e-f323-464a-8d91-436bcbc77dbf",
 			"key": "bundleId",
-			"value": "01EJYDH0CEFDGBV95ZR3D74FZA"
+			"value": "01EK0WTHC89J1KJKSD1SY418QQ"
 		},
 		{
-			"id": "61c83ff9-577c-40ed-be86-4c6f88fed83d",
+			"id": "7abf5a46-9e4d-4d00-b36f-b290eecafba9",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk5MGY5MzgwZS03MGE0LTRlYmMtOGQ1Yy1hYjY2ZTc2NjI2NjkiLCJ4bW9kIjoxNjAwODk1ODY1MDAwLCJuYmYiOjE2MDA4OTU4NjUsImlzcyI6Ijc1MzI4OGMwODYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU0NjcyMzAsImlhdCI6MTYwMDg5NTg2NSwianRpIjoiNmNjOTUxYzctMTIyNi00NzkxLTk4NzMtNDA1OTdjMWNhM2VmIn0.DNcI9_MIorM1HVWN3dERS5TAfjY72DfxQlhZ7s6lcik"
 		},
 		{
-			"id": "d2ee7a5a-81d6-46c7-b037-84e8b4ee170e",
+			"id": "a0548fe2-b1e3-4602-b42f-b2b5a9b14281",
 			"key": "bundleSuccessExpected",
 			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ecc9df87-02ad-4f58-afaf-f27ae4fb2c57</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "a55ca7a3-c962-4158-a246-6d0f4cdbfc9e",
+			"id": "a31c2f16-f1f4-4773-99da-ee661577ee1b",
 			"key": "bundleFailedExpected",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "4efc1768-d0d5-4dba-9006-0767e8ab0afe",
+			"id": "3687e5bd-991e-46e9-b0a5-98f8c5ec38bd",
 			"key": "endpointInvalidtoken",
 			"value": "<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t"
 		},
 		{
-			"id": "69f9006e-15ba-4b9c-aa93-4e3c90d9bf05",
+			"id": "a87f4515-d644-479f-9607-21603fc8a9da",
 			"key": "endpointSuccess",
 			"value": "<td valign=\"top\">Success</td>\t\t\t\t        <td valign=\"top\">Everything ok</td>"
 		},
 		{
-			"id": "322978fc-ac67-4c8a-b559-0e1f26be8e04",
+			"id": "f75d56f1-060d-4875-9495-1791cc6a6fb5",
 			"key": "bundleFailed",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "6fc8c598-25b0-46ad-a0a4-d801db026a1f",
+			"id": "862c4a3d-879f-49f2-b2c5-6f6029e5cf37",
 			"key": "bundleSuccess",
 			"value": "<th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "9c6b2a7d-2b25-4bf2-a173-c08b23b5fc78",
+			"id": "4855cf1b-07ff-4760-9ced-89963a46adce",
 			"key": "bundleWaitingPublish",
 			"value": "<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>"
 		},
 		{
-			"id": "cd11e3df-9433-482c-89a2-82e88d1a7346",
+			"id": "c9bdb073-4d50-46fd-8e72-e7ee93614ba3",
 			"key": "checkBundleStatus",
 			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log(responseBody.trim().length, responseBody.trim().length === 0);\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    } else {\n\n        const $ = cheerio.load(responseBody);\n\n        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n        if (htmlWithoutSpace.includes(bundleWaitingPublish)) {\n            console.log('AGAIN');\n            postman.setNextRequest(\"check success status\");\n        } else {\n            casesToTest.forEach((caseToTest) => {\n                expectedInclude = pm.collectionVariables.get(caseToTest);\n                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n            });\n\n        }\n    }\n}"
 		},
 		{
-			"id": "ec530fd0-b826-4d10-9155-c159db945772",
+			"id": "45e38a67-0414-4820-80d0-b49c1bf8d671",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
