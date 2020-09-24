@@ -13,7 +13,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -82,7 +81,6 @@ public class AppsAPIImpl implements AppsAPI {
     static final int DESCRIPTOR_KEY_MAX_LENGTH = 60;
     static final int DESCRIPTOR_NAME_MAX_LENGTH = 60;
 
-    private final UserAPI userAPI;
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
@@ -98,9 +96,8 @@ public class AppsAPIImpl implements AppsAPI {
             .findAndRegisterModules();
 
     @VisibleForTesting
-    public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI,
+    public AppsAPIImpl( final LayoutAPI layoutAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI,
             final SecretsStore secretsRepository, final AppsCache appsCache, final LocalSystemEventsAPI localSystemEventsAPI, final LicenseValiditySupplier licenseValiditySupplier) {
-        this.userAPI = userAPI;
         this.layoutAPI = layoutAPI;
         this.hostAPI = hostAPI;
         this.contentletAPI = contentletAPI;
@@ -111,7 +108,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     public AppsAPIImpl() {
-        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(),
+        this(APILocator.getLayoutAPI(), APILocator.getHostAPI(),
                 APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
                 CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
                 new LicenseValiditySupplier() {

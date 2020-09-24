@@ -1,5 +1,6 @@
 package com.dotcms.security.apps;
 
+import static com.dotcms.security.apps.SecretsStoreKeyStoreImpl.SECRETS_KEYSTORE_PASSWORD_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -7,7 +8,10 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.commons.lang.RandomStringUtils;
@@ -208,6 +212,36 @@ public class SecretsStoreKeyStoreImplTest {
         final char[] encrypted = ((SecretsStoreKeyStoreImpl) secretsStore).encrypt(uuid.toCharArray());
         assertEquals(uuid,new String(((SecretsStoreKeyStoreImpl) secretsStore).decrypt(encrypted)));
 
+    }
+
+    /**
+     * Given scenario: We ensure there's a storage file out there created on top of a password. Then
+     * we set a new password to simulate a conflict loading the existing file
+     * Expected Result: After changing password we should still be able to interact with the store
+     * without getting the UnrecoverableKeyException.
+     * But as the previous file just got wiped-out no secret previously stored will be available now.
+     */
+    @Test
+    public void Test_Recovery_On_Load_Failure() {
+        final String password = Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY);
+        try {
+            final SecretsStoreKeyStoreImpl secretsStore = (SecretsStoreKeyStoreImpl) SecretsStore.INSTANCE
+                    .get();
+            final String anyKey = "anyKey-" + System.currentTimeMillis();
+            final String anyValue = "anyValue";
+            // Save something to ensure there's a file in use.
+            secretsStore.saveValue(anyKey, anyValue.toCharArray());
+            //Now we change the password.
+            Config.setProperty(SECRETS_KEYSTORE_PASSWORD_KEY,
+                    RandomStringUtils.randomAlphanumeric(10));
+            Config.forceRefresh();
+            secretsStore.flushCache();
+            //it's a brand new store so do not expect the old key to be there.
+            final Optional<char[]> valueInStore = secretsStore.getValue(anyKey);
+            assertFalse(valueInStore.isPresent());
+        } finally {
+            Config.setProperty(SECRETS_KEYSTORE_PASSWORD_KEY, password);
+        }
     }
 
 
