@@ -663,7 +663,7 @@ public class IntegrityResource {
             if (!QuartzUtils.isJobRunning(
                     IntegrityDataGenerationJob.JOB_NAME,
                     IntegrityDataGenerationJob.JOB_GROUP)) {
-                return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
+                return Response.status(HttpStatus.SC_CONFLICT).build();
             }
 
             final Optional<IntegrityUtil.IntegrityDataExecutionMetadata> controlOpt =
