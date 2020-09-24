@@ -3985,9 +3985,10 @@
 					"",
 					"        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");",
 					"        pendingStatus = pm.collectionVariables.get(\"pendingStatus\");",
+					"        bundlingStatus = pm.collectionVariables.get(\"bundlingStatus\");",
 					"        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");",
 					"",
-					"        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus)) {",
+					"        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus)) {",
 					"            console.log('AGAIN');",
 					"            postman.setNextRequest(\"check success status\");",
 					"        } else {",
@@ -4034,6 +4035,11 @@
 					"",
 					"pendingStatus = \"th>Status:</th>        <td> Pending</td\";",
 					"pm.collectionVariables.set(\"pendingStatus\", pendingStatus);",
+					"",
+					"",
+					"bundlingStatus = \"th>Status:</th>        <td> Bundling</td\";",
+					"pm.collectionVariables.set(\"bundlingStatus\", bundlingStatus);",
+					"",
 					""
 				]
 			}
@@ -4051,92 +4057,92 @@
 	],
 	"variable": [
 		{
-			"id": "e87e11bf-4c8e-4fe7-8389-13fd606ee3a3",
+			"id": "150cecb7-f888-4d8f-8125-01ad7c43f6ee",
 			"key": "origin",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "6a42c38d-a63a-422c-b7cf-47804ef3e98a",
+			"id": "445dd04f-515d-4dcc-ba33-b4e6fec19b08",
 			"key": "environmentName",
 			"value": "environment-353"
 		},
 		{
-			"id": "6c5f39da-2f1e-46a0-a21a-96b8984b2d3f",
+			"id": "39580286-1f61-40c9-a9db-66128a1b0916",
 			"key": "endpointName",
 			"value": "endpoint-496"
 		},
 		{
-			"id": "11c9d80d-65a6-436f-87b0-807e9bdce0e6",
+			"id": "8f38bb1d-7eaf-4f0e-a338-5cb61a80ec53",
 			"key": "environmentId",
 			"value": "a4d2cc7a-1566-4b0d-9c31-b22d84814506"
 		},
 		{
-			"id": "d63cbcea-7f21-4da4-a8c0-809d6352de56",
+			"id": "88b09fb3-3119-4d2e-8358-0a9e74b937c8",
 			"key": "receiverName",
 			"value": "receiverName-976"
 		},
 		{
-			"id": "530e2811-10d0-4971-9d68-45caf8f52ffe",
+			"id": "cf3420a7-0f98-47d6-b033-3098f50ae73c",
 			"key": "bundleName",
 			"value": "bundleName-461"
 		},
 		{
-			"id": "49496ecc-7231-4340-a9a2-c645a9c242d7",
+			"id": "9365a6f5-fee5-4cd8-b947-5b7ff97c2548",
 			"key": "bundleID",
 			"value": null
 		},
 		{
-			"id": "0d049b45-d78d-4802-9e61-d9a3de987cff",
+			"id": "081f4aa2-580e-4844-9d5f-2588c6f15ef3",
 			"key": "bundleId",
 			"value": "01EK0WTHC89J1KJKSD1SY418QQ"
 		},
 		{
-			"id": "5cb723c0-1ac3-45a1-b5ee-7bb92570ca05",
+			"id": "b928bf3b-b180-4a92-9077-f6bda1f29af9",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk5MGY5MzgwZS03MGE0LTRlYmMtOGQ1Yy1hYjY2ZTc2NjI2NjkiLCJ4bW9kIjoxNjAwODk1ODY1MDAwLCJuYmYiOjE2MDA4OTU4NjUsImlzcyI6Ijc1MzI4OGMwODYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU0NjcyMzAsImlhdCI6MTYwMDg5NTg2NSwianRpIjoiNmNjOTUxYzctMTIyNi00NzkxLTk4NzMtNDA1OTdjMWNhM2VmIn0.DNcI9_MIorM1HVWN3dERS5TAfjY72DfxQlhZ7s6lcik"
 		},
 		{
-			"id": "6203d309-996b-4488-897b-6c25484a17a7",
+			"id": "f6d42b3b-6fb5-4ed4-8883-d0c88d00577f",
 			"key": "bundleSuccessExpected",
 			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ecc9df87-02ad-4f58-afaf-f27ae4fb2c57</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "453dea5f-0db5-40f7-8611-cdf4cbeb965d",
+			"id": "acd5b914-6a36-4d16-a68b-0e1b30b39526",
 			"key": "bundleFailedExpected",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "37932dc1-aebf-4d5d-9fa3-4e14059bf982",
+			"id": "c2db7819-95e7-43c6-bf55-465c45ce7f86",
 			"key": "endpointInvalidtoken",
 			"value": "<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t"
 		},
 		{
-			"id": "257f14ab-0c0c-434e-bab7-231e72ec0fc7",
+			"id": "5d73918e-870e-4ab5-9d74-0c4637cf37fc",
 			"key": "endpointSuccess",
 			"value": "<td valign=\"top\">Success</td>\t\t\t\t        <td valign=\"top\">Everything ok</td>"
 		},
 		{
-			"id": "a123198c-9e47-4f11-a1e5-7213ebfeb83c",
+			"id": "1782ce21-f432-454a-a270-c091e0b51234",
 			"key": "bundleFailed",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "c1ee557e-0a36-4f6c-ad87-a4f6c29ed9a9",
+			"id": "c9f0ff3d-7d26-4fe0-b800-96bc88a2a179",
 			"key": "bundleSuccess",
 			"value": "<th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "f1182f0e-35ae-40e3-8685-255c0ef84e0a",
+			"id": "f71fcd12-30c4-47e9-a32d-a08b4272d6ce",
 			"key": "bundleWaitingPublish",
 			"value": "<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>"
 		},
 		{
-			"id": "03f04452-b2d9-4b91-80ce-83363704ed98",
+			"id": "6d7633dd-4659-425d-a36f-d1615cca1fc5",
 			"key": "checkBundleStatus",
 			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log(responseBody.trim().length, responseBody.trim().length === 0);\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    } else {\n\n        const $ = cheerio.load(responseBody);\n\n        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n        if (htmlWithoutSpace.includes(bundleWaitingPublish)) {\n            console.log('AGAIN');\n            postman.setNextRequest(\"check success status\");\n        } else {\n            casesToTest.forEach((caseToTest) => {\n                expectedInclude = pm.collectionVariables.get(caseToTest);\n                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n            });\n\n        }\n    }\n}"
 		},
 		{
-			"id": "d0eb4f23-efcc-494b-9453-0c67dfbb104c",
+			"id": "5d321ae9-64e6-49a8-8160-5a3f9e63be8c",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
