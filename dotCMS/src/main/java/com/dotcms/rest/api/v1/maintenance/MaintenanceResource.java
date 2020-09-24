@@ -10,6 +10,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -70,16 +71,8 @@ public class MaintenanceResource implements Serializable {
                         "User:" + initData.getUser() + " is shutting down dotCMS from ip:" + request.getRemoteAddr());
 
         if (!Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true)) {
-            return Response.ok(new ResponseEntityView("Shutdown")).build();
+            return Response.status(Status.FORBIDDEN).build();
         }
-
-
-
-        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!");
-
-        SecurityLogger.logInfo(this.getClass(),
-                        "User:" + initData.getUser() + " is shutting down dotCMS from ip:" + request.getRemoteAddr());
-
 
         Runtime.getRuntime().exit(0);
         return Response.ok(new ResponseEntityView("Shutdown")).build();
