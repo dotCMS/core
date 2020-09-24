@@ -124,23 +124,41 @@ public class CategoryAPIImpl implements CategoryAPI {
         // Checking that we have a unique key.
 	    category = checkUniqueKey(category, user);
 
-	    boolean isANewCategory = UtilMethods.isNotSet(category.getInode());
+	    final boolean isANewCategory = UtilMethods.isNotSet(category.getInode());
 
-	    //If parent is null is a top level category, we need to check permissions over the SYSTEM_HOST
-		if(!UtilMethods.isSet(parent)){
-				if(!permissionAPI.doesUserHavePermission(APILocator.systemHost(), PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles) ||
-						!permissionAPI.doesUserHavePermissions(PermissionableType.CATEGORY, PermissionAPI.PERMISSION_EDIT, user)){
-					Logger.error(this,"User doesn't have permission to save the category at top level");
-				throw new DotSecurityException(
-						"User doesn't have permission to save the category at top level");
+	    if(isANewCategory) {
+			//If parent is null is a top level category, we need to check permissions over the SYSTEM_HOST
+			if (!UtilMethods.isSet(parent)) {
+				if (!permissionAPI.doesUserHavePermission(APILocator.systemHost(),
+						PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles) ||
+						!permissionAPI.doesUserHavePermissions(APILocator.systemHost().getIdentifier(),PermissionableType.CATEGORY,
+								PermissionAPI.PERMISSION_EDIT, user)) {
+					Logger.error(this,
+							"User doesn't have permission to save the category at top level");
+					throw new DotSecurityException(
+							"User doesn't have permission to save the category at top level");
+				}
+			} else {
+				if (!permissionAPI
+						.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user,
+								respectFrontendRoles)) {
+					Logger.error(this,
+							"User doesn't have permission to save the category having as parent the category = "
+									+ parent.getCategoryName());
+					throw new DotSecurityException(
+							"User doesn't have permission to save the category having as parent the category = "
+									+ parent.getCategoryName());
+				}
 			}
 		} else {
-			if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
-				Logger.error(this,"User doesn't have permission to save the category having as parent the category = "
-						+ parent.getCategoryName());
+	    	//Category already exists, just check permissions over the category itself
+			if (!permissionAPI
+					.doesUserHavePermission(category, PermissionAPI.PERMISSION_EDIT, user,
+							respectFrontendRoles)) {
+				Logger.error(this,
+						"User doesn't have permission to save the category");
 				throw new DotSecurityException(
-						"User doesn't have permission to save the category having as parent the category = "
-								+ parent.getCategoryName());
+						"User doesn't have permission to save the category");
 			}
 		}
 

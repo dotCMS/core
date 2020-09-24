@@ -88,7 +88,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	/**
 	 * Sets a Permission Factory for this API
-	 * @param PermissionFactory service reference
+	 * @param permissionFactory service reference
 	 * @return Nothing
 	 */
 	public void setPermissionFactory(PermissionFactory permissionFactory) {
@@ -153,7 +153,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	/**
 	 * This is not intended to be used to check permission because it doesn't check for cms administrator privileges
-	 * @param user
+	 * @param userRoleIDs
 	 * @param permissions
 	 * @param requiredPermissionType
 	 * @return If the user has the required permission for the collection of permissions passed in
@@ -545,7 +545,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
     /**
      * Saves passed in permission
-	 * @param Permission to save
+	 * @param permission to save
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
@@ -1415,16 +1415,27 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
     public boolean doesUserHavePermissions(PermissionableType permType, int permissionType, User user) throws DotDataException {
-    	if(user==null) return false;
+    	return doesUserHavePermissions(null,permType,permissionType,user);
+    }
 
-    	if(APILocator.getUserAPI().isCMSAdmin(user)) return true;
+	@Override
+	public boolean doesUserHavePermissions(final String assetId, final PermissionableType permType, final int permissionType, final User user) throws DotDataException {
+		if(user==null) return false;
 
-    	Boolean hasPerm = false;
-    	RoleAPI roleAPI = APILocator.getRoleAPI();
-		List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(user.getUserId(), false);
-		for(com.dotmarketing.business.Role r : roles) {
+		if(APILocator.getUserAPI().isCMSAdmin(user)) return true;
+
+		Boolean hasPerm = false;
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		final List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(user.getUserId(), false);
+		for(final com.dotmarketing.business.Role r : roles) {
 			List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(r, false);
-			for (Permission p : perms) {
+			if(UtilMethods.isSet(assetId)) {
+				perms = perms.stream()
+						.filter(permission -> permission.getInode().equalsIgnoreCase(assetId))
+						.collect(
+								Collectors.toList());
+			}
+			for (final Permission p : perms) {
 				if(p.getType().equals(permType.getCanonicalName())) {
 					hasPerm = hasPerm | p.getPermission()>=permissionType;
 				}
@@ -1432,7 +1443,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		return hasPerm;
-    }
+	}
 
     /**
      * @Deprecated: use permissionIndividually(Permissionable parent, Permissionable permissionable,

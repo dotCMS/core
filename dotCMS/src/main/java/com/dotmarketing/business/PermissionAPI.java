@@ -771,6 +771,8 @@ public interface PermissionAPI {
 	 */
 	boolean doesUserHavePermissions(Permissionable permissionable, String requiredPermissions, User user, boolean respectFrontendRoles) throws DotDataException;
 
+	boolean doesUserHavePermissions(final String assetId, final PermissionableType permType, final int permissionType, final User user) throws DotDataException;
+
 	/**
 	 * Returns true if the user has the requiredPermissions over the specified objectType
 	 * this method is meant to be used to check multiple parent & children permissions on Hosts/Folders.
