@@ -45,6 +45,17 @@ public class SearchForm {
         return userId;
     }
 
+    @Override
+    public String toString() {
+        return "SearchForm{" +
+                "query='" + query + '\'' +
+                ", sort='" + sort + '\'' +
+                ", limit=" + limit +
+                ", offset=" + offset +
+                ", userId='" + userId + '\'' +
+                '}';
+    }
+
     public static final class Builder {
 
         private  @JsonProperty String query  = "";

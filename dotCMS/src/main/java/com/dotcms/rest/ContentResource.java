@@ -97,6 +97,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static com.dotcms.util.CollectionsUtils.map;
 
 import static com.dotmarketing.util.NumberUtil.toInt;
 import static com.dotmarketing.util.NumberUtil.toLong;
@@ -121,17 +122,21 @@ public class ContentResource {
     /**
      *
      * Do a search, parameter are received by post and returns the json with the search info and contentlet results
-     * curl -XGET http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0
-     * Example call using curl: curl -X POST http://localhost:8080/api/content/_search
-     * -F 'json={
-     * 	 "query": "+structurename:webpagecontent",
-     * 	 "sort":"modDate",
-     * 	 "limit:20,
-     * 	 offset:0
-     * };type=application/json'
      *
-     * @param request request object
-     * @param response response obecjt
+     * Example call using curl:
+     * curl --location --request POST 'http://localhost:8080/api/content/_search' \
+     * --header 'Content-Type: application/json' \
+     * --data-raw '{
+     *      	 "query": "+structurename:webpagecontent",
+     *       	 "sort":"modDate",
+     *       	 "limit":20,
+     *       	 "offset":0,
+     *           "userId":"admin@dotcms.com"
+     * }'
+     *
+     * @param request {@link HttpServletRequest} object
+     * @param response {@link HttpServletResponse} object
+     * @param searchForm {@link SearchForm}
      * @return json array of objects. each object with inode and identifier
      */
     @POST
@@ -152,7 +157,7 @@ public class ContentResource {
         final PageMode pageMode   = PageMode.get(request);
         final String userToPullID = searchForm.getUserId();
         final String tmDate = (String) request.getSession().getAttribute("tm_date");
-        User   userForPull        = null;
+        User   userForPull        = user;
         List<ContentletSearch> contentletSearches = Collections.emptyList();
         List<Contentlet>       contentlets        = Collections.emptyList();
         long startAPISearchPull = 0;
@@ -160,6 +165,7 @@ public class ContentResource {
         long startAPIPull = 0;
         long afterAPIPull = 0;
 
+        Logger.debug(this, ()-> "Searching contentlets by: " + searchForm);
 
         if(null != user && user.isAdmin()){
 
@@ -184,15 +190,15 @@ public class ContentResource {
         final int  resultsSize   = contentletSearches.size();
         final long queryTook     = afterAPISearchPull-startAPISearchPull;
         final long contentTook   = afterAPIPull-startAPIPull;
-        final Map<String, Object> resultMap = new LinkedHashMap<>();
-        final Map<String, Object> summaryMap = new LinkedHashMap<>();
-        summaryMap.put("resultsSize", resultsSize);
-        summaryMap.put("queryTook", queryTook);
-        summaryMap.put("contentTook", contentTook);
-        resultMap.put("summaryMap", summaryMap);
-        resultMap.put("contentletSearches", contentletSearches);
-        resultMap.put("contentlets", contentlets);
-        return Response.ok(new ResponseEntityView(resultMap)).build();
+
+        return Response.ok(new ResponseEntityView(
+                map("summaryMap",
+                        map("resultsSize", resultsSize,
+                                "queryTook", queryTook,
+                                "contentTook", contentTook),
+                        "contentletSearches", contentletSearches,
+                        "contentlets", contentlets))
+        ).build();
     }
 
 

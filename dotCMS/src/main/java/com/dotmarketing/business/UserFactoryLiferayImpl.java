@@ -117,7 +117,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			try{
 				u = UserLocalManagerUtil.getUserById(userId);
 			}catch (com.liferay.portal.NoSuchUserException e) {
-				throw new NoSuchUserException(e.getMessage(), e);
+				throw new NoSuchUserException("No Such User Exception: " + e.getMessage(), e);
 			}catch (Exception e) {
 				throw new DotDataException(e.getMessage(), e);
 			}
