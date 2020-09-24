@@ -21,6 +21,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.liferay.portal.model.User;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -83,21 +84,26 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
         map.put("statusIcons", UtilHTML.getStatusIcons(page));
         map.put("__icon__", IconType.HTMLPAGE.iconName());
 
-        final ContentletVersionInfo info = APILocator.getVersionableAPI().
+        final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().
                 getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
 
-        map.put("workingInode",  info.getWorkingInode());
-        map.put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()));
+        info.ifPresent(contentletVersionInfo -> map.put("workingInode",
+                contentletVersionInfo.getWorkingInode()));
+        info.ifPresent(contentletVersionInfo -> map.put("liveInode",
+                contentletVersionInfo.getLiveInode()));
+        info.ifPresent(contentletVersionInfo -> map.put("shortyWorking",
+                APILocator.getShortyAPI().shortify(contentletVersionInfo.getWorkingInode())));
+        info.ifPresent(contentletVersionInfo -> map.put("shortyLive",
+                APILocator.getShortyAPI().shortify(contentletVersionInfo.getLiveInode())));
+
         map.put("canEdit", toolBox.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user, false));
         map.put("canRead", toolBox.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(), user, false));
-        map.put("liveInode", info.getLiveInode());
-        map.put("shortyLive", APILocator.getShortyAPI().shortify(info.getLiveInode()));
         map.put("canLock", canLock(page, user));
 
-        if(info.getLockedBy()!=null) {
-            map.put("lockedOn", info.getLockedOn());
-            map.put("lockedBy", info.getLockedBy());
-            map.put("lockedByName", getLockedByUserName(info));
+        if(info.isPresent() && info.get().getLockedBy()!=null) {
+            map.put("lockedOn", info.get().getLockedOn());
+            map.put("lockedBy", info.get().getLockedBy());
+            map.put("lockedByName", getLockedByUserName(info.get()));
         }
 
         return map;

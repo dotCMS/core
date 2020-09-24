@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Date;
 
+import java.util.Optional;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -107,42 +108,56 @@ public class CSSPreProcessServlet extends HttpServlet {
                       }
                         
                         // build cache object
-                        ContentletVersionInfo vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defLang);
+                        Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI()
+                                .getContentletVersionInfo(ident.getId(), defLang);
+
+                        if(!vinfo.isPresent()) {
+                            resp.sendError(404);
+                            return;
+                        }
+
                         CachedCSS newcache = new CachedCSS();
                         newcache.data = compiler.getOutput();
                         newcache.hostId = host.getIdentifier();
                         newcache.uri = actualUri;
                         newcache.live = live;
-                        newcache.modDate = vinfo.getVersionTs();
+                        newcache.modDate = vinfo.get().getVersionTs();
                         newcache.imported = new ArrayList<ImportedAsset>();
                         for(String importUri : compiler.getAllImportedURI()) {
                             // newcache entry for the imported asset
                             ImportedAsset asset = new ImportedAsset();
                             asset.uri = importUri;
-                            Identifier ii;
+                            Identifier importUriIdentifier;
                             if(importUri.startsWith("//")) {
                                 importUri=importUri.substring(2);
                                 String hn=importUri.substring(0, importUri.indexOf('/'));
                                 String uu=importUri.substring(importUri.indexOf('/'));
-                                ii = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().findByName(hn, user, live),uu);
+                                importUriIdentifier = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().findByName(hn, user, live),uu);
                             }
                             else {
-                                ii = APILocator.getIdentifierAPI().find(host, importUri);
+                                importUriIdentifier = APILocator.getIdentifierAPI().find(host, importUri);
                             }
-                            ContentletVersionInfo impInfo = APILocator.getVersionableAPI().getContentletVersionInfo(ii.getId(), defLang);
-                            asset.modDate = impInfo.getVersionTs();
+                            Optional<ContentletVersionInfo> impInfo = APILocator.getVersionableAPI()
+                                    .getContentletVersionInfo(importUriIdentifier.getId(), defLang);
+
+                            if(!impInfo.isPresent()) {
+                                resp.sendError(404);
+                                return;
+                            }
+
+                            asset.modDate = impInfo.get().getVersionTs();
                             newcache.imported.add(asset);
                             Logger.debug(this, host.getHostname()+":"+actualUri+" imports-> "+importUri);
                             
                             // actual cache entry for the imported asset. If needed
-                            synchronized(ii.getId().intern()) {
-                                if(CacheLocator.getCSSCache().get(ii.getHostId(), importUri, live, user)==null) {
+                            synchronized(importUriIdentifier.getId().intern()) {
+                                if(CacheLocator.getCSSCache().get(importUriIdentifier.getHostId(), importUri, live, user)==null) {
                                     CachedCSS entry = new CachedCSS();
                                     entry.data = null;
-                                    entry.hostId = ii.getHostId();
+                                    entry.hostId = importUriIdentifier.getHostId();
                                     entry.imported = new ArrayList<ImportedAsset>();
                                     entry.live = live;
-                                    entry.modDate = impInfo.getVersionTs();
+                                    entry.modDate = impInfo.get().getVersionTs();
                                     entry.uri = importUri;
                                     CacheLocator.getCSSCache().add(entry);
                                 }

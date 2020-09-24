@@ -2,6 +2,7 @@ package com.dotmarketing.servlets;
 
 import com.dotmarketing.filters.Constants;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.StringTokenizer;
 
 import javax.servlet.ServletConfig;
@@ -117,12 +118,18 @@ public class SpeedyAssetServlet extends HttpServlet {
 				//Language is in request, let's load it. Otherwise use the language in session
 		long lang = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 		try{
-  		  ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), lang);
-  		  if(cvi == null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
+  		  Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), lang);
+
+  		  if(!cvi.isPresent() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
   		      cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
   		  }
+
+  		  if(!cvi.isPresent()) {
+  		      throw new DotDataException("Can't find Contentlet-Version-Info. Identifier: "
+                      + id.getId(), ". Lang: " + APILocator.getLanguageAPI().getDefaultLanguage().getId());
+          }
   
-  		  String conInode = (serveWorkingVersion) ? cvi.getWorkingInode() : cvi.getLiveInode();
+  		  String conInode = (serveWorkingVersion) ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
           String referrer = "/contentAsset/raw-data/" + conInode + "/fileAsset/?byInode=true";
           request.getRequestDispatcher(referrer).forward(request, response);
 		}

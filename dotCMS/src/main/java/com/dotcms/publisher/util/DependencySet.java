@@ -188,9 +188,12 @@ public class DependencySet extends HashSet<String> {
 					if(!modifiedOnCurrentEnv && assetType.equals("content")) {
 						// check for versionInfo TS on content
 						for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
-							ContentletVersionInfo info=APILocator.getVersionableAPI().getContentletVersionInfo(assetId, lang.getId());
-							if(info!=null && InodeUtils.isSet(info.getIdentifier())) {
-								modifiedOnCurrentEnv = modifiedOnCurrentEnv || (null == info.getVersionTs()) || asset.getPushDate().before(info.getVersionTs());
+							Optional<ContentletVersionInfo> info=APILocator.getVersionableAPI().getContentletVersionInfo(assetId, lang.getId());
+
+							if(info.isPresent() && InodeUtils.isSet(info.get().getIdentifier())) {
+								modifiedOnCurrentEnv = modifiedOnCurrentEnv
+										|| (null == info.get().getVersionTs())
+										|| asset.getPushDate().before(info.get().getVersionTs());
 							}
 						}
 					}

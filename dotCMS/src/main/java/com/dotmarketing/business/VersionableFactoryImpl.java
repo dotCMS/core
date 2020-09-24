@@ -288,34 +288,34 @@ public class VersionableFactoryImpl extends VersionableFactory {
     }
 
     @Override
-    protected ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
+    protected Optional<ContentletVersionInfo> getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
         if (DbConnectionFactory.inTransaction()) {
             return findContentletVersionInfoInDB(identifier, lang);
         }
-        ContentletVersionInfo contv = this.icache.getContentVersionInfo(identifier, lang);
-        if(contv!=null && fourOhFour.equals(contv.getWorkingInode())) {
-        	return null;
-        }else if(contv!=null ){
-        	return contv;
+        ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang);
+        if(contentVersionInfo!=null && fourOhFour.equals(contentVersionInfo.getWorkingInode())) {
+        	return Optional.empty();
+        }else if(contentVersionInfo!=null ){
+        	return Optional.of(contentVersionInfo);
         }
 
-    	contv = findContentletVersionInfoInDB(identifier, lang);
-        if(contv!=null && UtilMethods.isSet(contv.getIdentifier())){
-        	this.icache.addContentletVersionInfoToCache(contv);
+    	final Optional<ContentletVersionInfo> optionalInfo = findContentletVersionInfoInDB(identifier, lang);
+        if(optionalInfo.isPresent()){
+        	this.icache.addContentletVersionInfoToCache(contentVersionInfo);
         }else{
-        	contv = new ContentletVersionInfo();
-        	contv.setIdentifier(identifier);
-        	contv.setLang(lang);
-        	contv.setWorkingInode(fourOhFour);
-        	this.icache.addContentletVersionInfoToCache(contv);
-			return null;
+        	contentVersionInfo = new ContentletVersionInfo();
+        	contentVersionInfo.setIdentifier(identifier);
+        	contentVersionInfo.setLang(lang);
+        	contentVersionInfo.setWorkingInode(fourOhFour);
+        	this.icache.addContentletVersionInfoToCache(contentVersionInfo);
+			return Optional.empty();
         }
 
-        return contv;
+        return Optional.empty();
     }
 
     @Override
-    protected ContentletVersionInfo findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
+    protected Optional<ContentletVersionInfo> findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
 		final DotConnect dotConnect = new DotConnect()
 				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=? AND lang=?")
 				.addParam(identifier)
@@ -324,7 +324,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		List<ContentletVersionInfo> versionInfos = TransformerLocator
 				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
 
-		return !versionInfos.isEmpty() ? versionInfos.get(0) : new ContentletVersionInfo();
+		return !versionInfos.isEmpty() ? Optional.of(versionInfos.get(0)) : Optional.empty();
     }
     @Override
     protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)throws DotDataException, DotStateException {
@@ -342,9 +342,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		boolean isNew = true;
 		if (UtilMethods.isSet(cvInfo.getIdentifier())) {
 			try {
-				final ContentletVersionInfo fromDB =
+				final Optional<ContentletVersionInfo> fromDB =
 						findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
-				if (fromDB != null) {
+				if (fromDB.isPresent()) {
 					isNew = false;
 				}
 			} catch (final Exception e) {
@@ -399,7 +399,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		dotConnect.addParam(new Date());
 		dotConnect.loadResult();
 
-		return findContentletVersionInfoInDB(identifier.getId(), lang);
+		return findContentletVersionInfoInDB(identifier.getId(), lang).get();
     }
 
     @Override

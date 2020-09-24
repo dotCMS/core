@@ -329,12 +329,15 @@ public class ContentResource {
                 }
                 jo.put("canLock", canLock);
                 jo.put("locked", contentlet.isLocked());
-                ContentletVersionInfo cvi = APILocator.getVersionableAPI()
+
+                Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
                         .getContentletVersionInfo(id, contentlet.getLanguageId());
-                if (contentlet.isLocked()) {
-                    jo.put("lockedBy", cvi.getLockedBy());
-                    jo.put("lockedOn", cvi.getLockedOn());
-                    jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.getLockedBy()));
+
+                if (contentlet.isLocked() && cvi.isPresent()) {
+                    jo.put("lockedBy", cvi.get().getLockedBy());
+                    jo.put("lockedOn", cvi.get().getLockedOn());
+                    jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.get()
+                            .getLockedBy()));
 
 
                 }

@@ -53,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -1754,9 +1755,9 @@ public class UtilMethods {
     public static boolean isUrlLive(String url, String hostId) throws Exception {
       
       Identifier id = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().find(hostId, APILocator.systemUser(), true), url);
-      ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+      Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
 
-      return (cinfo !=null && cinfo.getLiveInode() !=null);
+      return (cinfo.isPresent() && cinfo.get().getLiveInode() !=null);
     }
 
     public static boolean isUrlPreview(String url, Host host) throws Exception {
@@ -1765,9 +1766,8 @@ public class UtilMethods {
 
     public static boolean isUrlPreview(String url, String hostId) throws Exception {
       Identifier id = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().find(hostId, APILocator.systemUser(), true), url);
-      ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
-
-      return (cinfo !=null && cinfo.getWorkingInode() !=null);
+      Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+      return (cinfo.isPresent() && cinfo.get().getWorkingInode() !=null);
     }
 
     public static String stripUnicode(String x) {

@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 
+import java.util.Optional;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 public class FileTool implements ViewTool {
@@ -32,8 +33,12 @@ public class FileTool implements ViewTool {
 
 	public IFileAsset getFile(String identifier, boolean live, long languageId) throws DotDataException, DotStateException, DotSecurityException{
 		Identifier id = identifierAPI.find(identifier);
-		ContentletVersionInfo  cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
-	    String conInode = (!live) ? cvi.getWorkingInode() : cvi.getLiveInode();
+		Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
+
+		if(!cvi.isPresent()) {
+			throw new DotDataException("Can't find Content-version-info. Identifier: " + id.getId() + ". Lang:" + languageId);
+		}
+	    String conInode = (!live) ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
 	    FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  userAPI.getSystemUser(), false));
 	    return file;
 	}

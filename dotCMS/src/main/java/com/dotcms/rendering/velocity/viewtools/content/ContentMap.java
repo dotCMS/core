@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -185,15 +186,19 @@ public class ContentMap {
 					return null;
 				}
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
-				ContentletVersionInfo cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
-				if(cvi == null) {
+				Optional<ContentletVersionInfo> cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
+				if(!cvi.isPresent()) {
 				    final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 				    if(content.getLanguageId() != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true)){
 				        cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), defaultLanguageId);
 				    }
 				}
 
-				String inode =  (EDIT_OR_PREVIEW_MODE) ? cvi.getWorkingInode()  : cvi.getLiveInode();
+				if(!cvi.isPresent()) {
+					return null;
+				}
+
+				String inode =  (EDIT_OR_PREVIEW_MODE) ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
 				Contentlet fileAsset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
 					
 				if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){

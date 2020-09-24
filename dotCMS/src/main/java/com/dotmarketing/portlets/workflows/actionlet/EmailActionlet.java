@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotmarketing.exception.DotDataException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Optional;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -204,8 +206,13 @@ public class EmailActionlet extends WorkFlowActionlet {
                             }
 
                             Identifier id = APILocator.getIdentifierAPI().find(fileHost, filename);
-                            ContentletVersionInfo vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),processor.getContentlet().getLanguageId());
-                            Contentlet cont = APILocator.getContentletAPI().find(vinfo.getLiveInode(), processor.getUser(), true);
+                            Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),processor.getContentlet().getLanguageId());
+
+                            if(!vinfo.isPresent()) {
+                                throw new DotDataException("Unable to find version info for attachment. Identifier: " + id.getId() + ", lang: " + processor.getContentlet().getLanguageId());
+                            }
+
+                            Contentlet cont = APILocator.getContentletAPI().find(vinfo.get().getLiveInode(), processor.getUser(), true);
                             FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
                             f = fileAsset.getFileAsset();
                         }

@@ -59,6 +59,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -260,13 +261,14 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         if ("contentlet".equals(id.getAssetType())) {
             try {
 
-                ContentletVersionInfo cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId );
+                Optional<ContentletVersionInfo> cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId );
 
-                if ( cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
+                if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
                     return null;
                 }
 
-                Contentlet c = contentletAPI.find(live?cinfo.getLiveInode():cinfo.getWorkingInode(), userAPI.getSystemUser(), false);
+                Contentlet c = contentletAPI.find(live ? cinfo.get().getLiveInode()
+                        : cinfo.get().getWorkingInode(), userAPI.getSystemUser(), false);
 
                 if(c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
                     return fromContentlet(c);
@@ -753,12 +755,15 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         
 
-        ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), viewingLang );
-        if((cinfo==null || cinfo.getLiveInode() == null) && viewingLang!=languageAPI.getDefaultLanguage().getId() && languageAPI.canDefaultPageToDefaultLanguage()){
+        Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), viewingLang );
+        if((!cinfo.isPresent() || cinfo.get().getLiveInode() == null)
+                && viewingLang!=languageAPI.getDefaultLanguage().getId()
+                && languageAPI.canDefaultPageToDefaultLanguage()){
           cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageAPI.getDefaultLanguage().getId() );
         }
         // if we still have nothing.
-        if (!InodeUtils.isSet(ident.getId()) || cinfo==null || cinfo.getLiveInode() == null && liveMode) {
+        if (!InodeUtils.isSet(ident.getId()) || !cinfo.isPresent()
+                || cinfo.get().getLiveInode() == null && liveMode) {
             throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
         }
 

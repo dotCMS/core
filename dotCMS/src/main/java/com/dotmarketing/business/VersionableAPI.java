@@ -299,7 +299,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public String getLockedBy(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	public Optional<String> getLockedBy(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Returns the date when the asset were locked
@@ -310,7 +310,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Date getLockedOn(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	public Optional<Date> getLockedOn(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Allows to change locked status for the versionable 
@@ -355,7 +355,7 @@ public interface VersionableAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException;
+	Optional<ContentletVersionInfo> getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException;
 	
 	/**
 	 * Will save the VersionInfo Record. For normal operations you should use the setLive, setWorking etc... but there are cases like
