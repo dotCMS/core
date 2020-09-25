@@ -1,13 +1,23 @@
 package com.dotcms.publisher.pusher;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
+import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.business.TestPushPublisher;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 /**
  * This class provides the main configuration values for the bundle that is
@@ -41,6 +51,39 @@ public class PushPublisherConfig extends PublisherConfig {
 	public PushPublisherConfig() {
 		super();
 	}
+
+    public PushPublisherConfig(Bundle bundle) {
+        super();
+
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+
+        final List<PublishQueueElement> tempBundleContents =
+                        Try.of(() -> publisherAPI.getQueueElementsByBundleId(bundle.getId()))
+                                        .onFailure(e -> Logger.warnAndDebug(PushPublisherConfig.class, e))
+                                        .getOrElse(ImmutableList.of());
+        final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
+        assetsToPublish.addAll(tempBundleContents);
+
+
+        this.setDownloading(true);
+        this.setOperation(PushPublisherConfig.Operation.PUBLISH.ordinal() == bundle.getOperation()
+                        ? PushPublisherConfig.Operation.PUBLISH
+                        : PushPublisherConfig.Operation.UNPUBLISH);
+
+        setAssets(assetsToPublish);
+        // Queries creation
+        setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
+        setId(bundle.getId());
+        // get the bundle user or system user if failure
+        final User user = Try.of(()->APILocator.getUserAPI().loadUserById(bundle.getOwner())).getOrElse(APILocator.systemUser());
+                        
+        setUser(user);
+
+
+    }
+	
+	
+	
 
 	boolean switchIndexWhenDone = false;
 

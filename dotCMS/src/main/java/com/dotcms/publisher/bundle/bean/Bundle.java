@@ -1,6 +1,9 @@
 package com.dotcms.publisher.bundle.bean;
 
+import java.io.File;
 import java.util.Date;
+import com.dotmarketing.util.ConfigUtils;
+import io.vavr.control.Try;
 
 public class Bundle {
 	private String id;
@@ -84,4 +87,17 @@ public class Bundle {
 		this.filterKey = filterKey;
 	}
 
+	/**
+	 * does the bundle download Exists
+	 * @return
+	 */
+	public boolean bundleTgzExists() {
+	    
+	    return Try.of(()->new File(  ConfigUtils.getBundlePath() + File.separator + File.separator + id + ".tar.gz" ).exists()).getOrElse(false);
+	    
+	    
+	}
+	
+	
+	
 }

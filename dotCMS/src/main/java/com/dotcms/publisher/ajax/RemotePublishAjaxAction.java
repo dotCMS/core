@@ -23,6 +23,7 @@ import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
@@ -571,6 +572,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
 
         final Bundle dbBundle = Try.of(()->APILocator.getBundleAPI().getBundleById(bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
+        
+        
         final String bundleName = dbBundle.getName().replaceAll("[^\\w.-]", "_");
         
         
@@ -581,12 +584,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
             //set ForcePush value of the filter to the bundle
             dbBundle.setForcePush(
                     (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(bundleFilter).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false));
+            dbBundle.setOperation(operation.ordinal());
             //Update Bundle
             APILocator.getBundleAPI().updateBundle(dbBundle);
 
             //Generate the bundle file for this given operation
-            final Map<String, Object> bundleData = generateBundle( bundleId, operation );
-            bundle = (File) bundleData.get( "file" );
+
+            bundle = APILocator.getBundleAPI().generateTarGzipBundleFile(dbBundle);
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
             response.sendError( 500, "Error trying to generate bundle with id: " + bundleId );
@@ -626,84 +630,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
     }
 
-    /**
-     * Generates an Unpublish bundle for a given bundle id  operation (publish/unpublish)
-     *
-     * @param bundleId The Bundle id of the Bundle we want to generate
-     * @param operation Download for publish or un-publish
-     * @return The generated requested Bundle file
-     * @throws DotPublisherException If fails retrieving the Bundle contents
-     * @throws DotDataException If fails finding the system user
-     * @throws DotPublishingException If fails initializing the Publisher
-     * @throws IllegalAccessException If fails creating new Bundlers instances
-     * @throws InstantiationException If fails creating new Bundlers instances
-     * @throws DotBundleException If fails generating the Bundle
-     * @throws IOException If fails compressing the all the Bundle contents into the final Bundle file
-     */
-    @CloseDBIfOpened
-    @SuppressWarnings ("unchecked")
-    private Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
-
-        final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig();
-        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
-
-        final List<PublishQueueElement> tempBundleContents = publisherAPI.getQueueElementsByBundleId( bundleId );
-        final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
-
-        for ( final PublishQueueElement publishQueueElement : tempBundleContents ) {
-                assetsToPublish.add( publishQueueElement );
-        }
-
-        pushPublisherConfig.setDownloading( true );
-        pushPublisherConfig.setOperation(operation);
-
-        pushPublisherConfig.setAssets( assetsToPublish );
-        //Queries creation
-        pushPublisherConfig.setLuceneQueries( PublisherUtil.prepareQueries( tempBundleContents ) );
-        pushPublisherConfig.setId( bundleId );
-        pushPublisherConfig.setUser( APILocator.getUserAPI().getSystemUser() );
-
-        //BUNDLERS
-
-        final List<Class<IBundler>> bundlers = new ArrayList<Class<IBundler>>();
-        final List<IBundler> confBundlers = new ArrayList<IBundler>();
-
-        final Publisher publisher = new PushPublisher();
-        publisher.init( pushPublisherConfig );
-        //Add the bundles for this publisher
-        for ( final Class clazz : publisher.getBundlers() ) {
-            if ( !bundlers.contains( clazz ) ) {
-                bundlers.add( clazz );
-            }
-        }
-        final File bundleRoot = BundlerUtil.getBundleRoot( pushPublisherConfig );
-
-        // Run bundlers
-        BundlerUtil.writeBundleXML( pushPublisherConfig );
-        for ( final Class<IBundler> clazzBundler : bundlers ) {
-
-            final IBundler bundler = clazzBundler.newInstance();
-            confBundlers.add( bundler );
-            bundler.setConfig( pushPublisherConfig );
-            bundler.setPublisher(publisher);
-            final BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
-            //Generate the bundler
-            Logger.info(this, "Start of Bundler: " + clazzBundler.getSimpleName());
-            bundler.generate( bundleRoot, bundlerStatus );
-            Logger.info(this, "End of Bundler: " + clazzBundler.getSimpleName());
-        }
-
-        pushPublisherConfig.setBundlers( confBundlers );
-
-        //Compressing bundle
-        final ArrayList<File> fileList = new ArrayList<File>();
-        fileList.add( bundleRoot );
-        final File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pushPublisherConfig.getId() + ".tar.gz" );
-
-        final Map<String, Object> bundleData = new HashMap<String, Object>();
-        bundleData.put( "file", PushUtils.compressFiles( fileList, bundle, bundleRoot.getAbsolutePath() ) );
-        return bundleData;
-    }
 
     /**
      * Publish a given Bundle file

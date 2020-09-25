@@ -4,7 +4,9 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -16,6 +18,7 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -23,6 +26,7 @@ import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
@@ -32,12 +36,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -62,10 +69,15 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -625,6 +637,140 @@ public class BundleResource {
                 "Removing bundles in a separated process, the result of the operation will be notified")).build();
     } // deleteAllSuccess.
 
+    
+    @Path("/_download/{bundleId}")
+    @GET
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public final Response downloadBundle(@Context final HttpServletRequest request,
+                                       @Context final HttpServletResponse response,
+                                       @PathParam("bundleId") final String bundleId) throws DotPublisherException {
+    
+        User user = new WebResource.InitBuilder(request, response)
+                        .requiredBackendUser(true)
+                        .rejectWhenNoUser(true)
+                        .requiredPortlet("publishing-queue")
+                        .init()
+                        .getUser();
+        
+
+        final Bundle bundle = Try.of(()->APILocator.getBundleAPI().getBundleById(bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
+
+        File bundleFile = new File(  ConfigUtils.getBundlePath() + File.separator + File.separator + bundle.getId() + ".tar.gz" );
+        if ( !bundleFile.exists() ) {
+            return ExceptionMapperUtil.createResponse(javax.ws.rs.core.Response.Status.NOT_FOUND);
+        }
+        final String bundleName = bundle.getName().replaceAll("[^\\w.-]", "_");
+        response.setHeader( "Content-Disposition", "attachment; filename=" +bundleName  +"-"+ bundle.getId() + ".tar.gz" );
+        return Response.ok(bundleFile, "application/x-tgz").build();
+    }
+    
+    @Path("/_generate")
+    @POST
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    public final Response generateBundle(@Context final HttpServletRequest request,
+                                       @Context final HttpServletResponse response,
+                                       final DownloadBundleForm form) throws DotPublisherException, DotDataException {
+
+
+        User user = new WebResource.InitBuilder(request, response)
+                        .requiredBackendUser(true)
+                        .rejectWhenNoUser(true)
+                        .requiredPortlet("publishing-queue")
+                        .init()
+                        .getUser();
+
+
+
+        try {
+
+            final Bundle bundle = Try.of(()->APILocator.getBundleAPI().getBundleById(form.bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
+            
+            
+            final String bundleName = bundle.getName().replaceAll("[^\\w.-]", "_");
+            
+            //set Filter to the bundle
+            bundle.setFilterKey(form.filterKey);
+            bundle.setOwner(user.getUserId());
+            //set ForcePush value of the filter to the bundle
+            bundle.setForcePush(
+                    (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(form.filterKey).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false));
+            bundle.setOperation(form.operation.ordinal());
+            //Update Bundle
+            APILocator.getBundleAPI().updateBundle(bundle);
+
+            //Generate the bundle file for this given operation
+
+            BundleGenerator generator = new BundleGenerator(bundle, user);
+            
+            DotConcurrentFactory.getInstance().getSubmitter().submit(generator);
+            response.setContentType( "application/x-tgz" );
+            response.setHeader( "Content-Disposition", "attachment; filename=" +bundleName  +"-"+ bundle.getId() + ".tar.gz" );
+            final byte whiteByte = 0x20;
+            
+            final long nowsers = System.currentTimeMillis();
+            
+            // 10 secs
+            final int sleep = 1000;
+
+            // 2 hours
+            int loop = sleep * 60 * 120;
+            try(final OutputStream outStream = response.getOutputStream()){
+                while(generator.bundleFile==null) {
+                    Logger.infoEvery(this.getClass(), "writing bundleId:" + bundle.getId() + " time elapsed:" + Duration.ofMillis(System.currentTimeMillis()-nowsers).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase(), 10000);
+                    outStream.write(whiteByte);
+                    outStream.flush();
+                    Try.run(()->Thread.sleep(sleep));
+                    if(--loop<=0)break;
+                }
+        
+                
+                return Response.ok(generator.bundleFile, "application/x-tgz").build();
+            }
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error trying to generate bundle with id: " + form, e );
+
+            return ExceptionMapperUtil.createResponse(e, javax.ws.rs.core.Response.Status.fromStatusCode(500));
+        }
+        
+
+    } // uploadBundleSync.
+    
+    
+    class BundleGenerator implements Runnable {
+
+
+        public BundleGenerator(Bundle bundle,  User user) {
+            super();
+            this.bundle = bundle;
+            this.user = user;
+            
+        }
+
+        File bundleFile;
+        final Bundle bundle;
+        final User user;
+        
+        @Override
+        public void run() {
+            bundleFile = APILocator.getBundleAPI().generateTarGzipBundleFile(bundle);
+            
+            final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+
+            final String message = "Bundle '" + bundle.getName() + "' can be downloaded here: <a href='/api/bundle/_download/" + bundle.getId() + "'>download</a>";
+
+            SystemMessage systemMessage = systemMessageBuilder.setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
+                            .setSeverity(MessageSeverity.SUCCESS).setLife(1000*60*12).create();
+
+            SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
+            
+        }
+    }
+    
     @Path("/sync")
     @POST
     @JSONP

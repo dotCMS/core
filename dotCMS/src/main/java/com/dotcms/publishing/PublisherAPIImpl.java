@@ -1,30 +1,29 @@
 package com.dotcms.publishing;
 
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
-import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.system.event.local.type.staticpublish.StaticPublishEndEvent;
-import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PushPublishLogger;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.model.User;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
+import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
+import com.dotcms.system.event.local.type.staticpublish.StaticPublishEndEvent;
+import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PushPublishLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 
 public class PublisherAPIImpl implements PublisherAPI {
 
@@ -34,14 +33,14 @@ public class PublisherAPIImpl implements PublisherAPI {
 
 
     @Override
-    public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException {
 
         return publish( config, new PublishStatus() );
     }
 
     @CloseDBIfOpened
     @Override
-    public PublishStatus publish ( PublisherConfig config, PublishStatus status ) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config, PublishStatus status ) throws DotPublishingException {
 
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 

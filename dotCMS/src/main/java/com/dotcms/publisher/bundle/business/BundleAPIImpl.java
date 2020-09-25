@@ -25,6 +25,12 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushUtils;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.GenerateBundlePublisher;
+import com.dotcms.publishing.Publisher;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.UserAPI;
@@ -32,6 +38,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 public class BundleAPIImpl implements BundleAPI {
@@ -391,4 +398,39 @@ public class BundleAPIImpl implements BundleAPI {
 
 	}
 
+	
+
+    @CloseDBIfOpened
+    @Override
+    public File generateBundleDirectory(Bundle bundle) {
+
+        final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);
+        pushPublisherConfig.setPublishers(Arrays.asList(GenerateBundlePublisher.class));
+        try {
+            APILocator.getPublisherAPI().publish(pushPublisherConfig);
+        }
+        catch(Exception e) {
+            throw new DotRuntimeException(e);
+        }
+        return BundlerUtil.getBundleRoot( pushPublisherConfig );
+
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public File generateTarGzipBundleFile(Bundle bundle) {
+        final File bundleRoot = generateBundleDirectory(bundle);
+        File bundleFile = new File(  ConfigUtils.getBundlePath()  + File.separator + bundle.getId() + ".tar.gz" );
+        bundleFile.delete();
+        try {
+            File tmpFile= PushUtils.tarGzipDirectory( bundleRoot );
+            tmpFile.renameTo(bundleFile);
+            return bundleFile;
+        }
+        catch(Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+	
+	
 }

@@ -1,5 +1,6 @@
 package com.dotcms.publisher.bundle.business;
 
+import java.io.File;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -167,5 +168,17 @@ public interface BundleAPI {
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
 	public void deleteAssetFromBundle(String assetId, String bundleId) throws DotDataException;
+
+	/**
+	 * This takes a Bundle, generates the folder/file structure and returns the resulting directory
+	 * @param bundleId
+	 * @return
+	 */
+    public File generateBundleDirectory(Bundle bundle);
+
+    /*
+     * This takes a bundle and generates the tar.gzipped output file
+     */
+    public File generateTarGzipBundleFile(Bundle bundle);
 
 }
