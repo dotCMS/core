@@ -11,7 +11,6 @@ import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.exception.ForbiddenException;
-import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -37,7 +36,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -54,6 +52,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import org.quartz.SchedulerException;
 
 /**
  * This REST end-point provides all the required mechanisms for the execution of
@@ -170,6 +169,24 @@ public class IntegrityResource {
     }
 
     /**
+     * Evaluates if the {@link IntegrityDataGenerationJob} is running.
+     *
+     * @return true if it does, otherwise false
+     */
+    private boolean isJobRunning() {
+        try {
+            return QuartzUtils.isJobRunning(
+                    IntegrityDataGenerationJob.getJobScheduler(),
+                    IntegrityDataGenerationJob.JOB_NAME,
+                    IntegrityDataGenerationJob.JOB_GROUP,
+                    IntegrityDataGenerationJob.TRIGGER_NAME,
+                    IntegrityDataGenerationJob.TRIGGER_GROUP);
+        } catch (SchedulerException e) {
+            return false;
+        }
+    }
+
+    /**
      * <p>Returns a zip with data from structures and folders for integrity check
      */
     @POST
@@ -190,9 +207,7 @@ public class IntegrityResource {
         }
 
         try {
-            if (QuartzUtils.isJobRunning(
-                    IntegrityDataGenerationJob.JOB_NAME,
-                    IntegrityDataGenerationJob.JOB_GROUP)) {
+            if (isJobRunning()) {
                 Logger.error(
                         IntegrityResource.class,
                         String.format(
@@ -258,9 +273,7 @@ public class IntegrityResource {
                 return failResponse.get();
             }
 
-            if (QuartzUtils.isJobRunning(
-                    IntegrityDataGenerationJob.JOB_NAME,
-                    IntegrityDataGenerationJob.JOB_GROUP)) {
+            if (isJobRunning()) {
                 Logger.error(
                         IntegrityResource.class,
                         String.format(
@@ -577,7 +590,7 @@ public class IntegrityResource {
                 if (status == ProcessStatus.PROCESSING) {
                     final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
                     final String integrityDataRequestId = (String) session.getAttribute( "integrityDataRequest_" + endpointId );
-                    Response response = cancelIntegrityRequest(integrityDataRequestId, endpoint);
+                    final Response response = cancelIntegrityRequest(integrityDataRequestId, endpoint);
 
                     if (response.getStatus() == HttpStatus.SC_OK) {
                         //Nothing to do here, we found no process to cancel
@@ -660,9 +673,7 @@ public class IntegrityResource {
 
 
         try {
-            if (!QuartzUtils.isJobRunning(
-                    IntegrityDataGenerationJob.JOB_NAME,
-                    IntegrityDataGenerationJob.JOB_GROUP)) {
+            if (!isJobRunning()) {
                 return Response.status(HttpStatus.SC_CONFLICT).build();
             }
 

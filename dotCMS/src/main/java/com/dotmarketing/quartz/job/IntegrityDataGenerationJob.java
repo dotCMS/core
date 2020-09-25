@@ -3,7 +3,6 @@ package com.dotmarketing.quartz.job;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.http.DotExecutionException;
 import com.dotcms.integritycheckers.IntegrityUtil;
-import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rest.IntegrityResource;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.quartz.DotStatefulJob;
@@ -14,7 +13,6 @@ import org.quartz.InterruptableJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
@@ -30,11 +28,10 @@ import java.util.Date;
  */
 public class IntegrityDataGenerationJob extends DotStatefulJob implements InterruptableJob {
 
-    static final String TRIGGER_NAME = "IntegrityDataGenerationTrigger";
-    static final String TRIGGER_GROUP = "integrity_data_generation_triggers";
-
     public static final String JOB_NAME = "IntegrityDataGenerationJob";
     public static final String JOB_GROUP = "dotcms_jobs";
+    public static final String TRIGGER_NAME = "IntegrityDataGenerationTrigger";
+    public static final String TRIGGER_GROUP = "integrity_data_generation_triggers";
 
     private JobExecutionContext jobContext;
 
@@ -44,7 +41,6 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
      * metadata to have control of what is going on.
      *
      * @param jobContext job context
-     * @throws JobExecutionException
      */
     @Override
     @CloseDBIfOpened
