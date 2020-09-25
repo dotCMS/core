@@ -1420,24 +1420,28 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
 	public boolean doesUserHavePermissions(final String assetId, final PermissionableType permType, final int permissionType, final User user) throws DotDataException {
-		if(user==null) return false;
+		if(user==null) {
+			return false;
+		}
 
-		if(APILocator.getUserAPI().isCMSAdmin(user)) return true;
+		if(APILocator.getUserAPI().isCMSAdmin(user)){
+			return true;
+		}
 
 		Boolean hasPerm = false;
 		final RoleAPI roleAPI = APILocator.getRoleAPI();
 		final List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(user.getUserId(), false);
-		for(final com.dotmarketing.business.Role r : roles) {
-			List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(r, false);
+		for(final com.dotmarketing.business.Role role : roles) {
+			List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(role, false);
 			if(UtilMethods.isSet(assetId)) {
 				perms = perms.stream()
 						.filter(permission -> permission.getInode().equalsIgnoreCase(assetId))
 						.collect(
 								Collectors.toList());
 			}
-			for (final Permission p : perms) {
-				if(p.getType().equals(permType.getCanonicalName())) {
-					hasPerm = hasPerm | p.getPermission()>=permissionType;
+			for (final Permission permission : perms) {
+				if(permission.getType().equals(permType.getCanonicalName())) {
+					hasPerm = hasPerm | permission.getPermission()>=permissionType;
 				}
 			}
 		}
