@@ -301,7 +301,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     	final Optional<ContentletVersionInfo> optionalInfo = findContentletVersionInfoInDB(identifier, lang);
         if(optionalInfo.isPresent()){
-        	this.icache.addContentletVersionInfoToCache(contentVersionInfo);
+        	this.icache.addContentletVersionInfoToCache(optionalInfo.get());
         }else{
         	contentVersionInfo = new ContentletVersionInfo();
         	contentVersionInfo.setIdentifier(identifier);
@@ -311,7 +311,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			return Optional.empty();
         }
 
-        return Optional.empty();
+        return optionalInfo;
     }
 
     @Override
