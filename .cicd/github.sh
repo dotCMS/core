@@ -62,12 +62,14 @@ function persistResults {
 
   remoteBranch=$(git ls-remote --heads ${GITHUB_TEST_RESULTS_REMOTE_REPO} ${CURRENT_BRANCH} | wc -l | tr -d '[:space:]')
 
-  if [[ ${remoteBranch} == 1 ]]; then
-    echo "git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}"
-    git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}
-  else
-    echo "git checkout -b ${CURRENT_BRANCH}"
-    git checkout -b ${CURRENT_BRANCH}
+  if [[ ${CURRENT_BRANCH} != "master" ]]; then
+    if [[ ${remoteBranch} == 1 ]]; then
+      echo "git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}"
+      git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}
+    else
+      echo "git checkout -b ${CURRENT_BRANCH}"
+      git checkout -b ${CURRENT_BRANCH}
+    fi
   fi
   
   if [[ $? != 0 ]]; then
