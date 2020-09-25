@@ -972,19 +972,7 @@
 									],
 									"request": {
 										"auth": {
-											"type": "basic",
-											"basic": [
-												{
-													"key": "password",
-													"value": "admin",
-													"type": "string"
-												},
-												{
-													"key": "username",
-													"value": "admin@dotcms.com",
-													"type": "string"
-												}
-											]
+											"type": "noauth"
 										},
 										"method": "GET",
 										"header": [],
@@ -1637,19 +1625,7 @@
 									],
 									"request": {
 										"auth": {
-											"type": "basic",
-											"basic": [
-												{
-													"key": "password",
-													"value": "admin",
-													"type": "string"
-												},
-												{
-													"key": "username",
-													"value": "admin@dotcms.com",
-													"type": "string"
-												}
-											]
+											"type": "noauth"
 										},
 										"method": "GET",
 										"header": [],
@@ -1963,19 +1939,7 @@
 									],
 									"request": {
 										"auth": {
-											"type": "basic",
-											"basic": [
-												{
-													"key": "password",
-													"value": "admin",
-													"type": "string"
-												},
-												{
-													"key": "username",
-													"value": "admin@dotcms.com",
-													"type": "string"
-												}
-											]
+											"type": "noauth"
 										},
 										"method": "GET",
 										"header": [],
@@ -2044,42 +2008,42 @@
 	],
 	"variable": [
 		{
-			"id": "7bdbada9-93d3-42fc-8a5d-bf7f386521e0",
+			"id": "bc22274e-f650-481b-8a31-4a88756e02b6",
 			"key": "endpointName",
 			"value": "endpoint-602"
 		},
 		{
-			"id": "c6c57241-856b-4a1b-9d2c-53e06862043c",
+			"id": "6dc3e100-63fb-4e0a-bcfa-27c0310501d9",
 			"key": "environmentName",
 			"value": "environment-518"
 		},
 		{
-			"id": "27810b7c-ec05-4748-8a22-336a26314080",
+			"id": "e6d5de63-d39b-4d2c-bf71-7aaa38528521",
 			"key": "origin",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "49910765-72d3-47bd-b6de-fa85a76db662",
+			"id": "1881fdff-7ea3-402d-9f21-2e293228b5d8",
 			"key": "environmentId",
 			"value": "45bfcadd-77fb-4029-ac05-62cb369ace8f"
 		},
 		{
-			"id": "7699bb00-f6f1-4fa6-ab35-0e3e8b529917",
+			"id": "13065228-c0a5-4017-b01a-c9206d3f0a61",
 			"key": "endpintId",
 			"value": "fed35809-457d-40b0-89ed-356314d35b57"
 		},
 		{
-			"id": "cf013f97-8111-4875-b20a-400cb869961a",
+			"id": "0619abae-7a60-46b4-953e-ff96324d0c9c",
 			"key": "receiverName",
 			"value": "receiverName-221"
 		},
 		{
-			"id": "d0e971bb-3b4e-4f1b-94cf-46ad7080a5f0",
+			"id": "1315fdb5-87d7-4cb8-9269-caf32e15a0ff",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGljZjhiZmQyMC0zNTE1LTQxNzgtOWQwZi1kYWUxNTY1YmViZmYiLCJ4bW9kIjoxNjAxMDU0MzQyMDAwLCJuYmYiOjE2MDEwNTQzNDIsImlzcyI6ImFjNWMwMDc2N2YiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU2MjU3MDcsImlhdCI6MTYwMTA1NDM0MiwianRpIjoiZWIxYmFkMTQtZmFjZi00MWNiLTkzNTctMWEzODdiODJjY2JjIn0.ezWYPQ77-Gzr7MN0V7ne_3MedeJ9IgmU3By8RE-flvk"
 		},
 		{
-			"id": "0eb0f114-e841-4a4d-967b-5b3baca7d9f1",
+			"id": "b323d4b0-900a-4966-924f-839cb70f13d3",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
