@@ -2,10 +2,22 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static org.junit.Assert.assertEquals;
 
 
 public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest {
@@ -30,7 +42,7 @@ public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegra
      * After remove the constraint you should be allow to insert register in this table without has any register in publishing_end_point
      */
     @Test
-    public void constraintShouldNotExists() throws DotDataException {
+    public void constraintShouldNotExists() throws DotDataException, SQLException {
 
         final String endpointId = insertPublishingEndPoint();
         insertFolderIntegrityResolver(endpointId);
@@ -49,6 +61,38 @@ public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegra
         insertFileAssetIntegrityResolver("anyIP");
         insertRolesIntegrityResolver("anyIP");
         insertStructuresIntegrityResolver("anyIP");
+
+        checkColumnsSize();
+    }
+
+    private void checkColumnsSize() throws SQLException {
+        final List<String> tables = list(
+                "folders_ir",
+                "structures_ir",
+                "htmlpages_ir",
+                "fileassets_ir",
+                "cms_roles_ir"
+        );
+
+        for (String table : tables) {
+            checkColumnSize(table);
+        }
+    }
+
+    private void checkColumnSize(final String tableName) throws SQLException {
+        final Connection connection = DbConnectionFactory.getConnection();
+        final ResultSet resultSet = DotDatabaseMetaData.getColumnsMetaData(connection, tableName);
+
+        while (resultSet.next()) {
+
+            final String columnName = resultSet.getString("COLUMN_NAME");
+
+            if (columnName.equals("endpoint_Id")) {
+                final int columnSize = resultSet.getInt("COLUMN_SIZE");
+                assertEquals(columnSize, 40);
+            }
+
+        }
     }
 
     private String insertPublishingEndPoint() throws DotDataException {

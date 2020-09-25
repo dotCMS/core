@@ -3679,7 +3679,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content.tar.gz"
+											"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content.tar.gz"
 										}
 									],
 									"options": {
@@ -3901,7 +3901,7 @@
 											"",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    checkBundleStatus(pm.response.text(), [\"bundleSuccess\", \"endpointSuccess\"], \"check success status\");",
+											"    checkBundleStatus(pm.response.text(), [\"endpointSuccess\"], \"check success status\");",
 											"});"
 										],
 										"type": "text/javascript"
@@ -3984,9 +3984,13 @@
 					"        const $ = cheerio.load(responseBody);",
 					"",
 					"        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");",
+					"        pendingStatus = pm.collectionVariables.get(\"pendingStatus\");",
+					"        bundlingStatus = pm.collectionVariables.get(\"bundlingStatus\");",
+					"        noResultFound = pm.collectionVariables.get(\"noResultFound\");",
+					"",
 					"        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");",
 					"",
-					"        if (htmlWithoutSpace.includes(bundleWaitingPublish)) {",
+					"        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound)) {",
 					"            console.log('AGAIN');",
 					"            postman.setNextRequest(\"check success status\");",
 					"        } else {",
@@ -4019,7 +4023,7 @@
 					"bundleSuccess = \"<th>Status:</th>        <td> Success</td>    </tr>\";",
 					"pm.collectionVariables.set(\"bundleSuccess\", bundleSuccess);",
 					"",
-					"endpointSuccess = '<td valign=\"top\">Success</td>\t\t\t\t        <td valign=\"top\">Everything ok</td>';",
+					"endpointSuccess = 'Everything ok';",
 					"pm.collectionVariables.set(\"endpointSuccess\", endpointSuccess);",
 					"",
 					"bundleFailed = \" <th>Status:</th>        <td> Failed to send to all environments</td>\";",
@@ -4029,7 +4033,19 @@
 					"pm.collectionVariables.set(\"endpointInvalidtoken\", endpointInvalidtoken);",
 					"",
 					"bundleWaitingPublish = \"<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>\";",
-					"pm.collectionVariables.set(\"bundleWaitingPublish\", bundleWaitingPublish);"
+					"pm.collectionVariables.set(\"bundleWaitingPublish\", bundleWaitingPublish);",
+					"",
+					"pendingStatus = \"th>Status:</th>        <td> Pending</td\";",
+					"pm.collectionVariables.set(\"pendingStatus\", pendingStatus);",
+					"",
+					"",
+					"bundlingStatus = \"th>Status:</th>        <td> Bundling</td\";",
+					"pm.collectionVariables.set(\"bundlingStatus\", bundlingStatus);",
+					"",
+					"noResultFound = \"No results found\";",
+					"",
+					"pm.collectionVariables.set(\"noResultFound\", noResultFound);",
+					""
 				]
 			}
 		},
@@ -4046,92 +4062,92 @@
 	],
 	"variable": [
 		{
-			"id": "7758a4b7-b3f6-4a14-9c6d-9509dab7247c",
+			"id": "e61c83da-08f7-40f6-bbe5-b61984f16726",
 			"key": "origin",
-			"value": "localhost"
+			"value": "http://localhost:8080"
 		},
 		{
-			"id": "c782a78b-2426-4d21-812e-6d0009fadd48",
+			"id": "51839ea3-0bbe-477a-b5d0-2f7d96a95849",
 			"key": "environmentName",
-			"value": "environment-941"
+			"value": "environment-353"
 		},
 		{
-			"id": "5e4591fa-8de3-4d01-8e02-fa84af405de8",
+			"id": "bc44560e-7b4e-4e56-bd89-0b50fd88500c",
 			"key": "endpointName",
-			"value": "endpoint-684"
+			"value": "endpoint-496"
 		},
 		{
-			"id": "3aa310d4-584b-4c78-82d1-421d3ba7e667",
+			"id": "61481beb-2602-481f-b48c-5c683083c205",
 			"key": "environmentId",
-			"value": "6751c0ff-0a6d-4a6e-9c21-c333e2d4ce8c"
+			"value": "a4d2cc7a-1566-4b0d-9c31-b22d84814506"
 		},
 		{
-			"id": "ac92ceb3-7295-4256-b125-09928eacbfc4",
+			"id": "b42661ff-97b4-4250-b518-c8b0c7f32c2a",
 			"key": "receiverName",
-			"value": "receiverName-11"
+			"value": "receiverName-976"
 		},
 		{
-			"id": "8efd404a-c38e-4376-83e9-65b30b23a474",
+			"id": "bd62a10f-1e83-410a-97a6-7da811942be9",
 			"key": "bundleName",
-			"value": "bundleName-640"
+			"value": "bundleName-461"
 		},
 		{
-			"id": "064ac0a0-37a2-4f24-bdfa-3b321198428d",
+			"id": "5885eaa6-1790-44d6-aa22-f86926014c64",
 			"key": "bundleID",
 			"value": null
 		},
 		{
-			"id": "d89ab88f-1126-4380-87d4-48147aabf369",
+			"id": "eefe57bd-f4b8-4993-86d6-c5c7b7e29d63",
 			"key": "bundleId",
-			"value": "01EJYDH0CEFDGBV95ZR3D74FZA"
+			"value": "01EK0WTHC89J1KJKSD1SY418QQ"
 		},
 		{
-			"id": "61c83ff9-577c-40ed-be86-4c6f88fed83d",
+			"id": "2701b8d1-2202-4939-b95b-ad3d688bdd7b",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk5MGY5MzgwZS03MGE0LTRlYmMtOGQ1Yy1hYjY2ZTc2NjI2NjkiLCJ4bW9kIjoxNjAwODk1ODY1MDAwLCJuYmYiOjE2MDA4OTU4NjUsImlzcyI6Ijc1MzI4OGMwODYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU0NjcyMzAsImlhdCI6MTYwMDg5NTg2NSwianRpIjoiNmNjOTUxYzctMTIyNi00NzkxLTk4NzMtNDA1OTdjMWNhM2VmIn0.DNcI9_MIorM1HVWN3dERS5TAfjY72DfxQlhZ7s6lcik"
 		},
 		{
-			"id": "d2ee7a5a-81d6-46c7-b037-84e8b4ee170e",
+			"id": "049761c9-f469-489e-a849-d89e704bbd20",
 			"key": "bundleSuccessExpected",
 			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ecc9df87-02ad-4f58-afaf-f27ae4fb2c57</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "a55ca7a3-c962-4158-a246-6d0f4cdbfc9e",
+			"id": "8f5f0853-ab07-448f-a014-4f73f25e0455",
 			"key": "bundleFailedExpected",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "4efc1768-d0d5-4dba-9006-0767e8ab0afe",
+			"id": "988c97df-c58e-40c8-94f1-454f5b7666cb",
 			"key": "endpointInvalidtoken",
 			"value": "<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t"
 		},
 		{
-			"id": "69f9006e-15ba-4b9c-aa93-4e3c90d9bf05",
+			"id": "a879a6c6-2761-4a05-ad2c-bdfd98c2c100",
 			"key": "endpointSuccess",
 			"value": "<td valign=\"top\">Success</td>\t\t\t\t        <td valign=\"top\">Everything ok</td>"
 		},
 		{
-			"id": "322978fc-ac67-4c8a-b559-0e1f26be8e04",
+			"id": "b4e8f0a7-32a5-48c4-8702-ef9b33d121e1",
 			"key": "bundleFailed",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "6fc8c598-25b0-46ad-a0a4-d801db026a1f",
+			"id": "773f22c6-d739-49f6-8f01-14c3a8d2db2f",
 			"key": "bundleSuccess",
 			"value": "<th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "9c6b2a7d-2b25-4bf2-a173-c08b23b5fc78",
+			"id": "735f6985-148a-444b-8c1c-2d791a9ebee9",
 			"key": "bundleWaitingPublish",
 			"value": "<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>"
 		},
 		{
-			"id": "cd11e3df-9433-482c-89a2-82e88d1a7346",
+			"id": "0c59c707-7924-4d48-8147-11e7240dcc8e",
 			"key": "checkBundleStatus",
 			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log(responseBody.trim().length, responseBody.trim().length === 0);\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    } else {\n\n        const $ = cheerio.load(responseBody);\n\n        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n        if (htmlWithoutSpace.includes(bundleWaitingPublish)) {\n            console.log('AGAIN');\n            postman.setNextRequest(\"check success status\");\n        } else {\n            casesToTest.forEach((caseToTest) => {\n                expectedInclude = pm.collectionVariables.get(caseToTest);\n                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n            });\n\n        }\n    }\n}"
 		},
 		{
-			"id": "ec530fd0-b826-4d10-9155-c159db945772",
+			"id": "52ac1a66-ebac-4b34-8738-d8b5672e9569",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
