@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -41,15 +42,33 @@ public class KeyValueViewStrategy extends AbstractTransformStrategy<Contentlet> 
     protected Map<String, Object> transform(final Contentlet contentlet,
     final Map<String, Object> map, final Set<TransformOptions> options, final User user) {
 
-        final List<Field> keyValueFields = contentlet.getContentType().fields(KeyValueField.class);
+        if (null != contentlet && null != contentlet.getContentType()) {
 
-        if (UtilMethods.isSet(keyValueFields)) {
+            final List<Field> keyValueFields = contentlet.getContentType().fields(KeyValueField.class);
 
-            keyValueFields.forEach(field ->
-                    map.put(field.variable(), contentlet.getKeyValueProperty(field.variable())));
+            if (UtilMethods.isSet(keyValueFields)) {
+
+                keyValueFields.stream().filter(field -> this.isValidKeyValue(field, contentlet))
+                        .forEach(field ->
+                                map.put(field.variable(), this.getKeyValueObject(field, contentlet)));
+            }
         }
 
         return map;
+    }
+
+    private Object  getKeyValueObject (final Field field, final Contentlet contentlet) {
+
+        return contentlet.getMap().get(field.variable()) instanceof Map?
+            contentlet.getMap().get(field.variable()):
+            contentlet.getKeyValueProperty(field.variable());
+    }
+    private boolean isValidKeyValue (final Field field, final Contentlet contentlet) {
+
+        return contentlet.getMap().containsKey(field.variable()) &&
+                (contentlet.getMap().get(field.variable()) instanceof Map || // if it is a map ok, or if it is a string should contains a {
+                        (UtilMethods.isSet(contentlet.getMap().get(field.variable())) &&
+                                StringUtils.isJson(contentlet.getMap().get(field.variable()).toString().trim())));
     }
 
 }
