@@ -7,6 +7,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
 import java.util.Optional;
 
+/**
+ * Provide util methods to get remote or local IP from {@link HttpServletRequest}
+ */
 public class RestEndPointIPUtil {
     /**
      * Tries to get the local address plus the port in a "host:port" format
