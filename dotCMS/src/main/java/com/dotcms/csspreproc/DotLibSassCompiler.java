@@ -24,6 +24,7 @@ import com.liferay.util.FileUtil;
 import io.bit3.jsass.Options;
 import io.bit3.jsass.Output;
 import io.bit3.jsass.OutputStyle;
+import java.util.Optional;
 
 public class DotLibSassCompiler extends DotCSSCompiler {
 
@@ -54,14 +55,17 @@ public class DotLibSassCompiler extends DotCSSCompiler {
                 }
             }
 
-            final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(),
+            final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(),
                     APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
+            if(!info.isPresent()) {
+                throw new DotDataException("Can't find Contentlet-version-info. Identifier: " + ident.getId() + ". Lang:"
+                        + APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            }
+
             final FileAsset mainFile = APILocator.getFileAssetAPI()
-                .fromContentlet(APILocator.getContentletAPI().find(info.getWorkingInode(), APILocator.systemUser(), true));
-
-            
-
+                .fromContentlet(APILocator.getContentletAPI().find(info.get().getWorkingInode(),
+                        APILocator.systemUser(), true));
 
             // build directories to build scss
             final File compileTargetFile =

@@ -613,15 +613,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if(InodeUtils.isSet(con.getInode())){
                 APILocator.getPermissionAPI().removePermissions(con);
 
-                ContentletVersionInfo verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
-                if(verInfo!=null && UtilMethods.isSet(verInfo.getIdentifier())) {
-                    if(UtilMethods.isSet(verInfo.getLiveInode()) && verInfo.getLiveInode().equals(con.getInode()))
+                Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+
+                if(verInfo.isPresent() && UtilMethods.isSet(verInfo.get().getIdentifier())) {
+                    if(UtilMethods.isSet(verInfo.get().getLiveInode()) && verInfo.get().getLiveInode().equals(con.getInode()))
                         try {
                             APILocator.getVersionableAPI().removeLive(con);
                         } catch (Exception e) {
                             throw new DotDataException(e.getMessage(),e);
                         }
-                    if(verInfo.getWorkingInode().equals(con.getInode()))
+                    if(verInfo.get().getWorkingInode().equals(con.getInode()))
                         APILocator.getVersionableAPI().deleteContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
                 }
 
@@ -1033,12 +1034,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
-        final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
-        if(cvi == null  || UtilMethods.isEmpty(cvi.getIdentifier()) || (live && UtilMethods.isEmpty(cvi.getLiveInode()))) {
+        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+        if(!cvi.isPresent() || UtilMethods.isEmpty(cvi.get().getIdentifier())
+                || (live && UtilMethods.isEmpty(cvi.get().getLiveInode()))) {
             return null;
         }
-        return Try.of(()->find((live?cvi.getLiveInode():cvi.getWorkingInode()))).getOrElseThrow(e->new DotRuntimeException(e));
-        
+        return Try.of(()->find((live?cvi.get().getLiveInode():cvi.get().getWorkingInode())))
+                .getOrElseThrow(DotRuntimeException::new);
 	}
 
 	@Override
@@ -1054,11 +1056,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
         // Looking content up this way can avoid any DB hits as these calls are all cached.
         final List<Language> langs = this.languageAPI.getLanguages();
         for(final Language language : langs) {
-            final ContentletVersionInfo contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-            if (contentVersion != null  && UtilMethods.isSet(contentVersion.getIdentifier()) && (includeDeleted || !contentVersion.isDeleted())) {
-                return find(contentVersion.getWorkingInode());
+            final Optional<ContentletVersionInfo> contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
+            if (contentVersion.isPresent() && UtilMethods.isSet(contentVersion.get().getIdentifier())
+                    && (includeDeleted || !contentVersion.get().isDeleted())) {
+                return find(contentVersion.get().getWorkingInode());
             }
-            if (null != contentVersion && contentVersion.isDeleted() && !includeDeleted) {
+            if (contentVersion.isPresent() && contentVersion.get().isDeleted() && !includeDeleted) {
                 Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
                         identifier));
             }

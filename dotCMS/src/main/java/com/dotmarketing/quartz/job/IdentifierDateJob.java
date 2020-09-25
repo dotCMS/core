@@ -5,6 +5,7 @@ package com.dotmarketing.quartz.job;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.dotcms.notifications.bean.NotificationType;
@@ -106,11 +107,11 @@ public class IdentifierDateJob implements Job {
 					CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletSearch.getIdentifier());
 					//Clears Contentlet Cache for each language and version
 					for(Language lan : APILocator.getLanguageAPI().getLanguages()) {
-						ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), lan.getId()) ;
-						if(versionInfo!=null && UtilMethods.isSet(versionInfo.getIdentifier())) {
-							CacheLocator.getContentletCache().remove(versionInfo.getWorkingInode());
-							if(UtilMethods.isSet(versionInfo.getLiveInode())) {
-								CacheLocator.getContentletCache().remove(versionInfo.getLiveInode());
+						Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), lan.getId()) ;
+						if(versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getIdentifier())) {
+							CacheLocator.getContentletCache().remove(versionInfo.get().getWorkingInode());
+							if(UtilMethods.isSet(versionInfo.get().getLiveInode())) {
+								CacheLocator.getContentletCache().remove(versionInfo.get().getLiveInode());
 
 							}
 						}

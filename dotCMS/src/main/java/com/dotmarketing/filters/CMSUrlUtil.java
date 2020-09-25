@@ -35,6 +35,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -159,9 +160,9 @@ public class CMSUrlUtil {
 				List<Language> languages = APILocator.getLanguageAPI().getLanguages();
 
 				//First try with the given language
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
+				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
-				if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
+				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 
 					for (Language language : languages) {
                         /*
@@ -172,7 +173,7 @@ public class CMSUrlUtil {
 						if (languageId != language.getId()) {
 							cinfo = APILocator.getVersionableAPI()
 									.getContentletVersionInfo(id.getId(), language.getId());
-							if (cinfo != null && !cinfo.getWorkingInode().equals(NOT_FOUND)) {
+							if (cinfo.isPresent() && !cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 								//Found it
 								break;
 							}
@@ -180,11 +181,11 @@ public class CMSUrlUtil {
 					}
 
 				}
-				if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
+				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 					return false;//At this point we know is not a page
 				} else {
 					Contentlet c = APILocator.getContentletAPI()
-							.find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
+							.find(cinfo.get().getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
 									false);
 					return (c.getStructure().getStructureType()
 							== Structure.STRUCTURE_TYPE_HTMLPAGE);
@@ -238,10 +239,10 @@ public class CMSUrlUtil {
 
 		if (CONTENTLET.equals(id.getAssetType())) {
 			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
+				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
 
-				if ((cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) && Config
+				if ((!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) && Config
 						.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
 					//Get the Default Language
 					Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -250,11 +251,11 @@ public class CMSUrlUtil {
 							.getContentletVersionInfo(id.getId(), defaultLang.getId());
 				}
 
-				if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
+				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 					return false;//At this point we know is not a File Asset
 				} else {
 					Contentlet c = APILocator.getContentletAPI()
-							.find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
+							.find(cinfo.get().getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
 									false);
 					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
@@ -353,23 +354,26 @@ public class CMSUrlUtil {
 		}
 		if (ident.getAssetType().equals(CONTENTLET)) {
 			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
+				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(ident.getId(), languageId);
 
 				// If we did not find a version with for given
 				// language lets try with the default language
-				if (cinfo == null && languageId != APILocator.getLanguageAPI().getDefaultLanguage()
+				if (!cinfo.isPresent() && languageId != APILocator.getLanguageAPI().getDefaultLanguage()
 						.getId()) {
 					languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 					cinfo = APILocator.getVersionableAPI()
 							.getContentletVersionInfo(ident.getId(), languageId);
 				}
 
-				Contentlet proxy = new Contentlet();
+				if(!cinfo.isPresent()) {
+					throw new DotDataException("Unable to find file asset contentlet with identifier: "+ ident.getId() + ". Lang:" + languageId);
+				}
 
-				proxy.setInode(cinfo.getWorkingInode());
-				proxy.setIdentifier(cinfo.getIdentifier());
-				proxy.setLanguageId(cinfo.getLang());
+				Contentlet proxy = new Contentlet();
+				proxy.setInode(cinfo.get().getWorkingInode());
+				proxy.setIdentifier(cinfo.get().getIdentifier());
+				proxy.setLanguageId(cinfo.get().getLang());
 				return APILocator.getPermissionAPI()
 						.doesUserHavePermission(proxy, PermissionAPI.PERMISSION_READ, user, true);
 			} catch (Exception e) {

@@ -68,6 +68,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -603,13 +604,19 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //*****************************************************************
         //Build a site search result in order to add it to the index
-        ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(testHtmlPage.getIdentifier(), testHtmlPage.getLanguageId());
+        Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(testHtmlPage.getIdentifier(), testHtmlPage.getLanguageId());
+
+        if(!versionInfo.isPresent()) {
+            throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
+                    + testHtmlPage.getIdentifier() + ". Lang: " + testHtmlPage.getLanguageId());
+        }
+
         String docId = testHtmlPage.getIdentifier() + "_" + defaultLanguage.getId();
 
         SiteSearchResult res = new SiteSearchResult( testHtmlPage.getMap() );
         res.setLanguage( defaultLanguage.getId() );
         res.setFileName( testHtmlPage.getFriendlyName() );
-        res.setModified( versionInfo.getVersionTs() );
+        res.setModified( versionInfo.get().getVersionTs() );
         res.setHost( defaultHost.getIdentifier() );
         res.setMimeType( "text/html" );
         res.setContentLength( 1 );//Just sending something different than 0

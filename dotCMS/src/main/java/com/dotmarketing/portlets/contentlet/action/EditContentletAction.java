@@ -109,6 +109,7 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -1324,8 +1325,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 		else if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && workingContentlet.isLocked()){
 
-			String lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
-			if(user.getUserId().equals(lockedUserId)){
+			Optional<String> lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
+			if(lockedUserId.isPresent() && user.getUserId().equals(lockedUserId.get())){
 				req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
 			}else{
 				req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
@@ -1377,11 +1378,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private void unLockIfNecessary(final Contentlet content, final User user) {
 		try {
 			if (content.isLocked()) {
-				ContentletVersionInfo contentletVersionInfo =
+				Optional<ContentletVersionInfo> contentletVersionInfo =
 						APILocator.getVersionableAPI().getContentletVersionInfo(content.getIdentifier(), content.getLanguageId());
 
-				if (user.getUserId().equals(contentletVersionInfo.getLockedBy())) {
-						conAPI.unlock(content, user, false);
+				if (contentletVersionInfo.isPresent()
+						&& user.getUserId().equals(contentletVersionInfo.get().getLockedBy())) {
+					conAPI.unlock(content, user, false);
 				}
 			}
 		} catch (DotDataException|DotSecurityException e) {

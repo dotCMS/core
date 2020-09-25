@@ -63,6 +63,7 @@ import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -1647,8 +1648,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         // create 20 versions
         for(int i=1; i<=20; i++) {
             file = contentletAPI.findContentletByIdentifier(ident, false, defLang, user, false);
+            file.setIndexPolicy(IndexPolicy.FORCE);
             APILocator.getFileAssetAPI().renameFile(file, "hello"+i, user, false);
-            contentletAPI.isInodeIndexed(APILocator.getVersionableAPI().getContentletVersionInfo(ident, defLang).getWorkingInode());
+//            contentletAPI.isInodeIndexed(APILocator.getVersionableAPI().getContentletVersionInfo(ident, defLang).getWorkingInode());
         }
         
         file = contentletAPI.findContentletByIdentifier(ident, false, defLang, user, false);
@@ -6227,9 +6229,12 @@ public class ContentletAPITest extends ContentletBaseTest {
                             .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
 
             //Verify that a new English version with the Spanish template was created
-            final String newEnglishInode = APILocator.getVersionableAPI()
+            Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
                     .getContentletVersionInfo(englishPage.getIdentifier(),
-                            englishPage.getLanguageId()).getWorkingInode();
+                            englishPage.getLanguageId());
+
+            assertTrue(info.isPresent());
+            final String newEnglishInode = info.get().getWorkingInode();
 
             assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
                     contentletAPI.find(newEnglishInode, user, false)
@@ -6316,9 +6321,13 @@ public class ContentletAPITest extends ContentletBaseTest {
                             .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
 
             //Verify that a new English version with the Spanish template was created
-            final String newEnglishInode = APILocator.getVersionableAPI()
+            Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
                     .getContentletVersionInfo(englishPage.getIdentifier(),
-                            englishPage.getLanguageId()).getWorkingInode();
+                            englishPage.getLanguageId());
+
+            assertTrue(info.isPresent());
+
+            final String newEnglishInode = info.get().getWorkingInode();
 
             assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
                     contentletAPI.find(newEnglishInode, user, false)

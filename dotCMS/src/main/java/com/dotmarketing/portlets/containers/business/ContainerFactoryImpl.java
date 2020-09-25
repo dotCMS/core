@@ -224,10 +224,17 @@ public class ContainerFactoryImpl implements ContainerFactory {
             throw new NotFoundInDbException("no container found under: " + folder.getPath() );
         }
 
-        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().
+        final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
 				getContentletVersionInfo(identifier.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        final String inode = showLive && UtilMethods.isSet(contentletVersionInfo.getLiveInode()) ?
-				contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+
+        if(!contentletVersionInfo.isPresent()) {
+        	throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
+					+ identifier.getId() + ". Lang:"
+					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
+        final String inode = showLive && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode()) ?
+				contentletVersionInfo.get().getLiveInode() : contentletVersionInfo.get().getWorkingInode();
         Container container = containerCache.get(inode);
 
         if(container==null || !InodeUtils.isSet(container.getInode())) {

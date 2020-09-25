@@ -17,6 +17,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.ettrema.httpclient.*;
 import com.liferay.portal.model.User;
+import java.util.Optional;
 import junit.framework.Assert;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -28,6 +29,7 @@ import java.io.FileWriter;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class WebDavTest {
 	
@@ -176,8 +178,11 @@ public class WebDavTest {
             }
         }
         
-        ContentletVersionInfo vi = APILocator.getVersionableAPI().getContentletVersionInfo(file.getIdentifier(), 1);
-        Assert.assertTrue(vi.isDeleted());
+        Optional<ContentletVersionInfo> vi = APILocator.getVersionableAPI()
+				.getContentletVersionInfo(file.getIdentifier(), 1);
+
+        assertTrue(vi.isPresent());
+        assertTrue(vi.get().isDeleted());
 	}
 	
 	/**

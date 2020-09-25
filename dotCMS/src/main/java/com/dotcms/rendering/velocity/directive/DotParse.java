@@ -106,11 +106,12 @@ public class DotParse extends DotDirective {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
-            ContentletVersionInfo contentletVersionInfo =
+            Optional<ContentletVersionInfo> contentletVersionInfo =
                             APILocator.getVersionableAPI().getContentletVersionInfo(idAndField._1.getId(), languageId);
 
-            if (contentletVersionInfo == null || UtilMethods.isNotSet(contentletVersionInfo.getIdentifier())
-                            || contentletVersionInfo.isDeleted()) {
+            if (!contentletVersionInfo.isPresent()
+                    || UtilMethods.isNotSet(contentletVersionInfo.get().getIdentifier())
+                            || contentletVersionInfo.get().isDeleted()) {
 
                 final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
                 if (defaultLang != languageId) {
@@ -119,12 +120,14 @@ public class DotParse extends DotDirective {
                 }
             }
 
-            if (null == contentletVersionInfo || UtilMethods.isNotSet(contentletVersionInfo.getIdentifier())) {
+            if (!contentletVersionInfo.isPresent()
+                    || UtilMethods.isNotSet(contentletVersionInfo.get().getIdentifier())) {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
             final String inode =
-                            params.mode.showLive ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+                            params.mode.showLive ? contentletVersionInfo.get().getLiveInode()
+                                    : contentletVersionInfo.get().getWorkingInode();
 
             // We found the resource but not the version we are looking for
             if (!UtilMethods.isSet(inode)) {
