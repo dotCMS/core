@@ -1,20 +1,19 @@
 #!/bin/bash
 
-TEST_RESULTS="test-results"
+TEST_RESULTS="test-results-core-web"
 GITHUB="github.com"
 GITHACK="raw.githack.com"
 GITHUB_TEST_RESULTS_PATH="DotCMS/${TEST_RESULTS}"
 DOT_CICD_TARGET="core-web"
 GITHUB_USER="dotcmsbuild"
-_CURRENT_BRANCH=${GITHUB_REF##*/}
+CURRENT_BRANCH=${GITHUB_REF##*/}
 DOT_CICD_PATH="./dotcicd"
 OUTPUT_FOLDER="karma_html"
-BUILD_ID="origin/master"
 export GITHUB_TEST_RESULTS_HOST_PATH="${GITHUB}/${GITHUB_TEST_RESULTS_PATH}"
 export GITHUB_TEST_RESULTS_URL="https://${GITHUB_TEST_RESULTS_HOST_PATH}"
-export GITHACK_TEST_RESULTS_URL="https://${GITHACK}/${GITHUB_TEST_RESULTS_PATH}/master"
+export GITHACK_TEST_RESULTS_URL="https://${GITHACK}/${GITHUB_TEST_RESULTS_PATH}"
 export GITHUB_TEST_RESULTS_REPO="${GITHUB_TEST_RESULTS_URL}.git"
-export GITHUB_TEST_RESULTS_BROWSE_URL="${GITHACK_TEST_RESULTS_URL}/projects/${DOT_CICD_TARGET}/${GITHUB_SHA::8}"
+export GITHUB_TEST_RESULTS_BROWSE_URL="${GITHACK_TEST_RESULTS_URL}/${CURRENT_BRANCH}/projects/${DOT_CICD_TARGET}/${GITHUB_SHA::8}"
 export GITHUB_TEST_RESULTS_REMOTE="https://${GH_TOKEN}@${GITHUB_TEST_RESULTS_HOST_PATH}"
 export GITHUB_TEST_RESULTS_REMOTE_REPO="https://${GH_TOKEN}@${GITHUB_TEST_RESULTS_HOST_PATH}.git"
 
@@ -47,6 +46,7 @@ function addResults {
   cp -r "${GITHUB_WORKSPACE}/${OUTPUT_FOLDER}/." ${targetFolder}
 }
 
+
 function persistResults {
   TEST_RESULTS_PATH=${DOT_CICD_PATH}/${TEST_RESULTS}
   gitConfig
@@ -58,10 +58,32 @@ function persistResults {
   
   existsOrCreateAndSwitch ${TEST_RESULTS_PATH}/projects/${DOT_CICD_TARGET}
   
-  git pull origin master
+  git fetch --all
+
+  remoteBranch=$(git ls-remote --heads ${GITHUB_TEST_RESULTS_REMOTE_REPO} ${CURRENT_BRANCH} | wc -l | tr -d '[:space:]')
+
+  if [[ ${remoteBranch} == 1 ]]; then
+    echo "git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}"
+    git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}
+  else
+    echo "git checkout -b ${CURRENT_BRANCH}"
+    git checkout -b ${CURRENT_BRANCH}
+  fi
+  
+  if [[ $? != 0 ]]; then
+    echo "Error checking out branch '${CURRENT_BRANCH}', continuing with master"
+    git pull origin master
+  else
+    git branch
+    if [[ ${remoteBranch} == 1 ]]; then
+      echo "git pull origin ${CURRENT_BRANCH}"
+      git pull origin ${CURRENT_BRANCH}
+    fi
+  fi
+
   addResults ./${GITHUB_SHA::8}
   git add .
-  git commit -m "Adding tests results for ${GITHUB_SHA::8} from ${_CURRENT_BRANCH}"
+  git commit -m "Adding tests results for ${GITHUB_SHA::8} from ${CURRENT_BRANCH}"
   git push ${GITHUB_TEST_RESULTS_REMOTE} 
   git status
 }
