@@ -25,7 +25,7 @@ public class RestClientBuilder {
      *
      * @return The REST {@link Client} object.
      */
-    public static Client newClient() {
+    public static Client newClient() { // todo: create a DotConfigMap that wraps the config and allows to reuse this class on non-dotcms contexts
         TrustFactory tFactory = new TrustFactory();
 
         final Client client;
