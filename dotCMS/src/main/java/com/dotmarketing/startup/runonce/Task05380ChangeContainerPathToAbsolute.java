@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
@@ -27,6 +28,16 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
             "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
         "WHERE template.drawed_body is not null order by template.inode";
 
+    final static String GET_TEMPLATES_QUERY_ORACLE = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.identifier, to_char(template.drawed_body), template.body " +
+            "FROM identifier " +
+            "INNER JOIN template ON identifier.id = template.identifier " +
+            "INNER JOIN contentlet_version_info cvi on identifier.host_inode = cvi.identifier " +
+            "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
+            "WHERE template.drawed_body is not null order by template.inode";
+
+    final static String UPDATE_TEMPLATES = "update template set drawed_body = ?, body = ? where inode =?";
+
+    final static String UPDATE_TEMPLATES_ORACLE = "update template set drawed_body = TO_CLOB(?), body = ? where inode =?";
 
     @Override
     public boolean forceRun() {
@@ -42,7 +53,9 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
             if (!params.isEmpty()) {
                 final DotConnect dotConnect = new DotConnect();
-                dotConnect.executeBatch("update template set drawed_body = ?, body = ? where inode =?", params);
+                dotConnect.executeBatch(
+                        DbConnectionFactory.isOracle() ? UPDATE_TEMPLATES_ORACLE : UPDATE_TEMPLATES,
+                        params);
             }
         }
     }
@@ -99,6 +112,8 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
     }
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {
-        return new DotConnect().setSQL(GET_TEMPLATES_QUERY).loadObjectResults();
+        return new DotConnect()
+                .setSQL(DbConnectionFactory.isOracle() ? GET_TEMPLATES_QUERY_ORACLE : GET_TEMPLATES_QUERY)
+                .loadObjectResults();
     }
 }
