@@ -117,6 +117,90 @@ query = Xss.strip(query);
 %>
 <script>
 	dojo.require("dijit.form.NumberTextBox");
+
+
+	function search(event) {
+		clearErrorMessage();
+		var form = document.forms.luceneQueryForm;
+		var formData = new FormData(form);
+		fetch('/api/content/_search', {
+			method: 'post',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(Object.fromEntries(formData))
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.entity) {
+				setSummary(data.entity.summaryMap);
+				if (data.entity.contentlets && data.entity.contentlets.length){
+					setContentletTable(data.entity.contentlets);
+				} else {
+					showNoResults();
+				}
+			} else {
+				setErrorMessage(data.message)
+				console.log(data.message);
+			}
+		}).catch(error => {
+			console.log(error)
+		});
+
+	}
+
+	function setContentletTable(contentlets) {
+		debugger;
+		const luceneResultTable = document.getElementById('luceneResultTable');
+		let htmlRows = '';
+		contentlets.forEach((item, index) => {
+			htmlRows += setContentletItem(item, index+1);
+		});
+		luceneResultTable.innerHTML = htmlRows;
+	}
+
+	function setContentletItem(contentlet, index) {
+		return `<tr><th><strong>${index}.</th><th><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
+				<th><a href="/c/portal/layout?p_l_id=<%=layout.getId() %>&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/edit_contentlet&_<%=PortletID.CONTENT%>_cmd=edit&inode=${contentlet.inode}&referer=<%=referer %>">
+				${contentlet.title}</a></th></tr><tr><td></td>
+				<td><strong><%= LanguageUtil.get(pageContext, "ContentType") %>:</strong></td>
+				<td width="90%">${contentlet.map.contentType}</td>
+				</tr><tr><td></td>
+				<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
+				<td width="90%">${contentlet.inode}</td>
+				</tr><tr><td></td>
+				<td><strong><%= LanguageUtil.get(pageContext, "Identifier") %>:</strong></td>
+				<td>${contentlet.identifier}</td>
+				</tr>`
+	}
+
+	function setSummary(summary) {
+		const luceneResultSize = document.getElementById('luceneResultSize');
+		const luceneQueryTook = document.getElementById('luceneQueryTook');
+		const luceneContentPopulation = document.getElementById('luceneContentPopulation');
+
+		luceneResultSize.innerText = summary.resultsSize;
+		luceneQueryTook.innerText = summary.queryTook;
+		luceneContentPopulation.innerText = summary.contentTook;
+	}
+
+	function setErrorMessage(error) {
+		const errorMessageContainer = document.getElementById('errorMessageContainer');
+		const errorElement = document.getElementById('errorMessage');
+		errorElement.innerText = error;
+		errorMessageContainer.style.display= 'block';
+	}
+
+	function clearErrorMessage() {
+		const errorMessageContainer = document.getElementById('errorMessageContainer');
+		errorMessageContainer.style.display= 'none';
+	}
+
+	function showNoResults() {
+		const luceneResultTable = document.getElementById('luceneResultTable');
+		luceneResultTable.innerHTML = `<tr><td><div style="text-align:center; padding: 40px;"><%= LanguageUtil.get(pageContext, "No-Results") %></div></td></tr>`;
+	}
+
 </script>
 
 <!-- START Split Screen -->
@@ -126,7 +210,7 @@ query = Xss.strip(query);
 	    <div class="portlet-sidebar">
 
 			<div id="advancedSearch">
-				<form name="query" action="<%= submitURL %>" method="post">
+				<form name="query" id="luceneQueryForm" onsubmit="search(event);return false">
 					<dl class="vertical">
 
 						<dt><label><%= LanguageUtil.get(pageContext, "Lucene-Query") %> :</label></dt>
@@ -134,15 +218,15 @@ query = Xss.strip(query);
 
 						<dt><label><%= LanguageUtil.get(pageContext, "Offset") %> : </label></dt>
 						<dd><input name="offset" id="offset" dojoType="dijit.form.NumberTextBox" type="text" value="<%=offset%>" size="10" /></dd>
-				
+
 						<dt><label><%= LanguageUtil.get(pageContext, "Limit") %> : </label></dt>
 						<dd><input name="limit" id="limit" dojoType="dijit.form.NumberTextBox" type="text" value="<%=limit%>" size="10" /></dd>
-				
+
 						<dt><label><%= LanguageUtil.get(pageContext, "Sort") %> : </label></dt>
 						<dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="<%=sortBy%>" size="10" /></dd>
-				
+
 						<dt><label><%= LanguageUtil.get(pageContext, "UserID") %> : </label></dt>
-						<dd><input name="userid" id="userid" dojoType="dijit.form.TextBox" type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/></dd>
+						<dd><input name="userId" id="userId" dojoType="dijit.form.TextBox" type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/></dd>
 					</dl>
 					<div class="inline-form">
 						<input name="reindexResults" id="reindexResults" dojoType="dijit.form.CheckBox" type="checkbox"  value="true" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/>
@@ -174,114 +258,31 @@ query = Xss.strip(query);
 	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;">
 		<div class="portlet-main" style="margin: 35px 20px;">
 
-			<%if(UtilMethods.isSet(nastyError)){%>
-				<dl>
-					<dt style='color:red;'><%= LanguageUtil.get(pageContext, "Query-Error") %> : </dt>
-					<dd><%=nastyError %></dd>
-				</dl>
 
-			<%}else if(iresults != null){%>
-
+			<dl id="errorMessageContainer" style="display:none" >
+				<dt style='color:red;'><%= LanguageUtil.get(pageContext, "Query-Error") %> : </dt>
+				<dd id="errorMessage" ></dd>
+			</dl>
 			<table class="listingTable">
 				<tr>
-					<td><strong><%= LanguageUtil.get(pageContext, "The-total-results-are") %> :</strong> <%=iresults == null ? "0" : iresults.size()%></td>
+					<td><strong><%= LanguageUtil.get(pageContext, "The-total-results-are") %> :</strong> <span id="luceneResultSize">0</span></td>
 					<td></td>
 				</tr>
 				<tr>
-					<td><strong><%= LanguageUtil.get(pageContext, "Query-took") %> :</strong> <<%= afterAPISearchPull-startAPISearchPull %> ms</td>
+					<td><strong><%= LanguageUtil.get(pageContext, "Query-took") %> :</strong> <<span id="luceneQueryTook">0</span> ms</td>
 					<td><em><%= LanguageUtil.get(pageContext, "This-includes-permissions-but-returns-only-the-index-objects") %></em></td>
 				</tr>
 				<tr>
-					<td><strong><%= LanguageUtil.get(pageContext, "Content-Population-took") %> :</strong> <%= afterAPIPull-startAPIPull %> ms</td>
+					<td><strong><%= LanguageUtil.get(pageContext, "Content-Population-took") %> :</strong> <span id="luceneContentPopulation">0</span> ms</td>
 					<td><em><%= LanguageUtil.get(pageContext, "This-includes-permissions-and-returns-full-content-objects") %></em></td>
 				</tr>
 			</table>
-				<!-- <tr>
-					<td><%= LanguageUtil.get(pageContext, "Query-is") %> :</td>
-					<td><%=UtilMethods.htmlifyString(query)%></td>
-				</tr>
-				<tr>
-					<td><%= LanguageUtil.get(pageContext, "Translated-query-is") %> :</td>
-					<td><%=translatedQuery%></td>
-				</tr>
-				<tr>
-					<td><%= LanguageUtil.get(pageContext, "The-offset-is") %> :</td>
-					<td><%=offset%></td>
-				</tr>
-				<tr>
-					<td><%= LanguageUtil.get(pageContext, "The-limit-is") %> :</td>
-					<td><%=limit%></td>
-				</tr>
-				<tr>
-					<td><%= LanguageUtil.get(pageContext, "The-sort-is") %>:</td>
-					<td><%=sortBy%> </td>
-				</tr>
-				 -->
-			</table>
-			<!--
-			<table class="listingTable">
-				<tr>
-					<th><%= LanguageUtil.get(pageContext, "INODE") %></th>
-					<th><%= LanguageUtil.get(pageContext, "IDENTIFIER") %></th>
-					<th><%= LanguageUtil.get(pageContext, "score") %></th>
-				</tr>
-				<% for (ContentletSearch r : iresults){%>
-					<tr>
-						<td><%= r.getInode() %></td>
-						<td><%= r.getIdentifier() %></td>
-						<td><%= r.getScore() %></td>
-					</tr>
-				<% } %>
-			</table>
-			-->
-
-			<div id="results" style="margin-top: 30px;">
-				<table class="listingTable">
-					<!--<tr>
-						<th colspan="3"><%= LanguageUtil.get(pageContext, "INODE") %></th>
-					</tr>-->
-					<%if(iresults.size() >0){ %>
-
-						<% for(Contentlet c : cons) {%>
-							<tr>
-								<th><strong><%= counter %>.</th>
-								<th><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
-								<th>
-									<a href="/c/portal/layout?p_l_id=<%=layout.getId() %>&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/edit_contentlet&_<%=PortletID.CONTENT%>_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
-										<%=c.getTitle() %>
-									</a>
-								</th>
-							</tr>
-							<tr>
-								<td></td>
-								<td><strong><%= LanguageUtil.get(pageContext, "ContentType") %>:</strong></td>
-								<td width="90%"><%=c.getStructure().getVelocityVarName() %></td>
-							</tr>
-							<tr>
-								<td></td>
-								<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
-								<td width="90%"><%=c.getInode() %></td>
-							</tr>
-							<tr>
-								<td></td>
-								<td><strong><%= LanguageUtil.get(pageContext, "Identifier") %>:</strong></td>
-								<td><%= c.getIdentifier() %></td>
-							</tr>
-							<!-- <tr >
-								<td></td>
-								<td colspan="2">
-									<div style="padding-bottom: 25px;"><%= UtilMethods.makeHtmlSafe(ContentletUtil.getContentPrintableMap(user, c).toString()) %></div>
-								</td>
-							</tr> -->
-
-							<%	counter++;%>
-						<%}%>
-					<% }else{ %>
-						<div id="result" style="text-align:center; padding: 40px;"><%= LanguageUtil.get(pageContext, "No-Results") %></div>
-					<%} %>
+			<div style="margin-top: 30px;">
+				<table class="listingTable" id=luceneResultTable>
+					<tr><td><div style="text-align:center; padding: 40px;"><%= LanguageUtil.get(pageContext, "No-Results") %></div></td></tr>
 				</table>
 			</div>
-		<%} %>
+
 		</div>
 	</div>
 </div>
