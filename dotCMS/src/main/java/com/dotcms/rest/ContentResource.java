@@ -54,6 +54,7 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -88,6 +89,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -154,16 +156,25 @@ public class ContentResource {
         final String sort    = searchForm.getSort(); // ""
         final int    limit   = searchForm.getLimit();  // 20
         final int    offset  = searchForm.getOffset(); // 0
-        final PageMode pageMode   = PageMode.get(request);
-        final String userToPullID = searchForm.getUserId();
+        final String render  = searchForm.getRender();
+        final int depth      = searchForm.getDepth(); // -1
+        final long language  = searchForm.getLanguageId();
+        final PageMode pageMode         = PageMode.get(request);
+        final String userToPullID       = searchForm.getUserId();
+        final boolean allCategoriesInfo = searchForm.isAllCategoriesInfo();
+        User   userForPull              = user;
+        List<Contentlet> contentlets    = Collections.emptyList();
+        long resultsSize                = 0;
+        long startAPISearchPull         = 0;
+        long afterAPISearchPull         = 0;
+        long startAPIPull               = 0;
+        long afterAPIPull               = 0;
+        JSONObject resultJson           = new JSONObject();
         final String tmDate = (String) request.getSession().getAttribute("tm_date");
-        User   userForPull        = user;
-        List<ContentletSearch> contentletSearches = Collections.emptyList();
-        List<Contentlet>       contentlets        = Collections.emptyList();
-        long startAPISearchPull = 0;
-        long afterAPISearchPull = 0;
-        long startAPIPull = 0;
-        long afterAPIPull = 0;
+
+        if (depth > 3) {
+            throw new IllegalArgumentException("Invalid depth: " + depth);
+        }
 
         Logger.debug(this, ()-> "Searching contentlets by: " + searchForm);
 
@@ -178,30 +189,24 @@ public class ContentResource {
         if (UtilMethods.isSet(query)) {
 
             startAPISearchPull = Calendar.getInstance().getTimeInMillis();
-            contentletSearches = APILocator.getContentletAPI().searchIndex(query, limit, offset, sort, userForPull, pageMode.respectAnonPerms);
+            resultsSize        = APILocator.getContentletAPI().indexCount(query, userForPull, pageMode.respectAnonPerms);
             afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
 
             startAPIPull       = Calendar.getInstance().getTimeInMillis();
-            contentlets        = ContentUtils.pull(processQuery(query), offset, limit, sort, user, tmDate, pageMode.respectAnonPerms)
+            contentlets        = ContentUtils.pull(processQuery(query), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms)
                                     .stream().map(this.contentHelper::hydrateContentlet).collect(Collectors.toList());
+            resultJson = getJSONObject(contentlets, request, response, render, user, depth,
+                    pageMode.respectAnonPerms, language, pageMode.showLive, allCategoriesInfo);
+
             afterAPIPull       = Calendar.getInstance().getTimeInMillis();
         }
 
-        final int  resultsSize   = contentletSearches.size();
         final long queryTook     = afterAPISearchPull-startAPISearchPull;
         final long contentTook   = afterAPIPull-startAPIPull;
 
         return Response.ok(new ResponseEntityView(
-                map("summaryMap",
-                        map("resultsSize", resultsSize,
-                                "queryTook", queryTook,
-                                "contentTook", contentTook),
-                        "contentletSearches", contentletSearches,
-                        "contentlets", contentlets))
-        ).build();
+                new SearchView(resultsSize, queryTook, contentTook, new JsonObjectView(resultJson)))).build();
     }
-
-
 
     /**
      * performs a call to APILocator.getContentletAPI().searchIndex() with the specified parameters.
@@ -1048,6 +1053,31 @@ public class ContentResource {
             final HttpServletResponse response, final String render, final User user,
             final int depth, final boolean respectFrontendRoles, final long language,
             final boolean live, final boolean allCategoriesInfo){
+        final JSONObject json = this.getJSONObject(cons, request, response, render, user,
+                depth, respectFrontendRoles, language, live, allCategoriesInfo);
+        return json.toString();
+    }
+
+    /**
+     * Creates a json object (as string) of a list of contentlets
+     * @param cons
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @param respectFrontendRoles
+     * @param language
+     * @param live
+     * @param allCategoriesInfo
+     * @return
+     * @throws IOException
+     * @throws DotDataException
+     */
+    private JSONObject getJSONObject(final List<Contentlet> cons, final HttpServletRequest request,
+                           final HttpServletResponse response, final String render, final User user,
+                           final int depth, final boolean respectFrontendRoles, final long language,
+                           final boolean live, final boolean allCategoriesInfo){
         final JSONObject json = new JSONObject();
         final JSONArray jsonCons = new JSONArray();
 
@@ -1074,7 +1104,7 @@ public class ContentResource {
             Logger.debug(this.getClass(), "unable to create JSONObject", e);
         }
 
-        return json.toString();
+        return json;
     }
 
     /**
