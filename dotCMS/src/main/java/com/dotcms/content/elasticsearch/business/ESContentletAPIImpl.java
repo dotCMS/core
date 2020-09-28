@@ -8082,7 +8082,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         }
 
-        if(lockedBy != null && !user.getUserId().equals(lockedBy)){
+        if(lockedBy!=null && lockedBy.isPresent() && !user.getUserId().equals(lockedBy.get())){
 
             throw new DotLockException(CANT_GET_LOCK_ON_CONTENT);
         }
