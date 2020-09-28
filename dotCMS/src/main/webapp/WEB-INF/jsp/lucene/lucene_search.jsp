@@ -120,7 +120,7 @@ query = Xss.strip(query);
 
 
 	function search(event) {
-		clearErrorMessage();
+		luceneLoadingMode();
 		var form = document.forms.luceneQueryForm;
 		var formData = new FormData(form);
 		fetch('/api/content/_search', {
@@ -133,24 +133,25 @@ query = Xss.strip(query);
 		.then(response => response.json())
 		.then(data => {
 			if (data.entity) {
-				setSummary(data.entity.summaryMap);
-				if (data.entity.contentlets && data.entity.contentlets.length){
-					setContentletTable(data.entity.contentlets);
+				var contentlets = data.entity.jsonObjectView.contentlets;
+				setSummary(data.entity.contentTook, data.entity.queryTook, data.entity.resultsSize);
+				if (contentlets && contentlets.length){
+					setContentletTable(contentlets);
 				} else {
 					showNoResults();
 				}
 			} else {
-				setErrorMessage(data.message)
-				console.log(data.message);
+				setErrorMessage(data.message);
 			}
+			luceneResultMode();
 		}).catch(error => {
-			console.log(error)
+			setErrorMessage(error);
+			luceneResultMode();
 		});
 
 	}
 
 	function setContentletTable(contentlets) {
-		debugger;
 		const luceneResultTable = document.getElementById('luceneResultTable');
 		let htmlRows = '';
 		contentlets.forEach((item, index) => {
@@ -161,10 +162,10 @@ query = Xss.strip(query);
 
 	function setContentletItem(contentlet, index) {
 		return `<tr><th><strong>${index}.</th><th><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
-				<th><a href="/c/portal/layout?p_l_id=<%=layout.getId() %>&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/edit_contentlet&_<%=PortletID.CONTENT%>_cmd=edit&inode=${contentlet.inode}&referer=<%=referer %>">
+				<th><a onclick="return openContent(event, '${contentlet.inode}')" href="/dotAdmin/#/c/content/${contentlet.inode}">
 				${contentlet.title}</a></th></tr><tr><td></td>
 				<td><strong><%= LanguageUtil.get(pageContext, "ContentType") %>:</strong></td>
-				<td width="90%">${contentlet.map.contentType}</td>
+				<td width="90%">${contentlet.contentType}</td>
 				</tr><tr><td></td>
 				<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
 				<td width="90%">${contentlet.inode}</td>
@@ -174,14 +175,14 @@ query = Xss.strip(query);
 				</tr>`
 	}
 
-	function setSummary(summary) {
+	function setSummary(contentTook, queryTook, resultsSize) {
 		const luceneResultSize = document.getElementById('luceneResultSize');
 		const luceneQueryTook = document.getElementById('luceneQueryTook');
 		const luceneContentPopulation = document.getElementById('luceneContentPopulation');
 
-		luceneResultSize.innerText = summary.resultsSize;
-		luceneQueryTook.innerText = summary.queryTook;
-		luceneContentPopulation.innerText = summary.contentTook;
+		luceneResultSize.innerText = resultsSize;
+		luceneQueryTook.innerText = queryTook;
+		luceneContentPopulation.innerText = contentTook;
 	}
 
 	function setErrorMessage(error) {
@@ -189,7 +190,29 @@ query = Xss.strip(query);
 		const errorElement = document.getElementById('errorMessage');
 		errorElement.innerText = error;
 		errorMessageContainer.style.display= 'block';
+		showNoResults();
+		setSummary(0, 0, 0);
+
 	}
+
+	function luceneLoadingMode() {
+		clearErrorMessage();
+		const loadingContainer = document.getElementById('luceneResultLoading');
+		const resultContainer = document.getElementById('luceneResultContainer');
+
+		resultContainer.style.display= 'none';
+		loadingContainer.style.display= 'block';
+	}
+
+
+	function luceneResultMode() {
+		const loadingContainer = document.getElementById('luceneResultLoading');
+		const resultContainer = document.getElementById('luceneResultContainer');
+
+		loadingContainer.style.display= 'none';
+		resultContainer.style.display= 'block';
+	}
+
 
 	function clearErrorMessage() {
 		const errorMessageContainer = document.getElementById('errorMessageContainer');
@@ -199,6 +222,20 @@ query = Xss.strip(query);
 	function showNoResults() {
 		const luceneResultTable = document.getElementById('luceneResultTable');
 		luceneResultTable.innerHTML = `<tr><td><div style="text-align:center; padding: 40px;"><%= LanguageUtil.get(pageContext, "No-Results") %></div></td></tr>`;
+	}
+
+	function openContent(event, inode)	{
+		if (! hastModifiers(event)){
+			window.parent.location = `/dotAdmin/#/c/content/${inode}`;
+			return false;
+		}
+		return true;
+	}
+
+
+	function hastModifiers(event) {
+		return event.getModifierState("Shift") || event.getModifierState("Alt") ||
+				event.getModifierState("Control") || event.metaKey;
 	}
 
 </script>
@@ -256,13 +293,15 @@ query = Xss.strip(query);
 	</div>
 
 	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;">
-		<div class="portlet-main" style="margin: 35px 20px;">
+		<div class="portlet-main"  id="luceneResultLoading" style="margin: 35px 20px; display:none"><%= LanguageUtil.get(pageContext, "Loading") %>... </div>
+		<div class="portlet-main"  id="luceneResultContainer"  style="margin: 35px 20px;">
 
-
-			<dl id="errorMessageContainer" style="display:none" >
-				<dt style='color:red;'><%= LanguageUtil.get(pageContext, "Query-Error") %> : </dt>
-				<dd id="errorMessage" ></dd>
-			</dl>
+			<table id="errorMessageContainer" style="display:none">
+				<tr>
+					<td style='color:red;'><strong><%= LanguageUtil.get(pageContext, "Query-Error") %> :</strong></td>
+					<td><span id="errorMessage"></span></td>
+				</tr>
+			</table>
 			<table class="listingTable">
 				<tr>
 					<td><strong><%= LanguageUtil.get(pageContext, "The-total-results-are") %> :</strong> <span id="luceneResultSize">0</span></td>
@@ -278,7 +317,7 @@ query = Xss.strip(query);
 				</tr>
 			</table>
 			<div style="margin-top: 30px;">
-				<table class="listingTable" id=luceneResultTable>
+				<table class="listingTable" id="luceneResultTable">
 					<tr><td><div style="text-align:center; padding: 40px;"><%= LanguageUtil.get(pageContext, "No-Results") %></div></td></tr>
 				</table>
 			</div>
