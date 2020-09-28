@@ -387,15 +387,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         try {
             Optional<ContentletVersionInfo> clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+            String liveInode = null;
+            String workingInode = null;
 
-            if(!clvi.isPresent()){
-                throw new DotContentletStateException("No contentlet found for given identifier");
+            if(clvi.isPresent()) {
+                liveInode = clvi.get().getLiveInode();
+                workingInode = clvi.get().getWorkingInode();
             }
-            if(live){
-                return find(clvi.get().getLiveInode(), user, respectFrontendRoles);
-            }
-            else{
-                return find(clvi.get().getWorkingInode(), user, respectFrontendRoles);
+
+            if (live) {
+                return find(liveInode, user, respectFrontendRoles);
+            } else {
+                return find(workingInode, user, respectFrontendRoles);
             }
         }catch (DotSecurityException se) {
             throw se;
