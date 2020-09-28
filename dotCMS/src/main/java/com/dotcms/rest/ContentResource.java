@@ -193,8 +193,7 @@ public class ContentResource {
             afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
 
             startAPIPull       = Calendar.getInstance().getTimeInMillis();
-            contentlets        = ContentUtils.pull(processQuery(query), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms)
-                                    .stream().map(this.contentHelper::hydrateContentlet).collect(Collectors.toList());
+            contentlets        = ContentUtils.pull(processQuery(query), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
             resultJson = getJSONObject(contentlets, request, response, render, user, depth,
                     pageMode.respectAnonPerms, language, pageMode.showLive, allCategoriesInfo);
 
