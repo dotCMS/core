@@ -9,6 +9,7 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.ConfigUtils;
 import com.liferay.portal.model.User;
 
 public interface BundleAPI {
@@ -169,15 +170,17 @@ public interface BundleAPI {
 	 */
 	public void deleteAssetFromBundle(String assetId, String bundleId) throws DotDataException;
 
-	/**
-	 * This takes a Bundle, generates the folder/file structure and returns the resulting directory
-	 * @param bundleId
-	 * @return
-	 */
+    /**
+     * This takes a Bundle, generates the folder/file structure and returns the resulting directory
+     * as a File handle. It will not delete the bundle directory if it already existed.
+     * @param bundleId
+     * @return
+     */
     public File generateBundleDirectory(Bundle bundle);
 
-    /*
-     * This takes a bundle and generates the tar.gzipped output file
+    /**
+     * This takes a bundle and generates the tar.gzipped output file.  The resulting file will be placed under
+     * the ConfigUtils.getBundlePath() + "/" + bundleId + ".tar.gz"
      */
     public File generateTarGzipBundleFile(Bundle bundle);
 

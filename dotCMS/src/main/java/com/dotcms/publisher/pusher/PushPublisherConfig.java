@@ -52,6 +52,11 @@ public class PushPublisherConfig extends PublisherConfig {
 		super();
 	}
 
+    /**
+     * Convenience constructor for generating a PP config from a bundle
+     * 
+     * @param bundle
+     */
     public PushPublisherConfig(Bundle bundle) {
         super();
 

@@ -56,6 +56,12 @@ public class PushUtils {
 	}
 	
 
+	/**
+	 * Tar and GZIPs a directory on the asset path
+	 * @param directory
+	 * @return
+	 * @throws IOException
+	 */
     public static File tarGzipDirectory(final File directory) throws IOException {
         if (directory == null || !directory.exists() || !directory.isDirectory()) {
             throw new DotRuntimeException("Unable to compress directory:" + directory);
@@ -101,6 +107,12 @@ public class PushUtils {
 	private static void addFilesToCompression(TarArchiveOutputStream taos, File file, String dir, String bundleRoot)
 		throws IOException
 	{
+	    if(!file.getAbsolutePath().contains(bundleRoot)) {
+	        throw new DotRuntimeException("Directory Traversal Warning: You can only tar files that are under the directory:" + bundleRoot + " found " + file.getAbsolutePath() );
+	    }
+	    
+	    
+	    
 	    	if(!file.isHidden()) {
 	    		// Create an entry for the file
 	    		if(!dir.equals("."))
