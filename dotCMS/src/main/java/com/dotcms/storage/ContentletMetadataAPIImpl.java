@@ -38,7 +38,8 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
 
     private static final String METADATA_GROUP_NAME = "METADATA_GROUP_NAME";
     private static final String DEFAULT_STORAGE_TYPE = "DEFAULT_STORAGE_TYPE";
-    private static final String DEFAULT_METADATA_GROUP_NAME = "dotmetadata";
+    private static final String DOT_METADATA = "dotmetadata";
+    private static final String DEFAULT_METADATA_GROUP_NAME = DOT_METADATA;
     private final FileStorageAPI fileStorageAPI;
 
     public ContentletMetadataAPIImpl() {
@@ -168,7 +169,8 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
 
 
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
-        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
+        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME,
+                DOT_METADATA);
         for (final String fullBinaryFieldName : fullBinaryFieldNameSet) {
             Logger.info(ContentletMetadataAPIImpl.class,"");
             final File file           = contentlet.getBinary(fullBinaryFieldName);
@@ -265,7 +267,8 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
     public Map<String, Object> getMetadata(final Contentlet contentlet,final  String fieldVariableName) {
 
         final String storageType        = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
-        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
+        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME,
+                DOT_METADATA);
         final String metadataPath       = this.getFileName(contentlet, fieldVariableName);
 
         return this.fileStorageAPI.retrieveMetaData(
@@ -289,7 +292,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
 
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config
-                .getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
+                .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
         final String metadataPath = this.getFileName(contentlet, fieldVariableName);
 
         return this.fileStorageAPI.retrieveMetaData(
