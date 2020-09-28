@@ -35,7 +35,7 @@ public class FileJoiner implements AutoCloseable, Flushable, Closeable {
     private static InputStream createCompressorOutputStream (final File file) {
 
         final String compressor   = Config.getStringProperty("FILE_SPLITTER_COMPRESSOR", "gzip");
-        return Try.of(()->com.liferay.util.FileUtil.createInputStream(file.toPath(), compressor)).getOrElseThrow(DotRuntimeException::new);
+        return Try.of(()->FileUtil.createInputStream(file.toPath(), compressor)).getOrElseThrow(DotRuntimeException::new);
     }
 
     public FileJoiner(final File file) throws IOException {
