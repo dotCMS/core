@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - release-*     
+      - release-*  
 jobs:
   build:
     env:
@@ -12,6 +12,8 @@ jobs:
       GH_TOKEN: ${{ secrets.GH_USER_TOKEN }}
       GITHUB_CONTEXT: ${{ toJson(github) }}
       PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
+      IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+      HEAD_REF: ${{ github.head_ref }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

@@ -6,7 +6,13 @@ GITHACK="raw.githack.com"
 GITHUB_TEST_RESULTS_PATH="DotCMS/${TEST_RESULTS}"
 DOT_CICD_TARGET="core-web"
 GITHUB_USER="dotcmsbuild"
-CURRENT_BRANCH=${GITHUB_REF##*/}
+
+if [[ $IS_PULL_REQUEST == true ]]; then
+  CURRENT_BRANCH=${HEAD_REF}   
+else
+  CURRENT_BRANCH=${GITHUB_REF##*/}
+fi 
+
 DOT_CICD_PATH="./dotcicd"
 OUTPUT_FOLDER="karma_html"
 export GITHUB_TEST_RESULTS_HOST_PATH="${GITHUB}/${GITHUB_TEST_RESULTS_PATH}"
@@ -16,6 +22,7 @@ export GITHUB_TEST_RESULTS_REPO="${GITHUB_TEST_RESULTS_URL}.git"
 export GITHUB_TEST_RESULTS_BROWSE_URL="${GITHACK_TEST_RESULTS_URL}/${CURRENT_BRANCH}/projects/${DOT_CICD_TARGET}/${GITHUB_SHA::8}"
 export GITHUB_TEST_RESULTS_REMOTE="https://${GH_TOKEN}@${GITHUB_TEST_RESULTS_HOST_PATH}"
 export GITHUB_TEST_RESULTS_REMOTE_REPO="https://${GH_TOKEN}@${GITHUB_TEST_RESULTS_HOST_PATH}.git"
+
 
 function existsOrCreateAndSwitch {
   local results=${1}
@@ -29,6 +36,7 @@ function existsOrCreateAndSwitch {
 function gitConfig {
   git config --global user.email "${GITHUB_USER}@dotcms.com"
   git config --global user.name "${GITHUB_USER}"
+  git config pull.rebase false
   git config -l | grep user
 }
 
@@ -62,14 +70,11 @@ function persistResults {
 
   remoteBranch=$(git ls-remote --heads ${GITHUB_TEST_RESULTS_REMOTE_REPO} ${CURRENT_BRANCH} | wc -l | tr -d '[:space:]')
 
-  if [[ ${CURRENT_BRANCH} != "master" ]]; then
-    if [[ ${remoteBranch} == 1 ]]; then
-      echo "git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}"
-      git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}
-    else
-      echo "git checkout -b ${CURRENT_BRANCH}"
-      git checkout -b ${CURRENT_BRANCH}
-    fi
+  if [[ ${remoteBranch} == 1 ]]; then
+    echo "git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}"
+    git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}
+  else
+    git checkout -b ${CURRENT_BRANCH}
   fi
   
   if [[ $? != 0 ]]; then
