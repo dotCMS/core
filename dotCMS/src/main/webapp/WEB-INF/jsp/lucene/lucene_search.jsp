@@ -265,10 +265,6 @@ query = Xss.strip(query);
 						<dt><label><%= LanguageUtil.get(pageContext, "UserID") %> : </label></dt>
 						<dd><input name="userId" id="userId" dojoType="dijit.form.TextBox" type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/></dd>
 					</dl>
-					<div class="inline-form">
-						<input name="reindexResults" id="reindexResults" dojoType="dijit.form.CheckBox" type="checkbox"  value="true" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/>
-						<label><%= LanguageUtil.get(pageContext, "Reindex-selected-contents") %></label>
-					</div>
 						<div class="buttonRow">
 							<button type="submit" id="submitButton" dojoType="dijit.form.Button" value="Submit"><%= LanguageUtil.get(pageContext, "Submit") %></button>
 					</div>
