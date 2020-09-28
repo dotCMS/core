@@ -7,6 +7,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
@@ -14,6 +15,7 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.VersionableAPI;
@@ -346,7 +348,7 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response publish(@Context final HttpServletRequest  request,
+    public final Response PUBLISH(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
                                final List<String> templatesToPublish) throws DotDataException, DotSecurityException {
 
@@ -734,6 +736,11 @@ public class TemplateResource {
      * @return true if template can be deleted
      */
     private boolean canTemplateBeDeleted (final Template template, final User user, final SessionDialogMessage errorMessage) {
+
+        if (Try.of(()-> !template.isArchived()).getOrElse(false)) {
+
+            throw new DotStateException("The template: " + template.getName() + " must be archive before delete");
+        }
 
         final Map<String, String> resultMap = this.templateAPI.checkPageDependencies(template, user, false);
 
