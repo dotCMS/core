@@ -67,13 +67,13 @@
 		String title = ver.getTitle();
 		String modUser = ver.getModUser();
 		Date modDate = ver.getModDate();
-		ContentletVersionInfo verinfo=APILocator.getVersionableAPI().getContentletVersionInfo(id, ver.getLanguageId());
-		if(verinfo==null){
+		Optional<ContentletVersionInfo> verinfo=APILocator.getVersionableAPI().getContentletVersionInfo(id, ver.getLanguageId());
+		if(!verinfo.isPresent()){
 			continue;
 		}
 		Language langV=APILocator.getLanguageAPI().getLanguage(ver.getLanguageId());
-		boolean working = ver.getInode().equals(verinfo.getWorkingInode());
-		boolean live = ver.getInode().equals(verinfo.getLiveInode());
+		boolean working = ver.getInode().equals(verinfo.get().getWorkingInode());
+		boolean live = ver.getInode().equals(verinfo.get().getLiveInode());
 
 %>
 	<tr>
