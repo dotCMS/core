@@ -1,7 +1,6 @@
 package com.dotcms.storage;
 
 import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * Simple method to read an object into the stream

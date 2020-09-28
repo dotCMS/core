@@ -2,8 +2,6 @@ package com.dotcms.storage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-
-import java.io.IOException;
 import java.io.InputStream;
 
 /**

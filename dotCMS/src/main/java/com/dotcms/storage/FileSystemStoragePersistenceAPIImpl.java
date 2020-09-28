@@ -31,6 +31,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAPI {
 
     private static final String DEFAULT_ROOT = "root";
+    private static final String THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED = "The bucketName: `%s`, does not have any files mapped";
 
     private final Map<String, File> groups = new ConcurrentHashMap<>();
 
@@ -169,8 +170,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
         if (!this.existsGroup(groupName)) {
 
-            throw new IllegalArgumentException("The groupName: " + groupName +
-                    ", does not have any file mapped");
+            throw new IllegalArgumentException(String.format(
+                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
         }
 
         final File groupFile = this.groups.get(groupName.toLowerCase());
@@ -212,8 +213,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
         if (!this.existsGroup(groupName)) {
 
-            throw new IllegalArgumentException("The bucketName: " + groupName +
-                    ", does not have any file mapped");
+            throw new IllegalArgumentException(String.format(
+                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
         }
 
         final File groupFile = this.groups.get(groupName.toLowerCase());
@@ -302,12 +303,13 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public File pullFile(final String groupName, final String path) {
 
-        File clientFile = null;
         if (!this.existsGroup(groupName)) {
 
-            throw new IllegalArgumentException("The bucketName: " + groupName +
-                    ", does not have any file mapped");
+            throw new IllegalArgumentException(String.format(
+                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
         }
+
+        final File clientFile;
 
         final File bucketFile = this.groups.get(groupName.toLowerCase());
 
@@ -344,8 +346,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         Object object;
         if (!this.existsGroup(groupName)) {
 
-            throw new IllegalArgumentException("The bucketName: " + groupName +
-                    ", does not have any file mapped");
+            throw new IllegalArgumentException(String.format(
+                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
         }
 
         final File bucketFile = this.groups.get(groupName.toLowerCase());

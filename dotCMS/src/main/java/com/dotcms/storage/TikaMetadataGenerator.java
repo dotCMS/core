@@ -22,7 +22,7 @@ class TikaMetadataGenerator implements MetadataGenerator {
     public Map<String, Object> generate(final File binary, final long maxLength) {
         try {
             final TikaUtils tikaUtils = new TikaUtils();
-            return tikaUtils.getForcedMetaDataMap(binary,  Long.valueOf(maxLength).intValue());
+            return tikaUtils.getForcedMetaDataMap(binary,(int) maxLength);
         } catch (DotDataException e) {
 
             Logger.error(this, e.getMessage(), e);

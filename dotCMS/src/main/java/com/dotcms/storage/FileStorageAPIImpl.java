@@ -1,11 +1,8 @@
 package com.dotcms.storage;
 
-import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
-
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;

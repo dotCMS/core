@@ -108,18 +108,18 @@ public class GenerateMetadataConfig {
         /**
          * Provides the supplier to stores the metadata generated, if store is true
          */
-        private StorageKey storageKey = null;
+        private StorageKey storageKey;
 
         /**
          * If true, means the metadata output will be storage
          */
-        private boolean store = false;
+        private boolean store;
 
         /**
          * if store is true, and you want to force always the file generation set this to true (keep
          * in mind it could be expensive)
          */
-        private boolean override = false;
+        private boolean override;
 
         /**
          * On huge file, we probably do not want to parse all the content, so this max will limited
@@ -135,7 +135,7 @@ public class GenerateMetadataConfig {
         /**
          * If true, means the medatada output will be stores in the memory cache.
          */
-        private boolean cache = false;
+        private boolean cache;
 
         /**
          * Cache key supplier, if cache is true

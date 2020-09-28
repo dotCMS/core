@@ -77,12 +77,12 @@ public class RequestMetadata {
         /**
          * If true, means the medatada output will be stores in the memory cache.
          */
-        private boolean           cache = false;
+        private boolean           cache;
 
         /**
          * Cache key supplier, if cache is true
          */
-        private Supplier<String>  cacheKeySupplier = null;
+        private Supplier<String>  cacheKeySupplier;
 
         /**
          * In case the metadata is retrieved from the storage instead of the cache,

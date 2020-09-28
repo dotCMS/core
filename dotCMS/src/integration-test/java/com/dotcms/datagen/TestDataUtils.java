@@ -58,6 +58,10 @@ import java.util.stream.Stream;
  */
 public class TestDataUtils {
 
+    public static final String FILE_ASSET_1 = "fileAsset1";
+    public static final String FILE_ASSET_2 = "fileAsset2";
+    public static final String FILE_ASSET_3 = "fileAsset3";
+
     public static ContentType getBlogLikeContentType() {
         return getBlogLikeContentType("Blog" + System.currentTimeMillis());
     }
@@ -1844,8 +1848,8 @@ public class TestDataUtils {
 
                 fields.add(
                         new FieldDataGen()
-                                .name("fileAsset1")
-                                .velocityVarName("fileAsset1")
+                                .name(FILE_ASSET_1)
+                                .velocityVarName(FILE_ASSET_1)
                                 .sortOrder(3)
                                 //The only way we can guarantee a field won't be indexed is by setting all these to false
                                 .indexed(false).searchable(false).listed(false).unique(false)
@@ -1855,8 +1859,8 @@ public class TestDataUtils {
 
                 fields.add(
                         new FieldDataGen()
-                                .name("fileAsset2")
-                                .velocityVarName("fileAsset2")
+                                .name(FILE_ASSET_2)
+                                .velocityVarName(FILE_ASSET_2)
                                 .sortOrder(4)
                                 .indexed(true)
                                 .type(BinaryField.class)
@@ -1865,8 +1869,8 @@ public class TestDataUtils {
 
                 fields.add(
                         new FieldDataGen()
-                                .name("fileAsset3")
-                                .velocityVarName("fileAsset3")
+                                .name(FILE_ASSET_3)
+                                .velocityVarName(FILE_ASSET_3)
                                 .sortOrder(5)
                                 .indexed(true)
                                 .type(BinaryField.class)
@@ -1918,16 +1922,16 @@ public class TestDataUtils {
            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
                     .languageId(languageId)
                     .setProperty("title", "blah")
-                    .setProperty("fileAsset1", nextBinaryFile(TestFile.JPG))
-                    .setProperty("fileAsset2", nextBinaryFile(TestFile.PNG))
+                    .setProperty(FILE_ASSET_1, nextBinaryFile(TestFile.JPG))
+                    .setProperty(FILE_ASSET_2, nextBinaryFile(TestFile.PNG))
                     .setProperty("image1", fileAssetJpgContent.getIdentifier());
 
             if (persist) {
                 final Contentlet persisted = contentletDataGen.nextPersisted();
 
-                final File fileAsset1 = (File) persisted.get("fileAsset1");
+                final File fileAsset1 = (File) persisted.get(FILE_ASSET_1);
                 removeAnyMetadata(fileAsset1);
-                final File fileAsset2 = (File) persisted.get("fileAsset2");
+                final File fileAsset2 = (File) persisted.get(FILE_ASSET_2);
                 removeAnyMetadata(fileAsset2);
 
                 return persisted;
