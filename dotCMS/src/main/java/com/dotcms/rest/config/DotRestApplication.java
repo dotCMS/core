@@ -40,7 +40,6 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueResource;
-import com.dotcms.rest.api.v1.storage.ContentStorageResource;
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
 import com.dotcms.rest.api.v1.system.UpgradeTaskResource;
@@ -58,11 +57,10 @@ import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
 import com.google.common.collect.ImmutableSet;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -161,7 +159,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(DotSamlResource.class)
 			.add(LoggerResource.class)
 			.add(TemplateResource.class)
-			.add(ContentStorageResource.class)
 			.build();
 
 

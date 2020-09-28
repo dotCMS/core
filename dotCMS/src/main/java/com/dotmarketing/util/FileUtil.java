@@ -287,11 +287,19 @@ public class FileUtil {
 	 * @return
 	 */
 	@VisibleForTesting
-	static Optional <String> getRealAssetsPathRelativePiece(final File file, final Supplier<String> realAssetsRootPathSupplier) {
+	static Optional<String> getRealAssetsPathRelativePiece(final File file,
+			final Supplier<String> realAssetsRootPathSupplier) {
 		final String absolutePathLC = file.getAbsolutePath().toLowerCase();
 		final String realAssetsRootPath = realAssetsRootPathSupplier.get();
 		if (absolutePathLC.startsWith(realAssetsRootPath.toLowerCase())) {
-			return Optional.of(file.getAbsolutePath().substring(realAssetsRootPath.length()));
+			try {
+				return Optional
+						.of(file.getAbsolutePath().substring(realAssetsRootPath.length() - 1));
+			} catch (StringIndexOutOfBoundsException e) {
+				Logger.error(FileUtil.class, String.format(
+						"Error extracting realAsset Path from absolute path `%s` , `%s` ",
+						file.getAbsolutePath(), realAssetsRootPath), e);
+			}
 		}
 		return Optional.empty();
 	}

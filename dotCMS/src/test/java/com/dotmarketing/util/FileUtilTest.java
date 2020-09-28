@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Optional;
 import org.junit.Test;
 
@@ -20,10 +21,10 @@ public class FileUtilTest extends UnitTestBase {
     @Test
     public void Test_Get_Relative_Path_Expect_Match(){
         final String relativePart = "/4/1/419bacda-1e1d-412e-b73e-db514289b71f/fileAsset/test_image11600880647045.jpg";
-        final String realAssetPath = "/Users/fabrizzio/code/servers/server1/assets";
+        final String realAssetPath = "/Users/fabrizzio/code/servers/server1/assets/";
         final String absolutePath = realAssetPath + relativePart;
         final File file = mock(File.class);
-        when(file.getAbsolutePath()).thenReturn(absolutePath);
+        when(file.getAbsolutePath()).thenReturn(Paths.get(absolutePath).normalize().toString());
         final Optional<String> optional = FileUtil
                 .getRealAssetsPathRelativePiece(file, () -> realAssetPath);
         assertTrue(optional.isPresent());

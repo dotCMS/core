@@ -32,6 +32,10 @@ public class RequestMetadata {
      */
     private final Function<Map<String, Object>, Map<String, Object>> wrapMetadataMapForCache;
 
+    /**
+     * Builder based constructor
+     * @param builder
+     */
     private RequestMetadata(final Builder builder) {
 
         this.cache                   = builder.cache;
@@ -44,6 +48,10 @@ public class RequestMetadata {
         return storageKey;
     }
 
+    /**
+     * cache setting read
+     * @return
+     */
     public boolean isCache() {
         return cache;
     }
@@ -56,6 +64,9 @@ public class RequestMetadata {
         return wrapMetadataMapForCache;
     }
 
+    /**
+     * Convenience Builder
+     */
     public static final class Builder {
 
         /**

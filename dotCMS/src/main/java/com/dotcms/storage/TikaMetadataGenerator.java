@@ -7,20 +7,26 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Tika based metadata generator.
+ */
 class TikaMetadataGenerator implements MetadataGenerator {
 
+    /**
+     * {@inheritDoc}
+     * @param binary     {@link File} binary to generate the metadata
+     * @param maxLength  {@link Long} max length to parse the content
+     * @return
+     */
     @Override
     public Map<String, Object> generate(final File binary, final long maxLength) {
-
         try {
             final TikaUtils tikaUtils = new TikaUtils();
-            final Map<String, Object> tikaMetaDataMap = tikaUtils.getForcedMetaDataMap(binary,  Long.valueOf(maxLength).intValue());
-            return tikaMetaDataMap;
+            return tikaUtils.getForcedMetaDataMap(binary,  Long.valueOf(maxLength).intValue());
         } catch (DotDataException e) {
 
             Logger.error(this, e.getMessage(), e);
         }
-
         return Collections.emptyMap();
     }
 }

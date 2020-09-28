@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Default implementation
@@ -51,6 +50,14 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
         this.fileStorageAPI = fileStorageAPI;
     }
 
+    /**
+     * {@inheritDoc}
+     * @param contentlet Contentlet
+     * @param basicBinaryFieldNameSet {@link Set} fields to generate basic metadata
+     * @param fullBinaryFieldNameSet  {@link Set} fields to generate full metadata
+     * @return
+     * @throws IOException
+     */
     @Override
     public ContentletMetadata generateContentletMetadata(final Contentlet contentlet,
                                                          final Set<String> basicBinaryFieldNameSet,
@@ -76,6 +83,16 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
         return new ContentletMetadata(fullMetadataMap.build(), basicMetadataMap.build());
     }
 
+    /**
+     * Basic metadata generation entry point.
+     * @param contentlet
+     * @param basicBinaryFieldNameSet
+     * @param fullBinaryFieldNameSet
+     * @param basicMetadataMap
+     * @param fieldMap
+     * @param alwaysRegenerateMetadata
+     * @throws IOException
+     */
     private void generateBasicMetadata(final Contentlet contentlet,
                                        final Set<String> basicBinaryFieldNameSet,
                                        final Set<String> fullBinaryFieldNameSet,
@@ -83,7 +100,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                                        final Map<String, Field> fieldMap,
                                        final boolean alwaysRegenerateMetadata) throws IOException {
 
-        final String storageType        = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
         Map<String, Object> metadataMap;
         final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DEFAULT_METADATA_GROUP_NAME);
         for (final String basicBinaryFieldName : basicBinaryFieldNameSet) {
@@ -115,7 +132,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                                     .cache(()-> ContentletCache.META_DATA_MAP_KEY + contentlet.getInode() + basicBinaryFieldName)
                                     .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty()
                                             || metadataFields.contains(metadataKey))
-                                    .storageKey(new StorageKey.Builder().group(metadataBucketName).key(metadataPath).storage(storageType).build())
+                                    .storageKey(new StorageKey.Builder().group(metadataBucketName).path(metadataPath).storage(storageType).build())
                                     .build()
                     );
                 }
@@ -128,6 +145,12 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
         }
     }
 
+    /**
+     * Metadata file generator.
+     * @param contentlet
+     * @param fieldVariableName
+     * @return
+     */
     private String getFileName (final Contentlet contentlet, final String fieldVariableName) {
 
         final String inode        = contentlet.getInode();
@@ -144,7 +167,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                                       final boolean alwaysRegenerateMetadata) throws IOException {
 
 
-        final String storageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
         for (final String fullBinaryFieldName : fullBinaryFieldNameSet) {
             Logger.info(ContentletMetadataAPIImpl.class,"");
@@ -160,7 +183,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                             .store(true)
                             .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty()
                                     || metadataFields.contains(metadataKey))
-                            .storageKey(new StorageKey.Builder().group(metadataBucketName).key(metadataPath).storage(storageType).build())
+                            .storageKey(new StorageKey.Builder().group(metadataBucketName).path(metadataPath).storage(storageType).build())
                             .build()
                         );
 
@@ -172,6 +195,13 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
         }
     }
 
+    /**
+     * based on the identifier this will give you a set of fields for the metadata generation
+     * fields are specific to the CT or preconfigured
+     * @param fieldIdentifier
+     * @return
+     */
+    @VisibleForTesting
     Set<String> getMetadataFields (final String fieldIdentifier) {
 
         final Optional<FieldVariable> customIndexMetaDataFieldsOpt =
@@ -188,7 +218,7 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
     }
 
     /**
-     * Reads INDEX_METADATA_FIELDS from configuration
+     * Reads INDEX_METADATA_FIELDS for  pre-configured metadata fields
      * @return
      */
     private Set<String> getConfiguredMetadataFields(){
@@ -200,6 +230,12 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
             Collections.emptySet();
     }
 
+    /**
+     * {@inheritDoc}
+     * @param contentlet {@link Contentlet}
+     * @return
+     * @throws IOException
+     */
     @Override
     public ContentletMetadata generateContentletMetadata(final Contentlet contentlet) throws IOException {
 
@@ -207,12 +243,24 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
         return this.generateContentletMetadata(contentlet, binaryFields._1(), binaryFields._2());
     }
 
+    /**
+     * {@inheritDoc}
+     * @param contentlet  {@link Contentlet}
+     * @param field       {@link Field}
+     * @return
+     */
     @Override
     public Map<String, Object> getMetadata(final Contentlet contentlet, final Field field) {
 
         return this.getMetadata(contentlet, field.variable());
     }
 
+    /**
+     * {@inheritDoc}
+     * @param contentlet          {@link Contentlet}
+     * @param fieldVariableName  {@link String}
+     * @return
+     */
     @Override
     public Map<String, Object> getMetadata(final Contentlet contentlet,final  String fieldVariableName) {
 
@@ -224,17 +272,22 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                 new RequestMetadata.Builder()
                         .wrapMetadataMapForCache(this::wrapMetadataMapForCache)
                         .cache(()-> ContentletCache.META_DATA_MAP_KEY + contentlet.getInode() + fieldVariableName)
-                        .storageKey(new StorageKey.Builder().group(metadataBucketName).key(metadataPath).storage(storageType).build())
+                        .storageKey(new StorageKey.Builder().group(metadataBucketName).path(metadataPath).storage(storageType).build())
                         .build()
         );
     }
 
+    /**
+     * {@inheritDoc}
+     * @param contentlet          {@link Contentlet}
+     * @param fieldVariableName  {@link String}
+     * @return
+     */
     @Override
     public Map<String, Object> getMetadataNoCache(final Contentlet contentlet,
             final String fieldVariableName) {
 
-        final String storageType = Config
-                .getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config
                 .getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
         final String metadataPath = this.getFileName(contentlet, fieldVariableName);
@@ -244,12 +297,17 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
                         .cache(false)
                         .wrapMetadataMapForCache(this::wrapMetadataMapForCache) // why is it needed for the non-cached version??
                         .storageKey(
-                                new StorageKey.Builder().group(metadataBucketName).key(metadataPath)
+                                new StorageKey.Builder().group(metadataBucketName).path(metadataPath)
                                         .storage(storageType).build())
                         .build()
         );
     }
 
+    /**
+     * filters exclude non-basic metadata fields
+     * @param originalMap
+     * @return
+     */
     private Map<String, Object> wrapMetadataMapForCache (final Map<String, Object> originalMap) {
 
         final ImmutableMap.Builder<String, Object> reduceMap = new ImmutableMap.Builder<>();
@@ -290,6 +348,12 @@ public class ContentletMetadataAPIImpl implements ContentletMetadataAPI {
         return reduceMap.build();
     }
 
+    /**
+     * This separates binaries in two sets candidates for the full meta and regular basic metadata
+     * @param contentlet
+     * @return
+     */
+    @VisibleForTesting
     Tuple2<Set<String>, Set<String>> findBinaryFields(final Contentlet contentlet) {
 
         final List<Field> binaryFields = contentlet.getContentType().fields(BinaryField.class);

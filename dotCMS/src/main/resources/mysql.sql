@@ -2349,7 +2349,7 @@ CREATE INDEX idx_storage_hash ON storage (hash);
 
 create table storage_data (
     hash_id  varchar(64) not null,
-    data     blob not null,
+    data     MEDIUMBLOB not null,
     mod_date TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
     PRIMARY KEY (hash_id)
 );

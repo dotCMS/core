@@ -17,7 +17,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
@@ -30,8 +29,6 @@ import java.util.function.Predicate;
 public class FileStorageAPIImpl implements FileStorageAPI {
 
     private static final String CACHE_GROUP = "Contentlet";
-
-    // width,height,contentType,author,keywords,fileSize,content,length,title
 
     private volatile ObjectReaderDelegate objectReaderDelegate;
     private volatile ObjectWriterDelegate objectWriterDelegate;
@@ -64,18 +61,35 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 new TikaMetadataGenerator(), StoragePersistenceProvider.INSTANCE.get());
     }
 
+    /**
+     * {@inheritDoc}
+     * @param binary {@link File} file to get the information
+     * @return
+     */
     @Override
     public Map<String, Object> generateRawBasicMetaData(final File binary) {
 
         return this.generateBasicMetaData(binary, s -> true); // raw = no filter
     }
 
+    /**
+     * {@inheritDoc}
+     * @param binary  {@link File} file to get the information
+     * @param maxLength {@link Long} max length is used when parse the content, how many bytes do you want to parse.
+     * @return
+     */
     @Override
     public Map<String, Object> generateRawFullMetaData(final File binary, long maxLength) {
 
         return this.generateFullMetaData(binary, s -> true, maxLength); // raw = no filter
     }
 
+    /**
+     * {@inheritDoc}
+     * @param binary {@link File} file to get the information
+     * @param metaDataKeyFilter  {@link Predicate} filter the meta data key for the map result generation
+     * @return
+     */
     @Override
     public Map<String, Object> generateBasicMetaData(final File binary,
             final Predicate<String> metaDataKeyFilter) {
@@ -92,6 +106,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             if (optional.isPresent()) {
                 mapBuilder.put(PATH_META_KEY, optional.get());
             } else {
+                Logger.warn(FileStorageAPIImpl.class, String.format(
+                        "Unable to determine relative path for asset `%s`. Using absolute path.",
+                        binary));
                 mapBuilder.put(PATH_META_KEY, binary.getAbsolutePath());
             }
 
@@ -111,7 +128,13 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return mapBuilder.build();
     }
 
-
+    /**
+     * {@inheritDoc}
+     * @param binary  {@link File} file to get the information
+     * @param metaDataKeyFilter  {@link Predicate} filter for the map result generation
+     * @param maxLength {@link Long} max length is used when parse the content, how many bytes do you want to parse.
+     * @return
+     */
     @Override
     public Map<String, Object> generateFullMetaData(final File binary,
             final Predicate<String> metaDataKeyFilter,
@@ -142,6 +165,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     /**
      * {@inheritDoc}
+     * @param binary {@link File} file to get the information
+     * @param configuration {@link GenerateMetadataConfig}
+     * @return
      */
     @Override
     public Map<String, Object> generateMetaData(final File binary,
@@ -149,13 +175,12 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         final Map<String, Object> metadataMap;
         final StorageKey storageKey = configuration.getStorageKey();
-        final StorageType storageType = this.getStorageType(storageKey);
-        final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageType);
+        final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
 
         this.checkBucket(storageKey, storage);  //if the group/bucket doesn't exist create it.
         this.checkOverride(storage, configuration); //if config states we need to remove and force regen
         //if the entry isn't already there skip and simply store in cache.
-        if (!storage.existsObject(storageKey.getGroup(), storageKey.getKey())) {
+        if (!storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
             if (this.validBinary(binary)) {
                 Logger.warn(FileStorageAPIImpl.class, String.format(
                         "Object identified by `/%s/%s` didn't exist in storage %s will be generated.",
@@ -169,7 +194,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                                 configuration.getMetaDataKeyFilter());
 
                 if (configuration.isStore()) {
-                    this.storeMetadata(storageKey, storage, metadataMap, binary);
+                    this.storeMetadata(storageKey, storage, metadataMap);
                 }
 
             } else {
@@ -188,20 +213,22 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return metadataMap;
     }
 
-    private StorageType getStorageType(final StorageKey storageKey) {
-        final String val = UtilMethods.isSet(storageKey.getStorage()) ? storageKey.getStorage()
-                : Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
-        return StorageType.valueOf(val);
-    }
-
+    /**
+     * Group existence verifier
+     * @param storageKey
+     * @param storage
+     */
     private void checkBucket(final StorageKey storageKey, final StoragePersistenceAPI storage) {
-
         if (!storage.existsGroup(storageKey.getGroup())) {
-
             storage.createGroup(storageKey.getGroup());
         }
     }
 
+    /**
+     * save into cache
+     * @param cacheKey
+     * @param metadataMap
+     */
     private void putIntoCache(final String cacheKey, final Map<String, Object> metadataMap) {
 
         final DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
@@ -212,14 +239,20 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         }
     }
 
+    /**
+     * meta-data retriever
+     * @param storageKey
+     * @param storage
+     * @return
+     */
     private Map<String, Object> retrieveMetadata(final StorageKey storageKey,
             final StoragePersistenceAPI storage) {
 
         Map<String, Object> objectMap = Collections.emptyMap();
 
         try {
-            objectMap = (Map<String, Object>) storage.pullObject(storageKey.getGroup(), storageKey.getKey(), this.objectReaderDelegate);
-            Logger.info(this, "Metadata read from: " + storageKey.getKey());
+            objectMap = (Map<String, Object>) storage.pullObject(storageKey.getGroup(), storageKey.getPath(), this.objectReaderDelegate);
+            Logger.info(this, "Metadata read from: " + storageKey.getPath());
         } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);
@@ -228,35 +261,21 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return objectMap;
     }
 
+    /**
+     * sends metadata to the respective configured storage
+     * @param storageKey
+     * @param storage
+     * @param metadataMap
+     */
     private void storeMetadata(final StorageKey storageKey, final StoragePersistenceAPI storage,
-            final Map<String, Object> metadataMap, final File binary) {
+            final Map<String, Object> metadataMap) {
 
         try {
-            //Commenting this rawBasic Metadata that basically brings everythig
-            //final Map<String, Object> extraMeta = generateRawBasicMetaData(binary);
-            //printInfo(metadataMap, extraMeta);
-            storage.pushObject(storageKey.getGroup(), storageKey.getKey(),
+            storage.pushObject(storageKey.getGroup(), storageKey.getPath(),
                     this.objectWriterDelegate, (Serializable) metadataMap, metadataMap);
-            Logger.info(this, "Metadata wrote on: " + storageKey.getKey());
+            Logger.info(this, "Metadata wrote on: " + storageKey.getPath());
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
-        }
-    }
-
-    /**
-     * debug utility
-     * @param meta
-     * @param extraMeta
-     */
-    private void printInfo( final Map<String, Object> meta, final Map<String, Object> extraMeta ){
-        //if (!Logger.isDebugEnabled(FileStorageAPIImpl.class)){ return;  }
-        Logger.warn(FileStorageAPIImpl.class," basic meta:  ");
-        for (Entry<String, Object> entry : meta.entrySet()) {
-            Logger.info(FileStorageAPIImpl.class,entry.getKey() + " " + entry.getValue());
-        }
-        Logger.warn(FileStorageAPIImpl.class," extra meta:  ");
-        for (Entry<String, Object> entry : extraMeta.entrySet()) {
-            Logger.info(FileStorageAPIImpl.class,entry.getKey() + " " + entry.getValue());
         }
     }
 
@@ -280,20 +299,25 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         final StorageKey storageKey = generateMetaDataConfiguration.getStorageKey();
         if (generateMetaDataConfiguration.isOverride() && storage
-                .existsObject(storageKey.getGroup(), storageKey.getKey())) {
+                .existsObject(storageKey.getGroup(), storageKey.getPath())) {
 
             try {
 
-                storage.deleteObject(storageKey.getGroup(), storageKey.getKey());
+                storage.deleteObject(storageKey.getGroup(), storageKey.getPath());
             } catch (Exception e) {
 
                 Logger.error(this.getClass(),
                         String.format("Unable to delete existing metadata file [%s] [%s]",
-                                storageKey.getKey(), e.getMessage()), e);
+                                storageKey.getPath(), e.getMessage()), e);
             }
         }
     } // checkOverride.
 
+    /**
+     * {@inheritDoc}
+     * @param requestMetaData {@link RequestMetadata}
+     * @return
+     */
     @Override
     public Map<String, Object> retrieveMetaData(final RequestMetadata requestMetaData) {
 
@@ -313,15 +337,14 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         if (!UtilMethods.isSet(metadataMap)) {
 
             final StorageKey storageKey = requestMetaData.getStorageKey();
-            final StorageType storageType = this.getStorageType(storageKey);
-            final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageType);
+            final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
 
             this.checkBucket(storageKey, storage);
-            if (storage.existsObject(storageKey.getGroup(), storageKey.getKey())) {
+            if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
 
                 metadataMap = this.retrieveMetadata(storageKey, storage);
                 Logger.info(this,
-                        "Retrieve the meta data from storage, path: " + storageKey.getKey());
+                        "Retrieve the meta data from storage, path: " + storageKey.getPath());
                 if (null != requestMetaData.getCacheKeySupplier()) {
                     this.putIntoCache(requestMetaData.getCacheKeySupplier().get(),
                             requestMetaData.getWrapMetadataMapForCache().apply(metadataMap));

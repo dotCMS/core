@@ -60,42 +60,71 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     "Invalid attempt of mapping an non existing or writable folder. Argument`%s` must be a valid. ",
                     folder));
         }
-        this.groups.put(groupName, folder);
+        this.groups.put(groupName.toLowerCase(), folder);
         Logger.info(FileSystemStoragePersistenceAPIImpl.class, () -> String.format("Registering New Group with key is `%s` mapped to folder `%s` ",groupName, folder));
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @return
+     */
     @Override
     public boolean existsGroup(final String groupName) {
-        return this.groups.containsKey(groupName) && this.groups.get(groupName).exists();
+        final String groupNameLC = groupName.toLowerCase();
+        return this.groups.containsKey(groupNameLC) && this.groups.get(groupNameLC).exists();
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName  {@link String}
+     * @param objectPath {@link String}
+     * @return
+     */
     @Override
     public boolean existsObject(final String groupName, final String objectPath) {
-
-        return this.existsGroup(groupName) && new File(this.groups.get(groupName), objectPath)
+        final String groupNameLC = groupName.toLowerCase();
+        return this.existsGroup(groupNameLC) && new File(this.groups.get(groupNameLC), objectPath)
                 .exists();
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @return
+     */
     @Override
     public boolean createGroup(final String groupName) {
         return this.createGroup(groupName, ImmutableMap.of());
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName    {@link String} group name
+     * @param extraOptions {@link Map} depending on the implementation it might need extra options or not.
+     * @return
+     */
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) {
+        final String groupNameLC = groupName.toLowerCase();
         final File rootGroup = this.groups.get(getRootGroupKey());
-        final File destBucketFile = new File(rootGroup, groupName);
+        final File destBucketFile = new File(rootGroup, groupNameLC);
         final boolean mkdirs = destBucketFile.mkdirs();
         if(mkdirs) {
-           this.groups.put(groupName, destBucketFile);
+           this.groups.put(groupNameLC, destBucketFile);
         }
         return mkdirs;
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @return
+     */
     @Override
     public int deleteGroup(final String groupName) {
         final File rootGroup = this.groups.get(getRootGroupKey());
-        final File destBucketFile = new File(rootGroup, groupName);
+        final File destBucketFile = new File(rootGroup, groupName.toLowerCase());
         if (!rootGroup.equals(destBucketFile)) {
             final int count = countFiles(destBucketFile);
             FileUtil.deltree(destBucketFile, true);
@@ -104,16 +133,34 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return 0;
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @param path   {   @link String} object path
+     * @return
+     */
     public boolean deleteObject(final String groupName, final String path) {
-        return new File(this.groups.get(groupName), path).delete();
+        return new File(this.groups.get(groupName.toLowerCase()), path.toLowerCase()).delete();
     }
 
+    /**
+     * {@inheritDoc}
+     * @return
+     */
     @Override
     public List<String> listGroups() {
 
         return new ImmutableList.Builder<String>().addAll(this.groups.keySet()).build();
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName  {@link String} the group to upload
+     * @param path       {@link String} path to upload the file
+     * @param file       {@link File}   the actual file
+     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
+     * @return
+     */
     @Override
     public Object pushFile(final String groupName,
             final String path,
@@ -126,13 +173,13 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     ", does not have any file mapped");
         }
 
-        final File groupFile = this.groups.get(groupName);
+        final File groupFile = this.groups.get(groupName.toLowerCase());
 
         if (null != file && file.exists() && file.canRead() && groupFile.canWrite()) {
 
             try {
 
-                final File destBucketFile = new File(groupFile, path);
+                final File destBucketFile = new File(groupFile, path.toLowerCase());
                 FileUtils.copyFile(file, destBucketFile);
             } catch (IOException e) {
 
@@ -151,6 +198,12 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     /**
      * {@inheritDoc}
+     * @param groupName {@link String} the group to upload
+     * @param path       {@link String} path to upload the file
+     * @param writerDelegate     {@link ObjectWriterDelegate} stream to upload
+     * @param object     {@link Serializable} object to write into the storage
+     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
+     * @return
      */
     @Override
     public Object pushObject(final String groupName, final String path,
@@ -163,13 +216,13 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     ", does not have any file mapped");
         }
 
-        final File groupFile = this.groups.get(groupName);
+        final File groupFile = this.groups.get(groupName.toLowerCase());
 
         if (groupFile.canWrite()) {
 
             try {
 
-                final File destBucketFile = new File(groupFile, path);
+                final File destBucketFile = new File(groupFile, path.toLowerCase());
                 final String compressor = Config
                         .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
                 this.prepareParent(destBucketFile);
@@ -193,6 +246,10 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return true;
     }
 
+    /**
+     * makes parent dir if doesnt exist
+     * @param file
+     */
     private void prepareParent(final File file) {
 
         if (!file.getParentFile().exists()) {
@@ -203,6 +260,11 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     /**
      * {@inheritDoc}
+     * @param groupName {@link String} the bucket to push
+     * @param path       {@link String} path to push the file
+     * @param file       {@link File}   the actual file
+     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
+     * @return
      */
     @Override
     public Future<Object> pushFileAsync(final String groupName, final String path,
@@ -212,16 +274,31 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         );
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName
+     * @param path       {@link String} path to upload the file
+     * @param writerDelegate     {@link ObjectWriterDelegate} stream to upload
+     * @param object     {@link Serializable} object to write into the storage
+     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
+     * @return
+     */
     @Override
-    public Future<Object> pushObjectAsync(final String bucketName, final String path,
+    public Future<Object> pushObjectAsync(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate, final Serializable object,
             final Map<String, Object> extraMeta) {
 
         return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
-                () -> this.pushObject(bucketName, path, writerDelegate, object, extraMeta)
+                () -> this.pushObject(groupName, path, writerDelegate, object, extraMeta)
         );
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @param path {@link String}
+     * @return
+     */
     @Override
     public File pullFile(final String groupName, final String path) {
 
@@ -232,11 +309,11 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.groups.get(groupName);
+        final File bucketFile = this.groups.get(groupName.toLowerCase());
 
         if (bucketFile.canRead()) {
 
-            final File destBucketFile = new File(bucketFile, path);
+            final File destBucketFile = new File(bucketFile, path.toLowerCase());
 
             if (destBucketFile.exists()) {
 
@@ -253,22 +330,29 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return clientFile;
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String}  group name to pull
+     * @param path {@link String} path to pull the file
+     * @param readerDelegate {@link ObjectReaderDelegate} to reads the object
+     * @return
+     */
     @Override
     public Object pullObject(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) {
 
-        Object object = null;
+        Object object;
         if (!this.existsGroup(groupName)) {
 
             throw new IllegalArgumentException("The bucketName: " + groupName +
                     ", does not have any file mapped");
         }
 
-        final File bucketFile = this.groups.get(groupName);
+        final File bucketFile = this.groups.get(groupName.toLowerCase());
 
         if (bucketFile.canRead()) {
 
-            final File file = new File(bucketFile, path);
+            final File file = new File(bucketFile, path.toLowerCase());
 
             if (file.exists()) {
 
@@ -294,6 +378,12 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return object;
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @param path {@link String}
+     * @return
+     */
     @Override
     public Future<File> pullFileAsync(final String groupName, final String path) {
 
@@ -302,6 +392,13 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         );
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @param path {@link String}
+     * @param readerDelegate {@link ObjectReaderDelegate} to reads the object
+     * @return
+     */
     @Override
     public Future<Object> pullObjectAsync(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) {
@@ -311,10 +408,18 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         );
     }
 
+    /**
+     * the default root folder key
+     * @return
+     */
     private String getRootGroupKey(){
-        return Config.getStringProperty("ROOT_GROUP_NAME", DEFAULT_ROOT);
+        return Config.getStringProperty("ROOT_GROUP_NAME", DEFAULT_ROOT).toLowerCase();
     }
 
+    /**
+     * the default root folder
+     * @return
+     */
     private File getRootFolder() {
         final String rootFolderPath = Config.getStringProperty("ROOT_GROUP_FOLDER_PATH",
                 Paths.get(System.getProperty("user.home") + File.separator + "storage")
@@ -326,13 +431,23 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return rootFolder;
     }
 
+    /**
+     * recursive files count
+     * @param dirPath
+     * @return
+     */
     private int countFiles(final File dirPath) {
         final MutableInt count = new MutableInt(0);
         countFiles(dirPath, count);
         return count.intValue();
     }
 
-    private void countFiles(final File dirPath, MutableInt count) {
+    /**
+     * recursive files count
+     * @param dirPath
+     * @param count
+     */
+    private void countFiles(final File dirPath, final MutableInt count) {
         final File[] files = dirPath.listFiles();
         if (files != null) {
             for (final File value : files) {

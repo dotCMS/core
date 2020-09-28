@@ -2,10 +2,12 @@ package com.dotcms.storage;
 
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.util.IntegrationTestInitService;
@@ -36,7 +38,6 @@ public class ContentletMetadataAPITest {
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         contentletMetadataAPI = APILocator.getContentletMetadataAPI();
-
     }
 
     /**
@@ -53,7 +54,8 @@ public class ContentletMetadataAPITest {
             Config.setProperty(DEFAULT_STORAGE_TYPE, testCase.storageType.name());
 
             //Remove any previously generated metadata by the checkin process
-            TestDataUtils.removeAnyMetadata((File)testCase.fileAssetContent.get("fileAsset"));
+            final File file = (File) testCase.fileAssetContent.get("fileAsset");
+            TestDataUtils.removeAnyMetadata(file);
 
             final ContentletMetadata metadata = contentletMetadataAPI
                     .generateContentletMetadata(testCase.fileAssetContent);
@@ -63,7 +65,7 @@ public class ContentletMetadataAPITest {
             assertNotNull(metadata.getBasicMetadataMap());
             assertNotNull(metadata.getFullMetadataMap());
 
-            validateBasic(metadata.getBasicMetadataMap().get("fileAsset"));
+            validateBasicStrict(metadata.getBasicMetadataMap().get("fileAsset"));
             validateFull(metadata.getFullMetadataMap().get("fileAsset"), testCase.testFile);
         }finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE,stringProperty);
@@ -133,7 +135,7 @@ public class ContentletMetadataAPITest {
         assertTrue(metaData.containsKey("content"));
         assertTrue(metaData.containsKey("contentType"));
         assertTrue(metaData.containsKey("fileSize"));
-        if(isSupportedImage(testFile.getFilePath())){
+        if(isSupportedImage(testFile.getFilePath())){ //svg files don't have dimensions. or Tika fails to read them.
           assertTrue(metaData.containsKey("height"));
           assertTrue(metaData.containsKey("width"));
         }
@@ -142,7 +144,7 @@ public class ContentletMetadataAPITest {
     }
 
     /**
-     * validate basic layout expected in the full md for File-Asset
+     * validate basic layout expected in the basic md for File-Asset
      * @param metaData
      */
     private void validateBasic(final Map<String, Object> metaData){
@@ -153,7 +155,17 @@ public class ContentletMetadataAPITest {
         assertTrue(metaData.containsKey("title"));
     }
 
-    //SVG are do not have the dimensions, but that's a know issue we're willing to forgive
+    /**
+     * validate basic layout expected in the basic md for File-Asset
+     * But nothing else if there are additional values we fail!!
+     * @param metaData
+     */
+    private void validateBasicStrict(final Map<String, Object> metaData){
+        validateBasic(metaData);
+        assertEquals("we're expecting exactly 5 entries.",5,metaData.size());
+    }
+
+    //SVG  do not have dimensions, but that's a known issue we're willing to forgive.
     private static Set<String> imageExt = ImmutableSet.of("jpg", "png", "gif");
 
     /**
@@ -217,6 +229,7 @@ public class ContentletMetadataAPITest {
     }
 
     /**
+     * Method to test: {@link ContentletMetadataAPIImpl#findBinaryFields(Contentlet)}
      * Given scenario: We have an instance of a content-type that has different fields of type bin
      * Expected Results: After calling findBinaryFields I should get a tuple with one file
      * candidate for the full MD generation and the rest in the second component of the tuple
@@ -242,6 +255,108 @@ public class ContentletMetadataAPITest {
         final Set<String> binaryFieldCandidateForFullMetadata = binaryFields._2;
         assertEquals(binaryFieldCandidateForFullMetadata.size(), 1);
         assertTrue(binaryFieldCandidateForFullMetadata.contains("fileAsset2"));
+    }
+
+    /**
+     *  Method to test: {@link ContentletMetadataAPIImpl#getMetadataNoCache(Contentlet, String)}
+     *  Given scenario: We create a new piece of content then we call getMetadataNoCache. Then we call it again after calling generateContentletMetadata
+     *  Expected Result: Until generateContentletMetadata gets called no metadata should be returned
+     * @param storageType
+     * @throws IOException
+     */
+    @Test
+    @UseDataProvider("getStorageType")
+    public void Test_Get_Metadata_No_Cache(final StorageType storageType) throws IOException {
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        try {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet fileAssetContent = TestDataUtils
+                    .getFileAssetContent(true, langId, TestFile.PDF);
+
+            //Remove any metadata generated by the checkin
+            final String fileAssetField = "fileAsset";
+
+            final File file = (File) fileAssetContent.get(fileAssetField);
+            TestDataUtils.removeAnyMetadata(file);
+
+            Map<String, Object> fileAssetMD = contentletMetadataAPI
+                    .getMetadataNoCache(fileAssetContent, fileAssetField);
+            //Expect no metadata it has not been generated
+            assertTrue(fileAssetMD.isEmpty());
+
+            final ContentletMetadata metadata = contentletMetadataAPI
+                    .generateContentletMetadata(fileAssetContent);
+            assertNotNull(metadata);
+
+            fileAssetMD = contentletMetadataAPI
+                    .getMetadataNoCache(fileAssetContent, fileAssetField);
+            assertFalse(fileAssetMD.isEmpty());
+
+            //This might seem a little unnecessary but by doing this we verify the fields in the resulting map are the ones allowed to be preset in the metadata generation
+            final ContentletMetadataAPIImpl impl = (ContentletMetadataAPIImpl) contentletMetadataAPI;
+
+            final Map<String, Field> fieldMap = fileAssetContent.getContentType().fieldMap();
+
+            final Set<String> metadataFields = impl
+                    .getMetadataFields(fieldMap.get(fileAssetField).id());
+
+            fileAssetMD.forEach((key, value) -> {
+                assertTrue(metadataFields.contains(key));
+            });
+
+        } finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+        }
+    }
+
+    /**
+     *  Method to test: {@link ContentletMetadataAPIImpl#getMetadata(Contentlet, String)}
+     *  Given scenario: We create a new piece of content then we call getMetadata. Then we call it again after calling generateContentletMetadata
+     *  Expected Result: Until generateContentletMetadata gets called no metadata should be returned
+     * @param storageType
+     * @throws IOException
+     */
+    @Test
+    @UseDataProvider("getStorageType")
+    public void Test_GetMetadata(final StorageType storageType) throws IOException {
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        try {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet fileAssetContent = TestDataUtils
+                    .getFileAssetContent(true, langId, TestFile.PDF);
+
+            //Remove any metadata generated by the checkin
+            final String fileAssetField = "fileAsset";
+
+            final File file = (File) fileAssetContent.get(fileAssetField);
+            TestDataUtils.removeAnyMetadata(file);
+
+            Map<String, Object> fileAssetMD = contentletMetadataAPI
+                    .getMetadata(fileAssetContent, fileAssetField);
+            //Expect no metadata it has not been generated
+            assertTrue(fileAssetMD.isEmpty());
+
+            final ContentletMetadata metadata = contentletMetadataAPI
+                    .generateContentletMetadata(fileAssetContent);
+            assertNotNull(metadata);
+
+            final Map<String,Object> metadataMap = contentletMetadataAPI
+                    .getMetadata(fileAssetContent,fileAssetField);
+            assertNotNull(metadataMap);
+
+            assertNotNull(metadataMap.get("author"));
+            assertNotNull(metadataMap.get("content"));
+            assertNotNull(metadataMap.get("fileSize"));
+            assertNotNull(metadataMap.get("modDate"));
+            assertNotNull(metadataMap.get("path"));
+            assertNotNull(metadataMap.get("sha256"));
+            assertNotNull(metadataMap.get("title"));
+
+        } finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+        }
     }
 
     @DataProvider

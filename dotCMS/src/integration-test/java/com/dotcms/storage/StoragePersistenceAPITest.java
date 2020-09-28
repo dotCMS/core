@@ -153,7 +153,7 @@ public class StoragePersistenceAPITest {
     @UseDataProvider("getDupeBinaryTestCases")
     public void Test_Attempt_Push_Same_Binary_Twice(final TestCase testCase) {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
-       // storage.deleteObject(testCase.groupName, testCase.path);
+        storage.deleteObject(testCase.groupName, testCase.path);
         assertTrue(storage.createGroup(testCase.groupName));
         final Object object = storage
                 .pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
@@ -186,6 +186,11 @@ public class StoragePersistenceAPITest {
         };
     }
 
+    /**
+     * Given scenario: We want corroborate that we're able to recover files and verify the existence of a group regardless of casing.
+     * Expected Results: Regardless of casing we should be able to retrieve and find objects
+     * @param testCase
+     */
     @Test
     @UseDataProvider("getRandomTestCases")
     public void Test_Pull_File_Different_Casing(final TestCase testCase) {

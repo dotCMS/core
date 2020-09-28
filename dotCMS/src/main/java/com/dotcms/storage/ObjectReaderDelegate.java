@@ -15,5 +15,5 @@ public interface ObjectReaderDelegate {
      * @param stream {@link InputStream}
      * @return  object {@link Object}
      */
-    public Object read(final InputStream stream);
+    Object read(final InputStream stream);
 }

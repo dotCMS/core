@@ -17,6 +17,11 @@ public class StoragePersistenceProvider {
     private StoragePersistenceProvider() {
     }
 
+    public static StorageType getStorageType(){
+        final String storageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        return StorageType.valueOf(storageType);
+    }
+
     public FileSystemStoragePersistenceAPIImpl getFileSystemStorage() {
 
         return (FileSystemStoragePersistenceAPIImpl) this.storageMap.get(StorageType.FILE_SYSTEM);
@@ -29,8 +34,7 @@ public class StoragePersistenceProvider {
 
     public StoragePersistenceAPI getStorage (StorageType storageType) {
         if(null == storageType){
-            final String storageTypeString = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
-            storageType = StorageType.valueOf(storageTypeString);
+            storageType = getStorageType();
         }
         final StorageType finalStorageType = storageType;
         Logger.info(this, ()-> "Retrieving from storage: " + finalStorageType);

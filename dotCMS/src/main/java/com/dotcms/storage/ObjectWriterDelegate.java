@@ -15,5 +15,5 @@ public interface ObjectWriterDelegate {
      * @param stream {@link OutputStream}
      * @param object {@link Serializable}
      */
-    public void write (final OutputStream stream, Serializable object);
+    void write(final OutputStream stream, Serializable object);
 }

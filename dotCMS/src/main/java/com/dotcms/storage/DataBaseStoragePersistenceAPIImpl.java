@@ -22,11 +22,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -59,6 +62,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * custom external connection provider method
+     * in case we want to store stuff outside our db
+     * @return
+     */
     protected Connection getConnection() {
 
         final String jdbcPool = Config
@@ -70,6 +78,10 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 DbConnectionFactory.getConnection();
     }
 
+    /**
+     * custom close connection wrapper
+     * @param voidDelegate
+     */
     protected void wrapCloseConnection(final VoidDelegate voidDelegate) {
 
         final String jdbcPool = Config
@@ -85,6 +97,10 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
     }
 
+    /**
+     * custom close connection wrapper
+     * @param voidDelegate
+     */
     private void wrapLocalCloseConnection(final VoidDelegate voidDelegate) {
 
         final boolean isNewConnection = !DbConnectionFactory.connectionExists();
@@ -105,6 +121,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
     }
 
+    /**
+     * custom external close connection wrapper
+     * @param voidDelegate
+     * @param jdbcPool
+     */
     private void wrapExternalCloseConnection(final VoidDelegate voidDelegate,
             final String jdbcPool) {
 
@@ -123,6 +144,12 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
     }
 
+    /**
+     * custom transaction wrapper
+     * @param delegate
+     * @param <T>
+     * @return
+     */
     protected <T> T wrapInTransaction(final ReturnableDelegate<T> delegate) {
 
         final String jdbcPool = Config
@@ -145,6 +172,13 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
     }
 
+    /**
+     * custom transaction wrapper
+     * @param delegate
+     * @param jdbcPool
+     * @param <T>
+     * @return
+     */
     private <T> T wrapInExternalTransaction(final ReturnableDelegate<T> delegate,
             final String jdbcPool) {
 
@@ -193,6 +227,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @return
+     */
     @Override
     public boolean existsGroup(final String groupName) {
         final String groupNameLC = groupName.toLowerCase();
@@ -210,6 +249,12 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return result.booleanValue();
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName  {@link String}
+     * @param objectPath {@link String}
+     * @return
+     */
     @Override
     public boolean existsObject(final String groupName, final String objectPath) {
         final String groupNameLC = groupName.toLowerCase();
@@ -228,11 +273,22 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return result.booleanValue();
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @return
+     */
     @Override
     public boolean createGroup(final String groupName) {
         return createGroup(groupName, ImmutableMap.of());
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName    {@link String} group name
+     * @param extraOptions {@link Map} depending on the implementation it might need extra options or not.
+     * @return
+     */
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) {
         final String groupNameLC = groupName.toLowerCase();
@@ -246,6 +302,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         );
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @return
+     */
     @Override
     public int deleteGroup(final String groupName) {
         final String groupNameLC = groupName.toLowerCase();
@@ -253,15 +314,12 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             final Connection connection = this.getConnection();
             final DotConnect dotConnect = new DotConnect();
 
-            final String hash = dotConnect
+            final List<Map<String, Object>> maps = dotConnect
                     .setSQL("SELECT hash FROM storage WHERE group_name = ?").addParam(groupNameLC)
-                    .getString("hash");
+                    .loadObjectResults();
 
-            final int dataPiecesCount = dotConnect.executeUpdate(connection,
-                    "DELETE FROM storage_x_data WHERE data_hash = ?", hash);
-
-            final int storageDataCount = dotConnect.executeUpdate(connection,
-                    "DELETE FROM storage_data WHERE hash_id = ?", hash);
+            int count = deleteObjects(maps.stream().map(map -> map.get("hash").toString())
+                    .collect(Collectors.toSet()), dotConnect, connection);
 
             final int storageEntriesCount = dotConnect.executeUpdate(connection,
                     "DELETE FROM storage WHERE group_name = ?", groupNameLC);
@@ -270,29 +328,69 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                     "DELETE FROM storage_group WHERE group_name = ?", groupNameLC);
 
             Logger.info(this, () -> String
-                    .format("total of `%d` objects allocated in `%d` and split in `%d` removed for `%d` group. ",
-                            storageEntriesCount, storageDataCount, dataPiecesCount, groupsCount));
+                    .format("total of `%d` objects allocated in `%d` removed for `%d` group. ",
+                            storageEntriesCount, count, groupsCount));
             return storageEntriesCount;
         });
 
     }
 
+    /**
+     * {@inheritDoc}
+     * @param groupName {@link String} group name
+     * @param path   {   @link String} object path
+     * @return
+     */
     @Override
     public boolean deleteObject(final String groupName, final String path) {
         final String groupNameLC = groupName.toLowerCase();
         final String pathLC = path.toLowerCase();
-        //TODO: Delete other objects in cascade
         return this.wrapInTransaction(() -> {
             final Connection connection = this.getConnection();
+
             final DotConnect dotConnect = new DotConnect();
+
+            final String hash = dotConnect
+                    .setSQL("SELECT hash FROM storage WHERE group_name = ? AND path = ? ")
+                    .addParam(groupNameLC).addParam(pathLC).getString("hash");
+            if(null != hash) {
+                deleteObjects(ImmutableSet.of(hash), dotConnect, connection);
+            }
             final int count = dotConnect
                     .executeUpdate(connection,
-                    "DELETE FROM storage WHERE group_name = ? AND path = ?",
+                            "DELETE FROM storage WHERE group_name = ? AND path = ?",
                             groupNameLC, pathLC);
             return count > 0;
         });
     }
 
+    /**
+     * object reference removal
+     * @param hashSet object hash id
+     * @param dotConnect DotConnect
+     * @param connection external connection
+     * @return count of all removed objects
+     * @throws DotDataException
+     */
+    private int deleteObjects(final Set<String> hashSet, final DotConnect dotConnect, final Connection connection)
+            throws DotDataException {
+      int count = 0;
+        for (final String hash:hashSet) {
+            //We could seriously benefit from a batch update here. The only problem is our current impl does not take an external connection
+            count += dotConnect.executeUpdate(connection,
+                    "DELETE FROM storage_x_data WHERE data_hash = ?", hash);
+
+            count +=  dotConnect.executeUpdate(connection,
+                    "DELETE FROM storage_data WHERE hash_id = ?", hash);
+
+        }
+        return count;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @return
+     */
     @Override
     public List<String> listGroups() {
 
