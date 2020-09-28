@@ -15,12 +15,13 @@ public class JsonWriterDelegate implements ObjectWriterDelegate {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public JsonWriterDelegate() {
-    }
-
+    /**
+     * Delegate writer
+     * @param out
+     * @param object {@link Serializable}
+     */
     @Override
     public void write(final OutputStream out, final Serializable object) {
-        //Sneaky.sneaked(()-> objectMapper.writeValue(out, object));
         try {
             this.objectMapper.writeValue(out, object);
         } catch (IOException e) {
