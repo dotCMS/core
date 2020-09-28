@@ -148,6 +148,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
         	EnvironmentAPI eAPI = APILocator.getEnvironmentAPI();
 			eAPI.saveEnvironment(environment, permissions);
 
+			response.getWriter().write(environment.getId());
 		} catch (DotDataException e) {
 			Logger.info(getClass(), e.getMessage());
 			throw new DotRuntimeException(e.getMessage(),e);

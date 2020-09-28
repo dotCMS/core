@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 [[ -s .cicd/seed.source ]] && source .cicd/seed.source
 : ${DOT_CICD_BRANCH:="master"}
 

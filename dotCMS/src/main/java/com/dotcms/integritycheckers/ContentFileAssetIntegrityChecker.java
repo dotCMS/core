@@ -72,7 +72,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
     }
 
     @Override
-    public void executeFix(final String endpointId) throws DotDataException, DotSecurityException {
+    public void executeFix(final String key) throws DotDataException, DotSecurityException {
         DotConnect dc = new DotConnect();
         // Get information from IR.
         final String getResultsQuery = new StringBuilder("SELECT ")
@@ -81,7 +81,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
                 .append(getIntegrityType().getResultsTableName()).append(" WHERE endpoint_id = ?")
                 .toString();
         dc.setSQL(getResultsQuery);
-        dc.addParam(endpointId);
+        dc.addParam(key);
         List<Map<String, Object>> results = dc.loadObjectResults();
 
         // Generate counter to know how many version are for each identifier
