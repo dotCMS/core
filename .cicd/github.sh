@@ -71,8 +71,8 @@ function persistResults {
   remoteBranch=$(git ls-remote --heads ${GITHUB_TEST_RESULTS_REMOTE_REPO} ${CURRENT_BRANCH} | wc -l | tr -d '[:space:]')
 
   if [[ ${remoteBranch} == 1 ]]; then
-    echo "git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}"
-    git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}
+    echo "git pull origin ${CURRENT_BRANCH}"
+    git pull origin ${CURRENT_BRANCH}
   else
     git checkout -b ${CURRENT_BRANCH}
   fi
@@ -80,12 +80,6 @@ function persistResults {
   if [[ $? != 0 ]]; then
     echo "Error checking out branch '${CURRENT_BRANCH}', continuing with master"
     git pull origin master
-  else
-    git branch
-    if [[ ${remoteBranch} == 1 ]]; then
-      echo "git pull origin ${CURRENT_BRANCH}"
-      git pull origin ${CURRENT_BRANCH}
-    fi
   fi
 
   addResults ./${GITHUB_SHA::8}
