@@ -404,7 +404,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                     "Can't unpublish content that is scheduled to expire on a future date. Identifier: " + identifier.getId() );
             }
         }
-        final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(contentletVersionInfo)) ;
+        final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(contentletVersionInfo.get())) ;
         newInfo.setLiveInode( null );
         versionableFactory.saveContentletVersionInfo( newInfo, true );
     }
@@ -426,7 +426,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             if(!info.isPresent())
                 throw new DotStateException("No version info. Call setWorking first");
             
-            final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info)) ;
+            final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info.get())) ;
             newInfo.setDeleted(deleted);
             versionableFactory.saveContentletVersionInfo(newInfo, true);
         }
@@ -472,7 +472,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                     throw new PublishStateException( "The content cannot be published because the expire date has already passed." );
                 }
             }
-            final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info)) ;
+            final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info.get())) ;
             newInfo.setLiveInode(versionable.getInode());
             versionableFactory.saveContentletVersionInfo( newInfo, true );
         } else {
@@ -504,7 +504,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             if(!info.isPresent())
                 throw new DotStateException("No version info. Call setWorking first");
-            final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info)) ;
+            final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info.get())) ;
 
             if(locked) {
                 newInfo.setLocked(user.getUserId());
