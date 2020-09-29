@@ -87,6 +87,69 @@
 			"response": []
 		},
 		{
+			"name": "Can not Delete",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "bcd3dae3-8bc9-49ac-aa81-295c3bcb7b73",
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates",
+						"{{temporaryInode}}"
+					]
+				},
+				"description": "Can not delete, non-archive template"
+			},
+			"response": []
+		},
+		{
 			"name": "Edit Template",
 			"event": [
 				{
@@ -447,6 +510,14 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
+							"pm.test(\"publishedInodes\", function () {",
+							"    pm.expect(jsonData.entity.failedInodes.length).to.eql(0);",
+							"});",
+							"",
+							"",
+							"pm.test(\"publishedInodes\", function () {",
+							"    pm.expect(jsonData.entity.publishedInodes.length).to.eql(1);",
+							"});",
 							""
 						],
 						"type": "text/javascript"
@@ -581,8 +652,19 @@
 					"script": {
 						"id": "4f94abfe-0ea3-4e88-9539-820f23940338",
 						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"publishedInodes\", function () {",
+							"    pm.expect(jsonData.entity.failedInodes.length).to.eql(0);",
+							"});",
+							"",
+							"",
+							"pm.test(\"publishedInodes\", function () {",
+							"    pm.expect(jsonData.entity.unpublishedInodes.length).to.eql(1);",
 							"});",
 							""
 						],
@@ -1192,22 +1274,22 @@
 	],
 	"variable": [
 		{
-			"id": "0bec4b5f-2e72-49bd-b2e3-588ce89c48c5",
+			"id": "ae13f2a4-314e-4cdf-b0bc-870f6091f8d3",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "5c09bfc2-b34d-4a6c-bf62-79c17c7bb83f",
+			"id": "509c1ecc-6038-4308-b46e-b69b76a7a266",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "d4edf47f-6119-4de9-8580-a6f4deac5957",
+			"id": "81b381d5-f887-4741-9114-647bda4b9c83",
 			"key": "temporaryInode",
-			"value": "91e12d76-17f0-4c3e-b956-e5f7c9d7db37"
+			"value": "bc59f5c6-9188-4fc0-ba62-54a4d801eeee"
 		},
 		{
-			"id": "00eeb466-3181-4d4b-9e73-dfce92fff944",
+			"id": "890af0c0-6a46-47c7-91c7-c188cae05f19",
 			"key": "temporaryIdentifier",
 			"value": "909162a8-1776-40e9-ac4c-6d927b718fe3"
 		}

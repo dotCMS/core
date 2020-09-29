@@ -238,16 +238,26 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public boolean delete (final Template template, final User user) {
+	public boolean deleteTemplate(final Template template, final User user, final boolean respectFrontendRoles) {
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
+
 		if (Try.of(()->template.isArchived()).getOrElseThrow(e -> new RuntimeException(e))) {
 
-			return Try.of(()->WebAssetFactory.deleteAsset(template,user))
-					.getOrElseThrow(e -> new RuntimeException(e));
-		}
+			if(Try.of(()->this.permissionAPI.doesUserHavePermission(
+					template, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
+					.getOrElseThrow(e -> new RuntimeException(e))) {
 
-		return false;
+				return Try.of(() -> WebAssetFactory.deleteAsset(template, user))
+						.getOrElseThrow(e -> new RuntimeException(e));
+			} else {
+
+				throw new SecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+			}
+		} else {
+
+			throw new DotStateException("The template: " + template.getName() + " must be archived before it can be deleted");
+		}
 	}
 
 	@WrapInTransaction
