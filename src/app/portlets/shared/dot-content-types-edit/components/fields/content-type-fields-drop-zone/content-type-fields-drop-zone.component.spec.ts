@@ -316,6 +316,13 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         expect(comp.fieldRows.length).toBe(0);
     });
+
+    afterEach(() => {
+        // Removes dirty DOM after tests have finished
+        if (fixture.nativeElement && 'remove' in fixture.nativeElement) {
+            (fixture.nativeElement as HTMLElement).remove();
+        }
+    });
 });
 
 let fakeFields: DotCMSContentTypeLayoutRow[];
@@ -797,5 +804,12 @@ describe('Load fields and drag and drop', () => {
 
             expect(dotLoadingIndicatorServiceMock.hide).toHaveBeenCalled();
         });
+    });
+
+    afterEach(() => {
+        // Removes dirty DOM after tests have finished
+        if (fixture.nativeElement && 'remove' in fixture.nativeElement) {
+            (fixture.nativeElement as HTMLElement).remove();
+        }
     });
 });

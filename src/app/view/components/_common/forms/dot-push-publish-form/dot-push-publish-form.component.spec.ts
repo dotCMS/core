@@ -1,5 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { Component, DebugElement, Input } from '@angular/core';
@@ -25,8 +24,6 @@ import {
 } from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
 import { CoreWebService, LoginService } from 'dotcms-js';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -38,6 +35,7 @@ import { DotPushPublishDialogData } from 'dotcms-models';
 import { SelectItem } from 'primeng/api';
 import { PushPublishEnvSelectorComponent } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 import { of } from 'rxjs';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.push_publish.action.push': 'Push',
@@ -111,40 +109,36 @@ describe('DotPushPublishFormComponent', () => {
         environment: ''
     };
 
-    beforeEach(
-        async(() => {
-            pushPublishServiceMock = new PushPublishServiceMock();
-            TestBed.configureTestingModule({
-                declarations: [DotPushPublishFormComponent, TestHostComponent],
-                providers: [
-                    { provide: PushPublishService, useValue: pushPublishServiceMock },
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: ConnectionBackend, useClass: MockBackend },
-                    { provide: RequestOptions, useClass: BaseRequestOptions },
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    DotPushPublishFiltersService,
-                    Http,
-                    DotParseHtmlService,
-                    DotHttpErrorManagerService,
-                    DotAlertConfirmService,
-                    ConfirmationService
-                ],
-                imports: [
-                    FormsModule,
-                    CalendarModule,
-                    DotDialogModule,
-                    PushPublishEnvSelectorModule,
-                    ReactiveFormsModule,
-                    DropdownModule,
-                    DotFieldValidationMessageModule,
-                    SelectButtonModule,
-                    DotPipesModule
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(() => {
+        pushPublishServiceMock = new PushPublishServiceMock();
+        TestBed.configureTestingModule({
+            declarations: [DotPushPublishFormComponent, TestHostComponent],
+            providers: [
+                { provide: PushPublishService, useValue: pushPublishServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                DotPushPublishFiltersService,
+                DotParseHtmlService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService
+            ],
+            imports: [
+                FormsModule,
+                CalendarModule,
+                DotDialogModule,
+                PushPublishEnvSelectorModule,
+                ReactiveFormsModule,
+                DropdownModule,
+                DotFieldValidationMessageModule,
+                SelectButtonModule,
+                DotPipesModule,
+                HttpClientTestingModule
+            ]
+        }).compileComponents();
+    });
 
     beforeEach(() => {
         jasmine.clock().install();

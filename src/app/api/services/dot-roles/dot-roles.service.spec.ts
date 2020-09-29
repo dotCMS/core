@@ -1,19 +1,11 @@
 import { DotRolesService } from './dot-roles.service';
-import {
-    BaseRequestOptions,
-    ConnectionBackend,
-    Http,
-    RequestOptions,
-    Response,
-    ResponseOptions
-} from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { DotRole } from '@models/dot-role/dot-role.model';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
 import { CoreWebService } from 'dotcms-js';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 
 const mockRoles: DotRole[] = [
     {
@@ -38,48 +30,40 @@ export const mockProcessedRoles: DotRole[] = [
 
 const messageServiceMock = new MockDotMessageService({
     'current-user': 'Current User',
-    'user': 'User'
+    user: 'User'
 });
 
 describe('DotRolesService', () => {
-    let service: DotRolesService;
-    let connectionBackend: MockBackend;
-    let lastConnection;
+    let injector: TestBed;
+    let dotRolesService: DotRolesService;
+    let httpMock: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             providers: [
                 DotRolesService,
-                { provide: ConnectionBackend, useClass: MockBackend },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: RequestOptions, useClass: BaseRequestOptions },
-                Http,
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
-        service = TestBed.get(DotRolesService);
-        connectionBackend = TestBed.get(ConnectionBackend);
-        connectionBackend.connections.subscribe((connection: any) => (lastConnection = connection));
+        injector = getTestBed();
+        dotRolesService = injector.get(DotRolesService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should get Roles', () => {
-        let result;
         const url = '/api/v1/roles/123/rolehierarchyanduserroles?roleHierarchyForAssign=false';
-
-        service.get('123', false).subscribe(res => {
-            result = res;
+        dotRolesService.get('123', false).subscribe((res) => {
+            expect(res).toEqual(mockProcessedRoles);
         });
 
-        lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: { entity: mockRoles }
-                })
-            )
-        );
+        const req = httpMock.expectOne(url);
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: mockRoles });
+    });
 
-        expect(result).toEqual(mockProcessedRoles);
-        expect(lastConnection.request.method).toBe(0); // 0 is GET method
-        expect(lastConnection.request.url).toBe(url);
+    afterEach(() => {
+        httpMock.verify();
     });
 });

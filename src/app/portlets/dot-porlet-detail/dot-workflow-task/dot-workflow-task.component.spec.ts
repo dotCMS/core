@@ -33,8 +33,6 @@ import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-di
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import {DotWizardService} from '@services/dot-wizard/dot-wizard.service';
@@ -44,6 +42,7 @@ import {ConfirmationService} from 'primeng/api';
 import {DotWorkflowActionsFireService} from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import {DotGlobalMessageService} from '@components/_common/dot-global-message/dot-global-message.service';
 import {DotEventsService} from '@services/dot-events/dot-events.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 @Injectable()
 class MockDotWorkflowTaskDetailService {
     view = jasmine.createSpy('view');
@@ -66,7 +65,7 @@ describe('DotWorkflowTaskComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotWorkflowTaskComponent],
-            imports: [DotWorkflowTaskDetailModule, BrowserAnimationsModule, RouterTestingModule],
+            imports: [DotWorkflowTaskDetailModule, BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule],
             providers: [
                 DotWorkflowTaskDetailService,
                 {
@@ -104,9 +103,6 @@ describe('DotWorkflowTaskComponent', () => {
                 LoggerService,
                 StringUtils,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: ConnectionBackend, useClass: MockBackend },
-                { provide: RequestOptions, useClass: BaseRequestOptions },
-                Http,
                 DotCurrentUserService,
                 DotMessageDisplayService,
                 DotcmsEventsService,

@@ -7,7 +7,7 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { async, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -16,10 +16,16 @@ import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { FormsModule } from '@angular/forms';
-import { CoreWebService, ApiRoot, UserModel, LoggerService, StringUtils, BrowserUtil } from 'dotcms-js';
-import { Http, ConnectionBackend, RequestOptions, BaseRequestOptions, } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
+import {
+    CoreWebService,
+    ApiRoot,
+    UserModel,
+    LoggerService,
+    StringUtils,
+    BrowserUtil
+} from 'dotcms-js';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('ContainerSelectorComponent', () => {
     let comp: DotContainerSelectorComponent;
@@ -28,77 +34,70 @@ describe('ContainerSelectorComponent', () => {
     let searchableDropdownComponent;
     let containers: DotContainer[];
 
-    beforeEach(
-        async(() => {
-            const messageServiceMock = new MockDotMessageService({
-                addcontainer: 'Add a Container'
-            });
+    beforeEach(() => {
+        const messageServiceMock = new MockDotMessageService({
+            addcontainer: 'Add a Container'
+        });
 
+        TestBed.configureTestingModule({
+            declarations: [DotContainerSelectorComponent],
+            imports: [
+                SearchableDropDownModule,
+                BrowserAnimationsModule,
+                CommonModule,
+                FormsModule,
+                ButtonModule,
+                DotPipesModule,
+                HttpClientTestingModule
+            ],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                BrowserUtil,
+                IframeOverlayService,
+                PaginatorService,
+                TemplateContainersCacheService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                ApiRoot,
+                UserModel,
+                LoggerService,
+                StringUtils
+            ]
+        }).compileComponents();
 
-            TestBed.configureTestingModule({
-                declarations: [DotContainerSelectorComponent],
-                imports: [
-                    SearchableDropDownModule,
-                    BrowserAnimationsModule,
-                    CommonModule,
-                    FormsModule,
-                    ButtonModule,
-                    DotPipesModule
-                ],
-                providers: [
-                    { provide: ConnectionBackend, useClass: MockBackend },
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: RequestOptions, useClass: BaseRequestOptions },
-                    BrowserUtil,
-                    IframeOverlayService,
-                    PaginatorService,
-                    TemplateContainersCacheService,
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    ApiRoot,
-                    UserModel,
-                    LoggerService,
-                    StringUtils,
-                    Http
+        fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
 
-                ]
-            }).compileComponents();
+        searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
 
-            fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-
-            searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown'))
-                .componentInstance;
-
-            containers = [
-                {
-                    categoryId: '427c47a4-c380-439f-a6d0-97d81deed57e',
-                    deleted: false,
-                    friendlyName: 'Friendly Container name',
-                    identifier: '427c47a4-c380-439f',
-                    name: 'Container 1',
-                    type: 'Container',
-                    source: CONTAINER_SOURCE.DB,
-                    parentPermissionable: {
-                        hostname: 'demo.dotcms.com'
-                    }
-                },
-                {
-                    categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
-                    deleted: false,
-                    friendlyName: 'Friendly Container2 name',
-                    identifier: '427c47a4-c380-439f',
-                    name: 'Container 2',
-                    type: 'Container',
-                    source: CONTAINER_SOURCE.FILE,
-                    path: 'container/path',
-                    parentPermissionable: {
-                        hostname: 'demo.dotcms.com'
-                    }
+        containers = [
+            {
+                categoryId: '427c47a4-c380-439f-a6d0-97d81deed57e',
+                deleted: false,
+                friendlyName: 'Friendly Container name',
+                identifier: '427c47a4-c380-439f',
+                name: 'Container 1',
+                type: 'Container',
+                source: CONTAINER_SOURCE.DB,
+                parentPermissionable: {
+                    hostname: 'demo.dotcms.com'
                 }
-            ];
-        })
-    );
+            },
+            {
+                categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
+                deleted: false,
+                friendlyName: 'Friendly Container2 name',
+                identifier: '427c47a4-c380-439f',
+                name: 'Container 2',
+                type: 'Container',
+                source: CONTAINER_SOURCE.FILE,
+                path: 'container/path',
+                parentPermissionable: {
+                    hostname: 'demo.dotcms.com'
+                }
+            }
+        ];
+    });
 
     it('should show the hots name and container name', () => {
         comp.data = [
@@ -111,56 +110,50 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         const dataItem = de.query(By.css('.container-selector__list-item span'));
-        expect(dataItem.nativeElement.textContent).toEqual('Container 1 (demo.dotcms.com)')
+        expect(dataItem.nativeElement.textContent).toEqual('Container 1 (demo.dotcms.com)');
     });
 
-    it(
-        'should change Page',
-        fakeAsync(() => {
-            const filter = 'filter';
-            const page = 1;
+    it('should change Page', fakeAsync(() => {
+        const filter = 'filter';
+        const page = 1;
 
-            fixture.detectChanges();
+        fixture.detectChanges();
 
-            const paginatorService: PaginatorService = de.injector.get(PaginatorService);
-            paginatorService.totalRecords = 2;
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
 
-            fixture.detectChanges();
+        fixture.detectChanges();
 
-            searchableDropdownComponent.pageChange.emit({
-                filter: filter,
-                first: 10,
-                page: page,
-                pageCount: 10,
-                rows: 0
-            });
+        searchableDropdownComponent.pageChange.emit({
+            filter: filter,
+            first: 10,
+            page: page,
+            pageCount: 10,
+            rows: 0
+        });
 
-            tick();
-            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
-        })
-    );
+        tick();
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+    }));
 
-    it(
-        'should paginate when the filter change',
-        fakeAsync(() => {
-            const filter = 'filter';
+    it('should paginate when the filter change', fakeAsync(() => {
+        const filter = 'filter';
 
-            fixture.detectChanges();
+        fixture.detectChanges();
 
-            const paginatorService: PaginatorService = de.injector.get(PaginatorService);
-            paginatorService.totalRecords = 2;
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
 
-            fixture.detectChanges();
+        fixture.detectChanges();
 
-            searchableDropdownComponent.filterChange.emit(filter);
+        searchableDropdownComponent.filterChange.emit(filter);
 
-            tick();
-            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-            expect(paginatorService.filter).toEqual(filter);
-        })
-    );
+        tick();
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.filter).toEqual(filter);
+    }));
 
     it('should add containers to containers list and emit a change event', () => {
         comp.currentContainers = containers;

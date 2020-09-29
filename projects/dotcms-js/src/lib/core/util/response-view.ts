@@ -1,4 +1,5 @@
-import { Response, Headers } from '@angular/http';
+import { HttpResponse, HttpHeaders } from '@angular/common/http';
+import { DotCMSResponse } from '../core-web.service';
 
 /**
  *
@@ -12,16 +13,16 @@ import { Response, Headers } from '@angular/http';
  * }
  * </code>
  */
-export class ResponseView {
-    private bodyJsonObject: any;
-    private headers: Headers;
+export class ResponseView<T = any> {
+    private bodyJsonObject: DotCMSResponse<T>;
+    private headers: HttpHeaders;
 
-    public constructor(private resp: Response) {
+    public constructor(private resp: HttpResponse<DotCMSResponse<T>>) {
         try {
-            this.bodyJsonObject = resp.json();
+            this.bodyJsonObject = resp.body;
             this.headers = resp.headers;
         } catch (e) {
-            this.bodyJsonObject = {};
+            this.bodyJsonObject = null;
         }
     }
 
@@ -29,15 +30,15 @@ export class ResponseView {
         return this.headers.get(headerName);
     }
 
-    get i18nMessagesMap(): any {
+    get i18nMessagesMap(): { [key: string]: string } {
         return this.bodyJsonObject.i18nMessagesMap;
     }
 
-    get contentlets(): any {
+    get contentlets(): T {
         return this.bodyJsonObject.contentlets;
     }
 
-    get entity(): any {
+    get entity(): T {
         return this.bodyJsonObject.entity;
     }
 
@@ -45,11 +46,11 @@ export class ResponseView {
         let errorMessages = '';
 
         if (this.bodyJsonObject.errors) {
-            this.bodyJsonObject.errors.forEach((e) => {
+            this.bodyJsonObject.errors.forEach((e: any) => {
                 errorMessages += e.message;
             });
         } else {
-            errorMessages = this.bodyJsonObject.message;
+            errorMessages = this.bodyJsonObject.messages.toString();
         }
 
         return errorMessages;
@@ -59,14 +60,14 @@ export class ResponseView {
         return this.resp.status;
     }
 
-    get response(): Response {
+    get response(): HttpResponse<DotCMSResponse<T>> {
         return this.resp;
     }
 
     public existError(errorCode: string): boolean {
         return (
             this.bodyJsonObject.errors &&
-            this.bodyJsonObject.errors.filter((e) => e.errorCode === errorCode).length > 0
+            this.bodyJsonObject.errors.filter((e: any) => e.errorCode === errorCode).length > 0
         );
     }
 }

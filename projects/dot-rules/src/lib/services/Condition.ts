@@ -1,29 +1,34 @@
-
-import {from as observableFrom, empty as observableEmpty, Subject} from 'rxjs';
-
-import {reduce, mergeMap, catchError, map} from 'rxjs/operators';
+import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
+import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiRoot } from 'dotcms-js';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
-import { Http, Response } from '@angular/http';
+import { RequestMethod, Response } from '@angular/http';
 import { ConditionGroupModel, ConditionModel, ICondition } from './Rule';
 import { HttpCode } from 'dotcms-js';
-import { LoggerService } from 'dotcms-js';
+import { CoreWebService, LoggerService } from 'dotcms-js';
 
 // tslint:disable-next-line:no-unused-variable
 // const noop = (...arg: any[]) => {};
 
 @Injectable()
 export class ConditionService {
+    public get error(): Observable<string> {
+        return this._error.asObservable();
+    }
     private _apiRoot: ApiRoot;
-    private _http: Http;
     private _baseUrl: string;
 
     private _error: Subject<string> = new Subject<string>();
 
-    public get error(): Observable<string> {
-        return this._error.asObservable();
+    constructor(
+        apiRoot: ApiRoot,
+        private coreWebService: CoreWebService,
+        private loggerService: LoggerService
+    ) {
+        this._apiRoot = apiRoot;
+        this._baseUrl = `${apiRoot.baseUrl}api/v1/sites/${apiRoot.siteId}/ruleengine/conditions`;
     }
 
     static toJson(condition: ConditionModel): any {
@@ -42,7 +47,7 @@ export class ConditionService {
             conditionModel = new ConditionModel(condition);
             const values = condition['values'];
 
-            Object.keys(values).forEach(key => {
+            Object.keys(values).forEach((key) => {
                 const x = values[key];
                 conditionModel.setParameter(key, x.value, x.priority);
                 // tslint:disable-next-line:no-console
@@ -56,33 +61,32 @@ export class ConditionService {
         return conditionModel;
     }
 
-    constructor(apiRoot: ApiRoot, http: Http, private loggerService: LoggerService) {
-        this._apiRoot = apiRoot;
-        this._http = http;
-        this._baseUrl = `${apiRoot.baseUrl}api/v1/sites/${apiRoot.siteId}/ruleengine/conditions`;
-    }
-
     makeRequest(childPath: string): Observable<any> {
         const opts = this._apiRoot.getDefaultRequestOptions();
-        return this._http
-            .get(this._baseUrl + '/' + childPath, opts).pipe(
-            map((res: Response) => {
-                return res.json();
-            }),
-            catchError((err: any, _source: Observable<any>) => {
-                if (err && err.status === HttpCode.NOT_FOUND) {
-                    this.loggerService.info('Could not retrieve Condition Types: URL not valid.');
-                } else if (err) {
-                    this.loggerService.info(
-                        'Could not retrieve Condition Types.',
-                        'response status code: ',
-                        err.status,
-                        'error:',
-                        err
-                    );
-                }
-                return observableEmpty();
-            }),);
+        return this.coreWebService
+            .request({
+                method: RequestMethod.Get,
+                url: this._baseUrl + '/' + childPath,
+                ...opts
+            })
+            .pipe(
+                catchError((err: any, _source: Observable<any>) => {
+                    if (err && err.status === HttpCode.NOT_FOUND) {
+                        this.loggerService.info(
+                            'Could not retrieve Condition Types: URL not valid.'
+                        );
+                    } else if (err) {
+                        this.loggerService.info(
+                            'Could not retrieve Condition Types.',
+                            'response status code: ',
+                            err.status,
+                            'error:',
+                            err
+                        );
+                    }
+                    return observableEmpty();
+                })
+            );
     }
 
     listForGroup(
@@ -90,13 +94,14 @@ export class ConditionService {
         conditionTypes?: { [key: string]: ServerSideTypeModel }
     ): Observable<ConditionModel[]> {
         return observableFrom(Object.keys(group.conditions)).pipe(
-            mergeMap(conditionId => {
+            mergeMap((conditionId) => {
                 return this.get(conditionId, conditionTypes);
             }),
             reduce((acc: ConditionModel[], entity: ConditionModel) => {
                 acc.push(entity);
                 return acc;
-            }, []),);
+            }, [])
+        );
     }
 
     get(
@@ -106,11 +111,13 @@ export class ConditionService {
         let conditionModelResult: Observable<ICondition>;
         conditionModelResult = this.makeRequest(conditionId);
 
-        return conditionModelResult.pipe(map(entity => {
-            entity.id = conditionId;
-            entity._type = conditionTypes ? conditionTypes[entity.conditionlet] : null;
-            return ConditionService.fromServerConditionTransformFn(entity);
-        }));
+        return conditionModelResult.pipe(
+            map((entity) => {
+                entity.id = conditionId;
+                entity._type = conditionTypes ? conditionTypes[entity.conditionlet] : null;
+                return ConditionService.fromServerConditionTransformFn(entity);
+            })
+        );
     }
 
     add(groupId: string, model: ConditionModel): Observable<any> {
@@ -122,13 +129,20 @@ export class ConditionService {
         const json = ConditionService.toJson(model);
         json.owningGroup = groupId;
         const opts = this._apiRoot.getDefaultRequestOptions();
-        const add = this._http
-            .post(this._baseUrl + '/', JSON.stringify(json), opts).pipe(
-            map((res: Response) => {
-                const json = res.json();
-                model.key = json.id;
-                return model;
-            }));
+        const add = this.coreWebService
+            .request({
+                method: RequestMethod.Post,
+                body: JSON.stringify(json),
+                url: this._baseUrl + '/',
+                ...opts
+            })
+            .pipe(
+                map((res: Response) => {
+                    const json: any = res;
+                    model.key = json.id;
+                    return model;
+                })
+            );
         return add.pipe(catchError(this._catchRequestError('add')));
     }
 
@@ -145,22 +159,35 @@ export class ConditionService {
             json.owningGroup = groupId;
             const opts = this._apiRoot.getDefaultRequestOptions();
             const body = JSON.stringify(json);
-            const save = this._http
-                .put(this._baseUrl + '/' + model.key, body, opts).pipe(
-                map((_res: Response) => {
-                    return model;
-                }));
+            const save = this.coreWebService
+                .request({
+                    method: RequestMethod.Put,
+                    body: body,
+                    url: this._baseUrl + '/' + model.key,
+                    ...opts
+                })
+                .pipe(
+                    map((_res: Response) => {
+                        return model;
+                    })
+                );
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
 
     remove(model: ConditionModel): Observable<ConditionModel> {
         const opts = this._apiRoot.getDefaultRequestOptions();
-        const remove = this._http
-            .delete(this._baseUrl + '/' + model.key, opts).pipe(
-            map((_res: Response) => {
-                return model;
-            }));
+        const remove = this.coreWebService
+            .request({
+                method: RequestMethod.Delete,
+                url: this._baseUrl + '/' + model.key,
+                ...opts
+            })
+            .pipe(
+                map((_res: Response) => {
+                    return model;
+                })
+            );
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
 
@@ -179,7 +206,7 @@ export class ConditionService {
             }
 
             this._error.next(err.json().error.replace('dotcms.api.error.forbidden: ', ''));
-            
+
             return observableEmpty();
         };
     }

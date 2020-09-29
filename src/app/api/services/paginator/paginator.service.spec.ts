@@ -1,66 +1,85 @@
-import { Response, ResponseOptions, ConnectionBackend, Headers } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { PaginatorService, OrderDirection } from './';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { HttpHeaders } from '@angular/common/http';
 
 describe('PaginatorService setting', () => {
-    beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([PaginatorService]);
+    let injector: TestBed;
+    let paginatorService: PaginatorService;
+    let httpMock: HttpTestingController;
 
-        this.paginatorService = this.injector.get(PaginatorService);
-        this.paginatorService.url = 'v1/urldemo';
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, PaginatorService]
+        });
+        injector = getTestBed();
+        paginatorService = injector.get(PaginatorService);
+        httpMock = injector.get(HttpTestingController);
+        paginatorService.url = 'v1/urldemo';
     });
 
     it('should do a request with basic params', () => {
-        this.paginatorService.get().subscribe((items) => (this.result = items));
-        expect(this.lastConnection.request.url).toContain('v1/urldemo');
+        paginatorService.get().subscribe();
+        const req = httpMock.expectOne(() => true);
+        expect(req.request.method).toBe('GET');
+        expect(req.request.url).toBe('v1/urldemo');
     });
 
     it('should do a request with basic pagination params', () => {
-        this.paginatorService.filter = 'test';
-        this.paginatorService.sortField = 'name';
-        this.paginatorService.sortOrder = OrderDirection.DESC;
-        this.paginatorService.get().subscribe((items) => (this.result = items));
-        expect(this.lastConnection.request.url).toContain(
-            'v1/urldemo?filter=test&orderby=name&direction=DESC'
-        );
+        paginatorService.filter = 'test';
+        paginatorService.sortField = 'name';
+        paginatorService.sortOrder = OrderDirection.DESC;
+        paginatorService.get().subscribe();
+        httpMock.expectOne('v1/urldemo?filter=test&orderby=name&direction=DESC');
     });
 
     it('should do a request with extra params', () => {
-        this.paginatorService.setExtraParams('archive', 'false');
-        this.paginatorService.setExtraParams('system', 'true');
-        this.paginatorService.setExtraParams('live', null);
-        this.paginatorService.get().subscribe((items) => (this.result = items));
-        expect(this.lastConnection.request.url).toContain('v1/urldemo?archive=false&system=true');
+        paginatorService.setExtraParams('archive', 'false');
+        paginatorService.setExtraParams('system', 'true');
+        paginatorService.setExtraParams('live', null);
+        paginatorService.get().subscribe();
+        httpMock.expectOne('v1/urldemo?archive=false&system=true');
     });
 
     it('should remove extra parameters', () => {
-        this.paginatorService.setExtraParams('name', 'John');
-        this.paginatorService.deleteExtraParams('name');
+        paginatorService.setExtraParams('name', 'John');
+        paginatorService.deleteExtraParams('name');
 
-        expect(this.paginatorService.extraParams.get('name')).toBeNull();
+        expect(paginatorService.extraParams.get('name')).toBeNull();
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });
 
 describe('PaginatorService getting', () => {
     let fakeEntity;
     let headerLink;
+    let injector: TestBed;
+    let paginatorService: PaginatorService;
+    let httpMock: HttpTestingController;
+    let req;
+    let result;
 
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([PaginatorService]);
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, PaginatorService]
+        });
+        injector = getTestBed();
+        paginatorService = injector.get(PaginatorService);
+        httpMock = injector.get(HttpTestingController);
+        paginatorService.url = 'v1/urldemo';
 
-        this.paginatorService = this.injector.get(PaginatorService);
-        this.paginatorService.url = 'v1/urldemo';
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
-
-        headerLink = `</baseURL?filter=filter&page=1>;rel="first",
-            </baseURL?filter=filter&page=5>;rel="last",
-            </baseURL?filter=filter&page=pageValue>;rel="x-page",
-            </baseURL?filter=filter&page=4>;rel="next",
-            </baseURL?filter=filter&page=2>;rel="prev"`;
+        headerLink = `/baseURL?filter=filter&page=1>;rel="first",
+            /baseURL?filter=filter&page=5>;rel="last",
+            /baseURL?filter=filter&page=pageValue>;rel="x-page",
+            /baseURL?filter=filter&page=4>;rel="next",
+            /baseURL?filter=filter&page=2>;rel="prev"`;
 
         fakeEntity = {
             items: [
@@ -72,76 +91,76 @@ describe('PaginatorService getting', () => {
             totalRecords: 5
         };
 
-        this.paginatorService.get().subscribe((items) => {
-            this.result = items;
+        let headers = new HttpHeaders();
+        headers = headers.set('Link', headerLink);
+        headers = headers.set('X-Pagination-Current-Page', '3');
+        headers = headers.set('X-Pagination-Link-Pages', '5');
+        headers = headers.set('X-Pagination-Per-Page', '10');
+        headers = headers.set('X-Pagination-Total-Entries', '38');
+
+        paginatorService.get().subscribe((items) => {
+            result = items;
         });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: JSON.stringify({
-                        entity: fakeEntity
-                    }),
-                    headers: new Headers({
-                        Link: headerLink,
-                        'X-Pagination-Current-Page': '3',
-                        'X-Pagination-Link-Pages': '5',
-                        'X-Pagination-Per-Page': '10',
-                        'X-Pagination-Total-Entries': '38'
-                    })
-                })
-            )
-        );
+        req = httpMock.expectOne(() => true);
+        req.flush({ entity: fakeEntity }, { headers });
     });
 
     it('should get entity results', () => {
-        expect(this.result).toEqual(fakeEntity);
+        expect(result).toEqual(fakeEntity);
     });
 
     it('links should has the right values', () => {
-        expect(this.paginatorService.links.first).toEqual('/baseURL?filter=filter&page=1');
-        expect(this.paginatorService.links.last).toEqual('</baseURL?filter=filter&page=5');
-        expect(this.paginatorService.links.next).toEqual('</baseURL?filter=filter&page=4');
-        expect(this.paginatorService.links.prev).toEqual('</baseURL?filter=filter&page=2');
-        expect(this.paginatorService.links['x-page']).toEqual(
-            '</baseURL?filter=filter&page=pageValue'
-        );
+        expect(paginatorService.links.first).toEqual('baseURL?filter=filter&page=1');
+        expect(paginatorService.links.last).toEqual('/baseURL?filter=filter&page=5');
+        expect(paginatorService.links.next).toEqual('/baseURL?filter=filter&page=4');
+        expect(paginatorService.links.prev).toEqual('/baseURL?filter=filter&page=2');
+        expect(paginatorService.links['x-page']).toEqual('/baseURL?filter=filter&page=pageValue');
     });
 
     it('clean links after set any extra params', () => {
-        this.paginatorService.setExtraParams('any_param', 'any_value');
-        expect({}).toEqual(this.paginatorService.links);
+        paginatorService.setExtraParams('any_param', 'any_value');
+        expect({}).toEqual(paginatorService.links);
     });
 
     it('should set basic pagination information', () => {
-        expect(this.paginatorService.currentPage).toEqual(3);
-        expect(this.paginatorService.maxLinksPage).toEqual(5);
-        expect(this.paginatorService.totalRecords).toEqual(38);
-        expect(this.paginatorService.paginationPerPage).toEqual(10);
+        expect(paginatorService.currentPage).toEqual(3);
+        expect(paginatorService.maxLinksPage).toEqual(5);
+        expect(paginatorService.totalRecords).toEqual(38);
+        expect(paginatorService.paginationPerPage).toEqual(10);
     });
 
     it('should get first page', () => {
-        this.paginatorService.getFirstPage().subscribe();
-        expect(this.lastConnection.request.url).toContain('/baseURL?filter=filter&page=1');
+        paginatorService.getFirstPage().subscribe();
+        req = httpMock.expectOne(() => true);
+        expect(req.request.url).toBe('baseURL?filter=filter&page=1');
     });
 
     it('should get last page', () => {
-        this.paginatorService.getLastPage().subscribe();
-        expect(this.lastConnection.request.url).toContain('/baseURL?filter=filter&page=5');
+        paginatorService.getLastPage().subscribe();
+        req = httpMock.expectOne(() => true);
+        expect(req.request.url).toBe('/baseURL?filter=filter&page=5');
     });
 
     it('should get next page', () => {
-        this.paginatorService.getNextPage().subscribe();
-        expect(this.lastConnection.request.url).toContain('/baseURL?filter=filter&page=4');
+        paginatorService.getNextPage().subscribe();
+        req = httpMock.expectOne(() => true);
+        expect(req.request.url).toBe('/baseURL?filter=filter&page=4');
     });
 
     it('should get prev page', () => {
-        this.paginatorService.getPrevPage().subscribe();
-        expect(this.lastConnection.request.url).toContain('/baseURL?filter=filter&page=2');
+        paginatorService.getPrevPage().subscribe();
+        req = httpMock.expectOne(() => true);
+        expect(req.request.url).toBe('/baseURL?filter=filter&page=2');
     });
 
     it('should get page 6', () => {
-        this.paginatorService.getPage(6).subscribe();
-        expect(this.lastConnection.request.url).toContain('/baseURL?filter=filter&page=6');
+        paginatorService.getPage(6).subscribe();
+        req = httpMock.expectOne(() => true);
+        expect(req.request.url).toBe('/baseURL?filter=filter&page=6');
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

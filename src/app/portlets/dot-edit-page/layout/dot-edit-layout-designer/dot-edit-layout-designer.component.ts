@@ -26,6 +26,7 @@ import {
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { tap, take, takeUntil } from 'rxjs/operators';
 import { DotLayoutBody } from '@portlets/dot-edit-page/shared/models/dot-layout-body.model';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -221,7 +222,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
                 (theme: DotTheme) => {
                     this.currentTheme = theme;
                 },
-                (error: ResponseView) => this.errorHandler(error)
+                (error) => this.errorHandler(error)
             );
         // Emit event to redraw the grid when the sidebar change
         this.form
@@ -306,13 +307,13 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
         return this.editTemplate && !this.isLayout() && this.pageState.template.canEdit;
     }
 
-    private errorHandler(err: ResponseView): Observable<any> {
+    private errorHandler(err: HttpErrorResponse): Observable<any> {
         return this.dotHttpErrorManagerService.handle(err).pipe(
             tap((res: DotHttpErrorHandled) => {
                 if (!res.redirected) {
                     this.dotRouterService.goToSiteBrowser();
                 }
-                this.currentTheme = err.response.status === 403 ? null : this.currentTheme;
+                this.currentTheme = err.status === 403 ? null : this.currentTheme;
             })
         );
     }

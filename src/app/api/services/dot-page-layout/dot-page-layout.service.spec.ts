@@ -1,51 +1,52 @@
-import { MockBackend } from '@angular/http/testing';
-import { ConnectionBackend, Response, ResponseOptions } from '@angular/http';
-import { fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
 import { DotPageLayoutService } from './dot-page-layout.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { mockDotLayout } from '../../../test/dot-page-render.mock';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
-describe('PageViewService', () => {
-    let service: DotPageLayoutService;
+describe('DotPageLayoutService', () => {
+    let injector: TestBed;
+    let dotPageLayoutService: DotPageLayoutService;
+    let httpMock: HttpTestingController;
+
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotPageLayoutService]);
-
-        service = this.injector.get(DotPageLayoutService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotPageLayoutService
+            ]
+        });
+        injector = getTestBed();
+        dotPageLayoutService = injector.get(DotPageLayoutService);
+        httpMock = injector.get(HttpTestingController);
     });
 
-    it(
-        'should post data and return an entity',
-        fakeAsync(() => {
-            let result;
+    it('should post data and return an entity', () => {
+        const mockResponse = {
+            entity: [
+                Object.assign({}, mockDotLayout, {
+                    iDate: 1495670226000,
+                    identifier: '1234-id-7890-entifier',
+                    modDate: 1495670226000
+                })
+            ]
+        };
 
-            const mockResponse = {
-                entity: [
-                    Object.assign({}, mockDotLayout, {
-                        iDate: 1495670226000,
-                        identifier: '1234-id-7890-entifier',
-                        modDate: 1495670226000
-                    })
-                ]
-            };
+        dotPageLayoutService
+            .save('test38923-82393842-23823', mockDotLayout)
+            .subscribe((result: any) => {
+                expect(result.params).toEqual(mockResponse.entity);
+            });
 
-            service
-                .save('test38923-82393842-23823', mockDotLayout)
-                .subscribe((res) => (result = res));
-            this.lastConnection.mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: JSON.stringify(mockResponse)
-                    })
-                )
-            );
+        const req = httpMock.expectOne('v1/page/test38923-82393842-23823/layout');
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toBe(mockDotLayout);
+        req.flush(mockResponse);
+    });
 
-            tick();
-            expect(this.lastConnection.request.url).toContain(
-                'v1/page/test38923-82393842-23823/layout'
-            );
-            expect(result.params).toEqual(mockResponse.entity);
-        })
-    );
+    afterEach(() => {
+        httpMock.verify();
+    });
 });

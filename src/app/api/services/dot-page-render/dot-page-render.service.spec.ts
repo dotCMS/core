@@ -1,80 +1,60 @@
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-
-import { LoginService } from 'dotcms-js';
-
-import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
+import { LoginService, CoreWebService } from 'dotcms-js';
 import { DotPageRenderService } from './dot-page-render.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { LoginServiceMock } from '@tests/login-service.mock';
-import { mockDotPersona } from '@tests/dot-persona.mock';
-import { mockDotDevices } from '@tests/dot-device.mock';
-import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
-
-const url = 'about-us';
+import { DotPageRender, DotPageMode } from '@portlets/dot-edit-page/shared/models';
+import { mockDotDevices } from '@tests/dot-device.mock';
+import { mockDotPersona } from '@tests/dot-persona.mock';
 
 describe('DotPageRenderService', () => {
-    let service: DotPageRenderService;
-    let backend: MockBackend;
-    let lastConnection;
-    let injector;
+    let injector: TestBed;
+    let dotPageRenderService: DotPageRenderService;
+    let httpMock: HttpTestingController;
+    const url = 'about-us';
 
     beforeEach(() => {
-        lastConnection = [];
-
-        injector = DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             providers: [
-                DotPageRenderService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
-                }
-            ],
-            imports: [RouterTestingModule]
+                },
+                DotPageRenderService
+            ]
         });
-
-        service = injector.get(DotPageRenderService);
-
-        backend = injector.get(ConnectionBackend) as MockBackend;
-        backend.connections.subscribe((connection: any) => {
-            lastConnection.push(connection);
-        });
+        injector = getTestBed();
+        dotPageRenderService = injector.get(DotPageRenderService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should return entity', () => {
-        let result: DotPageRender;
-
-        service.get({ url }).subscribe((res: DotPageRender) => {
-            result = res;
+        dotPageRenderService.get({ url }).subscribe((res: DotPageRender.Parameters) => {
+            expect(res).toEqual(mockDotRenderedPage);
         });
-        lastConnection[0].mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: mockDotRenderedPage
-                    }
-                })
-            )
-        );
 
-        expect(result).toEqual(result);
+        const req = httpMock.expectOne(`v1/page/render/${url.replace(/^\//, '')}`);
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: mockDotRenderedPage });
     });
 
     it('should get a page with just the url', () => {
-        service.get({ url }).subscribe();
-        expect(lastConnection[0].request.url).toBe(`v1/page/render/${url}`);
+        dotPageRenderService.get({ url }).subscribe();
+        httpMock.expectOne(`v1/page/render/${url}`);
     });
 
     it('should get a page with just the mode', () => {
-        service.get({ url, mode: DotPageMode.LIVE }).subscribe();
-        expect(lastConnection[0].request.url).toBe(`v1/page/render/${url}?mode=ADMIN_MODE`);
+        dotPageRenderService.get({ url, mode: DotPageMode.LIVE }).subscribe();
+        httpMock.expectOne(`v1/page/render/${url}?mode=ADMIN_MODE`);
     });
 
     describe('view as', () => {
         it('should get a page with just the language', () => {
-            service
+            dotPageRenderService
                 .get({
                     url,
                     viewAs: {
@@ -82,12 +62,11 @@ describe('DotPageRenderService', () => {
                     }
                 })
                 .subscribe();
-
-            expect(lastConnection[0].request.url).toBe(`v1/page/render/${url}?language_id=3`);
+            httpMock.expectOne(`v1/page/render/${url}?language_id=3`);
         });
 
         it('should get a page with just the device', () => {
-            service
+            dotPageRenderService
                 .get({
                     url,
                     viewAs: {
@@ -98,12 +77,11 @@ describe('DotPageRenderService', () => {
                     }
                 })
                 .subscribe();
-
-            expect(lastConnection[0].request.url).toBe(`v1/page/render/${url}?device_inode=1234`);
+            httpMock.expectOne(`v1/page/render/${url}?device_inode=1234`);
         });
 
         it('should get a page with just the device', () => {
-            service
+            dotPageRenderService
                 .get({
                     url,
                     viewAs: {
@@ -114,14 +92,11 @@ describe('DotPageRenderService', () => {
                     }
                 })
                 .subscribe();
-
-            expect(lastConnection[0].request.url).toBe(
-                `v1/page/render/${url}?com.dotmarketing.persona.id=6789`
-            );
+            httpMock.expectOne(`v1/page/render/${url}?com.dotmarketing.persona.id=6789`);
         });
 
         it('should get a page with all params and preserve render options over extraParams', () => {
-            service
+            dotPageRenderService
                 .get({
                     url,
                     viewAs: {
@@ -135,12 +110,16 @@ describe('DotPageRenderService', () => {
                             identifier: '6789'
                         }
                     }
-                }, {language_id: '1'})
+                })
                 .subscribe();
 
-            expect(lastConnection[0].request.url).toBe(
-                `v1/page/render/${url}?language_id=3&com.dotmarketing.persona.id=6789&device_inode=1234`
+            httpMock.expectOne(
+                `v1/page/render/${url}?com.dotmarketing.persona.id=6789&device_inode=1234&language_id=3`
             );
         });
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

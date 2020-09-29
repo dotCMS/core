@@ -1,68 +1,62 @@
-/* tslint:disable:no-unused-variable */
-
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
-
 import {
     DotPushPublishFiltersService,
     DotPushPublishFilter
 } from './dot-push-publish-filters.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotPushPublishFiltersService', () => {
-    let service: DotPushPublishFiltersService;
-    let backend: MockBackend;
-    let lastConnection;
-    let injector;
+    let injector: TestBed;
+    let dotPushPublishFiltersService: DotPushPublishFiltersService;
+    let httpMock: HttpTestingController;
 
     beforeEach(() => {
-        lastConnection = [];
-
-        injector = DOTTestBed.configureTestingModule({
-            providers: [DotPushPublishFiltersService]
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotPushPublishFiltersService
+            ]
         });
-
-        service = injector.get(DotPushPublishFiltersService);
-
-        backend = injector.get(ConnectionBackend) as MockBackend;
-        backend.connections.subscribe((connection: any) => {
-            lastConnection.push(connection);
-        });
+        injector = getTestBed();
+        dotPushPublishFiltersService = injector.get(DotPushPublishFiltersService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should get hit pp filters url', () => {
-        service.get().subscribe();
-        expect(lastConnection[0].request.url).toBe('/api/v1/pushpublish/filters/');
+        dotPushPublishFiltersService.get().subscribe();
+
+        const req = httpMock.expectOne('/api/v1/pushpublish/filters/');
+        expect(req.request.method).toBe('GET');
     });
 
     it('should return entity', () => {
-        let result: DotPushPublishFilter[];
-
-        service.get().subscribe((res: DotPushPublishFilter[]) => {
-            result = res;
+        dotPushPublishFiltersService.get().subscribe((res: DotPushPublishFilter[]) => {
+            expect(res).toEqual([
+                {
+                    defaultFilter: true,
+                    key: 'some.yml',
+                    title: 'Hello World'
+                }
+            ]);
         });
-        lastConnection[0].mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: [
-                            {
-                                defaultFilter: true,
-                                key: 'some.yml',
-                                title: 'Hello World'
-                            }
-                        ]
-                    }
-                })
-            )
-        );
 
-        expect(result).toEqual([
-            {
-                defaultFilter: true,
-                key: 'some.yml',
-                title: 'Hello World'
-            }
-        ]);
+        const req = httpMock.expectOne('/api/v1/pushpublish/filters/');
+        expect(req.request.method).toBe('GET');
+        req.flush({
+            entity: [
+                {
+                    defaultFilter: true,
+                    key: 'some.yml',
+                    title: 'Hello World'
+                }
+            ]
+        });
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

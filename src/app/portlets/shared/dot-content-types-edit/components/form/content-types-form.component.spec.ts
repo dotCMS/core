@@ -50,6 +50,7 @@ import {
 } from '@tests/dot-content-types.mock';
 import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 @Component({
     selector: 'dot-site-selector-field',
@@ -175,7 +176,8 @@ describe('ContentTypesFormComponent', () => {
                 OverlayPanelModule,
                 ReactiveFormsModule,
                 RouterTestingModule,
-                TabViewModule
+                TabViewModule,
+                HttpClientTestingModule
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },

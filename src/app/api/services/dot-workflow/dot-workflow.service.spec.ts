@@ -1,51 +1,61 @@
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotWorkflowService } from './dot-workflow.service';
-import { MockBackend } from '@angular/http/testing';
-import { ConnectionBackend, ResponseOptions, Response, RequestMethod } from '@angular/http';
 import { mockWorkflows } from '../../../test/dot-workflow-service.mock';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotWorkflowService', () => {
+    let injector: TestBed;
+    let dotWorkflowService: DotWorkflowService;
+    let httpMock: HttpTestingController;
+
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotWorkflowService]);
-        this.dotWorkflowService = this.injector.get(DotWorkflowService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotWorkflowService
+            ]
+        });
+        injector = getTestBed();
+        dotWorkflowService = injector.get(DotWorkflowService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should get workflows', () => {
-        let result;
-        this.dotWorkflowService.get().subscribe((res) => {
-            result = res;
+        dotWorkflowService.get().subscribe((res: any) => {
+            expect(res).toEqual([
+                {
+                    hello: 'world',
+                    hola: 'mundo'
+                }
+            ]);
         });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: [
-                            {
-                                hello: 'world',
-                                hola: 'mundo'
-                            }
-                        ]
-                    }
-                })
-            )
-        );
-        expect(result).toEqual([
-            {
-                hello: 'world',
-                hola: 'mundo'
-            }
-        ]);
-        expect(this.lastConnection.request.url).toContain('v1/workflow/schemes');
-        expect(this.lastConnection.request.method).toBe(RequestMethod.Get);
+        const req = httpMock.expectOne('v1/workflow/schemes');
+        expect(req.request.method).toBe('GET');
+        req.flush({
+            entity: [
+                {
+                    hello: 'world',
+                    hola: 'mundo'
+                }
+            ]
+        });
     });
 
     it('should get default workflow', () => {
         const defaultSystemWorkflow = mockWorkflows.filter((workflow) => workflow.system);
-        this.dotWorkflowService.getSystem().subscribe((workflow) => {
-            expect(workflow).toEqual(defaultSystemWorkflow[0]);
+
+        dotWorkflowService.getSystem().subscribe((res: any) => {
+            expect(res).toEqual(defaultSystemWorkflow[0]);
         });
+
+        httpMock.expectOne('v1/workflow/schemes');
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

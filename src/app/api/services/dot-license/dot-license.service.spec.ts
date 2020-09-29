@@ -1,73 +1,102 @@
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotLicenseService } from './dot-license.service';
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { of } from 'rxjs';
 
-let lastConnection: any;
-
-function mockConnectionLicenseResponse(levelNumber: number): void {
-    return lastConnection.mockRespond(
-        new Response(
-            new ResponseOptions({
-                body: {
-                    entity: {
-                        config: {
-                            license: {
-                                level: levelNumber
-                            }
-                        }
-                    }
-                }
-            })
-        )
-    );
-}
-
 describe('DotLicenseService', () => {
+    let injector: TestBed;
+    let dotLicenseService: DotLicenseService;
+    let httpMock: HttpTestingController;
+
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotLicenseService]);
-        this.dotLicenseService = this.injector.get(DotLicenseService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (lastConnection = connection));
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotLicenseService
+            ]
+        });
+        injector = getTestBed();
+        dotLicenseService = injector.get(DotLicenseService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should call the BE with correct endpoint url and method', () => {
-        this.dotLicenseService.isEnterprise().subscribe();
-        mockConnectionLicenseResponse(100);
+        dotLicenseService.isEnterprise().subscribe();
 
-        expect(lastConnection.request.method).toBe(0); // 0 is GET method
-        expect(lastConnection.request.url).toContain(`v1/appconfiguration`);
+        const req = httpMock.expectOne('v1/appconfiguration');
+        expect(req.request.method).toBe('GET');
+        req.flush({
+            entity: {
+                config: {
+                    license: {
+                        level: 100
+                    }
+                }
+            }
+        });
     });
 
     it('should return a false response because license is 100 = Community', () => {
-        let result;
-        this.dotLicenseService.isEnterprise().subscribe((res) => (result = res));
-        mockConnectionLicenseResponse(100);
+        dotLicenseService.isEnterprise().subscribe((result) => {
+            expect(result).toBe(false);
+        });
 
-        expect(result).toBe(false);
+        const req = httpMock.expectOne('v1/appconfiguration');
+        expect(req.request.method).toBe('GET');
+        req.flush({
+            entity: {
+                config: {
+                    license: {
+                        level: 100
+                    }
+                }
+            }
+        });
     });
 
     it('should return a true response because license is equal to 200', () => {
-        let result: boolean;
-        this.dotLicenseService.isEnterprise().subscribe((res) => (result = res));
-        mockConnectionLicenseResponse(200);
+        dotLicenseService.isEnterprise().subscribe((result) => {
+            expect(result).toBe(true);
+        });
 
-        expect(result).toBe(true);
+        const req = httpMock.expectOne('v1/appconfiguration');
+        expect(req.request.method).toBe('GET');
+        req.flush({
+            entity: {
+                config: {
+                    license: {
+                        level: 200
+                    }
+                }
+            }
+        });
     });
 
     it('should return a true response because license is equal to 400', () => {
-        let result: boolean;
-        this.dotLicenseService.isEnterprise().subscribe((res) => (result = res));
-        mockConnectionLicenseResponse(400);
+        dotLicenseService.isEnterprise().subscribe((result) => {
+            expect(result).toBe(true);
+        });
 
-        expect(result).toBe(true);
+        const req = httpMock.expectOne('v1/appconfiguration');
+        expect(req.request.method).toBe('GET');
+        req.flush({
+            entity: {
+                config: {
+                    license: {
+                        level: 400
+                    }
+                }
+            }
+        });
     });
 
     it('should return true with any URL and user has license', () => {
-        spyOn(this.dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
         let result: boolean;
-        this.dotLicenseService
+        dotLicenseService
             .canAccessEnterprisePortlet('/whatever')
             .subscribe((res) => (result = res));
 
@@ -75,9 +104,9 @@ describe('DotLicenseService', () => {
     });
 
     it('should return true when URL is not enterprise and user do not has license', () => {
-        spyOn(this.dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
         let result: boolean;
-        this.dotLicenseService
+        dotLicenseService
             .canAccessEnterprisePortlet('/whatever')
             .subscribe((res) => (result = res));
 
@@ -85,7 +114,7 @@ describe('DotLicenseService', () => {
     });
 
     it('should return false when URL is enterprise and user do not has license', () => {
-        spyOn(this.dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
         const urls = [
             '/rules',
             '/c/publishing-queue',
@@ -97,9 +126,13 @@ describe('DotLicenseService', () => {
             '/apps'
         ];
         urls.forEach((url) => {
-            return this.dotLicenseService
+            return dotLicenseService
                 .canAccessEnterprisePortlet(url)
                 .subscribe((res) => expect(res).toBe(false));
         });
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

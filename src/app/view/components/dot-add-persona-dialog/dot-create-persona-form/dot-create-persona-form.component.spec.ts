@@ -15,6 +15,7 @@ import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-f
 import { SiteService } from 'dotcms-js';
 import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
 import { DotAutocompleteTagsComponent } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 const FROM_INITIAL_VALUE = {
     hostFolder: mockSites[0].identifier,
@@ -65,7 +66,8 @@ describe('DotCreatePersonaFormComponent', () => {
                 SiteSelectorFieldModule,
                 DotFieldValidationMessageModule,
                 DotAutofocusModule,
-                DotAutocompleteTagsModule
+                DotAutocompleteTagsModule,
+                HttpClientTestingModule
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

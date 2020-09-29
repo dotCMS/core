@@ -30,8 +30,6 @@ import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.servic
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { CoreWebServiceMock } from '../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { FormatDateService } from '@services/format-date-service';
@@ -44,6 +42,7 @@ import { ConfirmationService } from 'primeng/api';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('DotPortletDetailComponent', () => {
     let fixture: ComponentFixture<DotPortletDetailComponent>;
@@ -62,9 +61,6 @@ describe('DotPortletDetailComponent', () => {
                     DotWorkflowEventHandlerService,
                     DotIframeService,
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: ConnectionBackend, useClass: MockBackend },
-                    { provide: RequestOptions, useClass: BaseRequestOptions },
-                    Http,
                     PushPublishService,
                     ApiRoot,
                     FormatDateService,
@@ -92,7 +88,8 @@ describe('DotPortletDetailComponent', () => {
                     DotContentletsModule,
                     RouterTestingModule,
                     BrowserAnimationsModule,
-                    DotDownloadBundleDialogModule
+                    DotDownloadBundleDialogModule,
+                    HttpClientTestingModule
                 ]
             });
         })

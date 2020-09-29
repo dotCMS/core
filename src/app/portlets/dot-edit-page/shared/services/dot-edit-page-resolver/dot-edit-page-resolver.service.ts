@@ -1,9 +1,8 @@
 import { throwError, Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
-import { Response, Headers } from '@angular/http';
 
-import { ResponseView, HttpCode } from 'dotcms-js';
+import { HttpCode, DotCMSResponse } from 'dotcms-js';
 import { tap, switchMap, filter, catchError, map } from 'rxjs/operators';
 
 import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
@@ -11,6 +10,7 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
 import { DotPageRenderOptions } from '@services/dot-page-render/dot-page-render.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { HttpResponse, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 
 /**
  * With the url return a string of the edit page html
@@ -59,7 +59,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
                         ? this.checkUserCanGoToLayout(dotRenderedPageState)
                         : of(dotRenderedPageState);
                 }),
-                catchError((err: ResponseView) => {
+                catchError((err: HttpErrorResponse) => {
                     this.dotRouterService.goToSiteBrowser();
                     return this.dotHttpErrorManagerService.handle(err).pipe(map(() => null));
                 })
@@ -72,27 +72,25 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     ): Observable<DotPageRenderState> {
         if (!dotRenderedPageState.page.canEdit) {
             return throwError(
-                new ResponseView(
-                    new Response({
-                        body: {},
+                new HttpErrorResponse(
+                    new HttpResponse<DotCMSResponse<any>>({
+                        body: null,
                         status: HttpCode.FORBIDDEN,
                         headers: null,
                         url: '',
-                        merge: null
                     })
                 )
             );
         } else if (!dotRenderedPageState.layout) {
             return throwError(
-                new ResponseView(
-                    new Response({
-                        body: {},
+                new HttpErrorResponse(
+                    new HttpResponse<DotCMSResponse<any>>({
+                        body: null,
                         status: HttpCode.FORBIDDEN,
-                        headers: new Headers({
+                        headers: new HttpHeaders({
                             'error-key': 'dotcms.api.error.license.required'
                         }),
                         url: '',
-                        merge: null
                     })
                 )
             );

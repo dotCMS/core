@@ -1,5 +1,6 @@
-import { Response, Request } from '@angular/http';
+import { Response } from '@angular/http';
 import { HttpCode } from './http-code';
+import { HttpRequest, HttpErrorResponse } from '@angular/common/http';
 
 export const NETWORK_CONNECTION_ERROR = 1;
 export const UNKNOWN_RESPONSE_ERROR = 2;
@@ -12,8 +13,8 @@ export class CwError {
     constructor(
         public code: number,
         public message: string,
-        public request?: Request,
-        public response?: Response,
+        public request?: HttpRequest<any>,
+        public response?: HttpErrorResponse,
         public source?: any
     ) {}
 }
@@ -23,12 +24,10 @@ export interface ResponseError {
     msg: string;
 }
 
-// tslint:disable-next-line:only-arrow-functions
 export function isSuccess(resp: Response): boolean {
     return resp.status > 199 && resp.status < 300;
 }
 
-// tslint:disable-next-line:only-arrow-functions
 export function hasContent(resp: Response): boolean {
     return isSuccess(resp) && resp.status !== HttpCode.NO_CONTENT;
 }

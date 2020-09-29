@@ -1,14 +1,7 @@
-import {
-    Http,
-    Response,
-    Request,
-    Headers,
-    RequestOptionsArgs,
-    URLSearchParams
-} from '@angular/http';
+import { RequestOptionsArgs, URLSearchParams, RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 import { Subject, Observable, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, filter } from 'rxjs/operators';
 
 import {
     CwError,
@@ -23,6 +16,16 @@ import { LoggerService } from './logger.service';
 import { BrowserUtil } from './browser-util.service';
 import { HttpCode } from './util/http-code';
 import { Router } from '@angular/router';
+import {
+    HttpClient,
+    HttpRequest,
+    HttpHeaders,
+    HttpParams,
+    HttpResponse,
+    HttpEventType,
+    HttpEvent,
+    HttpErrorResponse
+} from '@angular/common/http';
 
 export const RULE_CREATE = 'RULE_CREATE';
 export const RULE_DELETE = 'RULE_DELETE';
@@ -48,40 +51,64 @@ export const RULE_CONDITION_UPDATE_TYPE = 'RULE_CONDITION_UPDATE_TYPE';
 export const RULE_CONDITION_UPDATE_PARAMETER = 'RULE_CONDITION_UPDATE_PARAMETER';
 export const RULE_CONDITION_UPDATE_OPERATOR = 'RULE_CONDITION_UPDATE_OPERATOR';
 
+export interface DotCMSResponse<T> {
+    contentlets?: T;
+    entity?: T;
+    errors: string[];
+    i18nMessagesMap: { [key: string]: string };
+    messages: string[];
+    permissions: string[];
+}
+
+export interface RequestOptionsParams {
+    headers?: HttpHeaders;
+    reportProgress?: boolean;
+    params?: HttpParams;
+    responseType?: 'arraybuffer' | 'blob' | 'text' | 'json';
+    withCredentials?: boolean;
+}
+
 @Injectable()
 export class CoreWebService {
     private httpErrosSubjects: Subject<any>[] = [];
 
     constructor(
         private _apiRoot: ApiRoot,
-        private _http: Http,
         private loggerService: LoggerService,
         private browserUtil: BrowserUtil,
-        private router: Router
+        private router: Router,
+        private http: HttpClient
     ) {}
 
-    request(options: any): Observable<any> {
-        const request = this.getRequestOpts(options);
+    request<T>(options: RequestOptionsArgs): Observable<any> {
+        const request = this.getRequestOpts<T>(options);
         const source = options.body;
 
-        return this._http.request(request).pipe(
-            map((resp: Response) => {
+        return this.http.request(request).pipe(
+            filter(
+                (event: HttpEvent<HttpResponse<DotCMSResponse<T>> | any>) =>
+                    event.type === HttpEventType.Response
+            ),
+            map((resp: HttpResponse<DotCMSResponse<T>>) => {
                 // some endpoints have empty body.
                 try {
-                    return resp.json();
+                    return resp.body;
                 } catch (error) {
                     return resp;
                 }
             }),
             catchError(
-                (response: Response, _original: Observable<any>): Observable<any> => {
+                (response: HttpErrorResponse, _original: Observable<any>): Observable<any> => {
                     if (response) {
                         this.handleHttpError(response);
                         if (
                             response.status === HttpCode.SERVER_ERROR ||
                             response.status === HttpCode.FORBIDDEN
                         ) {
-                            if (response.text() && response.text().indexOf('ECONNREFUSED') >= 0) {
+                            if (
+                                response.statusText &&
+                                response.statusText.indexOf('ECONNREFUSED') >= 0
+                            ) {
                                 throw new CwError(
                                     NETWORK_CONNECTION_ERROR,
                                     CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR],
@@ -92,7 +119,7 @@ export class CoreWebService {
                             } else {
                                 throw new CwError(
                                     SERVER_RESPONSE_ERROR,
-                                    response.json().message,
+                                    response.error.message,
                                     request,
                                     response,
                                     source
@@ -130,33 +157,30 @@ export class CoreWebService {
      * }
      * </code>
      *
-     * @param options
-     * @returns DotCMSHttpResponse
+     * @RequestOptionsArgs options
+     * @returns Observable<ResponseView>
      */
-    public requestView(options: RequestOptionsArgs): Observable<ResponseView> {
-        const request = this.getRequestOpts(options);
-
-        return this._http.request(request).pipe(
-            map((resp) => {
-                if (resp.json().errors && resp.json().errors.length > 0) {
+    public requestView<T = any>(options: RequestOptionsArgs): Observable<ResponseView<T>> {
+        const request = this.getRequestOpts<T>(options);
+        return this.http.request(request).pipe(
+            filter(
+                (event: HttpEvent<HttpResponse<DotCMSResponse<T>> | any>) =>
+                    event.type === HttpEventType.Response
+            ),
+            map((resp: HttpResponse<DotCMSResponse<T>>) => {
+                if (resp.body && resp.body.errors && resp.body.errors.length > 0) {
                     return this.handleRequestViewErrors(resp);
                 } else {
-                    return new ResponseView(resp);
+                    return new ResponseView<T>(resp);
                 }
             }),
-            catchError((err: Response) => throwError(this.handleRequestViewErrors(err)))
+            catchError((err: HttpErrorResponse) => {
+                return throwError(this.handleResponseHttpErrors(err));
+            })
         );
     }
 
-    private handleRequestViewErrors(resp: Response): ResponseView {
-        if (resp.status === 401) {
-            this.router.navigate(['/public/login']);
-          }
-
-        return new ResponseView(resp);
-    }
-
-    public subscribeTo(httpErrorCode: number): Observable<any> {
+    public subscribeTo<T>(httpErrorCode: number): Observable<T> {
         if (!this.httpErrosSubjects[httpErrorCode]) {
             this.httpErrosSubjects[httpErrorCode] = new Subject();
         }
@@ -164,48 +188,89 @@ export class CoreWebService {
         return this.httpErrosSubjects[httpErrorCode].asObservable();
     }
 
-    private getRequestOpts(options: RequestOptionsArgs): Request {
-        const headers: Headers = this._apiRoot.getDefaultRequestHeaders();
-        const tempHeaders = options.headers
-            ? options.headers
-            : { 'Content-Type': 'application/json' };
-
-        Object.keys(tempHeaders).forEach((key) => {
-            headers.set(key, tempHeaders[key]);
-        });
-
-        // https://github.com/angular/angular/issues/10612#issuecomment-238712920
-        options.body =
-            options.body && typeof options.body !== 'string'
-                ? JSON.stringify(options.body)
-                : options.body
-                    ? options.body
-                    : '';
-
-        options.headers = headers;
-
-        if (options.url.indexOf('://') === -1) {
-
-            options.url = options.url.startsWith('/api') ?
-                `${this._apiRoot.baseUrl}${options.url.substr(1)}`
-                : `${this._apiRoot.baseUrl}api/${options.url}`;
+    private handleRequestViewErrors<T>(resp: HttpResponse<DotCMSResponse<T>>): ResponseView<T> {
+        if (resp.status === 401) {
+            this.router.navigate(['/public/login']);
         }
 
-        if (this.browserUtil.isIE11()) {
-            options = options || {};
-            options.search = options.search || new URLSearchParams();
-            const currentTime = new Date().getTime();
-            (<URLSearchParams>options.search).set('timestamp', String(currentTime));
-        }
-
-        return new Request(<any>options);
+        return new ResponseView<T>(resp);
     }
 
-    private handleHttpError(response): void {
+    private handleResponseHttpErrors(resp: HttpErrorResponse): any {
+        if (resp.status === 401) {
+            this.router.navigate(['/public/login']);
+        }
+
+        return resp;
+    }
+
+    private handleHttpError(response: HttpErrorResponse): void {
         if (!this.httpErrosSubjects[response.status]) {
             this.httpErrosSubjects[response.status] = new Subject();
         }
 
         this.httpErrosSubjects[response.status].next(response);
+    }
+
+    private getRequestOpts<T>(options: RequestOptionsArgs): HttpRequest<T> {
+        const optionsArgs: RequestOptionsParams = {
+            headers: new HttpHeaders(),
+            params: new HttpParams()
+        };
+
+        optionsArgs.headers = this._apiRoot.getDefaultRequestHeaders();
+        const tempHeaders = options.headers
+            ? options.headers.toJSON()
+            : { 'Content-Type': 'application/json' };
+
+        Object.keys(tempHeaders).forEach((key) => {
+            optionsArgs.headers = optionsArgs.headers.set(key, tempHeaders[key]);
+        });
+
+        const body =
+            options.body && typeof options.body !== 'string'
+                ? JSON.stringify(options.body)
+                : options.body;
+
+        if (options.url.indexOf('://') === -1) {
+            options.url = options.url.startsWith('/api')
+                ? `${this._apiRoot.baseUrl}${options.url.substr(1)}`
+                : `${this._apiRoot.baseUrl}api/${options.url}`;
+        }
+
+        if (this.browserUtil.isIE11()) {
+            optionsArgs.params = optionsArgs.params.set('timestamp', String(new Date().getTime()));
+        }
+
+        if (options.params) {
+            optionsArgs.params = this.setHttpParams(
+                <URLSearchParams>options.params,
+                optionsArgs.params
+            );
+        }
+
+        if (options.search) {
+            optionsArgs.params = this.setHttpParams(
+                <URLSearchParams>options.search,
+                optionsArgs.params
+            );
+        }
+
+        return new HttpRequest<T>(RequestMethod[options.method], options.url, body, optionsArgs);
+    }
+
+    private setHttpParams(urlParams: URLSearchParams, httpParams: HttpParams): HttpParams {
+        if (urlParams.paramsMap) {
+            const searchParams = urlParams.toString().split('&');
+            searchParams.forEach((paramString: string) => {
+                const [key, value] = paramString.split('=');
+                httpParams = httpParams.set(key, value);
+            });
+        } else {
+            Object.keys(urlParams).forEach((key: string) => {
+                httpParams = httpParams.set(key, urlParams[key]);
+            });
+        }
+        return httpParams;
     }
 }

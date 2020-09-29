@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { Response } from '@angular/http';
 
 import { ResponseView, HttpCode } from 'dotcms-js';
 
@@ -11,6 +10,7 @@ import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-
 import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
 import { mockWorkflows } from '@tests/dot-workflow-service.mock';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { HttpResponse } from '@angular/common/http';
 
 describe('DotWorkflowsActionsSelectorFieldService', () => {
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
@@ -83,12 +83,11 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
 
     it('should handle error', () => {
         const mock = new ResponseView(
-            new Response({
-                body: {},
+            new HttpResponse({
+                body: null,
                 status: HttpCode.BAD_REQUEST,
                 headers: null,
-                url: '',
-                merge: null
+                url: ''
             })
         );
         spy.and.returnValue(throwError(mock));

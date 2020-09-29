@@ -8,7 +8,6 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotCMSWorkflowActionEvent } from 'dotcms-models';
 import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -30,8 +29,6 @@ import {
     StringUtils
 } from 'dotcms-js';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -39,9 +36,10 @@ import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { ConfirmationService } from 'primeng/primeng';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotCMSWorkflowAction } from 'dotcms-models';
+import { DotCMSWorkflowAction, DotCMSWorkflowActionEvent } from 'dotcms-models';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 const mockWAEvent: DotCMSWorkflowActionEvent = {
     workflow: mockWorkflowsActions[0],
@@ -110,7 +108,7 @@ describe('DotWorkflowEventHandlerService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
+            imports: [RouterTestingModule, HttpClientTestingModule],
             providers: [
                 DotWorkflowEventHandlerService,
                 DotMessageDisplayService,
@@ -135,10 +133,7 @@ describe('DotWorkflowEventHandlerService', () => {
                 DotEventsSocket,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
-                { provide: ConnectionBackend, useClass: MockBackend },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: RequestOptions, useClass: BaseRequestOptions },
-                Http,
                 LoggerService,
                 StringUtils,
                 DotRouterService,

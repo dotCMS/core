@@ -1,56 +1,49 @@
 import { DotLanguagesService } from './dot-languages.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { mockDotLanguage } from '../../../test/dot-language.mock';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotLanguagesService', () => {
+    let injector: TestBed;
+    let dotLanguagesService: DotLanguagesService;
+    let httpMock: HttpTestingController;
+
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotLanguagesService]);
-        this.dotLanguagesService = this.injector.get(DotLanguagesService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotLanguagesService
+            ]
+        });
+        injector = getTestBed();
+        dotLanguagesService = injector.get(DotLanguagesService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should get Languages', () => {
-        let result;
-
-        this.dotLanguagesService.get().subscribe((res) => {
-            result = res;
+        dotLanguagesService.get().subscribe((res) => {
+            expect(res).toEqual([mockDotLanguage]);
         });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: [mockDotLanguage]
-                    }
-                })
-            )
-        );
-
-        expect(result).toEqual([mockDotLanguage]);
-        expect(this.lastConnection.request.url).toContain('v2/languages');
+        const req = httpMock.expectOne('v2/languages');
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [mockDotLanguage] });
     });
 
     it('should get Languages by content indode', () => {
-        let result;
-
-        this.dotLanguagesService.get('2').subscribe((res) => {
-            result = res;
+        dotLanguagesService.get('2').subscribe((res) => {
+            expect(res).toEqual([mockDotLanguage]);
         });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: [mockDotLanguage]
-                    }
-                })
-            )
-        );
+        const req = httpMock.expectOne('v2/languages?contentInode=2');
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [mockDotLanguage] });
+    });
 
-        expect(result).toEqual([mockDotLanguage]);
-        expect(this.lastConnection.request.url).toContain('v2/languages?contentInode=2');
+    afterEach(() => {
+        httpMock.verify();
     });
 });

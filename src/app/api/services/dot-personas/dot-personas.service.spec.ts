@@ -1,19 +1,29 @@
 import { DotPersonasService } from './dot-personas.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { mockDotPersona } from '../../../test/dot-persona.mock';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotPersonasService', () => {
+    let injector: TestBed;
+    let dotPersonasService: DotPersonasService;
+    let httpMock: HttpTestingController;
+
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotPersonasService]);
-        this.dotPersonasService = this.injector.get(DotPersonasService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotPersonasService
+            ]
+        });
+        injector = getTestBed();
+        dotPersonasService = injector.get(DotPersonasService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should get Personas', () => {
-        let result;
         const url = [
             `content/respectFrontendRoles/false/render/false/query/+contentType:persona `,
             `+live:true `,
@@ -21,21 +31,16 @@ describe('DotPersonasService', () => {
             `+working:true`
         ].join('');
 
-        this.dotPersonasService.get().subscribe((res) => {
-            result = res;
+        dotPersonasService.get().subscribe((result) => {
+            expect(result).toEqual(Array.of(mockDotPersona));
         });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        contentlets: [mockDotPersona]
-                    }
-                })
-            )
-        );
-        expect(result).toEqual(Array.of(mockDotPersona));
-        expect(this.lastConnection.request.method).toBe(0); // 0 is GET method
-        expect(this.lastConnection.request.url).toContain(url);
+        const req = httpMock.expectOne(url);
+        expect(req.request.method).toBe('GET');
+        req.flush({ contentlets: [mockDotPersona] });
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

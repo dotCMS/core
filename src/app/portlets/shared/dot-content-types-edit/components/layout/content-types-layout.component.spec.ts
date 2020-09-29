@@ -20,8 +20,7 @@ import { DotCurrentUserService } from '@services/dot-current-user/dot-current-us
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CoreWebService } from 'dotcms-js';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { Http, ConnectionBackend, RequestOptions, BaseRequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -115,18 +114,16 @@ describe('ContentTypesLayoutComponent', () => {
                 DotApiLinkModule,
                 DotCopyButtonModule,
                 DotPipesModule,
-                SplitButtonModule
+                SplitButtonModule,
+                HttpClientTestingModule
             ],
             providers: [
-                { provide: ConnectionBackend, useClass: MockBackend },
-                { provide: RequestOptions, useClass: BaseRequestOptions },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotMenuService, useClass: MockDotMenuService },
                 { provide: FieldDragDropService, useClass: FieldDragDropServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotCurrentUserService,
                 DotEventsService,
-                Http
             ]
         });
 

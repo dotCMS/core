@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Headers, RequestOptions } from '@angular/http';
+import { Headers } from '@angular/http';
 import { UserModel } from './shared/user.model';
 import { LoggerService } from './logger.service';
+import { HttpHeaders } from '@angular/common/http';
+import { RequestOptionsArgs } from '@angular/http/src/interfaces';
 
 @Injectable()
 export class ApiRoot {
@@ -74,19 +76,17 @@ export class ApiRoot {
         }
     }
 
-    getDefaultRequestHeaders(): Headers {
-        const headers = new Headers();
-        headers.append('com.dotmarketing.session_host', this.siteId);
-        headers.append('Accept', '*/*');
-        // headers.append('Accept', 'application/json');
-        // headers.append('Content-Type', 'application/json,text/html');
+    getDefaultRequestHeaders(): HttpHeaders {
+        let headers = new HttpHeaders()
+            .set('com.dotmarketing.session_host', this.siteId)
+            .set('Accept', '*/*');
         if (this.authToken) {
-            headers.append('Authorization', this.authToken);
+            headers = headers.set('Authorization', this.authToken);
         }
         return headers;
     }
 
-    getDefaultRequestOptions(): RequestOptions {
+    getDefaultRequestOptions(): RequestOptionsArgs {
         const headers = new Headers();
         headers.append('com.dotmarketing.session_host', this.siteId);
         if (this.authToken) {
@@ -94,9 +94,7 @@ export class ApiRoot {
         }
         headers.append('Content-Type', 'application/json');
 
-        return new RequestOptions({
-            headers: headers
-        });
+        return { headers: headers };
     }
 
     setBaseUrl(url = null): void {

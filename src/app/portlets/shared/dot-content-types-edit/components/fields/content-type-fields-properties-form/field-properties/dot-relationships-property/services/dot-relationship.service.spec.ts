@@ -1,8 +1,8 @@
-import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { DotRelationshipService } from './dot-relationship.service';
-import { Response, ConnectionBackend, ResponseOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
-import { tick, fakeAsync } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { TestBed, getTestBed } from '@angular/core/testing';
 
 const cardinalities = [
     {
@@ -19,30 +19,33 @@ const cardinalities = [
 
 describe('DotRelationshipService', () => {
     let dotRelationshipService: DotRelationshipService;
+    let injector: TestBed;
+    let httpMock: HttpTestingController;
 
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotRelationshipService]);
-
-        dotRelationshipService = this.injector.get(DotRelationshipService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotRelationshipService
+            ]
+        });
+        injector = getTestBed();
+        dotRelationshipService = injector.get(DotRelationshipService);
+        httpMock = injector.get(HttpTestingController);
     });
 
-    it('should load cardinalities', fakeAsync(() => {
-        dotRelationshipService.loadCardinalities().subscribe((res) => this.response = res);
+    it('should load cardinalities', () => {
+        dotRelationshipService.loadCardinalities().subscribe((res: any) => {
+            expect(res).toEqual(cardinalities);
+        });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: cardinalities
-                    }
-                })
-            )
-        );
+        const req = httpMock.expectOne('v1/relationships/cardinalities');
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: cardinalities });
+    });
 
-        tick();
-
-        expect(this.response).toEqual(cardinalities);
-    }));
+    afterEach(() => {
+        httpMock.verify();
+    });
 });

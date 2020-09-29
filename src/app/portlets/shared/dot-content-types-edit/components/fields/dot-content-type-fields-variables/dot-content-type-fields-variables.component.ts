@@ -2,11 +2,11 @@ import { Component, Input, OnDestroy, OnChanges, SimpleChanges } from '@angular/
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotFieldVariable } from './models/dot-field-variable.interface';
-import { ResponseView } from 'dotcms-js';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
 import { DotCMSContentTypeField } from 'dotcms-models';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
     selector: 'dot-content-type-fields-variables',
@@ -51,7 +51,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
                         (item: DotFieldVariable) => item.key !== variable.key
                     );
                 },
-                (err: ResponseView) => {
+                (err: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
                 }
             );
@@ -70,7 +70,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
                 (savedVariable: DotFieldVariable) => {
                     this.fieldVariables = this.updateVariableCollection(savedVariable);
                 },
-                (err: ResponseView) => {
+                (err: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
                 }
             );

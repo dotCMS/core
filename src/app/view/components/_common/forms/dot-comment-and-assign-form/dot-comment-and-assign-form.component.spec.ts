@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
 import { DotRolesService } from '@services/dot-roles/dot-roles.service';
@@ -8,13 +8,12 @@ import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CoreWebService } from 'dotcms-js';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { FormatDateService } from '@services/format-date-service';
 import { Component, DebugElement, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { mockProcessedRoles } from '@services/dot-roles/dot-roles.service.spec';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -33,28 +32,24 @@ describe('DotAssigneeFormComponent', () => {
     let dropdownElement: DebugElement;
     let dropdown: Dropdown;
 
-    beforeEach(
-        async(() => {
-            TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotCommentAndAssignFormComponent],
-                providers: [
-                    DotRolesService,
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: ConnectionBackend, useClass: MockBackend },
-                    { provide: RequestOptions, useClass: BaseRequestOptions },
-                    Http,
-                    FormatDateService
-                ],
-                imports: [
-                    DotPipesModule,
-                    FormsModule,
-                    ReactiveFormsModule,
-                    InputTextareaModule,
-                    DropdownModule
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            declarations: [TestHostComponent, DotCommentAndAssignFormComponent],
+            providers: [
+                DotRolesService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                FormatDateService
+            ],
+            imports: [
+                HttpClientTestingModule,
+                DotPipesModule,
+                FormsModule,
+                ReactiveFormsModule,
+                InputTextareaModule,
+                DropdownModule
+            ]
+        }).compileComponents();
+    });
 
     beforeEach(() => {
         fixture = TestBed.createComponent(TestHostComponent);

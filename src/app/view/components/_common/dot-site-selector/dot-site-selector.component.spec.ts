@@ -1,4 +1,4 @@
-import { Observable, of as observableOf } from 'rxjs';
+import { Observable, of as observableOf, of } from 'rxjs';
 import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotSiteSelectorComponent } from './dot-site-selector.component';
@@ -45,44 +45,39 @@ describe('SiteSelectorComponent', () => {
     let siteService: SiteService;
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(
-        async(() => {
-            const messageServiceMock = new MockDotMessageService({
-                search: 'Search'
-            });
-            DOTTestBed.configureTestingModule({
-                declarations: [DotSiteSelectorComponent],
-                imports: [SearchableDropDownModule, BrowserAnimationsModule],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: SiteService, useValue: siteServiceMock },
-                    IframeOverlayService,
-                    PaginatorService
-                ]
-            });
+    beforeEach(async(() => {
+        const messageServiceMock = new MockDotMessageService({
+            search: 'Search'
+        });
+        DOTTestBed.configureTestingModule({
+            declarations: [DotSiteSelectorComponent],
+            imports: [SearchableDropDownModule, BrowserAnimationsModule],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: SiteService, useValue: siteServiceMock },
+                IframeOverlayService,
+                PaginatorService
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(DotSiteSelectorComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            paginatorService = de.injector.get(PaginatorService);
-            siteService = de.injector.get(SiteService);
-        })
-    );
+        fixture = DOTTestBed.createComponent(DotSiteSelectorComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        paginatorService = de.injector.get(PaginatorService);
+        siteService = de.injector.get(SiteService);
+    }));
 
-    it(
-        'should send notification when login-as/logout-as',
-        fakeAsync(() => {
-            const dotEventsService = de.injector.get(DotEventsService);
-            spyOn(comp, 'getSitesList');
-            spyOn(comp, 'handleSitesRefresh');
-            fixture.detectChanges();
-            dotEventsService.notify('login-as');
-            tick(0);
-            dotEventsService.notify('logout-ass');
-            tick(0);
-            expect(comp.getSitesList).toHaveBeenCalledTimes(2);
-        })
-    );
+    it('should send notification when login-as/logout-as', fakeAsync(() => {
+        const dotEventsService = de.injector.get(DotEventsService);
+        spyOn(comp, 'getSitesList');
+        spyOn(comp, 'handleSitesRefresh');
+        fixture.detectChanges();
+        dotEventsService.notify('login-as');
+        tick(0);
+        dotEventsService.notify('logout-ass');
+        tick(0);
+        expect(comp.getSitesList).toHaveBeenCalledTimes(2);
+    }));
 
     it('should set extra params to paginator service to false', () => {
         comp.archive = false;
@@ -200,7 +195,7 @@ describe('SiteSelectorComponent', () => {
             By.css('dot-searchable-dropdown')
         );
         let result: any;
-        comp.change.subscribe(res => (result = res));
+        comp.change.subscribe((res) => (result = res));
         searchableDropdownComponent.triggerEventHandler('change', { fake: 'site' });
 
         expect(result).toEqual({ fake: 'site' });
@@ -214,7 +209,7 @@ describe('SiteSelectorComponent', () => {
         fixture.detectChanges();
 
         let result: any;
-        comp.currentSite.subscribe(res => (result = res));
+        comp.currentSite.subscribe((res) => (result = res));
 
         expect(result).toEqual(mockSites[0]);
     });
@@ -223,7 +218,7 @@ describe('SiteSelectorComponent', () => {
         fixture.detectChanges();
         siteServiceMock.setFakeCurrentSite(sites[1]);
 
-        comp.currentSite.subscribe(site => {
+        comp.currentSite.subscribe((site) => {
             expect(site).toEqual(sites[1]);
         });
     });
@@ -231,7 +226,7 @@ describe('SiteSelectorComponent', () => {
     describe('sitesCurrentPage', () => {
         const mockFunction = (times, success, fail) => {
             let count = 0;
-            return Observable.create(observer => {
+            return Observable.create((observer) => {
                 if (count++ >= times) {
                     observer.next(success);
                 } else {
@@ -240,31 +235,25 @@ describe('SiteSelectorComponent', () => {
             });
         };
 
-        it(
-            'should update until site is not present after archived',
-            fakeAsync(() => {
-                spyOn(paginatorService, 'getCurrentPage').and.callFake(() =>
-                    mockFunction(2, sites.slice(0, 2), sites)
-                );
-                comp.handleSitesRefresh(sites[2]);
-                tick(2500);
-                expect(paginatorService.getCurrentPage).toHaveBeenCalledTimes(1);
-                expect(comp.sitesCurrentPage).toEqual(sites.slice(0, 2));
-            })
-        );
+        it('should update until site is not present after archived', fakeAsync(() => {
+            spyOn(paginatorService, 'getCurrentPage').and.callFake(() =>
+                mockFunction(2, sites.slice(0, 2), sites)
+            );
+            comp.handleSitesRefresh(sites[2]);
+            tick(2500);
+            expect(paginatorService.getCurrentPage).toHaveBeenCalledTimes(1);
+            expect(comp.sitesCurrentPage).toEqual(sites.slice(0, 2));
+        }));
 
-        it(
-            'should update until site is present after add',
-            fakeAsync(() => {
-                spyOn(siteService, 'getSiteById').and.callFake(() =>
-                    mockFunction(2, sites[1], undefined)
-                );
-                spyOn(paginatorService, 'getCurrentPage').and.callThrough();
-                comp.handleSitesRefresh(sites[0]);
-                tick(2500);
-                expect(siteService.getSiteById).toHaveBeenCalledWith(sites[0].identifier);
-                expect(paginatorService.getCurrentPage).toHaveBeenCalledTimes(1);
-            })
-        );
+        it('should update until site is present after add', fakeAsync(() => {
+            spyOn(siteService, 'getSiteById').and.callFake(() =>
+                mockFunction(2, sites[1], undefined)
+            );
+            spyOn(paginatorService, 'getCurrentPage').and.returnValue(of(sites));
+            comp.handleSitesRefresh(sites[0]);
+            tick(2500);
+            expect(siteService.getSiteById).toHaveBeenCalledWith(sites[0].identifier);
+            expect(paginatorService.getCurrentPage).toHaveBeenCalledTimes(1);
+        }));
     });
 });

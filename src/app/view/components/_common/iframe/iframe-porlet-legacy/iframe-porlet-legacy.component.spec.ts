@@ -25,8 +25,6 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -47,6 +45,7 @@ import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fi
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { SiteServiceMock } from '@tests/site-service.mock';
 
 const routeDatamock = {
@@ -83,7 +82,7 @@ describe('IframePortletLegacyComponent', () => {
         async(() => {
             TestBed.configureTestingModule({
                 declarations: [],
-                imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogModule],
+                imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogModule, HttpClientTestingModule],
                 providers: [
                     DotContentTypeService,
                     DotCustomEventHandlerService,
@@ -99,11 +98,8 @@ describe('IframePortletLegacyComponent', () => {
                         useClass: ActivatedRouteMock
                     },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: ConnectionBackend, useClass: MockBackend },
-                    { provide: RequestOptions, useClass: BaseRequestOptions },
                     { provide: DotRouterService, useClass: MockDotRouterService },
                     { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                    Http,
                     DotContentletEditorService,
                     DotIframeService,
                     DotWorkflowEventHandlerService,

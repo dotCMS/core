@@ -1,60 +1,54 @@
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
-
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { DotContentletLockerService } from './dot-contentlet-locker.service';
 
 describe('DotContentletLockerService', () => {
-    let service: DotContentletLockerService;
-    let backend: MockBackend;
-    let lastConnection;
-    let injector;
+    let injector: TestBed;
+    let dotContentletLockerService: DotContentletLockerService;
+    let httpMock: HttpTestingController;
 
     beforeEach(() => {
-        lastConnection = [];
-
-        injector = DOTTestBed.configureTestingModule({
-            providers: [DotContentletLockerService]
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotContentletLockerService
+            ]
         });
-
-        service = injector.get(DotContentletLockerService);
-        backend = injector.get(ConnectionBackend) as MockBackend;
-        backend.connections.subscribe((connection: any) => {
-            lastConnection.push(connection);
-        });
+        injector = getTestBed();
+        dotContentletLockerService = injector.get(DotContentletLockerService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should lock a content asset', () => {
-        let result: any;
-        service.lock('123').subscribe((lockInfo: any) => (result = lockInfo));
+        const inode = '123';
+        dotContentletLockerService.lock(inode).subscribe((lockInfo: any) => {
+            expect(lockInfo).toEqual({ message: 'locked' });
+        });
 
-        lastConnection[0].mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        message: 'locked'
-                    }
-                })
-            )
-        );
-        expect(lastConnection[0].request.url).toContain('content/lock/inode/123');
-        expect(result).toEqual({ message: 'locked' });
+        const req = httpMock.expectOne(`content/lock/inode/${inode}`);
+        expect(req.request.method).toBe('PUT');
+        req.flush({
+            message: 'locked'
+        });
     });
 
     it('should unlock a content asset', () => {
-        let result: any;
-        service.unlock('123').subscribe((lockInfo: any) => (result = lockInfo));
+        const inode = '123';
+        dotContentletLockerService.unlock(inode).subscribe((lockInfo: any) => {
+            expect(lockInfo).toEqual({ message: 'locked' });
+        });
 
-        lastConnection[0].mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        message: 'locked'
-                    }
-                })
-            )
-        );
-        expect(lastConnection[0].request.url).toContain('content/unlock/inode/123');
-        expect(result).toEqual({ message: 'locked' });
+        const req = httpMock.expectOne(`content/unlock/inode/${inode}`);
+        expect(req.request.method).toBe('PUT');
+        req.flush({
+            message: 'locked'
+        });
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

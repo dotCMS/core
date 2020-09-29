@@ -1,27 +1,26 @@
 import { DotEditPageService } from './dot-edit-page.service';
-import { MockBackend } from '@angular/http/testing';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { ConnectionBackend } from '@angular/http';
 import { DotPageContainer } from '../../../portlets/dot-edit-page/shared/models/dot-page-container.model';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotEditPageService', () => {
-    let service: DotEditPageService;
-    let backend: MockBackend;
-    let lastConnection;
-    let injector;
+    let injector: TestBed;
+    let dotEditPageService: DotEditPageService;
+    let httpMock: HttpTestingController;
 
     beforeEach(() => {
-        lastConnection = [];
-
-        injector = DOTTestBed.configureTestingModule({
-            providers: [DotEditPageService]
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotEditPageService
+            ]
         });
-
-        service = injector.get(DotEditPageService);
-        backend = injector.get(ConnectionBackend) as MockBackend;
-        backend.connections.subscribe((connection: any) => {
-            lastConnection.push(connection);
-        });
+        injector = getTestBed();
+        dotEditPageService = injector.get(DotEditPageService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should do a request for save content', () => {
@@ -39,10 +38,15 @@ describe('DotEditPageService', () => {
             }
         ];
 
-        service.save(pageId, model).subscribe(() => {
-            expect(lastConnection[0].request.url).toContain(`v1/page/${pageId}/content`);
-            expect(lastConnection[0].request.method).toEqual(1);
-            expect(lastConnection[0].request._body).toEqual(JSON.stringify(model));
-        });
+        dotEditPageService.save(pageId, model).subscribe();
+
+        const req = httpMock.expectOne(`v1/page/${pageId}/content`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toBe(model);
+        req.flush({});
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

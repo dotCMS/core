@@ -25,13 +25,12 @@ import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { ConfirmationService } from 'primeng/api';
 import { FormatDateService } from '@services/format-date-service';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('DotAddContentletComponent', () => {
     let component: DotAddContentletComponent;
@@ -56,9 +55,6 @@ describe('DotAddContentletComponent', () => {
                     ConfirmationService,
                     FormatDateService,
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    Http,
-                    { provide: ConnectionBackend, useClass: MockBackend },
-                    { provide: RequestOptions, useClass: BaseRequestOptions },
                     { provide: DotRouterService, useClass: MockDotRouterService },
                     ApiRoot,
                     DotIframeService,
@@ -71,7 +67,7 @@ describe('DotAddContentletComponent', () => {
                     StringUtils,
                     UserModel
                 ],
-                imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
+                imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule]
             });
         })
     );
@@ -131,5 +127,12 @@ describe('DotAddContentletComponent', () => {
 
             expect(dotAddContentletWrapperComponent.header).toEqual('Add some content');
         });
+    });
+
+    afterEach(() => {
+        // Removes dirty DOM after tests have finished
+        if (fixture.nativeElement && 'remove' in fixture.nativeElement) {
+            (fixture.nativeElement as HTMLElement).remove();
+        }
     });
 });

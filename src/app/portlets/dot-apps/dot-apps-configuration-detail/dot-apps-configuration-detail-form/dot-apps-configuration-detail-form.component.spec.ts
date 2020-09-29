@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 import {
@@ -12,6 +12,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { NgxMdModule } from 'ngx-md';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 const secrets = [
     {
@@ -77,9 +78,10 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     let component: DotAppsConfigurationDetailFormComponent;
     let fixture: ComponentFixture<DotAppsConfigurationDetailFormComponent>;
 
-    beforeEach(async(() => {
+    beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [
+                HttpClientTestingModule,
                 CommonModule,
                 CheckboxModule,
                 DropdownModule,
@@ -93,7 +95,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             declarations: [DotAppsConfigurationDetailFormComponent],
             providers: []
         });
-    }));
+    });
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotAppsConfigurationDetailFormComponent);

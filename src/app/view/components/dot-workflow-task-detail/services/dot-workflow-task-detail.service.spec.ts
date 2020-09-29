@@ -4,8 +4,7 @@ import { DotMenuService } from '@services/dot-menu.service';
 import { TestBed } from '@angular/core/testing';
 import { CoreWebService } from 'dotcms-js';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { ConnectionBackend, RequestOptions, BaseRequestOptions, Http } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('DotWorkflowTaskDetailService', () => {
     let service: DotWorkflowTaskDetailService;
@@ -14,13 +13,11 @@ describe('DotWorkflowTaskDetailService', () => {
 
     beforeEach(() => {
         injector = TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             providers: [
                 DotMenuService,
                 DotWorkflowTaskDetailService,
-                Http,
-                { provide: ConnectionBackend, useClass: MockBackend },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: RequestOptions, useClass: BaseRequestOptions }
             ]
         });
 

@@ -1,14 +1,9 @@
-import { ResponseView } from 'dotcms-js';
-import { ResponseOptions, Response } from '@angular/http';
+import { HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 
-export const mockResponseView = (status, url?) =>
-    new ResponseView(
-        new Response(
-            new ResponseOptions({
-                body: {},
-                status: status,
-                headers: null,
-                url: url || '/test/test'
-            })
-        )
-    );
+export const mockResponseView = (status: number, url?: string, headers?: HttpHeaders, body?: any) =>
+    new HttpErrorResponse({
+        error: body || null,
+        status: status,
+        headers: headers || null,
+        url: url || '/test/test'
+    });

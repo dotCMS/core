@@ -26,8 +26,6 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { FormatDateService } from '@services/format-date-service';
@@ -41,6 +39,7 @@ import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fi
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import {DotDownloadBundleDialogService} from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -59,7 +58,7 @@ describe('DotContentletsComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotContentletsComponent],
-            imports: [DotContentletEditorModule, RouterTestingModule],
+            imports: [DotContentletEditorModule, RouterTestingModule, HttpClientTestingModule],
             providers: [
                 DotContentletEditorService,
                 DotIframeService,
@@ -86,11 +85,8 @@ describe('DotContentletsComponent', () => {
                 DotWorkflowEventHandlerService,
                 PushPublishService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: ConnectionBackend, useClass: MockBackend },
-                { provide: RequestOptions, useClass: BaseRequestOptions },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                Http,
                 PushPublishService,
                 ApiRoot,
                 FormatDateService,

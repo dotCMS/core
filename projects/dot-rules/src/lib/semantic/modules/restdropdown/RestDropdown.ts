@@ -1,8 +1,9 @@
 import { map } from 'rxjs/operators';
-import { Component, EventEmitter, Optional } from '@angular/core';
+import { Component, EventEmitter, OnChanges, Optional } from '@angular/core';
 import { AfterViewInit, Output, Input, ChangeDetectionStrategy } from '@angular/core';
 import { NgControl, ControlValueAccessor } from '@angular/forms';
-import { Http } from '@angular/http';
+import { RequestMethod } from '@angular/http';
+import { CoreWebService } from 'dotcms-js';
 
 import { Verify } from '../../../services/validation/Verify';
 import { ApiRoot } from 'dotcms-js';
@@ -26,7 +27,7 @@ import * as _ from 'lodash';
         </cw-input-dropdown>
     `
 })
-export class RestDropdown implements AfterViewInit, ControlValueAccessor {
+export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAccessor {
     @Input() placeholder: string;
     @Input() allowAdditions: boolean;
     @Input() minSelections: number;
@@ -43,7 +44,7 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
     private _options: Observable<any[]>;
 
     constructor(
-        private _http: Http,
+        private coreWebService: CoreWebService,
         private _apiRoot: ApiRoot,
         @Optional() public control: NgControl
     ) {
@@ -102,19 +103,26 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
     ngOnChanges(change): void {
         if (change.optionUrl) {
             const requestOptionArgs = this._apiRoot.getDefaultRequestOptions();
-            this._options = this._http
-                .get(change.optionUrl.currentValue, requestOptionArgs)
+            this._options = this.coreWebService
+                .request({
+                    method: RequestMethod.Get,
+                    url: change.optionUrl.currentValue,
+                    ...requestOptionArgs
+                })
                 .pipe(map((res: any) => this.jsonEntriesToOptions(res)));
         }
 
-        if (change.value && typeof change.value.currentValue === 'string' && this.maxSelections > 1) {
-            this._modelValue =
-                    change.value.currentValue.split(',');
+        if (
+            change.value &&
+            typeof change.value.currentValue === 'string' &&
+            this.maxSelections > 1
+        ) {
+            this._modelValue = change.value.currentValue.split(',');
         }
     }
 
     private jsonEntriesToOptions(res: any): any {
-        const valuesJson = res.json();
+        const valuesJson = res;
         let ary = [];
         if (Verify.isArray(valuesJson)) {
             ary = valuesJson.map((valueJson) => this.jsonEntryToOption(valueJson));

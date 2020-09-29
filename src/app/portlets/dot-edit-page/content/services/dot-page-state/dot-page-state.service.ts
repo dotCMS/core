@@ -1,7 +1,7 @@
 import { of, Observable, Subject, BehaviorSubject } from 'rxjs';
 
 import { pluck, take, map, catchError, tap } from 'rxjs/operators';
-import { LoginService, User, ResponseView, HttpCode } from 'dotcms-js';
+import { LoginService, User, HttpCode } from 'dotcms-js';
 import { DotPageRenderState } from '../../../shared/models/dot-rendered-page-state.model';
 import {
     DotPageRenderService,
@@ -18,6 +18,7 @@ import {
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Injectable()
 export class DotPageStateService {
@@ -180,7 +181,7 @@ export class DotPageStateService {
     requestPage(options: DotPageRenderOptions): Observable<DotPageRenderState> {
         const { url, ...extraParams } = this.dotRouterService.queryParams;
         return this.dotPageRenderService.get(options, extraParams).pipe(
-            catchError((err: ResponseView) => this.handleSetPageStateFailed(err)),
+            catchError((err) => this.handleSetPageStateFailed(err)),
             take(1),
             map((page: DotPageRender.Parameters) => {
                 if (page) {
@@ -236,7 +237,7 @@ export class DotPageStateService {
         return of(null);
     }
 
-    private handleSetPageStateFailed(err: ResponseView): Observable<DotHttpErrorHandled> {
+    private handleSetPageStateFailed(err: HttpErrorResponse): Observable<DotHttpErrorHandled> {
         return this.dotHttpErrorManagerService.handle(err).pipe(
             take(1),
             tap(({ status }: DotHttpErrorHandled) => {

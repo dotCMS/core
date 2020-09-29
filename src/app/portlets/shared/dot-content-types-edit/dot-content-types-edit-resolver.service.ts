@@ -8,9 +8,10 @@ import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { DotCrudService } from '@services/dot-crud';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotCMSContentType } from 'dotcms-models';
-import { LoginService, ResponseView } from 'dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, map, catchError } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
 
 /**
  * With the url return a content type by id or a default content type
@@ -45,7 +46,7 @@ export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
     private getContentType(id: string): Observable<DotCMSContentType> {
         return this.crudService.getDataById('v1/contenttype', id).pipe(
             take(1),
-            catchError((err: ResponseView) => {
+            catchError((err: HttpErrorResponse) => {
                 return this.dotHttpErrorManagerService.handle(err).pipe(
                     map((res: DotHttpErrorHandled) => {
                         if (!res.redirected) {

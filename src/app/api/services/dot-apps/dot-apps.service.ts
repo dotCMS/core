@@ -3,8 +3,9 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotApps, DotAppsSaveData } from '@models/dot-apps/dot-apps.model';
 import { RequestMethod } from '@angular/http';
-import { CoreWebService, ResponseView } from 'dotcms-js';
+import { CoreWebService } from 'dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 const appsUrl = `v1/apps`;
 
@@ -29,13 +30,13 @@ export class DotAppsService {
     get(filter?: string): Observable<DotApps[]> {
         const url = filter ? `${appsUrl}?filter=${filter}` : appsUrl;
         return this.coreWebService
-            .requestView({
+            .requestView<DotApps[]>({
                 method: RequestMethod.Get,
                 url
             })
             .pipe(
                 pluck('entity'),
-                catchError((error: ResponseView) => {
+                catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),
                         map(() => null)
@@ -58,7 +59,7 @@ export class DotAppsService {
             })
             .pipe(
                 pluck('entity'),
-                catchError((error: ResponseView) => {
+                catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),
                         map(() => null)
@@ -82,7 +83,7 @@ export class DotAppsService {
             })
             .pipe(
                 pluck('entity'),
-                catchError((error: ResponseView) => {
+                catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),
                         map(() => null)
@@ -110,7 +111,7 @@ export class DotAppsService {
             })
             .pipe(
                 pluck('entity'),
-                catchError((error: ResponseView) => {
+                catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),
                         map(() => null)
@@ -134,7 +135,7 @@ export class DotAppsService {
             })
             .pipe(
                 pluck('entity'),
-                catchError((error: ResponseView) => {
+                catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),
                         map(() => null)
@@ -157,7 +158,7 @@ export class DotAppsService {
             })
             .pipe(
                 pluck('entity'),
-                catchError((error: ResponseView) => {
+                catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),
                         map(() => null)

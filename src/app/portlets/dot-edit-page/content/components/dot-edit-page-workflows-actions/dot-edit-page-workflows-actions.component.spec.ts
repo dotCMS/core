@@ -2,8 +2,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { DebugElement, Component, Input } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MenuModule, Menu, ConfirmationService } from 'primeng/primeng';
 import {
@@ -21,7 +20,6 @@ import { LoginServiceMock } from '@tests/login-service.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { mockDotPage } from '@tests/dot-page-render.mock';
 import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
-
 import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-actions.component';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -37,20 +35,17 @@ import { PushPublishService } from '@services/push-publish/push-publish.service'
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `
-        <dot-edit-page-workflows-actions [page]="page"></dot-edit-page-workflows-actions>
-    `
+    template: ` <dot-edit-page-workflows-actions [page]="page"></dot-edit-page-workflows-actions> `
 })
 class TestHostComponent {
     @Input() page: DotPage;
@@ -74,54 +69,54 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         'Workflow-Action': 'Workflow Action'
     });
 
-    beforeEach(
-        async(() => {
-            testbed = TestBed.configureTestingModule({
-                imports: [RouterTestingModule, BrowserAnimationsModule, MenuModule],
-                declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
-                providers: [
-                    {
-                        provide: DotWorkflowService,
-                        useClass: DotWorkflowServiceMock
-                    },
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    {
-                        provide: PushPublishService,
-                        useClass: MockPushPublishService
-                    },
-                    { provide: ConnectionBackend, useClass: MockBackend },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: RequestOptions, useClass: BaseRequestOptions },
-                    Http,
-                    DotWorkflowsActionsService,
-                    DotHttpErrorManagerService,
-                    DotRouterService,
-                    DotWorkflowActionsFireService,
-                    DotWizardService,
-                    DotMessageDisplayService,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    DotGlobalMessageService,
-                    DotEventsService,
-                    DotcmsEventsService,
-                    DotEventsSocket,
-                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                    DotcmsConfigService,
-                    LoggerService,
-                    StringUtils,
-                    DotWorkflowEventHandlerService,
-                    DotIframeService
-                ]
-            });
-        })
-    );
+    beforeEach(() => {
+        testbed = TestBed.configureTestingModule({
+            imports: [
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                MenuModule,
+                HttpClientTestingModule
+            ],
+            declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
+            providers: [
+                {
+                    provide: DotWorkflowService,
+                    useClass: DotWorkflowServiceMock
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: PushPublishService,
+                    useClass: MockPushPublishService
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotWorkflowsActionsService,
+                DotHttpErrorManagerService,
+                DotRouterService,
+                DotWorkflowActionsFireService,
+                DotWizardService,
+                DotMessageDisplayService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotGlobalMessageService,
+                DotEventsService,
+                DotcmsEventsService,
+                DotEventsSocket,
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                DotcmsConfigService,
+                LoggerService,
+                StringUtils,
+                DotWorkflowEventHandlerService,
+                DotIframeService
+            ]
+        });
+    });
 
     beforeEach(() => {
         fixture = testbed.createComponent(TestHostComponent);

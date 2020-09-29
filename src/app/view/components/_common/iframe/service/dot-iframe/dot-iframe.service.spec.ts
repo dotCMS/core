@@ -3,8 +3,6 @@ import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.servic
 import { async, TestBed } from '@angular/core/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { Injectable } from '@angular/core';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { CoreWebService } from 'dotcms-js';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
@@ -24,10 +22,7 @@ describe('DotIframeService', () => {
                 DotIframeService,
                 DotUiColorsService,
                 { provide: DotRouterService, useClass: DotRouterServiceMock },
-                { provide: ConnectionBackend, useClass: MockBackend },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: RequestOptions, useClass: BaseRequestOptions },
-                Http
             ]
         });
 

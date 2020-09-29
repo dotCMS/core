@@ -1,29 +1,29 @@
-import { MockBackend } from '@angular/http/testing';
-import { ConnectionBackend } from '@angular/http';
 import { DotContainerContentletService } from './dot-container-contentlet.service';
-import { ReflectiveInjector } from '@angular/core';
-import { MockConnection } from '@angular/http/testing';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotPageContainer } from '../../../dot-edit-page/shared/models/dot-page-container.model';
 import { DotPageContent } from '../../../dot-edit-page/shared/models/dot-page-content.model';
 import { DotCMSContentType } from 'dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotContainerContentletService', () => {
+    let injector: TestBed;
     let dotContainerContentletService: DotContainerContentletService;
-    let backend: MockBackend;
-    let lastConnection: any;
+    let httpMock: HttpTestingController;
 
     beforeEach(() => {
-        const injector: ReflectiveInjector = DOTTestBed.resolveAndCreate([
-            DotContainerContentletService
-        ]);
-
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotContainerContentletService
+            ]
+        });
+        injector = getTestBed();
         dotContainerContentletService = injector.get(DotContainerContentletService);
-        backend = injector.get(ConnectionBackend);
-        backend.connections.subscribe(
-            (connection: MockConnection) => (lastConnection = connection)
-        );
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should do a request for get the contentlet html code', () => {
@@ -40,9 +40,8 @@ describe('DotContainerContentletService', () => {
 
         dotContainerContentletService
             .getContentletToContainer(pageContainer, pageContent)
-            .subscribe((resp) => resp);
-
-        expect(lastConnection.request.url).toContain(`v1/containers/content/2?containerId=1`);
+            .subscribe();
+        httpMock.expectOne(`v1/containers/content/2?containerId=1`);
     });
 
     it('should do a request for get the form html code', () => {
@@ -66,10 +65,11 @@ describe('DotContainerContentletService', () => {
             id: formId
         };
 
-        dotContainerContentletService
-            .getFormToContainer(pageContainer, form)
-            .subscribe((resp) => resp);
+        dotContainerContentletService.getFormToContainer(pageContainer, form).subscribe();
+        httpMock.expectOne(`v1/containers/form/2?containerId=1`);
+    });
 
-        expect(lastConnection.request.url).toContain(`v1/containers/form/2?containerId=1`);
+    afterEach(() => {
+        httpMock.verify();
     });
 });

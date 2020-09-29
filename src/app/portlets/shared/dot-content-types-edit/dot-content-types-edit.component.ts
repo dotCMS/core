@@ -15,12 +15,12 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { ResponseView } from 'dotcms-js';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { MenuItem } from 'primeng/primeng';
 import { Subject } from 'rxjs';
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { HttpErrorResponse } from '@angular/common/http';
 
 /**
  * Portlet component for edit content types
@@ -195,7 +195,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;
                 },
-                (err: ResponseView) => {
+                (err) => {
                     this.dotHttpErrorManagerService
                         .handle(err)
                         .pipe(take(1))
@@ -219,7 +219,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                     this.layout = fields;
                     this.loadingFields = false;
                 },
-                (err: ResponseView) => {
+                (err) => {
                     this.dotHttpErrorManagerService
                         .handle(err)
                         .pipe(take(1))
@@ -246,7 +246,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 () => {
                     this.loadingFields = false;
                 },
-                (err: ResponseView) => {
+                (err) => {
                     this.dotHttpErrorManagerService
                         .handle(err)
                         .pipe(take(1))
@@ -305,13 +305,13 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                     );
                     this.show = false;
                 },
-                (err: ResponseView) => {
+                (err) => {
                     this.handleHttpError(err);
                 }
             );
     }
 
-    private handleHttpError(err: ResponseView) {
+    private handleHttpError(err: HttpErrorResponse) {
         this.dotHttpErrorManagerService.handle(err).pipe(take(1));
     }
 
@@ -329,7 +329,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                     this.data = contentType;
                     this.show = false;
                 },
-                (err: ResponseView) => {
+                (err) => {
                     this.handleHttpError(err);
                 }
             );

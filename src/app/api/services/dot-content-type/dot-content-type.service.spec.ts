@@ -1,65 +1,68 @@
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
-import { mockDotContentlet } from '../../../test/dot-contentlet.mock';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 import { DotContentTypeService } from './dot-content-type.service';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { mockDotContentlet } from '@tests/dot-contentlet.mock';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { DotCMSContentType } from 'dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
-
-let lastConnection: any;
-
-function mockConnectionContentletResponse(): void {
-    return lastConnection.mockRespond(
-        new Response(
-            new ResponseOptions({
-                body: {
-                    entity: mockDotContentlet
-                }
-            })
-        )
-    );
-}
 
 function isRecentContentType(type: StructureTypeView): boolean {
     return type.name.startsWith('RECENT');
 }
 
 describe('DotContentletService', () => {
+    let injector: TestBed;
+    let dotContentTypeService: DotContentTypeService;
+    let httpMock: HttpTestingController;
+
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotContentTypeService]);
-        this.dotContentletService = this.injector.get(DotContentTypeService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (lastConnection = connection));
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotContentTypeService
+            ]
+        });
+        injector = getTestBed();
+        dotContentTypeService = injector.get(DotContentTypeService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should call the BE with correct endpoint url and method for getContentTypes()', () => {
-        this.dotContentletService.getContentTypes().subscribe((structures: StructureTypeView[]) => {
+        dotContentTypeService.getContentTypes().subscribe((structures: StructureTypeView[]) => {
             expect(structures).toEqual(mockDotContentlet);
         });
-        mockConnectionContentletResponse();
-        expect(lastConnection.request.method).toBe(0); // 0 is GET method
-        expect(lastConnection.request.url).toContain(`v1/contenttype/basetypes`);
+
+        const req = httpMock.expectOne('v1/contenttype/basetypes');
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [...mockDotContentlet] });
     });
 
     it('should get all content types excluding the RECENT ones for getAllContentTypes()', () => {
-        this.dotContentletService
-            .getAllContentTypes()
-            .subscribe((structures: StructureTypeView[]) => {
-                const types = mockDotContentlet.filter(
-                    (structure: StructureTypeView) => !isRecentContentType(structure)
-                );
-                expect(structures).toEqual(types);
-            });
-        mockConnectionContentletResponse();
+        const types = mockDotContentlet.filter(
+            (structure: StructureTypeView) => !isRecentContentType(structure)
+        );
+        dotContentTypeService.getAllContentTypes().subscribe((structures: StructureTypeView[]) => {
+            expect(structures).toEqual(types);
+        });
+
+        const req = httpMock.expectOne('v1/contenttype/basetypes');
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [...mockDotContentlet] });
     });
 
     it('should get url by id for getUrlById()', () => {
         const idSearched = 'banner';
-        this.dotContentletService.getUrlById(idSearched).subscribe((action: string) => {
+
+        dotContentTypeService.getUrlById(idSearched).subscribe((action: string) => {
             expect(action).toBe(mockDotContentlet[0].types[0].action);
         });
-        mockConnectionContentletResponse();
+
+        const req = httpMock.expectOne('v1/contenttype/basetypes');
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [...mockDotContentlet] });
     });
 
     it('should get one content type by id or varName', () => {
@@ -74,21 +77,19 @@ describe('DotContentletService', () => {
             id: id,
             name: 'content type name',
             owner: 'user',
-            system: false,
+            system: false
         };
 
-        this.dotContentletService.getContentType(id).subscribe((contentType: DotCMSContentType) => {
+        dotContentTypeService.getContentType(id).subscribe((contentType: DotCMSContentType) => {
             expect(contentType).toBe(contentTypeExpected);
         });
 
-        lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: contentTypeExpected
-                    }
-                })
-            )
-        );
+        const req = httpMock.expectOne(`v1/contenttype/id/${id}`);
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: contentTypeExpected });
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

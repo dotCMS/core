@@ -6,8 +6,8 @@ import { SelectItemGroup, SelectItem } from 'primeng/primeng';
 
 import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
 import { DotCMSWorkflowAction, DotCMSWorkflow } from 'dotcms-models';
-import { ResponseView } from 'dotcms-js/dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Injectable()
 export class DotWorkflowsActionsSelectorFieldService {
@@ -43,7 +43,7 @@ export class DotWorkflowsActionsSelectorFieldService {
                     map((actions: DotCMSWorkflowAction[]) =>
                         this.getSelectItemGroups(workflows, actions)
                     ),
-                    catchError((err: ResponseView) =>
+                    catchError((err: HttpErrorResponse) =>
                         this.dotHttpErrorManagerService.handle(err).pipe(map(() => []))
                     )
                 )

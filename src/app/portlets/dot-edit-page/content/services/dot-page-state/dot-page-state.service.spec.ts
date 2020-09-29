@@ -1,10 +1,5 @@
 import { of, throwError } from 'rxjs';
-import { ConnectionBackend } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
-
-import { LoginService, HttpCode } from 'dotcms-js';
-
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { LoginService, CoreWebService, HttpCode } from 'dotcms-js';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotPageStateService } from './dot-page-state.service';
 import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
@@ -15,41 +10,49 @@ import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
 import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
 import { mockUser } from '@tests/login-service.mock';
 import * as _ from 'lodash';
-import { mockDotPersona } from '@tests/dot-persona.mock';
-import { DotDevice } from '@shared/models/dot-device/dot-device.model';
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { mockResponseView } from '@tests/response-view.mock';
-import { TestBedStatic } from '@angular/core/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { ConfirmationService } from 'primeng/primeng';
+import { FormatDateService } from '@services/format-date-service';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotDevice } from '@shared/models/dot-device/dot-device.model';
+import { mockResponseView } from '@tests/response-view.mock';
 import { PageModelChangeEventType } from '../dot-edit-content-html/models';
+import { mockDotPersona } from '@tests/dot-persona.mock';
 
 const getDotPageRenderStateMock = () => {
     return new DotPageRenderState(mockUser, mockDotRenderedPage);
 };
 
 describe('DotPageStateService', () => {
-    let backend: MockBackend;
     let dotContentletLockerService: DotContentletLockerService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotHttpErrorManagerServiceHandle: jasmine.Spy;
     let dotPageRenderService: DotPageRenderService;
     let dotPageRenderServiceGetSpy: jasmine.Spy;
     let dotRouterService: DotRouterService;
-    let injector: TestBedStatic;
-    let lastConnection;
     let loginService: LoginService;
+    let injector: TestBed;
     let service: DotPageStateService;
 
     beforeEach(() => {
-        lastConnection = [];
-
-        injector = DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             providers: [
                 DotContentletLockerService,
                 DotHttpErrorManagerService,
                 DotPageRenderService,
                 DotPageStateService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                FormatDateService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -57,11 +60,8 @@ describe('DotPageStateService', () => {
             ]
         });
 
-        backend = injector.get(ConnectionBackend) as MockBackend;
-        backend.connections.subscribe((connection: any) => {
-            lastConnection.push(connection);
-        });
-
+        injector = getTestBed();
+        service = injector.get(DotPageStateService);
         dotContentletLockerService = injector.get(DotContentletLockerService);
         dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
         dotPageRenderService = injector.get(DotPageRenderService);
@@ -113,7 +113,6 @@ describe('DotPageStateService', () => {
     describe('$state', () => {
         it('should get state', () => {
             const mock = getDotPageRenderStateMock();
-
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(mock);
             });
@@ -200,7 +199,6 @@ describe('DotPageStateService', () => {
                     cssHeight: '',
                     cssWidth: ''
                 };
-
                 service.setDevice(device);
 
                 expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual(
@@ -221,7 +219,9 @@ describe('DotPageStateService', () => {
         describe('setLanguage', () => {
             it('should set laguage 1', () => {
                 service.setLanguage(1);
-                expect(dotRouterService.replaceQueryParams).toHaveBeenCalledWith({language_id: 1});
+                expect(dotRouterService.replaceQueryParams).toHaveBeenCalledWith({
+                    language_id: 1
+                });
             });
         });
 

@@ -2,7 +2,7 @@ import { toArray, filter, pluck, mergeMap } from 'rxjs/operators';
 import { CoreWebService, ApiRoot } from 'dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
+import { Headers, RequestMethod } from '@angular/http';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
 import * as moment from 'moment';
@@ -67,11 +67,11 @@ export class PushPublishService {
         isBundle: boolean
     ): Observable<DotAjaxActionResponseView> {
         this._lastEnvironmentPushed = pushPublishData.environment;
+        const headers = new Headers();
+        headers.set('Content-Type', 'application/x-www-form-urlencoded');
         return this.coreWebService.request({
             body: this.getPublishEnvironmentData(assetIdentifier, pushPublishData),
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
+            headers,
             method: RequestMethod.Post,
             url: isBundle ? this.publishBundleURL : this.publishUrl
         });

@@ -5,7 +5,6 @@ import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotCreatePersonaFormComponent } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { ResponseView } from 'dotcms-js/lib/core/util/response-view';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const PERSONA_CONTENT_TYPE = 'persona';
@@ -69,7 +68,7 @@ export class DotAddPersonaDialogComponent implements OnInit {
                         this.createdPersona.emit(persona);
                         this.closeDialog();
                     },
-                    (error: ResponseView) => {
+                    (error) => {
                         this.dotHttpErrorManagerService
                             .handle(error)
                             .pipe(take(1))

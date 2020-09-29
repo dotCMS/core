@@ -1,19 +1,10 @@
 import { DotWorkflowActionsFireService } from './dot-workflow-actions-fire.service';
-import {
-    BaseRequestOptions,
-    ConnectionBackend,
-    Http,
-    RequestMethod,
-    RequestOptions,
-    Response,
-    ResponseOptions
-} from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
-import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from 'dotcms-js';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { DotActionBulkRequestOptions } from '@shared/models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
+import { DotActionBulkResult } from '@shared/models/dot-action-bulk-result/dot-action-bulk-result.model';
 
 const mockBulkOptions: DotActionBulkRequestOptions = {
     workflowActionId: '1',
@@ -34,172 +25,128 @@ const mockBulkOptions: DotActionBulkRequestOptions = {
         }
     }
 };
-
 describe('DotWorkflowActionsFireService', () => {
+    let injector: TestBed;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
-    let backend;
-    let lastConnection;
+    let httpMock: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             providers: [
-                DotWorkflowActionsFireService,
-                { provide: ConnectionBackend, useClass: MockBackend },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: RequestOptions, useClass: BaseRequestOptions },
-                Http
+                DotWorkflowActionsFireService
             ]
         });
-
-        dotWorkflowActionsFireService = TestBed.get(DotWorkflowActionsFireService);
-
-        backend = TestBed.get(ConnectionBackend);
-        backend.connections.subscribe((connection: any) => (lastConnection = connection));
+        injector = getTestBed();
+        dotWorkflowActionsFireService = injector.get(DotWorkflowActionsFireService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should SAVE and return a new contentlet', () => {
-        let result;
-        dotWorkflowActionsFireService.newContentlet('persona', { name: 'Test' }).subscribe(res => {
-            result = res;
-        });
-
-        lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: [
-                            {
-                                name: 'test'
-                            }
-                        ]
+        dotWorkflowActionsFireService
+            .newContentlet('persona', { name: 'Test' })
+            .subscribe((res) => {
+                expect(res).toEqual([
+                    {
+                        name: 'test'
                     }
-                })
-            )
-        );
+                ]);
+            });
 
-        expect(result).toEqual([
-            {
-                name: 'test'
-            }
-        ]);
-
-        expect(lastConnection.request.url).toContain('v1/workflow/actions/default/fire/NEW');
-        expect(lastConnection.request.method).toEqual(RequestMethod.Put);
-        expect(JSON.parse(lastConnection.request.getBody())).toEqual({
+        const req = httpMock.expectOne('v1/workflow/actions/default/fire/NEW');
+        expect(req.request.method).toBe('PUT');
+        expect(req.request.body).toEqual({
             contentlet: {
                 contentType: 'persona',
                 name: 'Test'
             }
+        });
+        req.flush({
+            entity: [
+                {
+                    name: 'test'
+                }
+            ]
         });
     });
 
     it('should PUBLISH and return a new contentlet', () => {
-        let result;
         dotWorkflowActionsFireService
-            .publishContentlet('persona', { name: 'Test' })
-            .subscribe(res => {
-                result = res;
+            .publishContentlet('persona', { name: 'test' })
+            .subscribe((res) => {
+                expect(res).toEqual([
+                    {
+                        name: 'test'
+                    }
+                ]);
             });
 
-        lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: [
-                            {
-                                name: 'test'
-                            }
-                        ]
-                    }
-                })
-            )
-        );
-
-        expect(result).toEqual([
-            {
-                name: 'test'
-            }
-        ]);
-
-        expect(lastConnection.request.url).toContain('v1/workflow/actions/default/fire/PUBLISH');
-        expect(lastConnection.request.method).toEqual(RequestMethod.Put);
-        expect(JSON.parse(lastConnection.request.getBody())).toEqual({
+        const req = httpMock.expectOne('v1/workflow/actions/default/fire/PUBLISH');
+        expect(req.request.method).toBe('PUT');
+        expect(req.request.body).toEqual({
             contentlet: {
                 contentType: 'persona',
-                name: 'Test'
+                name: 'test'
             }
+        });
+        req.flush({
+            entity: [
+                {
+                    name: 'test'
+                }
+            ]
         });
     });
 
     it('should PUBLISH, wait for index and return a new contentlet', () => {
-        let result;
         dotWorkflowActionsFireService
-            .publishContentletAndWaitForIndex('persona', { name: 'Test' })
-            .subscribe(res => {
-                result = res;
+            .publishContentletAndWaitForIndex('persona', { name: 'test' })
+            .subscribe((res) => {
+                expect(res).toEqual([
+                    {
+                        name: 'test'
+                    }
+                ]);
             });
 
-        lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: [
-                            {
-                                name: 'test'
-                            }
-                        ]
-                    }
-                })
-            )
-        );
-
-        expect(result).toEqual([
-            {
-                name: 'test'
-            }
-        ]);
-
-        expect(lastConnection.request.url).toContain('v1/workflow/actions/default/fire/PUBLISH');
-        expect(lastConnection.request.method).toEqual(RequestMethod.Put);
-        expect(JSON.parse(lastConnection.request.getBody())).toEqual({
+        const req = httpMock.expectOne('v1/workflow/actions/default/fire/PUBLISH');
+        expect(req.request.method).toBe('PUT');
+        expect(req.request.body).toEqual({
             contentlet: {
                 contentType: 'persona',
-                name: 'Test',
+                name: 'test',
                 indexPolicy: 'WAIT_FOR'
             }
+        });
+        req.flush({
+            entity: [
+                {
+                    name: 'test'
+                }
+            ]
         });
     });
 
     it('should create and return a new Content', () => {
-        let result;
         const data = { id: '123' };
-        dotWorkflowActionsFireService.fireTo('123', 'new', data).subscribe(res => {
-            result = res;
+        dotWorkflowActionsFireService.fireTo('123', 'new', data).subscribe((res: any) => {
+            expect(res).toEqual([
+                {
+                    name: 'test'
+                }
+            ]);
         });
 
-        lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: [
-                            {
-                                name: 'test'
-                            }
-                        ]
-                    }
-                })
-            )
-        );
-
-        expect(result).toEqual([
-            {
-                name: 'test'
-            }
-        ]);
-
-        expect(lastConnection.request.url).toContain('v1/workflow/actions/new/fire?inode=123');
-        expect(lastConnection.request.method).toEqual(RequestMethod.Put);
-        expect(JSON.parse(lastConnection.request.getBody())).toEqual(data);
+        const req = httpMock.expectOne('v1/workflow/actions/new/fire?inode=123');
+        expect(req.request.method).toBe('PUT');
+        req.flush({
+            entity: [
+                {
+                    name: 'test'
+                }
+            ]
+        });
     });
 
     it('should fire bulk request', () => {
@@ -208,27 +155,18 @@ describe('DotWorkflowActionsFireService', () => {
             successCount: 2,
             fails: []
         };
-        let result;
-        dotWorkflowActionsFireService.bulkFire(mockBulkOptions).subscribe(res => {
-            result = res;
+        dotWorkflowActionsFireService.bulkFire(mockBulkOptions).subscribe((res) => {
+            expect(res).toEqual(mockResult);
         });
 
-        lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        entity: mockResult
-                    }
-                })
-            )
-        );
+        const req = httpMock.expectOne('/api/v1/workflow/contentlet/actions/bulk/fire');
+        expect(req.request.method).toBe('PUT');
+        req.flush({
+            entity: mockResult
+        });
+    });
 
-        expect(result).toEqual(mockResult);
-
-        expect(lastConnection.request.url).toContain(
-            '/api/v1/workflow/contentlet/actions/bulk/fire'
-        );
-        expect(lastConnection.request.method).toEqual(RequestMethod.Put);
-        expect(JSON.parse(lastConnection.request.getBody())).toEqual(mockBulkOptions);
+    afterEach(() => {
+        httpMock.verify();
     });
 });

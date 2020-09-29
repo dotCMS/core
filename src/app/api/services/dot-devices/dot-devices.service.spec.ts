@@ -1,18 +1,27 @@
 import { DotDevicesService } from './dot-devices.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotDevice } from '@models/dot-device/dot-device.model';
-import { Response, ConnectionBackend, ResponseOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
-import { mockDotDevices } from '../../../test/dot-device.mock';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { mockDotDevices } from '@tests/dot-device.mock';
 
 describe('DotDevicesService', () => {
+    let injector: TestBed;
+    let dotDevicesService: DotDevicesService;
+    let httpMock: HttpTestingController;
+
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotDevicesService]);
-        this.dotDevicesService = this.injector.get(DotDevicesService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => {
-            this.lastConnection = connection;
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotDevicesService
+            ]
         });
+        injector = getTestBed();
+        dotDevicesService = injector.get(DotDevicesService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should get Devices', () => {
@@ -23,21 +32,16 @@ describe('DotDevicesService', () => {
             `+working:true`
         ].join('');
 
-        this.dotDevicesService.get().subscribe((devices: DotDevice[]) => {
+        dotDevicesService.get().subscribe((devices: DotDevice[]) => {
             expect(devices).toEqual(mockDotDevices);
         });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: {
-                        contentlets: mockDotDevices
-                    }
-                })
-            )
-        );
+        const req = httpMock.expectOne(url);
+        expect(req.request.method).toBe('GET');
+        req.flush({ contentlets: mockDotDevices });
+    });
 
-        expect(this.lastConnection.request.method).toBe(0); // 0 is GET method
-        expect(this.lastConnection.request.url).toContain(url);
+    afterEach(() => {
+        httpMock.verify();
     });
 });

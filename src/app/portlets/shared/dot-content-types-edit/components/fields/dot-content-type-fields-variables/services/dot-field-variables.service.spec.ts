@@ -1,17 +1,28 @@
-import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { DotFieldVariablesService } from './dot-field-variables.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotFieldVariable } from '../models/dot-field-variable.interface';
 import { DotCMSContentTypeField } from 'dotcms-models';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotFieldVariablesService', () => {
+    let injector: TestBed;
+    let dotFieldVariablesService: DotFieldVariablesService;
+    let httpMock: HttpTestingController;
+
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotFieldVariablesService]);
-        this.fieldVariableService = this.injector.get(DotFieldVariablesService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotFieldVariablesService
+            ]
+        });
+        injector = getTestBed();
+        dotFieldVariablesService = injector.get(DotFieldVariablesService);
+        httpMock = injector.get(HttpTestingController);
     });
 
     it('should load field variables', () => {
@@ -40,31 +51,26 @@ describe('DotFieldVariablesService', () => {
             id: '1'
         };
 
-        this.fieldVariableService.load(field).subscribe((variables: DotFieldVariable[]) => {
+        dotFieldVariablesService.load(field).subscribe((variables: DotFieldVariable[]) => {
             expect(variables).toEqual(mockResponse.entity);
-            expect(0).toBe(this.lastConnection.request.method); // 2 is GET method
-            expect(this.lastConnection.request.url)
-                .toContain(`v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`);
         });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: JSON.stringify(mockResponse)
-                })
-            )
+        const req = httpMock.expectOne(
+            `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`
         );
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: mockResponse.entity });
     });
 
     it('should save field variables', () => {
         const mockResponse = {
             entity: {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-                    fieldId: '1',
-                    id: '1b',
-                    key: 'test3',
-                    value: 'value3'
-                }
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                fieldId: '1',
+                id: '1b',
+                key: 'test3',
+                value: 'value3'
+            }
         };
 
         const field: DotCMSContentTypeField = {
@@ -76,23 +82,17 @@ describe('DotFieldVariablesService', () => {
         const variable: DotFieldVariable = {
             key: 'test3',
             value: 'value3'
-        }
+        };
 
-        this.fieldVariableService.save(field, variable).subscribe((variables: DotFieldVariable) => {
+        dotFieldVariablesService.save(field, variable).subscribe((variables: DotFieldVariable) => {
             expect(variables).toEqual(mockResponse.entity);
-            expect(1).toBe(this.lastConnection.request.method); // 1 is POST method
-            expect(this.lastConnection.request.url)
-                .toContain(`v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`);
-
         });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: JSON.stringify(mockResponse)
-                })
-            )
+        const req = httpMock.expectOne(
+            `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`
         );
+        expect(req.request.method).toBe('POST');
+        req.flush(mockResponse);
     });
 
     it('should delete field variables', () => {
@@ -112,19 +112,18 @@ describe('DotFieldVariablesService', () => {
             value: 'value3'
         };
 
-        this.fieldVariableService.delete(field, variable).subscribe((_variables: DotFieldVariable) => {
-            expect(3).toBe(this.lastConnection.request.method); // 3 is DELETE method
-            expect(this.lastConnection.request.url)
-                .toContain(`v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables/id/${variable.id}`);
-
+        dotFieldVariablesService.delete(field, variable).subscribe((variables: any) => {
+            expect(variables).toEqual(mockResponse);
         });
 
-        this.lastConnection.mockRespond(
-            new Response(
-                new ResponseOptions({
-                    body: JSON.stringify(mockResponse)
-                })
-            )
+        const req = httpMock.expectOne(
+            `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables/id/${variable.id}`
         );
+        expect(req.request.method).toBe('DELETE');
+        req.flush({ entity: mockResponse });
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });

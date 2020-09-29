@@ -22,8 +22,6 @@ import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-han
 import { TestBed } from '@angular/core/testing';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
-import { BaseRequestOptions, ConnectionBackend, Http, RequestOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
 import { FormatDateService } from '@services/format-date-service';
@@ -37,6 +35,7 @@ import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fi
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;
@@ -60,11 +59,8 @@ describe('DotCustomEventHandlerService', () => {
                 DotContentletEditorService,
                 PushPublishService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: ConnectionBackend, useClass: MockBackend },
-                { provide: RequestOptions, useClass: BaseRequestOptions },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                Http,
                 ApiRoot,
                 FormatDateService,
                 UserModel,
@@ -88,7 +84,7 @@ describe('DotCustomEventHandlerService', () => {
                 DotDownloadBundleDialogService,
                 LoginService
             ],
-            imports: [RouterTestingModule]
+            imports: [RouterTestingModule, HttpClientTestingModule]
         });
 
         service = TestBed.get(DotCustomEventHandlerService);

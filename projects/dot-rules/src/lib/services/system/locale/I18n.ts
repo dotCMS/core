@@ -1,15 +1,14 @@
+import { defer as observableDefer, Observer } from 'rxjs';
 
-import {defer as observableDefer,  Observer } from 'rxjs';
-
-import {catchError, map} from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
+import { RequestMethod } from '@angular/http';
 import { Observable } from 'rxjs';
 
 import { ApiRoot } from 'dotcms-js';
 import { Verify } from '../../validation/Verify';
 import { LoggerService } from 'dotcms-js';
-import { HttpCode } from 'dotcms-js';
+import { CoreWebService, HttpCode } from 'dotcms-js';
 
 export class TreeNode {
     [key: string]: TreeNode | any;
@@ -31,7 +30,7 @@ export class TreeNode {
         if (Verify.isString(childJson)) {
             cNode._value = childJson;
         } else {
-            Object.keys(childJson).forEach(cKey => {
+            Object.keys(childJson).forEach((cKey) => {
                 cNode.$addAllFromJson(cKey, childJson[cKey]);
             });
         }
@@ -52,17 +51,19 @@ export class TreeNode {
 
     $markAsLoaded(): void {
         this._loaded = true;
-        this.$children().forEach(child => child.$markAsLoaded());
+        this.$children().forEach((child) => child.$markAsLoaded());
     }
 
     $markAsLoading(promise: Promise<TreeNode>): void {
         this._loaded = false;
         this._loading = promise;
-        this.$children().forEach(child => child.$markAsLoading(promise));
+        this.$children().forEach((child) => child.$markAsLoading(promise));
     }
 
     $children(): TreeNode[] {
-        return Object.keys(this).filter(key => key[0] !== '_').map(cKey => this[cKey]);
+        return Object.keys(this)
+            .filter((key) => key[0] !== '_')
+            .map((cKey) => this[cKey]);
     }
 
     $child(cKey: string): TreeNode {
@@ -94,11 +95,13 @@ export class TreeNode {
 export class I18nService {
     root: TreeNode;
     private _apiRoot: ApiRoot;
-    private _http: Http;
     private _baseUrl;
 
-    constructor(apiRoot: ApiRoot, http: Http, private loggerService: LoggerService) {
-        this._http = http;
+    constructor(
+        apiRoot: ApiRoot,
+        private coreWebService: CoreWebService,
+        private loggerService: LoggerService
+    ) {
         this._apiRoot = apiRoot;
         this._baseUrl = apiRoot.baseUrl + 'api/v1/system/i18n';
         this.root = new TreeNode(null, 'root');
@@ -106,9 +109,17 @@ export class I18nService {
 
     makeRequest(url): Observable<Response> {
         const opts = this._apiRoot.getDefaultRequestOptions();
-        return this._http.get(this._baseUrl + '/' + url, opts).pipe(map(res => {
-            return res.json();
-        }));
+        return this.coreWebService
+            .request({
+                method: RequestMethod.Get,
+                url: this._baseUrl + '/' + url,
+                ...opts
+            })
+            .pipe(
+                map((res) => {
+                    return res;
+                })
+            );
     }
 
     get(
@@ -129,26 +140,28 @@ export class I18nService {
         const cNode = this.root.$descendant(path);
         if (!cNode.$isLoaded() && !cNode.$isLoading()) {
             const promise = new Promise((resolve, _reject) => {
-                this.makeRequest(path.join('/')).pipe(
-                    catchError((err: any, _source: Observable<any>) => {
-                        if (err && err.status === HttpCode.NOT_FOUND) {
-                            this.loggerService.debug('Missing Resource: \'', msgKey, '\'');
-                        } else {
-                            this.loggerService.debug(
-                                'I18n',
-                                'Failed:: ',
-                                msgKey,
-                                '=',
-                                cNode,
-                                'error:',
-                                err
-                            );
-                        }
-                        return Observable.create(obs => {
-                            obs.next(defaultValue);
-                        });
-                    }))
-                    .subscribe(jsonVal => {
+                this.makeRequest(path.join('/'))
+                    .pipe(
+                        catchError((err: any, _source: Observable<any>) => {
+                            if (err && err.status === HttpCode.NOT_FOUND) {
+                                this.loggerService.debug("Missing Resource: '", msgKey, "'");
+                            } else {
+                                this.loggerService.debug(
+                                    'I18n',
+                                    'Failed:: ',
+                                    msgKey,
+                                    '=',
+                                    cNode,
+                                    'error:',
+                                    err
+                                );
+                            }
+                            return Observable.create((obs) => {
+                                obs.next(defaultValue);
+                            });
+                        })
+                    )
+                    .subscribe((jsonVal) => {
                         cNode._p.$addAllFromJson(cNode._k, jsonVal);
                         cNode.$markAsLoaded();
                         resolve(cNode);

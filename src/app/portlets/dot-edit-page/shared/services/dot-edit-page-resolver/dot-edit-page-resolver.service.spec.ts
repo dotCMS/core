@@ -1,5 +1,4 @@
 import { ActivatedRouteSnapshot } from '@angular/router';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -8,14 +7,19 @@ import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.
 import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { LoginService, HttpCode, ResponseView } from 'dotcms-js';
+import { LoginService, CoreWebService, HttpCode } from 'dotcms-js';
 import { LoginServiceMock, mockUser } from './../../../../../test/login-service.mock';
-import { Response, Headers } from '@angular/http';
-import { RouterTestingModule } from '@angular/router/testing';
-import { async } from '@angular/core/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
 import { mockDotRenderedPage } from '../../../../../test/dot-page-render.mock';
-import { mockResponseView } from '../../../../../test/response-view.mock';
-import { throwError, of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { ConfirmationService } from 'primeng/api';
+import { FormatDateService } from '@services/format-date-service';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { mockResponseView } from '@tests/response-view.mock';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
@@ -28,16 +32,24 @@ describe('DotEditPageResolver', () => {
     let dotPageStateService: DotPageStateService;
     let dotPageStateServiceRequestPageSpy: jasmine.Spy;
     let dotRouterService: DotRouterService;
-    let resolver: DotEditPageResolver;
 
-    beforeEach(async(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+    let injector: TestBed;
+    let dotEditPageResolver: DotEditPageResolver;
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotHttpErrorManagerService,
                 DotPageStateService,
                 DotEditPageResolver,
                 DotPageRenderService,
                 DotContentletLockerService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                FormatDateService,
+                { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: route
@@ -46,18 +58,17 @@ describe('DotEditPageResolver', () => {
                     provide: LoginService,
                     useClass: LoginServiceMock
                 }
-            ],
-            imports: [RouterTestingModule]
+            ]
         });
-
-        dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
-        dotPageStateService = testbed.get(DotPageStateService);
+        injector = getTestBed();
+        dotEditPageResolver = injector.get(DotEditPageResolver);
+        dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
+        dotPageStateService = injector.get(DotPageStateService);
         dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
-        dotRouterService = testbed.get(DotRouterService);
-        resolver = testbed.get(DotEditPageResolver);
+        dotRouterService = injector.get(DotRouterService);
 
         spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-    }));
+    });
 
     beforeEach(() => {
         route.queryParams.url = 'edit-page/content';
@@ -77,7 +88,7 @@ describe('DotEditPageResolver', () => {
         const mock = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
         dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
 
-        resolver.resolve(route).subscribe((state: DotPageRenderState) => {
+        dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
             expect(state).toEqual(mock);
         });
 
@@ -94,7 +105,7 @@ describe('DotEditPageResolver', () => {
 
         dotPageStateServiceRequestPageSpy.and.returnValue(throwError(fake403Response));
 
-        resolver.resolve(route).subscribe();
+        dotEditPageResolver.resolve(route).subscribe();
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
     });
 
@@ -102,7 +113,7 @@ describe('DotEditPageResolver', () => {
         const mock = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
         dotPageStateService.setInternalNavigationState(mock);
 
-        resolver.resolve(route).subscribe((state: DotPageRenderState) => {
+        dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
             expect(state).toEqual(mock);
         });
 
@@ -126,7 +137,7 @@ describe('DotEditPageResolver', () => {
             const mock = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
             dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
 
-            resolver.resolve(route).subscribe((state: DotPageRenderState) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(mock);
             });
             expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
@@ -145,18 +156,17 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
 
-            resolver.resolve(route).subscribe((state: DotPageRenderState) => {;
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
-                new ResponseView(
-                    new Response({
-                        body: {},
+                new HttpErrorResponse(
+                    new HttpResponse({
+                        body: null,
                         status: HttpCode.FORBIDDEN,
                         headers: null,
-                        url: '',
-                        merge: null
+                        url: ''
                     })
                 )
             );
@@ -172,23 +182,11 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
 
-            resolver.resolve(route).subscribe((state: DotPageRenderState) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
-                new ResponseView(
-                    new Response({
-                        body: {},
-                        status: HttpCode.FORBIDDEN,
-                        headers: new Headers({
-                            'error-key': 'dotcms.api.error.license.required'
-                        }),
-                        url: '',
-                        merge: null
-                    })
-                )
-            );
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
         });
     });
 });

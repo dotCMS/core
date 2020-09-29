@@ -3,15 +3,18 @@ import { CoreWebService } from 'dotcms-js';
 import { of } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { FormatDateService } from '@services/format-date-service';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotLocalstorageService } from '@services/dot-localstorage/dot-localstorage.service';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
 describe('DotMessageService', () => {
-    let service: DotMessageService;
+    let dotMessageService: DotMessageService;
     let coreWebService: CoreWebService;
     let formatDateService: FormatDateService;
     let dotLocalstorageService: DotLocalstorageService;
     const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
+    let injector: TestBed;
 
     const messages = {
         'dot.common.cancel': 'Cancel',
@@ -48,15 +51,20 @@ describe('DotMessageService', () => {
     };
 
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([
-            DotMessageService,
-            FormatDateService,
-            DotLocalstorageService
-        ]);
-        service = this.injector.get(DotMessageService);
-        coreWebService = this.injector.get(CoreWebService);
-        formatDateService = this.injector.get(FormatDateService);
-        dotLocalstorageService = this.injector.get(DotLocalstorageService);
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotMessageService,
+                FormatDateService,
+                DotLocalstorageService
+            ]
+        });
+        injector = getTestBed();
+        dotMessageService = injector.get(DotMessageService);
+        coreWebService = injector.get(CoreWebService);
+        formatDateService = injector.get(FormatDateService);
+        dotLocalstorageService = injector.get(DotLocalstorageService);
 
         spyOn(coreWebService, 'requestView').and.returnValue(
             of({
@@ -66,11 +74,10 @@ describe('DotMessageService', () => {
     });
 
     describe('init', () => {
-
         it('should call languages endpoint with default language and set them in local storage', () => {
             spyOn(dotLocalstorageService, 'setItem');
             spyOn(dotLocalstorageService, 'getItem');
-            service.init(true);
+            dotMessageService.init(true);
             expect(dotLocalstorageService.getItem).not.toHaveBeenCalled();
             expect(coreWebService.requestView).toHaveBeenCalledWith({
                 method: RequestMethod.Get,
@@ -81,10 +88,11 @@ describe('DotMessageService', () => {
                 messages
             );
         });
+
         it('should try to laod mesasges otherwise get the default one and set them in local storage', () => {
             spyOn(dotLocalstorageService, 'setItem');
             spyOn(dotLocalstorageService, 'getItem');
-            service.init(false);
+            dotMessageService.init(false);
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(coreWebService.requestView).toHaveBeenCalledWith({
                 method: RequestMethod.Get,
@@ -95,17 +103,19 @@ describe('DotMessageService', () => {
                 messages
             );
         });
+
         it('should call languages endpoint with passed language', () => {
-            service.init(true, 'en_US');
+            dotMessageService.init(true, 'en_US');
             expect(coreWebService.requestView).toHaveBeenCalledWith({
                 method: RequestMethod.Get,
                 url: '/api/v2/languages/en_US/keys'
             });
         });
+
         it('should read messages from local storage', () => {
             spyOn(dotLocalstorageService, 'getItem').and.callThrough();
             dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
-            service.init(false);
+            dotMessageService.init(false);
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(coreWebService.requestView).not.toHaveBeenCalled();
         });
@@ -113,26 +123,29 @@ describe('DotMessageService', () => {
 
     describe('get', () => {
         beforeEach(() => {
-            service.init(true);
+            dotMessageService.init(true);
         });
+
         it('should return message', () => {
-            const label = service.get('dot.common.cancel');
+            const label = dotMessageService.get('dot.common.cancel');
             expect(label).toEqual('Cancel');
         });
+
         it('should return key if message not found', () => {
-            const label = service.get('dot.unknown');
+            const label = dotMessageService.get('dot.unknown');
             expect(label).toEqual('dot.unknown');
         });
+
         it('should replace text in message', () => {
-            const label = service.get('dot.common.accept', 'data');
+            const label = dotMessageService.get('dot.common.accept', 'data');
             expect(label).toEqual('Accept data');
         });
     });
 
     it('should set relative date messages', () => {
         spyOn(formatDateService, 'setLang');
-        service.init(true);
-        service.setRelativeDateMessages('en_US');
+        dotMessageService.init(true);
+        dotMessageService.setRelativeDateMessages('en_US');
         expect(formatDateService.setLang).toHaveBeenCalledWith('en', relativeDateMessages);
     });
 });

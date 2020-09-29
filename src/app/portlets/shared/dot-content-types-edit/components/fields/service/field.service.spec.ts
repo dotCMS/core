@@ -1,11 +1,11 @@
-import { fakeAsync, tick } from '@angular/core/testing';
-import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
 import { FieldService } from '.';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fields';
-import { DotCMSContentTypeField } from 'dotcms-models';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DotCMSContentTypeField } from 'dotcms-models';
 
 export const mockFieldType: FieldType = {
     clazz: 'TextField',
@@ -16,39 +16,36 @@ export const mockFieldType: FieldType = {
 };
 
 describe('FieldService', () => {
-    beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([FieldService]);
+    let injector: TestBed;
+    let fieldService: FieldService;
+    let httpMock: HttpTestingController;
 
-        this.fieldService = this.injector.get(FieldService);
-        this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, FieldService]
+        });
+        injector = getTestBed();
+        fieldService = injector.get(FieldService);
+        httpMock = injector.get(HttpTestingController);
     });
 
-    it(
-        'should load field types',
-        fakeAsync(() => {
-            const mockResponse = {
-                entity: [mockFieldType]
-            };
+    it('should load field types', () => {
+        const mockResponse = {
+            entity: [mockFieldType]
+        };
 
-            this.fieldService.loadFieldTypes().subscribe(res => (this.response = res));
+        fieldService.loadFieldTypes().subscribe((res: any) => {
+            expect(res).toEqual(mockResponse);
+        });
 
-            this.lastConnection.mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: JSON.stringify(mockResponse)
-                    })
-                )
-            );
-
-            tick();
-
-            expect(this.response).toEqual(mockResponse.entity);
-        })
-    );
+        const req = httpMock.expectOne('v1/fieldTypes');
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: mockResponse });
+    });
 
     describe('Save Fields', () => {
-        beforeEach(() => {
+        it('should save field', () => {
             this.mockData = [
                 {
                     divider: {
@@ -57,36 +54,25 @@ describe('FieldService', () => {
                     }
                 },
                 {
-                    divider:                 {
+                    divider: {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
                     }
-                },
+                }
             ];
 
-            this.fieldService
-                .saveFields('1', this.mockData)
-                .subscribe(res => (this.response = JSON.parse(res)));
+            const contentTypeId = '1';
+            fieldService.saveFields(contentTypeId, this.mockData).subscribe((res: any) => {
+                expect(res).toEqual(this.mockData);
+            });
 
-            this.lastConnection.mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: JSON.stringify(this.mockData)
-                        }
-                    })
-                )
-            );
-        });
-
-        it('should save field', () => {
-            expect(this.mockData).toEqual(this.response);
-            expect(this.lastConnection.request.url).toContain('v3/contenttype/1/fields');
-            expect(2).toBe(this.lastConnection.request.method); // 2 is PUT method
+            const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields/move`);
+            expect(req.request.method).toBe('PUT');
+            req.flush({ entity: this.mockData });
         });
     });
 
     describe('Delete Fields', () => {
-        beforeEach(() => {
+        it('should delete field', () => {
             this.mockData = [
                 {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
@@ -99,34 +85,19 @@ describe('FieldService', () => {
                 }
             ];
 
-            this.fieldService
-                .deleteFields('1', this.mockData)
-                .subscribe(res => (this.response = res));
+            const contentTypeId = '1';
+            fieldService.deleteFields(contentTypeId, this.mockData).subscribe((res: any) => {
+                expect(res).toEqual({ deletedIds: ['1', '2'], fields: this.mockData });
+            });
 
-            this.lastConnection.mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: {
-                                deletedIds: ['1', '2'],
-                                fields: this.mockData
-                            }
-                        }
-                    })
-                )
-            );
-        });
-
-        it('should delete field', () => {
-            expect(['1', '2']).toEqual(this.response.deletedIds);
-            expect(this.mockData).toEqual(this.response.fields);
-            expect(3).toBe(this.lastConnection.request.method); // 3 is DELETE method
-            expect(this.lastConnection.request.url).toContain('v3/contenttype/1/fields');
+            const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields`);
+            expect(req.request.method).toBe('DELETE');
+            req.flush({ entity: { deletedIds: ['1', '2'], fields: this.mockData } });
         });
     });
 
     describe('Update Field', () => {
-        beforeEach(() => {
+        it('should update field', () => {
             const field: DotCMSContentTypeField = {
                 ...dotcmsContentTypeFieldBasicMock,
                 name: 'test field',
@@ -134,31 +105,23 @@ describe('FieldService', () => {
                 sortOrder: 1
             };
 
-            this.fieldService
-                .updateField('2', field)
-                .subscribe(res => (this.response = JSON.parse(res)));
-
-            this.lastConnection.mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: JSON.stringify([field])
-                        }
-                    })
-                )
-            );
-        });
-
-        it('should update field', () => {
-            expect(this.lastConnection.request._body.field).toEqual({
-                ...dotcmsContentTypeFieldBasicMock,
-                name: 'test field',
-                id: '1',
-                sortOrder: 1
+            const contentTypeId = '2';
+            fieldService.updateField(contentTypeId, field).subscribe((res: any) => {
+                expect(res[0]).toEqual({
+                    ...dotcmsContentTypeFieldBasicMock,
+                    name: 'test field',
+                    id: '1',
+                    sortOrder: 1
+                });
             });
 
-            expect(this.lastConnection.request.url).toContain('v3/contenttype/2/fields/1');
-            expect(2).toBe(this.lastConnection.request.method); // 2 is PUT method
+            const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields/1`);
+            expect(req.request.method).toBe('PUT');
+            req.flush({ entity: [field] });
         });
+    });
+
+    afterEach(() => {
+        httpMock.verify();
     });
 });
