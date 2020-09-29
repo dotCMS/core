@@ -150,12 +150,12 @@ public class ContentletMetadataAPITest {
      * @param metaData
      */
     private void validateBasic(final Map<String, Object> metaData){
-        assertTrue(metaData.containsKey("contentType"));
-        assertTrue(metaData.containsKey("modDate"));
-        assertTrue(metaData.containsKey("sha256"));
-        assertTrue(metaData.containsKey("path"));
-        assertTrue(metaData.containsKey("title"));
+        basicMetadataFields.forEach(key -> {
+            assertTrue(metaData.containsKey(key));
+        });
     }
+
+    private static Set<String> basicMetadataFields = ImmutableSet.of("sha256", "path","title","modDate","contentType");
 
     /**
      * validate basic layout expected in the basic md for File-Asset
@@ -301,7 +301,7 @@ public class ContentletMetadataAPITest {
                     .getMetadataFields(fieldMap.get(fileAssetField).id());
 
             fileAssetMD.forEach((key, value) -> {
-                assertTrue(metadataFields.contains(key));
+                assertTrue(metadataFields.contains(key) || basicMetadataFields.contains(key));
             });
 
         } finally {
@@ -334,7 +334,7 @@ public class ContentletMetadataAPITest {
             Map<String, Object> fileAssetMD = contentletMetadataAPI
                     .getMetadata(fileAssetContent, fileAssetField);
             //Expect no metadata it has not been generated
-            assertTrue(fileAssetMD.isEmpty());
+            assertNull(fileAssetMD);
 
             final ContentletMetadata metadata = contentletMetadataAPI
                     .generateContentletMetadata(fileAssetContent);

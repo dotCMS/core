@@ -31,6 +31,8 @@ import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.storage.ContentletMetadataAPITest;
+import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -330,7 +332,9 @@ import org.junit.runners.Suite.SuiteClasses;
         DotStatefulJobTest.class,
         FolderFactoryImplTest.class,
         FolderFactoryImplTest.class,
-        IntegrityDataGenerationJobTest.class
+        IntegrityDataGenerationJobTest.class,
+        StoragePersistenceAPITest.class,
+        ContentletMetadataAPITest.class
 })
 public class MainSuite {
 
