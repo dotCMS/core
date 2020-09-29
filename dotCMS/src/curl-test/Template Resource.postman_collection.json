@@ -107,6 +107,30 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
 				"method": "DELETE",
 				"header": [],
 				"url": {
@@ -160,12 +184,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "test123",
+							"value": "admin",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "test@dotcms.com",
+							"value": "admin@dotcms.com",
 							"type": "string"
 						},
 						{
@@ -1250,22 +1274,22 @@
 	],
 	"variable": [
 		{
-			"id": "1fa6df36-005f-486a-8377-f7d0abbd9d7d",
+			"id": "8550cb0c-b1a9-4233-92a6-da4c25c26202",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "51030c76-e031-4582-8f09-67ce7051d013",
+			"id": "30c1ce6c-90f6-4be9-bd81-981e444d4d91",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "c37b7d36-9c65-44db-b868-30e25da34909",
+			"id": "4a336f23-eb5e-4d87-bd03-1072e827188f",
 			"key": "temporaryInode",
-			"value": "fcd381a8-a700-446f-9ca0-ad238547d4f4"
+			"value": "bc59f5c6-9188-4fc0-ba62-54a4d801eeee"
 		},
 		{
-			"id": "8c2eda66-3af9-4685-8697-e0b341bb0d0d",
+			"id": "e2f7bde1-72d9-4425-80e4-619f7801ab0c",
 			"key": "temporaryIdentifier",
 			"value": "909162a8-1776-40e9-ac4c-6d927b718fe3"
 		}
