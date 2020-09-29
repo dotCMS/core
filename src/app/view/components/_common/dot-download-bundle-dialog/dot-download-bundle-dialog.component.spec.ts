@@ -62,9 +62,6 @@ const FILTERS_SORTED = [
     }
 ];
 
-const DOWNLOAD_URL =
-    '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadUnpushedBundle/bundleId/';
-
 describe('DotDownloadBundleDialogComponent', () => {
     let component: DotDownloadBundleDialogComponent;
     let fixture: ComponentFixture<DotDownloadBundleDialogComponent>;
@@ -215,7 +212,6 @@ describe('DotDownloadBundleDialogComponent', () => {
                     anchor = document.createElement('a');
                     spyOn(anchor, 'click');
                     spyOn(dotUtils, 'getDownloadLink').and.returnValue(anchor);
-
                 });
                 it('should disable buttons and change to label to downloading...', () => {
                     downloadButton.click();
@@ -224,30 +220,34 @@ describe('DotDownloadBundleDialogComponent', () => {
                     expect(cancelButton.disabled).toEqual(true);
                 });
 
-                it(
-                    'should fetch to the correct url when publish',
-                    fakeAsync(() => {
-                        downloadButton.click();
-                        tick(1);
-                        fixture.detectChanges();
-                        expect(window.fetch).toHaveBeenCalledWith(
-                            `${DOWNLOAD_URL}${BUNDLE_ID}/operation/publish/filterKey/2`
-                        );
-                        expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(
-                            blobMock,
-                            fileName
-                        );
-                        expect(anchor.click).toHaveBeenCalledTimes(1);
-                        expect(dotDialogComponent.visible).toEqual(false);
-                    })
-                );
+                it('should fetch to the correct url when publish', fakeAsync(() => {
+                    downloadButton.click();
+                    tick(1);
+                    fixture.detectChanges();
+                    expect(window.fetch).toHaveBeenCalledWith(`/api/bundle/_generate`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: '{"bundleId":"XXZC4","operation":"0","filterKey":"2"}'
+                    });
+                    expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
+                    expect(anchor.click).toHaveBeenCalledTimes(1);
+                    expect(dotDialogComponent.visible).toEqual(false);
+                }));
                 it('should set location to the correct url when unplublish', () => {
                     unPublishButton.click();
                     fixture.detectChanges();
                     downloadButton.click();
-                    expect(window.fetch).toHaveBeenCalledWith(
-                        `${DOWNLOAD_URL}${BUNDLE_ID}/operation/unpublish`
-                    );
+                    expect(window.fetch).toHaveBeenCalledWith(`/api/bundle/_generate`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: '{"bundleId":"XXZC4","operation":"1"}'
+                    });
                 });
             });
 
@@ -256,22 +256,17 @@ describe('DotDownloadBundleDialogComponent', () => {
                     spyOn(window, 'fetch').and.returnValue(Promise.resolve(throwError('error')));
                 });
 
-                it(
-                    'should enable buttons and display error message',
-                    fakeAsync(() => {
-                        downloadButton.click();
-                        tick(1);
-                        fixture.detectChanges();
-                        expect(downloadButton.disabled).toEqual(false);
-                        expect(cancelButton.disabled).toEqual(false);
-                        const errorElement = fixture.debugElement.query(
-                            By.css('.download-bundle__error')
-                        );
-                        expect(errorElement.nativeElement.innerText).toEqual(
-                            'Error Building Bundle'
-                        );
-                    })
-                );
+                it('should enable buttons and display error message', fakeAsync(() => {
+                    downloadButton.click();
+                    tick(1);
+                    fixture.detectChanges();
+                    expect(downloadButton.disabled).toEqual(false);
+                    expect(cancelButton.disabled).toEqual(false);
+                    const errorElement = fixture.debugElement.query(
+                        By.css('.download-bundle__error')
+                    );
+                    expect(errorElement.nativeElement.innerText).toEqual('Error Building Bundle');
+                }));
             });
         });
     });

@@ -18,8 +18,7 @@ enum DownloadType {
     PUBLISH = 'publish'
 }
 
-const DOWNLOAD_URL =
-    '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadUnpushedBundle/bundleId/';
+const DOWNLOAD_URL = '/api/bundle/_generate';
 
 @Component({
     selector: 'dot-download-bundle-dialog',
@@ -84,16 +83,18 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         if (this.form.valid) {
             this.errorMessage = '';
             const value = this.form.value;
-            let url = `${DOWNLOAD_URL}${value.bundleId}/operation/${value.downloadOptionSelected}`;
-            if (value.downloadOptionSelected === DownloadType.PUBLISH) {
-                url += `/filterKey/${value.filterKey}`;
-            }
+            const bundleForm = {};
+            bundleForm['bundleId'] = value.bundleId;
+            bundleForm['operation'] =
+                value.downloadOptionSelected === DownloadType.PUBLISH ? '0' : '1';
+            bundleForm['filterKey'] = value.filterKey;
+
             this.dialogActions.accept.disabled = true;
             this.dialogActions.accept.label = this.dotMessageService.get(
                 'download.bundle.downloading'
             );
             this.dialogActions.cancel.disabled = true;
-            this.downloadFile(url);
+            this.downloadFile(bundleForm);
         }
     }
 
@@ -194,9 +195,19 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         }
     }
 
-    private downloadFile(url: string): void {
+    private downloadFile(bundleForm: {}) {
         let fileName = '';
-        fetch(url)
+
+        fetch(DOWNLOAD_URL, {
+            method: 'POST',
+            mode: 'cors',
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify(bundleForm) // body data type must match "Content-Type" header
+        })
             .then((res: Response) => {
                 const contentDisposition = res.headers.get('content-disposition');
                 fileName = this.getFilenameFromContentDisposition(contentDisposition);
