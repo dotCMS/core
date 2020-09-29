@@ -30,7 +30,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +59,8 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     private final String secretsKeyStorePath;
     private final AppsCache cache;
 
-    private static String getSecretStorePath() {
+    @VisibleForTesting
+    public static String getSecretStorePath() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + File.separator + "server" + File.separator + "secrets" + File.separator + SECRETS_STORE_FILE;
         final String dirPath = Config.getStringProperty(SECRETS_KEYSTORE_FILE_PATH_KEY, supplier.get());

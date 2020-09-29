@@ -1,7 +1,12 @@
 package com.dotcms.security.apps;
 
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.util.UtilMethods.isSet;
+
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import com.liferay.util.Base64;
@@ -15,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.io.input.CharSequenceInputStream;
@@ -23,6 +29,7 @@ import org.apache.commons.lang3.ArrayUtils;
 public class AppsUtil {
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+    public static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
 
     /**
      * Given the AppSecrets this will return a char array representing the deserialized json object.
@@ -201,7 +208,10 @@ public class AppsUtil {
      * @param password
      * @return
      */
-    public static Key generateKey(final String password){
+    public static Key generateKey(final String password) throws DotDataException {
+        if(null == password){
+            throw new DotDataException("No password has been provided. ");
+        }
         final String seed = keySeed(password);
         final byte [] bytes = seed.getBytes();
         return new SecretKeySpec(bytes, 0, bytes.length, Encryptor.KEY_ALGORITHM);
@@ -217,6 +227,21 @@ public class AppsUtil {
     }
 
 
+    /**
+     * Loads the default password stored in the properties
+     */
+    public static String loadPass(final Supplier<String> passwordOverride) {
+        String password = null;
+        if (null != passwordOverride) {
+            Logger.info(AppsUtil.class,"Apps Password Override supplier has been provided.");
+            password = passwordOverride.get();
+        }
+        if(isNotSet(password)) {
+            Logger.info(AppsUtil.class,"Apps Password default will be used.");
+            password = Config.getStringProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD);
+        }
+        return password;
+    }
 
 
 }

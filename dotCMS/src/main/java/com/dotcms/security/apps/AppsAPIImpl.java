@@ -700,13 +700,18 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
+    /**
+     * This is the directory intended for customers use
+     * @return
+     */
     public static String getAppsDefaultDirectory() {
         return APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
     }
 
     /**
-     * This is the directory intended for customers use
+     * This is the directory intended for customers use.
+     * with the option to read an override property from the config
      * @return
      */
     private static Path getUserAppsDescriptorDirectory() {
