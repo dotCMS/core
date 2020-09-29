@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -488,6 +489,7 @@ public class ContentToolTest extends IntegrationTestBase {
 
         final HttpSession session = mock(HttpSession.class);
         final HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         when(request.getSession(false)).thenReturn(session);
         when(request.getSession()).thenReturn(session);
         when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
