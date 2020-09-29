@@ -1,4 +1,4 @@
-import { pluck, map, withLatestFrom, mergeMap, takeUntil } from 'rxjs/operators';
+import { pluck, map, withLatestFrom, mergeMap, takeUntil, skip } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, UrlSegment } from '@angular/router';
 
@@ -41,8 +41,11 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                 this.reloadIframePortlet(portletId);
             }
         });
-        this.siteService.switchSite$.subscribe(() => {
-            // prevent set empty URL - when the page first loads.
+        /**
+         *  skip first - to avoid subscription when page loads due login user subscription:
+         *  https://github.com/dotCMS/core-web/blob/master/projects/dotcms-js/src/lib/core/site.service.ts#L58
+        */
+        this.siteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
             if (this.url.getValue() !== '') {
                 this.reloadIframePortlet();
             }
@@ -90,10 +93,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
 
     private setIframeSrc(): void {
         // We use the query param to load a page in edit mode in the iframe
-        const queryUrl$ = this.route.queryParams.pipe(
-            pluck('url'),
-            map((url: string) => url)
-        );
+        const queryUrl$ = this.route.queryParams.pipe(pluck('url'), map((url: string) => url));
 
         queryUrl$.subscribe((queryUrl: string) => {
             if (queryUrl) {
@@ -105,10 +105,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     }
 
     private setPortletUrl(): void {
-        const portletId$ = this.route.params.pipe(
-            pluck('id'),
-            map((id: string) => id)
-        );
+        const portletId$ = this.route.params.pipe(pluck('id'), map((id: string) => id));
 
         portletId$
             .pipe(
@@ -117,10 +114,11 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                         map((urlSegment: UrlSegment[]) => urlSegment[0].path)
                     )
                 ),
-                mergeMap(([id, url]) =>
-                    url === 'add'
-                        ? this.contentletService.getUrlById(id)
-                        : this.dotMenuService.getUrlById(id)
+                mergeMap(
+                    ([id, url]) =>
+                        url === 'add'
+                            ? this.contentletService.getUrlById(id)
+                            : this.dotMenuService.getUrlById(id)
                 )
             )
             .subscribe((url: string) => {
