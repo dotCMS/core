@@ -87,6 +87,45 @@
 			"response": []
 		},
 		{
+			"name": "Can not Delete",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "bcd3dae3-8bc9-49ac-aa81-295c3bcb7b73",
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates",
+						"{{temporaryInode}}"
+					]
+				},
+				"description": "Can not delete, non-archive template"
+			},
+			"response": []
+		},
+		{
 			"name": "Edit Template",
 			"event": [
 				{
@@ -121,12 +160,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "admin",
+							"value": "test123",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin@dotcms.com",
+							"value": "test@dotcms.com",
 							"type": "string"
 						},
 						{
@@ -447,6 +486,14 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
+							"pm.test(\"publishedInodes\", function () {",
+							"    pm.expect(jsonData.entity.failedInodes.length).to.eql(0);",
+							"});",
+							"",
+							"",
+							"pm.test(\"publishedInodes\", function () {",
+							"    pm.expect(jsonData.entity.publishedInodes.length).to.eql(1);",
+							"});",
 							""
 						],
 						"type": "text/javascript"
@@ -581,8 +628,19 @@
 					"script": {
 						"id": "4f94abfe-0ea3-4e88-9539-820f23940338",
 						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"publishedInodes\", function () {",
+							"    pm.expect(jsonData.entity.failedInodes.length).to.eql(0);",
+							"});",
+							"",
+							"",
+							"pm.test(\"publishedInodes\", function () {",
+							"    pm.expect(jsonData.entity.unpublishedInodes.length).to.eql(1);",
 							"});",
 							""
 						],
@@ -1192,22 +1250,22 @@
 	],
 	"variable": [
 		{
-			"id": "0bec4b5f-2e72-49bd-b2e3-588ce89c48c5",
+			"id": "1fa6df36-005f-486a-8377-f7d0abbd9d7d",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "5c09bfc2-b34d-4a6c-bf62-79c17c7bb83f",
+			"id": "51030c76-e031-4582-8f09-67ce7051d013",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "d4edf47f-6119-4de9-8580-a6f4deac5957",
+			"id": "c37b7d36-9c65-44db-b868-30e25da34909",
 			"key": "temporaryInode",
-			"value": "91e12d76-17f0-4c3e-b956-e5f7c9d7db37"
+			"value": "fcd381a8-a700-446f-9ca0-ad238547d4f4"
 		},
 		{
-			"id": "00eeb466-3181-4d4b-9e73-dfce92fff944",
+			"id": "8c2eda66-3af9-4685-8697-e0b341bb0d0d",
 			"key": "temporaryIdentifier",
 			"value": "909162a8-1776-40e9-ac4c-6d927b718fe3"
 		}
