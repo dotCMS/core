@@ -97,6 +97,17 @@ public interface AppsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
+     * Creates or replaces an existing app set of secrets.
+     * When calling this the Whole secret gets replaced.
+     * @param secrets
+     * @param hostIdentifier
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void saveSecrets(final AppSecrets secrets, final String hostIdentifier, final User user)
+            throws DotDataException, DotSecurityException;
+    /**
      * Lookup for an individual secret/property then removes the single entry.
      * @param key App unique id.
      * @param propSecretNames Individual secret or property name.

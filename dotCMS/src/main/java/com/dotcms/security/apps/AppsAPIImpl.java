@@ -341,12 +341,18 @@ public class AppsAPIImpl implements AppsAPI {
     @Override
     public void saveSecrets(final AppSecrets secrets, final Host host, final User user)
             throws DotDataException, DotSecurityException {
+            saveSecrets(secrets, host.getIdentifier(), user);
+    }
+
+    @Override
+    public void saveSecrets(final AppSecrets secrets, final String hostIdentifier, final User user)
+            throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid secret update attempt on `%s` performed by user with id `%s` and host `%s` ",
-                    secrets.getKey(), user.getUserId(), host.getIdentifier()));
+                    secrets.getKey(), user.getUserId(), hostIdentifier));
         } else {
-            final String internalKey = internalKey(secrets.getKey(), host);
+            final String internalKey = internalKey(secrets.getKey(), hostIdentifier);
             if (secrets.getSecrets().isEmpty()) {
                 //if everything has been removed from the json entry we need to kick it off from cache.
                 secretsStore.deleteValue(internalKey);
@@ -355,7 +361,7 @@ public class AppsAPIImpl implements AppsAPI {
                 try {
                     chars = toJsonAsChars(secrets);
                     secretsStore.saveValue(internalKey, chars);
-                    notifySaveEventAndDestroySecret(secrets, host, user);
+                    notifySaveEventAndDestroySecret(secrets, hostIdentifier, user);
                 } finally {
                     if (null != chars) {
                         Arrays.fill(chars, (char) 0);
@@ -369,11 +375,11 @@ public class AppsAPIImpl implements AppsAPI {
      * This will broadcast an async AppSecretSavedEvent
      * and will also perform a clean-up (destroy) over the secret once all the event subscribers are done consuming the event.
      * @param secrets
-     * @param host
+     * @param hostIdentifier
      * @param user
      */
-    private void notifySaveEventAndDestroySecret(final AppSecrets secrets, final Host host, final User user) {
-        localSystemEventsAPI.asyncNotify(new AppSecretSavedEvent(secrets, host, user.getUserId()),
+    private void notifySaveEventAndDestroySecret(final AppSecrets secrets, final String hostIdentifier, final User user) {
+        localSystemEventsAPI.asyncNotify(new AppSecretSavedEvent(secrets, hostIdentifier, user.getUserId()),
             event -> {
                 final AppSecretSavedEvent appSecretSavedEvent = (AppSecretSavedEvent) event;
                 final AppSecrets appSecrets = appSecretSavedEvent.getAppSecrets();
@@ -694,13 +700,17 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
+    public static String getAppsDefaultDirectory() {
+        return APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
+    }
+
     /**
      * This is the directory intended for customers use
      * @return
      */
     private static Path getUserAppsDescriptorDirectory() {
-        final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
-        + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
+        final Supplier<String> supplier = AppsAPIImpl::getAppsDefaultDirectory;
         final String dirPath = Config
                 .getStringProperty(APPS_DIR_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize();

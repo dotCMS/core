@@ -26,6 +26,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -720,12 +721,7 @@ class AppsHelper {
             throws DotSecurityException, IOException, DotDataException {
 
         Logger.info(AppsHelper.class,"Secrets export: "+form);
-
-        if(isNotSet(form.getPassword())){
-           throw new DotDataException("Unable to locate password param.");
-        }
-        final String password = form.getPassword();
-        final Key key = AppsUtil.generateKey(password);
+        final Key key = AppsUtil.generateKey(AppsUtil.loadPass(form::getPassword));
             return  Files.newInputStream(appsAPI
                     .exportSecrets(key, form.isExportAll(), form.getAppKeysBySite(), user));
     }
@@ -745,32 +741,23 @@ class AppsHelper {
             throws IOException, DotDataException, JSONException, DotSecurityException, EncryptorException, ClassNotFoundException {
         final MultiPartUtils multiPartUtils = new MultiPartUtils();
         final List<File> files = multiPartUtils.getBinariesFromMultipart(multipart);
-        if(!UtilMethods.isSet(files)){
+        if (!UtilMethods.isSet(files)) {
             throw new DotDataException("Unable to extract any files from multi-part request.");
         }
 
         final Map<String, Object> bodyMapFromMultipart = multiPartUtils
                 .getBodyMapFromMultipart(multipart);
-        final Object object = bodyMapFromMultipart.get("password");
-
-        if(null == object){
-            throw new DotDataException("Unable to locate password param.");
-        }
-
-        final String password = object.toString();
-        final Key key = AppsUtil.generateKey(password);
+        final String password = (String) bodyMapFromMultipart.get("password");
+        final Key key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
         final Map<String, List<AppSecrets>> importedSecretsBySiteId = appsAPI
                 .importSecrets(files.get(0).toPath(), key, user);
-        Logger.info(AppsHelper.class,"Number of secrets found: "+importedSecretsBySiteId.size());
+        Logger.info(AppsHelper.class, "Number of secrets found: " + importedSecretsBySiteId.size());
         for (final Entry<String, List<AppSecrets>> entry : importedSecretsBySiteId.entrySet()) {
             final String siteId = entry.getKey();
             final List<AppSecrets> secrets = entry.getValue();
-            final Host site = hostAPI.find(siteId, user, false);
-            if(null != site && isSet(site.getIdentifier())){
-                for (final AppSecrets appSecrets : secrets) {
-                    Logger.info(AppsHelper.class,String.format("Importing secret `%s` ",appSecrets));
-                    appsAPI.saveSecrets(appSecrets, site, user);
-                }
+            for (final AppSecrets appSecrets : secrets) {
+                Logger.info(AppsHelper.class, String.format("Importing secret `%s` ", appSecrets));
+                appsAPI.saveSecrets(appSecrets, siteId, user);
             }
         }
     }
