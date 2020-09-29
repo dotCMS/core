@@ -1650,7 +1650,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             file = contentletAPI.findContentletByIdentifier(ident, false, defLang, user, false);
             file.setIndexPolicy(IndexPolicy.FORCE);
             APILocator.getFileAssetAPI().renameFile(file, "hello"+i, user, false);
-//            contentletAPI.isInodeIndexed(APILocator.getVersionableAPI().getContentletVersionInfo(ident, defLang).getWorkingInode());
+            contentletAPI.isInodeIndexed(APILocator.getVersionableAPI().getContentletVersionInfo(ident, defLang).getWorkingInode());
         }
         
         file = contentletAPI.findContentletByIdentifier(ident, false, defLang, user, false);
