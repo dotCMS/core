@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 public class HashBuilderTest {
 
     @Test
-    public void test_buildUnixHash () throws Exception {
+    public void Test_BuildUnixHash () throws Exception {
 
         final String text1 = "this is a test";
         final HashBuilder hashBuilder = Encryptor.Hashing.sha256();
@@ -25,10 +25,9 @@ public class HashBuilderTest {
         Assert.assertEquals("both should be the same", hash1, hash2);
 
         final HashBuilder hashBuilder3 = Encryptor.Hashing.sha256();
-        final String hash3 =  hashBuilder3.append(subtext1.getBytes(StandardCharsets.UTF_8)).append(subtext1.getBytes(StandardCharsets.UTF_8)).buildUnixHash();
+        final String hash3 =  hashBuilder3.append(subtext1.getBytes(StandardCharsets.UTF_8)).append(subtext2.getBytes(StandardCharsets.UTF_8)).buildUnixHash();
 
-        Assert.assertEquals("both should be the same", hash1, hash2);
-        Assert.assertEquals("both should be the same", hashBuilder3, hash2);
-        Assert.assertEquals("both should be the same", hash1, hashBuilder3);
+        Assert.assertEquals("both should be the same", hash3, hash2);
+        Assert.assertEquals("both should be the same", hash1, hash3);
     }
 }
