@@ -26,7 +26,6 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -416,7 +415,6 @@ public class IntegrityResource {
         final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final HttpSession session = httpServletRequest.getSession();
-        final User loggedUser = initData.getUser();
         final JSONObject jsonResponse = new JSONObject();
 
         //Validate the parameters

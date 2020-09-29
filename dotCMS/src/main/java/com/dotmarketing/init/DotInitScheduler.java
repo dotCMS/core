@@ -15,6 +15,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
+import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
 import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobDetail;
@@ -690,6 +691,60 @@ public class DotInitScheduler {
                 }
             }
 
+            // Integrity Check Scheduled Job
+            if (Config.getBooleanProperty("INTEGRITY_CHECK_ENABLE", true)) {
+                try {
+                    isNew = false;
+
+                    try {
+                        if ((job = sched.getJobDetail(
+                                IntegrityDataGenerationJob.JOB_NAME,
+                                IntegrityDataGenerationJob.JOB_GROUP)) == null) {
+                            job = new JobDetail(
+                                    IntegrityDataGenerationJob.JOB_NAME,
+                                    IntegrityDataGenerationJob.JOB_GROUP,
+                                    IntegrityDataGenerationJob.class);
+                            isNew = true;
+                        }
+                    } catch (SchedulerException se) {
+                        sched.deleteJob(IntegrityDataGenerationJob.JOB_NAME, IntegrityDataGenerationJob.JOB_GROUP);
+                        job = new JobDetail(
+                                IntegrityDataGenerationJob.JOB_NAME,
+                                IntegrityDataGenerationJob.JOB_GROUP,
+                                IntegrityDataGenerationJob.class);
+                        isNew = true;
+                    }
+
+                    calendar = GregorianCalendar.getInstance();
+                    //By default, the job runs once a day at 12 AM
+                    trigger = new CronTrigger(
+                            IntegrityDataGenerationJob.TRIGGER_NAME,
+                            IntegrityDataGenerationJob.TRIGGER_GROUP,
+                            IntegrityDataGenerationJob.JOB_NAME,
+                            IntegrityDataGenerationJob.JOB_GROUP,
+                            calendar.getTime(),
+                            null,
+                            Config.getStringProperty("INTEGRITY_CHECK_INTERVAL_CRON", "0 * * * *"));
+                    trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+                    sched.addJob(job, true);
+
+                    if (isNew) {
+                        sched.scheduleJob(trigger);
+                    } else {
+                        sched.rescheduleJob(
+                                IntegrityDataGenerationJob.TRIGGER_NAME,
+                                IntegrityDataGenerationJob.TRIGGER_GROUP,
+                                trigger);
+                    }
+                } catch (Exception e) {
+                    Logger.error(DotInitScheduler.class, e.getMessage(),e);
+                }
+            } else if ((sched.getJobDetail(
+                    IntegrityDataGenerationJob.JOB_NAME,
+                    IntegrityDataGenerationJob.JOB_GROUP)) != null) {
+                sched.deleteJob(IntegrityDataGenerationJob.JOB_NAME, IntegrityDataGenerationJob.JOB_GROUP);
+            }
+
 			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ) {
 				// Enabling the System Events Job
 				addSystemEventsJob();
@@ -701,7 +756,7 @@ public class DotInitScheduler {
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
 		} catch (SchedulerException e) {
-			Logger.fatal(DotInitScheduler.class, "An error as ocurred scheduling critical startup task of dotCMS, the system will shutdown immediately, " + e.toString(), e);
+			Logger.fatal(DotInitScheduler.class, "An error as occurred scheduling critical startup task of dotCMS, the system will shutdown immediately, " + e.toString(), e);
 			throw e;
 		}
 	}
