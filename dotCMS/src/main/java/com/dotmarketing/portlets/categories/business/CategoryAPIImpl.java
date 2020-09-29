@@ -128,6 +128,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 	    if(isANewCategory) {
 			//If parent is null is a top level category, we need to check permissions over the SYSTEM_HOST
+			//the permissions that the user requires are: ADD CHILDREN and PUBLISH over the CATEGORY type
 			if (!UtilMethods.isSet(parent)) {
 				if (!permissionAPI.doesUserHavePermission(APILocator.systemHost(),
 						PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles) ||
