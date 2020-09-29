@@ -194,8 +194,24 @@ public interface TemplateAPI {
 	void unarchive (Template template);
 
 	/**
+	 * Delete the specified template.
+	 *
+	 * Template should be archive, otherwise DotStateException
+	 * Should have write permission, otherwise SecurityException
+	 *
+	 * @param template {@link Template}
+	 * @param user     {@link User}
+	 * @param respectFrontendRoles {@link Boolean}
+	 * @return boolean
+	 * @throws DotSecurityException
+	 * @throws Exception
+	 */
+	public boolean deleteTemplate(Template template, User user, boolean respectFrontendRoles);
+
+	/**
 	 * Delete the specified template
 	 *
+	 * @deprecated uses {@link #deleteTemplate(Template, User, boolean)}
 	 * @param template
 	 * @param user
 	 * @param respectFrontendRoles
@@ -203,6 +219,7 @@ public interface TemplateAPI {
 	 * @throws DotSecurityException
 	 * @throws Exception
 	 */
+	@Deprecated
 	public boolean delete(Template template, User user, boolean respectFrontendRoles) throws DotSecurityException, Exception;
 
     /**

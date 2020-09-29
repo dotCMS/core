@@ -661,11 +661,6 @@ public class TemplateResource {
             throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
         }
 
-        if (Try.of(()-> !template.isArchived()).getOrElse(false)) {
-
-            throw new DotStateException("The template: " + template.getName() + " must be archived before it can be deleted");
-        }
-
         final SessionDialogMessage error = new SessionDialogMessage(
                 LanguageUtil.get(user, "Delete-Template"),
                 LanguageUtil.get(user, TemplateConstants.TEMPLATE_DELETE_ERROR),
@@ -676,7 +671,7 @@ public class TemplateResource {
                 ));
 
         return this.canTemplateBeDeleted(template, user, error)?
-             Response.ok(new ResponseEntityView(this.templateAPI.delete(template,user, pageMode.respectAnonPerms))).build():
+             Response.ok(new ResponseEntityView(this.templateAPI.deleteTemplate(template,user, pageMode.respectAnonPerms))).build():
              Response.status(Response.Status.BAD_REQUEST).entity(map("message", error)).build();
     }
 
