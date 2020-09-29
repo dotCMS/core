@@ -132,7 +132,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 				if (!permissionAPI.doesUserHavePermission(APILocator.systemHost(),
 						PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles) ||
 						!permissionAPI.doesUserHavePermissions(APILocator.systemHost().getIdentifier(),PermissionableType.CATEGORY,
-								PermissionAPI.PERMISSION_EDIT, user)) {
+								PermissionAPI.PERMISSION_PUBLISH, user)) {
 					Logger.error(this,
 							"User doesn't have permission to save the category at top level");
 					throw new DotSecurityException(
