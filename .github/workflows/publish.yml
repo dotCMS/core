@@ -1,0 +1,25 @@
+name: Publish to NPM
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - uses: actions/cache@v2     
+      - name: Configuring Node.js
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: '10.15.3'
+      - name: Installing dependencies
+        run: npm install
+      - name: Publish to NPM    
+        run: |
+          npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
+          npm run publish:dev

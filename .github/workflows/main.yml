@@ -26,7 +26,7 @@ jobs:
           path: |
             **/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}      
-      - name: Setting Node.js 10.x
+      - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
           node-version: '10.15.3'
@@ -64,12 +64,4 @@ jobs:
           SLACK_COLOR: ${{ steps.test_run.outputs.color }}
           SLACK_TITLE: 'Report: (${{ steps.test_run.outputs.status }})'
           SLACK_MESSAGE: ${{ steps.persist_results.outputs.message }}
-          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Publish to NPM    
-        run: |
-          npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
-          npm run publish:dev
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}      
