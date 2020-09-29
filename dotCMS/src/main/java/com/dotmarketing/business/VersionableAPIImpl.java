@@ -15,6 +15,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -574,7 +575,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
     @CloseDBIfOpened
     @Override
-    public Optional<String> getLockedBy(Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+    public Optional<String> getLockedBy(Versionable versionable) throws DotDataException {
 
         if(!UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
@@ -585,8 +586,9 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(identifier.getAssetType().equals("contentlet")) {
 
             final Contentlet contentlet = (Contentlet)versionable;
-            final Optional<ContentletVersionInfo> vinfo = versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+            final Optional<ContentletVersionInfo> vinfo = Try.of(()->versionableFactory
+                    .getContentletVersionInfo(contentlet.getIdentifier()
+                            ,contentlet.getLanguageId())).getOrElse(Optional.empty());
 
             if(vinfo.isPresent() && UtilMethods.isSet(vinfo.get().getLockedBy())) {
                 userId = Optional.of(vinfo.get().getLockedBy());
@@ -647,8 +649,9 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	@CloseDBIfOpened
 	public Optional<ContentletVersionInfo> getContentletVersionInfo(final String identifier,
-                                                          final long lang) throws DotDataException, DotStateException {
-	    return versionableFactory.getContentletVersionInfo(identifier, lang);
+                                                          final long lang) {
+	    return Try.of((()->versionableFactory.getContentletVersionInfo(identifier, lang)))
+                .getOrElse(Optional.empty());
 	}
 	
 	@Override
