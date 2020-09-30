@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
 import com.dotcms.contenttype.model.type.PageContentType;
+import com.dotcms.contenttype.util.KeyValueFieldUtil;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.services.SiteLoader;
 
@@ -63,42 +64,48 @@ public class ContentletCacheImpl extends ContentletCache {
 	}
 
 	@Override
-	public void addMetadata(String key, String metadata) {
-		key = metadataGroup + key;
-		if(!UtilMethods.isSet(metadata))
-			metadata=EMPTY_METADATA;
-		cache.put(key, metadata, metadataGroup);
+	public void addMetadata(final String key, final String fieldVariable, final Map<String, Object> metadata) {
+
+		final String cacheKey = metadataGroup + key + fieldVariable;
+  		cache.put(cacheKey, !UtilMethods.isSet(metadata)?EMPTY_METADATA:metadata, metadataGroup);
+
 	}
 
 	@Override
-	public void addMetadata(String key, com.dotmarketing.portlets.contentlet.model.Contentlet content) {
+	public void addMetadata(final String key, final com.dotmarketing.portlets.contentlet.model.Contentlet content) {
 		// http://jira.dotmarketing.net/browse/DOTCMS-7335
 		// we need metadata in other cache region
 		if("CACHE_404_CONTENTLET".equals(content.getInode())){
 			return;
 		}
-		Structure st=content.getStructure();
-		if(st!=null && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-			Field f=st.getFieldVar(FileAssetAPI.META_DATA_FIELD);
-			if(f!=null && UtilMethods.isSet(f.getInode())) {
-				final String metadata = content.get(FileAssetAPI.META_DATA_FIELD) instanceof Map?
-						new GsonBuilder().disableHtmlEscaping().create().toJson(content.get(FileAssetAPI.META_DATA_FIELD)):
-						(String)content.get(FileAssetAPI.META_DATA_FIELD);
-				addMetadata(key, metadata);
-				content.setStringProperty(FileAssetAPI.META_DATA_FIELD, ContentletCache.CACHED_METADATA);
+
+		final Structure structure = content.getStructure();
+		if(structure!=null && structure.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+
+			final Field field = structure.getFieldVar(FileAssetAPI.META_DATA_FIELD);
+			if(field!=null && UtilMethods.isSet(field.getInode())) {
+
+				final Map<String, Object> metadata = content.get(FileAssetAPI.META_DATA_FIELD) instanceof Map?
+						(Map)content.get(FileAssetAPI.META_DATA_FIELD):
+						KeyValueFieldUtil.JSONValueToHashMap(content.get(FileAssetAPI.META_DATA_FIELD).toString());
+				addMetadata(key, field.getVelocityVarName(), metadata);
+				content.setProperty(FileAssetAPI.META_DATA_FIELD, ContentletCache.CACHED_METADATA);
 			}
 		}
 	}
 
 	@Override
-	public String getMetadata(String key) {
-		key = metadataGroup + key;
-		String metadata=null;
+	public Map<String, Object> getMetadata(final String key, final String fieldVariable) {
+
+		final String cacheKey        = metadataGroup + key + fieldVariable;
+		Map<String, Object> metadata = null;
 		try {
-			metadata=(String)cache.get(key, metadataGroup);
+			metadata = (Map<String, Object>)cache.get(cacheKey, metadataGroup);
 		} catch (DotCacheException e) {
+
 			Logger.debug(this, "Cache Entry not found", e);
 		}
+
 		return metadata;
 	}
 

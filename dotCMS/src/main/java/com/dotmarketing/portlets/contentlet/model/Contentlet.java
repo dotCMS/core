@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.util.KeyValueFieldUtil;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
@@ -1229,8 +1230,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param velocityVarName
 	 * @return
 	 */
-	public Map<String, Object> getKeyValueProperty(String velocityVarName) {
-		return com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String) get(velocityVarName));
+	public Map<String, Object> getKeyValueProperty(final String velocityVarName) {
+		final Object keyValueMap = get(velocityVarName);
+		return keyValueMap instanceof Map? (Map<String, Object>)keyValueMap:
+				com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String)keyValueMap);
 	}
 
 	/**
@@ -1252,30 +1255,37 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
 	@JsonIgnore
-    public static Object lazyMetadataLoad ( String inode, String structureInode ) {
+    public static Object lazyMetadataLoad (final String inode, final String structureInode) {
 
-        String cachedMetadata = CacheLocator.getContentletCache().getMetadata( inode );
-        if ( cachedMetadata == null ) {
+		final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(structureInode );
+		final Field field = structure.getFieldVar(FileAssetAPI.META_DATA_FIELD);
+        final Map<String, Object> cachedMetadata = (field!=null && UtilMethods.isSet(field.getInode()))?
+				CacheLocator.getContentletCache().getMetadata(inode, field.getVelocityVarName()): null;
+
+        if (cachedMetadata == null) {
             // lazy load from db
             try {
-                Structure st = CacheLocator.getContentTypeCache().getStructureByInode( structureInode );
-                Object fieldVal = APILocator.getContentletAPI().loadField( inode, st.getFieldVar( FileAssetAPI.META_DATA_FIELD ) );
-                if ( fieldVal != null && UtilMethods.isSet( fieldVal.toString() ) ) {
-                    String loadedMetadata = fieldVal.toString();
-                    CacheLocator.getContentletCache().addMetadata( inode, loadedMetadata );
-                    return loadedMetadata;
-                } else
-                    return "";
-            } catch ( DotDataException e ) {
-                Logger.error( Contentlet.class, "error lazy loading metadata field", e );
-                return "";
+
+                final Object fieldVal = APILocator.getContentletAPI().loadField(inode,
+						structure.getFieldVar(FileAssetAPI.META_DATA_FIELD));
+                if (fieldVal != null && UtilMethods.isSet(fieldVal.toString())) {
+
+                    final String              loadedMetadata = fieldVal.toString();
+                    final Map<String, Object> parsedMetadata = KeyValueFieldUtil.JSONValueToHashMap(loadedMetadata);
+                    CacheLocator.getContentletCache().addMetadata(inode, field.getVelocityVarName(), parsedMetadata);
+                    return parsedMetadata;
+                } else {
+					return ContentletCache.EMPTY_METADATA;
+				}
+            } catch (DotDataException e) {
+
+                Logger.error( Contentlet.class, "error lazy loading metadata field", e);
+                return ContentletCache.EMPTY_METADATA;
             }
-        } else if ( cachedMetadata.equals( ContentletCache.EMPTY_METADATA ) ) {
-            return "";
-        } else {
-            // normal metadata from cache
-            return cachedMetadata;
         }
+
+		// normal metadata from cache
+		return cachedMetadata;
     }
 
     /**
