@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -42,6 +43,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import io.vavr.control.Try;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -448,7 +450,7 @@ public class ContentToolTest extends IntegrationTestBase {
         final ContentTool contentTool = getContentTool(null);
 
         final PaginatedContentList<ContentMap> contents = contentTool.pullPerPage(query, 1, 2, null);
-        assertEquals(0, contents.size());
+        assertFalse(Try.of(()->contents.get(0).isLive()).getOrElse(false));
     }
 
     /**
