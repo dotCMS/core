@@ -87,7 +87,7 @@ public class ContentletCacheImpl extends ContentletCache {
 
 				final Map<String, Object> metadata = content.get(FileAssetAPI.META_DATA_FIELD) instanceof Map?
 						(Map)content.get(FileAssetAPI.META_DATA_FIELD):
-						KeyValueFieldUtil.JSONValueToHashMap(content.get(FileAssetAPI.META_DATA_FIELD).toString());
+						KeyValueFieldUtil.JSONValueToHashMap((String)content.get(FileAssetAPI.META_DATA_FIELD));
 				addMetadata(key, field.getVelocityVarName(), metadata);
 				content.setProperty(FileAssetAPI.META_DATA_FIELD, ContentletCache.CACHED_METADATA);
 			}
