@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.gson.GsonBuilder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -55,7 +56,11 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 
 	public String getMetaData(){
 		if(metaData ==null){
-			metaData=(String) super.get(FileAssetAPI.META_DATA_FIELD);
+
+			final Object recoveryMetadata = super.get(FileAssetAPI.META_DATA_FIELD);
+			metaData = recoveryMetadata instanceof Map?
+					new GsonBuilder().disableHtmlEscaping().create().toJson(recoveryMetadata):
+					(String) recoveryMetadata;
 		}
 		return metaData;
 
