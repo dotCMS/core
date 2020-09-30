@@ -11,8 +11,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          fetch-depth: 1
-      - uses: actions/cache@v2     
+          fetch-depth: 1  
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
