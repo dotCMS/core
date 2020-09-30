@@ -190,7 +190,7 @@ public class DependencySet extends HashSet<String> {
 						for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
 							Optional<ContentletVersionInfo> info=APILocator.getVersionableAPI().getContentletVersionInfo(assetId, lang.getId());
 
-							if(info.isPresent() && InodeUtils.isSet(info.get().getIdentifier())) {
+							if(info.isPresent()) {
 								modifiedOnCurrentEnv = modifiedOnCurrentEnv
 										|| null == info.get().getVersionTs()
 										|| asset.getPushDate().before(info.get().getVersionTs());
