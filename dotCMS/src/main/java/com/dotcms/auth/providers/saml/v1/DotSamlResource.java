@@ -301,7 +301,7 @@ public class DotSamlResource implements Serializable {
 					Logger.debug(this, () -> "Processing saml logout request for idpConfig id: " + idpConfigId);
 					final String logoutPath = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
-							()->buildBaseUrlFromRequest(httpServletRequest) + "/");
+							()-> "/dotAdmin/#/public/logout");
 
 					httpServletResponse.sendRedirect(logoutPath);
 					return;
