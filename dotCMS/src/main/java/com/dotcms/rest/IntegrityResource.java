@@ -15,8 +15,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.quartz.job.IntegrityCheckJob;
 import com.dotmarketing.util.*;
-import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -47,11 +47,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+
+import com.liferay.portal.model.User;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
-import org.quartz.SchedulerException;
 
 /**
  * This REST end-point provides all the required mechanisms for the execution of
@@ -167,22 +168,8 @@ public class IntegrityResource {
         return response;
     }
 
-    /**
-     * Evaluates if the {@link IntegrityDataGenerationJob} is running.
-     *
-     * @return true if it does, otherwise false
-     */
-    private boolean isJobRunning() {
-        try {
-            return QuartzUtils.isJobRunning(
-                    IntegrityDataGenerationJob.getJobScheduler(),
-                    IntegrityDataGenerationJob.JOB_NAME,
-                    IntegrityDataGenerationJob.JOB_GROUP,
-                    IntegrityDataGenerationJob.TRIGGER_NAME,
-                    IntegrityDataGenerationJob.TRIGGER_GROUP);
-        } catch (SchedulerException e) {
-            return false;
-        }
+    private boolean isIntegrityCheckRunning() {
+        return IntegrityDataGenerationJob.isJobRunning() || IntegrityCheckJob.isJobRunning();
     }
 
     /**
@@ -206,7 +193,7 @@ public class IntegrityResource {
         }
 
         try {
-            if (isJobRunning()) {
+            if (isIntegrityCheckRunning()) {
                 Logger.error(
                         IntegrityResource.class,
                         String.format(
@@ -272,7 +259,7 @@ public class IntegrityResource {
                 return failResponse.get();
             }
 
-            if (isJobRunning()) {
+            if (isIntegrityCheckRunning()) {
                 Logger.error(
                         IntegrityResource.class,
                         String.format(
@@ -353,11 +340,11 @@ public class IntegrityResource {
                                 pushPublishAuthenticationToken.getKey()));
                 return Response
                         .status(HttpStatus.SC_RESET_CONTENT)
-                        .entity(integrityMetadata.get().getErrorMessage())
+                        .entity(integrityMetadata.get().getMessage())
                         .build();
             } else if (integrityMetadata.get().getProcessStatus() == ProcessStatus.ERROR) {
                 final String message = StringUtils.defaultString(
-                        String.format(" due to '%s'", integrityMetadata.get().getErrorMessage()),
+                        String.format(" due to '%s'", integrityMetadata.get().getMessage()),
                         "");
                 Logger.error(
                         IntegrityResource.class,
@@ -368,7 +355,7 @@ public class IntegrityResource {
                                 message));
                 return Response
                         .status(HttpStatus.SC_INTERNAL_SERVER_ERROR)
-                        .entity(integrityMetadata.get().getErrorMessage())
+                        .entity(integrityMetadata.get().getMessage())
                         .build();
             }
         } catch (Exception e) {
@@ -415,6 +402,7 @@ public class IntegrityResource {
         final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final HttpSession session = httpServletRequest.getSession();
+        final User loggedUser = initData.getUser();
         final JSONObject jsonResponse = new JSONObject();
 
         //Validate the parameters
@@ -669,9 +657,8 @@ public class IntegrityResource {
             return failResponse.get();
         }
 
-
         try {
-            if (!isJobRunning()) {
+            if (!isIntegrityCheckRunning()) {
                 return Response.status(HttpStatus.SC_CONFLICT).build();
             }
 
@@ -1354,10 +1341,10 @@ public class IntegrityResource {
                     // call IntegrityChecker
                     boolean conflictPresent = false;
 
-                    IntegrityUtil integrityUtil = new IntegrityUtil();
+                    final IntegrityUtil integrityUtil = new IntegrityUtil();
                     try {
-                        integrityUtil.completeDiscardConflicts(endpoint.getId());
-                        conflictPresent = integrityUtil.completeCheckIntegrity(endpoint.getId());
+                        IntegrityUtil.completeDiscardConflicts(endpoint.getId());
+                        conflictPresent = IntegrityUtil.completeCheckIntegrity(endpoint.getId());
                     } catch (Exception e) {
                         //Special handling if the thread was interrupted
                         if (e instanceof InterruptedException) {
@@ -1417,5 +1404,7 @@ public class IntegrityResource {
             return postWithEndpointState(
                     endpoint, url, new MediaType("application", "zip"));
         }
+
     }
+
 }

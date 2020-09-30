@@ -24,7 +24,7 @@ import java.util.Optional;
  * if the config property 'USE_JWT_TOKEN_IN_PUSH_PUBLISH' is set to true (default value)
  * it is going to use JWT token, but if the config property is set to false or the JWT token fails then auth key is going to use
  * */
-public enum AuthCredentialPushPublishUtil {
+public enum  AuthCredentialPushPublishUtil {
     INSTANCE;
 
     private final String BEARER = "Bearer ";

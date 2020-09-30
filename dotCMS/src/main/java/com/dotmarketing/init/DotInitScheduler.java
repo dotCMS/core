@@ -2,20 +2,12 @@ package com.dotmarketing.init;
 
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 
-import java.lang.management.ManagementFactory;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-
-import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
+import com.dotmarketing.quartz.job.IntegrityCheckJob;
 import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobDetail;
@@ -41,7 +33,6 @@ import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.TrashCleanupJob;
 import com.dotmarketing.quartz.job.UsersToDeleteThread;
 import com.dotmarketing.quartz.job.WebDavCleanupJob;
-import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -692,39 +683,31 @@ public class DotInitScheduler {
             }
 
             // Integrity Check Scheduled Job
-            if (Config.getBooleanProperty("INTEGRITY_CHECK_ENABLE", true)) {
+            if (Config.getBooleanProperty("SCHEDULED_INTEGRITY_CHECK_ENABLED", true)) {
                 try {
                     isNew = false;
 
                     try {
-                        if ((job = sched.getJobDetail(
-                                IntegrityDataGenerationJob.JOB_NAME,
-                                IntegrityDataGenerationJob.JOB_GROUP)) == null) {
-                            job = new JobDetail(
-                                    IntegrityDataGenerationJob.JOB_NAME,
-                                    IntegrityDataGenerationJob.JOB_GROUP,
-                                    IntegrityDataGenerationJob.class);
+                        if ((job = IntegrityCheckJob.findJobDetail()) == null) {
+                            job = IntegrityCheckJob.instanceJobDetail() ;
                             isNew = true;
                         }
                     } catch (SchedulerException se) {
-                        sched.deleteJob(IntegrityDataGenerationJob.JOB_NAME, IntegrityDataGenerationJob.JOB_GROUP);
-                        job = new JobDetail(
-                                IntegrityDataGenerationJob.JOB_NAME,
-                                IntegrityDataGenerationJob.JOB_GROUP,
-                                IntegrityDataGenerationJob.class);
+                        sched.deleteJob(IntegrityCheckJob.JOB_NAME, IntegrityCheckJob.JOB_GROUP);
+                        job = IntegrityCheckJob.instanceJobDetail();
                         isNew = true;
                     }
 
                     calendar = GregorianCalendar.getInstance();
                     //By default, the job runs once a day at 12 AM
                     trigger = new CronTrigger(
-                            IntegrityDataGenerationJob.TRIGGER_NAME,
-                            IntegrityDataGenerationJob.TRIGGER_GROUP,
-                            IntegrityDataGenerationJob.JOB_NAME,
-                            IntegrityDataGenerationJob.JOB_GROUP,
+                            IntegrityCheckJob.TRIGGER_NAME,
+                            IntegrityCheckJob.TRIGGER_GROUP,
+                            IntegrityCheckJob.JOB_NAME,
+                            IntegrityCheckJob.JOB_GROUP,
                             calendar.getTime(),
                             null,
-                            Config.getStringProperty("INTEGRITY_CHECK_INTERVAL_CRON", "0 * * * *"));
+                            Config.getStringProperty("SCHEDULED_INTEGRITY_CHECK_INTERVAL_CRON", "0 * * * *"));
                     trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
                     sched.addJob(job, true);
 
@@ -732,17 +715,15 @@ public class DotInitScheduler {
                         sched.scheduleJob(trigger);
                     } else {
                         sched.rescheduleJob(
-                                IntegrityDataGenerationJob.TRIGGER_NAME,
-                                IntegrityDataGenerationJob.TRIGGER_GROUP,
+                                IntegrityCheckJob.TRIGGER_NAME,
+                                IntegrityCheckJob.TRIGGER_GROUP,
                                 trigger);
                     }
                 } catch (Exception e) {
                     Logger.error(DotInitScheduler.class, e.getMessage(),e);
                 }
-            } else if ((sched.getJobDetail(
-                    IntegrityDataGenerationJob.JOB_NAME,
-                    IntegrityDataGenerationJob.JOB_GROUP)) != null) {
-                sched.deleteJob(IntegrityDataGenerationJob.JOB_NAME, IntegrityDataGenerationJob.JOB_GROUP);
+            } else if (IntegrityCheckJob.findJobDetail() != null) {
+                sched.deleteJob(IntegrityCheckJob.JOB_NAME, IntegrityCheckJob.JOB_GROUP);
             }
 
 			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ) {

@@ -368,7 +368,7 @@ public class IntegrityUtil {
         addData.accept(endpointId, REQUESTER_KEY);
         addData.accept(integrityDataExecutionMetadata.getRequestId(), INTEGRITY_DATA_REQUEST_ID);
         statusData.setProperty(INTEGRITY_DATA_STATUS, integrityDataExecutionMetadata.getProcessStatus().toString().toUpperCase());
-        addData.accept(integrityDataExecutionMetadata.getErrorMessage(), INTEGRITY_DATA_ERROR_MESSAGE);
+        addData.accept(integrityDataExecutionMetadata.getMessage(), INTEGRITY_DATA_ERROR_MESSAGE);
 
         try (FileOutputStream output = new FileOutputStream(statusFile)) {
             statusData.store(output, null);
@@ -804,23 +804,23 @@ public class IntegrityUtil {
         private final String endpointId;
         private final String requestId;
         private final IntegrityResource.ProcessStatus processStatus;
-        private final String errorMessage;
+        private final String message;
 
         public IntegrityDataExecutionMetadata(String endpointId,
                                               String requestId,
                                               IntegrityResource.ProcessStatus processStatus,
-                                              String errorMessage) {
+                                              String message) {
             this.endpointId = endpointId;
             this.requestId = requestId;
             this.processStatus = processStatus;
-            this.errorMessage = errorMessage;
+            this.message = message;
         }
 
         public IntegrityDataExecutionMetadata(String endpointId,
                                               String requestId,
                                               String status,
-                                              String errorMessage) {
-            this(endpointId, requestId, IntegrityResource.ProcessStatus.valueOf(status.toUpperCase()), errorMessage);
+                                              String message) {
+            this(endpointId, requestId, IntegrityResource.ProcessStatus.valueOf(status.toUpperCase()), message);
         }
 
         public String getEndpointId() {
@@ -835,8 +835,8 @@ public class IntegrityUtil {
             return processStatus;
         }
 
-        public String getErrorMessage() {
-            return errorMessage;
+        public String getMessage() {
+            return message;
         }
 
     }

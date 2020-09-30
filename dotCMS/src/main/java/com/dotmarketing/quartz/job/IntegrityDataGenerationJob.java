@@ -140,4 +140,22 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
         return QuartzUtils.getStandardScheduler();
     }
 
+    /**
+     * Evaluates if the {@link IntegrityDataGenerationJob} is running.
+     *
+     * @return true if it does, otherwise false
+     */
+    public static boolean isJobRunning() {
+        try {
+            return QuartzUtils.isJobRunning(
+                    getJobScheduler(),
+                    IntegrityDataGenerationJob.JOB_NAME,
+                    IntegrityDataGenerationJob.JOB_GROUP,
+                    IntegrityDataGenerationJob.TRIGGER_NAME,
+                    IntegrityDataGenerationJob.TRIGGER_GROUP);
+        } catch (SchedulerException e) {
+            return false;
+        }
+    }
+
 }
