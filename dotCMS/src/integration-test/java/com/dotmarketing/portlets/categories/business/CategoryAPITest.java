@@ -1129,7 +1129,7 @@ public class CategoryAPITest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
-     * Given Scenario: As a limited user, with the required permissions (can add children, edit categories), create a top level category
+     * Given Scenario: As a limited user, with the required permissions (can add children, publish categories), create a top level category
      * ExpectedResult: Category created successfully
      */
     @Test
@@ -1147,7 +1147,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         permissions = new Permission(PermissionableType.CATEGORY.getCanonicalName(),
                 APILocator.systemHost().getPermissionId(),
                 APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH, true);
         APILocator.getPermissionAPI().save(permissions, APILocator.systemHost(), user, false);
         //Create new top level Category as limited user
         final String categoryName = "newCategory" + System.currentTimeMillis();
