@@ -28,7 +28,7 @@ public class KeyValueFieldUtil {
     LinkedHashMap<String, Object> keyValueMap = new LinkedHashMap<String, Object>();
     if (UtilMethods.isSet(json)) {
 
-      if (json.equals(ContentletCache.CACHED_METADATA)) { // todo: double check this
+      if (json.equals("**~~||%%CACHED_METADATA%%||~~**")) {
         /*
          * Contentlet.get(key) already verify for the metadata field if the data is cached in order to get
          * the information from cache.
