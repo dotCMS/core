@@ -615,7 +615,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                 Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
 
-                if(verInfo.isPresent() && UtilMethods.isSet(verInfo.get().getIdentifier())) {
+                if(verInfo.isPresent()) {
                     if(UtilMethods.isSet(verInfo.get().getLiveInode()) && verInfo.get().getLiveInode().equals(con.getInode()))
                         try {
                             APILocator.getVersionableAPI().removeLive(con);
