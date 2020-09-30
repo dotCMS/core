@@ -606,10 +606,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         //Build a site search result in order to add it to the index
         Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(testHtmlPage.getIdentifier(), testHtmlPage.getLanguageId());
 
-        if(!versionInfo.isPresent()) {
-            throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
-                    + testHtmlPage.getIdentifier() + ". Lang: " + testHtmlPage.getLanguageId());
-        }
+        assertTrue(versionInfo.isPresent());
 
         String docId = testHtmlPage.getIdentifier() + "_" + defaultLanguage.getId();
 

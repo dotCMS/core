@@ -24,7 +24,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Versionable findWorkingVersion(Versionable inode, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,DotSecurityException;
+	Versionable findWorkingVersion(Versionable inode, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds the working version based on the identifier
 	 * @param id
@@ -35,7 +35,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Versionable findWorkingVersion(Identifier id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
+	Versionable findWorkingVersion(Identifier id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds the working version based on the identifier's id
 	 * @param id
@@ -46,7 +46,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Versionable findWorkingVersion(String id, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,DotSecurityException;
+	Versionable findWorkingVersion(String id, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds the live version based on any version of the object being passed in
 	 * @param inode
@@ -57,7 +57,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Versionable findLiveVersion(Versionable inode, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
+	Versionable findLiveVersion(Versionable inode, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Finds the live version based on the identifier
@@ -69,7 +69,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Versionable findLiveVersion(Identifier id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
+	Versionable findLiveVersion(Identifier id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds the live version based on the identifier's id
 	 * @param id
@@ -80,7 +80,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Versionable findLiveVersion(String id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
+	Versionable findLiveVersion(String id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds all versions based on an versionable
 	 * @param inode
@@ -91,7 +91,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public List<Versionable>  findAllVersions(Versionable inode)  throws DotDataException, DotStateException,DotSecurityException;
+	List<Versionable>  findAllVersions(Versionable inode)  throws DotDataException, DotStateException,DotSecurityException;
 
 	/**
 	 * Finds all versions based on an id
@@ -101,7 +101,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public List<Versionable>  findAllVersions(Identifier identifier)  throws DotDataException, DotStateException,DotSecurityException;
+	List<Versionable>  findAllVersions(Identifier identifier)  throws DotDataException, DotStateException,DotSecurityException;
 
 	/**
 	 * Finds previous versions based on an identifier (if exists)
@@ -145,7 +145,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public List<Versionable>  findAllVersions(String id)  throws DotDataException, DotStateException,DotSecurityException;
+	List<Versionable>  findAllVersions(String id)  throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Finds all versions based on any version of the object being passed in
@@ -157,7 +157,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public List<Versionable>  findAllVersions(Versionable inode, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
+	List<Versionable>  findAllVersions(Versionable inode, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds all versions based on an identifier
 	 * @param inode
@@ -169,7 +169,7 @@ public interface VersionableAPI {
 	 * @throws DotSecurityException
 	 */
 
-	public List<Versionable>  findAllVersions(Identifier id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
+	List<Versionable>  findAllVersions(Identifier id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds all versions based on an identifier.id
 	 * @param inode
@@ -180,7 +180,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public List<Versionable>  findAllVersions(String id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
+	List<Versionable>  findAllVersions(String id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds the deleted version based on any version of the object being passed in
 	 * @param inode
@@ -191,7 +191,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Versionable findDeletedVersion(Versionable inode, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,DotSecurityException;
+	Versionable findDeletedVersion(Versionable inode, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds the deleted version based on the identifier
 	 * @param id
@@ -202,7 +202,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Versionable findDeletedVersion(Identifier id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
+	Versionable findDeletedVersion(Identifier id, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
 	/**
 	 * Finds the deleted version based on the identifier's id
 	 * @param id
@@ -213,7 +213,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Versionable findDeletedVersion(String id, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,DotSecurityException;
+	Versionable findDeletedVersion(String id, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Tells if the versionable is live
@@ -224,7 +224,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public boolean isLive(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
+	boolean isLive(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Set this versionable as the live version for its identifier
@@ -234,7 +234,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public void setLive(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
+	void setLive(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Remove the reference to the live version for this identifier. This is useful to unpublish 
@@ -245,7 +245,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public void removeLive(String identifier) throws DotDataException, DotStateException,DotSecurityException;
+	void removeLive(String identifier) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
      * Remove the reference to the live version for this identifier. This is useful to unpublish 
@@ -256,7 +256,7 @@ public interface VersionableAPI {
      * @throws DotStateException
      * @throws DotSecurityException
      */
-    public void removeLive(Contentlet contentlet) throws DotDataException, DotStateException,DotSecurityException;
+    void removeLive(Contentlet contentlet) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Tells if the versionable is the working version for its identifier
@@ -267,7 +267,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public boolean isWorking(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
+	boolean isWorking(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Sets the versionable as the working version for its identifier
@@ -277,7 +277,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public void setWorking(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
+	void setWorking(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Tells if the versionable is locked
@@ -288,7 +288,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public boolean isLocked(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	boolean isLocked(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Returns the userId of the owner of the asset's lock
@@ -296,7 +296,7 @@ public interface VersionableAPI {
 	 * @param ver
 	 * @return
 	 */
-	public Optional<String> getLockedBy(Versionable ver) throws DotDataException;
+	Optional<String> getLockedBy(Versionable ver) throws DotDataException;
 	
 	/**
 	 * Returns the date when the asset were locked
@@ -307,7 +307,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Optional<Date> getLockedOn(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	Optional<Date> getLockedOn(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Allows to change locked status for the versionable 
@@ -319,7 +319,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public void setLocked(Versionable ver, boolean locked, User user) throws DotDataException, DotStateException,DotSecurityException;
+	void setLocked(Versionable ver, boolean locked, User user) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Tells if the versionable is deleted
@@ -330,7 +330,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public boolean isDeleted(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	boolean isDeleted(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Allows to delete (when true) of undelete (when false) a versionable 
@@ -341,7 +341,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public void setDeleted(Versionable ver, boolean deleted) throws DotDataException, DotStateException,DotSecurityException;
+	void setDeleted(Versionable ver, boolean deleted) throws DotDataException, DotStateException,DotSecurityException;
 	
 	
 	/**
@@ -363,7 +363,7 @@ public interface VersionableAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public void saveVersionInfo(VersionInfo vInfo) throws DotDataException, DotStateException;
+	void saveVersionInfo(VersionInfo vInfo) throws DotDataException, DotStateException;
 	
 	/**
 	 * Will save the contentletVersionInfo Record. For normal operations you should use the setLive, setWorking etc... but there are cases like
@@ -374,7 +374,7 @@ public interface VersionableAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException;
+	void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException;
 	
 	/**
 	 * Will return the @VersionInfo holder for the given identifier
@@ -383,27 +383,27 @@ public interface VersionableAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public  VersionInfo getVersionInfo(String identifier) throws DotDataException, DotStateException;
+	VersionInfo getVersionInfo(String identifier) throws DotDataException, DotStateException;
 	
-	public void deleteVersionInfo(String identifier) throws DotDataException;
+	void deleteVersionInfo(String identifier) throws DotDataException;
 	
-	public void deleteContentletVersionInfo(String identifier, long lang) throws DotDataException;
+	void deleteContentletVersionInfo(String identifier, long lang) throws DotDataException;
 	
-	public boolean hasLiveVersion(Versionable identifier)  throws DotDataException, DotStateException;
-	
-	/**
-	 * 
-	 * @param identifier
-	 * @param lang
-	 */
-	public void removeContentletVersionInfoFromCache(String identifier, long lang);
+	boolean hasLiveVersion(Versionable identifier)  throws DotDataException, DotStateException;
 	
 	/**
 	 * 
 	 * @param identifier
 	 * @param lang
 	 */
-	public void removeVersionInfoFromCache(String identifier);
+	void removeContentletVersionInfoFromCache(String identifier, long lang);
+	
+	/**
+	 * 
+	 * @param identifier
+	 * @param lang
+	 */
+	void removeVersionInfoFromCache(String identifier);
 	
 	/**
 	 * Will return a list of all ContentletVersionInfo for a given piece of content (if there are multiple languages) 
@@ -412,6 +412,6 @@ public interface VersionableAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-    public List<ContentletVersionInfo> findContentletVersionInfos(String identifier) throws DotDataException, DotStateException;
+    List<ContentletVersionInfo> findContentletVersionInfos(String identifier) throws DotDataException, DotStateException;
 	
 }

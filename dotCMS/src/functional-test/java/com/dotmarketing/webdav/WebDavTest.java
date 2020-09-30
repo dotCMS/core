@@ -178,11 +178,11 @@ public class WebDavTest {
             }
         }
         
-        Optional<ContentletVersionInfo> vi = APILocator.getVersionableAPI()
+        Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI()
 				.getContentletVersionInfo(file.getIdentifier(), 1);
 
-        assertTrue(vi.isPresent());
-        assertTrue(vi.get().isDeleted());
+        assertTrue(versionInfo.isPresent());
+        assertTrue(versionInfo.get().isDeleted());
 	}
 	
 	/**

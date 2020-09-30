@@ -8077,16 +8077,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     +" does not have Edit Permissions to lock content: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
         }
 
-        Optional<String> lockedBy = null;
+        Optional<String> lockedBy = Optional.empty();
         try {
-
             lockedBy = APILocator.getVersionableAPI().getLockedBy(contentlet);
         } catch(Exception e) {
 
         }
 
-        if(lockedBy!=null && lockedBy.isPresent() && !user.getUserId().equals(lockedBy.get())){
-
+        if(lockedBy.isPresent() && !user.getUserId().equals(lockedBy.get())){
             throw new DotLockException(CANT_GET_LOCK_ON_CONTENT);
         }
 

@@ -192,7 +192,7 @@ public class DependencySet extends HashSet<String> {
 
 							if(info.isPresent() && InodeUtils.isSet(info.get().getIdentifier())) {
 								modifiedOnCurrentEnv = modifiedOnCurrentEnv
-										|| (null == info.get().getVersionTs())
+										|| null == info.get().getVersionTs()
 										|| asset.getPushDate().before(info.get().getVersionTs());
 							}
 						}

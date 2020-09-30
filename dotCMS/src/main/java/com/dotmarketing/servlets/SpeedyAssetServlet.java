@@ -129,7 +129,7 @@ public class SpeedyAssetServlet extends HttpServlet {
                       + id.getId(), ". Lang: " + APILocator.getLanguageAPI().getDefaultLanguage().getId());
           }
   
-  		  String conInode = (serveWorkingVersion) ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
+  		  String conInode = serveWorkingVersion ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
           String referrer = "/contentAsset/raw-data/" + conInode + "/fileAsset/?byInode=true";
           request.getRequestDispatcher(referrer).forward(request, response);
 		}

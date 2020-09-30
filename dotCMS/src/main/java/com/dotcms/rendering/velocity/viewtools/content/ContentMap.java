@@ -198,7 +198,7 @@ public class ContentMap {
 					return null;
 				}
 
-				String inode =  (EDIT_OR_PREVIEW_MODE) ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
+				String inode =  EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
 				Contentlet fileAsset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
 					
 				if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){

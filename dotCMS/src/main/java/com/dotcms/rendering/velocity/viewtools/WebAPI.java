@@ -396,7 +396,7 @@ public class WebAPI implements ViewTool {
 		  if(!cvi.isPresent()) {
 		  	throw new DotDataException("Can't find Contentlet-version-info. Identifier: " + ident.getId() + ". Lang:" + defaultLang);
 		  }
-		  String conInode = (PREVIEW_MODE && EDIT_MODE) ? cvi.get().getWorkingInode()
+		  String conInode = PREVIEW_MODE && EDIT_MODE ? cvi.get().getWorkingInode()
 				  : cvi.get().getLiveInode();
 		  FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  user, true));
 		  

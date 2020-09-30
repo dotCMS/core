@@ -358,30 +358,30 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			cvInfo.setVersionTs(new Date());
 		}
 
-		final DotConnect db = new DotConnect();
+		final DotConnect dotConnect = new DotConnect();
 
     	if(isNew) {
-			db.setSQL(INSERT_CONTENTLET_VERSION_INFO_SQL);
-			db.addParam(cvInfo.getIdentifier());
-			db.addParam(cvInfo.getLang());
-			db.addParam(cvInfo.getWorkingInode());
-			db.addParam(cvInfo.getLiveInode());
-			db.addParam(cvInfo.isDeleted());
-			db.addParam(cvInfo.getLockedBy());
-			db.addParam(cvInfo.getLockedOn());
-			db.addParam(cvInfo.getVersionTs());
-			db.loadResult();
+			dotConnect.setSQL(INSERT_CONTENTLET_VERSION_INFO_SQL);
+			dotConnect.addParam(cvInfo.getIdentifier());
+			dotConnect.addParam(cvInfo.getLang());
+			dotConnect.addParam(cvInfo.getWorkingInode());
+			dotConnect.addParam(cvInfo.getLiveInode());
+			dotConnect.addParam(cvInfo.isDeleted());
+			dotConnect.addParam(cvInfo.getLockedBy());
+			dotConnect.addParam(cvInfo.getLockedOn());
+			dotConnect.addParam(cvInfo.getVersionTs());
+			dotConnect.loadResult();
         } else {
-			db.setSQL(UPDATE_CONTENTLET_VERSION_INFO_SQL);
-			db.addParam(cvInfo.getWorkingInode());
-			db.addParam(cvInfo.getLiveInode());
-			db.addParam(cvInfo.isDeleted());
-			db.addParam(cvInfo.getLockedBy());
-			db.addParam(cvInfo.getLockedOn());
-			db.addParam(cvInfo.getVersionTs());
-			db.addParam(cvInfo.getIdentifier());
-			db.addParam(cvInfo.getLang());
-			db.loadResult();
+			dotConnect.setSQL(UPDATE_CONTENTLET_VERSION_INFO_SQL);
+			dotConnect.addParam(cvInfo.getWorkingInode());
+			dotConnect.addParam(cvInfo.getLiveInode());
+			dotConnect.addParam(cvInfo.isDeleted());
+			dotConnect.addParam(cvInfo.getLockedBy());
+			dotConnect.addParam(cvInfo.getLockedOn());
+			dotConnect.addParam(cvInfo.getVersionTs());
+			dotConnect.addParam(cvInfo.getIdentifier());
+			dotConnect.addParam(cvInfo.getLang());
+			dotConnect.loadResult();
         }
     	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
     }

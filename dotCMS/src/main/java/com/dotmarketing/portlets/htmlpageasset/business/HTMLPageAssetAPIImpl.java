@@ -267,11 +267,11 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     return null;
                 }
 
-                Contentlet c = contentletAPI.find(live ? cinfo.get().getLiveInode()
+                Contentlet contentlet = contentletAPI.find(live ? cinfo.get().getLiveInode()
                         : cinfo.get().getWorkingInode(), userAPI.getSystemUser(), false);
 
-                if(c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
-                    return fromContentlet(c);
+                if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                    return fromContentlet(contentlet);
                 }
 
             } catch (Exception e) {

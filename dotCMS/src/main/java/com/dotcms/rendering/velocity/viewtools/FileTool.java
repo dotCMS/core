@@ -38,7 +38,7 @@ public class FileTool implements ViewTool {
 		if(!cvi.isPresent()) {
 			throw new DotDataException("Can't find Content-version-info. Identifier: " + id.getId() + ". Lang:" + languageId);
 		}
-	    String conInode = (!live) ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
+	    String conInode = !live ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
 	    FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  userAPI.getSystemUser(), false));
 	    return file;
 	}

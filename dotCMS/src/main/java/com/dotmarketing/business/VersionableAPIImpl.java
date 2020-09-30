@@ -245,7 +245,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             final Optional<ContentletVersionInfo> cinfo = versionableFactory.
                     getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
 
-            return (cinfo.isPresent() && cinfo.get().isDeleted());
+            return cinfo.isPresent() && cinfo.get().isDeleted();
         } else {
 
             final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
@@ -544,7 +544,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             Optional<ContentletVersionInfo> info = versionableFactory
                     .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
 
-            if(!info.isPresent()) {
+            if(!info.isPresent() || UtilMethods.isNotSet(info.get().getIdentifier())) {
                 // Not yet created
                 info = Optional.of(versionableFactory.createContentletVersionInfo(identifier,
                         contentlet.getLanguageId(), versionable.getInode()));
@@ -650,7 +650,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 	@CloseDBIfOpened
 	public Optional<ContentletVersionInfo> getContentletVersionInfo(final String identifier,
                                                           final long lang) {
-	    return Try.of((()->versionableFactory.getContentletVersionInfo(identifier, lang)))
+	    return Try.of(()->versionableFactory.getContentletVersionInfo(identifier, lang))
                 .getOrElse(Optional.empty());
 	}
 	
@@ -710,8 +710,8 @@ public class VersionableAPIImpl implements VersionableAPI {
 			final Optional<ContentletVersionInfo> contentletVersionInfo = this.getContentletVersionInfo
                     (versionable.getVersionId(), ((Contentlet) versionable).getLanguageId());
 
-			return (contentletVersionInfo.isPresent()
-                    && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode()));
+			return contentletVersionInfo.isPresent()
+                    && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode());
 		} else {
 
 			final VersionInfo versionInfo = this.getVersionInfo(versionable.getVersionId());

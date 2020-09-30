@@ -33,25 +33,25 @@ public class ContentletDetail extends DotDirective {
 
 
     private long resolveLang(final String identifier, final RenderParams params) {
-        Optional<ContentletVersionInfo> cv;
+        Optional<ContentletVersionInfo> versionInfo;
         long tryingLang = params.language.getId();
         long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         if(tryingLang==defaultLang) {
             return tryingLang;
         }
         try {
-            cv = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryingLang);
-            if (cv.isPresent()) {
+            versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryingLang);
+            if (versionInfo.isPresent()) {
                 return tryingLang;
             }
             else {
-                cv = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLang);
+                versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLang);
 
-                if(!cv.isPresent()) {
+                if(!versionInfo.isPresent()) {
                     throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + defaultLang);
                 }
 
-                String inode = (params.mode.showLive) ? cv.get().getLiveInode() : cv.get().getWorkingInode();
+                String inode = params.mode.showLive ? versionInfo.get().getLiveInode() : versionInfo.get().getWorkingInode();
                 Contentlet test = APILocator.getContentletAPI().find(inode, params.user, params.mode.respectAnonPerms);
                 ContentType type = test.getContentType();
                 if (type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA
