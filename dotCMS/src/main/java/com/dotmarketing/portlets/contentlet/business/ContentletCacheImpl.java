@@ -20,9 +20,12 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.GsonBuilder;
+import io.vavr.control.Try;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -87,7 +90,13 @@ public class ContentletCacheImpl extends ContentletCache {
 
 				final Map<String, Object> metadata = content.get(FileAssetAPI.META_DATA_FIELD) instanceof Map?
 						(Map)content.get(FileAssetAPI.META_DATA_FIELD):
-						KeyValueFieldUtil.JSONValueToHashMap((String)content.get(FileAssetAPI.META_DATA_FIELD));
+						Try.of(()->KeyValueFieldUtil.JSONValueToHashMap(
+								(String)content.get(FileAssetAPI.META_DATA_FIELD)))
+								.onFailure(e-> {
+									Logger.debug(this.getClass(),
+											"json: " + content.get(FileAssetAPI.META_DATA_FIELD) + ", msg:" + e.getMessage(), e);
+								})
+								.getOrElse(()->new HashMap<>());
 				addMetadata(key, field.getVelocityVarName(), metadata);
 				content.setProperty(FileAssetAPI.META_DATA_FIELD, ContentletCache.CACHED_METADATA);
 			}
