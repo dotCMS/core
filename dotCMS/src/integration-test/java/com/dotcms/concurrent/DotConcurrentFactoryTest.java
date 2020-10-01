@@ -11,6 +11,79 @@ import static org.junit.Assert.*;
 public class DotConcurrentFactoryTest {
 
     @Test
+    public void testDefaultOne_Submitter_Conifg() throws JSONException{
+
+        final String submitterName = "testsubmitter";
+        final DotConcurrentFactory dotConcurrentFactory =
+                DotConcurrentFactory.getInstance();
+
+        final DotSubmitter submitter =
+                dotConcurrentFactory.getSubmitter(submitterName,
+                        new DotConcurrentFactory.SubmitterConfigCreatorBuilder().poolSize(2)
+                        .maxPoolSize(4).queueCapacity(500).build()
+                );
+
+        System.out.println(submitter);
+
+        IntStream.range(0, 40).forEach(
+                n -> {
+
+                    if (n % 10 == 0) {
+
+                        System.out.println(submitter);
+                    }
+                    submitter.execute(new PrintTask("Thread" + n));
+                }
+        );
+
+        //check active thread, if zero then shut down the thread pool
+        for (;;) {
+            int count = submitter.getActiveCount();
+            System.out.println("Active Threads : " + count);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (count == 0) {
+                //submitter.shutdown();
+                break;
+            }
+        }
+
+        System.out.print("Staring a new one submitter");
+
+        final DotSubmitter submitter2 =
+                dotConcurrentFactory.getSubmitter(submitterName);
+
+        System.out.println(submitter2);
+
+        assertTrue(submitter == submitter2);
+
+        IntStream.range(0, 20).forEach(
+                n -> {
+                    submitter2.execute(new PrintTask("Thread" + n));
+                }
+        );
+
+        //check active thread, if zero then shut down the thread pool
+        for (;;) {
+            int count = submitter2.getActiveCount();
+            System.out.println("Active Threads : " + count);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (count == 0) {
+                submitter2.shutdown();
+                break;
+            }
+        }
+
+    }
+
+    @Test
     public void testDefaultOne() throws JSONException{
 
         final DotConcurrentFactory dotConcurrentFactory =
