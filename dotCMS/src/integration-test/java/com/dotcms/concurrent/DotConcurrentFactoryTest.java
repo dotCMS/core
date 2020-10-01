@@ -2,6 +2,7 @@ package com.dotcms.concurrent;
 
 import com.dotmarketing.util.json.JSONException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -10,8 +11,9 @@ import static org.junit.Assert.*;
 
 public class DotConcurrentFactoryTest {
 
+    @Ignore
     @Test
-    public void testDefaultOne_Submitter_Conifg() throws JSONException{
+    public void testDefaultOne_Submitter_Config() throws JSONException{
 
         final String submitterName = "testsubmitter";
         final DotConcurrentFactory dotConcurrentFactory =
@@ -83,6 +85,89 @@ public class DotConcurrentFactoryTest {
 
     }
 
+    @Ignore
+    @Test
+    public void testDefaultOne_Submitter_Config_shutdown_keep_config() throws JSONException{
+
+        final String submitterName = "testsubmitter";
+        final DotConcurrentFactory dotConcurrentFactory =
+                DotConcurrentFactory.getInstance();
+
+        final DotSubmitter submitter =
+                dotConcurrentFactory.getSubmitter(submitterName,
+                        new DotConcurrentFactory.SubmitterConfigCreatorBuilder().poolSize(2)
+                                .maxPoolSize(4).queueCapacity(500).build()
+                );
+
+        System.out.println(submitter);
+
+        IntStream.range(0, 40).forEach(
+                n -> {
+
+                    if (n % 10 == 0) {
+
+                        System.out.println(submitter);
+                    }
+                    submitter.execute(new PrintTask("Thread" + n));
+                }
+        );
+
+        assertEquals(2, submitter.getPoolSize());
+        assertEquals(4, submitter.getMaxPoolSize());
+
+        //check active thread, if zero then shut down the thread pool
+        for (;;) {
+            int count = submitter.getActiveCount();
+            System.out.println("Active Threads : " + count);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (count == 0) {
+                //submitter.shutdown();
+                break;
+            }
+        }
+
+        submitter.shutdown();
+
+        System.out.print("Staring a new one submitter");
+
+        final DotSubmitter submitter2 =
+                dotConcurrentFactory.getSubmitter(submitterName);
+
+        System.out.println(submitter2);
+
+        assertFalse(submitter == submitter2);
+
+        IntStream.range(0, 20).forEach(
+                n -> {
+                    submitter2.execute(new PrintTask("Thread" + n));
+                }
+        );
+
+        assertEquals(2, submitter2.getPoolSize());
+        assertEquals(4, submitter2.getMaxPoolSize());
+
+        //check active thread, if zero then shut down the thread pool
+        for (;;) {
+            int count = submitter2.getActiveCount();
+            System.out.println("Active Threads : " + count);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (count == 0) {
+                submitter2.shutdown();
+                break;
+            }
+        }
+
+    }
+
+    @Ignore
     @Test
     public void testDefaultOne() throws JSONException{
 
@@ -185,7 +270,7 @@ public class DotConcurrentFactoryTest {
      * 
      * @throws Exception
      */
-    
+    @Ignore
     @Test
     public void test_delayed_queue() throws Exception{
         
@@ -207,13 +292,6 @@ public class DotConcurrentFactoryTest {
         
         // all of the jobs have been run
         assert(aInt.get()==50);
-        
-        
-    
-    
-    
     }
-    
-    
-    
+
 }

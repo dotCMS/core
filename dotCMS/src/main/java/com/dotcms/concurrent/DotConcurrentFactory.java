@@ -616,6 +616,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             }
 
             DotConcurrentFactory.this.subscribeDelayQueue (this.delayedQueue);
+
         } // DotConcurrentImpl.
 
         final BlockingQueue<Runnable> createQueue(final int queueCapacity) {
@@ -627,6 +628,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         final ThreadPoolExecutor getThreadPoolExecutor() {
 
             return this.threadPoolExecutor;
+        }
+
+        @Override
+        public int getPoolSize() {
+            return this.threadPoolExecutor.getPoolSize();
+        }
+
+        @Override
+        public int getMaxPoolSize() {
+            return this.threadPoolExecutor.getMaximumPoolSize();
         }
 
         @Override
