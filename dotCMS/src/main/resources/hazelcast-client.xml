@@ -20,7 +20,7 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <group>
-        <name>dev</name>
+        <name>dev-sender</name>
         <password>dev-pass</password>
     </group>
 <!--    <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key> -->

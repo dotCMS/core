@@ -26,7 +26,7 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-3.9.xsd">
     <group>
-        <name>dev</name>
+        <name>dev-sender</name>
         <password>dev-pass</password>
     </group>
     <properties>
