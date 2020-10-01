@@ -15,6 +15,7 @@ import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
+import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.PublisherFilterImplTest;
@@ -322,7 +323,8 @@ import org.junit.runners.Suite.SuiteClasses;
         DotStatefulJobTest.class,
         FolderFactoryImplTest.class,
         FolderFactoryImplTest.class,
-        IntegrityDataGenerationJobTest.class
+        IntegrityDataGenerationJobTest.class,
+        BundleAPITest.class
 })
 public class MainSuite {
 
