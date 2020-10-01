@@ -7,26 +7,24 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 /**
  * Stolen from @author jsanca
  */
-@JsonDeserialize(builder = DownloadBundleForm.Builder.class)
-public class DownloadBundleForm {
+@JsonDeserialize(builder = GenerateBundleForm.Builder.class)
+public class GenerateBundleForm {
 
     public final String bundleId;
-    public final String userId;
     public PushPublisherConfig.Operation operation;
     public final String filterKey;
 
-    private DownloadBundleForm(final Builder builder) {
+    private GenerateBundleForm(final Builder builder) {
 
         this.bundleId = builder.bundleId;
         this.operation = builder.operation == PushPublisherConfig.Operation.PUBLISH.ordinal() ? PushPublisherConfig.Operation.PUBLISH : PushPublisherConfig.Operation.UNPUBLISH;
         this.filterKey = builder.filterKey;
-        this.userId = builder.userId;
     }
 
 
     @Override
     public String toString() {
-        return "{bundleId=" + bundleId + ", userId=" + userId + ", operation=" + operation + ", filter=" + filterKey + "}";
+        return "{bundleId=" + bundleId + ", operation=" + operation + ", filter=" + filterKey + "}";
     }
 
 
@@ -35,7 +33,6 @@ public class DownloadBundleForm {
         private @JsonProperty String bundleId = null;
         private @JsonProperty String filterKey = null;
         private @JsonProperty int operation = 0;
-        private @JsonProperty String userId = null;
 
         public Builder bundleId(final String bundleId) {
             this.bundleId = bundleId;
@@ -52,13 +49,8 @@ public class DownloadBundleForm {
             return this;
         }
 
-        public Builder userId(final String userId) {
-            this.userId = userId;
-            return this;
-        }
-
-        public DownloadBundleForm build() {
-            return new DownloadBundleForm(this);
+        public GenerateBundleForm build() {
+            return new GenerateBundleForm(this);
         }
 
     }

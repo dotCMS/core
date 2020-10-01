@@ -25,6 +25,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -637,34 +638,45 @@ public class BundleResource {
                 "Removing bundles in a separated process, the result of the operation will be notified")).build();
     } // deleteAllSuccess.
 
-    
+
     @Path("/_download/{bundleId}")
     @GET
     @JSONP
     @NoCache
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    @Consumes(MediaType.APPLICATION_JSON)
     public final Response downloadBundle(@Context final HttpServletRequest request,
-                                       @Context final HttpServletResponse response,
-                                       @PathParam("bundleId") final String bundleId) throws DotPublisherException {
-    
-        User user = new WebResource.InitBuilder(request, response)
+            @Context final HttpServletResponse response,
+            @PathParam("bundleId") final String bundleId) {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
                         .requiredBackendUser(true)
+                        .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
                         .requiredPortlet("publishing-queue")
-                        .init()
-                        .getUser();
-        
-
-        final Bundle bundle = Try.of(()->APILocator.getBundleAPI().getBundleById(bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
-
-        File bundleFile = new File(  ConfigUtils.getBundlePath() + File.separator + File.separator + bundle.getId() + ".tar.gz" );
-        if ( !bundleFile.exists() ) {
-            return ExceptionMapperUtil.createResponse(javax.ws.rs.core.Response.Status.NOT_FOUND);
+                        .init();
+        try {
+            final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+            if (!UtilMethods.isSet(bundle)) {
+                throw new DoesNotExistException("Bundle with ID: " + bundleId + " not found");
+            }
+            final File bundleFile = new File(
+                    ConfigUtils.getBundlePath() + File.separator + bundle.getId() + ".tar.gz");
+            if (!bundleFile.exists()) {
+                throw new DoesNotExistException(
+                        "The bundle has not been generated for the provided bundle ID: "
+                                + bundleId);
+            }
+            final String bundleName = bundle.getName().replaceAll("[^\\w.-]", "_");
+            response.setHeader( "Content-Disposition", "attachment; filename=" +bundleName  +"-"+ bundle.getId() + ".tar.gz" );
+            return Response.ok(bundleFile, "application/x-tgz").build();
+        }catch (DoesNotExistException e){
+            Logger.error(this,e.getMessage());
+            return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.NOT_FOUND);
+        }catch (Exception e){
+            Logger.error(this,e.getMessage());
+            return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.INTERNAL_SERVER_ERROR);
         }
-        final String bundleName = bundle.getName().replaceAll("[^\\w.-]", "_");
-        response.setHeader( "Content-Disposition", "attachment; filename=" +bundleName  +"-"+ bundle.getId() + ".tar.gz" );
-        return Response.ok(bundleFile, "application/x-tgz").build();
     }
     
     @Path("/_generate")
@@ -674,45 +686,45 @@ public class BundleResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public final Response generateBundle(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       final DownloadBundleForm form) throws DotPublisherException, DotDataException {
+                                       final GenerateBundleForm form) {
 
 
-        User user = new WebResource.InitBuilder(request, response)
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
                         .requiredBackendUser(true)
+                        .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
                         .requiredPortlet("publishing-queue")
-                        .init()
-                        .getUser();
-
-
-
+                        .init();
+        final User user = initData.getUser();
         try {
-
-            final Bundle bundle = Try.of(()->APILocator.getBundleAPI().getBundleById(form.bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
-            
-            
-            final String bundleName = bundle.getName().replaceAll("[^\\w.-]", "_");
+            final Bundle bundle = APILocator.getBundleAPI().getBundleById(form.bundleId);
+            if (!UtilMethods.isSet(bundle)) {
+                throw new DoesNotExistException("Bundle with ID: " + form.bundleId + " not found");
+            }
             
             //set Filter to the bundle
-            bundle.setFilterKey(form.filterKey);
+            final FilterDescriptor filter = APILocator.getPublisherAPI().getFilterDescriptorByKey(form.filterKey);
+            bundle.setFilterKey(filter.getKey());
             bundle.setOwner(user.getUserId());
             //set ForcePush value of the filter to the bundle
             bundle.setForcePush(
-                    (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(form.filterKey).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false));
+                    (boolean) filter.getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false));
             bundle.setOperation(form.operation.ordinal());
             //Update Bundle
             APILocator.getBundleAPI().updateBundle(bundle);
 
             //Generate the bundle file for this given operation
 
-            BundleGenerator generator = new BundleGenerator(bundle, user);
+            final BundleGenerator generator = new BundleGenerator(bundle, user);
             
             DotConcurrentFactory.getInstance().getSubmitter().submit(generator);
+            final String bundleName = bundle.getName().replaceAll("[^\\w.-]", "_");
             response.setContentType( "application/x-tgz" );
-            response.setHeader( "Content-Disposition", "attachment; filename=" +bundleName  +"-"+ bundle.getId() + ".tar.gz" );
+            response.setHeader( "Content-Disposition", "attachment; filename=" + bundleName  +"-"+ bundle.getId() + ".tar.gz" );
             final byte whiteByte = 0x20;
             
-            final long nowsers = System.currentTimeMillis();
+            final long nowTimeMillis = System.currentTimeMillis();
             
             // 10 secs
             final int sleep = 1000;
@@ -721,20 +733,21 @@ public class BundleResource {
             int loop = sleep * 60 * 120;
             try(final OutputStream outStream = response.getOutputStream()){
                 while(generator.bundleFile==null) {
-                    Logger.infoEvery(this.getClass(), "writing bundleId:" + bundle.getId() + " time elapsed:" + Duration.ofMillis(System.currentTimeMillis()-nowsers).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase(), 10000);
+                    Logger.infoEvery(this.getClass(), "writing bundleId:" + bundle.getId() + " time elapsed:" + Duration.ofMillis(System.currentTimeMillis()-nowTimeMillis).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase(), 10000);
                     outStream.write(whiteByte);
                     outStream.flush();
                     Try.run(()->Thread.sleep(sleep));
                     if(--loop<=0)break;
                 }
-        
-                
+
                 return Response.ok(generator.bundleFile, "application/x-tgz").build();
             }
-        } catch ( Exception e ) {
-            Logger.error( this.getClass(), "Error trying to generate bundle with id: " + form, e );
-
-            return ExceptionMapperUtil.createResponse(e, javax.ws.rs.core.Response.Status.fromStatusCode(500));
+        }catch (DoesNotExistException e){
+            Logger.error(this,e.getMessage());
+            return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.NOT_FOUND);
+        }catch (Exception e){
+            Logger.error(this,e.getMessage());
+            return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.INTERNAL_SERVER_ERROR);
         }
         
 

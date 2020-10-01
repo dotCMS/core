@@ -17,11 +17,9 @@ public class GenerateBundlePublisher extends PushPublisher {
 
     @Override
     public PublisherConfig process(PublishStatus status) throws DotPublishingException {
-        File bundleRoot = BundlerUtil.getBundleRoot(this.config);
-        Logger.info(this.getClass(), "Bundling Complete:" + bundleRoot);
+        final File bundleRoot = BundlerUtil.getBundleRoot(this.config);
+        Logger.info(this.getClass(), "Bundling Complete: " + bundleRoot);
         return this.config;
-        
-        
     }
     
     

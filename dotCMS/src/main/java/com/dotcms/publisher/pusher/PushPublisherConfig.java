@@ -55,7 +55,7 @@ public class PushPublisherConfig extends PublisherConfig {
      * 
      * @param bundle
      */
-    public PushPublisherConfig(Bundle bundle) {
+    public PushPublisherConfig(final Bundle bundle) {
         super();
 
         final PublisherAPI publisherAPI = PublisherAPI.getInstance();

@@ -88,12 +88,12 @@ public class Bundle {
 	}
 
 	/**
-	 * does the bundle download Exists
-	 * @return
+	 * Checks if the bundle was already generated based on the id: BUNDLE_ID.tar.gz
+	 * @return boolean - true if the bundle exists.
 	 */
 	public boolean bundleTgzExists() {
 	    
-	    return Try.of(()->new File(  ConfigUtils.getBundlePath() + File.separator + File.separator + id + ".tar.gz" ).exists()).getOrElse(false);
+	    return Try.of(()->new File(  ConfigUtils.getBundlePath() + File.separator + id + ".tar.gz" ).exists()).getOrElse(false);
 	    
 	    
 	}
