@@ -44,7 +44,7 @@ public class TestJobExecutor {
         }
     }
 
-    private static class TriggerFiredBundleTest extends TriggerFiredBundle {
+    public static class TriggerFiredBundleTest extends TriggerFiredBundle {
         TriggerFiredBundleTest(JobDetail jobDetail){
             super(jobDetail , new TriggerTest(), null, false,null, null, null, null);
         }

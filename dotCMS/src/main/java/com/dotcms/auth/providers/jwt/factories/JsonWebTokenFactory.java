@@ -220,7 +220,6 @@ public class JsonWebTokenFactory implements Serializable {
         
         @Override
         public JWToken parseToken(final String jsonWebToken, final String requestingIp) {
-
             final Jws<Claims> jws = Jwts.parser().setSigningKey(this.getSigningKey()).parseClaimsJws(jsonWebToken);
             
             return validateToken(jws, resolveJWTokenType(jws), requestingIp);

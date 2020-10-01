@@ -135,10 +135,10 @@ public class DataSourceStrategyProviderTest {
             throws IllegalAccessException, InstantiationException, ClassNotFoundException {
 
         final DataSourceStrategyProvider provider = Mockito.spy(DataSourceStrategyProvider.class);
-        final SystemEnvironmentProperties properties = Mockito.spy(SystemEnvironmentProperties.class);
-        final DBPropertiesDataSourceStrategy dbStrategy = Mockito.spy(DBPropertiesDataSourceStrategy.class);
-        final SystemEnvDataSourceStrategy systemEnvStrategy = Mockito.spy(SystemEnvDataSourceStrategy.class);
-        final DockerSecretDataSourceStrategy dockerSecretStrategy = Mockito.spy(DockerSecretDataSourceStrategy.class);
+        final SystemEnvironmentProperties properties = Mockito.mock(SystemEnvironmentProperties.class);
+        final DBPropertiesDataSourceStrategy dbStrategy = Mockito.mock(DBPropertiesDataSourceStrategy.class);
+        final SystemEnvDataSourceStrategy systemEnvStrategy = Mockito.mock(SystemEnvDataSourceStrategy.class);
+        final DockerSecretDataSourceStrategy dockerSecretStrategy = Mockito.mock(DockerSecretDataSourceStrategy.class);
         final TomcatDataSourceStrategy tomcatDataSourceStrategy = Mockito.mock(TomcatDataSourceStrategy.class);
 
         final HikariDataSource dummyDatasource = new HikariDataSource();
