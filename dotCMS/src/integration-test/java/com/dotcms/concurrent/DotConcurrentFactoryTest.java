@@ -1,5 +1,6 @@
 package com.dotcms.concurrent;
 
+import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
 import com.dotmarketing.util.json.JSONException;
 
 import org.junit.Ignore;
@@ -21,7 +22,7 @@ public class DotConcurrentFactoryTest {
 
         final DotSubmitter submitter =
                 dotConcurrentFactory.getSubmitter(submitterName,
-                        new DotConcurrentFactory.SubmitterConfigCreatorBuilder().poolSize(2)
+                        new SubmitterConfigBuilder().poolSize(2)
                         .maxPoolSize(4).queueCapacity(500).build()
                 );
 
@@ -95,7 +96,7 @@ public class DotConcurrentFactoryTest {
 
         final DotSubmitter submitter =
                 dotConcurrentFactory.getSubmitter(submitterName,
-                        new DotConcurrentFactory.SubmitterConfigCreatorBuilder().poolSize(2)
+                        new SubmitterConfigBuilder().poolSize(2)
                                 .maxPoolSize(4).queueCapacity(500).build()
                 );
 

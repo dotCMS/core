@@ -77,7 +77,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     /**
      * Creator map
      */
-    private final Map<String, SubmitterConfigCreator> submitterConfigCreatorMap =
+    private final Map<String, SubmitterConfig> submitterConfigCreatorMap =
             new ConcurrentHashMap<>();
 
     /**
@@ -278,10 +278,10 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     /**
      * Register a submitter creator and gets the submitter
      * @param name    {@link String}
-     * @param creator {@link SubmitterConfigCreator}
+     * @param creator {@link SubmitterConfig}
      * @return DotSubmitter
      */
-    public DotSubmitter getSubmitter (final String name, final SubmitterConfigCreator creator) {
+    public DotSubmitter getSubmitter (final String name, final SubmitterConfig creator) {
 
         this.registerSubmitterCreator(name, creator);
         return this.getSubmitter(name);
@@ -292,7 +292,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      * @param name
      * @param creator
      */
-    public void registerSubmitterCreator (final String name, final SubmitterConfigCreator creator) {
+    public void registerSubmitterCreator (final String name, final SubmitterConfig creator) {
 
         this.submitterConfigCreatorMap.putIfAbsent(name, creator);
     }
@@ -380,9 +380,9 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     }
 
     /**
-     * {@link SubmitterConfigCreator} builder
+     * {@link SubmitterConfig} builder
      */
-    public static class SubmitterConfigCreatorBuilder {
+    public static class SubmitterConfigBuilder {
 
         private ThreadFactory            threadFactory;
         private RejectedExecutionHandler rejectedExecutionHandler;
@@ -392,76 +392,76 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         private Long    keepAliveMillis;
         private Integer queueCapacity;
 
-        public SubmitterConfigCreatorBuilder defaultThreadFactory(final ThreadFactory threadFactory) {
+        public SubmitterConfigBuilder defaultThreadFactory(final ThreadFactory threadFactory) {
             this.threadFactory = threadFactory; return this;
         }
 
-        public SubmitterConfigCreatorBuilder rejectedExecutionHandler(final RejectedExecutionHandler rejectedExecutionHandler) {
+        public SubmitterConfigBuilder rejectedExecutionHandler(final RejectedExecutionHandler rejectedExecutionHandler) {
             this.rejectedExecutionHandler = rejectedExecutionHandler;  return this;
         }
 
-        public SubmitterConfigCreatorBuilder allowCoreThreadTimeOut(final boolean allowCoreThreadTimeOut) {
+        public SubmitterConfigBuilder allowCoreThreadTimeOut(final boolean allowCoreThreadTimeOut) {
             this.allowCoreThreadTimeOut = allowCoreThreadTimeOut; return this;
         }
 
-        public SubmitterConfigCreatorBuilder poolSize (final int poolSize) {
+        public SubmitterConfigBuilder poolSize (final int poolSize) {
             this.poolSize = poolSize; return this;
         }
 
-        public SubmitterConfigCreatorBuilder maxPoolSize (final int maxPoolSize) {
+        public SubmitterConfigBuilder maxPoolSize (final int maxPoolSize) {
             this.maxPoolSize = maxPoolSize; return this;
         }
 
-        public SubmitterConfigCreatorBuilder  keepAliveMillis(final long keepAliveMillis) {
+        public SubmitterConfigBuilder keepAliveMillis(final long keepAliveMillis) {
             this.keepAliveMillis = keepAliveMillis; return this;
         }
 
-        public SubmitterConfigCreatorBuilder queueCapacity(final int queueCapacity) {
+        public SubmitterConfigBuilder queueCapacity(final int queueCapacity) {
             this.queueCapacity = queueCapacity; return this;
         }
 
-        public SubmitterConfigCreator build () {
-            return new SubmitterConfigCreator() {
+        public SubmitterConfig build () {
+            return new SubmitterConfig() {
                 @Override
                 public ThreadFactory getDefaultThreadFactory() {
-                    return null != SubmitterConfigCreatorBuilder.this.threadFactory?
-                            SubmitterConfigCreatorBuilder.this.threadFactory: SubmitterConfigCreator.super.getDefaultThreadFactory();
+                    return null != SubmitterConfigBuilder.this.threadFactory?
+                            SubmitterConfigBuilder.this.threadFactory: SubmitterConfig.super.getDefaultThreadFactory();
                 }
 
                 @Override
                 public RejectedExecutionHandler getRejectedExecutionHandler() {
-                    return null != SubmitterConfigCreatorBuilder.this.rejectedExecutionHandler?
-                            SubmitterConfigCreatorBuilder.this.rejectedExecutionHandler: SubmitterConfigCreator.super.getRejectedExecutionHandler();
+                    return null != SubmitterConfigBuilder.this.rejectedExecutionHandler?
+                            SubmitterConfigBuilder.this.rejectedExecutionHandler: SubmitterConfig.super.getRejectedExecutionHandler();
                 }
 
                 @Override
                 public boolean getAllowCoreThreadTimeOut() {
-                    return null != SubmitterConfigCreatorBuilder.this.allowCoreThreadTimeOut?
-                            SubmitterConfigCreatorBuilder.this.allowCoreThreadTimeOut: SubmitterConfigCreator.super.getAllowCoreThreadTimeOut();
+                    return null != SubmitterConfigBuilder.this.allowCoreThreadTimeOut?
+                            SubmitterConfigBuilder.this.allowCoreThreadTimeOut: SubmitterConfig.super.getAllowCoreThreadTimeOut();
                 }
 
                 @Override
                 public int getPoolSize() {
-                    return null != SubmitterConfigCreatorBuilder.this.poolSize?
-                            SubmitterConfigCreatorBuilder.this.poolSize: SubmitterConfigCreator.super.getPoolSize();
+                    return null != SubmitterConfigBuilder.this.poolSize?
+                            SubmitterConfigBuilder.this.poolSize: SubmitterConfig.super.getPoolSize();
                 }
 
                 @Override
                 public int getMaxPoolSize() {
-                    return null != SubmitterConfigCreatorBuilder.this.maxPoolSize?
-                            SubmitterConfigCreatorBuilder.this.maxPoolSize: SubmitterConfigCreator.super.getMaxPoolSize();
+                    return null != SubmitterConfigBuilder.this.maxPoolSize?
+                            SubmitterConfigBuilder.this.maxPoolSize: SubmitterConfig.super.getMaxPoolSize();
                 }
 
                 @Override
                 public long getKeepAliveMillis() {
-                    return null != SubmitterConfigCreatorBuilder.this.keepAliveMillis?
-                            SubmitterConfigCreatorBuilder.this.keepAliveMillis: SubmitterConfigCreator.super.getKeepAliveMillis();
+                    return null != SubmitterConfigBuilder.this.keepAliveMillis?
+                            SubmitterConfigBuilder.this.keepAliveMillis: SubmitterConfig.super.getKeepAliveMillis();
                 }
 
                 @Override
                 public int getQueueCapacity() {
-                    return null != SubmitterConfigCreatorBuilder.this.queueCapacity?
-                            SubmitterConfigCreatorBuilder.this.queueCapacity: SubmitterConfigCreator.super.getQueueCapacity();
+                    return null != SubmitterConfigBuilder.this.queueCapacity?
+                            SubmitterConfigBuilder.this.queueCapacity: SubmitterConfig.super.getQueueCapacity();
                 }
             };
         }
@@ -470,7 +470,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     /**
      * In case you want to configure by code.
      */
-    public interface SubmitterConfigCreator {
+    public interface SubmitterConfig {
 
         /**
          * Returns "Executors.defaultThreadFactory()"
