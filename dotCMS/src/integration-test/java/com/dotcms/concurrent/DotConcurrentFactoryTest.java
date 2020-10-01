@@ -3,7 +3,6 @@ package com.dotcms.concurrent;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
 import com.dotmarketing.util.json.JSONException;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,7 +11,6 @@ import static org.junit.Assert.*;
 
 public class DotConcurrentFactoryTest {
 
-    @Ignore
     @Test
     public void testDefaultOne_Submitter_Config() throws JSONException{
 
@@ -86,7 +84,6 @@ public class DotConcurrentFactoryTest {
 
     }
 
-    @Ignore
     @Test
     public void testDefaultOne_Submitter_Config_shutdown_keep_config() throws JSONException{
 
@@ -168,7 +165,6 @@ public class DotConcurrentFactoryTest {
 
     }
 
-    @Ignore
     @Test
     public void testDefaultOne() throws JSONException{
 
@@ -271,7 +267,6 @@ public class DotConcurrentFactoryTest {
      * 
      * @throws Exception
      */
-    @Ignore
     @Test
     public void test_delayed_queue() throws Exception{
         
