@@ -434,17 +434,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 	@Override
 	protected void deleteContentletVersionInfo(String id, long lang) throws DotDataException {
-		HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
-        dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? and lang=?");
-        dh.setParam(id);
-        dh.setParam(lang);
-        Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
-        ContentletVersionInfo contv = (ContentletVersionInfo)dh.load();
-
-        if(UtilMethods.isSet(contv.getIdentifier())) {
-        	HibernateUtil.delete(contv);
-        	this.icache.removeContentletVersionInfoToCache(id, lang);
-        }
+		new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE identifier=? AND lang=?")
+				.addParam(id).addParam(lang).loadResult();
+		this.icache.removeContentletVersionInfoToCache(id, lang);
 	}
 
 	/**

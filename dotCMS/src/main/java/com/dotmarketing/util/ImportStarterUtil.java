@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -674,7 +675,9 @@ public class ImportStarterUtil {
                 String id;
                 if (_importClass.equals(Relationship.class)) {
                     id = "inode";
-                } else {
+                } else if(_importClass.equals(ContentletVersionInfo.class)) {
+                    id = "identifier";
+                }else {
                     _dh = new HibernateUtil(_importClass);
                     id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass)
                                     .getIdentifierPropertyName();
@@ -723,6 +726,9 @@ public class ImportStarterUtil {
                                         APILocator.getRelationshipAPI().save(Relationship.class.cast(obj), rel.getInode());
                                     }
 
+                                } else if (obj instanceof ContentletVersionInfo) {
+                                    ContentletVersionInfo cvi = (ContentletVersionInfo) obj;
+                                    APILocator.getVersionableAPI().saveContentletVersionInfo(cvi);
                                 } else {
 
                                     Logger.debug(this, "Saving the object: " + obj.getClass() + ", with the id: " + prop);

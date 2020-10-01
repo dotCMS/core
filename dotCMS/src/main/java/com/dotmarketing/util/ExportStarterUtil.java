@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -167,6 +168,10 @@ public class ExportStarterUtil {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM relationship order by inode")
                                 .setStartRow(i).setMaxRows(step);
+                    } else if (ContentletVersionInfo.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM contentlet_version_info ORDER BY identifier")
+                                .setStartRow(i).setMaxRows(step);
                     }
                     else {
                         _dh.setQuery("from " + clazz.getName() + " order by 1");
@@ -181,6 +186,10 @@ public class ExportStarterUtil {
                     } else if (Relationship.class.equals(clazz)) {
                         _list = TransformerLocator
                                 .createRelationshipTransformer(dc.loadObjectResults()).asList();
+                    } else if (ContentletVersionInfo.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createContentletVersionInfoTransformer(dc.loadObjectResults())
+                                .asList();
                     } else {
                         _list = _dh.list();
                     }
