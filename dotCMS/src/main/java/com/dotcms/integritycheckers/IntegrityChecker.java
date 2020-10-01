@@ -68,12 +68,13 @@ public interface IntegrityChecker {
      * When there is conflicts, this method will fix them depending of the
      * implementation of every checker
      * 
-     * @param endpointId
-     *            Server identifier were we need to fix conflicts
+     * @param key
+     *            JWT Token key when using JWT token in Push Publish or
+     *            Server identifier were we need to fix conflicts when not using JWT token
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public void executeFix(final String endpointId) throws DotDataException, DotSecurityException;
+    public void executeFix(final String key) throws DotDataException, DotSecurityException;
 
     /**
      * Get temporal table names for an specific endpoint id.

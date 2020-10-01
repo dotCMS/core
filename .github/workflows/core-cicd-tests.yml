@@ -27,17 +27,24 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+      - name: Get the latest commit on PR
+        id: get-latest-commit
+        uses: ActionsRML/get-PR-latest-commit@v1
+        if: github.event_name == 'pull_request'
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
+            COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
             CURRENT_BRANCH=$(basename "${{ github.ref }}")
+            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
+          echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo ::set-env name=CURRENT_BRANCH::${CURRENT_BRANCH}
 
-          if [[ "${{ github.event_name }}" == "pull_request" || ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ github-all|github-unit ]]; then
+          if [[ "${{ github.event_name }}" == 'pull_request' || ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
             echo ::set-env name=jobRun::'true'
           else
             echo ::set-env name=jobRun::'false'
@@ -84,9 +91,13 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+      - name: Get the latest commit on PR
+        id: get-latest-commit
+        uses: ActionsRML/get-PR-latest-commit@v1
+        if: github.event_name == 'pull_request'
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
             IS_PR=true
           else
             IS_PR=false
@@ -94,13 +105,15 @@ jobs:
 
           if [[ ${IS_PR} == true ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
-            COMMIT_MESSG=$(git log -1 --pretty=format:%s)
+            COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
             CURRENT_BRANCH=$(basename "${{ github.ref }}")
             COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
+          echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo ::set-env name=CURRENT_BRANCH::"${CURRENT_BRANCH}"
+          echo ::set-env name=COMMIT_MESSG::${COMMIT_MESSG}
 
           if [[ ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* ]]; then
             SPECIAL_BRANCH=true
@@ -108,7 +121,7 @@ jobs:
             SPECIAL_BRANCH=false
           fi
 
-          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-postgres|github-mysql|github-oracle|github-mssql|github-unit ]]; then
+          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
             echo ::set-env name=jobRun::'true'
           else
             echo ::set-env name=jobRun::'false'
@@ -165,9 +178,13 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+      - name: Get the latest commit on PR
+        id: get-latest-commit
+        uses: ActionsRML/get-PR-latest-commit@v1
+        if: github.event_name == 'pull_request'
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
             IS_PR=true
           else
             IS_PR=false
@@ -175,13 +192,15 @@ jobs:
 
           if [[ ${IS_PR} == true ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
-            COMMIT_MESSG=$(git log -1 --pretty=format:%s)
+            COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
             CURRENT_BRANCH=$(basename "${{ github.ref }}")
             COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
+          echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo ::set-env name=CURRENT_BRANCH::${CURRENT_BRANCH}
+          echo ::set-env name=COMMIT_MESSG::${COMMIT_MESSG}
 
           if [[ ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* ]]; then
             SPECIAL_BRANCH=true
@@ -195,28 +214,28 @@ jobs:
             PUSH_AND_SPECIAL_BRANCH=false
           fi
 
-          if [[ (! ${COMMIT_MESSG} =~ github-mysql|github-oracle|github-mssql) || ${COMMIT_MESSG} =~ github-all|github-postgres ]]; then
+          if [[ (! ${COMMIT_MESSG} =~ run-mysql|run-oracle|run-mssql) || ${COMMIT_MESSG} =~ run-all|run-postgres ]]; then
             RUN_POSTGRES=true
           else
             RUN_POSTGRES=false
           fi
           echo ::set-env name=runPostgres::"${RUN_POSTGRES}"
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-mysql ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mysql ]]; then
             RUN_MYSQL=true
           else
             RUN_MYSQL=false
           fi
           echo ::set-env name=runMysql::"${RUN_MYSQL}"
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-oracle ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-oracle ]]; then
             RUN_ORACLE=true
           else
             RUN_ORACLE=false
           fi
           echo ::set-env name=runOracle::"${RUN_ORACLE}"
 
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-mssql ]]; then
+          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mssql ]]; then
             RUN_MSSQL=true
           else
             RUN_MSSQL=false
@@ -224,7 +243,7 @@ jobs:
           echo ::set-env name=runMssql::"${RUN_MSSQL}"
 
           echo ::set-env name=jobRun::'false'
-          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ github-all|github-postgres|github-mysql|github-oracle|github-mssql|github-unit ]]; then
+          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-postgres|run-mysql|run-oracle|run-mssql|run-unit ]]; then
             if [[ (${RUN_POSTGRES} == true && "${{ matrix.databaseType }}" == 'postgres') || (${RUN_MYSQL} == true && "${{ matrix.databaseType }}" == 'mysql') || (${RUN_ORACLE}  == true && "${{ matrix.databaseType }}" == 'oracle') || (${RUN_MSSQL} == true && "${{ matrix.databaseType }}" == 'mssql') ]]; then
               echo ::set-env name=jobRun::'true'
             fi
@@ -270,7 +289,7 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
             echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
           else
             echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
@@ -282,3 +301,4 @@ jobs:
         with:
           github-user: ${{ github.actor }}
           branch: ${{ env.CURRENT_BRANCH }}
+
