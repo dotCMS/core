@@ -33,6 +33,7 @@ import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
@@ -49,15 +50,18 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Key;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -728,7 +732,7 @@ public class AppsAPIImplTest {
 
     }
 
-    private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(APILocator.getUserAPI(),
+    private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(
             APILocator.getLayoutAPI(),
             APILocator.getHostAPI(), APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
             CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
@@ -792,6 +796,42 @@ public class AppsAPIImplTest {
         final User admin = TestUserUtils.getAdminUser();
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
         nonValidLicenseAppsAPI.getSecrets("anyKey", true, systemHost, admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#exportSecrets
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Export_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException, IOException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        //AES only supports key sizes of 16, 24 or 32 bytes.
+        final String password = RandomStringUtils.randomAlphanumeric(32);
+        final Key key = AppsUtil.generateKey(password);
+        nonValidLicenseAppsAPI.exportSecrets(key,true,ImmutableMap.of(),admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#importSecretsAndSave
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Import_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        //AES only supports key sizes of 16, 24 or 32 bytes.
+        final String password = RandomStringUtils.randomAlphanumeric(32);
+        final Key key = AppsUtil.generateKey(password);
+        //any file would do we're just testing license
+        final Path path = File.createTempFile("fileName1", "txt").toPath();
+        nonValidLicenseAppsAPI.importSecretsAndSave(path, key, admin);
     }
 
     /**
@@ -1025,6 +1065,7 @@ public class AppsAPIImplTest {
     }
 
     /**
+     * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)} and {@link AppsAPIImpl#importSecrets(Path, Key, User)}
      * Given Scenario: This test creates secrets then exports them Then re-imports the file with the generated secrets.
      * Expected Result: The test should be Able to recreate the secrets from the generated file.
      * @throws DotDataException
@@ -1035,43 +1076,119 @@ public class AppsAPIImplTest {
      */
     @Test
     public void Test_Create_Secrets_Then_Export_Them_Then_Import_Then_Save()
-            throws DotDataException, DotSecurityException, IOException, EncryptorException, ClassNotFoundException {
+            throws DotDataException, DotSecurityException, IOException, EncryptorException, AlreadyExistException {
         final User admin = TestUserUtils.getAdminUser();
         final Host site = new SiteDataGen().nextPersisted();
         final AppsAPI api = APILocator.getAppsAPI();
+        //generate a descriptor
         final AppSecrets.Builder builder1 = new AppSecrets.Builder();
-        final String appKey = "appKey-1-Host-1";
-        final AppSecrets secrets = builder1.withKey(appKey)
-                .withHiddenSecret("test:secret1", "secret-1")
-                .withHiddenSecret("test:secret2", "secret-2")
-                .withHiddenSecret("test:secret3", "secret3")
-                .withHiddenSecret("test:secret4", "secret-4")
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .withName("system-app-example")
+                .withDescription("system-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+        api.createAppDescriptor(file, admin);
+
+        final String appKey = dataGen.getKey();
+        //generate secrets
+        AppSecrets secrets = builder1.withKey(appKey)
+                .withHiddenSecret("p1", "secret-1")
+                .withHiddenSecret("p2", "secret-2")
                 .build();
         //Save it
         api.saveSecrets(secrets, site, admin);
         final Optional<AppSecrets> secretsOptional = api.getSecrets(appKey, site, admin);
-        final AppSecrets appSecretsPostSave = secretsOptional.get();
+        Assert.assertTrue(secretsOptional.isPresent());
+        secrets = secretsOptional.get();
 
-        //AES only supports key sizes of 16, 24 or 32 bytes.
+        //AES only supports security Key of sizes of 16, 24 or 32 bytes.
         final String password = RandomStringUtils.randomAlphanumeric(32);
-        final Key key = AppsUtil.generateKey(password);
-        final Path exportSecretsFile = api.exportSecrets(key, true, null, admin);
+        final Key securityKey = AppsUtil.generateKey(password);
+
+        //Now that we have a valid key lets dump our selection of secrets
+        final Map<String,Set<String>> appKeysBySite = ImmutableMap.of(site.getIdentifier(), ImmutableSet.of(appKey));
+        final Path exportSecretsFile = api.exportSecrets(securityKey, false, appKeysBySite, admin);
         assertTrue(exportSecretsFile.toFile().exists());
 
-        //Remove so we can re import them.
+        //Remove the secret we dumped we can re import it.
         api.deleteSecrets(appKey, site, admin);
 
-        final Map<String, List<AppSecrets>> secretAppsBySiteId = api.importSecrets(exportSecretsFile, key, admin);
-        assertFalse(secretAppsBySiteId.isEmpty());
-        assertTrue(secretAppsBySiteId.containsKey(site.getIdentifier()));
-        final List<AppSecrets> appSecretsBySite = secretAppsBySiteId.get(site.getIdentifier());
-        assertFalse(appSecretsBySite.isEmpty());
-        final AppSecrets importedSecrets = appSecretsBySite.get(0);
-        assertEquals(importedSecrets, appSecretsPostSave);
+        //import it
+        api.importSecretsAndSave(exportSecretsFile, securityKey, admin);
 
-        api.saveSecrets(importedSecrets, site, admin);
+        //verify
         final Optional<AppSecrets> secretsOptionalPostImport = api.getSecrets(appKey, site, admin);
         assertTrue(secretsOptionalPostImport.isPresent());
+        final AppSecrets restoredSecrets = secretsOptionalPostImport.get();
+
+        assertEquals(restoredSecrets.getKey(),secrets.getKey());
+        assertEquals(restoredSecrets.getSecrets().size(),secrets.getSecrets().size());
+        for (final Entry<String, Secret> entry : secrets.getSecrets().entrySet()) {
+            final Secret originalSecret = entry.getValue();
+            final Secret restoredSecret = restoredSecrets.getSecrets().get(entry.getKey());
+            assertTrue(originalSecret.equals(restoredSecret));
+        }
+    }
+
+    /**
+     * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)} and {@link AppsAPIImpl#importSecrets(Path, Key, User)}
+     * Given Scenario: This test creates secrets then exports them Then Deletes the appDescriptor used to generate the import Then re-imports the file with the generated secrets.
+     * Expected Result: The test should be Able to recreate the secrets from the generated file.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws EncryptorException
+     * @throws AlreadyExistException
+     */
+    @Test(expected = DotDataException.class)
+    public void Test_Create_Offending_Secrets_Then_Export_Them_Then_Import_Then_Save()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException, AlreadyExistException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        final Host site = new SiteDataGen().nextPersisted();
+        final AppsAPI api = APILocator.getAppsAPI();
+        //generate a descriptor
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .withName("system-app-example")
+                .withDescription("system-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+        api.createAppDescriptor(file, admin);
+
+        final String appKey = dataGen.getKey();
+        //generate secrets
+        final AppSecrets secrets = builder1.withKey(appKey)
+                .withHiddenSecret("p1", "secret-1")
+                .withHiddenSecret("p2", "secret-2")
+                .build();
+        //Save it
+        api.saveSecrets(secrets, site, admin);
+        final Optional<AppSecrets> secretsOptional = api.getSecrets(appKey, site, admin);
+        Assert.assertTrue(secretsOptional.isPresent());
+
+        //AES only supports security Key of sizes of 16, 24 or 32 bytes.
+        final String password = RandomStringUtils.randomAlphanumeric(32);
+        final Key securityKey = AppsUtil.generateKey(password);
+
+        //Now that we have a valid key lets dump our selection of secrets
+        final Map<String,Set<String>> appKeysBySite = ImmutableMap.of(site.getIdentifier(), ImmutableSet.of(appKey));
+        final Path exportSecretsFile = api.exportSecrets(securityKey, false, appKeysBySite, admin);
+        assertTrue(exportSecretsFile.toFile().exists());
+
+        //Remove the secret we dumped we can re import it.
+        api.deleteSecrets(appKey, site, admin);
+
+        //Now we're gonna create an inconsistency removing the app descriptor and then try to import the secret
+        api.removeApp(appKey,admin, true);
+
+        //and finally import it
+        api.importSecretsAndSave(exportSecretsFile, securityKey, admin);
+
     }
 
 }

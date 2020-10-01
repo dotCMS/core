@@ -5,6 +5,9 @@ import com.dotcms.rest.api.Validated;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**

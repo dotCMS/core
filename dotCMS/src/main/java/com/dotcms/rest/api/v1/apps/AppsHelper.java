@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.api.MultiPartUtils;
@@ -26,7 +25,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -53,8 +51,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
-import jersey.repackaged.com.google.common.collect.Sets;
-import jersey.repackaged.com.google.common.collect.Sets.SetView;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 /**
@@ -380,7 +376,7 @@ class AppsHelper {
         }
         appsAPI.saveSecrets(secrets, host, user);
 
-        //This operation needs to executed at the very end.
+        //This operation needs to be executed at the very end.
         appSecretsOptional.ifPresent(AppSecrets::destroy);
     }
 
@@ -488,7 +484,7 @@ class AppsHelper {
     /**
      * Validate the incoming params match the params described by an appDescriptor yml.
      * This validation is intended to behave as a form validation. It'll make sure that all required values are present at save time.
-     * And nothing else besides the params described are allowed. Unless they app-desciptor establishes that extraParams are allowed.
+     * And nothing else besides the params described are allowed. Unless they app-descriptor establishes that extraParams are allowed.
      * @param form a set of paramNames.
      * @param appDescriptor the app template.
      * @throws IllegalArgumentException This will give back an exception if you send an invalid param.
@@ -502,76 +498,25 @@ class AppsHelper {
             throw new IllegalArgumentException("Required Params aren't set.");
         }
 
-        //Param/Property names are case sensitive.
-        final Map<String, ParamDescriptor> appDescriptorParams = appDescriptor.getParams();
+        appsAPI.validateForSave(mapForValidation(form), appDescriptor);
 
-        for (final Entry<String, ParamDescriptor> appDescriptorParam : appDescriptorParams
-                .entrySet()) {
-            final String describedParamName = appDescriptorParam.getKey();
-            final Input input = params.get(describedParamName);
-            if (appDescriptorParam.getValue().isRequired() && (input == null || isNotSet(input.getValue()))) {
-                throw new IllegalArgumentException(
-                        String.format(
-                                "Param `%s` is marked required in the descriptor but does not come with a value.",
-                                describedParamName
-                        )
-                );
-            }
-
-            if(null == input){
-              //Param wasn't sent but it doesn't matter since it isn't required.
-              Logger.debug(AppsHelper.class, ()-> String.format("Non required param `%s` was not sent in the request.",describedParamName));
-              continue;
-            }
-
-            if (Type.BOOL.equals(appDescriptorParam.getValue().getType()) && UtilMethods
-                    .isSet(input.getValue())) {
-                final String asString = new String(input.getValue());
-                final boolean bool = (asString.equalsIgnoreCase(Boolean.TRUE.toString())
-                        || asString.equalsIgnoreCase(Boolean.FALSE.toString()));
-                if (!bool) {
-                    throw new IllegalArgumentException(
-                            String.format(
-                                    "Can not convert value `%s` to type BOOL for param `%s`.",
-                                    asString, describedParamName
-                            )
-                    );
-                }
-            }
-
-            if (Type.SELECT.equals(appDescriptorParam.getValue().getType()) && UtilMethods
-                    .isSet(input.getValue())) {
-                final List<Map> list = appDescriptorParam.getValue().getList();
-                final Set<String> values = list.stream().filter(map -> null != map.get("value"))
-                        .map(map -> map.get("value").toString()).collect(Collectors.toSet());
-                 final String asString = new String(input.getValue());
-                 if(!values.contains(asString)){
-                     throw new IllegalArgumentException(
-                             String.format(
-                                     "Can not find value `%s` in the list of permitted values `%s`.",
-                                     asString, describedParamName
-                             )
-                     );
-                 }
-
-            }
-        }
-
-        if (!appDescriptor.isAllowExtraParameters()) {
-            final SetView<String> extraParamsFound = Sets
-                    .difference(params.keySet(), appDescriptorParams.keySet());
-
-            if (!extraParamsFound.isEmpty()) {
-                throw new IllegalArgumentException(
-                        String.format(
-                                "Unknown additional params `%s` not allowed by the app descriptor.",
-                                String.join(", ", extraParamsFound)
-                        )
-                );
-            }
-        }
         return params;
     }
+
+    /**
+     * Map of optionals is a middle ground between {@link SecretForm} and {@link AppSecrets}
+     * used by {@link com.dotcms.security.apps.AppsAPIImpl#validateForSave(Map, AppDescriptor)}
+     * @return
+     */
+    private Map<String, Optional<char[]>> mapForValidation(final SecretForm form) {
+        return form.getInputParams().entrySet().stream()
+            .collect(Collectors.toMap(Entry::getKey, stringInputEntry -> {
+                final Input input = stringInputEntry.getValue();
+                return input == null ? Optional.empty() : Optional.of(input.getValue());
+                })
+            );
+    }
+
 
     /**
      * This method is meant to validate inputs for an update that can be performed on individual
@@ -628,6 +573,7 @@ class AppsHelper {
 
         return params;
     }
+
 
     /**
      * Validate the incoming param names match the params described by an appDescriptor yml.
@@ -749,17 +695,7 @@ class AppsHelper {
                 .getBodyMapFromMultipart(multipart);
         final String password = (String) bodyMapFromMultipart.get("password");
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
-        final Map<String, List<AppSecrets>> importedSecretsBySiteId = appsAPI
-                .importSecrets(files.get(0).toPath(), key, user);
-        Logger.info(AppsHelper.class, "Number of secrets found: " + importedSecretsBySiteId.size());
-        for (final Entry<String, List<AppSecrets>> entry : importedSecretsBySiteId.entrySet()) {
-            final String siteId = entry.getKey();
-            final List<AppSecrets> secrets = entry.getValue();
-            for (final AppSecrets appSecrets : secrets) {
-                Logger.info(AppsHelper.class, String.format("Importing secret `%s` ", appSecrets));
-                appsAPI.saveSecrets(appSecrets, siteId, user);
-            }
-        }
+        appsAPI.importSecretsAndSave(files.get(0).toPath(), key, user);
     }
 
 }

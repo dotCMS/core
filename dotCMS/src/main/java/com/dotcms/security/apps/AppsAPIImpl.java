@@ -13,7 +13,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -26,6 +25,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -33,6 +33,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import com.liferay.portal.model.User;
 import com.liferay.util.EncryptorException;
 import com.liferay.util.StringPool;
@@ -81,8 +83,8 @@ public class AppsAPIImpl implements AppsAPI {
     private static final String APPS_DIR_PATH_KEY = "APPS_DIR_PATH_KEY";
     static final int DESCRIPTOR_KEY_MAX_LENGTH = 60;
     static final int DESCRIPTOR_NAME_MAX_LENGTH = 60;
+    public static final String APPS_IMPORT_FAIL_SILENTLY = "APPS_IMPORT_FAIL_SILENTLY";
 
-    private final UserAPI userAPI;
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
@@ -98,9 +100,8 @@ public class AppsAPIImpl implements AppsAPI {
             .findAndRegisterModules();
 
     @VisibleForTesting
-    public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI,
+    public AppsAPIImpl( final LayoutAPI layoutAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI,
             final SecretsStore secretsRepository, final AppsCache appsCache, final LocalSystemEventsAPI localSystemEventsAPI, final LicenseValiditySupplier licenseValiditySupplier) {
-        this.userAPI = userAPI;
         this.layoutAPI = layoutAPI;
         this.hostAPI = hostAPI;
         this.contentletAPI = contentletAPI;
@@ -111,7 +112,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     public AppsAPIImpl() {
-        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(),
+        this(APILocator.getLayoutAPI(), APILocator.getHostAPI(),
                 APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
                 CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
                 new LicenseValiditySupplier() {
@@ -425,6 +426,10 @@ public class AppsAPIImpl implements AppsAPI {
         return getAppDescriptorsMeta();
     }
 
+    /**
+     * AppDescriptor mapped as alist
+     * @return
+     */
     private List<AppDescriptor> getAppDescriptorsMeta() {
 
         synchronized (AppsAPIImpl.class) {
@@ -441,6 +446,10 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
+    /**
+     * AppDescriptor mapped by appKey
+     * @return
+     */
     private Map<String, AppDescriptor> getAppDescriptorMap(){
        return appsCache.getAppDescriptorsMap(this::getAppDescriptorsMeta);
     }
@@ -1028,6 +1037,91 @@ public class AppsAPIImpl implements AppsAPI {
 
     /**
      * {@inheritDoc}
+     * @param params
+     * @param appDescriptor
+     */
+    public void validateForSave(final Map<String, Optional<char[]>> params,
+            final AppDescriptor appDescriptor) {
+
+        //Param/Property names are case sensitive.
+        final Map<String, ParamDescriptor> appDescriptorParams = appDescriptor.getParams();
+
+        for (final Entry<String, ParamDescriptor> descriptorParam : appDescriptorParams.entrySet()) {
+            final String describedParamName = descriptorParam.getKey();
+            //initialize to null so it is not found in the params map it means it wasn't sent.
+            char[] input = null;
+            if (params.containsKey(describedParamName)) {
+            // if the key is found then verify if there's an actual value or else null
+                final Optional<char[]> optionalChars = params.get(describedParamName);
+                input = optionalChars.orElse(null);
+            }
+            if (descriptorParam.getValue().isRequired() && (input == null || isNotSet(input))) {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Param `%s` is marked required in the descriptor but does not come with a value.",
+                                describedParamName
+                        )
+                );
+            }
+
+            if (null == input) {
+                //Param wasn't sent but it doesn't matter since it isn't required.
+                Logger.debug(AppsAPIImpl.class, () -> String
+                        .format("Non required param `%s` was set.",
+                                describedParamName));
+                continue;
+            }
+
+            if (Type.BOOL.equals(descriptorParam.getValue().getType()) && UtilMethods
+                    .isSet(input)) {
+                final String asString = new String(input);
+                final boolean bool = (asString.equalsIgnoreCase(Boolean.TRUE.toString())
+                        || asString.equalsIgnoreCase(Boolean.FALSE.toString()));
+                if (!bool) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Can not convert value `%s` to type BOOL for param `%s`.",
+                                    asString, describedParamName
+                            )
+                    );
+                }
+            }
+
+            if (Type.SELECT.equals(descriptorParam.getValue().getType()) && UtilMethods
+                    .isSet(input)) {
+                final List<Map> list = descriptorParam.getValue().getList();
+                final Set<String> values = list.stream().filter(map -> null != map.get("value"))
+                        .map(map -> map.get("value").toString()).collect(Collectors.toSet());
+                final String asString = new String(input);
+                if (!values.contains(asString)) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Can not find value `%s` in the list of permitted values `%s`.",
+                                    asString, describedParamName
+                            )
+                    );
+                }
+            }
+        }
+
+        if (!appDescriptor.isAllowExtraParameters()) {
+            final SetView<String> extraParamsFound = Sets
+                    .difference(params.keySet(), appDescriptorParams.keySet());
+
+            if (!extraParamsFound.isEmpty()) {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Unknown additional params `%s` not allowed by the app descriptor.",
+                                String.join(", ", extraParamsFound)
+                        )
+                );
+            }
+        }
+    }
+
+
+    /**
+     * {@inheritDoc}
      * @param key
      * @param paramAppKeysBySite
      * @return
@@ -1038,6 +1132,10 @@ public class AppsAPIImpl implements AppsAPI {
 
         if(!user.isAdmin()){
             throw new DotSecurityException("Only Admins are allowed to perform an export operation.");
+        }
+
+        if(!licenseValiditySupplier.hasValidLicense()){
+            throw new InvalidLicenseException("Apps requires of an enterprise level license.");
         }
 
         final AppsSecretsImportExport exportedSecrets;
@@ -1082,31 +1180,28 @@ public class AppsAPIImpl implements AppsAPI {
             throws DotDataException, DotSecurityException {
         final Map<String, List<AppSecrets>> exportedSecrets = new HashMap<>();
         final Map<String, Set<String>> keysByHost = appKeysByHost();
-        keysByHost.forEach((siteId, appKeys) -> {
-            try {
-                final Host site = hostAPI.find(siteId, user, false);
-                if (null != site) {
-
-                    final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
-                    if (isSet(appKeysBySiteId)) {
-                        for (final String appKey : appKeysBySiteId) {
-                            final Optional<AppSecrets> optional = getSecrets(appKey, site, user);
-                            if (optional.isPresent()) {
-                                final AppSecrets appSecrets = optional.get();
-                                exportedSecrets
-                                        .computeIfAbsent(siteId, list -> new LinkedList<>())
-                                        .add(appSecrets);
-                            }
+        for (final Entry<String, Set<String>> entry : keysByHost.entrySet()) {
+            final String siteId = entry.getKey();
+            final Host site = hostAPI.find(siteId, user, false);
+            if (null != site) {
+                final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
+                if (isSet(appKeysBySiteId)) {
+                    for (final String appKey : appKeysBySiteId) {
+                        final Optional<AppSecrets> optional = getSecrets(appKey, site, user);
+                        if (optional.isPresent()) {
+                            final AppSecrets appSecrets = optional.get();
+                            exportedSecrets
+                                    .computeIfAbsent(siteId, list -> new LinkedList<>())
+                                    .add(appSecrets);
+                        } else {
+                            throw new DotDataException(String.format("Unable to find secret identified by key `%s` and site `%s` ",appKey, siteId));
                         }
                     }
-                } else {
-                    Logger.warn(AppsAPIImpl.class,
-                            String.format("Unable to find site `%s` ", siteId));
                 }
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.warn(AppsAPIImpl.class, "An exception occurred collecting the secrets for export", e);
+            } else {
+                throw new DotDataException(String.format("Unable to find site `%s` ", siteId));
             }
-        });
+        }
         return new AppsSecretsImportExport(
                 exportedSecrets);
     }
@@ -1137,10 +1232,16 @@ public class AppsAPIImpl implements AppsAPI {
      * @throws IOException
      * @throws EncryptorException
      */
-   public Map<String, List<AppSecrets>> importSecrets(final Path incomingFile, final Key key, final User user)
+
+    Map<String, List<AppSecrets>> importSecrets(final Path incomingFile, final Key key,
+            final User user)
             throws DotDataException, DotSecurityException, IOException, EncryptorException {
         if(!user.isAdmin()){
             throw new DotSecurityException("Only Admins are allowed to perform an export operation.");
+        }
+
+        if(!licenseValiditySupplier.hasValidLicense()){
+           throw new InvalidLicenseException("Apps requires of an enterprise level license.");
         }
 
         final byte[] encryptedBytes = Files.readAllBytes(incomingFile);
@@ -1156,6 +1257,106 @@ public class AppsAPIImpl implements AppsAPI {
        } catch (ClassNotFoundException e) {
            throw new DotDataException(e);
        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param incomingFile encrypted file
+     * @param key security key
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws EncryptorException
+     */
+    public int importSecretsAndSave(final Path incomingFile, final Key key, final User user)
+            throws DotDataException, DotSecurityException, IOException, EncryptorException {
+        final String failSilentlyMessage = "These exceptions can be ignored by setting the property `APPS_IMPORT_FAIL_SILENTLY` to true.";
+
+        final boolean failSilently = Config.getBooleanProperty(APPS_IMPORT_FAIL_SILENTLY, false);
+        int count = 0;
+        final Map<String, List<AppSecrets>> importedSecretsBySiteId = importSecrets(incomingFile,
+                key, user);
+        Logger.info(AppsAPIImpl.class,
+                "Number of secrets found: " + importedSecretsBySiteId.size());
+        for (final Entry<String, List<AppSecrets>> importEntry : importedSecretsBySiteId
+                .entrySet()) {
+            final String siteId = importEntry.getKey();
+            final Host site = hostAPI.find(siteId, user, false);
+            if (null == site) {
+                if (failSilently) {
+                    Logger.warn(AppsAPIImpl.class, () -> String
+                            .format("No site identified by `%s` was found locally.", siteId));
+                    continue;
+                }
+                throw new DotDataException(
+                        String.format("No site identified by `%s` was found locally.\n %s", siteId,
+                                failSilentlyMessage));
+            }
+
+            for (final AppSecrets appSecrets : importEntry.getValue()) {
+                final Optional<AppDescriptor> appDescriptor = getAppDescriptor(appSecrets.getKey(),
+                        user);
+                if (!appDescriptor.isPresent()) {
+                    if (failSilently) {
+                        Logger.warn(AppsAPIImpl.class, () -> String
+                                .format("No App Descriptor `%s` was found locally.",
+                                        appSecrets.getKey()));
+                        continue;
+                    }
+                    throw new DotDataException(
+                            String.format("No App Descriptor `%s` was found locally.\n %s",
+                                    appSecrets.getKey(), failSilentlyMessage));
+                }
+
+                if (appSecrets.getSecrets().isEmpty()) {
+                    if (failSilently) {
+                        Logger.warn(AppsAPIImpl.class, () -> String
+                                .format("Incoming empty secret `%s` will be skipped.",
+                                        appSecrets.getKey()));
+                        continue;
+                    }
+                    throw new DotDataException(
+                            String.format("Incoming empty secret `%s` could replace local copy.\n %s ",
+                                    appSecrets.getKey(), failSilentlyMessage));
+                }
+                try {
+                    validateForSave(mapForValidation(appSecrets), appDescriptor.get());
+                } catch (IllegalArgumentException ae) {
+                    if (failSilently) {
+                        Logger.warn(AppsAPIImpl.class, () -> String
+                                .format("Incoming secret `%s` has validation issues with local descriptor will be skipped.",
+                                        appSecrets.getKey()));
+                        continue;
+                    }
+                    throw new DotDataException(
+                            String.format(
+                                    "Incoming secret `%s` has validation issues with local descriptor.\n %s ",
+                                    appSecrets.getKey(), failSilentlyMessage),
+                            ae);
+                }
+                Logger.info(AppsAPIImpl.class, String.format("Imported secret `%s` ", appSecrets));
+                saveSecrets(appSecrets, site, user);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Map of optionals. Common portable format
+     */
+    private Map<String, Optional<char[]>> mapForValidation(final AppSecrets appSecrets) {
+        return appSecrets.getSecrets().entrySet().stream()
+            .collect(Collectors
+                .toMap(Entry::getKey,
+                secretEntry -> {
+                    final Secret value = secretEntry.getValue();
+                    return value == null ? Optional.empty()
+                            : Optional.of(value.getValue());
+                })
+            );
     }
 
     /**

@@ -110,7 +110,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         appsResource = new AppsResource(webResource,
                 appsHelper);
 
-        final AppsAPI appsAPI = new AppsAPIImpl(APILocator.getUserAPI(), APILocator.getLayoutAPI(),
+        final AppsAPI appsAPI = new AppsAPIImpl(APILocator.getLayoutAPI(),
                 APILocator.getHostAPI(), APILocator.getContentletAPI(),
                 SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(),
                 APILocator.getLocalSystemEventsAPI(),

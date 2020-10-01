@@ -1,7 +1,6 @@
 package com.dotcms.security.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotDataException;
@@ -29,7 +28,7 @@ import org.apache.commons.lang3.ArrayUtils;
 public class AppsUtil {
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
-    public static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
+    private static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
 
     /**
      * Given the AppSecrets this will return a char array representing the deserialized json object.
@@ -242,6 +241,5 @@ public class AppsUtil {
         }
         return password;
     }
-
 
 }
