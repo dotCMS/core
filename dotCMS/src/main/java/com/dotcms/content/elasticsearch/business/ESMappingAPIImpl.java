@@ -823,7 +823,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
 
 		final Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(valueObj);
-		this.loadKeyValueField(contentletMap, keyName, tikaUtils, field, valueObj, fileMetadata);
+		this.loadKeyValueField(contentletMap, keyName, tikaUtils, field, keyValueMap, fileMetadata);
 	}
 
 	public String toJsonString(Map<String, Object> map) throws IOException{
