@@ -774,7 +774,7 @@ public class BundleResource {
             
             final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
 
-            final String message = "Bundle '" + bundle.getName() + "' can be downloaded here: <a href='/api/bundle/_download/" + bundle.getId() + "'>download</a>";
+            final String message = "Bundle <strong>" + bundle.getName() + "</strong> can be downloaded here: <a href='/api/bundle/_download/" + bundle.getId() + "'>download</a>";
 
             SystemMessage systemMessage = systemMessageBuilder.setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
                             .setSeverity(MessageSeverity.SUCCESS).setLife(1000*60*12).create();
