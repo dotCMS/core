@@ -1,7 +1,8 @@
 
 <img src="https://dotcms.com/dA/99fe3769-d649/256w/dotcms.png" title="dotcms java content management system">
 
-dotCMS is a scalable, java based, open source content management system (CMS) that has been designed to manage and deliver personalized, permission-based content experiences across multiple channels.  dotCMS can serve as the platform for sites, mobile apps, mini-sites, portals, intranets or as a headless CMS (content is consumed via RESTful APIs).  dotCMS is used everywhere, from running small sites to powering multi-node installations for governments, Fortune 100 companies, Universities and Global Brands. A dotCMS environment can scale to support hundreds of editors managing thousands of sites with millions of content objects.  
+dotCMS is a scalable, java based, open source content management system (CMS) that has been designed to manage and deliver personalized, permission-based content experiences across multiple channels.  dotCMS can serve as the platform for sites, mobile apps, mini-sites, portals, intranets or as a headless CMS (content is consumed via RESTful APIs).  dotCMS is used everywhere, from running small sites to powering multi-node installations for governments, Fortune 100 companies, Universities and Global Brands. A dotCMS environment can scale to support hundreds of editors managing thousands of sites with millions of content objects. 
+dotCms is an Amazing project of content management and independent of any platform.
 
 dotCMS is available for download or as a cloud based product.
 
