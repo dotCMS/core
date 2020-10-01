@@ -276,7 +276,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     } // getSubmitter.
 
     /**
-     * Register a submitterCreator and gets the submitter
+     * Register a submitterConfig that will act as instantiator and gets the submitter
      * @param name    {@link String}
      * @param creator {@link SubmitterConfig}
      * @return DotSubmitter
