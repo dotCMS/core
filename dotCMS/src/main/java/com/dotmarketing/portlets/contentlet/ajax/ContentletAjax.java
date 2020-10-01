@@ -783,7 +783,7 @@ public class ContentletAjax {
 						if( fieldbcontentname.startsWith("text") ){
 
 							if(thisField.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
-								fieldValue = fieldValue.trim();
+								fieldValue = fieldValue.trim(); // todo: not sure if this is right
 								boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
 								if(hasQuotes){
 									fieldValue = fieldValue.replaceFirst("\"", "");

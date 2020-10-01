@@ -5016,7 +5016,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     if(metaMap != null) {
                         final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
+                        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap)); // todo: set here the ?
                         contentlet = contentFactory.save(contentlet);
                         contentlet.setIndexPolicy(indexPolicy);
                         contentlet.setIndexPolicyDependencies(indexPolicyDependencies);

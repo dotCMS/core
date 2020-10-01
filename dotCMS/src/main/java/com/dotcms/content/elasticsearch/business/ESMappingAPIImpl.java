@@ -697,7 +697,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 									&& structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
 					if(LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
-						this.loadKeyValueField(contentletMap, keyName, tikaUtils, field, (String) valueObj, fileMetadata);
+						if (valueObj instanceof Map) {
+							this.loadKeyValueField(contentletMap, keyName, tikaUtils, field,
+									(Map<String, Object>) valueObj, fileMetadata);
+						} else {
+							this.loadKeyValueField(contentletMap, keyName, tikaUtils, field,
+									(String) valueObj, fileMetadata);
+						}
 					}
 				} else if(field.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
@@ -774,10 +780,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 								   final String keyName,
 								   final TikaUtils tikaUtils,
 								   final Field field,
-								   final String valueObj,
+								   final Map<String,Object> keyValueMap,
 								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
 
-		final Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(valueObj);
 		Set<String> allowedFields = new HashSet<>();
 
 		if(fileMetadata) {
@@ -800,14 +805,25 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
 
-            final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
-            keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + StringPool.PERIOD + k, v));
+			final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
+			keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + StringPool.PERIOD + k, v));
 		} else {
 			keyValueMap.forEach((k, v) -> {
 				((List)contentletMap.computeIfAbsent(keyName, key -> new ArrayList<>())).add(
 						ImmutableMap.of( "key", k, "value", v));
 			});
 		}
+	}
+
+	private void loadKeyValueField(final Map<String, Object> contentletMap,
+								   final String keyName,
+								   final TikaUtils tikaUtils,
+								   final Field field,
+								   final String valueObj,
+								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
+
+		final Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(valueObj);
+		this.loadKeyValueField(contentletMap, keyName, tikaUtils, field, valueObj, fileMetadata);
 	}
 
 	public String toJsonString(Map<String, Object> map) throws IOException{

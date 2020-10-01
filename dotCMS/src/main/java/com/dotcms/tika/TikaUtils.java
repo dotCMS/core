@@ -232,7 +232,7 @@ public class TikaUtils {
     private void saveMetadataOnFileAsset(final Contentlet contentlet, final Map<String, Object> metaDataMap) {
 
         final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaDataMap));
+        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaDataMap)); // todo: this seems to be good, but not sure if should be a new contentlet
         //Save the parsed metadata to the contentlet
         Try.of(()->FactoryLocator.getContentletFactory().save(contentlet));
     }
