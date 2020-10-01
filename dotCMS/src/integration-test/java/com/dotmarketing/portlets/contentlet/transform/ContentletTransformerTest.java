@@ -611,7 +611,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final String extension = (String)mapView.get("extension");
         final Integer returnedWidth = (Integer)mapView.get("width");
         final Integer returnedHeight = (Integer)mapView.get("height");
-        final String meta = (String)mapView.get(META_DATA_FIELD);
+        final Map<String, Object>  meta = (Map<String, Object>)mapView.get(META_DATA_FIELD);
         final String returnedUnderlyingFileName = (String)mapView.get(UNDERLYING_FILENAME);
 
         //FLAG Alias is OFF

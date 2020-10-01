@@ -23,6 +23,8 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -6120,7 +6122,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Validate Field Type
             if(fieldValue != null){
                 if(isFieldTypeString(field)){
-                    if(!(fieldValue instanceof String)){
+                    if(!((fieldValue instanceof String)
+                            || (LegacyFieldTypes.getLegacyName(KeyValueField.class.getName()).equals(field.getFieldType()) && fieldValue instanceof Map))){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type String");
                         hasError = true;
