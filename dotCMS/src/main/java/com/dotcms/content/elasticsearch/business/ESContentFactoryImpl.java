@@ -5,8 +5,6 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.util.PaginatedArrayList;
 import java.io.Serializable;
@@ -991,7 +989,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             int offset) throws DotDataException, DotStateException, DotSecurityException {
         final DotConnect dotConnect = new DotConnect();
         final StringBuilder select = new StringBuilder();
-        select.append("select inode, mod_date, mod_user,sort_order, structure_inode,last_review, next_review,review_interval,disabled_wysiwyg,contentlet.identifier,language_id "
+        select.append("select contentlet.* "
                 + "from contentlet, contentlet_version_info as contentletvi "
                 + "where structure_inode = '")
                 .append(structureInode).append("' " );
@@ -1023,10 +1021,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
             dotConnect.setMaxRows(limit);
         }
 
-        List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
+        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatContentlets =
+                TransformerLocator.createFatContentletTransformer
                 (dotConnect.loadObjectResults()).asList();
 
-        contentlets.forEach(contentlet -> contentletCache
+        List<Contentlet> contentlets = fatContentlets.stream()
+                .map(fatty -> Try.of(() -> convertFatContentletToContentlet(fatty)).getOrNull())
+                .collect(Collectors.toList());
+
+        contentlets.forEach(contentlet ->contentletCache
                 .add(String.valueOf(contentlet.getInode()), contentlet));
 
         return contentlets;

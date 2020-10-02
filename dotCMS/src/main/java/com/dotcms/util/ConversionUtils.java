@@ -246,6 +246,30 @@ public class ConversionUtils implements Serializable {
 	}
 
 	/**
+	 * Converts the specified input value into an {@code float}. The input value
+	 * can be a String or an instance of {@link Number}.
+	 *
+	 * @param input
+	 *            - The value to convert.
+	 * @param defaultInt
+	 *            - The default value in case the input cannot be converted.
+	 * @return The input as {@code int}, or the default value.
+	 */
+	public static float toFloat(final Object input, final float defaultInt) {
+		try {
+			if (input instanceof CharSequence) {
+				return Float.parseFloat(CharSequence.class.cast(input).toString());
+			} else if (input instanceof Number) {
+				return Number.class.cast(input).floatValue();
+			} else {
+				return defaultInt;
+			}
+		} catch (NumberFormatException e) {
+			return defaultInt;
+		}
+	}
+
+	/**
 	 * Converts the specified input value into an {@code int}. The input value
 	 * can be a String or an instance of {@link Number}.
 	 *
