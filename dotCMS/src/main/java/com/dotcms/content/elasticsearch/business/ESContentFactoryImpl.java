@@ -7,6 +7,7 @@ import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTok
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.util.PaginatedArrayList;
 import java.io.Serializable;
 import java.sql.Connection;
@@ -988,12 +989,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected List<Contentlet> findByStructure(String structureInode, Date maxDate, int limit,
             int offset) throws DotDataException, DotStateException, DotSecurityException {
-        final HibernateUtil hu = new HibernateUtil();
+        final DotConnect dotConnect = new DotConnect();
         final StringBuilder select = new StringBuilder();
-        select.append("select inode from inode in class ")
-                .append(com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName())
-                .append(", contentletvi in class ").append(ContentletVersionInfo.class.getName())
-                .append(" where type = 'contentlet' and structure_inode = '")
+        select.append("select inode, mod_date, mod_user,sort_order, structure_inode,last_review, next_review,review_interval,disabled_wysiwyg,contentlet.identifier,language_id "
+                + "from contentlet, contentlet_version_info as contentletvi "
+                + "where structure_inode = '")
                 .append(structureInode).append("' " );
 
         if (maxDate != null){
@@ -1013,23 +1013,23 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        select.append(" and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
-        hu.setQuery(select.toString());
+        select.append(" and contentletvi.identifier=contentlet.identifier and contentletvi.working_inode=contentlet.inode ");
+        dotConnect.setSQL(select.toString());
 
         if (offset > 0) {
-            hu.setFirstResult(offset);
+            dotConnect.setStartRow(offset);
         }
         if (limit > 0) {
-            hu.setMaxResults(limit);
+            dotConnect.setMaxRows(limit);
         }
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
-        List<Contentlet> result = new ArrayList<Contentlet>();
-        for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-            Contentlet content = convertFatContentletToContentlet(fatty);
-            contentletCache.add(String.valueOf(content.getInode()), content);
-            result.add(convertFatContentletToContentlet(fatty));
-        }
-        return result;
+
+        List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
+                (dotConnect.loadObjectResults()).asList();
+
+        contentlets.forEach(contentlet -> contentletCache
+                .add(String.valueOf(contentlet.getInode()), contentlet));
+
+        return contentlets;
     }
 
 	@Override
