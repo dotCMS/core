@@ -289,6 +289,13 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return proxy;
   }
   
+  @JsonIgnore
+  @Value.Default
+  public boolean deleted() {
+    return false;
+  }
+
+  
   
 
   @Override

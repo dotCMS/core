@@ -2530,8 +2530,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		dbDeletePermissionReferences(Collections.singletonList(permissionable));
 
 		if (permissionable instanceof ContentType) {
-			APILocator.getReindexQueueAPI()
+		    ContentType type = (ContentType)permissionable;
+		    
+		    if(!type.deleted()) {
+		        APILocator.getReindexQueueAPI()
 					.addStructureReindexEntries(permissionable.getPermissionId());
+		    }
 		} else if (permissionable instanceof Contentlet) {
 			APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
 		}

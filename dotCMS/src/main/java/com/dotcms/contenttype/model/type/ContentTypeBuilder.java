@@ -53,6 +53,7 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder folder(String variable);
 	
+	ContentTypeBuilder deleted(boolean deleted);
 	
 	public static ContentTypeBuilder builder(ContentType type) throws DotStateException {
 		return builder(type.getClass()).from(type);

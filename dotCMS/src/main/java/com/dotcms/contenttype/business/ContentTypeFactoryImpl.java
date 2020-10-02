@@ -1,7 +1,9 @@
 package com.dotcms.contenttype.business;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
-
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
@@ -15,6 +17,7 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -23,10 +26,12 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableSet;
+import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
 
 import java.util.*;
 import java.util.Calendar;
+import java.util.stream.Collectors;
 
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
@@ -124,8 +129,17 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   @Override
-  public void delete(ContentType type) throws DotDataException {
+  public void delete(final ContentType incomingType) throws DotDataException {
+      final ContentType type  =    ContentTypeBuilder.builder(incomingType).deleted(true).build();
+      
+      
       dbDelete(type);
+      
+      //DotConcurrentFactory.getInstance().getSubmitter().submit(()->
+          Try.run(()-> deleteContentletsInDBType(type)).onFailure(e-> Logger.error(ContentTypeFactoryImpl.class, e.getMessage(),e));
+      // );
+      
+      
       cache.remove(type);
   }
 
@@ -514,8 +528,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     // delete container structures
     APILocator.getContainerAPI().deleteContainerStructureByContentType(type);
 
-    // delete contentlets
-    deleteContentletsByType(type);
+
 
     // delete workflow schema references
     deleteWorkflowSchemeReference(type);
@@ -598,12 +611,42 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     workFlowFactory.forceDeleteSchemeForContentType(type.id());
   }
 
-  private void deleteContentletsByType(ContentType type) throws DotDataException {
+  @WrapInTransaction
+  private void deleteContentletsInDBType(ContentType type) throws DotDataException {
     // permissions have already been checked at this point
-    int limit = 200;
-    ContentletAPI conAPI = APILocator.getContentletAPI();
-    List<Contentlet> contentlets;
+      
+      
+      DotConnect dc = new DotConnect();
+      dc.setSQL("CREATE TEMP TABLE contentlets_to_delete AS SELECT inode, identifier from contentlet where structure_inode=?");
+      dc.addParam(type.id());
+      dc.loadResult();
+      
+      
+        dc.setSQL("DELETE FROM contentlet_version_info info WHERE "
+                        + " exists (SELECT 1 from contentlets_to_delete con "
+                        + " WHERE info.identifier = con.identifier) ");
+        dc.loadResult();
+      
+      
+     
 
+    dc.setSQL("delete from contentlet where structure_inode=?");
+    dc.addParam(type.id());
+    dc.loadResult();
+    
+    
+    dc.setSQL("DELETE FROM inode inode " + 
+                    "WHERE EXISTS (SELECT 1 from contentlets_to_delete con " + 
+                    "WHERE inode.inode = con.inode " + 
+                    "AND inode.type = 'contentlet')");
+    dc.loadResult();
+    
+    
+    List<String> idsToDelete = dc.setSQL("select identifier as id from contentlets_to_delete order by identifier").loadObjectResults().stream().map(r-> (String) r.get("id")).collect(Collectors.toList());
+    
+    APILocator.getReindexQueueAPI().addIdentifierDelete(idsToDelete);
+    /*
+    
     try {
       contentlets = conAPI.findByStructure(type.id(), APILocator.systemUser(), false, limit, 0);
 
@@ -613,7 +656,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       }
     } catch (DotSecurityException e) {
       throw new DotDataException(e);
-    }
+    }*/
   }
 
   private void deleteRelationships(ContentType type) throws DotDataException {
@@ -623,7 +666,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     for (final Relationship rel : relationships) {
       if(UtilMethods.isSet(rel.getParentRelationName()) && rel.isRelationshipField()) {
         final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
-        APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
+        if(type.deleted()) {
+            FactoryLocator.getFieldFactory().delete(fieldToDelete);
+        }else {
+            APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
+        }
       }
       FactoryLocator.getRelationshipFactory().delete(rel);
     }
@@ -633,7 +680,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     for (final Relationship rel : relationships) {
       if(UtilMethods.isSet(rel.getChildRelationName()) && rel.isRelationshipField()) {
         final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
-        APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
+        
+        if(type.deleted()) {
+            FactoryLocator.getFieldFactory().delete(fieldToDelete);
+        }else {
+            APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
+        }
       }
       FactoryLocator.getRelationshipFactory().delete(rel);
     }
