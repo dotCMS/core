@@ -4,9 +4,11 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
@@ -23,6 +25,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import javax.servlet.ServletOutputStream;
+import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.internal.util.Base64;
@@ -49,7 +52,6 @@ public class BundleResourceTest {
     private static BundleResource bundleResource;
     private static User adminUser;
     static HttpServletResponse response;
-    static ServletOutputStream servletOutputStream;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -58,7 +60,6 @@ public class BundleResourceTest {
         bundleResource = new BundleResource();
         adminUser = APILocator.systemUser();
         response = new MockHttpResponse();
-        servletOutputStream = mock(ServletOutputStream.class);
     }
 
     /**
@@ -152,7 +153,7 @@ public class BundleResourceTest {
     }
 
     /**
-     * Method to Test: {@link BundleResource#generateBundle(HttpServletRequest, HttpServletResponse, GenerateBundleForm)}
+     * Method to Test: {@link BundleResource#generateBundle(HttpServletRequest, HttpServletResponse, AsyncResponse, GenerateBundleForm)}
      * When: Create a bundle and generate the tar.gz file of the given bundle.
      * Should: Generate the bundle without issues, 200.
      */
@@ -168,10 +169,17 @@ public class BundleResourceTest {
         final GenerateBundleForm bundleForm = new GenerateBundleForm.Builder().bundleId(bundleId).build();
 
         //Call generate endpoint
-        when(response.getOutputStream()).thenReturn(servletOutputStream);
-        final Response responseResource = bundleResource.generateBundle(getHttpRequest(),response,bundleForm);
+        final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
 
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+            final Response generateBundleResponse = (Response)arg;
+            assertEquals(Status.OK.getStatusCode(), generateBundleResponse.getStatus());
+            return true;
+        }, arg -> {
+            fail("Error generating bundle");
+            return true;
+        });
+
+        bundleResource.generateBundle(getHttpRequest(),response,asyncResponse,bundleForm);
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
     }
 
@@ -204,18 +212,15 @@ public class BundleResourceTest {
         //Create a Filter since it's needed to generate the bundle
         createFilter();
 
-        //Create GenerateBundleForm
-        final GenerateBundleForm bundleForm = new GenerateBundleForm.Builder().bundleId(bundleId).build();
+        //Generate bundle file
+        final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+        bundle.setOperation(PushPublisherConfig.Operation.PUBLISH.ordinal());
+        APILocator.getBundleAPI().generateTarGzipBundleFile(bundle);
 
-        //Call generate endpoint
-        when(response.getOutputStream()).thenReturn(servletOutputStream);
-        Response responseResource = bundleResource.generateBundle(getHttpRequest(),response,bundleForm);
-
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
 
         //Call download endpoint
-        responseResource = bundleResource.downloadBundle(getHttpRequest(),response,bundleId);
+        final Response responseResource = bundleResource.downloadBundle(getHttpRequest(),response,bundleId);
 
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
     }
