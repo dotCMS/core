@@ -684,8 +684,10 @@ public class BundleResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    public final Response generateBundle(@Context final HttpServletRequest request,
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public final void generateBundle(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
+                                        @Suspended final AsyncResponse asyncResponse,
                                        final GenerateBundleForm form) {
 
 
@@ -716,38 +718,23 @@ public class BundleResource {
 
             //Generate the bundle file for this given operation
 
-            final BundleGenerator generator = new BundleGenerator(bundle, user);
-            
-            DotConcurrentFactory.getInstance().getSubmitter().submit(generator);
+            final BundleGenerator generator = new BundleGenerator(bundle, user,asyncResponse);
+
+            final DotSubmitter submitter =
+                    DotConcurrentFactory.getInstance().getSubmitter("generateBundle",
+                            new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2)
+                                    .maxPoolSize(4).queueCapacity(500).build()
+                    );
+            submitter.submit(generator);
             final String bundleName = bundle.getName().replaceAll("[^\\w.-]", "_");
             response.setContentType( "application/x-tgz" );
             response.setHeader( "Content-Disposition", "attachment; filename=" + bundleName  +"-"+ bundle.getId() + ".tar.gz" );
-            final byte whiteByte = 0x20;
-            
-            final long nowTimeMillis = System.currentTimeMillis();
-            
-            // 10 secs
-            final int sleep = 1000;
-
-            // 2 hours
-            int loop = sleep * 60 * 120;
-            try(final OutputStream outStream = response.getOutputStream()){
-                while(generator.bundleFile==null) {
-                    Logger.infoEvery(this.getClass(), "writing bundleId:" + bundle.getId() + " time elapsed:" + Duration.ofMillis(System.currentTimeMillis()-nowTimeMillis).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase(), 10000);
-                    outStream.write(whiteByte);
-                    outStream.flush();
-                    Try.run(()->Thread.sleep(sleep));
-                    if(--loop<=0)break;
-                }
-
-                return Response.ok(generator.bundleFile, "application/x-tgz").build();
-            }
         }catch (DoesNotExistException e){
             Logger.error(this,e.getMessage());
-            return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.NOT_FOUND);
+            asyncResponse.resume(ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.NOT_FOUND));
         }catch (Exception e){
             Logger.error(this,e.getMessage());
-            return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.INTERNAL_SERVER_ERROR);
+            asyncResponse.resume(ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.INTERNAL_SERVER_ERROR));
         }
         
 
@@ -757,16 +744,18 @@ public class BundleResource {
     class BundleGenerator implements Runnable {
 
 
-        public BundleGenerator(Bundle bundle,  User user) {
+        public BundleGenerator(final Bundle bundle,  final User user, final AsyncResponse asyncResponse) {
             super();
             this.bundle = bundle;
             this.user = user;
+            this.asyncResponse = asyncResponse;
             
         }
 
         File bundleFile;
         final Bundle bundle;
         final User user;
+        final AsyncResponse asyncResponse;
         
         @Override
         public void run() {
@@ -776,11 +765,14 @@ public class BundleResource {
 
             final String message = "Bundle <strong>" + bundle.getName() + "</strong> can be downloaded here: <a href='/api/bundle/_download/" + bundle.getId() + "'>download</a>";
 
-            SystemMessage systemMessage = systemMessageBuilder.setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
+            final SystemMessage systemMessage = systemMessageBuilder.setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
                             .setSeverity(MessageSeverity.SUCCESS).setLife(1000*60*12).create();
 
             SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
-            
+
+            final Response response = Response.ok(bundleFile, MediaType.APPLICATION_OCTET_STREAM).build();
+
+            this.asyncResponse.resume(response);
         }
     }
     
