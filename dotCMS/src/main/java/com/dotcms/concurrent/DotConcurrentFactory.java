@@ -75,6 +75,12 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             new ConcurrentHashMap<>();
 
     /**
+     * Creator map
+     */
+    private final Map<String, SubmitterConfig> submitterConfigCreatorMap =
+            new ConcurrentHashMap<>();
+
+    /**
      * Keeps a concurrent delay queue (for subscribe or unsubscribe)
      */
     private final Map<Integer, BlockingQueue<DelayedDelegate>> delayQueueMap =
@@ -270,6 +276,28 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     } // getSubmitter.
 
     /**
+     * Register a submitterConfig that will act as instantiator and gets the submitter
+     * @param name    {@link String}
+     * @param creator {@link SubmitterConfig}
+     * @return DotSubmitter
+     */
+    public DotSubmitter getSubmitter (final String name, final SubmitterConfig creator) {
+
+        this.registerSubmitterCreator(name, creator);
+        return this.getSubmitter(name);
+    }
+
+    /**
+     * Register submitter creator
+     * @param name
+     * @param creator
+     */
+    public void registerSubmitterCreator (final String name, final SubmitterConfig creator) {
+
+        this.submitterConfigCreatorMap.putIfAbsent(name, creator);
+    }
+
+    /**
      * Get's the submitter for a submitterName parameter
      * The submitterName is used as a prefix for all these properties:
      *
@@ -318,7 +346,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     private DotConcurrentImpl createDotConcurrent (final String name) {
 
-        DotConcurrentImpl submitter =
+        final DotConcurrentImpl submitter = this.submitterConfigCreatorMap.containsKey(name)?
+                new DotConcurrentImpl(
+                        this.submitterConfigCreatorMap.get(name).getDefaultThreadFactory(),
+                        this.submitterConfigCreatorMap.get(name).getRejectedExecutionHandler(),
+                        this.submitterConfigCreatorMap.get(name).getAllowCoreThreadTimeOut(),
+                        this.submitterConfigCreatorMap.get(name).getPoolSize(),
+                        this.submitterConfigCreatorMap.get(name).getMaxPoolSize(),
+                        this.submitterConfigCreatorMap.get(name).getKeepAliveMillis(),
+                        this.submitterConfigCreatorMap.get(name).getQueueCapacity()
+                ):
                 new DotConcurrentImpl(
                         this.getDefaultThreadFactory(name),
                         this.rejectedExecutionHandler,
@@ -340,6 +377,156 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      */
     public IdentifierStripedLock getIdentifierStripedLock(){
        return this.identifierStripedLock;
+    }
+
+    /**
+     * {@link SubmitterConfig} builder
+     */
+    public static class SubmitterConfigBuilder {
+
+        private ThreadFactory            threadFactory;
+        private RejectedExecutionHandler rejectedExecutionHandler;
+        private Boolean allowCoreThreadTimeOut;
+        private Integer poolSize;
+        private Integer maxPoolSize;
+        private Long    keepAliveMillis;
+        private Integer queueCapacity;
+
+        public SubmitterConfigBuilder defaultThreadFactory(final ThreadFactory threadFactory) {
+            this.threadFactory = threadFactory; return this;
+        }
+
+        public SubmitterConfigBuilder rejectedExecutionHandler(final RejectedExecutionHandler rejectedExecutionHandler) {
+            this.rejectedExecutionHandler = rejectedExecutionHandler;  return this;
+        }
+
+        public SubmitterConfigBuilder allowCoreThreadTimeOut(final boolean allowCoreThreadTimeOut) {
+            this.allowCoreThreadTimeOut = allowCoreThreadTimeOut; return this;
+        }
+
+        public SubmitterConfigBuilder poolSize (final int poolSize) {
+            this.poolSize = poolSize; return this;
+        }
+
+        public SubmitterConfigBuilder maxPoolSize (final int maxPoolSize) {
+            this.maxPoolSize = maxPoolSize; return this;
+        }
+
+        public SubmitterConfigBuilder keepAliveMillis(final long keepAliveMillis) {
+            this.keepAliveMillis = keepAliveMillis; return this;
+        }
+
+        public SubmitterConfigBuilder queueCapacity(final int queueCapacity) {
+            this.queueCapacity = queueCapacity; return this;
+        }
+
+        public SubmitterConfig build () {
+            return new SubmitterConfig() {
+                @Override
+                public ThreadFactory getDefaultThreadFactory() {
+                    return null != SubmitterConfigBuilder.this.threadFactory?
+                            SubmitterConfigBuilder.this.threadFactory: SubmitterConfig.super.getDefaultThreadFactory();
+                }
+
+                @Override
+                public RejectedExecutionHandler getRejectedExecutionHandler() {
+                    return null != SubmitterConfigBuilder.this.rejectedExecutionHandler?
+                            SubmitterConfigBuilder.this.rejectedExecutionHandler: SubmitterConfig.super.getRejectedExecutionHandler();
+                }
+
+                @Override
+                public boolean getAllowCoreThreadTimeOut() {
+                    return null != SubmitterConfigBuilder.this.allowCoreThreadTimeOut?
+                            SubmitterConfigBuilder.this.allowCoreThreadTimeOut: SubmitterConfig.super.getAllowCoreThreadTimeOut();
+                }
+
+                @Override
+                public int getPoolSize() {
+                    return null != SubmitterConfigBuilder.this.poolSize?
+                            SubmitterConfigBuilder.this.poolSize: SubmitterConfig.super.getPoolSize();
+                }
+
+                @Override
+                public int getMaxPoolSize() {
+                    return null != SubmitterConfigBuilder.this.maxPoolSize?
+                            SubmitterConfigBuilder.this.maxPoolSize: SubmitterConfig.super.getMaxPoolSize();
+                }
+
+                @Override
+                public long getKeepAliveMillis() {
+                    return null != SubmitterConfigBuilder.this.keepAliveMillis?
+                            SubmitterConfigBuilder.this.keepAliveMillis: SubmitterConfig.super.getKeepAliveMillis();
+                }
+
+                @Override
+                public int getQueueCapacity() {
+                    return null != SubmitterConfigBuilder.this.queueCapacity?
+                            SubmitterConfigBuilder.this.queueCapacity: SubmitterConfig.super.getQueueCapacity();
+                }
+            };
+        }
+    }
+
+    /**
+     * In case you want to configure by code.
+     */
+    public interface SubmitterConfig {
+
+        /**
+         * Returns "Executors.defaultThreadFactory()"
+         * @return ThreadFactory
+         */
+        default ThreadFactory getDefaultThreadFactory () {
+            return Executors.defaultThreadFactory();
+        }
+
+        /**
+         * Returns AbortPolicy
+         * @return RejectedExecutionHandler
+         */
+        default RejectedExecutionHandler getRejectedExecutionHandler() {
+            return new ThreadPoolExecutor.AbortPolicy();
+        }
+
+        /**
+         * By default does not allows allow core time out
+         * @return boolean
+         */
+        default boolean getAllowCoreThreadTimeOut() {
+            return Config.getBooleanProperty(DOTCMS_CONCURRENT_ALLOWCORETHREADTIMEOUT, Boolean.FALSE);
+        }
+
+        /**
+         * Returns 10 as a default pool size
+         * @return int
+         */
+        default int getPoolSize () {
+            return Config.getIntProperty(DOTCMS_CONCURRENT_POOLSIZE, POOL_SIZE_VAL);
+        }
+
+        /**
+         * Returns 50 as a default max pool size
+         * @return int
+         */
+        default int getMaxPoolSize () {
+            return Config.getIntProperty(DOTCMS_CONCURRENT_MAXPOOLSIZE, MAXPOOL_SIZE_VAL);
+        }
+
+        /**
+         * Returns one minute as a keep alive
+         * @return long
+         */
+        default long getKeepAliveMillis() {
+            return Config.getLongProperty(DOTCMS_CONCURRENT_KEEPALIVEMILLIS, DateUtil.MINUTE_MILLIS);
+        }
+
+        /**
+         * Returns 100 as a queue capacity
+         * @return int
+         */
+        default int getQueueCapacity() {
+            return Config.getIntProperty(DOTCMS_CONCURRENT_QUEUECAPACITY, QUEUE_CAPACITY_VAL);
+        }
     }
 
     //// DelayQueueConsumer
@@ -429,6 +616,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             }
 
             DotConcurrentFactory.this.subscribeDelayQueue (this.delayedQueue);
+
         } // DotConcurrentImpl.
 
         final BlockingQueue<Runnable> createQueue(final int queueCapacity) {
@@ -440,6 +628,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         final ThreadPoolExecutor getThreadPoolExecutor() {
 
             return this.threadPoolExecutor;
+        }
+
+        @Override
+        public int getPoolSize() {
+            return this.threadPoolExecutor.getPoolSize();
+        }
+
+        @Override
+        public int getMaxPoolSize() {
+            return this.threadPoolExecutor.getMaximumPoolSize();
         }
 
         @Override
