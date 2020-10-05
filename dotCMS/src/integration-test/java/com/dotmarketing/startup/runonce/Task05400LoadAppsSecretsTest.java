@@ -100,9 +100,12 @@ public class Task05400LoadAppsSecretsTest {
         destroySecretsStore();
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(null));
         final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site)).toFile();
-        final File fileToImport = new File(AppsAPIImpl.getAppsDefaultDirectory(), "dotSecrets-import.xxx");
+
+        final Path serverDir = Paths.get(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                + File.separator + AppsAPIImpl.SERVER_DIR_NAME ).normalize();
+
+        final File fileToImport = new File(serverDir.toString(), "dotSecrets-import.xxx");
         //Task will match any file matching this name followed by any extension
-        try {
             exportFile.renameTo(fileToImport);
             destroySecretsStore();
 
@@ -113,9 +116,8 @@ public class Task05400LoadAppsSecretsTest {
             final AppsAPI api = APILocator.getAppsAPI();
             final Optional<AppSecrets> secrets = api.getSecrets(descriptor.getKey(), site, admin);
             Assert.assertTrue(secrets.isPresent());
-        }finally {
-            fileToImport.delete();
-        }
+            //finally test file got removed.
+            Assert.assertFalse(fileToImport.exists());
     }
 
 }

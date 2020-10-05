@@ -65,8 +65,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -76,16 +74,6 @@ import java.util.stream.Stream;
  * and the structure of the APP defined via YML file descriptor.
  */
 public class AppsAPIImpl implements AppsAPI {
-
-    static final String APPS_PORTLET_ID = "apps";
-    private static final String HOST_SECRET_KEY_SEPARATOR = ":";
-    private static final String DOT_GLOBAL_SERVICE = "dotCMSGlobalService";
-    private static final String SERVER_DIR_NAME = "server";
-    private static final String APPS_DIR_NAME = "apps";
-    private static final String APPS_DIR_PATH_KEY = "APPS_DIR_PATH_KEY";
-    static final int DESCRIPTOR_KEY_MAX_LENGTH = 60;
-    static final int DESCRIPTOR_NAME_MAX_LENGTH = 60;
-    public static final String APPS_IMPORT_FAIL_SILENTLY = "APPS_IMPORT_FAIL_SILENTLY";
 
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
@@ -713,7 +701,7 @@ public class AppsAPIImpl implements AppsAPI {
      * This is the directory intended for customers use
      * @return
      */
-    public static String getAppsDefaultDirectory() {
+    private static String getAppsDefaultDirectory() {
         return APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
     }

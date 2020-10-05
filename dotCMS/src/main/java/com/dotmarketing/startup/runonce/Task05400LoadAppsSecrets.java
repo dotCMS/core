@@ -11,6 +11,7 @@ import com.dotmarketing.startup.StartupTask;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.io.File;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,14 +44,19 @@ public class Task05400LoadAppsSecrets implements StartupTask {
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         final User user = APILocator.systemUser();
-        final Path appsDefaultDir = Paths.get(AppsAPIImpl.getAppsDefaultDirectory());
+        final Path serverDir = Paths.get(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                + File.separator + AppsAPIImpl.SERVER_DIR_NAME ).normalize();
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(null));
         try {
 
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(appsDefaultDir,
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(serverDir,
                     entry -> matchesFileName(entry.getFileName().toString()))) {
                 for (final Path path : stream) {
-                     importCount += appsAPI.importSecretsAndSave(path, key, user);
+                    try {
+                        importCount += appsAPI.importSecretsAndSave(path, key, user);
+                    } finally {
+                        path.toFile().delete();
+                    }
                 }
             }
         } catch (Exception e) {

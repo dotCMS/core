@@ -321,7 +321,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
         DotStatefulJobTest.class,
-        Task05390MakeRoomForLongerJobDetailTest.class
+        Task05390MakeRoomForLongerJobDetailTest.class,
+        Task05400LoadAppsSecretsTest.class
 })
 public class MainSuite {
 

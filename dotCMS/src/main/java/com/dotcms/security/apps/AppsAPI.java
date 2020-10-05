@@ -24,7 +24,16 @@ import java.util.Set;
  */
 public interface AppsAPI {
 
-     static final String APPS_API_IMPL = "APPS_API_IMPL";
+     String APPS_PORTLET_ID = "apps";
+     String HOST_SECRET_KEY_SEPARATOR = ":";
+     String DOT_GLOBAL_SERVICE = "dotCMSGlobalService";
+     String SERVER_DIR_NAME = "server";
+     String APPS_DIR_NAME = "apps";
+     String APPS_DIR_PATH_KEY = "APPS_DIR_PATH_KEY";
+     int DESCRIPTOR_KEY_MAX_LENGTH = 60;
+     int DESCRIPTOR_NAME_MAX_LENGTH = 60;
+     String APPS_IMPORT_FAIL_SILENTLY = "APPS_IMPORT_FAIL_SILENTLY";
+     String APPS_API_IMPL = "APPS_API_IMPL";
 
     /**
      * Given an individual host a list with the associated App is returned.
