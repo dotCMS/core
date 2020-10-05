@@ -38,3 +38,8 @@ export interface DotAppsSaveData {
         value: string;
     };
 }
+
+export interface DotAppsListResolverData {
+    apps: DotApps[];
+    isEnterpriseLicense: boolean;
+}

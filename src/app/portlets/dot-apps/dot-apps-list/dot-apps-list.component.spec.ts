@@ -1,10 +1,9 @@
 import { of } from 'rxjs';
-import { async, ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ActivatedRoute } from '@angular/router';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotAppsListComponent } from './dot-apps-list.component';
 import { InputTextModule } from 'primeng/primeng';
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
@@ -15,12 +14,16 @@ import { By } from '@angular/platform-browser';
 import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { CoreWebService } from 'dotcms-js';
+import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
-class AppsServicesMock {
+export class AppsServicesMock {
     get() {}
 }
 
-const appsResponse = [
+export const appsResponse = [
     {
         allowExtraParams: true,
         configurationsCount: 0,
@@ -39,7 +42,12 @@ const appsResponse = [
     }
 ];
 
-let canAccessPortletResponse = { canAccessPortlet: true };
+let canAccessPortletResponse = {
+    dotAppsListResolverData: {
+        apps: appsResponse,
+        isEnterpriseLicense: true
+    }
+};
 
 class ActivatedRouteMock {
     get data() {
@@ -57,8 +65,8 @@ describe('DotAppsListComponent', () => {
         'apps.search.placeholder': 'Search'
     });
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
+    beforeEach(() => {
+        TestBed.configureTestingModule({
             imports: [
                 RouterTestingModule.withRoutes([
                     {
@@ -68,11 +76,13 @@ describe('DotAppsListComponent', () => {
                 ]),
                 DotAppsCardModule,
                 InputTextModule,
-                NotLicensedModule
+                NotLicensedModule,
+                DotPipesModule
             ],
             declarations: [DotAppsListComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
@@ -82,16 +92,15 @@ describe('DotAppsListComponent', () => {
                     useClass: MockDotRouterService
                 },
                 { provide: DotAppsService, useClass: AppsServicesMock },
-                DotAppsListResolver
+                DotAppsListResolver,
+                DotLicenseService
             ]
-        });
-    }));
+        }).compileComponents();
 
-    beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotAppsListComponent);
+        fixture = TestBed.createComponent(DotAppsListComponent);
         component = fixture.debugElement.componentInstance;
-        routerService = fixture.debugElement.injector.get(DotRouterService);
-        dotAppsService = fixture.debugElement.injector.get(DotAppsService);
+        routerService = TestBed.get(DotRouterService);
+        dotAppsService = TestBed.get(DotAppsService);
     });
 
     describe('With access to portlet', () => {
@@ -132,7 +141,12 @@ describe('DotAppsListComponent', () => {
 
     describe('Without access to portlet', () => {
         beforeEach(() => {
-            canAccessPortletResponse = { canAccessPortlet: false };
+            canAccessPortletResponse = {
+                dotAppsListResolverData: {
+                    apps: null,
+                    isEnterpriseLicense: false
+                }
+            };
             fixture.detectChanges();
         });
 

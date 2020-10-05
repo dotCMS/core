@@ -2,7 +2,9 @@ import { Observable } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Resolve, RouterStateSnapshot, ActivatedRouteSnapshot } from '@angular/router';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { take } from 'rxjs/operators';
+import { map, mergeMap, take } from 'rxjs/operators';
+import { DotApps, DotAppsListResolverData } from '@shared/models/dot-apps/dot-apps.model';
+import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 
 /**
  * Returns apps list from the system
@@ -12,10 +14,29 @@ import { take } from 'rxjs/operators';
  * @implements {Resolve<DotApps[]>}
  */
 @Injectable()
-export class DotAppsListResolver implements Resolve<boolean> {
-    constructor(private dotLicenseService: DotLicenseService) {}
+export class DotAppsListResolver implements Resolve<DotAppsListResolverData> {
+    constructor(
+        private dotLicenseService: DotLicenseService,
+        private dotAppsService: DotAppsService
+    ) {}
 
-    resolve(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-        return this.dotLicenseService.canAccessEnterprisePortlet(state.url).pipe(take(1));
+    resolve(
+        _route: ActivatedRouteSnapshot,
+        state: RouterStateSnapshot
+    ): Observable<DotAppsListResolverData> {
+        return this.dotLicenseService.canAccessEnterprisePortlet(state.url).pipe(
+            take(1),
+            mergeMap((enterpriseLicense: boolean) => {
+                return this.dotAppsService.get().pipe(
+                    take(1),
+                    map((apps: DotApps[]) => {
+                        return {
+                            isEnterpriseLicense: enterpriseLicense,
+                            apps: apps
+                        };
+                    })
+                );
+            })
+        );
     }
 }
