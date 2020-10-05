@@ -1142,7 +1142,7 @@ public class AppsAPIImplTest {
      * @throws EncryptorException
      * @throws AlreadyExistException
      */
-    @Test(expected = DotDataException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void Test_Create_Offending_Secrets_Then_Export_Them_Then_Import_Then_Save()
             throws DotDataException, DotSecurityException, IOException, EncryptorException, AlreadyExistException {
 
