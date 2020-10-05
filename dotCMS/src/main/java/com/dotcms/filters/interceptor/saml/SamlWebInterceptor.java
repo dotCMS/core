@@ -458,7 +458,7 @@ public class SamlWebInterceptor implements WebInterceptor {
         User user       = null;
 
         final HttpSession session = request.getSession(false);
-        if (session == null || request.isRequestedSessionIdValid()) {
+        if (session == null) {
 
             Logger.error(this, "Could not retrieve user from session as the session doesn't exist!");
             return null;
