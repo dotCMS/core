@@ -71,7 +71,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
     protected void createObjectMapUrlContent(final Contentlet urlContent, final Map<String, Object> pageViewMap) {
 
-        final DotContentletTransformer transformer   = new DotTransformerBuilder().keyValueToMapTransformer().content(urlContent).build();
+        final DotContentletTransformer transformer   = new DotTransformerBuilder().urlContentMapTransformer().content(urlContent).build();
         final Map<String, Object>   urlContentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
 
         pageViewMap.put("urlContentMap", urlContentletMap);
