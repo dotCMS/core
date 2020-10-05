@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.business.SystemCache;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
@@ -9,6 +10,7 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
@@ -21,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.sql.SQLException;
 import java.util.Map;
@@ -82,9 +85,8 @@ public class ReindexThread {
 
     private static ReindexThread instance ;
 
-    private final int SLEEP = Config.getIntProperty("REINDEX_THREAD_SLEEP", 250);
+    private final long SLEEP = Config.getLongProperty("REINDEX_THREAD_SLEEP", 250);
     private final int SLEEP_ON_ERROR = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
-    private int failedAttemptsCount = 0;
     private long contentletsIndexed = 0;
     // bulk up to this many requests
     public static final int ELASTICSEARCH_BULK_ACTIONS = Config
@@ -104,7 +106,15 @@ public class ReindexThread {
             new ThreadFactoryBuilder().setNameFormat("reindex-thread-%d").build()
     );
 
-
+    private final static String REINDEX_THREAD_PAUSED="REINDEX_THREAD_PAUSED";
+    static Lazy<SystemCache>  cache = Lazy.of(()-> CacheLocator.getSystemCache());
+    
+    
+    
+    
+    
+    
+    
     private final static AtomicBoolean rebuildBulkIndexer=new AtomicBoolean(false);
 
     public static void rebuildBulkIndexer() {
@@ -130,6 +140,10 @@ public class ReindexThread {
         this.indexAPI = indexAPI;
 
     }
+    
+
+    
+    
 
 
     private final Runnable ReindexThreadRunnable = () -> {
@@ -164,6 +178,19 @@ public class ReindexThread {
     }
 
 
+    private BulkProcessor finalizeReIndex(BulkProcessor bulkProcessor) throws InterruptedException, LanguageException, DotDataException, SQLException {
+        bulkProcessor = closeBulkProcessor(bulkProcessor);
+        switchOverIfNeeded();
+        if (!indexAPI.isInFullReindex()) {
+            ReindexThread.pause();
+        }
+        return bulkProcessor;
+        
+    }
+    
+    
+    
+    
 
   /**
    * This method is constantly verifying the existence of records in the {@code dist_reindex_journal}
@@ -179,6 +206,11 @@ public class ReindexThread {
 
         final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
 
+        if (workingRecords.isEmpty()) {
+            bulkProcessor = finalizeReIndex(bulkProcessor);
+        }
+        
+        
         if (!workingRecords.isEmpty()) {
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
@@ -195,14 +227,7 @@ public class ReindexThread {
           } else if (!ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()){
               reindexWithBulkRequest(workingRecords);
           }
-        } else {
-
-          bulkProcessor = closeBulkProcessor(bulkProcessor);
-          switchOverIfNeeded();
-
-          Thread.sleep(SLEEP);
-        }
-
+        } 
       } catch (Exception ex) {
         Logger.error(this, "ReindexThread Exception", ex);
         ThreadUtils.sleep(SLEEP_ON_ERROR);
@@ -210,9 +235,10 @@ public class ReindexThread {
         DbConnectionFactory.closeSilently();
       }
       while (STATE == ThreadState.PAUSED) {
-        ThreadUtils.sleep(1000);
-        if (System.currentTimeMillis() % 5 == 0) {
-          Logger.info(this.getClass(), "Reindex Thread Paused");
+        ThreadUtils.sleep(SLEEP);
+        Logger.infoEvery(ReindexThread.class, "ReindexThread Paused", 60000);
+        if(cache.get().get(REINDEX_THREAD_PAUSED)==null) {
+            unpause();
         }
       }
     }
@@ -247,7 +273,7 @@ public class ReindexThread {
      * Tells the thread to start processing. Starts the thread
      */
     public static void startThread() {
-        getInstance().state(ThreadState.RUNNING);
+        unpause();
         if(getInstance().threadRunning ==null || getInstance().threadRunning.isDone()) {
             final Thread thread = new Thread(getInstance().ReindexThreadRunnable, "ReindexThreadRunnable");
             getInstance().threadRunning = getInstance().executor.submit(thread);
@@ -285,10 +311,14 @@ public class ReindexThread {
     }
 
     public static void pause() {
+        Logger.debug(ReindexThread.class, "ReindexThread - Paused");
+        cache.get().put(REINDEX_THREAD_PAUSED, REINDEX_THREAD_PAUSED);
         getInstance().state(ThreadState.PAUSED);
     }
 
     public static void unpause() {
+        Logger.infoEvery(ReindexThread.class, "ReindexThread Running", 60000);
+        cache.get().remove(REINDEX_THREAD_PAUSED);
         getInstance().state(ThreadState.RUNNING);
     }
 
