@@ -618,9 +618,16 @@ class AppsHelper {
             throw new DotDataException("Unable to extract any files from multi-part request.");
         }
         final List<AppView> appViews = new ArrayList<>(files.size());
-        for (final File file : files) {
-            final AppDescriptor appDescriptor = appsAPI.createAppDescriptor(file, user);
-            appViews.add(new AppView(appDescriptor, 0, 0));
+        try {
+            for (final File file : files) {
+                if(0 == file.length()){
+                    throw new IllegalArgumentException("Zero length file.");
+                }
+                final AppDescriptor appDescriptor = appsAPI.createAppDescriptor(file, user);
+                appViews.add(new AppView(appDescriptor, 0, 0));
+            }
+        }finally {
+            removeTempFolder(files.get(0).getParentFile());
         }
         return appViews;
     }
@@ -681,21 +688,52 @@ class AppsHelper {
      * @throws JSONException
      * @throws DotSecurityException
      * @throws EncryptorException
-     * @throws ClassNotFoundException
      */
     void importSecrets(final FormDataMultiPart multipart, final User user)
-            throws IOException, DotDataException, JSONException, DotSecurityException, EncryptorException, ClassNotFoundException {
+            throws IOException, DotDataException, JSONException, DotSecurityException, EncryptorException {
         final MultiPartUtils multiPartUtils = new MultiPartUtils();
         final List<File> files = multiPartUtils.getBinariesFromMultipart(multipart);
-        if (!UtilMethods.isSet(files)) {
-            throw new DotDataException("Unable to extract any files from multi-part request.");
+        try {
+            if (!UtilMethods.isSet(files)) {
+                throw new DotDataException(
+                        "Unable to extract any files from multi-part request.");
+            }
+            final Map<String, Object> bodyMapFromMultipart = multiPartUtils
+                    .getBodyMapFromMultipart(multipart);
+            final String password = (String) bodyMapFromMultipart.get("password");
+            final Key key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
+            for (final File file : files) {
+                try {
+                    if (0 == file.length()) {
+                        throw new IllegalArgumentException("Zero length file.");
+                    }
+                    appsAPI.importSecretsAndSave(file.toPath(), key, user);
+                } finally {
+                    file.delete();
+                }
+            }
+        } finally {
+            removeTempFolder(files.get(0).getParentFile());
         }
+    }
 
-        final Map<String, Object> bodyMapFromMultipart = multiPartUtils
-                .getBodyMapFromMultipart(multipart);
-        final String password = (String) bodyMapFromMultipart.get("password");
-        final Key key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
-        appsAPI.importSecretsAndSave(files.get(0).toPath(), key, user);
+    /**
+     * cleanup our mess
+     * @param parentFolder
+     */
+    private void removeTempFolder(final File parentFolder) {
+        final String parentFolderName = parentFolder.getName();
+        if (parentFolder.isDirectory() && parentFolderName.startsWith("tmp_upload")) {
+            if (parentFolder.delete()) {
+                Logger.info(AppsHelper.class,
+                        String.format(" tmp upload directory `%s` removed successfully. ",
+                                parentFolder.getAbsolutePath()));
+            } else {
+                Logger.info(AppsHelper.class,
+                        String.format(" Unable to remove tmp upload directory `%s`. ",
+                                parentFolder.getAbsolutePath()));
+            }
+        }
     }
 
 }

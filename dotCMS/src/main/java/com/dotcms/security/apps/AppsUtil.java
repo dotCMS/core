@@ -209,7 +209,7 @@ public class AppsUtil {
      */
     public static Key generateKey(final String password) throws DotDataException {
         if(null == password){
-            throw new DotDataException("No password has been provided. ");
+            throw new IllegalArgumentException("No password has been provided. ");
         }
         final String seed = keySeed(password);
         final byte [] bytes = seed.getBytes();

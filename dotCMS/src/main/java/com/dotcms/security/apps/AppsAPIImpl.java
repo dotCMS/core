@@ -65,6 +65,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -704,9 +706,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     private void invalidateCache() {
-        synchronized (AppsAPIImpl.class) {
-            appsCache.invalidateDescriptorsCache();
-        }
+        appsCache.invalidateDescriptorsCache();
     }
 
     /**
@@ -871,7 +871,6 @@ public class AppsAPIImpl implements AppsAPI {
      * @param name
      * @param descriptor
      * @return
-     * @throws DotDataValidationException
      */
     private List<String> validateParamDescriptor(final String name,
             final ParamDescriptor descriptor) {
@@ -1142,7 +1141,14 @@ public class AppsAPIImpl implements AppsAPI {
         if (exportAll) {
             exportedSecrets = collectSecretsForExport(appKeysByHost(), user);
         } else {
-            exportedSecrets = collectSecretsForExport(paramAppKeysBySite, user);
+           if(null == paramAppKeysBySite || paramAppKeysBySite.isEmpty()){
+              throw new IllegalArgumentException("No `AppKeysBySite` param wasn't specified.");
+           }
+            //This does transform all keys into their lowe case version
+            Map<String, Set<String>> paramAppKeysBySiteLC = paramAppKeysBySite.entrySet().stream()
+                    .collect(Collectors.toMap(entry -> entry.getKey().toLowerCase(),
+                            Entry::getValue));
+           exportedSecrets = collectSecretsForExport(paramAppKeysBySiteLC, user);
         }
 
         Logger.info(AppsAPIImpl.class," exporting : "+exportedSecrets);
@@ -1180,7 +1186,12 @@ public class AppsAPIImpl implements AppsAPI {
             throws DotDataException, DotSecurityException {
         final Map<String, List<AppSecrets>> exportedSecrets = new HashMap<>();
         final Map<String, Set<String>> keysByHost = appKeysByHost();
-        for (final Entry<String, Set<String>> entry : keysByHost.entrySet()) {
+
+        if(keysByHost.isEmpty()){
+           throw new IllegalArgumentException("There are no secrets in storage to export. File would be empty. ");
+        }
+
+        for (final Entry<String, Set<String>> entry : paramAppKeysBySite.entrySet()) {
             final String siteId = entry.getKey();
             final Host site = hostAPI.find(siteId, user, false);
             if (null != site) {
@@ -1194,16 +1205,18 @@ public class AppsAPIImpl implements AppsAPI {
                                     .computeIfAbsent(siteId, list -> new LinkedList<>())
                                     .add(appSecrets);
                         } else {
-                            throw new DotDataException(String.format("Unable to find secret identified by key `%s` and site `%s` ",appKey, siteId));
+                            throw new IllegalArgumentException(String.format("Unable to find secret identified by key `%s` under site `%s` ",appKey, site.getIdentifier()));
                         }
                     }
                 }
             } else {
-                throw new DotDataException(String.format("Unable to find site `%s` ", siteId));
+                throw new IllegalArgumentException(String.format("Unable to find site `%s` ", siteId));
             }
         }
-        return new AppsSecretsImportExport(
-                exportedSecrets);
+        if(exportedSecrets.isEmpty()){
+            throw new IllegalArgumentException(String.format("Unable to collect any secrets for export with the given params `%s` ", paramAppKeysBySite));
+        }
+        return new AppsSecretsImportExport(exportedSecrets);
     }
 
     /**
@@ -1235,7 +1248,7 @@ public class AppsAPIImpl implements AppsAPI {
 
     Map<String, List<AppSecrets>> importSecrets(final Path incomingFile, final Key key,
             final User user)
-            throws DotDataException, DotSecurityException, IOException, EncryptorException {
+            throws DotDataException, DotSecurityException, IOException {
         if(!user.isAdmin()){
             throw new DotSecurityException("Only Admins are allowed to perform an export operation.");
         }
@@ -1245,7 +1258,12 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         final byte[] encryptedBytes = Files.readAllBytes(incomingFile);
-        final byte[] decryptedBytes = AppsUtil.decrypt(key, encryptedBytes);
+        final byte[] decryptedBytes;
+        try {
+            decryptedBytes = AppsUtil.decrypt(key, encryptedBytes);
+        }catch (EncryptorException e){
+            throw new IllegalArgumentException("An error occurred while decrypting file contents. ",e.getCause());
+        }
         final File importFile = File.createTempFile("secrets", "export");
         try (OutputStream outputStream = Files.newOutputStream(importFile.toPath())) {
             outputStream.write(decryptedBytes);
@@ -1290,7 +1308,7 @@ public class AppsAPIImpl implements AppsAPI {
                             .format("No site identified by `%s` was found locally.", siteId));
                     continue;
                 }
-                throw new DotDataException(
+                throw new IllegalArgumentException(
                         String.format("No site identified by `%s` was found locally.\n %s", siteId,
                                 failSilentlyMessage));
             }
@@ -1305,7 +1323,7 @@ public class AppsAPIImpl implements AppsAPI {
                                         appSecrets.getKey()));
                         continue;
                     }
-                    throw new DotDataException(
+                    throw new IllegalArgumentException(
                             String.format("No App Descriptor `%s` was found locally.\n %s",
                                     appSecrets.getKey(), failSilentlyMessage));
                 }
@@ -1317,7 +1335,7 @@ public class AppsAPIImpl implements AppsAPI {
                                         appSecrets.getKey()));
                         continue;
                     }
-                    throw new DotDataException(
+                    throw new IllegalArgumentException(
                             String.format("Incoming empty secret `%s` could replace local copy.\n %s ",
                                     appSecrets.getKey(), failSilentlyMessage));
                 }
@@ -1330,7 +1348,7 @@ public class AppsAPIImpl implements AppsAPI {
                                         appSecrets.getKey()));
                         continue;
                     }
-                    throw new DotDataException(
+                    throw new IllegalArgumentException(
                             String.format(
                                     "Incoming secret `%s` has validation issues with local descriptor.\n %s ",
                                     appSecrets.getKey(), failSilentlyMessage),
@@ -1340,6 +1358,9 @@ public class AppsAPIImpl implements AppsAPI {
                 saveSecrets(appSecrets, site, user);
                 count++;
             }
+        }
+        if(count >= 1){
+          appsCache.flushSecret();
         }
         return count;
     }
