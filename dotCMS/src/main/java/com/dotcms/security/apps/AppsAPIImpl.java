@@ -698,12 +698,20 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
+     * returns DotCMS server folder
+     * @return
+     */
+    public static Path getServerDirectory() {
+        return Paths.get(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                + File.separator + SERVER_DIR_NAME + File.separator).normalize();
+    }
+
+    /**
      * This is the directory intended for customers use
      * @return
      */
-    private static String getAppsDefaultDirectory() {
-        return APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
+    private static Path getAppsDefaultDirectory() {
+        return Paths.get(getServerDirectory() + File.separator + APPS_DIR_NAME + File.separator).normalize();
     }
 
     /**
@@ -712,7 +720,7 @@ public class AppsAPIImpl implements AppsAPI {
      * @return
      */
     private static Path getUserAppsDescriptorDirectory() {
-        final Supplier<String> supplier = AppsAPIImpl::getAppsDefaultDirectory;
+        final Supplier<String> supplier = ()-> getAppsDefaultDirectory().toString();
         final String dirPath = Config
                 .getStringProperty(APPS_DIR_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize();

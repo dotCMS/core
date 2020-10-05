@@ -17,19 +17,16 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.Key;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -101,8 +98,7 @@ public class Task05400LoadAppsSecretsTest {
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(null));
         final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site)).toFile();
 
-        final Path serverDir = Paths.get(APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + AppsAPIImpl.SERVER_DIR_NAME ).normalize();
+        final Path serverDir = AppsAPIImpl.getServerDirectory();
 
         final File fileToImport = new File(serverDir.toString(), "dotSecrets-import.xxx");
         //Task will match any file matching this name followed by any extension
