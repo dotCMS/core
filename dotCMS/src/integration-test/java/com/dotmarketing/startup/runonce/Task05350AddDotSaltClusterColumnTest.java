@@ -33,8 +33,13 @@ public class Task05350AddDotSaltClusterColumnTest {
         }
     }
 
+    /**
+     * Given scenario: We have a database that already has the cluster_salt column. Then We drop it.
+     * Expected Results: The test should be able to drop the column and invoke the upgrade task to demonstrate it works 
+     * @throws DotDataException
+     */
     @Test
-    public void test_upgradeTask_success() throws DotDataException {
+    public void Test_UpgradeTask_Success() throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
         Logger.debug(this, "Prepping for testing `add` column.");
         try {
