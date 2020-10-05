@@ -1605,6 +1605,46 @@ public class HTMLPageAssetRenderedTest {
         Assert.assertTrue(html.contains("content1content2content1content2"));
     }
 
+    @Test
+    public void pageWithSidebarShouldRender() throws Exception{
+
+        final FileAssetContainer container = createFileContainer();
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .withContainer(container.getPath(), "1")
+                .withContainerInSidebar(container.getPath(), "2")
+                .next();
+
+        final Contentlet theme = new ThemeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .host(site)
+                .drawedBody(templateLayout)
+                .theme(theme)
+                .nextPersisted();
+
+        final String pageName = "test_page_with_sidebar-"+System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
+
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "1");
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "2");
+
+        //request page ENG version
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                .request();
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue(html.contains("content1content2content1content2"));
+    }
+
     private static class TestContainerUUID{
         Container container;
         String UUID;
