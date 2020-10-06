@@ -22,6 +22,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -328,13 +329,16 @@ public class VersionableFactoryImpl extends VersionableFactory {
     }
     @Override
     protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)throws DotDataException, DotStateException {
+        final DotConnect dotConnect = new DotConnect()
+                .setSQL("SELECT * FROM contentlet_version_info WHERE identifier=?")
+                .addParam(identifier);
 
-         HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
-         dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? ");
-         dh.setParam(identifier);
+        List<ContentletVersionInfo> versionInfos = TransformerLocator
+                .createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
 
-         Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
-         return (List<ContentletVersionInfo>)dh.list();
+		return versionInfos==null || versionInfos.isEmpty()
+				? Collections.emptyList()
+				: versionInfos;
 
     }
     @Override
