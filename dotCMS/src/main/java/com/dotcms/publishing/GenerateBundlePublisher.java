@@ -16,7 +16,7 @@ import com.dotmarketing.util.Logger;
 public class GenerateBundlePublisher extends PushPublisher {
 
     @Override
-    public PublisherConfig process(PublishStatus status) throws DotPublishingException {
+    public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
         final File bundleRoot = BundlerUtil.getBundleRoot(this.config);
         Logger.info(this.getClass(), "Bundling Complete: " + bundleRoot);
         return this.config;

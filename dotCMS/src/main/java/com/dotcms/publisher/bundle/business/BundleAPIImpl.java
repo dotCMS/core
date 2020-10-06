@@ -409,7 +409,8 @@ public class BundleAPIImpl implements BundleAPI {
         try {
             APILocator.getPublisherAPI().publish(pushPublisherConfig);
         }
-        catch(Exception e) {
+        catch(final Exception e) {
+        	Logger.error(this,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
         return BundlerUtil.getBundleRoot( pushPublisherConfig );
@@ -427,7 +428,8 @@ public class BundleAPIImpl implements BundleAPI {
             tmpFile.renameTo(bundleFile);
             return bundleFile;
         }
-        catch(Exception e) {
+        catch(final Exception e) {
+			Logger.error(this,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
     }

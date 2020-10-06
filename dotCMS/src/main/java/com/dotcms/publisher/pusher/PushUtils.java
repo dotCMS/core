@@ -68,26 +68,24 @@ public class PushUtils {
         }
         final String tempFileId = directory.getName() + UUIDGenerator.shorty();
         final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() +File.separator + tempFileId + ".tar.gz");
-
-
-        List<File> files = FileUtil.listFilesRecursively(directory);
+        final List<File> files = FileUtil.listFilesRecursively(directory);
 
         Logger.info(PushUtils.class, "Compressing " + files.size() + " to " + tempFile.getAbsoluteFile());
         // Create the output stream for the output file
 
         // try-with-resources handles close of streams
-        try (OutputStream fos = Files.newOutputStream(tempFile.toPath());
+        try (final OutputStream fileOutputStream = Files.newOutputStream(tempFile.toPath());
                         // Wrap the output file stream in streams that will tar and gzip everything
-                        TarArchiveOutputStream taos = new TarArchiveOutputStream(
-                                        new GZIPOutputStream(new BufferedOutputStream(fos)))) {
+                        final TarArchiveOutputStream tarArchiveOutputStream = new TarArchiveOutputStream(
+                                        new GZIPOutputStream(new BufferedOutputStream(fileOutputStream)))) {
 
-            taos.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
+			tarArchiveOutputStream.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
             // TAR originally didn't support long file names, so enable the support for it
-            taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+			tarArchiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
 
             // Get to putting all the files in the compressed output file
-            for (File f : files) {
-                addFilesToCompression(taos, f, ".", directory.getAbsolutePath());
+            for (final File file : files) {
+                addFilesToCompression(tarArchiveOutputStream, file, ".", directory.getAbsolutePath());
             }
         }
 

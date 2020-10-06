@@ -24,7 +24,6 @@ import com.liferay.portal.util.WebKeys;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
-import javax.servlet.ServletOutputStream;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
