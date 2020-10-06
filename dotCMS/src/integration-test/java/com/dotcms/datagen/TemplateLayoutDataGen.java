@@ -4,7 +4,6 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.templates.design.bean.*;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -64,8 +63,7 @@ public class TemplateLayoutDataGen  {
 
         return templateLayout;
     }
-
-    @NotNull
+    
     private static List<ContainerUUID> createContainerUUIDS(Map<String, List<String>> containersIds) {
         final List<ContainerUUID> containers = new ArrayList<>();
 
