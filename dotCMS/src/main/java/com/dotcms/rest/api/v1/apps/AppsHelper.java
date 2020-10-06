@@ -612,24 +612,18 @@ class AppsHelper {
      * @throws DotDataException
      */
     List<AppView> createApp(final FormDataMultiPart multipart, final User user)
-            throws IOException, DotDataException, AlreadyExistException, DotSecurityException  {
-        final List<File> files = new MultiPartUtils().getBinariesFromMultipart(multipart);
-        if(!UtilMethods.isSet(files)){
-            throw new DotDataException("Unable to extract any files from multi-part request.");
-        }
-        final List<AppView> appViews = new ArrayList<>(files.size());
-        try {
-            for (final File file : files) {
-                if(0 == file.length()){
-                    throw new IllegalArgumentException("Zero length file.");
-                }
-                final AppDescriptor appDescriptor = appsAPI.createAppDescriptor(file, user);
-                appViews.add(new AppView(appDescriptor, 0, 0));
+            throws IOException, DotDataException, JSONException {
+
+        return processMultipart(multipart, (file, bodyMultipart) -> {
+            final AppDescriptor appDescriptor;
+            try {
+                appDescriptor = appsAPI.createAppDescriptor(file, user);
+                return new AppView(appDescriptor, 0, 0);
+            } catch (AlreadyExistException | DotSecurityException  e) {
+                throw new DotDataException(e.getMessage(), e);
             }
-        }finally {
-            removeTempFolder(files.get(0).getParentFile());
-        }
-        return appViews;
+        });
+
     }
 
     /**
@@ -686,11 +680,58 @@ class AppsHelper {
      * @throws IOException
      * @throws DotDataException
      * @throws JSONException
-     * @throws DotSecurityException
-     * @throws EncryptorException
      */
     void importSecrets(final FormDataMultiPart multipart, final User user)
-            throws IOException, DotDataException, JSONException, DotSecurityException, EncryptorException {
+            throws IOException, DotDataException, JSONException {
+
+        processMultipart(multipart, new FileConsumer<Void>() {
+            private Key key = null;
+            @Override
+            public Void apply(final File file, final Map<String, Object> bodyMultipart)
+                    throws DotDataException {
+                if(null == key){
+                    final String password = (String) bodyMultipart.get("password");
+                    key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
+                }
+                try {
+                    appsAPI.importSecretsAndSave(file.toPath(), key, user);
+                    return null;
+                } catch (DotSecurityException | IOException | EncryptorException e) {
+                    throw new DotDataException(e.getMessage(), e);
+                }
+            }
+        });
+    }
+
+    @FunctionalInterface
+    interface FileConsumer<T> {
+
+        /**
+         * Whatever need to happen with the file and the multipart.Should be halded
+         * @param file
+         * @param bodyMultipart
+         * @return
+         * @throws DotDataException
+         */
+        T apply (File file, Map<String, Object> bodyMultipart)
+                throws DotDataException;
+    }
+
+    /**
+     * Multipart common process function
+     * whatever specific needs be done in between has to take place in the fileConsumer
+     * @param multipart
+     * @param consumer
+     * @param <T>
+     * @return
+     * @throws IOException
+     * @throws DotDataException
+     * @throws JSONException
+     * @throws AlreadyExistException
+     * @throws DotSecurityException
+     */
+   private <T> List<T> processMultipart(final FormDataMultiPart multipart, final FileConsumer<T> consumer)
+           throws IOException, DotDataException, JSONException {
         final MultiPartUtils multiPartUtils = new MultiPartUtils();
         final List<File> files = multiPartUtils.getBinariesFromMultipart(multipart);
         try {
@@ -698,20 +739,20 @@ class AppsHelper {
                 throw new DotDataException(
                         "Unable to extract any files from multi-part request.");
             }
-            final Map<String, Object> bodyMapFromMultipart = multiPartUtils
-                    .getBodyMapFromMultipart(multipart);
-            final String password = (String) bodyMapFromMultipart.get("password");
-            final Key key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
+
+            final Map<String, Object> bodyMapFromMultipart = multiPartUtils.getBodyMapFromMultipart(multipart);
+            final List<T> result = new ArrayList<>(files.size());
             for (final File file : files) {
                 try {
                     if (0 == file.length()) {
                         throw new IllegalArgumentException("Zero length file.");
                     }
-                    appsAPI.importSecretsAndSave(file.toPath(), key, user);
+                    result.add(consumer.apply(file, bodyMapFromMultipart));
                 } finally {
                     file.delete();
                 }
             }
+              return result;
         } finally {
             removeTempFolder(files.get(0).getParentFile());
         }
