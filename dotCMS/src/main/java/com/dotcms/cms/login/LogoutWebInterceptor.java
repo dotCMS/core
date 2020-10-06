@@ -10,6 +10,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -21,12 +22,13 @@ import java.io.IOException;
 public class LogoutWebInterceptor implements WebInterceptor{
 
     private static final String      API_CALL                = "/dotAdmin/logout";
+    private static final String      API_SHOW                = "/dotAdmin/show-logout";
 
 
     @Override
     public String[] getFilters() {
         return new String[] {
-                API_CALL + "*"
+                API_CALL + "*",API_SHOW + "*",
         };
     }
 
@@ -37,17 +39,22 @@ public class LogoutWebInterceptor implements WebInterceptor{
 
         try {
 
-            Logger.info(this, ()-> "Doing the logout");
-            final User user = PortalUtil.getUser(request);
+            if (request.getRequestURI().contains(API_CALL)) {
+                Logger.info(this, () -> "Doing the logout");
+                final User user = PortalUtil.getUser(request);
 
-            APILocator.getLoginServiceAPI().doActionLogout(request, response);
+                APILocator.getLoginServiceAPI().doActionLogout(request, response);
 
-            if(null != user){
-                SecurityLogger.logInfo(this.getClass(), "User " +
-                        user.getFullName() + " (" + user.getUserId() + ") has logged out from IP: " + request.getRemoteAddr());
+                if (null != user) {
+                    SecurityLogger.logInfo(this.getClass(), "User " +
+                            user.getFullName() + " (" + user.getUserId() + ") has logged out from IP: " + request.getRemoteAddr());
+                }
             }
 
-            response.sendRedirect(Config.getStringProperty("logout.url", "/dotAdmin/#/public/logout"));
+            //response.sendRedirect(Config.getStringProperty("logout.url", "/dotAdmin/#/public/logout"));
+            final RequestDispatcher dispatcher = Config.CONTEXT
+                    .getRequestDispatcher("/html/portal/logout.jsp");
+            dispatcher.forward(request, response);
             Logger.info(this, ()-> "Logout DONE");
         }  catch (Exception e) {
 

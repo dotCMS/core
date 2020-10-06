@@ -248,7 +248,7 @@ public class DotSamlResource implements Serializable {
 	@Path( "/metadata/{idpConfigId}" )
 	@JSONP
 	@NoCache
-	@Produces( { MediaType.APPLICATION_JSON, "application/javascript" } )
+	@Produces( { MediaType.APPLICATION_XML, "application/xml" } )
 	public void metadata( @PathParam( "idpConfigId" ) final String idpConfigId,
 						  @Context final HttpServletRequest httpServletRequest,
 						  @Context final HttpServletResponse httpServletResponse ) throws IOException {
@@ -269,6 +269,7 @@ public class DotSamlResource implements Serializable {
 				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
 					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
+					httpServletResponse.setContentType("application/xml");
 					this.samlAuthenticationService.renderMetadataXML(httpServletResponse.getWriter(), identityProviderConfiguration);
 					return;
 				}
@@ -338,7 +339,7 @@ public class DotSamlResource implements Serializable {
 					Logger.debug(this, () -> "Processing saml logout get request for idpConfig id: " + idpConfigId);
 					final String logoutPath = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
-							()-> "/dotAdmin/#/public/logout");
+							()-> this.buildBaseUrlFromRequest(httpServletRequest));
 
 					return Response.seeOther(new URI(logoutPath)).build();
 				}
@@ -360,7 +361,7 @@ public class DotSamlResource implements Serializable {
 	private String buildBaseUrlFromRequest(final HttpServletRequest httpServletRequest) {
 
 		final String uri = httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":"
-				+ httpServletRequest.getServerPort();
+				+ httpServletRequest.getServerPort() + "/dotAdmin/show-logout";
 
 		return uri;
 	}
