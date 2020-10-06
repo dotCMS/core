@@ -28,12 +28,12 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
             "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
         "WHERE template.drawed_body is not null order by template.inode";
 
-    final static String GET_TEMPLATES_QUERY_ORACLE = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.identifier, to_char(template.drawed_body), template.body " +
+    final static String GET_TEMPLATES_QUERY_ORACLE = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.identifier, to_char(template.drawed_body), to_char(template.body) " +
             "FROM identifier " +
             "INNER JOIN template ON identifier.id = template.identifier " +
             "INNER JOIN contentlet_version_info cvi on identifier.host_inode = cvi.identifier " +
             "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
-            "WHERE template.drawed_body is not null order by template.inode";
+            "WHERE to_char(template.drawed_body) is not null order by template.inode";
 
     final static String UPDATE_TEMPLATES = "update template set drawed_body = ?, body = ? where inode =?";
 
