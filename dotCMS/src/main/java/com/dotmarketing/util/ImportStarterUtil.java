@@ -255,7 +255,7 @@ public class ImportStarterUtil {
         for (final Identifier ident : otherIdents) {
             APILocator.getIdentifierAPI().save(ident);
         }
-
+        DbConnectionFactory.closeAndCommit();
 
 
         // we store here defaultFileType for every folder
@@ -285,7 +285,7 @@ public class ImportStarterUtil {
         for (File file : endsWith(ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION)) {
             new ContentTypeImportExportUtil().importContentTypes(file);
         }
-
+        DbConnectionFactory.closeAndCommit();
         // updating file_type on folder now that structures were added
         DotConnect dc = new DotConnect();
         for (Entry<String, String> entry : fileTypesInodes.entrySet()) {
@@ -337,6 +337,7 @@ public class ImportStarterUtil {
         // workflow schemas need to come before permissions
         for (File file : contains("WorkflowSchemeImportExportObject.json")) {
             WorkflowImportExportUtil.getInstance().importWorkflowExport(file);
+            DbConnectionFactory.closeAndCommit();
         }
 
         for (File file : contains("com.dotmarketing.beans.Permission_")) {
@@ -352,6 +353,7 @@ public class ImportStarterUtil {
         // We install rules after Version info.
         for (File file : contains("RuleImportExportObject.json")) {
             RulesImportExportUtil.getInstance().importRules(file);
+            DbConnectionFactory.closeAndCommit();
         }
 
         for (File file : contains("com.dotmarketing.portlets.workflows.model.WorkflowTask_")) {
@@ -806,6 +808,7 @@ public class ImportStarterUtil {
                     turnIdentityOffMSSQL(tableName);
                 }
             }
+            DbConnectionFactory.closeAndCommit();
 
     }
 
