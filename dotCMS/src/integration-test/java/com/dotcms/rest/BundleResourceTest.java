@@ -200,11 +200,11 @@ public class BundleResourceTest {
 
     /**
      * Method to Test: {@link BundleResource#downloadBundle(HttpServletRequest, HttpServletResponse, String)}
-     * When: Create a bundle and try to download it, but since the tar.gz has not been generated should fail.
-     * Should: return 404 since the file has not been generated
+     * When: Create a bundle and try to download it, since the tar.gz has been generated should succeed.
+     * Should: return 200 since the file has been generated
      */
     @Test
-    public void test_downloadBundle_success() throws DotDataException, IOException {
+    public void test_downloadBundle_success() throws DotDataException {
         //Create new bundle
         final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
 
