@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.beanutils.BeanUtils;
@@ -220,15 +221,29 @@ public class VersionableFactoryImpl extends VersionableFactory {
             if(ident==null || !UtilMethods.isSet(ident.getId()))
                 return null;
             Class<?> clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
-            HibernateUtil dh = new HibernateUtil(clazz);
-            dh.setQuery("from "+clazz.getName()+" where identifier=?");
-            dh.setParam(identifier);
-            Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
-            vi=(VersionInfo)dh.load();
-            if(!UtilMethods.isSet(vi.getIdentifier())) {
-            	vi.setIdentifier(identifier);
-            	vi.setWorkingInode("NOTFOUND");
-            }
+            if(Objects.equals(clazz, ContentletVersionInfo.class)) {
+            	Optional<ContentletVersionInfo> info =
+						getContentletVersionInfo(identifier,
+								APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+				if(!info.isPresent()) {
+					throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
+							+ identifier + ". Lang: " + APILocator.getLanguageAPI()
+							.getDefaultLanguage().getId());
+				}
+
+				vi = info.get();
+			} else {
+				HibernateUtil dh = new HibernateUtil(clazz);
+				dh.setQuery("from " + clazz.getName() + " where identifier=?");
+				dh.setParam(identifier);
+				Logger.debug(this.getClass(), "getVersionInfo query: " + dh.getQuery());
+				vi = (VersionInfo) dh.load();
+				if (!UtilMethods.isSet(vi.getIdentifier())) {
+					vi.setIdentifier(identifier);
+					vi.setWorkingInode("NOTFOUND");
+				}
+			}
             this.icache.addVersionInfoToCache(vi);
         }
         if(vi.getWorkingInode().equals("NOTFOUND")) {
