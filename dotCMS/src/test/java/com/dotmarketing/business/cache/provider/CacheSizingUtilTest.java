@@ -1,12 +1,13 @@
 package com.dotmarketing.business.cache.provider;
 
 import org.junit.Test;
+import com.dotcms.repackage.com.google.common.base.Optional;
 import com.dotmarketing.portlets.contentlet.business.Contentlet;
 
 public class CacheSizingUtilTest {
 
     
-    
+    final String fourLetters = "CRAP";
 
     
     CacheSizingUtil cacheSizer = new CacheSizingUtil();
@@ -20,7 +21,7 @@ public class CacheSizingUtilTest {
         assert(contentletSize>0);
         
         
-        final String fourLetters = "CRAP";
+
         
         long fourLettersSize = cacheSizer.sizeOf(fourLetters);
         assert(fourLettersSize==48);
@@ -31,12 +32,26 @@ public class CacheSizingUtilTest {
     @Test
     public void test_sizeof_null_works() {
 
-        long contentletSize = cacheSizer.sizeOf(null);
-        assert(contentletSize==0);
+        long cacheSize = cacheSizer.sizeOf(null);
+        assert(cacheSize==0);
 
         
     }
     
     
+    @Test
+    public void test_sizeof_optional_works() {
+
+        
+        
+        
+        long cacheSize = cacheSizer.sizeOf(Optional.fromNullable(null));
+        assert(cacheSize==16);
+        
+        cacheSize = cacheSizer.sizeOf(Optional.of(fourLetters));
+        assert(cacheSize==64);
+
+        
+    }
 
 }
