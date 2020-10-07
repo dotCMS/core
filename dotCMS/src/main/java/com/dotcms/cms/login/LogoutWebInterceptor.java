@@ -53,7 +53,7 @@ public class LogoutWebInterceptor implements WebInterceptor{
 
             //response.sendRedirect(Config.getStringProperty("logout.url", "/dotAdmin/#/public/logout"));
             final RequestDispatcher dispatcher = Config.CONTEXT
-                    .getRequestDispatcher("/html/portal/logout.jsp");
+                    .getRequestDispatcher("/html/portal/show-logout.jsp");
             dispatcher.forward(request, response);
             Logger.info(this, ()-> "Logout DONE");
         }  catch (Exception e) {
