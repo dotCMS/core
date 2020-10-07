@@ -32,6 +32,8 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.Layout;
@@ -42,6 +44,7 @@ import com.dotmarketing.business.UsersRoles;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.HibernateUtil.TransactionListenerStatus;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -100,6 +103,10 @@ public class ImportStarterUtil {
 
 
     public ImportStarterUtil(File starterZipFile) {
+        
+        
+        
+        
         this.starterZip = starterZipFile;
 
         this.assetPath = ConfigUtils.getAbsoluteAssetsRootPath();
@@ -147,13 +154,13 @@ public class ImportStarterUtil {
     @WrapInTransaction
     public void doImport() throws Exception {
 
-
+        HibernateUtil.setTransactionListenersStatus(TransactionListenerStatus.DISABLED);
 
         Logger.info(this, "Found " + tempFiles.size() + " files to import");
 
 
         deleteDotCMS();
-        
+        DbConnectionFactory.closeAndCommit();
 
         for (File file : endsWith("Company.xml")) {
             doXMLFileImport(file);
@@ -386,8 +393,8 @@ public class ImportStarterUtil {
         Logger.info(ImportStarterUtil.class, "Done Importing");
         deleteTempFiles();
 
-
-
+        HibernateUtil.setTransactionListenersStatus(TransactionListenerStatus.ENABLED);
+        DbConnectionFactory.closeAndCommit();
     }
 
     /**
