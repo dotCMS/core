@@ -31,7 +31,12 @@ public class CacheSizingUtil {
 
     }
 
-
+    /**
+     * Takes a map and pulls random values from it to calculate an average object size
+     * 
+     * @param cacheMap
+     * @return
+     */
     public long averageSize(final Map<String, Object> cacheMap) {
 
         if (cacheMap.size() == 0) {
@@ -59,9 +64,16 @@ public class CacheSizingUtil {
 
     }
 
+    /**
+     * Tries to use the Unsafe class to calculate an objects size. If this does not work, it will fall
+     * back on the serialzied size (which less than accurate).
+     * 
+     * @param cacheMap
+     * @return
+     */
     public long sizeOf(Object object) {
-        long retainedSize = Try.of(()->retainedSize(object)).getOrElse(0);
-        
+        long retainedSize = Try.of(() -> retainedSize(object)).getOrElse(0);
+
         return retainedSize > 0 ? retainedSize : sizeOfSerialized(object);
 
     }
@@ -77,7 +89,7 @@ public class CacheSizingUtil {
      */
     long sizeOfSerialized(Object object) {
 
-        if(object==null) {
+        if (object == null) {
             return 0;
         }
 
@@ -148,7 +160,7 @@ public class CacheSizingUtil {
                     if (fcls.isPrimitive())
                         continue;
                     f.setAccessible(true);
-                     ref = f.get(obj);
+                    ref = f.get(obj);
                     if (ref != null && !isCalculated(calculated, ref)) {
                         calculated.put(ref, ref);
                         int referentSize = retainedSize(ref, calculated);
