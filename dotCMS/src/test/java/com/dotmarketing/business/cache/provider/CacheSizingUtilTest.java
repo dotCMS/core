@@ -16,13 +16,13 @@ public class CacheSizingUtilTest {
        
         final Contentlet con = new Contentlet();
         
-        long contentletSize = cacheSizer.sizeOfMemory(con);
+        long contentletSize = cacheSizer.sizeOf(con);
         assert(contentletSize>0);
         
         
         final String fourLetters = "CRAP";
         
-        long fourLettersSize = cacheSizer.sizeOfMemory(fourLetters);
+        long fourLettersSize = cacheSizer.sizeOf(fourLetters);
         assert(fourLettersSize==48);
         
         
