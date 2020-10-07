@@ -77,6 +77,9 @@ public class CacheSizingUtil {
      */
     long sizeOfSerialized(Object object) {
 
+        if(object==null) {
+            return 0;
+        }
 
         if (!(object instanceof Serializable)) {
             Logger.warn(this.getClass(), object.getClass() + " not serializable: " + object);
@@ -121,6 +124,7 @@ public class CacheSizingUtil {
 
     @SuppressWarnings("restriction")
     private static int retainedSize(Object obj, HashMap<Object, Object> calculated) {
+        Object ref = null;
         try {
             if (obj == null)
                 throw new NullPointerException();
@@ -144,7 +148,7 @@ public class CacheSizingUtil {
                     if (fcls.isPrimitive())
                         continue;
                     f.setAccessible(true);
-                    Object ref = f.get(obj);
+                     ref = f.get(obj);
                     if (ref != null && !isCalculated(calculated, ref)) {
                         calculated.put(ref, ref);
                         int referentSize = retainedSize(ref, calculated);

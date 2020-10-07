@@ -26,11 +26,17 @@ public class CacheSizingUtilTest {
         assert(fourLettersSize==48);
         
         
-        
-        
-        
-        
+    }
+    
+    @Test
+    public void test_sizeof_null_works() {
+
+        long contentletSize = cacheSizer.sizeOf(null);
+        assert(contentletSize==0);
+
         
     }
+    
+    
 
 }
