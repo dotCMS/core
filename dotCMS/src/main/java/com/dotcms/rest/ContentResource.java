@@ -15,7 +15,6 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.FireActionForm;
@@ -45,7 +44,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -54,7 +52,6 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -89,8 +86,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +94,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static com.dotcms.util.CollectionsUtils.map;
 
 import static com.dotmarketing.util.NumberUtil.toInt;
 import static com.dotmarketing.util.NumberUtil.toLong;
@@ -152,12 +146,12 @@ public class ContentResource {
                 (null, request, response, false, null);
 
         final User   user    = initData.getUser();
-        final String query   = searchForm.getQuery(); // ""
-        final String sort    = searchForm.getSort(); // ""
-        final int    limit   = searchForm.getLimit();  // 20
-        final int    offset  = searchForm.getOffset(); // 0
+        final String query   = searchForm.getQuery(); // default value = ""
+        final String sort    = searchForm.getSort(); // default value = ""
+        final int    limit   = searchForm.getLimit();  // default value = 20
+        final int    offset  = searchForm.getOffset(); // default value = 0
         final String render  = searchForm.getRender();
-        final int depth      = searchForm.getDepth(); // -1
+        final int depth      = searchForm.getDepth(); // default value = -1
         final long language  = searchForm.getLanguageId();
         final PageMode pageMode         = PageMode.get(request);
         final String userToPullID       = searchForm.getUserId();
@@ -178,6 +172,7 @@ public class ContentResource {
 
         Logger.debug(this, ()-> "Searching contentlets by: " + searchForm);
 
+        //If the user is an admin can send an user to filter the search
         if(null != user && user.isAdmin()){
 
             if(UtilMethods.isSet(userToPullID)) {
@@ -198,6 +193,10 @@ public class ContentResource {
                     pageMode.respectAnonPerms, language, pageMode.showLive, allCategoriesInfo);
 
             afterAPIPull       = Calendar.getInstance().getTimeInMillis();
+
+            if(contentlets.isEmpty() && offset <= resultsSize ){
+                resultsSize = 0;
+            }
         }
 
         final long queryTook     = afterAPISearchPull-startAPISearchPull;
