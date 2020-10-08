@@ -182,6 +182,29 @@
 					"response": []
 				},
 				{
+					"name": "Switch Host",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "SuccessRequest",
 					"event": [
 						{
