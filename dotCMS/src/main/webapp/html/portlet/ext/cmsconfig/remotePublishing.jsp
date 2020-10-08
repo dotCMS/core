@@ -12,6 +12,7 @@
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
+<%@ page import="com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil" %>
 
 <%	if( LicenseUtil.getLevel()<LicenseLevel.PROFESSIONAL.level){ %>
 <%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
@@ -1020,6 +1021,7 @@ function deleteEnvPushHistory(envId) {
 <%--END OF ENVIROMENTS--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 
+<%if (!AuthCredentialPushPublishUtil.isJWTAvailable()){%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--START OF END POINTS--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
@@ -1079,7 +1081,7 @@ function deleteEnvPushHistory(envId) {
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--END OF END POINTS--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
-
+<%}%>
 
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--INTEGRITY RESULTS DIALOG--%>

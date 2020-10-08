@@ -343,6 +343,6 @@ public class VelocityServletIntegrationTest {
         velocityServlet.service(mockRequest, mockResponse);
 
         verify(mockResponse, never()).sendError(anyInt());
-        verify(outputStream).write("<div> content1</div>".getBytes());
+        verify(outputStream).write("<div>content1</div>".getBytes());
     }
 }

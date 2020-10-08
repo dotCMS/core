@@ -1042,7 +1042,6 @@ task cleanDotCmsWebComponents {
     delete './src/main/webapp/dotcms-webcomponents/package'
     delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.js'
     delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.esm.js'
-    delete './src/main/webapp/dotcms-webcomponents/index.esm.js'
 }
 
 task copyDotCmsUi(type: Copy) {

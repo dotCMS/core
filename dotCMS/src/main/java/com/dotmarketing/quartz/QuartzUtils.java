@@ -1,16 +1,13 @@
 package com.dotmarketing.quartz;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
@@ -838,29 +835,51 @@ public class QuartzUtils {
     }
 	
 	public static boolean isJobRunning(String jobName, String jobGroup) throws SchedulerException{
-		
-		List<JobExecutionContext> currentlyExecutingJobs = new ArrayList<JobExecutionContext>();
-		currentlyExecutingJobs.addAll(getSequentialScheduler().getCurrentlyExecutingJobs());
-		currentlyExecutingJobs.addAll(getStandardScheduler().getCurrentlyExecutingJobs());
-
 		JobDetail existingJobDetail = getSequentialScheduler().getJobDetail(jobName, jobGroup);
-
 		if (existingJobDetail == null) {
 			existingJobDetail = getStandardScheduler().getJobDetail(jobName, jobGroup);
 		}
+
 		if (existingJobDetail != null) {
+			final List<JobExecutionContext> currentlyExecutingJobs = new ArrayList<>();
+			currentlyExecutingJobs.addAll(getSequentialScheduler().getCurrentlyExecutingJobs());
+			currentlyExecutingJobs.addAll(getStandardScheduler().getCurrentlyExecutingJobs());
+
 	        for (JobExecutionContext jec : currentlyExecutingJobs) {
-	        	JobDetail runningJobDetail = jec.getJobDetail();
-	            if(existingJobDetail.equals(runningJobDetail) || isSameJob(existingJobDetail, runningJobDetail)) {
+	        	final JobDetail runningJobDetail = jec.getJobDetail();
+	            if (existingJobDetail.equals(runningJobDetail) || isSameJob(existingJobDetail, runningJobDetail)) {
 	                return true;
 	            }
 	        }
 		}
 
-
 		return false;
-		
+	}
 
+	/**
+	 * A more cluster aware method to find out if a job is running since {@link #isJobRunning(String, String) evaluates
+	 * for the current scheduler.
+	 *
+	 * @param scheduler scheduler to use
+	 * @param jobName job name
+	 * @param jobGroup job group
+	 * @param triggerName trigger name
+	 * @param triggerGroup trigger group
+	 * @return true if running job is detected, otherwise false
+	 */
+	public static boolean isJobRunning(final Scheduler scheduler,
+									   final String jobName,
+									   final String jobGroup,
+									   final String triggerName,
+									   final String triggerGroup) {
+		try {
+			return Arrays
+					.stream(scheduler.getTriggersOfJob(jobName, jobGroup))
+					.anyMatch(trigger -> trigger.getName().equals(triggerName) &&
+							trigger.getGroup().equals(triggerGroup));
+		} catch (SchedulerException e) {
+			return false;
+		}
 	}
 	
 	/**

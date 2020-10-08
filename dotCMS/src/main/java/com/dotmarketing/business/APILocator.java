@@ -84,7 +84,6 @@ import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexQueueAPIImpl;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.MultiTreeAPIImpl;

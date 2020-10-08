@@ -78,7 +78,8 @@ public class ConfigUtils {
 	}
 
 	public static String getIntegrityPath() {
-		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "integrity";
+		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath();
+		path += (path.endsWith(File.separator) ? "" : File.separator) + "integrity";
 		File pathDir=new File(path);
 		if(!pathDir.exists())
 		    pathDir.mkdirs();
