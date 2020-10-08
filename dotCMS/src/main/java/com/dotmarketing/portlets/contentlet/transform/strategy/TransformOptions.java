@@ -21,6 +21,7 @@ public enum TransformOptions {
     IDENTIFIER_VIEW, //This instructs the transformer to emulate the old IdentifierToMapTransformer.
     LANGUAGE_VIEW, //This instructs the transformer to emulate the old IdentifierToMapTransformer.
     BINARIES_VIEW, //This Emulates the old BinaryToMapTransformer.
+    KEY_VALUE_VIEW,
     CATEGORIES_VIEW; //This emulates the Category To MapTransformer.
 
     private boolean defaultProperty;
