@@ -404,7 +404,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -1099,7 +1099,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -1773,7 +1773,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -2365,7 +2365,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -2892,7 +2892,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -3538,7 +3538,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content.tar.gz"
+											"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
 									],
 									"options": {

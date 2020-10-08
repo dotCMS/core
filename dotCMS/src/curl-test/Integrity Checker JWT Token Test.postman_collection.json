@@ -454,7 +454,7 @@
 											"    var jsonData = pm.response.json();",
 											"    console.log(jsonData);",
 											"",
-											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"folder_integrity_test.tar.gz\");",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"folder_integrity_test_demo.tar.gz\");",
 											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 											"});"
 										],
@@ -498,7 +498,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -764,7 +764,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/folder_integrity_test",
+									"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/folder_integrity_test_demo",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -775,7 +775,7 @@
 										"sitename",
 										"default",
 										"uri",
-										"folder_integrity_test"
+										"folder_integrity_test_demo"
 									]
 								}
 							},
