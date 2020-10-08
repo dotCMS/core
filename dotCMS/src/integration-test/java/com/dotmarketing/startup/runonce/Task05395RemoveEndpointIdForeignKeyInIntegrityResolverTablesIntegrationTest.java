@@ -12,15 +12,13 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 
 
-public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest {
+public class Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -29,7 +27,7 @@ public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegra
     }
 
     /**
-     * Method to Test: {@link Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables#executeUpgrade()}
+     * Method to Test: {@link Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables#executeUpgrade()}
      * When: Run the Upgrade Task
      * Should: Should remove the foreign key to all the Integrity Resolver tables and rename the column endpoint_id
      * The Integrity Resolver tables are:
@@ -51,8 +49,8 @@ public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegra
         insertRolesIntegrityResolver(endpointId);
         insertStructuresIntegrityResolver(endpointId);
 
-        final Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables =
-                new Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables();
+        final Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables =
+                new Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables();
 
         task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables.executeUpgrade();
 

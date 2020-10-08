@@ -323,7 +323,8 @@ import org.junit.runners.Suite.SuiteClasses;
         DotSamlResourceTest.class,
         DotStatefulJobTest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
-        IntegrityDataGenerationJobTest.class
+        IntegrityDataGenerationJobTest.class,
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class
 })
 public class MainSuite {
 
