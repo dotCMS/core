@@ -50,6 +50,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
@@ -81,6 +82,8 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
+
+        createFilter();
 
         systemUser = APILocator.getUserAPI().getSystemUser();
         createFilterDescriptor(defaultFilterKey,true,true,false,null,null,null,null,true);
@@ -679,6 +682,15 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
             Config.setProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", allowZeroLengthFilesDefault);
         }
 
+    }
+
+    private static void createFilter() {
+        final Map<String, Object> filtersMap =
+                ImmutableMap.of("dependencies", true, "relationships", true);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterTestAPI.yml", "Filter Test Title", filtersMap, true,
+                        "Reviewer,dotcms.org.2789");
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 
 }
