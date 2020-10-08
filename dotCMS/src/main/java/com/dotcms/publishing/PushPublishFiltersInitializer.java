@@ -20,12 +20,15 @@ public class PushPublishFiltersInitializer implements DotInitializer {
     public void init() {
 
         try {
+            //Clear filtersMap
+            PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
             //Path where the YAML files are stored
             final String filtersDirectoryString =
                     APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
                             + File.separator + "publishing-filters" + File.separator;
             final File basePath = new File(filtersDirectoryString);
             if (!basePath.exists()) {
+                Logger.debug(PushPublishFiltersInitializer.class, ()->"PushPublishing Filters directory does not exists, creating under: " + filtersDirectoryString);
                 basePath.mkdir();
                 //If the directory does not exists, copy the YAML files that are ship with
                 //dotcms to the created directory
@@ -43,7 +46,7 @@ public class PushPublishFiltersInitializer implements DotInitializer {
                 });
                 Logger.debug(PushPublishFiltersInitializer.class, ()->" dotcms filters files copied");
             }
-            Logger.info(PushPublishFiltersInitializer.class, " ymlFiles are set under:  " + filtersDirectoryString);
+            Logger.debug(PushPublishFiltersInitializer.class, ()->" PushPublishing Filters Directory: " + filtersDirectoryString);
             //For each YAML file under the directory,
             // read it and load the Filter to the PublisherAPI.loadedFilters
             Files.list(basePath.toPath()).forEach(this::loadFilter);
@@ -54,7 +57,7 @@ public class PushPublishFiltersInitializer implements DotInitializer {
 
     protected void loadFilter(final Path path){
         final String fileName = path.getFileName().toString();
-        Logger.info(PushPublishFiltersInitializer.class, " ymlFileName:  " + fileName);
+        Logger.info(PushPublishFiltersInitializer.class, " Loading PushPublish Filter:  " + fileName);
         try {
             final FilterDescriptor filterDescriptor = YamlUtil.parse(path, FilterDescriptor.class);
             filterDescriptor.setKey(fileName);

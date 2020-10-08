@@ -2,24 +2,35 @@ package com.dotcms.security.apps;
 
 import static com.dotcms.security.apps.AppsCache.CACHE_404;
 
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.auth.providers.jwt.factories.SigningKeyFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
@@ -51,10 +62,11 @@ import org.apache.commons.lang.time.FastDateFormat;
  */
 public class SecretsStoreKeyStoreImpl implements SecretsStore {
 
+    static final String SECRETS_KEYSTORE_PASSWORD_KEY = "SECRETS_KEYSTORE_PASSWORD_KEY";
     private static final String SECRETS_STORE_FILE = "dotSecretsStore.p12";
     private static final String SECRETS_STORE_KEYSTORE_TYPE = "pkcs12";
     private static final String SECRETS_STORE_SECRET_KEY_FACTORY_TYPE = "PBE";
-    private static final String SECRETS_KEYSTORE_PASSWORD_KEY = "SECRETS_KEYSTORE_PASSWORD_KEY";
+    private static final String SECRETS_STORE_LOAD_TRIES = "SECRETS_STORE_LOAD_TRIES";
     private static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
     private static final String APPS_KEY_PROVIDER_CLASS = "APPS_KEY_PROVIDER_CLASS";
     private final String secretsKeyStorePath;
@@ -113,28 +125,40 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         return secretStoreFile;
     }
 
-
-    /**
-     * loads up the Keystore from disk
-     * 
-     * @return
-     */
-    private KeyStore getSecretsStore() {
-        final File secretStoreFile = createStoreIfNeeded();
+   /**
+    * loads up the Keystore from disk
+    */
+    @VisibleForTesting
+    KeyStore getSecretsStore() {
         try {
             final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
-            try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
-                keyStore.load(inputStream, loadStorePassword());
+            final int maxLoadTries = Config.getIntProperty(SECRETS_STORE_LOAD_TRIES, 2);
+
+            int tryCount = 1;
+            while (tryCount <= maxLoadTries) {
+                final File secretStoreFile = createStoreIfNeeded();
+                try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
+                    keyStore.load(inputStream, loadStorePassword());
+                    Logger.info(SecretsStoreKeyStoreImpl.class,
+                            String.format("KeyStore loaded successfully after `%d` tries.", tryCount));
+                    break;
+                } catch (IOException gse) {
+                    //IOException wraps the underlying UnrecoverableKeyException
+                    Try.of(() -> handleStorageLoadException(gse));
+                    tryCount++;
+                }
             }
 
             return keyStore;
 
         } catch (Exception e) {
-            Logger.debug(this.getClass(), "unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
+            Logger.debug(this.getClass(),
+                    "Unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
         }
 
     }
+
 
     /**
      * Persists the keystore, tries to do a 2 phase commit, saving to a tmp file, copying that to the
@@ -371,11 +395,10 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * Short hand accessor to put values in cache impl
      * @param key
      * @param val
-     * @throws KeyStoreException
      * @throws DotCacheException
      */
     private void putInCache(final String key, final char[] val)
-            throws KeyStoreException, DotCacheException {
+            throws DotCacheException {
         cache.putSecret(key, val);
         putInCache(key);
     }
@@ -383,10 +406,9 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     /**
      * Short hand accessor to get values from cache impl
      * @param key
-     * @throws KeyStoreException
      * @throws DotCacheException
      */
-    private void putInCache(final String key) throws KeyStoreException, DotCacheException{
+    private void putInCache(final String key) throws DotCacheException{
          final Set <String> keys = getKeysFromCache();
          keys.add(key);
          cache.putKeys(keys);
@@ -415,7 +437,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     /**
      * short hand accessor to clear cache.
      */
-    private void flushCache() {
+    void flushCache() {
         cache.flushSecret();
     }
 
@@ -444,5 +466,39 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         secretStoreFile.delete();
 
         Logger.info(SecretsStoreKeyStoreImpl.class, ()->String.format("KeyStore `%s` has been removed a backup has been created.", secretsKeyStorePath));
+    }
+
+    /**
+     * broad cast system-wide a notification in case of a keystore load exception
+     * @throws DotDataException
+     */
+    private void sendFailureNotification()
+            throws DotDataException {
+
+        final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
+        // Search for the CMS Admin role and System User
+        final Role cmsAdminRole = APILocator.getRoleAPI().loadCMSAdminRole();
+        final User systemUser = APILocator.systemUser();
+
+        notificationAPI.generateNotification(new I18NMessage("apps.fail.recover.secrets.title"),
+                new I18NMessage("apps.fail.recover.secrets.notification", null), null, // no actions
+                NotificationLevel.WARNING, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
+                systemUser.getLocale());
+    }
+
+    /**
+     * handles the any security exception when loading the keyStore
+     * on failure the p12 store is back-up and then gets removed.
+     * @param gse
+     * @throws DotDataException
+     * @throws IOException
+     */
+    private boolean handleStorageLoadException(final IOException gse) throws DotDataException, IOException {
+        Logger.warn(SecretsStoreKeyStoreImpl.class,
+                "Failed to recover secrets from key/store. The keyStore will be backup and then removed. A new empty store will be generated.",
+                gse);
+        backupAndRemoveKeyStore();
+        sendFailureNotification();
+        return true;
     }
 }

@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -16,17 +17,20 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.ajax.RoleAjax;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -184,6 +188,62 @@ public class PermissionAPITest extends IntegrationTestBase {
         }
         assertTrue(throwException);
         
+    }
+
+    /**
+     * Method to test: {@link PermissionAPI#doesUserHavePermissions(String, PermissionableType, int, User)}
+     * Given Scenario: Give a limited user permissions to edit Categories over the System Host, check permissions against System Host.
+     * ExpectedResult: true since the user has permissions over the permissionable type and the asset.
+     */
+    @Test
+    public void test_doesUserHavePermissions_checkSameAssetIdThatPermissionsWereGiven_returnTrue()
+            throws DotDataException, DotSecurityException {
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        //Give Permissions Over the System Host
+        final Permission permissions = new Permission(PermissionableType.CATEGORY.getCanonicalName(),
+                APILocator.systemHost().getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        permissionAPI.save(permissions, APILocator.systemHost(), sysuser, false);
+
+        //Check Permissions
+        final boolean doesUserHavePermissions =
+                permissionAPI.doesUserHavePermissions(APILocator.systemHost().getIdentifier(),PermissionableType.CATEGORY,PermissionAPI.PERMISSION_EDIT,limitedUser);
+        assertTrue(doesUserHavePermissions);
+    }
+
+    /**
+     * Method to test: {@link PermissionAPI#doesUserHavePermissions(String, PermissionableType, int, User)}
+     * Given Scenario: Create a category as asmin, Give a limited user permissions to edit the category, check permissions against System Host.
+     * ExpectedResult: false since the user has permissions over the permissionable type but no the System Host.
+     */
+    @Test
+    public void test_doesUserHavePermissions_checkDiffAssetIdThatPermissionsWereGiven_returnFalse()
+            throws DotDataException, DotSecurityException {
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        //Create new top level Category as admin user
+        final long currentTime = System.currentTimeMillis();
+        final Category parentCategory = new CategoryDataGen()
+                .setCategoryName("CT-Category-Parent"+currentTime)
+                .setKey("parent"+currentTime)
+                .setCategoryVelocityVarName("parent"+currentTime)
+                .nextPersisted();
+
+        //Give Permissions Over the Category
+        final Permission permissions = new Permission(PermissionableType.CATEGORY.getCanonicalName(),
+                parentCategory.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        permissionAPI.save(permissions, parentCategory, sysuser, false);
+
+        //Check Permissions
+        final boolean doesUserHavePermissions =
+                permissionAPI.doesUserHavePermissions(APILocator.systemHost().getIdentifier(),PermissionableType.CATEGORY,PermissionAPI.PERMISSION_EDIT,limitedUser);
+        assertFalse(doesUserHavePermissions);
     }
 
     /**
