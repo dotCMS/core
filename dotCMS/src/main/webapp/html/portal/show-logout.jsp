@@ -5,7 +5,7 @@
 <head>
 	<link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
-	<link rel="stylesheet" type="text/css" href="/html/js/dojo/custom-build/dijit/themes/dijit.css">
+	<link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=master">
 	<style>
 		.logout {
 			height: 100%;
@@ -97,7 +97,6 @@
 	}).then(async response => {
 		if (response.status === 200) {
 			const data = await response.json();
-			debugger;
 			const pageBody = document.getElementsByTagName('body')[0];
 			const header = document.getElementsByTagName('h3')[0];
 			const message = document.getElementsByTagName('p')[0];
@@ -117,7 +116,7 @@
 	});
 
 	function goToLogin() {
-		window.location.href = '/dotAdmin/';
+		window.location.href = `/dotAdmin/?r=${new Date().getTime()}`;
 	}
 
 </script>
