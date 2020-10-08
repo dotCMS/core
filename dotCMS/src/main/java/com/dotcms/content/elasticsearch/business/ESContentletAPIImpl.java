@@ -4956,10 +4956,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                         // we take all inodes associated with that identifier
                         // remove them from cache and then reindex them
-                        final HibernateUtil hu = new HibernateUtil(ContentletVersionInfo.class);
-                        hu.setQuery("from "+ContentletVersionInfo.class.getCanonicalName()+" where identifier=?");
-                        hu.setParam(ident.getId());
-                        final List<ContentletVersionInfo> list = hu.list();
+                        final List<ContentletVersionInfo> list = APILocator.getVersionableAPI()
+                                .findContentletVersionInfos(ident.getId());
+
                         final List<String> inodes = new ArrayList<>();
                         for(final ContentletVersionInfo cvi : list) {
                             inodes.add(cvi.getWorkingInode());
