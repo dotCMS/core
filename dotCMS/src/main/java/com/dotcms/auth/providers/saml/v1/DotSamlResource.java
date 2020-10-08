@@ -288,6 +288,7 @@ public class DotSamlResource implements Serializable {
 	@POST
 	@Path("/logout/{idpConfigId}")
 	@NoCache
+	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
 	// Login configuration by id
 	public Response logoutPost(@PathParam("idpConfigId") final String idpConfigId,
 					   @Context final HttpServletRequest httpServletRequest,
@@ -306,7 +307,7 @@ public class DotSamlResource implements Serializable {
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
 							()-> "/dotAdmin/#/public/logout");
 
-					return Response.seeOther(new URI(logoutPath)).build();
+					return Response.temporaryRedirect(new URI(logoutPath)).build();
 				}
 			} finally {
 				if (null != identityProviderConfiguration) {
@@ -323,6 +324,7 @@ public class DotSamlResource implements Serializable {
 	@GET
 	@Path("/logout/{idpConfigId}")
 	@NoCache
+	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
 	// Login configuration by id
 	public Response logoutGet(@PathParam("idpConfigId") final String idpConfigId,
 					   @Context final HttpServletRequest httpServletRequest,
@@ -341,7 +343,7 @@ public class DotSamlResource implements Serializable {
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
 							()-> this.buildBaseUrlFromRequest(httpServletRequest));
 
-					return Response.seeOther(new URI(logoutPath)).build();
+					return Response.temporaryRedirect(new URI(logoutPath)).build();
 				}
 			} finally {
 				if (null != identityProviderConfiguration) {

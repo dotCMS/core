@@ -580,7 +580,10 @@ public class SamlWebInterceptor implements WebInterceptor {
                     uriWithoutQueryString.endsWith(".png")  ||
                     uriWithoutQueryString.endsWith(".gif")  ||
                     uriWithoutQueryString.endsWith(".css")  ||
-                    uriWithoutQueryString.endsWith(".js");
+                    uriWithoutQueryString.endsWith(".js")   ||
+                    uriWithoutQueryString.endsWith(".js.map")         ||
+                    uriWithoutQueryString.endsWith("manifest.json")   ||
+                    uriWithoutQueryString.endsWith(".ttf");
         }
 
         return true;
