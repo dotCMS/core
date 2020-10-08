@@ -322,7 +322,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DotSamlResourceTest.class,
         DotStatefulJobTest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
-        Task05400LoadAppsSecretsTest.class
+        Task201008LoadAppsSecretsTest.class
 })
 public class MainSuite {
 

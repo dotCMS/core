@@ -221,18 +221,6 @@ public interface AppsAPI {
     void resetSecrets(User user)
                     throws DotDataException, IOException;
 
-    /**
-     * Validate the incoming params and match them with the params described by the respective appDescriptor yml.
-     * This method takes a Map of Optional<char[]> As this is a middle ground object representation
-     * that can be mapped from a saved  AppSecrets or an incoming SecretForm
-     * if the param isn't included in the map it means it wasn't sent..
-     * if the param was sent empty that would be represented as an empty optional.
-     * I'm using optional since null vales on map triggers warnings
-     * @param params
-     * @param appDescriptor
-     */
-    void validateForSave(final Map<String, Optional<char[]>> params,
-            final AppDescriptor appDescriptor);
 
     /**
      * Given a selection of AppKey-Sites This will generate an encrypted temp file.

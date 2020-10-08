@@ -285,7 +285,7 @@ public class TaskLocatorUtil {
 		.add(Task05370AddAppsPortletToLayout.class)
     	.add(Task05380ChangeContainerPathToAbsolute.class)
     	.add(Task05390MakeRoomForLongerJobDetail.class)
-		.add(Task05400LoadAppsSecrets.class)
+		.add(Task201008LoadAppsSecrets.class)
 
         .build();
         

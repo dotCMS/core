@@ -4,12 +4,12 @@ import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.security.apps.AppDescriptor;
+import com.dotcms.security.apps.AppDescriptorHelper;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
-import com.dotcms.security.apps.AppsAPIImpl;
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsUtil;
-import com.dotcms.security.apps.SecretsStoreKeyStoreImpl;
+import com.dotcms.security.apps.SecretsKeyStoreHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -17,6 +17,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.File;
@@ -31,7 +32,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task05400LoadAppsSecretsTest {
+public class Task201008LoadAppsSecretsTest {
 
     static AppsAPI api;
     static User admin;
@@ -47,7 +48,7 @@ public class Task05400LoadAppsSecretsTest {
     }
 
     private void destroySecretsStore() {
-        final String secretStorePath = SecretsStoreKeyStoreImpl.getSecretStorePath();
+        final String secretStorePath = SecretsKeyStoreHelper.getSecretStorePath();
         new File(secretStorePath).delete();
         final AppsCache appsCache = CacheLocator.getAppsCache();
         appsCache.clearCache();
@@ -98,14 +99,14 @@ public class Task05400LoadAppsSecretsTest {
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(null));
         final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site)).toFile();
 
-        final Path serverDir = AppsAPIImpl.getServerDirectory();
+        final Path serverDir = AppDescriptorHelper.getServerDirectory();
 
         final File fileToImport = new File(serverDir.toString(), "dotSecrets-import.xxx");
         //Task will match any file matching this name followed by any extension
             exportFile.renameTo(fileToImport);
             destroySecretsStore();
 
-            final Task05400LoadAppsSecrets task = new Task05400LoadAppsSecrets();
+            final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
             Assert.assertTrue(task.forceRun());
             task.executeUpgrade();
             Assert.assertEquals(1, task.getImportCount());
@@ -114,6 +115,66 @@ public class Task05400LoadAppsSecretsTest {
             Assert.assertTrue(secrets.isPresent());
             //finally test file got removed.
             Assert.assertFalse(fileToImport.exists());
+    }
+
+    @Test(expected = DotDataException.class)
+    public void Test_UpgradeTask_Expect_Failure_Due_To_Invalid_Site()
+            throws DotDataException, DotSecurityException, AlreadyExistException, IOException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final AppDescriptor descriptor = genAppDescriptor();
+        destroySecretsStore();
+        final Key key = AppsUtil.generateKey(AppsUtil.loadPass(null));
+        final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site)).toFile();
+
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        hostAPI.archive(site, admin, false);
+        hostAPI.delete(site, admin, false);
+
+        final Path serverDir = AppDescriptorHelper.getServerDirectory();
+
+        final File fileToImport = new File(serverDir.toString(), "dotSecrets-import.xxx");
+        //Task will match any file matching this name followed by any extension
+        exportFile.renameTo(fileToImport);
+        destroySecretsStore();
+
+        final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
+        Assert.assertTrue(task.forceRun());
+        task.executeUpgrade();
+        Assert.assertEquals(1, task.getImportCount());
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Optional<AppSecrets> secrets = api.getSecrets(descriptor.getKey(), site, admin);
+        Assert.assertTrue(secrets.isPresent());
+        //finally test file got removed.
+        Assert.assertFalse(fileToImport.exists());
+    }
+
+    @Test(expected = DotDataException.class)
+    public void Test_UpgradeTask_Expect_Failure_Due_To_Invalid_Descriptor()
+            throws DotDataException, DotSecurityException, AlreadyExistException, IOException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final AppDescriptor descriptor = genAppDescriptor();
+        destroySecretsStore();
+        final Key key = AppsUtil.generateKey(AppsUtil.loadPass(null));
+        final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site)).toFile();
+
+        api.removeApp(descriptor.getKey(), admin,true);
+
+        final Path serverDir = AppDescriptorHelper.getServerDirectory();
+
+        final File fileToImport = new File(serverDir.toString(), "dotSecrets-import.xxx");
+        //Task will match any file matching this name followed by any extension
+        exportFile.renameTo(fileToImport);
+        destroySecretsStore();
+
+        final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
+        Assert.assertTrue(task.forceRun());
+        task.executeUpgrade();
+        Assert.assertEquals(1, task.getImportCount());
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Optional<AppSecrets> secrets = api.getSecrets(descriptor.getKey(), site, admin);
+        Assert.assertTrue(secrets.isPresent());
+        //finally test file got removed.
+        Assert.assertFalse(fileToImport.exists());
     }
 
 }

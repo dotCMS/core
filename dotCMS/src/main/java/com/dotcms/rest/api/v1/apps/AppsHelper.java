@@ -498,14 +498,14 @@ class AppsHelper {
             throw new IllegalArgumentException("Required Params aren't set.");
         }
 
-        appsAPI.validateForSave(mapForValidation(form), appDescriptor);
+        AppsUtil.validateForSave(mapForValidation(form), appDescriptor);
 
         return params;
     }
 
     /**
      * Map of optionals is a middle ground between {@link SecretForm} and {@link AppSecrets}
-     * used by {@link com.dotcms.security.apps.AppsAPIImpl#validateForSave(Map, AppDescriptor)}
+     * used by {@link com.dotcms.security.apps.AppsUtil#validateForSave(Map, AppDescriptor)}
      * @return
      */
     private Map<String, Optional<char[]>> mapForValidation(final SecretForm form) {
