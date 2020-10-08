@@ -68,7 +68,7 @@ public class IntegrityUtil {
     public static final String INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME = "DataToCheck.zip";
     public static final String INTEGRITY_DATA_TO_FIX_ZIP_FILENAME = "DataToFix.zip";
     public static final String INTEGRITY_DATA_STATUS_FILENAME = "DataStatus.properties";
-    public static final String REQUESTER_ENDPOINT = "requesterEndpoint";
+    public static final String REQUESTER_KEY = "requesterKey";
     public static final String INTEGRITY_DATA_REQUEST_ID = "integrityDataRequestId";
 
     private File generateDataToFixCSV(String outputPath, String endpointId, IntegrityType type)
@@ -294,11 +294,11 @@ public class IntegrityUtil {
      * Gets a {@link IntegrityDataExecutionMetadata} instance based on provided endpoint id which contains metadata of the
      * integrity data generation execution.
      *
-     * @param endpointId endpoint id
+     * @param requesterKey endpoint id
      * @return Optional wrapping the integrity generation  metadata
      */
-    public static Optional<IntegrityDataExecutionMetadata> getIntegrityMetadata(final String endpointId) {
-        final File statusFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_STATUS_FILENAME));
+    public static Optional<IntegrityDataExecutionMetadata> getIntegrityMetadata(final String requesterKey) {
+        final File statusFile = new File(getIntegrityDataFilePath(requesterKey, INTEGRITY_DATA_STATUS_FILENAME));
         if (!statusFile.exists()) {
             return Optional.empty();
         }
@@ -315,7 +315,7 @@ public class IntegrityUtil {
         }
 
         return Optional.of(new IntegrityDataExecutionMetadata(
-                statusData.getProperty(REQUESTER_ENDPOINT),
+                statusData.getProperty(REQUESTER_KEY),
                 statusData.getProperty(INTEGRITY_DATA_REQUEST_ID),
                 statusData.getProperty(INTEGRITY_DATA_STATUS),
                 statusData.getProperty(INTEGRITY_DATA_ERROR_MESSAGE)));
@@ -365,7 +365,7 @@ public class IntegrityUtil {
             }
         };
 
-        addData.accept(endpointId, REQUESTER_ENDPOINT);
+        addData.accept(endpointId, REQUESTER_KEY);
         addData.accept(integrityDataExecutionMetadata.getRequestId(), INTEGRITY_DATA_REQUEST_ID);
         statusData.setProperty(INTEGRITY_DATA_STATUS, integrityDataExecutionMetadata.getProcessStatus().toString().toUpperCase());
         addData.accept(integrityDataExecutionMetadata.getErrorMessage(), INTEGRITY_DATA_ERROR_MESSAGE);
@@ -547,7 +547,7 @@ public class IntegrityUtil {
 	 * 
 	 * @param dataToFix
 	 *            - The {@link InputStream} containing the data to fix.
-	 * @param endpointId
+	 * @param key
 	 *            - The ID of the end point where the data will be fixed.
 	 * @param type
 	 *            - The type of object (Content Page, Folder, Content Type,
@@ -556,16 +556,17 @@ public class IntegrityUtil {
 	 *             An error occurred during the integrity fix process. The
 	 *             results table must be wiped out.
 	 */
-    public void fixConflicts(InputStream dataToFix, String endpointId, IntegrityType type)
+	@WrapInTransaction
+    public void fixConflicts(InputStream dataToFix, String key, IntegrityType type)
             throws Exception {
-        final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
+        final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + key;
 
         // lets first unzip the given file
         unzipFile(dataToFix, outputDir);
 
         // lets generate the tables with the data to be fixed
-        generateDataToFixTable(endpointId, type);
-        fixConflicts(endpointId, type);
+        generateDataToFixTable(key, type);
+        fixConflicts(key, type);
 
         HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             @Override
@@ -598,7 +599,7 @@ public class IntegrityUtil {
 	 * which indicates what records <b>MUST</b> be changed in the specified end
 	 * point.
 	 * 
-	 * @param endpointId
+	 * @param key
 	 *            - The ID of the end point where the data will be fixed.
 	 * @param type
 	 *            - The type of object (Content Page, Folder, Content Type,
@@ -606,11 +607,11 @@ public class IntegrityUtil {
 	 * @throws Exception
 	 *             An error occurred during the integrity fix process.
 	 */
-    public void generateDataToFixTable(String endpointId, IntegrityType type) throws Exception {
+    public void generateDataToFixTable(String key, IntegrityType type) throws Exception {
 
         try {
             CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
-                    + endpointId + File.separator + type.getDataToFixCSVName(), '|',
+                    + key + File.separator + type.getDataToFixCSVName(), '|',
                     Charset.forName("UTF-8"));
 
             final String resultsTable = type.getResultsTableName();
@@ -668,7 +669,7 @@ public class IntegrityUtil {
 	                }
                 }
 
-                dc.addParam(endpointId);
+                dc.addParam(key);
 
                 if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
                     dc.addParam(new Long(csvFile.get(7))); // languageId
@@ -726,7 +727,7 @@ public class IntegrityUtil {
 	/**
 	 * Executes the integrity fix process according to the specified type.
 	 * 
-	 * @param endpointId
+	 * @param key
 	 *            - The ID of the end point where the data will be fixed.
 	 * @param type
 	 *            - The type of object (Content Page, Folder, Content Type,
@@ -737,9 +738,10 @@ public class IntegrityUtil {
 	 *             The specified user does not have permissions to perform the
 	 *             action.
 	 */
-    public void fixConflicts(final String endpointId, IntegrityType type) throws DotDataException,
+	@WrapInTransaction
+    public void fixConflicts(final String key, IntegrityType type) throws DotDataException,
             DotSecurityException {
-        type.getIntegrityChecker().executeFix(endpointId);
+        type.getIntegrityChecker().executeFix(key);
     }
 
     /**
@@ -765,6 +767,7 @@ public class IntegrityUtil {
      */
     @WrapInTransaction
     public static void completeDiscardConflicts(final String endpointId) throws DotDataException {
+
         IntegrityType[] types = IntegrityType.values();
         for (IntegrityType integrityType : types) {
             integrityType.getIntegrityChecker().discardConflicts(endpointId);

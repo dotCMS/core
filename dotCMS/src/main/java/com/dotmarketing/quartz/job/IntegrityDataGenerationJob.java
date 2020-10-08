@@ -3,7 +3,6 @@ package com.dotmarketing.quartz.job;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.http.DotExecutionException;
 import com.dotcms.integritycheckers.IntegrityUtil;
-import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rest.IntegrityResource;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.quartz.DotStatefulJob;
@@ -14,7 +13,6 @@ import org.quartz.InterruptableJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
@@ -30,11 +28,10 @@ import java.util.Date;
  */
 public class IntegrityDataGenerationJob extends DotStatefulJob implements InterruptableJob {
 
-    static final String TRIGGER_NAME = "IntegrityDataGenerationTrigger";
-    static final String TRIGGER_GROUP = "integrity_data_generation_triggers";
-
     public static final String JOB_NAME = "IntegrityDataGenerationJob";
     public static final String JOB_GROUP = "dotcms_jobs";
+    public static final String TRIGGER_NAME = "IntegrityDataGenerationTrigger";
+    public static final String TRIGGER_GROUP = "integrity_data_generation_triggers";
 
     private JobExecutionContext jobContext;
 
@@ -44,40 +41,38 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
      * metadata to have control of what is going on.
      *
      * @param jobContext job context
-     * @throws JobExecutionException
      */
     @Override
     @CloseDBIfOpened
     public void run(final JobExecutionContext jobContext) {
         this.jobContext = jobContext;
         final JobDataMap jobDataMap = this.jobContext.getJobDetail().getJobDataMap();
-        final PublishingEndPoint requesterEndPoint =
-                (PublishingEndPoint) jobDataMap.get(IntegrityUtil.REQUESTER_ENDPOINT);
+        final String requesterKey = (String) jobDataMap.get(IntegrityUtil.REQUESTER_KEY);
 
-        IntegrityUtil.cleanUpIntegrityData(requesterEndPoint.getId());
+        IntegrityUtil.cleanUpIntegrityData(requesterKey);
 
         final String requestId = (String) jobDataMap.get(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID);
         IntegrityUtil.saveIntegrityDataStatus(
-                requesterEndPoint.getId(),
+                requesterKey,
                 requestId,
                 IntegrityResource.ProcessStatus.PROCESSING);
 
         try {
             // Actual integrity data file generation
-            IntegrityUtil.generateDataToCheckZip(requesterEndPoint.getId());
+            IntegrityUtil.generateDataToCheckZip(requesterKey);
             // Integrity data generation went ok
             IntegrityUtil.saveIntegrityDataStatus(
-                    requesterEndPoint.getId(),
+                    requesterKey,
                     requestId,
                     IntegrityResource.ProcessStatus.FINISHED);
             Logger.info(
                     IntegrityDataGenerationJob.class,
-                    String.format("Job execution for endpoint %s has finished", requesterEndPoint.getId()));
+                    String.format("Job execution for endpoint %s has finished", requesterKey));
         } catch (DotExecutionException e) {
             // Error has happened while generating integrity data
             Logger.error(IntegrityDataGenerationJob.class, "Error generating data to check", e);
             IntegrityUtil.saveIntegrityDataStatus(
-                    requesterEndPoint.getId(),
+                    requesterKey,
                     requestId,
                     IntegrityResource.ProcessStatus.ERROR,
                     String.format("Error generating data to check: %s", e.getMessage()));
@@ -100,12 +95,11 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
                 IntegrityDataGenerationJob.class,
                 "Requested interruption of generation of data to check by the user");
         final JobDataMap jobDataMap = this.jobContext.getJobDetail().getJobDataMap();
-        final PublishingEndPoint requesterEndPoint =
-                (PublishingEndPoint) jobDataMap.get(IntegrityUtil.REQUESTER_ENDPOINT);
+        final String requesterKey = (String) jobDataMap.get(IntegrityUtil.REQUESTER_KEY);
         final String requestId = (String) jobDataMap.get(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID);
 
         IntegrityUtil.saveIntegrityDataStatus(
-                requesterEndPoint.getId(),
+                requesterKey,
                 requestId,
                 IntegrityResource.ProcessStatus.CANCELLED);
     }
@@ -113,13 +107,13 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
     /**
      * Creates {@link JobDataMap} and {@link JobDetail} instances with integrity check data to trigger actual job.
      *
-     * @param requesterEndpoint endpoint id
+     * @param key JWT token key if you are using JWT token in Push Publish, otherwise end point id
      * @param integrityDataRequestId integrity data request id
      */
-    public static void triggerIntegrityDataGeneration(final PublishingEndPoint requesterEndpoint,
+    public static void triggerIntegrityDataGeneration(final String key,
                                                       final String integrityDataRequestId) {
         final JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put(IntegrityUtil.REQUESTER_ENDPOINT, requesterEndpoint);
+        jobDataMap.put(IntegrityUtil.REQUESTER_KEY, key);
         jobDataMap.put(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID, integrityDataRequestId);
 
         final JobDetail jobDetail = new JobDetail(JOB_NAME, JOB_GROUP, IntegrityDataGenerationJob.class);

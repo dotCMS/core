@@ -283,7 +283,10 @@ public class TaskLocatorUtil {
         .add(Task05305AddPushPublishFilterColumn.class)
 		.add(Task05350AddDotSaltClusterColumn.class)
 		.add(Task05370AddAppsPortletToLayout.class)
+		.add(Task05370AddAppsPortletToLayout.class)
     	.add(Task05380ChangeContainerPathToAbsolute.class)
+		.add(Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables.class)
+
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
