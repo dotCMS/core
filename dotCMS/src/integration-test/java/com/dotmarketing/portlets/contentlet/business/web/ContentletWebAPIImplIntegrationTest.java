@@ -1,44 +1,45 @@
 package com.dotmarketing.portlets.contentlet.business.web;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerAsFileDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.quartz.DotSchedulerFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
-
-import com.dotcms.repackage.org.directwebremoting.WebContext;
-import org.quartz.*;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.quartz.SchedulerException;
 
 public class ContentletWebAPIImplIntegrationTest {
 

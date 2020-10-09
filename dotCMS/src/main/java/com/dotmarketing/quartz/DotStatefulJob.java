@@ -82,7 +82,7 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
     private static Optional<Map<String, Object>> getTriggerJobDetail(final String jobName,
             final String groupName) {
         final JobDetail jobDetail = Try
-                .of(() -> DotSchedulerFactory.getInstance().getScheduler().getJobDetail(jobName, groupName))
+                .of(() -> QuartzUtils.getScheduler().getJobDetail(jobName, groupName))
                 .getOrNull();
         if (null == jobDetail) {
             return Optional.empty();

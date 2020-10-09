@@ -62,14 +62,14 @@ public class ViewSchedulersAction extends PortletAction {
 			String group2 = "Recurrent Campaign";
 			Map<String,List<String>> results = new HashMap<String,List<String>>();
 			List<String> list = new ArrayList<String>();
-			String[] tasks =  DotSchedulerFactory.getInstance().getScheduler().getJobNames(group);
+			String[] tasks =  QuartzUtils.getScheduler().getJobNames(group);
 			for(String task : tasks){
 				list.add(task);
 			}
 			results.put(group, list);
 			
 			List<String> list2 = new ArrayList<String>();
-			String[] tasks2 =  DotSchedulerFactory.getInstance().getScheduler().getJobNames(group2);
+			String[] tasks2 =  QuartzUtils.getScheduler().getJobNames(group2);
 			for(String task : tasks2){
 				list2.add(task);
 			}
