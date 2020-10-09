@@ -1501,6 +1501,39 @@
 									"response": []
 								},
 								{
+									"name": "logout",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "fd508af5-5d9a-4855-bd4d-b62845b9d902",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/logout",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"logout"
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Shoyld response with 401",
 									"event": [
 										{
@@ -1820,6 +1853,39 @@
 									"response": []
 								},
 								{
+									"name": "logout",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "34d0a069-9727-4640-aea3-c1f6809bfa3a",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/logout",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"logout"
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Shoyld response with 401",
 									"event": [
 										{
@@ -1914,42 +1980,42 @@
 	],
 	"variable": [
 		{
-			"id": "a7fb7d12-045e-41cf-ba7e-79d287acd7a0",
+			"id": "a9899814-0138-4309-bfda-ae9ec6b30ad5",
 			"key": "endpointName",
-			"value": "endpoint-336"
+			"value": "endpoint-537"
 		},
 		{
-			"id": "89869925-949e-470c-a3c6-24d5220d14be",
+			"id": "98b67fee-e1e9-43db-bcf8-8042ea495474",
 			"key": "environmentName",
-			"value": "environment-510"
+			"value": "environment-57"
 		},
 		{
-			"id": "2fb1cadc-f459-49fc-8c00-0544c4ca9a24",
+			"id": "7f271169-fe6a-4f0f-8ffb-32a1053c29e7",
 			"key": "origin",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "61c79568-50bf-4908-a7e2-c660acc36530",
+			"id": "0455a07e-d39b-4548-8e4c-9a900e5d34bd",
 			"key": "environmentId",
-			"value": "82025b6d-a24f-4b5c-abd6-fbd7e6769916"
+			"value": "a100ed31-db50-4dd1-a56a-c8dbe6e95560"
 		},
 		{
-			"id": "7ecf6595-c822-484d-9e22-73970f386171",
+			"id": "2cb1b4c4-344e-454d-8ae2-3a12c46d2372",
 			"key": "endpintId",
-			"value": "1b70715e-6e5b-4473-a4f7-8f961bde06bd"
+			"value": "1737d79b-1877-4cfc-aa62-5124afada319"
 		},
 		{
-			"id": "68f84b46-0931-482b-9fe7-cd651486833a",
+			"id": "54905aae-dd97-4b00-9672-204caaa27884",
 			"key": "receiverName",
-			"value": "receiverName-653"
+			"value": "receiverName-443"
 		},
 		{
-			"id": "bc7783ed-8d91-432c-9014-e409c9c8e443",
+			"id": "83afd85f-02ec-405e-a3e5-53ef5c141ad0",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGlhZTJjMmY2NS04MzdhLTQyMDYtOGMzOS1jMTEyM2I3MWViYTAiLCJ4bW9kIjoxNjAyMjcwMjU2MDAwLCJuYmYiOjE2MDIyNzAyNTYsImlzcyI6ImI2ZTc1ZTIyNzMiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTY4NDE2MjEsImlhdCI6MTYwMjI3MDI1NiwianRpIjoiYjIzNjkyNjUtNzhjOC00ZTY3LTk3M2YtOWMyNDc5Y2U1M2FkIn0.ozJdF3x2rnmd4AwKkKXAmCtIHragPDTgUOTyIisVw_Q"
 		},
 		{
-			"id": "a39b78b0-793d-4050-9f92-f66696624ef8",
+			"id": "c8368aee-0df2-4263-83cc-5c45e0125f9d",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
