@@ -1264,6 +1264,16 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{token}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "GET",
 										"header": [],
 										"url": {
@@ -1500,8 +1510,6 @@
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
-													"    endPoint = pm.collectionVariables.get(\"endpintId\");",
-													"    pm.expect(pm.response.text()).to.equals(\"Invalid token Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: \" + endPoint);",
 													"",
 													"});"
 												],
@@ -1821,8 +1829,6 @@
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
-													"    endPoint = pm.collectionVariables.get(\"endpintId\");",
-													"    pm.expect(pm.response.text()).to.equals(\"Invalid token Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: \" + endPoint);",
 													"",
 													"});"
 												],
@@ -1832,7 +1838,14 @@
 									],
 									"request": {
 										"auth": {
-											"type": "noauth"
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{token}}",
+													"type": "string"
+												}
+											]
 										},
 										"method": "GET",
 										"header": [],
@@ -1901,42 +1914,42 @@
 	],
 	"variable": [
 		{
-			"id": "bc22274e-f650-481b-8a31-4a88756e02b6",
+			"id": "a7fb7d12-045e-41cf-ba7e-79d287acd7a0",
 			"key": "endpointName",
-			"value": "endpoint-602"
+			"value": "endpoint-336"
 		},
 		{
-			"id": "6dc3e100-63fb-4e0a-bcfa-27c0310501d9",
+			"id": "89869925-949e-470c-a3c6-24d5220d14be",
 			"key": "environmentName",
-			"value": "environment-518"
+			"value": "environment-510"
 		},
 		{
-			"id": "e6d5de63-d39b-4d2c-bf71-7aaa38528521",
+			"id": "2fb1cadc-f459-49fc-8c00-0544c4ca9a24",
 			"key": "origin",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "1881fdff-7ea3-402d-9f21-2e293228b5d8",
+			"id": "61c79568-50bf-4908-a7e2-c660acc36530",
 			"key": "environmentId",
-			"value": "45bfcadd-77fb-4029-ac05-62cb369ace8f"
+			"value": "82025b6d-a24f-4b5c-abd6-fbd7e6769916"
 		},
 		{
-			"id": "13065228-c0a5-4017-b01a-c9206d3f0a61",
+			"id": "7ecf6595-c822-484d-9e22-73970f386171",
 			"key": "endpintId",
-			"value": "fed35809-457d-40b0-89ed-356314d35b57"
+			"value": "1b70715e-6e5b-4473-a4f7-8f961bde06bd"
 		},
 		{
-			"id": "0619abae-7a60-46b4-953e-ff96324d0c9c",
+			"id": "68f84b46-0931-482b-9fe7-cd651486833a",
 			"key": "receiverName",
-			"value": "receiverName-221"
+			"value": "receiverName-653"
 		},
 		{
-			"id": "1315fdb5-87d7-4cb8-9269-caf32e15a0ff",
+			"id": "bc7783ed-8d91-432c-9014-e409c9c8e443",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGljZjhiZmQyMC0zNTE1LTQxNzgtOWQwZi1kYWUxNTY1YmViZmYiLCJ4bW9kIjoxNjAxMDU0MzQyMDAwLCJuYmYiOjE2MDEwNTQzNDIsImlzcyI6ImFjNWMwMDc2N2YiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU2MjU3MDcsImlhdCI6MTYwMTA1NDM0MiwianRpIjoiZWIxYmFkMTQtZmFjZi00MWNiLTkzNTctMWEzODdiODJjY2JjIn0.ezWYPQ77-Gzr7MN0V7ne_3MedeJ9IgmU3By8RE-flvk"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGlhZTJjMmY2NS04MzdhLTQyMDYtOGMzOS1jMTEyM2I3MWViYTAiLCJ4bW9kIjoxNjAyMjcwMjU2MDAwLCJuYmYiOjE2MDIyNzAyNTYsImlzcyI6ImI2ZTc1ZTIyNzMiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTY4NDE2MjEsImlhdCI6MTYwMjI3MDI1NiwianRpIjoiYjIzNjkyNjUtNzhjOC00ZTY3LTk3M2YtOWMyNDc5Y2U1M2FkIn0.ozJdF3x2rnmd4AwKkKXAmCtIHragPDTgUOTyIisVw_Q"
 		},
 		{
-			"id": "b323d4b0-900a-4966-924f-839cb70f13d3",
+			"id": "a39b78b0-793d-4050-9f92-f66696624ef8",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}

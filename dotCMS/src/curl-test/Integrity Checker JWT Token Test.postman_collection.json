@@ -498,7 +498,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
 										}
 									],
 									"options": {
