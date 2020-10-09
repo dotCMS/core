@@ -703,7 +703,7 @@
 										{
 											"key": "DATA_TO_FIX",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix.zip"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix_demo.zip"
 										},
 										{
 											"key": "TYPE",
