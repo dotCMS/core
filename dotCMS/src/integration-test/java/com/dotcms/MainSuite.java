@@ -24,6 +24,7 @@ import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
+import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
@@ -326,7 +327,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
         IntegrityDataGenerationJobTest.class,
-        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
+        JSONToolTest.class
 })
 public class MainSuite {
 
