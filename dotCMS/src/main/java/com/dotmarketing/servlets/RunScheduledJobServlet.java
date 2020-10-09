@@ -1,27 +1,21 @@
 package com.dotmarketing.servlets;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.PrintWriter;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerUtils;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.quartz.DotSchedulerFactory;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
 
 public class RunScheduledJobServlet extends HttpServlet {
 
