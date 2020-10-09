@@ -164,7 +164,7 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
                     groupName, description,
                     jobClass.getCanonicalName(), false,
                     nextTriggerName, triggerGroup, new Date(), null,
-                    SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, true, jobProperties,
+                    SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, jobProperties,
                     cronString);
             task.setDurability(true); //must be durable to preserve the detail across triggers.
 

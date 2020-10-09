@@ -78,7 +78,7 @@ public class RunScheduledJobServlet extends HttpServlet {
                 return;
             }
             try {
-                Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
+                Scheduler sched = QuartzUtils.getScheduler();
                 JobDetail job = new JobDetail(runClass + System.currentTimeMillis(), null, clazz);
                 Trigger trigger = TriggerUtils.makeImmediateTrigger(0, 1);
                 trigger.setName(runClass + System.currentTimeMillis());

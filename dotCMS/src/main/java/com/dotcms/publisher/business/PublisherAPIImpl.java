@@ -309,7 +309,7 @@ public class PublisherAPIImpl extends PublisherAPI{
     @Override
     public void firePublisherQueueNow(Map<String, Object> dataMap){
 		try {
-		    Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
+		    Scheduler sched = QuartzUtils.getScheduler();
 		    JobDetail job = sched.getJobDetail("PublishQueueJob"  , "dotcms_jobs");
 			if(job==null) {
 				return;

@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz;
 
+import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,10 +42,7 @@ public class DotSchedulerFactory implements SchedulerFactory {
     }
 
     public Collection<Scheduler> getAllSchedulers() throws SchedulerException {
-        List<Scheduler> list = new ArrayList<Scheduler>();
-        list.add(standardScheduler);
-
-        return list;
+        return ImmutableList.of(standardScheduler);
     }
 
     public Scheduler getScheduler() throws SchedulerException {

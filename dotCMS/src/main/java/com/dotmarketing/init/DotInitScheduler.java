@@ -15,7 +15,6 @@ import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
 import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.workflow.EscalationThread;
-import com.dotmarketing.quartz.DotSchedulerFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
@@ -76,7 +75,7 @@ public class DotInitScheduler {
 	 */
 	public static void start() throws SchedulerException {
 		try {
-			final Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
+			final Scheduler sched = QuartzUtils.getScheduler();
 			JobDetail job;
 			CronTrigger trigger;
 			Calendar calendar;
@@ -550,7 +549,7 @@ public class DotInitScheduler {
 	 */
 	private static void scheduleJob(final JobBuilder jobBuilder) {
 		try {
-			Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
+			Scheduler sched = QuartzUtils.getScheduler();
 			Calendar calendar;
 			JobDetail job;
 			CronTrigger trigger;

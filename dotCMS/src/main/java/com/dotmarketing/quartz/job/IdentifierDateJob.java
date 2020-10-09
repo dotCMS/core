@@ -179,7 +179,7 @@ public class IdentifierDateJob implements Job {
 		SimpleTrigger trigger = new SimpleTrigger("IdentifierDateTrigger-" + randomID, "identifier_data_triggers",  new Date(startTime));
 		
 		try {
-			Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
+			Scheduler sched = QuartzUtils.getScheduler();
 			sched.scheduleJob(jd, trigger);
 		} catch (SchedulerException e) {
 			Logger.error(IdentifierDateJob.class, "Error scheduling the Identifier Date Job", e);

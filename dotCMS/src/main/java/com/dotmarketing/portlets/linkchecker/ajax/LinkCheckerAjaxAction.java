@@ -28,7 +28,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.quartz.DotSchedulerFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
@@ -121,7 +120,7 @@ public class LinkCheckerAjaxAction extends AjaxAction {
             
             Trigger trigger=new SimpleTrigger("linkCheckerTrigger-"+randomID, "group20", new Date());
             
-            Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
+            Scheduler sched = QuartzUtils.getScheduler();
             sched.scheduleJob(jd, trigger);
         } catch (SchedulerException e) {
             throw new ServletException(e);
