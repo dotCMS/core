@@ -486,7 +486,7 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier=ecc9df87-02ad-4f58-afaf-f27ae4fb2c57&bundleName={{bundleName}}",
+									"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier=ea533f67-4883-42bb-9701-83293e7313e5&bundleName={{bundleName}}",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -499,7 +499,7 @@
 									"query": [
 										{
 											"key": "assetIdentifier",
-											"value": "ecc9df87-02ad-4f58-afaf-f27ae4fb2c57"
+											"value": "ea533f67-4883-42bb-9701-83293e7313e5"
 										},
 										{
 											"key": "bundleName",
@@ -1181,7 +1181,7 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier=ecc9df87-02ad-4f58-afaf-f27ae4fb2c57&bundleName={{bundleName}}",
+									"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier=ea533f67-4883-42bb-9701-83293e7313e5&bundleName={{bundleName}}",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1194,7 +1194,7 @@
 									"query": [
 										{
 											"key": "assetIdentifier",
-											"value": "ecc9df87-02ad-4f58-afaf-f27ae4fb2c57"
+											"value": "ea533f67-4883-42bb-9701-83293e7313e5"
 										},
 										{
 											"key": "bundleName",
@@ -3620,7 +3620,7 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier=ecc9df87-02ad-4f58-afaf-f27ae4fb2c57&bundleName={{bundleName}}",
+									"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier=ea533f67-4883-42bb-9701-83293e7313e5&bundleName={{bundleName}}",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -3633,7 +3633,7 @@
 									"query": [
 										{
 											"key": "assetIdentifier",
-											"value": "ecc9df87-02ad-4f58-afaf-f27ae4fb2c57"
+											"value": "ea533f67-4883-42bb-9701-83293e7313e5"
 										},
 										{
 											"key": "bundleName",
@@ -3978,7 +3978,7 @@
 		{
 			"id": "3ffa053a-a968-4260-ad99-a2b5f9dc6504",
 			"key": "bundleSuccessExpected",
-			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ecc9df87-02ad-4f58-afaf-f27ae4fb2c57</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
+			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ea533f67-4883-42bb-9701-83293e7313e5</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
 			"id": "8e4d8952-e713-443e-9a78-6feb4f5c94d2",

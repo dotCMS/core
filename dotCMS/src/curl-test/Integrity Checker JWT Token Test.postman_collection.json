@@ -764,7 +764,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/folder_integrity_test_demo",
+									"raw": "{{serverURL}}/api/v1/folder/sitename/demo.dotcms.com/uri/folder_integrity_test_demo",
 									"host": [
 										"{{serverURL}}"
 									],
