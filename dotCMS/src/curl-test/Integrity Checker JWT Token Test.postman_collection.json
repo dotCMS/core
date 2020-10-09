@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "a60c8d93-b01a-4fc7-b817-5080ab8ff140",
+		"_postman_id": "0edfa926-4880-4395-8e3f-2b9c1a5746f5",
 		"name": "Integrity Checker JWT Token Test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -17,7 +17,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "80afc1ed-8a26-413c-9960-3aa034991ebf",
+										"id": "3780408c-6a5e-4cf5-a596-33338d59a9d5",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -80,7 +80,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6c8540af-784c-4821-af20-9c64ca3092af",
+										"id": "1b608153-74a6-4ef7-9c28-f88bae1e94d0",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -113,7 +113,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "062243b0-ea15-492e-a4c3-47351fe304f2",
+										"id": "1185664c-f4ac-460e-9de2-eeeca14b96c9",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -163,7 +163,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a63b3d2d-516c-41ee-a33d-9c3e119dc9a5",
+										"id": "03ee6681-0c9a-45be-9e8f-ca6174165f7e",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -226,7 +226,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d36a15a3-9ebe-4b22-9de7-bd2cb7acae51",
+										"id": "d68aca10-87c4-4ad9-a56c-545e30c6f430",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -301,7 +301,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "815e86d1-3067-4131-88c5-7325b3a82c90",
+										"id": "8fe02d21-5ba5-4c6e-be67-5effd5e53463",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -367,7 +367,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "da716781-b552-4bcb-903d-1768b4d86d60",
+										"id": "4cadaed2-6ecf-4028-9491-534d53d77cdc",
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -446,7 +446,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "673944eb-40c9-49cc-8bb9-bc6d5cc38d8a",
+										"id": "2d1f4319-9e32-455d-90db-ae3e299196e5",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -498,7 +498,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
+											"src": "/Users/freddyrodriguez/DOTCMS/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -526,7 +526,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3d676359-d941-4461-bc4d-078b13d334f2",
+										"id": "2673af26-ed03-4e15-ba26-9ea0c0908e3d",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -589,7 +589,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "c7823712-8ca6-44a0-baff-b203e3a88bc5",
+										"id": "19323924-d877-4aeb-9ae4-61e055fc157c",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -667,7 +667,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "00e15a74-7360-40d8-a6ba-33bdbd7b6896",
+										"id": "ad9f66ef-9f27-4ab8-8e59-1100d7cce987",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -703,7 +703,7 @@
 										{
 											"key": "DATA_TO_FIX",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix_demo.zip"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix.zip"
 										},
 										{
 											"key": "TYPE",
@@ -732,7 +732,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3db6822c-c9e6-4f33-8f1d-632af0063d9d",
+										"id": "1a6e5aff-7276-47a1-af74-5230e2515add",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -793,7 +793,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "49ce2425-9a2b-4425-92e0-2d6e1c24c38e",
+				"id": "1445153e-5315-42db-9ece-8bdcb182aae3",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -803,7 +803,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "d3aa9e2b-4aa1-4882-9876-65b9266fe453",
+				"id": "80980b55-233c-427a-9897-df788b1dccc4",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -813,22 +813,22 @@
 	],
 	"variable": [
 		{
-			"id": "81a21cd1-affe-4e42-914a-894e7ffde1e9",
+			"id": "e2d29d4e-c09b-44e4-917c-b522c8010b9e",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "547ffe1c-a555-4e44-903f-c80060dccb1c",
+			"id": "2c415bb4-e0ab-4b1e-8e1c-97415d4be808",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk1MGY1N2RlNi02MjJhLTQyMWYtYThjYy0wZTY0ZDIwOGY3NTgiLCJ4bW9kIjoxNjAwOTgwMTYyMDAwLCJuYmYiOjE2MDA5ODAxNjIsImlzcyI6IjZmZWRmNjBhMTYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU1NTE1MjcsImlhdCI6MTYwMDk4MDE2MiwianRpIjoiZjAwYjcyZmItNDQ0YS00MGUzLWI1MzItMDBiZDk4NzFmMTk3In0.S3W8wZV8SAtTxPwlxoB1nzd301wvNDZDEFzVis-UdfA"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkwYWIzNWEyZS0yZmNjLTRiNTktYTgzZC0yZGNhODQ1ZDJiNzMiLCJ4bW9kIjoxNjAyMjYyMzA0MDAwLCJuYmYiOjE2MDIyNjIzMDQsImlzcyI6ImI2ZTc1ZTIyNzMiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTY4MzM2NjksImlhdCI6MTYwMjI2MjMwNCwianRpIjoiYjhkYTkzNzQtNThlNC00NTFkLThmM2QtYmZmMWQ5YjAyMGM4In0.fLNFl1RnrCEXrpkSMwCqBDlMRLHngkAPxugqW3x6FU4"
 		},
 		{
-			"id": "1f57fb71-9bc1-4a31-b3b4-4ab44647f181",
+			"id": "68cc22b5-c200-4675-ad5e-05117c139b4c",
 			"key": "bundle_id",
 			"value": "bundle_1598948729120"
 		},
 		{
-			"id": "b4166b36-71b9-4cc9-ab25-4514b88e07c7",
+			"id": "2317e5d1-2c8f-44ec-a232-12930cd4d60b",
 			"key": "transactionId",
 			"value": "48db03da-d303-47cc-af29-9be490e99648"
 		}

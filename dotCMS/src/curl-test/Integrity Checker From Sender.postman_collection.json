@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "bebbcc93-773f-4a17-a01b-52cedcf7a57a",
+		"_postman_id": "f5c019b0-9b8b-4a2f-a744-d41fed88c328",
 		"name": "Integrity Checker From Sender",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -64,7 +64,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "0ad65822-5039-4aac-90b5-42fbc04fd51d",
+												"id": "372d74d1-1a5b-4a98-b02e-496283c51376",
 												"exec": [
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -77,7 +77,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "e4692913-6d9b-48ef-8148-17627374a504",
+												"id": "6ef10aa3-9f45-41b9-8b0f-15f57acf8a51",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -157,7 +157,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "1dd9c455-ec58-4536-97ec-0188dcdfe237",
+												"id": "d459120d-5e28-4ae9-b5b9-f502e2006e13",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -169,7 +169,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "2075c9c1-6247-40d5-bd1f-c4aa53da565e",
+												"id": "8fd4e1fc-3cdf-46d8-a46e-419c7a634684",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -265,7 +265,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "b77e3d3a-ccca-4df8-80d6-88396fbb8adc",
+												"id": "5083f082-6769-4722-ad6b-1162288a2da0",
 												"exec": [
 													"receiverName = 'receiverName-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"receiverName\", receiverName);",
@@ -277,7 +277,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "2eae5120-ac21-4870-a736-6cf5abc64d67",
+												"id": "eb1ca745-e82f-49ca-af2a-69701dddebd1",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -362,7 +362,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "63c180f1-ffbc-47ea-ab74-c6c946bdeb43",
+												"id": "32c859a2-6bdc-4a7e-8b57-2f014049f2e3",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -461,7 +461,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "8c8e5210-7359-4b5a-a3eb-14f30b01cb57",
+												"id": "7ef8005d-ec3f-4468-9726-761cff60f353",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -575,7 +575,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "2f5e5a96-83d3-4d33-8223-bb5362160a96",
+												"id": "a865cead-08ca-4256-91c7-7dd64aff8098",
 												"exec": [
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -588,7 +588,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "6e3ecf3d-825a-4484-936a-2129c1f1469c",
+												"id": "4ef07232-a709-4b25-82aa-d7de1e969bee",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -668,7 +668,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "28358715-9669-4877-b171-40131d12749f",
+												"id": "68d9dd38-4818-49f4-9bae-263c07b092f4",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -680,7 +680,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "a9ceaaf3-02aa-4202-b669-42e95f033f69",
+												"id": "e310d0fb-39ed-46e1-a09b-c931c0fc237f",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -776,7 +776,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "3002b7cd-f4d5-401b-a6b4-a837e814330e",
+												"id": "63c920e7-8ba3-4c3b-a3e5-77b6889613f7",
 												"exec": [
 													"receiverName = 'receiverName-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"receiverName\", receiverName);",
@@ -788,7 +788,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "7b7c68b2-33de-47ec-80f0-c80f15d4035a",
+												"id": "1cb18a61-d4f8-4b1f-9872-74c7482aa3c6",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -873,7 +873,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "1130d11f-864f-4188-9de6-ab9e4021627f",
+												"id": "32737775-caef-4ceb-ade8-4123b589b098",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
@@ -984,7 +984,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "94836223-e9a8-4b1c-b78d-265162220ff0",
+												"id": "95a2bf20-a375-48a6-ae72-5cc5d7589202",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1047,7 +1047,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "3f1cb8c1-4ea5-49aa-9e39-37b136714a10",
+												"id": "a9d35b77-39c7-470a-84a8-cd8ca4bd2d51",
 												"exec": [
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -1060,7 +1060,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "f790c7dd-b057-4567-b3c8-00d0eae27692",
+												"id": "68749e4d-148c-456d-b133-ef4d5be49e24",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1140,7 +1140,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "6170f15f-c5f2-458a-88c8-02f0ff0430c4",
+												"id": "532927c5-1a2a-4d7d-992c-579253afa940",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -1152,7 +1152,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "4b4e7278-60f8-40ca-9aab-bd34c336b8dd",
+												"id": "ba2439e2-9615-4ed6-8a5c-b288a8b5ba9b",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1248,7 +1248,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "d862f37a-20e9-41cc-a359-970cef36bc9b",
+												"id": "6712b1ec-091f-4dce-851f-e198c2fd1b00",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1295,7 +1295,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "f6653dd2-eaab-4e4c-80eb-211e75c1a0b6",
+												"id": "24e850c3-6d95-4499-8ae3-e2fb6d41641b",
 												"exec": [
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -1308,7 +1308,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "6e30749c-4aac-46af-98fa-12c711babdd2",
+												"id": "a47e0e97-121f-42c0-b3a5-783984c47946",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1388,7 +1388,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "b87e25b4-98fa-4508-9cd5-79430eccfd98",
+												"id": "79e6bf22-2f7d-4f7c-8fd0-81fae68db892",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -1400,7 +1400,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "2ffdf0e3-25d1-47a0-9013-286246f66a1b",
+												"id": "b16b3640-4381-496b-8cec-5ae9d08121f3",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1496,7 +1496,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "fa051653-5c86-49b4-95c8-12cd6e1f33a3",
+												"id": "573a8b33-d3d9-49f8-91e5-bb13a1d9d119",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
@@ -1511,16 +1511,11 @@
 									],
 									"request": {
 										"auth": {
-											"type": "basic",
-											"basic": [
+											"type": "bearer",
+											"bearer": [
 												{
-													"key": "password",
-													"value": "admin",
-													"type": "string"
-												},
-												{
-													"key": "username",
-													"value": "admin@dotcms.com",
+													"key": "token",
+													"value": "invalid_token",
 													"type": "string"
 												}
 											]
@@ -1556,7 +1551,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "54c09382-1e1a-46a0-a997-d95be8b47f25",
+												"id": "fc275043-f66b-4238-8a05-1dbba56ba0ad",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1621,7 +1616,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "2b32209a-bb05-4e39-bd1d-d4222f390ff9",
+												"id": "366d3a7e-90f9-48cd-943e-88fdf8708013",
 												"exec": [
 													"",
 													"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -1634,7 +1629,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "c082a427-606f-4f1c-8277-7d7d3fe5a13b",
+												"id": "23415d44-4a7a-4afe-877c-6c9b6d19850e",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1714,7 +1709,7 @@
 										{
 											"listen": "prerequest",
 											"script": {
-												"id": "a0e8bc37-4825-4569-ac05-39fd0bf839fb",
+												"id": "726e028c-bc4e-4bc5-b533-a3771abbdc3f",
 												"exec": [
 													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 													"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -1726,7 +1721,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "8825739a-9425-4571-82d1-e82c24c314eb",
+												"id": "92745fb9-4c9e-44f5-9ef9-f8881a3eec59",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
@@ -1822,7 +1817,7 @@
 										{
 											"listen": "test",
 											"script": {
-												"id": "442f9aa0-55f0-41b2-9fca-a4c2547a6e5e",
+												"id": "e9bf80f9-9138-4c94-9d46-61ef1985ae94",
 												"exec": [
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(401);",
@@ -1873,7 +1868,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "71206d30-b7c5-469c-b91b-22cd76424b08",
+				"id": "898e5783-6317-417f-88a1-9bc21c358c61",
 				"type": "text/javascript",
 				"exec": [
 					"wait = (ms) => {",
@@ -1896,7 +1891,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "ee1eac1b-26c2-4de8-b486-68ad292cc651",
+				"id": "6dac8440-d832-4cb6-9d17-915f4768b408",
 				"type": "text/javascript",
 				"exec": [
 					""
