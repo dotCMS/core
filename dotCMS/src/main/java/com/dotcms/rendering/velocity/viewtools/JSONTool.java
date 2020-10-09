@@ -249,8 +249,8 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return new JSONObject(o);
   }
 
-  private Class LIST_MAP_CLASS = new ArrayList<Map<String, Object>>().getClass();
-  private Class MAP_CLASS      = new HashMap<String, Object>().getClass();
+  private final static Class LIST_MAP_CLASS = new ArrayList<Map<String, Object>>().getClass();
+  private final static Class MAP_CLASS      = new HashMap<String, Object>().getClass();
   /**
    * Returns a JSONObject as constructed from the provided string.
    *
