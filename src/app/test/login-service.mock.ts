@@ -55,7 +55,9 @@ export const mockLoginFormResponse = {
         'enter-password': 'Enter Password',
         're-enter-password': 'Confirm Password',
         'change-password': 'Change Password',
-        'welcome-login': 'Welcome!'
+        'welcome-login': 'Welcome!',
+        'Logout': 'Logout',
+        'message.successfully.logout': 'You are logout successfully, click the button to login'
     },
     permissions: []
 };

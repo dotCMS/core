@@ -4,6 +4,7 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
 import { LoginService, Auth, LoggerService } from 'dotcms-js';
 import { LOCATION_TOKEN } from 'src/app/providers';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-toolbar-user',
@@ -11,8 +12,7 @@ import { DotNavigationService } from '@components/dot-navigation/services/dot-na
     templateUrl: 'dot-toolbar-user.component.html'
 })
 export class DotToolbarUserComponent implements OnInit {
-    @ViewChild(DotDropdownComponent)
-    dropdown: DotDropdownComponent;
+    @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
     auth: Auth;
 
     showLoginAs = false;
@@ -23,7 +23,8 @@ export class DotToolbarUserComponent implements OnInit {
         private loggerService: LoggerService,
         private loginService: LoginService,
         public iframeOverlayService: IframeOverlayService,
-        private dotNavigationService: DotNavigationService
+        private dotNavigationService: DotNavigationService,
+        private dotRouterService: DotRouterService
     ) {}
 
     ngOnInit(): void {
@@ -39,12 +40,7 @@ export class DotToolbarUserComponent implements OnInit {
      * @memberof ToolbarUserComponent
      */
     logout(): boolean {
-        this.loginService.logOutUser().subscribe(
-            () => {},
-            (error) => {
-                this.loggerService.error(error);
-            }
-        );
+        this.dotRouterService.doLogOut();
         return false;
     }
 
@@ -52,7 +48,7 @@ export class DotToolbarUserComponent implements OnInit {
      * Call the logout as service and clear the user login as
      *
      * @param any $event
-     * @memberof ToolbarUserComponent
+     * @memberof To/olbarUserComponent
      */
     logoutAs($event): void {
         $event.preventDefault();
@@ -64,7 +60,7 @@ export class DotToolbarUserComponent implements OnInit {
                     this.location.reload();
                 });
             },
-            (error) => {
+            error => {
                 this.loggerService.error(error);
             }
         );

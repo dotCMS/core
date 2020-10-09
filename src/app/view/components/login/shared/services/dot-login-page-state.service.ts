@@ -26,7 +26,9 @@ export const LOGIN_LABELS = [
     're-enter-password',
     'change-password',
     'reset-password-confirmation-do-not-match',
-    'message.forgot.password.password.updated'
+    'message.forgot.password.password.updated',
+    'Logout',
+    'message.successfully.logout'
 ];
 
 @Injectable()

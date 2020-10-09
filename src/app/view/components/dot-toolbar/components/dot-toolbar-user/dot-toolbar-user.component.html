@@ -17,7 +17,7 @@
         <ul class="toolbar-user__menu" id="dot-toolbar-user-menu">
             <li class="user-menu__item"><a href="#" (click)='toggleMyAccount()' *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-my-account" [textContent]="'my-account' | dm "></a></li>
             <li class="user-menu__item"><a href="#" (click)="tooggleLoginAs($event)" *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-login-as" [textContent]="'login-as' | dm ">login-as</a></li>
-            <li class="user-menu__item"><a href="#" (click)="logout($event)" *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-logout" [textContent]="'Logout' | dm "></a></li>
+            <li class="user-menu__item"><a href="/dotAdmin/logout" (click)="logout()" *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-logout" [textContent]="'Logout' | dm "></a></li>
             <li class="user-menu__item"><a href="#" (click)="logoutAs($event)" *ngIf="auth.loginAsUser" id="dot-toolbar-user-link-logout-as" [textContent]="'logout-as' | dm ">logout-as</a></li>
         </ul>
     </div>

@@ -1,12 +1,11 @@
 import { ResetPasswordComponent } from '@components/login/reset-password-component/reset-password.component';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { By } from '@angular/platform-browser';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/primeng';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -16,6 +15,7 @@ import { ActivatedRoute } from '@angular/router';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
 
 describe('ResetPasswordComponent', () => {
     let component: ResetPasswordComponent;
@@ -26,11 +26,12 @@ describe('ResetPasswordComponent', () => {
     let dotRouterService: DotRouterService;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [ResetPasswordComponent],
             imports: [
                 BrowserAnimationsModule,
                 FormsModule,
+                ReactiveFormsModule,
                 ButtonModule,
                 InputTextModule,
                 MdInputTextModule,
@@ -39,11 +40,12 @@ describe('ResetPasswordComponent', () => {
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
-                { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService }
+                { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
+                { provide: DotRouterService, useClass: MockDotRouterService }
             ]
         });
 
-        fixture = DOTTestBed.createComponent(ResetPasswordComponent);
+        fixture = TestBed.createComponent(ResetPasswordComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
         activatedRoute = de.injector.get(ActivatedRoute);
@@ -91,7 +93,11 @@ describe('ResetPasswordComponent', () => {
         });
         this.changePasswordButton.triggerEventHandler('click', {});
         expect(loginService.changePassword).toHaveBeenCalledWith('test', 'test@test.com');
-        expect(dotRouterService.goToLogin).toHaveBeenCalledWith({ changedPassword: true });
+        expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
+            queryParams: {
+                changedPassword: true
+            }
+        });
     });
 
     it('should show error message for required form fields', () => {

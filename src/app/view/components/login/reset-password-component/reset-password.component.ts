@@ -86,7 +86,11 @@ export class ResetPasswordComponent implements OnInit {
                 .subscribe(
                     () => {
                         alert(this.changePasswordSuccessfully);
-                        this.dotRouterService.goToLogin({ changedPassword: true });
+                        this.dotRouterService.goToLogin({
+                            queryParams: {
+                                changedPassword: true
+                            }
+                        });
                     },
                     error => {
                         this.message = error.errorsMessages;

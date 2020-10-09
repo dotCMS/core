@@ -1,12 +1,11 @@
 import { ForgotPasswordComponent } from '@components/login/forgot-password-component/forgot-password.component';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { By } from '@angular/platform-browser';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/primeng';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -16,6 +15,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
 
 describe('ForgotPasswordComponent', () => {
     let component: ForgotPasswordComponent;
@@ -25,11 +25,12 @@ describe('ForgotPasswordComponent', () => {
     let loginService: LoginService;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [ForgotPasswordComponent],
             imports: [
                 BrowserAnimationsModule,
                 FormsModule,
+                ReactiveFormsModule,
                 ButtonModule,
                 MdInputTextModule,
                 InputTextModule,
@@ -38,11 +39,12 @@ describe('ForgotPasswordComponent', () => {
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
-                { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService }
+                { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
+                { provide: DotRouterService, useClass: MockDotRouterService }
             ]
         });
 
-        fixture = DOTTestBed.createComponent(ForgotPasswordComponent);
+        fixture = TestBed.createComponent(ForgotPasswordComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
         loginService = de.injector.get(LoginService);
@@ -79,8 +81,10 @@ describe('ForgotPasswordComponent', () => {
 
         expect(loginService.recoverPassword).toHaveBeenCalledWith('test');
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
-            resetEmailSent: true,
-            resetEmail: 'test'
+            queryParams: {
+                resetEmailSent: true,
+                resetEmail: 'test'
+            }
         });
     });
 
@@ -99,13 +103,10 @@ describe('ForgotPasswordComponent', () => {
         expect(messageElemnt).not.toBeNull();
     });
 
-    it('should emit cancel when cancel button is clicked', () => {
+    it('should call goToLogin when cancel button is clicked', () => {
         const cancelButton = de.query(By.css('button[secondary]'));
         cancelButton.triggerEventHandler('click', {});
 
-        expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
-            resetEmailSent: true,
-            resetEmail: ''
-        });
+        expect(dotRouterService.goToLogin).toHaveBeenCalledWith(undefined);
     });
 });

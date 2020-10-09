@@ -13,7 +13,7 @@ import {
 import { takeUntil, filter } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
-import { LoginService, DotcmsEventsService, DotEventTypeWrapper, LoggerService } from 'dotcms-js';
+import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from 'dotcms-js';
 
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
@@ -49,7 +49,6 @@ export class IframeComponent implements OnInit, OnDestroy {
         private dotRouterService: DotRouterService,
         private dotUiColorsService: DotUiColorsService,
         private dotcmsEventsService: DotcmsEventsService,
-        private loginService: LoginService,
         private ngZone: NgZone,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public iframeOverlayService: IframeOverlayService,
@@ -210,7 +209,7 @@ export class IframeComponent implements OnInit, OnDestroy {
     private handleErrors(error: number): void {
         const errorMapHandler = {
             401: () => {
-                this.loginService.logOutUser().subscribe(_data => {});
+                this.dotRouterService.doLogOut();
             }
         };
 

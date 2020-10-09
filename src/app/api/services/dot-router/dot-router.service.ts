@@ -4,6 +4,7 @@ import { Router, ActivatedRoute, Params } from '@angular/router';
 import { PortletNav } from '@models/navigation';
 import { Subject } from 'rxjs';
 import { DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
+import { NavigationExtras } from '@angular/router/src/router';
 
 @Injectable()
 export class DotRouterService {
@@ -86,8 +87,14 @@ export class DotRouterService {
             : this.redirectMain();
     }
 
-    goToLogin(parameters?: any): void {
-        this.router.navigate(['/public/login'], parameters);
+    /**
+     * Redirects to the login page adding a busting cache parameter.
+     *
+     * * @param NavigationExtras navExtras
+     * @memberof DotRouterService
+     */
+    goToLogin(navExtras?: NavigationExtras): void {
+        this.router.navigate(['/public/login'], this.addCacheBusting(navExtras));
     }
 
     goToSiteBrowser(): void {
@@ -100,6 +107,15 @@ export class DotRouterService {
 
     goToURL(url: string): void {
         this.router.navigate([url]);
+    }
+
+    /**
+     * Redirects to backend to handle the logout.
+     *
+     * @memberof DotRouterService
+     */
+    doLogOut(): void {
+        window.location.href = '/dotAdmin/logout';
     }
 
     /**
@@ -178,7 +194,7 @@ export class DotRouterService {
 
         const urlSegments = url
             .split('/')
-            .filter((item) => item !== '' && item !== '#' && item !== 'c');
+            .filter(item => item !== '' && item !== '#' && item !== 'c');
         return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : urlSegments[0];
     }
 
@@ -238,5 +254,15 @@ export class DotRouterService {
         } else {
             return this.router.navigate(['/']);
         }
+    }
+
+    private addCacheBusting(navExtras: NavigationExtras): NavigationExtras {
+        if (navExtras) {
+            navExtras.queryParams['r'] = new Date().getTime();
+        } else {
+            navExtras = { queryParams: { r: new Date().getTime() } };
+        }
+
+        return navExtras;
     }
 }

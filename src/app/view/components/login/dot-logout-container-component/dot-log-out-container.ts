@@ -12,10 +12,7 @@ export class DotLogOutContainerComponent {
     constructor(loginService: LoginService, router: DotRouterService) {
         loginService.isLogin$.pipe(take(1)).subscribe(isLogin => {
             if (isLogin) {
-                loginService
-                    .logOutUser()
-                    .pipe(take(1))
-                    .subscribe(() => {});
+                window.location.href = '/dotAdmin/logout';
             } else {
                 router.goToLogin();
             }

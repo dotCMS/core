@@ -6,6 +6,7 @@ import { take, tap } from 'rxjs/operators';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { LoginService, ResponseView } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import {NavigationExtras} from '@angular/router/src/router';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -54,7 +55,12 @@ export class ForgotPasswordComponent implements OnInit {
                 .pipe(take(1))
                 .subscribe(
                     () => {
-                        this.goToLogin();
+                        this.goToLogin({
+                            queryParams: {
+                                resetEmailSent: true,
+                                resetEmail: this.forgotPasswordForm.get('login').value
+                            }
+                        });
                     },
                     (resp: ResponseView) => {
                         if (!resp.existError('a-new-password-has-been-sent-to-x')) {
@@ -70,12 +76,10 @@ export class ForgotPasswordComponent implements OnInit {
     /**
      * Executes the recover password service
      *
+     * @param NavigationExtras parameters
      * @memberof ForgotPasswordComponent
      */
-    goToLogin(): void {
-        this.dotRouterService.goToLogin({
-            resetEmailSent: true,
-            resetEmail: this.forgotPasswordForm.get('login').value
-        });
+    goToLogin(parameters?: NavigationExtras): void {
+        this.dotRouterService.goToLogin(parameters);
     }
 }

@@ -17,6 +17,7 @@ import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotcmsConfigService, LoginService, User, Auth } from 'dotcms-js';
 import { StringFormat } from 'src/app/api/util/stringFormat';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 interface AccountUserForm extends AccountUser {
     confirmPassword?: string;
@@ -56,7 +57,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
         private accountService: AccountService,
         private dotcmsConfigService: DotcmsConfigService,
         private loginService: LoginService,
-        private stringFormat: StringFormat
+        private stringFormat: StringFormat,
+        private dotRouterService: DotRouterService
     ) {
         this.passwordMatch = false;
         this.changePasswordOption = false;
@@ -116,7 +118,10 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     }
 
     getRequiredMessage(item): string {
-        return this.stringFormat.formatMessage(this.dotMessageService.get('error.form.mandatory'), item);
+        return this.stringFormat.formatMessage(
+            this.dotMessageService.get('error.form.mandatory'),
+            item
+        );
     }
 
     save(): void {
@@ -127,7 +132,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                 this.close.emit();
 
                 if (response.entity.reauthenticate) {
-                    this.loginService.logOutUser().subscribe(() => {});
+                    this.dotRouterService.doLogOut();
                 } else {
                     this.loginService.setAuth({
                         loginAsUser: null,

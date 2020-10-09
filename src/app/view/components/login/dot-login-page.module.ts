@@ -4,7 +4,6 @@ import { DotLoginPageRoutingModule } from '@components/login/dot-login-page-rout
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 
 @NgModule({
-    declarations: [],
     imports: [CommonModule, DotLoginPageRoutingModule],
     providers: [DotLoginPageResolver]
 })
