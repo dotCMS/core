@@ -1,0 +1,2052 @@
+{
+	"info": {
+		"_postman_id": "f01856b1-ba87-4b3a-baec-db23aa455f21",
+		"name": "Integrity Checker From Sender",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Generate ",
+			"item": [
+				{
+					"name": "old Way",
+					"item": [
+						{
+							"name": "Happy path",
+							"item": [
+								{
+									"name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to false",
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"USE_JWT_TOKEN_IN_PUSH_PUBLISH\": false\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api//v1/configuration",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"",
+												"v1",
+												"configuration"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "login",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "d1325914-a9be-42cc-8c1f-63c2192d2fba",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"backEndLogin\": true,\n    \"country\": \"US\",\n    \"language\": \"en\",\n    \"password\": \"admin\",\n    \"rememberMe\": false,\n    \"userId\": \"admin@dotcms.com\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/authentication",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"authentication"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create environment",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "fb45d570-c6c5-46fd-b3b2-1c8a1ef74c03",
+												"exec": [
+													"",
+													"environmentName = 'environment-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"environmentName\", environmentName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "7ef880d0-9d8b-4e0b-9265-3d9abdb71b7f",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"environmentId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment?environmentName={{environmentName}}&pushType=pushToOne&whoCanUseSelect=e7d4e34e-5127-45fc-8123-d48b62d510e3&whoCanUse=e7d4e34e-5127-45fc-8123-d48b62d510e3",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction",
+												"cmd",
+												"addEnvironment"
+											],
+											"query": [
+												{
+													"key": "environmentName",
+													"value": "{{environmentName}}"
+												},
+												{
+													"key": "pushType",
+													"value": "pushToOne"
+												},
+												{
+													"key": "whoCanUseSelect",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												},
+												{
+													"key": "whoCanUse",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create end point",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "d62ce929-8806-4d31-92bc-cf8cc1814f69",
+												"exec": [
+													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"endpointName\", endpointName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "ab0964bd-799b-47c5-9271-5042516bded9",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"endpintId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"type": "text",
+												"value": "{{origin}}"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey=123&enabled=on",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+												"cmd",
+												"addEndpoint"
+											],
+											"query": [
+												{
+													"key": "sending",
+													"value": "false"
+												},
+												{
+													"key": "serverName",
+													"value": "{{endpointName}}"
+												},
+												{
+													"key": "environmentId",
+													"value": "{{environmentId}}"
+												},
+												{
+													"key": "protocol",
+													"value": "http"
+												},
+												{
+													"key": "address",
+													"value": "localhost"
+												},
+												{
+													"key": "port",
+													"value": "8080"
+												},
+												{
+													"key": "authKey",
+													"value": "123"
+												},
+												{
+													"key": "enabled",
+													"value": "on"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create receiver",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "4e2de1ab-af19-4ebe-9743-3f9655047bfa",
+												"exec": [
+													"receiverName = 'receiverName-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"receiverName\", receiverName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "f367f14e-7818-4aaf-bcc4-5cbecd849609",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"type": "text",
+												"value": "{{origin}}"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=true&serverName={{receiverName}}&environmentId={{environmentId}}&address=localhost&authKey=123&enabled=on",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+												"cmd",
+												"addEndpoint"
+											],
+											"query": [
+												{
+													"key": "sending",
+													"value": "true"
+												},
+												{
+													"key": "serverName",
+													"value": "{{receiverName}}"
+												},
+												{
+													"key": "environmentId",
+													"value": "{{environmentId}}"
+												},
+												{
+													"key": "address",
+													"value": "localhost"
+												},
+												{
+													"key": "authKey",
+													"value": "123"
+												},
+												{
+													"key": "enabled",
+													"value": "on"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "generate Integrity Checker",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "cdfbfaa0-b329-41a7-b7d2-84a870997efb",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    response = pm.response.json();",
+													"",
+													"    pm.expect(response['success']).to.equals(true, );",
+													"    pm.expect(response['message']).to.equals(\"Integrity Checking Initialized...\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/integrity/checkintegrity/endpoint/{{endpintId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"integrity",
+												"checkintegrity",
+												"endpoint",
+												"{{endpintId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to true",
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"USE_JWT_TOKEN_IN_PUSH_PUBLISH\": true\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api//v1/configuration",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"",
+												"v1",
+												"configuration"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "{{serverURL}}/api/v1/apitoken",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "e0cfe90b-1514-4feb-a1b9-d1f16e6cc6b9",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0);",
+													"    pm.expect(jsonData.entity).to.not.eq(undefined);",
+													"    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
+													"    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 1,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/apitoken",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"apitoken"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "invalid token",
+							"item": [
+								{
+									"name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to false",
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"USE_JWT_TOKEN_IN_PUSH_PUBLISH\": false\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api//v1/configuration",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"",
+												"v1",
+												"configuration"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "login",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "c27614e2-dd39-44d6-9103-33a4771661d0",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"backEndLogin\": true,\n    \"country\": \"US\",\n    \"language\": \"en\",\n    \"password\": \"admin\",\n    \"rememberMe\": false,\n    \"userId\": \"admin@dotcms.com\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/authentication",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"authentication"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create environment",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "7452a212-04c5-4e98-b438-b7e977342888",
+												"exec": [
+													"",
+													"environmentName = 'environment-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"environmentName\", environmentName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "7b7fbca7-4558-4d0b-b42e-acf545fb9924",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"environmentId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment?environmentName={{environmentName}}&pushType=pushToOne&whoCanUseSelect=e7d4e34e-5127-45fc-8123-d48b62d510e3&whoCanUse=e7d4e34e-5127-45fc-8123-d48b62d510e3",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction",
+												"cmd",
+												"addEnvironment"
+											],
+											"query": [
+												{
+													"key": "environmentName",
+													"value": "{{environmentName}}"
+												},
+												{
+													"key": "pushType",
+													"value": "pushToOne"
+												},
+												{
+													"key": "whoCanUseSelect",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												},
+												{
+													"key": "whoCanUse",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create end point",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "525f2862-6e5e-4ef7-8485-4bf6242f1ae9",
+												"exec": [
+													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"endpointName\", endpointName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "79c8c9ff-7d29-4e5c-951d-8936cbf41123",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"endpintId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"type": "text",
+												"value": "{{origin}}"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey=123&enabled=on",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+												"cmd",
+												"addEndpoint"
+											],
+											"query": [
+												{
+													"key": "sending",
+													"value": "false"
+												},
+												{
+													"key": "serverName",
+													"value": "{{endpointName}}"
+												},
+												{
+													"key": "environmentId",
+													"value": "{{environmentId}}"
+												},
+												{
+													"key": "protocol",
+													"value": "http"
+												},
+												{
+													"key": "address",
+													"value": "localhost"
+												},
+												{
+													"key": "port",
+													"value": "8080"
+												},
+												{
+													"key": "authKey",
+													"value": "123"
+												},
+												{
+													"key": "enabled",
+													"value": "on"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create receiver",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "f18da640-cdcc-4b0b-a03d-ac9faac33d9e",
+												"exec": [
+													"receiverName = 'receiverName-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"receiverName\", receiverName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "5f3158f3-5f86-43c1-865e-9fc66fa21422",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"type": "text",
+												"value": "{{origin}}"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=true&serverName={{receiverName}}&environmentId={{environmentId}}&address=localhost&authKey=invalid&enabled=on",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+												"cmd",
+												"addEndpoint"
+											],
+											"query": [
+												{
+													"key": "sending",
+													"value": "true"
+												},
+												{
+													"key": "serverName",
+													"value": "{{receiverName}}"
+												},
+												{
+													"key": "environmentId",
+													"value": "{{environmentId}}"
+												},
+												{
+													"key": "address",
+													"value": "localhost"
+												},
+												{
+													"key": "authKey",
+													"value": "invalid"
+												},
+												{
+													"key": "enabled",
+													"value": "on"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "generate Integrity Checker",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "44ce47f8-d6e5-45d0-bbf4-cfd4ff7afa25",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(401);",
+													"    endPoint = pm.collectionVariables.get(\"endpintId\");",
+													"    pm.expect(pm.response.text()).to.equals(\"Invalid token Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: \" + endPoint);",
+													"",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/integrity/checkintegrity/endpoint/{{endpintId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"integrity",
+												"checkintegrity",
+												"endpoint",
+												"{{endpintId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to true",
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"USE_JWT_TOKEN_IN_PUSH_PUBLISH\": true\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api//v1/configuration",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"",
+												"v1",
+												"configuration"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "using JWT",
+					"item": [
+						{
+							"name": "Happy path",
+							"item": [
+								{
+									"name": "request_token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "37a7ff6b-f988-4f89-b54b-a3aa04d70efd",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0);",
+													"    pm.expect(jsonData.entity).to.not.eq(undefined);",
+													"    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
+													"    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 94571365,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/apitoken",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"apitoken"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create environment",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "79b5fbd1-dc2e-4faa-987c-1a953cdc849b",
+												"exec": [
+													"",
+													"environmentName = 'environment-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"environmentName\", environmentName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "95b178ba-7cfb-44f7-9b16-518f6e98f002",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"environmentId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment?environmentName={{environmentName}}&pushType=pushToOne&whoCanUseSelect=e7d4e34e-5127-45fc-8123-d48b62d510e3&whoCanUse=e7d4e34e-5127-45fc-8123-d48b62d510e3",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction",
+												"cmd",
+												"addEnvironment"
+											],
+											"query": [
+												{
+													"key": "environmentName",
+													"value": "{{environmentName}}"
+												},
+												{
+													"key": "pushType",
+													"value": "pushToOne"
+												},
+												{
+													"key": "whoCanUseSelect",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												},
+												{
+													"key": "whoCanUse",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create end point",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "19df49ca-b1a2-4ee2-8bdd-d33bfb9146a2",
+												"exec": [
+													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"endpointName\", endpointName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "202775bf-90a4-4e4b-89c5-c786a9029ab8",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"endpintId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"type": "text",
+												"value": "{{origin}}"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey={{token}}&enabled=on",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+												"cmd",
+												"addEndpoint"
+											],
+											"query": [
+												{
+													"key": "sending",
+													"value": "false"
+												},
+												{
+													"key": "serverName",
+													"value": "{{endpointName}}"
+												},
+												{
+													"key": "environmentId",
+													"value": "{{environmentId}}"
+												},
+												{
+													"key": "protocol",
+													"value": "http"
+												},
+												{
+													"key": "address",
+													"value": "localhost"
+												},
+												{
+													"key": "port",
+													"value": "8080"
+												},
+												{
+													"key": "authKey",
+													"value": "{{token}}"
+												},
+												{
+													"key": "enabled",
+													"value": "on"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "generate Integrity Checker",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "ddd02cc3-77be-4591-a237-2549fe073525",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    response = pm.response.json();",
+													"",
+													"    pm.expect(response['success']).to.equals(true, );",
+													"    pm.expect(response['message']).to.equals(\"Integrity Checking Initialized...\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/integrity/checkintegrity/endpoint/{{endpintId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"integrity",
+												"checkintegrity",
+												"endpoint",
+												"{{endpintId}}"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "Invalid Token",
+							"item": [
+								{
+									"name": "login",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "0a008749-4206-443e-aa62-cf4ae75c5596",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"backEndLogin\": true,\n    \"country\": \"US\",\n    \"language\": \"en\",\n    \"password\": \"admin\",\n    \"rememberMe\": false,\n    \"userId\": \"admin@dotcms.com\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/authentication",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"authentication"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create environment",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "79ca1b4c-7a87-4b1b-8c6a-1c88c8c451d1",
+												"exec": [
+													"",
+													"environmentName = 'environment-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"environmentName\", environmentName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "7ec74343-5968-418d-9d02-79df35354cf7",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"environmentId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment?environmentName={{environmentName}}&pushType=pushToOne&whoCanUseSelect=e7d4e34e-5127-45fc-8123-d48b62d510e3&whoCanUse=e7d4e34e-5127-45fc-8123-d48b62d510e3",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction",
+												"cmd",
+												"addEnvironment"
+											],
+											"query": [
+												{
+													"key": "environmentName",
+													"value": "{{environmentName}}"
+												},
+												{
+													"key": "pushType",
+													"value": "pushToOne"
+												},
+												{
+													"key": "whoCanUseSelect",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												},
+												{
+													"key": "whoCanUse",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create end point",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "cf59260c-bdd8-466f-959c-b1e4b7e05fc5",
+												"exec": [
+													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"endpointName\", endpointName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "369ce43a-c4d6-4cd9-831d-55475aa3d3e3",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"endpintId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"type": "text",
+												"value": "{{origin}}"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey=123&enabled=on",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+												"cmd",
+												"addEndpoint"
+											],
+											"query": [
+												{
+													"key": "sending",
+													"value": "false"
+												},
+												{
+													"key": "serverName",
+													"value": "{{endpointName}}"
+												},
+												{
+													"key": "environmentId",
+													"value": "{{environmentId}}"
+												},
+												{
+													"key": "protocol",
+													"value": "http"
+												},
+												{
+													"key": "address",
+													"value": "localhost"
+												},
+												{
+													"key": "port",
+													"value": "8080"
+												},
+												{
+													"key": "authKey",
+													"value": "123"
+												},
+												{
+													"key": "enabled",
+													"value": "on"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Shoyld response with 401",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "2cf7bcef-dea9-413f-812a-27e25060cbe4",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(401);",
+													"    endPoint = pm.collectionVariables.get(\"endpintId\");",
+													"    pm.expect(pm.response.text()).to.equals(\"Invalid token Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: \" + endPoint);",
+													"",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/integrity/checkintegrity/endpoint/{{endpintId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"integrity",
+												"checkintegrity",
+												"endpoint",
+												"{{endpintId}}"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "experied Token",
+							"item": [
+								{
+									"name": "request_token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "d7e7204e-00ab-4eb0-ae3b-458766971db7",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0);",
+													"    pm.expect(jsonData.entity).to.not.eq(undefined);",
+													"    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
+													"    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
+													"",
+													"    eval(pm.collectionVariables.get(\"wait\"))(2);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 94571365,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/apitoken",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"apitoken"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create environment",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "c1b527d1-78c4-40f2-a49e-c321e1810908",
+												"exec": [
+													"",
+													"environmentName = 'environment-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"environmentName\", environmentName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "67a7ca8c-605a-461b-893b-162a04a00ebf",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"environmentId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment?environmentName={{environmentName}}&pushType=pushToOne&whoCanUseSelect=e7d4e34e-5127-45fc-8123-d48b62d510e3&whoCanUse=e7d4e34e-5127-45fc-8123-d48b62d510e3",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction",
+												"cmd",
+												"addEnvironment"
+											],
+											"query": [
+												{
+													"key": "environmentName",
+													"value": "{{environmentName}}"
+												},
+												{
+													"key": "pushType",
+													"value": "pushToOne"
+												},
+												{
+													"key": "whoCanUseSelect",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												},
+												{
+													"key": "whoCanUse",
+													"value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "create end point",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "9bb94357-12a4-4808-ada7-32415dc9146e",
+												"exec": [
+													"endpointName = 'endpoint-' + new Date().getMilliseconds();",
+													"pm.collectionVariables.set(\"endpointName\", endpointName);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"id": "9f245535-9fd6-49b6-87bd-1363ff614bb3",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"",
+													"    var environmentId = pm.response.text();",
+													"    pm.collectionVariables.set(\"endpintId\", environmentId);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Origin",
+												"type": "text",
+												"value": "{{origin}}"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": []
+										},
+										"url": {
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey=123&enabled=on",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"DotAjaxDirector",
+												"com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+												"cmd",
+												"addEndpoint"
+											],
+											"query": [
+												{
+													"key": "sending",
+													"value": "false"
+												},
+												{
+													"key": "serverName",
+													"value": "{{endpointName}}"
+												},
+												{
+													"key": "environmentId",
+													"value": "{{environmentId}}"
+												},
+												{
+													"key": "protocol",
+													"value": "http"
+												},
+												{
+													"key": "address",
+													"value": "localhost"
+												},
+												{
+													"key": "port",
+													"value": "8080"
+												},
+												{
+													"key": "authKey",
+													"value": "123"
+												},
+												{
+													"key": "enabled",
+													"value": "on"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Shoyld response with 401",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "8f014fe7-aa64-4c9d-9818-ce95613e44e5",
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(401);",
+													"    endPoint = pm.collectionVariables.get(\"endpintId\");",
+													"    pm.expect(pm.response.text()).to.equals(\"Invalid token Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: \" + endPoint);",
+													"",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/integrity/checkintegrity/endpoint/{{endpintId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"integrity",
+												"checkintegrity",
+												"endpoint",
+												"{{endpintId}}"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "78ded004-2f45-41e0-9140-aef5b8a20e8a",
+				"type": "text/javascript",
+				"exec": [
+					"wait = (ms) => {",
+					"   var start = new Date().getTime();",
+					"   var end = start;",
+					"   while(end < start + ms) {",
+					"     end = new Date().getTime();",
+					"  }",
+					"};",
+					"",
+					"pm.collectionVariables.set(\"wait\", wait.toString());",
+					"",
+					"serverURL = pm.environment.get(\"serverURL\");",
+					"",
+					"console.log('hostName', serverURL);",
+					"pm.collectionVariables.set(\"origin\", serverURL);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "0c989cc6-7c8d-4703-90b6-6db31ccd17cc",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "bc22274e-f650-481b-8a31-4a88756e02b6",
+			"key": "endpointName",
+			"value": "endpoint-602"
+		},
+		{
+			"id": "6dc3e100-63fb-4e0a-bcfa-27c0310501d9",
+			"key": "environmentName",
+			"value": "environment-518"
+		},
+		{
+			"id": "e6d5de63-d39b-4d2c-bf71-7aaa38528521",
+			"key": "origin",
+			"value": "http://localhost:8080"
+		},
+		{
+			"id": "1881fdff-7ea3-402d-9f21-2e293228b5d8",
+			"key": "environmentId",
+			"value": "45bfcadd-77fb-4029-ac05-62cb369ace8f"
+		},
+		{
+			"id": "13065228-c0a5-4017-b01a-c9206d3f0a61",
+			"key": "endpintId",
+			"value": "fed35809-457d-40b0-89ed-356314d35b57"
+		},
+		{
+			"id": "0619abae-7a60-46b4-953e-ff96324d0c9c",
+			"key": "receiverName",
+			"value": "receiverName-221"
+		},
+		{
+			"id": "1315fdb5-87d7-4cb8-9269-caf32e15a0ff",
+			"key": "token",
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGljZjhiZmQyMC0zNTE1LTQxNzgtOWQwZi1kYWUxNTY1YmViZmYiLCJ4bW9kIjoxNjAxMDU0MzQyMDAwLCJuYmYiOjE2MDEwNTQzNDIsImlzcyI6ImFjNWMwMDc2N2YiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU2MjU3MDcsImlhdCI6MTYwMTA1NDM0MiwianRpIjoiZWIxYmFkMTQtZmFjZi00MWNiLTkzNTctMWEzODdiODJjY2JjIn0.ezWYPQ77-Gzr7MN0V7ne_3MedeJ9IgmU3By8RE-flvk"
+		},
+		{
+			"id": "b323d4b0-900a-4966-924f-839cb70f13d3",
+			"key": "wait",
+			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

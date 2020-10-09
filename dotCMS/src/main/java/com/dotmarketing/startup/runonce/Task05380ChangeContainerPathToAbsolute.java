@@ -21,19 +21,12 @@ import java.util.stream.Collectors;
  */
 public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
-    final static String GET_TEMPLATES_QUERY = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.identifier, template.drawed_body, template.body " +
+    final static String GET_TEMPLATES_QUERY = "SELECT contentlet.title as host_name, template.inode, template.identifier, template.drawed_body, template.body " +
         "FROM identifier " +
             "INNER JOIN template ON identifier.id = template.identifier " +
             "INNER JOIN contentlet_version_info cvi on identifier.host_inode = cvi.identifier " +
             "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
         "WHERE template.drawed_body is not null order by template.inode";
-
-    final static String GET_TEMPLATES_QUERY_ORACLE = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.identifier, to_char(template.drawed_body), template.body " +
-            "FROM identifier " +
-            "INNER JOIN template ON identifier.id = template.identifier " +
-            "INNER JOIN contentlet_version_info cvi on identifier.host_inode = cvi.identifier " +
-            "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
-            "WHERE template.drawed_body is not null order by template.inode";
 
     final static String UPDATE_TEMPLATES = "update template set drawed_body = ?, body = ? where inode =?";
 
@@ -113,7 +106,7 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {
         return new DotConnect()
-                .setSQL(DbConnectionFactory.isOracle() ? GET_TEMPLATES_QUERY_ORACLE : GET_TEMPLATES_QUERY)
+                .setSQL(GET_TEMPLATES_QUERY)
                 .loadObjectResults();
     }
 }

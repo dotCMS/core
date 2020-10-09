@@ -126,6 +126,17 @@ public class DotTransformerBuilder {
     }
 
     /**
+     * Url Content Map to Map Transformer
+     * @return
+     */
+    public DotTransformerBuilder urlContentMapTransformer(){
+        optionsHolder.clear();
+        optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
+        optionsHolder.add(KEY_VALUE_VIEW);
+        return this;
+    }
+
+    /**
      * Fine tuned to be used for FileAssets on BrowserAPI
      * @return
      */

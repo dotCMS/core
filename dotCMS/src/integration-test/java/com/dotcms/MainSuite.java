@@ -47,6 +47,7 @@ import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
+import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.startup.runonce.*;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.TestConfig;
@@ -57,6 +58,9 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 //@RunWith(Suite.class)
+
+
+
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
@@ -322,7 +326,10 @@ import org.junit.runners.Suite.SuiteClasses;
         DotSamlResourceTest.class,
         DotStatefulJobTest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
+        IntegrityDataGenerationJobTest.class,
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         Task201008LoadAppsSecretsTest.class
+
 })
 public class MainSuite {
 

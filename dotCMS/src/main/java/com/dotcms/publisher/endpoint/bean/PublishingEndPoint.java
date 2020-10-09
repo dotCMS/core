@@ -1,6 +1,9 @@
 package com.dotcms.publisher.endpoint.bean;
 
+import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
+import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 
 /**
@@ -99,6 +102,10 @@ public abstract class PublishingEndPoint implements Serializable {
         this.authKey = authKey;
     }
 
+    public void setAuthKey(final String authKey) {
+        this.authKey = new StringBuilder(authKey);
+    }
+
     /**
      * Returns whether this endpoint is sending or receiving bundles.
      * <p>
@@ -145,4 +152,36 @@ public abstract class PublishingEndPoint implements Serializable {
      * translated in upper layer.
      */
     public abstract void validatePublishingEndPoint() throws PublishingEndPointValidationException;
+
+    public boolean hasAuthKey() {
+        final StringBuilder authKey = getAuthKey();
+
+        if (UtilMethods.isEmpty(authKey.toString())) {
+            return false;
+        }
+
+        return !isTokenExpired() && !isTokenInvalid();
+    }
+
+    public boolean isTokenExpired() {
+        final String authKey = getAuthKey().toString();
+
+        if (UtilMethods.isEmpty(authKey)) {
+            return false;
+        }
+
+        final String authKeyString = authKey;
+        return authKeyString.equals(AuthCredentialPushPublishUtil.EXPIRED_TOKEN_ERROR_KEY);
+    }
+
+    public boolean isTokenInvalid() {
+        final StringBuilder authKey = getAuthKey();
+
+        if (UtilMethods.isEmpty(authKey.toString())) {
+            return false;
+        }
+
+        final String authKeyString = authKey.toString();
+        return authKeyString.equals(AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
+    }
 }
