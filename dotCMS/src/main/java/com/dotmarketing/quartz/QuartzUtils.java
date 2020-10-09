@@ -479,11 +479,11 @@ public class QuartzUtils {
 
 		scheduler.addJob(jobDetail, true);
 
-		if (isNew)
+		if (isNew) {
 			scheduler.scheduleJob(trigger);
-		else if (scheduler.getTrigger(triggerName, triggerGroup) != null)
+		} else if (scheduler.getTrigger(triggerName, triggerGroup) != null) {
 			scheduler.rescheduleJob(triggerName, triggerGroup, trigger);
-		else {
+		} else {
 			try {
 				scheduler.scheduleJob(trigger);
 			} catch (Exception e) {
@@ -508,9 +508,8 @@ public class QuartzUtils {
 	 */
 	public static boolean removeJob(final String jobName, final String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
-		boolean result1 = removeJob(jobName, jobGroup, scheduler);
 
-		return result1 ;
+		return removeJob(jobName, jobGroup, scheduler);
 	}
 
 	/**
