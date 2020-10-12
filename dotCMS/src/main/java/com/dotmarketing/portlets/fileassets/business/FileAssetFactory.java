@@ -23,5 +23,22 @@ public interface FileAssetFactory {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    
     List<Contentlet>  findFileAssetsByFolderInDB(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    
+    
+    /**
+     * Return the FileAsset into a {@link Folder}, it just return the FileAsset for which the user has permission.
+     *
+     * takes a FileAssetSearcher object as params
+
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+
+    
+    List<Contentlet> findByDB(FileAssetSearcher fileSearcher)
+                    throws DotDataException, DotSecurityException;
 }

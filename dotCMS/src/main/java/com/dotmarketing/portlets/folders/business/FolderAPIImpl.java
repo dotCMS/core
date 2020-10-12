@@ -61,6 +61,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -604,9 +606,15 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	}
 
+	final Lazy<Folder> loadSystemFolder = Lazy.of(
+	                ()-> { return Try.of(()->folderFactory.findSystemFolder())
+	                                .getOrElseThrow(e->new DotRuntimeException(e));
+	                                                });
+	
+	
 	@CloseDBIfOpened
 	public Folder findSystemFolder() throws DotDataException {
-		return folderFactory.findSystemFolder();
+		return loadSystemFolder.get();
 	}
 
 

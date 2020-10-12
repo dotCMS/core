@@ -101,4 +101,10 @@ public class FileAssetAPIImplTest {
         verify(contAPI, times(1)).copyProperties(fileAssetsByFolder.get(0), contentMap);
         verify(contentletCache, times(1)).add(fileAssetsByFolder.get(0));
     }
+    
+    
+    
+    
+    
+    
 }

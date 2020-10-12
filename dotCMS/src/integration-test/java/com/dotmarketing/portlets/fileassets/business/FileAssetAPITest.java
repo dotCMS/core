@@ -3,21 +3,24 @@ package com.dotmarketing.portlets.fileassets.business;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertNotEquals;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.util.List;
-import java.util.Optional;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class FileAssetAPITest extends IntegrationTestBase {
 
@@ -169,6 +172,117 @@ public class FileAssetAPITest extends IntegrationTestBase {
       assertTrue("Content should not be a file asset", (asset4 instanceof FileAsset));
       assertTrue("FileAssets should be the same Object", asset3 == asset4);
       
+    }
+    
+    /**
+     * This tests that file assets saved to a random folder, e.g. /dasfasd/ will be returned from the database
+     * @throws Exception
+     */
+    @Test
+    public void test_that_file_asset_from_db_works()
+            throws Exception {
+
+        final User user = APILocator.systemUser();
+        final Folder parentFolder = new FolderDataGen().nextPersisted();
+    
+        List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize=6;
+        
+        for(int i=0;i<fileAssetSize;i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.nextPersisted();
+        }
+        
+        FileAssetSearcher searcher = FileAssetSearcher.builder().user(user).folder(parentFolder).respectFrontendRoles(false).build();
+                        
+
+        List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByDB(searcher);
+        assert(assets.size()==fileAssetSize);
+        assets.forEach(a-> {
+            assert(fileNames.contains(a.getFileName()));
+        });
+
+    }
+    
+    /**
+     * This tests that file assets saved to a folder are not readable unless the user has read permissions to the parent folder itself
+     * @throws Exception
+     */
+    @Test
+    public void test_that_file_asset_from_db_respects_folder_permissions()
+            throws Exception {
+
+        final User user = APILocator.getUserAPI().getAnonymousUser();
+        final Folder parentFolder = new FolderDataGen().nextPersisted();
+    
+        List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize=2;
+        
+        for(int i=0;i<fileAssetSize;i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.nextPersisted();
+        }
+        
+        FileAssetSearcher searcher = FileAssetSearcher.builder().user(user).folder(parentFolder).respectFrontendRoles(false).build();
+                        
+
+        try {
+            APILocator.getFileAssetAPI().findFileAssetsByDB(searcher);
+        }
+        catch(DotRuntimeException e) {
+            assertTrue("We should have thrown a DotRuntimeException", e!=null);
+            assertTrue("This should have a good message", e.getMessage().contains("does not have permission to view the parent folder"));
+            return;
+        }
+
+        assertTrue("this should have thrown a DotRuntimeException", false);
+
+    }
+    
+    /**
+     * This tests that file assets saved to the system folder, e.g. / will be returned from the database
+     * as exepcteds
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void test_that_we_return_files_from_host_system_folder() throws Exception {
+
+        final User user = APILocator.systemUser();
+        final Folder parentFolder = APILocator.getFolderAPI().findSystemFolder();
+
+        List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize = 4;
+
+        for (int i = 0; i < fileAssetSize; i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.nextPersisted();
+        }
+
+        FileAssetSearcher searcher = FileAssetSearcher.builder().user(user)
+                        .host(APILocator.getHostAPI().findDefaultHost(user, false)).respectFrontendRoles(false).build();
+
+        List<String> assetNames = APILocator.getFileAssetAPI().findFileAssetsByDB(searcher).stream()
+                        .map(c -> c.getFileName()).collect(Collectors.toList());
+
+
+        assert (assetNames.size() > -fileAssetSize);
+        fileNames.forEach(f -> {
+            assert (assetNames.contains(f));
+        });
+
     }
 
 }

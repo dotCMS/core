@@ -39,6 +39,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAssetSearcher;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -460,7 +461,7 @@ public class DotWebdavHelper {
 			//Search for child files
 			List<Versionable> filesListSubChildren = new ArrayList<Versionable>();
 			try {
-				filesListSubChildren.addAll( APILocator.getFileAssetAPI().findFileAssetsByFolder( parentFolder, user, false ) );
+				filesListSubChildren.addAll( APILocator.getFileAssetAPI().findFileAssetsByDB(FileAssetSearcher.builder().folder(parentFolder).user(user).respectFrontendRoles(false).build()) );
 			} catch ( Exception e2 ) {
 				Logger.error( this, "Could not load files : ", e2 );
 			}
@@ -905,8 +906,10 @@ public class DotWebdavHelper {
 											 final boolean disableWorkflow, final Contentlet fileAsset)
 			throws DotDataException, DotSecurityException {
 
-		fileAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
-		fileAsset.getMap().put(Contentlet.VALIDATE_EMPTY_FILE, false);
+	    // We can use defer because we use the DB to list files / folders
+		fileAsset.setIndexPolicy(IndexPolicy.DEFER);
+		fileAsset.setIndexPolicyDependencies(IndexPolicy.DEFER);
+		fileAsset.getMap().put(Contentlet.VALIDATE_EMPTY_FILE, true);
 
 		return disableWorkflow?
 				this.runCheckinPublishNoWorkflow(resourceUri, user, isAutoPub, disableWorkflow, fileAsset):
@@ -1715,24 +1718,22 @@ public class DotWebdavHelper {
 					path += "/";
 					Folder folder = folderAPI.findFolderByPath(path, host, user, false);
 					if (InodeUtils.isSet(folder.getInode())) {
-						List<Folder> folders = new ArrayList<Folder>();
-						// List<HTMLPage> pages = new ArrayList<HTMLPage>();
-						List<Versionable> files = new ArrayList<Versionable>();
-						// List<Link> links = new ArrayList<Link>();
+						List<Folder> folders = new ArrayList<>();
+						List<Versionable> files = new ArrayList<>();
+
 
 						try {
-							folders = (ArrayList<Folder>)APILocator.getFolderAPI().findSubFolders(folder, user, false);
-							// pages = (ArrayList<HTMLPage>)
-							// InodeFactory.getChildrenClassByCondition(folder,HTMLPage.class,
-							// conditionAsset);
-							if(folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)){
-								files.addAll(APILocator.getFileAssetAPI().findFileAssetsByHost(APILocator.getHostAPI().find(folder.getHostId(), user,false), user,false));
-							}else{
-								files.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, user,false));
-							}
-							// links = (ArrayList<Link>)
-							// InodeFactory.getChildrenClassByCondition(folder,Link.class,
-							// conditionAsset);
+							folders = APILocator.getFolderAPI().findSubFolders(folder, user, false);
+
+							final FileAssetSearcher searcher = folder.isSystemFolder() 
+							                ? FileAssetSearcher.builder().host(host).user(user).respectFrontendRoles(false).build()
+							                : FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(false).build();
+							    
+			
+							files.addAll(APILocator.getFileAssetAPI().findFileAssetsByDB(searcher));
+							
+							
+							
 						} catch (Exception ex) {
 							String message = ex.getMessage();
 							Logger.debug(this, ex.toString());
