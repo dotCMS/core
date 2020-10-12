@@ -132,6 +132,13 @@ public class FieldAPIImpl implements FieldAPI {
   @WrapInTransaction
   @Override
   public Field save(final Field field, final User user) throws DotDataException, DotSecurityException {
+        return save(field, user, true);
+  }
+
+  @WrapInTransaction
+  @Override
+  public Field save(final Field field, final User user, final boolean reorder)
+          throws DotDataException, DotSecurityException {
 
       if(!UtilMethods.isSet(field.contentTypeId())){
           Logger.error(this, "ContentTypeId needs to be set to save the Field");

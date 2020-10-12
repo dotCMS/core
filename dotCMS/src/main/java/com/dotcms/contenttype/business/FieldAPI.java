@@ -128,7 +128,19 @@ public interface FieldAPI {
 	 * @throws DotSecurityException The user does not have permissions to perform this action.
 	 */
 	Field save(Field field, User user) throws DotDataException, DotSecurityException;
-	
+
+	/**
+	 * Saves a new Field
+	 *
+	 * @param field
+	 * @param user
+	 * @param reorderIfNeed if it true then reorder all the fields,according to the field to save sort order
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public Field save(Field field, User user, boolean reorderIfNeed) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Saves a new Field Variable.
 	 * 
