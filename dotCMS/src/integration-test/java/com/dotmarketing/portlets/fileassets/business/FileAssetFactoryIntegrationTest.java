@@ -64,7 +64,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         final Contentlet fileAsset4 = createFileAsset(folder2, "text2", ".txt");
 
         this.addPermission(role, folder1, folder2, fileAsset1, fileAsset2, fileAsset3, fileAsset4);
-        final List<Contentlet> files = fileAssetFactory.findFileAssetsByFolderInDB(folder1, user, false);
+        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder1).user(user).respectFrontendRoles(false).build());
 
         assertEquals(2, files.size());
 
@@ -97,7 +97,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         createFileAsset(folder, "text2", ".txt");
 
         this.addPermission(role, folder, fileAsset1);
-        final List<Contentlet> files = fileAssetFactory.findFileAssetsByFolderInDB(folder, user, false);
+        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(false).build());
 
         assertEquals(1, files.size());
 
@@ -129,7 +129,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         ContentletDataGen.publish(fileAsset2);
 
         this.addPermission(anonymousRole, folder, fileAsset1, fileAsset2);
-        final List<Contentlet> files = fileAssetFactory.findFileAssetsByFolderInDB(folder, user, true);
+        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(false).build());
 
         assertEquals(2, files.size());
 
@@ -157,7 +157,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
         this.addPermission(role, folder);
-        final List<Contentlet> files = fileAssetFactory.findFileAssetsByFolderInDB(folder, user, false);
+        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(false).build());
 
         assertTrue(files.isEmpty());
     }
@@ -180,7 +180,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         final Host host = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
-        fileAssetFactory.findFileAssetsByFolderInDB(folder, user, false);
+        fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(false).build());
     }
 
     private Contentlet createFileAsset(

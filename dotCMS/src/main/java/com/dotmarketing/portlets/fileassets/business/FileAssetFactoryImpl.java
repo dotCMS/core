@@ -38,12 +38,6 @@ public class FileAssetFactoryImpl implements FileAssetFactory {
         permissionAPI = APILocator.getPermissionAPI();
     }
 
-    @Override
-    public List<Contentlet> findFileAssetsByFolderInDB(Folder parentFolder, User user, boolean respectFrontendRoles)
-                    throws DotDataException, DotSecurityException {
-        return findByDB(FileAssetSearcher.builder().folder(parentFolder).user(user).respectFrontendRoles(respectFrontendRoles).build());
-    }
-    
     
     /**
      * takes a list of inodes and returns the list of contentlets - includes permissions check
