@@ -1,5 +1,6 @@
 package com.dotcms.storage;
 
+import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static com.dotcms.unittest.TestUtil.upperCaseRandom;
 import static junit.framework.Assert.assertNotSame;
 import static junit.framework.TestCase.assertEquals;
@@ -11,6 +12,7 @@ import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.storage.StoragePersistenceProvider.INSTANCE;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.util.Config;
 import com.google.common.collect.ImmutableMap;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -44,8 +46,16 @@ public class StoragePersistenceAPITest {
      */
     @Test
     public void Test_Get_Default_Provider() {
-        final StoragePersistenceProvider persistenceProvider = INSTANCE.get();
-        assertTrue(persistenceProvider.getStorage() instanceof FileSystemStoragePersistenceAPIImpl);
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        try {
+        //if there's a property already set we need to clean it so we can test that by default we will get FileSystem
+            Config.setProperty(DEFAULT_STORAGE_TYPE, null);
+            final StoragePersistenceProvider persistenceProvider = INSTANCE.get();
+            assertTrue(persistenceProvider
+                    .getStorage() instanceof FileSystemStoragePersistenceAPIImpl);
+        }finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+        }
     }
 
     /**
@@ -146,7 +156,7 @@ public class StoragePersistenceAPITest {
 
     /**
      * Test Scenario: Regardless of group we attempt saving a binary
-     * Expected Results: TBD
+     * Expected Results: We're basically testing we no longer have an exception where the binary would be inserted as a new file generating an constrain violation
      * @param testCase
      */
     @Test

@@ -171,7 +171,7 @@ public class ContentletMetadataAPITest {
     private static Set<String> imageExt = ImmutableSet.of("jpg", "png", "gif");
 
     /**
-     * Custom is image method. this custom version skips svg files.
+     * Custom `isImage` method. this custom version skips svg files. So we can forgive them from getting us dimensions
      * @param fileName
      * @return
      */
@@ -181,8 +181,8 @@ public class ContentletMetadataAPITest {
     }
 
     /**
-     * Given scenario: We have an instance of a content-type that has different fields of type bin
-     * this time we test that te first field get the generated full-md generated while the rest only get the basic version.
+     * Given scenario: We have an instance of a content-type that has different fields of type binary
+     * this time we test that the first field gets the generated full-MD generated while the rest only get the basic one.
      * Expected Results:
      * @throws IOException
      */
@@ -281,7 +281,7 @@ public class ContentletMetadataAPITest {
 
             Map<String, Object> fileAssetMD = contentletMetadataAPI
                     .getMetadataNoCache(fileAssetContent, fileAssetField);
-            //Expect no metadata it has not been generated
+            //Expect no metadata it hasn't been generated
             assertTrue(fileAssetMD.isEmpty());
 
             final ContentletMetadata metadata = contentletMetadataAPI
