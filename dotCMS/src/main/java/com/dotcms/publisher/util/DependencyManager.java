@@ -244,29 +244,44 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Container to the Bundle. Bundle ID: " + config.getId() + ", Container ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals(PusheableAsset.FOLDER.getType())) {
+			} else if (asset.getType().equals(PusheableAsset.FOLDER.getType())) {
 				try {
-					Folder f = APILocator.getFolderAPI().find(asset.getAsset(), user, false);
+					final Folder f = APILocator.getFolderAPI().find(asset.getAsset(), user, false);
 
-					if(f == null){
-						Logger.warn(getClass(), "Folder id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+					if(f == null) {
+						Logger.warn(
+								getClass(),
+								String.format(
+										"Folder id: %s does NOT have working or live version, not Pushed",
+										asset.getAsset() != null ? asset.getAsset() : "N/A"));
 					} else {
-						folders.add(asset.getAsset(), f.getModDate());
-						foldersSet.add(asset.getAsset());
+						f.ifSystemFolderLog(folder -> {
+							folders.add(asset.getAsset(), folder.getModDate());
+							foldersSet.add(asset.getAsset());
+						});
 					}
 
 				} catch (DotSecurityException e) {
-					Logger.error(getClass(), "Couldn't add the Folder to the Bundle. Bundle ID: " + config.getId() + ", Folder ID: " + asset.getAsset(), e);
+					Logger.error(
+							getClass(),
+							"Couldn't add the Folder to the Bundle. Bundle ID: " + config.getId() + ", Folder ID: " + asset.getAsset(),
+							e);
 				}
-			} else if(asset.getType().equals(PusheableAsset.SITE.getType())) {
+			} else if (asset.getType().equals(PusheableAsset.SITE.getType())) {
 				try {
-					Host h = APILocator.getHostAPI().find(asset.getAsset(), user, false);
+					final Host h = APILocator.getHostAPI().find(asset.getAsset(), user, false);
 
-					if(h == null){
-						Logger.warn(getClass(), "Host id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+					if (h == null) {
+						Logger.warn(
+								getClass(),
+								"Host id: " + (asset.getAsset() != null
+										? asset.getAsset()
+										: "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						hosts.add(asset.getAsset(), h.getModDate());
-						hostsSet.add(asset.getAsset());
+						h.ifSystemHostLog(host -> {
+							hosts.add(asset.getAsset(), host.getModDate());
+							hostsSet.add(asset.getAsset());
+						});
 					}
 
 				} catch (DotSecurityException e) {
@@ -476,14 +491,16 @@ public class DependencyManager {
 
 				// Content dependencies
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
-					final String luceneQuery = "+conHost:" + host.getIdentifier();
-					final List<Contentlet> contentList = APILocator.getContentletAPI()
-							.search(luceneQuery, 0, 0, null, user, false);
-					for (final Contentlet contentlet : contentList) {
-						if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
-							contents.addOrClean(contentlet.getIdentifier(),
-									contentlet.getModDate());
-							contentsSet.add(contentlet.getIdentifier());
+					if (!host.ifSystemHostLog()) {
+						final String luceneQuery = "+conHost:" + host.getIdentifier();
+						final List<Contentlet> contentList = APILocator
+								.getContentletAPI()
+								.search(luceneQuery, 0, 0, null, user, false);
+						for(final Contentlet contentlet : contentList) {
+							if (!publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
+								contents.addOrClean(contentlet.getIdentifier(), contentlet.getModDate());
+								contentsSet.add(contentlet.getIdentifier());
+							}
 						}
 					}
 				}
@@ -500,12 +517,15 @@ public class DependencyManager {
 
 				// Folder dependencies
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.FOLDER.getType())) {
-					final List<Folder> folderList = APILocator.getFolderAPI()
-							.findFoldersByHost(host, user, false);
-					for (final Folder folder : folderList) {
-						folders.addOrClean(folder.getInode(), folder.getModDate());
-						foldersSet.add(folder.getInode());
-					}
+					APILocator
+							.getFolderAPI()
+							.findFoldersByHost(host, user, false)
+							.stream()
+							.filter(folder -> !folder.ifSystemFolderLog())
+							.forEach(folder -> {
+								folders.addOrClean(folder.getInode(), folder.getModDate());
+								foldersSet.add(folder.getInode());
+							});
 				}
 
 				// Rule dependencies
@@ -1085,17 +1105,18 @@ public class DependencyManager {
 		final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
 
 		// Host Dependency
-		if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
-			final Host host = APILocator.getHostAPI().find(structure.getHost(), user, false);
-			hosts.addOrClean(structure.getHost(), host.getModDate()); // add the host dependency
+		if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
+			APILocator
+					.getHostAPI().find(structure.getHost(), user, false)
+					.ifSystemHostLog(host -> hosts.addOrClean(structure.getHost(), host.getModDate()));
 		}
 
 		// Folder Dependencies
-		if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.FOLDER.getType())) {
-			final Folder folder = APILocator.getFolderAPI()
-					.find(structure.getFolder(), user, false);
-			folders.addOrClean(structure.getFolder(),
-					folder.getModDate()); // add the folder dependency
+		if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.FOLDER.getType())) {
+			APILocator
+					.getFolderAPI()
+					.find(structure.getFolder(), user, false)
+					.ifSystemFolderLog(folder -> folders.addOrClean(structure.getFolder(), folder.getModDate()));
 		}
 
 		// Workflows Dependencies
@@ -1171,9 +1192,11 @@ public class DependencyManager {
 
 		for (final Contentlet contentlet : contentletSet) {
 			// Host Dependency
-			if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
-				final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, false);
-				hosts.addOrClean(contentlet.getHost(), host.getModDate());
+			if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
+				APILocator
+						.getHostAPI()
+						.find(contentlet.getHost(), user, false)
+						.ifSystemHostLog(host -> hosts.addOrClean(contentlet.getHost(), host.getModDate()));
 			}
 
 			contentsToProcess.add(contentlet);
@@ -1201,9 +1224,12 @@ public class DependencyManager {
 		for (final Contentlet contentletToProcess : contentsToProcess) {
 			// Host Dependency
 			if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
-				final Host host = APILocator.getHostAPI().find(contentletToProcess.getHost(), user, false);
-				hosts.addOrClean(contentletToProcess.getHost(), host.getModDate());
+				APILocator
+						.getHostAPI()
+						.find(contentletToProcess.getHost(), user, false)
+						.ifSystemHostLog(host -> hosts.addOrClean(contentletToProcess.getHost(), host.getModDate()));
 			}
+
 			contentsWithDependenciesToProcess.add(contentletToProcess);
 			//Copy asset files to bundle folder keeping original folders structure
 			final List<Field> fields=FieldsCache.getFieldsByStructureInode(contentletToProcess.getStructureInode());
@@ -1234,8 +1260,12 @@ public class DependencyManager {
 		for (final Contentlet contentletWithDependenciesToProcess : contentsWithDependenciesToProcess) {
 			// Host Dependency
 			if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
-				final Host host = APILocator.getHostAPI().find(contentletWithDependenciesToProcess.getHost(), user, false);
-				hosts.addOrClean(contentletWithDependenciesToProcess.getHost(), host.getModDate());
+				APILocator
+						.getHostAPI()
+						.find(contentletWithDependenciesToProcess.getHost(), user, false)
+						.ifSystemHostLog(host -> hosts.addOrClean(
+								contentletWithDependenciesToProcess.getHost(),
+								host.getModDate()));
 			}
 			// Content Dependency
 			if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentletWithDependenciesToProcess.getIdentifier())) {

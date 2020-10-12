@@ -3,12 +3,19 @@ package com.dotmarketing.portlets.folders.model;
 import com.dotcms.api.tree.Parentable;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Ruleable;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -20,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /** @author Hibernate CodeGenerator */
 public class Folder extends Inode implements Serializable, Permissionable, Treeable, Ruleable, Parentable {
@@ -327,6 +335,21 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		return true;
 	}
 
+	/**
+	 * If current folder (this) is SYSTEM_FOLDER then log a message, otherwise call the provided consumer
+	 * @param elseAction code block to execute when host is not SYSTEM_FOLDER
+	 * @return true if host is SYSTEM_FOLDER, otherwise false
+	 */
+	public boolean ifSystemFolderLog(final Consumer<Folder> elseAction) {
+		return HostUtil.ifSystemLog(SYSTEM_FOLDER, this::getInode, this, elseAction);
+	}
 
+	/**
+	 * If current folder (this) is SYSTEM_FOLDER then log a message, otherwise call the provided consumer
+	 * @return true if host is SYSTEM_FOLDER, otherwise false
+	 */
+	public <T> boolean ifSystemFolderLog() {
+		return ifSystemFolderLog(null);
+	}
 
 }

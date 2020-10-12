@@ -1,6 +1,7 @@
 package com.dotmarketing.beans;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotmarketing.util.HostUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
@@ -14,6 +15,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  *
@@ -24,9 +26,6 @@ import java.util.Map;
  */
 public class Host extends Contentlet implements Permissionable,Treeable,Parentable {
 
-	/**
-     *
-     */
 	private static final long serialVersionUID = 1L;
 
 	public Host() {
@@ -192,4 +191,22 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 	public String toString() {
 		return this.getHostname();
 	}
+
+	/**
+	 * If current host (this) is SYSTEM_HOST then log a message, otherwise call the provided consumer
+	 * @param elseAction code block to execute when host is not SYSTEM_HOST
+	 * @return true if host is SYSTEM_HOST, otherwise false
+	 */
+	public boolean ifSystemHostLog(final Consumer<Host> elseAction) {
+		return HostUtil.ifSystemLog(SYSTEM_HOST, this::getIdentifier, this, elseAction);
+	}
+
+	/**
+	 * If current host (this) is SYSTEM_HOST then log a message, otherwise call the provided consumer
+	 * @return true if host is SYSTEM_HOST, otherwise false
+	 */
+	public <T> boolean ifSystemHostLog() {
+		return ifSystemHostLog(null);
+	}
+
 }

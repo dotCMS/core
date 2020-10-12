@@ -18,6 +18,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class HostUtil {
@@ -107,6 +108,25 @@ public class HostUtil {
 		return Tuple.of(path, null == host? hostAPI.findDefaultHost(user, false): host);
 	}
 
+	/**
+	 * If current target is whatever suppler returns then log a message, otherwise call the provided consumer
+	 *
+	 * @param systemLiteral system literal to compare against
+	 * @param supplier supplier returning target field
+	 * @param target object to call consumer against
+	 * @param elseAction code block to execute when host is not SYSTEM_HOST
+	 * @return true if host is SYSTEM_HOST, otherwise false
+	 */
+	public static <T> boolean ifSystemLog(final String systemLiteral,
+										  final Supplier<String> supplier,
+										  final T target,
+										  final Consumer<T> elseAction) {
+		final boolean result = systemLiteral.equals(supplier.get());
+		if (!result && target != null && elseAction != null) {
+			elseAction.accept(target);
+		}
 
+		return result;
+	}
 
 }
