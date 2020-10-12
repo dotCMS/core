@@ -74,14 +74,14 @@ public class FieldAPIImplIntegrationTest {
 
         final Field tagStorage = new FieldDataGen()
                 .name("Tag Storage")
-                .sortOrder(1)
+                .sortOrder(2)
                 .contentTypeId(contentType.id())
                 .velocityVarName("tagstorage" + current)
                 .nextPersisted();
 
         final Field isDefault = new FieldDataGen()
                 .name("Is Default")
-                .sortOrder(1)
+                .sortOrder(3)
                 .contentTypeId(contentType.id())
                 .velocityVarName("default" + current)
                 .nextPersisted();
