@@ -15,6 +15,7 @@ import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
+import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.PublisherFilterImplTest;
@@ -31,6 +32,7 @@ import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -278,6 +280,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
         AppsResourceTest.class,
+        AppsCacheImplTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
@@ -320,9 +323,10 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
         DotStatefulJobTest.class,
-        FolderFactoryImplTest.class,
-        FolderFactoryImplTest.class,
-        IntegrityDataGenerationJobTest.class
+        BundleAPITest.class,
+        Task05390MakeRoomForLongerJobDetailTest.class,
+        IntegrityDataGenerationJobTest.class,
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class
 })
 public class MainSuite {
 

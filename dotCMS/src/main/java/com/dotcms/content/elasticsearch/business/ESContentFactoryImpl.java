@@ -989,8 +989,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             int offset) throws DotDataException, DotStateException, DotSecurityException {
         final DotConnect dotConnect = new DotConnect();
         final StringBuilder select = new StringBuilder();
-        select.append("select contentlet.* "
-                + "from contentlet, contentlet_version_info as contentletvi "
+        select.append("select contentlet.*, inode.owner "
+                + "from contentlet, contentlet_version_info as contentletvi, inode "
                 + "where structure_inode = '")
                 .append(structureInode).append("' " );
 
@@ -1011,7 +1011,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        select.append(" and contentletvi.identifier=contentlet.identifier and contentletvi.working_inode=contentlet.inode ");
+        select.append(" and contentletvi.identifier=contentlet.identifier "
+                + " and contentletvi.working_inode=contentlet.inode "
+                + " and contentlet.inode = inode.inode");
         dotConnect.setSQL(select.toString());
 
         if (offset > 0) {

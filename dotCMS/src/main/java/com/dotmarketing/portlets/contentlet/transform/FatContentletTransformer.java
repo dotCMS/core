@@ -51,6 +51,7 @@ public class FatContentletTransformer implements DBTransformer {
         contentlet.setDisabledWysiwyg((String) map.get("disable_wysiwyg"));
         contentlet.setIdentifier((String) map.get("identifier"));
         contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
+        contentlet.setOwner((String) map.get("owner"));
 
         // set date fields
         contentlet.setDate1((Date) map.get("date1"));

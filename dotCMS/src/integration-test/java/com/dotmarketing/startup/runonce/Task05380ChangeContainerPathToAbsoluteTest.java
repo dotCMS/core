@@ -70,9 +70,30 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
                             "]" +
                         "}" +
                     "]" +
-            "}" +
-        "}";
+                "}" +
+            "}";
 
+
+    final String jsonDrawBodyWithSideBar =
+            "{" +
+                "\"title\": \"layout_test\"," +
+                "\"body\": {" +
+                    "\"rows\": [" +
+                    "]" +
+                "}," +
+                 "\"sidebar\": {" +
+                    "\"containers\": [" +
+                        "{" +
+                            "\"identifier\": \"%s/application/containers/default/\"," +
+                            "\"uuid\": \"2\"" +
+                        "}" +
+                    "]," +
+                    "\"widthPercent\": 83," +
+                    "\"leftOffset\": 1," +
+                    "\"width\": 10," +
+                    "\"left\": 0" +
+                 "}" +
+            "}";
     final String legacyHTMLLayout =
             "<div id=\"resp-template\" name=\"globalContainer\">" +
                 "<div id=\"hd-template\"><h1>Header</h1></div>" +
@@ -513,5 +534,36 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
                 .count();
 
         assertEquals(count, 1);
+    }
+
+    /**
+     * Method to Test: {@link Task05380ChangeContainerPathToAbsolute#executeUpgrade()}
+     * When: Exists A TemplateLayout with relative path container in Sidebar
+     * Should: Should turn it into a Absolute Path, using the template's host
+     */
+    @Test
+    public void whenTemplateLayoutHasRelativePathAndSideBar() throws IOException, DotDataException, DotSecurityException {
+
+        final String layout = String.format(jsonDrawBodyWithSideBar, "");
+        final String testBody = String.format(body, "");
+        final Host host = new SiteDataGen().nextPersisted();
+
+        checkTemplateLayout(layout);
+        final Contentlet theme = new ThemeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .title("template_test_" + System.currentTimeMillis())
+                .theme(theme)
+                .drawedBody(layout)
+                .body(testBody)
+                .host(host)
+                .nextPersisted();
+
+
+        final Task05380ChangeContainerPathToAbsolute task05380ChangeContainerPathToAbsolute =
+                new Task05380ChangeContainerPathToAbsolute();
+
+        task05380ChangeContainerPathToAbsolute.executeUpgrade();
+
+        checkTemplateFromDataBase(host, template);
     }
 }
