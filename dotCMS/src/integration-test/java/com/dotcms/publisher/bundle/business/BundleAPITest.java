@@ -13,14 +13,19 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -221,5 +226,42 @@ public class BundleAPITest {
 
         bundleAPI.deleteBundleAndDependencies(bundleId,adminUser);
         assertNull(publishAuditStatus.getPublishAuditStatus(bundleId));
+    }
+
+    /**
+     * Method to test: {@link Bundle#bundleTgzExists()}
+     * Given Scenario: This test is for checking if a bundle tar.gz file was already generated.
+     * ExpectedResult: false, since the bundle is created but no generated.
+     */
+    @Test
+    public void test_bundleTgzExists_returnFalse() throws DotDataException {
+        final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
+        final Bundle bundle = bundleAPI.getBundleById(bundleId);
+        assertFalse(bundle.bundleTgzExists());
+    }
+
+    private static void createFilter(){
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",true,"relationships",true);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterTestAPI.yml","Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
+
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+    }
+
+    /**
+     * Method to test: {@link Bundle#bundleTgzExists()} and {@link BundleAPI#generateTarGzipBundleFile(Bundle)}
+     * Given Scenario: This test is for checking if a bundle tar.gz file was already generated.
+     * ExpectedResult: true, since the bundle is created but no generated.
+     */
+    @Test
+    public void test_bundleTgzExists_returnTrue() throws DotDataException {
+        final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
+        createFilter();//A Default filter is needed
+        final Bundle bundle = bundleAPI.getBundleById(bundleId);
+        bundle.setOperation(PushPublisherConfig.Operation.PUBLISH.ordinal());
+        bundleAPI.generateTarGzipBundleFile(bundle);
+        assertTrue(bundle.bundleTgzExists());
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
     }
 }

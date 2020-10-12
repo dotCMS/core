@@ -135,7 +135,7 @@ public class IntegrityDataGenerationJobTest extends IntegrationTestBase {
 
     private JobDetail getJobDetail(PublishingEndPoint endpoint, String requestId) {
         JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put(IntegrityUtil.REQUESTER_ENDPOINT, endpoint);
+        jobDataMap.put(IntegrityUtil.REQUESTER_KEY, endpoint.getId());
         jobDataMap.put(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID, requestId);
 
         final JobDetail jobDetail = new JobDetail(

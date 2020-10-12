@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset"%>
 <%@ page import="com.dotcms.enterprise.HTMLDiffUtilProxy" %>
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.liferay.portal.model.User" %>
@@ -8,10 +9,10 @@
     String id = request.getParameter("id");
     long lang = Long.parseLong(request.getParameter("pageLang"));
     User user = APILocator.getUserAPI().getSystemUser();
-    IHTMLPage htmlPage = null;
+    HTMLPageAsset htmlPage = null;
 
     try {
-        htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, lang, false, user, false);
+        htmlPage = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, lang, false, user, false);
     } catch(final Exception e){
         Logger.error(this.getClass(), e.getMessage(), e);
     }

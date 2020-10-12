@@ -727,6 +727,32 @@ public class QuartzUtils {
 
 		return false;
 	}
+
+	/**
+	 * A more cluster aware method to find out if a job is running since {@link #isJobRunning(String, String) evaluates
+	 * for the current scheduler.
+	 *
+	 * @param scheduler scheduler to use
+	 * @param jobName job name
+	 * @param jobGroup job group
+	 * @param triggerName trigger name
+	 * @param triggerGroup trigger group
+	 * @return true if running job is detected, otherwise false
+	 */
+	public static boolean isJobRunning(final Scheduler scheduler,
+									   final String jobName,
+									   final String jobGroup,
+									   final String triggerName,
+									   final String triggerGroup) {
+		try {
+			return Arrays
+					.stream(scheduler.getTriggersOfJob(jobName, jobGroup))
+					.anyMatch(trigger -> trigger.getName().equals(triggerName) &&
+							trigger.getGroup().equals(triggerGroup));
+		} catch (SchedulerException e) {
+			return false;
+		}
+	}
 	
 	/**
 	 * job comparision util
