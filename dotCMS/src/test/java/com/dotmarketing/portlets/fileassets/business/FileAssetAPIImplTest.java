@@ -82,9 +82,9 @@ public class FileAssetAPIImplTest {
         when(
                 contAPI.search(luceneQuery, -1, 0, null , user, respectFrontendRoles)
         ).thenThrow(exception);
-        FileAssetSearcher searcher =FileAssetSearcher.builder().build();
+        FileAssetSearcher searcher =FileAssetSearcher.builder().folder(parentFolder).build();
         
-        when(fileAssetFactory.findByDB(searcher))
+        when(fileAssetFactory.findByDB(notNull(FileAssetSearcher.class)))
                 .thenReturn(contentlets);
 
         when(perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user))
@@ -93,7 +93,7 @@ public class FileAssetAPIImplTest {
         final List<FileAsset> fileAssetsByFolder = fileAssetAPI
                 .findFileAssetsByFolder(parentFolder, user, respectFrontendRoles);
 
-        verify(fileAssetFactory, times(1)).findByDB(searcher);
+        verify(fileAssetFactory, times(1)).findByDB(any(FileAssetSearcher.class));
 
         assertEquals(1,  contentlets.size());
         assertEquals(contentTypeId, fileAssetsByFolder.get(0).getContentTypeId());
