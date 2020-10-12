@@ -29,15 +29,13 @@ public class FolderTest {
         Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
         assert (systemFolder.isSystemFolder());
 
+        // test a db persisted folder
         assertFalse(new FolderDataGen().nextPersisted().isSystemFolder());
 
+        // test an unpersisted folder
         Folder folder = new FolderDataGen().next();
-
         assertFalse(folder.isSystemFolder());
 
-        folder = new FolderDataGen().nextPersisted();
-
-        assertFalse(folder.isSystemFolder());
 
 
     }
