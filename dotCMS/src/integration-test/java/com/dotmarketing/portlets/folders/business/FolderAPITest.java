@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -56,6 +57,7 @@ import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1292,4 +1294,62 @@ public class FolderAPITest {//24 contentlets
 		Assert.assertEquals(folder.getOwner(), folderByPath.getOwner());
 	}
 
+	
+	
+    /**
+     * this method tests that when you create a folder with a default file type and then create folders
+     * underneith it, that the children folders inherit the parent's default file type. This is
+     * especially used when creating folders via webdav
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void test_folders_inherit_the_filetypes_of_their_parents() throws DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final long currentTime = System.currentTimeMillis();
+
+        final ContentType fileAssetType = contentTypeAPI.find(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+        ContentType newFileAssetType = ContentTypeBuilder
+                        .builder(fileAssetType)
+                        .id(null)
+                        .variable("fileAsset"  + currentTime)
+                        .name("fileAsset"  + currentTime)
+                        .build();
+        
+        newFileAssetType =  contentTypeAPI.save(newFileAssetType);
+        
+
+        
+        assertEquals(newFileAssetType.variable(),"fileAsset"  + currentTime);
+        assert(newFileAssetType.id()!=null);
+        
+        final Folder parentFolder = new FolderDataGen().defaultFileType(newFileAssetType.id()).site(newHost).nextPersisted();
+        assertEquals(parentFolder.getDefaultFileType(), newFileAssetType.id());
+        
+        
+        final String folderPath = parentFolder.getPath() + "folder1/folder2/folder3";
+
+        folderAPI.createFolders(folderPath, newHost, user, false);
+
+        // /path/folder1
+        Folder folder1 = folderAPI.findFolderByPath(parentFolder.getPath() + "/folder1", newHost, user, false);
+        assert(folder1!=null);
+        assertEquals(folder1.getDefaultFileType(), newFileAssetType.id());
+        
+        // /path/folder2
+        Folder folder2 = folderAPI.findFolderByPath(parentFolder.getPath() + "/folder1/folder2", newHost, user, false);
+        assert(folder2!=null);
+        assertEquals(folder2.getDefaultFileType(), newFileAssetType.id());
+        
+        // /path/folder3
+        Folder folder3 = folderAPI.findFolderByPath(parentFolder.getPath() + "/folder1/folder2/folder3", newHost, user, false);
+        assert(folder3!=null);
+        assertEquals(folder3.getDefaultFileType(), newFileAssetType.id());        
+    }
+	
+	
+	
+	
 }
+

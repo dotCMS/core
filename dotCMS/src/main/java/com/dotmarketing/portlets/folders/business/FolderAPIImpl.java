@@ -630,6 +630,14 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		Folder parent = null;
 
+		
+		final String defaultFileAssetType=Try.of(
+                        ()->
+                        APILocator.getContentTypeAPI(APILocator.systemUser()).find(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).id())
+		                .getOrElseThrow(e-> new DotRuntimeException("unable to find default fileAssetType"));
+		
+		
+		
 		while (st.hasMoreTokens()) {
 			final String name = st.nextToken();
 			sb.append(name + "/");
@@ -642,7 +650,9 @@ public class FolderAPIImpl implements FolderAPI  {
 				f.setSortOrder(0);
 				f.setFilesMasks("");
 				f.setHostId(host.getIdentifier());
-				f.setDefaultFileType(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+				f.setDefaultFileType((parent!=null && parent.getDefaultFileType() !=null) 
+				                ? parent.getDefaultFileType() 
+				                : defaultFileAssetType);
 				final Identifier newIdentifier = !UtilMethods.isSet(parent)?
 						APILocator.getIdentifierAPI().createNew(f, host):
 						APILocator.getIdentifierAPI().createNew(f, parent);
