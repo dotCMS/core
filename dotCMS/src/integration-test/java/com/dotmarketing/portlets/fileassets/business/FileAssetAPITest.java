@@ -186,7 +186,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
         final Folder parentFolder = new FolderDataGen().nextPersisted();
     
         List<String> fileNames = new ArrayList<>();
-        final int fileAssetSize=6;
+        final int fileAssetSize=3;
         
         for(int i=0;i<fileAssetSize;i++) {
             final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
@@ -209,6 +209,51 @@ public class FileAssetAPITest extends IntegrationTestBase {
     }
     
     /**
+     * This tests that file assets saved to a random folder, e.g. /dasfasd/ will be returned from the database
+     * @throws Exception
+     */
+    @Test
+    public void test_that_file_asset_from_db_respects_live_working_flag()
+            throws Exception {
+
+        final User user = APILocator.systemUser();
+        final Folder parentFolder = new FolderDataGen().nextPersisted();
+    
+        final List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize=3;
+        
+        for(int i=0;i<fileAssetSize;i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.nextPersisted();
+        }
+        
+        FileAssetSearcher searcher = FileAssetSearcher.builder().user(user).folder(parentFolder).respectFrontendRoles(false).build();
+                        
+        // we have all the working files
+        assert(APILocator.getFileAssetAPI().findFileAssetsByDB(searcher).size() == fileAssetSize);
+
+        
+        
+        searcher = FileAssetSearcher.builder().live(true).user(user).folder(parentFolder).respectFrontendRoles(false).build();
+        
+        
+        // there are no live files
+        assert(APILocator.getFileAssetAPI().findFileAssetsByDB(searcher).size() == 0);
+
+
+        
+        
+        
+    }
+    
+    
+    
+    
+    /**
      * This tests that file assets saved to a folder are not readable unless the user has read permissions to the parent folder itself
      * @throws Exception
      */
@@ -220,7 +265,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
         final Folder parentFolder = new FolderDataGen().nextPersisted();
     
         List<String> fileNames = new ArrayList<>();
-        final int fileAssetSize=2;
+        final int fileAssetSize=3;
         
         for(int i=0;i<fileAssetSize;i++) {
             final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
@@ -260,7 +305,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
         final Folder parentFolder = APILocator.getFolderAPI().findSystemFolder();
 
         List<String> fileNames = new ArrayList<>();
-        final int fileAssetSize = 4;
+        final int fileAssetSize = 3;
 
         for (int i = 0; i < fileAssetSize; i++) {
             final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
