@@ -326,7 +326,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
         IntegrityDataGenerationJobTest.class,
-        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
+        Task201013AddNewColumnsToIdentifierTableTest.class
 })
 public class MainSuite {
 

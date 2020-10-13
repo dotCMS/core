@@ -279,6 +279,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		if(versionable instanceof Folder) {
 			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName());
+            identifier.setOwner(((Folder) versionable).getOwner());
 		} else {
 			String uri = versionable.getVersionType() + "." + versionable.getInode();
 			if(versionable instanceof Contentlet){
@@ -319,6 +320,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setURI(uri);
 				identifier.setAssetType(versionable.getVersionType());
 			}
+
+            identifier.setOwner((versionable instanceof WebAsset)
+                    ? ((WebAsset) versionable).getOwner() : versionable.getModUser());
 		}
 		Host site;
 		try {
@@ -333,8 +337,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		identifier.setHostId(site.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
-
-        identifier.setOwner(versionable.getModUser());
 
         final Inode inode = InodeFactory.getInode(versionable.getInode(), Inode.class);
         identifier.setCreateDate(inode.getIDate());
@@ -363,6 +365,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName());
             identifier.setParentPath( "/" );
+            identifier.setOwner(((Folder) versionable).getOwner());
         } else {
             String uri = versionable.getVersionType() + "." + versionable.getInode();
             if ( versionable instanceof Contentlet) {
@@ -397,10 +400,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			} else {
                 identifier.setURI( uri );
             }
+
+            identifier.setOwner((versionable instanceof WebAsset)
+                    ? ((WebAsset) versionable).getOwner() : versionable.getModUser());
         }
         identifier.setHostId( site != null ? site.getIdentifier() : null );
-
-        identifier.setOwner(versionable.getModUser());
 
         final Inode inode = InodeFactory.getInode(versionable.getInode(), Inode.class);
         identifier.setCreateDate(inode.getIDate());
