@@ -1266,6 +1266,9 @@ create table identifier (
    syspublish_date datetime null,
    sysexpire_date datetime null,
    full_path_lc  as CASE WHEN parent_path = 'System folder' THEN '/' ELSE LOWER(CONCAT(parent_path, asset_name)) END,
+   owner NVARCHAR(255),
+   create_date datetime,
+   asset_subtype NVARCHAR(255),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );

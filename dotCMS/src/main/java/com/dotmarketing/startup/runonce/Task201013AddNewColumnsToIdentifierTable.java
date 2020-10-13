@@ -1,0 +1,51 @@
+package com.dotmarketing.startup.runonce;
+
+import com.dotmarketing.startup.AbstractJDBCStartupTask;
+import java.util.List;
+
+public class Task201013AddNewColumnsToIdentifierTable extends AbstractJDBCStartupTask {
+    @Override
+    public boolean forceRun() {
+        return true;
+    }
+
+    @Override
+    public String getPostgresScript() {
+        return "alter table identifier add owner varchar(255);" +
+                "alter table identifier add create_date timestamp;" +
+                "alter table identifier add asset_subtype varchar(255);";
+    }
+
+    @Override
+    public String getMySQLScript() {
+        return "alter table identifier add owner varchar(255);" +
+                "alter table identifier add create_date datetime;" +
+                "alter table identifier add asset_subtype varchar(255);";
+
+    }
+
+    @Override
+    public String getOracleScript() {
+        return "alter table identifier add owner varchar2(255);" +
+                "alter table identifier add create_date date;" +
+                "alter table identifier add asset_subtype varchar2(255);";
+    }
+
+    @Override
+    public String getMSSQLScript() {
+        return  "alter table identifier add owner NVARCHAR(255);" +
+                "alter table identifier add create_date datetime;" +
+                "alter table identifier add asset_subtype NVARCHAR(255);";
+    }
+
+    @Override
+    protected List<String> getTablesToDropConstraints() {
+        return null;
+    }
+
+    @Override
+    public String getH2Script() {
+        return null;
+    }
+
+}

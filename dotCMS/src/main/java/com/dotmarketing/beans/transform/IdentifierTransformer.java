@@ -42,6 +42,9 @@ public class IdentifierTransformer implements DBTransformer {
         i.setParentPath((String) map.get("parent_path"));
         i.setSysPublishDate((Date) map.get("syspublish_date"));
         i.setSysExpireDate((Date) map.get("sysexpire_date"));
+        i.setOwner((String) map.get("owner"));
+        i.setCreateDate((Date) map.get("create_date"));
+        i.setAssetSubType((String) map.get("asset_subtype"));
         return i;
     }
 }

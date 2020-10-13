@@ -1031,6 +1031,9 @@ create table identifier (
    asset_type varchar(64),
    syspublish_date timestamp,
    sysexpire_date timestamp,
+   owner varchar(255),
+   create_date timestamp,
+   asset_subtype varchar(255),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );

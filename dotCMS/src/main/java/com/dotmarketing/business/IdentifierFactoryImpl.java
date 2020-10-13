@@ -10,6 +10,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -308,6 +309,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath(parentId.getPath());
 				identifier.setAssetName(uri);
+				identifier.setAssetSubType(contentlet.getContentType().variable());
 			} else if (versionable instanceof WebAsset) {
 				identifier.setURI(((WebAsset) versionable).getURI(folder));
 				identifier.setAssetType(versionable.getVersionType());
@@ -331,6 +333,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		identifier.setHostId(site.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
+
+        identifier.setOwner(versionable.getModUser());
+
+        final Inode inode = InodeFactory.getInode(versionable.getInode(), Inode.class);
+        identifier.setCreateDate(inode.getIDate());
 
 		saveIdentifier(identifier);
 
@@ -378,6 +385,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
                 identifier.setParentPath( "/" );
                 identifier.setAssetName( uri );
+                identifier.setAssetSubType(cont.getContentType().variable());
             } else if ( versionable instanceof Link ) {
                 identifier.setAssetName( versionable.getInode() );
                 identifier.setParentPath("/");
@@ -385,11 +393,17 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setAssetName(versionable.getInode());
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath("/");
+				identifier.setAssetSubType(Host.HOST_VELOCITY_VAR_NAME);
 			} else {
                 identifier.setURI( uri );
             }
         }
         identifier.setHostId( site != null ? site.getIdentifier() : null );
+
+        identifier.setOwner(versionable.getModUser());
+
+        final Inode inode = InodeFactory.getInode(versionable.getInode(), Inode.class);
+        identifier.setCreateDate(inode.getIDate());
 
         saveIdentifier( identifier );
 
@@ -447,13 +461,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			if (UtilMethods.isSet(id.getId())) {
 
 				if (isIdentifier(id.getId())) {
-					query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=? where id=?";
+                    query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=?, owner=?, create_date=?, asset_subtype=? where id=?";
 				} else{
-					query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
+					query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
 				}
 			} else {
 				id.setId(UUIDGenerator.generateUuid());
-				query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
+				query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
 			}
 
 			DotConnect dc = new DotConnect();
@@ -465,7 +479,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			dc.addParam(id.getAssetType());
 			dc.addParam(id.getSysPublishDate());
 			dc.addParam(id.getSysExpireDate());
-			dc.addParam(id.getId());
+
+            dc.addParam(id.getOwner());
+            dc.addParam(id.getCreateDate());
+            dc.addParam(id.getAssetSubType());
+            dc.addParam(id.getId());
 
 			try{
 				dc.loadResult();
