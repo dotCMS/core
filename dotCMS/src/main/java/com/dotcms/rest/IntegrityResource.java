@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -421,6 +422,11 @@ public class IntegrityResource {
 
         //Validate the parameters
         final String endpointId = paramsMap.get("endpoint");
+
+        Logger.info(
+                IntegrityResource.class,
+                String.format("Endpoint id: %s", endpointId));
+
         if (!UtilMethods.isSet(endpointId)) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity("Error: endpoint is a required Field.").build();
         }
@@ -455,6 +461,15 @@ public class IntegrityResource {
 
         try {
             final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
+
+            Logger.info(
+                    IntegrityResource.class,
+                    APILocator.getPublisherEndPointAPI().getAllEndPoints().stream().map(e -> e.getServerName()).collect(Collectors.joining()));
+
+            Logger.info(
+                    IntegrityResource.class,
+                    String.format("Endpoint: %s %s", endpoint.getServerName(), endpoint.getAuthKey()));
+
             //Sending bundle to endpoint
             Response response = generateIntegrityCheckerRequest(endpoint);
 

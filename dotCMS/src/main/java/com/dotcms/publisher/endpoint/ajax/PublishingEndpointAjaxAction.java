@@ -141,6 +141,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
         	PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
         	peAPI.saveEndPoint(endpoint);
 
+        	Logger.info(PublishingEndpointAjaxAction.class, "receiver ; " + endpoint.getId());
 			response.getWriter().write(endpoint.getId());
 
 		} catch (DotDataException e) {
