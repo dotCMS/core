@@ -294,6 +294,10 @@ public class TagAjax {
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 
+		Logger.info(this, "=============================================");
+		Logger.info(this, "====== DEBUG PLUGIN FOR ZENDESK-102534 ======");
+		Logger.info(this, "=============================================");
+
 		try {
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
 			Host host = APILocator.getHostAPI().find(selectedHostOrFolderId, currentUser, false);
@@ -305,10 +309,13 @@ public class TagAjax {
 		}
 
 		try {
+            Logger.info(this, "-> tagName = " + tagName);
+            Logger.info(this, "-> selectedHostOrFolderId = " + selectedHostOrFolderId);
 			return APILocator.getTagAPI().getSuggestedTag(tagName, selectedHostOrFolderId);
 		} catch (Exception e) {
 			//Logging the error because DWR tends to swallow the exceptions
-			Logger.error(TagAjax.class, "Error retrieving tags", e);
+			Logger.error(TagAjax.class, String.format("Error retrieving tags for '%s' in Site '%s': %s", tagName,
+					selectedHostOrFolderId, e.getMessage()), e);
 			throw e;
 		}
 	}

@@ -117,6 +117,11 @@ public class TagFactoryImpl implements TagFactory {
 
     @Override
     public List<Tag> getSuggestedTags(final String name, final String siteId) throws DotDataException {
+
+        Logger.info(this, "Getting suggested Tags from the database...");
+        Logger.info(this, "-> name = " + name);
+        Logger.info(this, "-> siteId = " + siteId);
+
         //Execute the search
         final DotConnect dc = new DotConnect();
         if ( UtilMethods.isSet(siteId) ) {
@@ -133,6 +138,15 @@ public class TagFactoryImpl implements TagFactory {
 
         //Convert and return the list of found tags excluding tags with the same tag name
         final List<Tag> tags = convertForTagsFilteringDuplicated(dc.loadObjectResults());
+
+        if (UtilMethods.isSet(tags)) {
+            Logger.info(this, "-> Total returned Tags = " + tags.size());
+            for (Tag tag : tags) {
+                Logger.info(this, "==>> " + tag);
+            }
+        } else {
+            Logger.info(this, "-> NO TAGS WERE RETURNED!!");
+        }
 
         //And add the results to the cache
         for (final Tag tag : tags) {
