@@ -133,7 +133,7 @@ public enum AuthCredentialPushPublishUtil {
         final PublishingEndPoint publishingEndPoint =
                 APILocator.getPublisherEndPointAPI().findEnabledSendingEndPointByAddress(remoteIP);
 
-        Logger.info(AuthCredentialPushPublishUtil.class, String.format("PublishingEndPoint: %s", publishingEndPoint.getServerName()));
+        Logger.info(AuthCredentialPushPublishUtil.class, String.format("PublishingEndPoint: %s", publishingEndPoint != null ? publishingEndPoint.getServerName() : "null"));
 
         Optional<String> key = PushPublisher.retriveEndpointKeyDigest(publishingEndPoint);
 
