@@ -289,7 +289,6 @@ import org.junit.runners.Suite.SuiteClasses;
         RulesAPIImplIntegrationTest.class,
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
-        FileAssetAPIImplTest.class,
         UserResourceIntegrationTest.class,
         SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,

@@ -10,6 +10,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -129,7 +130,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         ContentletDataGen.publish(fileAsset2);
 
         this.addPermission(anonymousRole, folder, fileAsset1, fileAsset2);
-        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(false).build());
+        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(true).build());
 
         assertEquals(2, files.size());
 
@@ -171,7 +172,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @Test(expected = DotSecurityException.class)
+    @Test(expected = DotRuntimeException.class)
     public void whenUserNotHavePermissionOverParentFolder() throws DotDataException, DotSecurityException {
         final Role backEndUserRole = APILocator.getRoleAPI().loadBackEndUserRole();
         final Role role = new RoleDataGen().nextPersisted();
