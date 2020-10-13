@@ -285,7 +285,8 @@ public class TaskLocatorUtil {
 		.add(Task05370AddAppsPortletToLayout.class)
 		.add(Task05370AddAppsPortletToLayout.class)
     	.add(Task05380ChangeContainerPathToAbsolute.class)
-		.add(Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables.class)
+    	.add(Task05390MakeRoomForLongerJobDetail.class)
+		.add(Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables.class)
         .add(Task201013AddNewColumnsToIdentifierTable.class)
         .build();
         

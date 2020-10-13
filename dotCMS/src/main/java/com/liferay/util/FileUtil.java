@@ -22,6 +22,7 @@
 
 package com.liferay.util;
 
+import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
@@ -1011,5 +1012,19 @@ public class FileUtil {
 
 		GZIP, BZIP2, NONE;
 	}
+	
+	/**
+	 * Convienience Method to access .tar.gz functionality
+	 * @param directory
+	 * @return
+	 * @throws IOException
+	 */
+    public static File tarGzipDirectory(final File directory) throws IOException {
+	    return PushUtils.tarGzipDirectory(directory);
+	    
+	}
+	
+	
+	
 
 }

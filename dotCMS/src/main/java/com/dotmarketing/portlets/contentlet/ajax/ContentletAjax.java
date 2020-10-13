@@ -1031,7 +1031,7 @@ public class ContentletAjax {
 		if (page == 0)
 			counters.put("hasNext", false);
 		else
-			counters.put("hasNext", perPage < hits.size());
+			counters.put("hasNext", perPage * page < total);
 
 		// Data to show in the bottom content listing page
 		String luceneQueryToShow2= luceneQuery.toString();
