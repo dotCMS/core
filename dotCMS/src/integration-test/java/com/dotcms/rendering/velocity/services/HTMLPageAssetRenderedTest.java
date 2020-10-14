@@ -128,13 +128,17 @@ public class HTMLPageAssetRenderedTest {
     }
 
     private static Container createContainer() throws DotSecurityException, DotDataException, WebAssetException {
+        return createContainer(5);
+    }
+
+    private static Container createContainer(final int maxContentlet) throws DotSecurityException, DotDataException, WebAssetException {
         Container container = new Container();
         final String containerName = "containerHTMLPageRenderedTest" + System.currentTimeMillis();
 
         container.setFriendlyName(containerName);
         container.setTitle(containerName);
         container.setOwner(systemUser.getUserId());
-        container.setMaxContentlets(5);
+        container.setMaxContentlets(maxContentlet);
 
         final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         final ContainerStructure cs = new ContainerStructure();
@@ -297,6 +301,7 @@ public class HTMLPageAssetRenderedTest {
     private void  createMultiTree(final String pageId, final String containerId) throws DotDataException {
         createMultiTree(pageId, containerId, UUID);
     }
+
 
     private void  createMultiTree(final String pageId, final String containerId, final String UUID)
             throws DotDataException {
@@ -1651,6 +1656,103 @@ public class HTMLPageAssetRenderedTest {
         final int thirdIndex = html.indexOf(toFind, secondIndex + toFind.length());
 
         assertTrue(firstIndex != -1 && secondIndex != -1 && firstIndex != secondIndex && thirdIndex == -1);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A page has multiple personas version, and the container has a MAx contentlet equals to 1
+     * Should: render the page
+     */
+    @Test
+    public void pageWithMultiplePersona() throws Exception{
+
+        final Container container = createContainer(1);
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .withContainer(container)
+                .next();
+
+        final Contentlet theme = new ThemeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .host(site)
+                .drawedBody(templateLayout)
+                .theme(theme)
+                .nextPersisted();
+
+        final String pageName = "test1Page-"+System.currentTimeMillis();
+        final HTMLPageAsset page = createHtmlPageAsset(template, pageName, 1);
+
+        final Persona defaultPersona = APILocator.getPersonaAPI().getDefaultPersona();
+        final Persona notDefaultPersona = new PersonaDataGen().nextPersisted();
+
+        final Contentlet defaultPersonaContentlet = new ContentletDataGen(contentGenericType.id())
+                .languageId(1)
+                .folder(folder)
+                .host(site)
+                .setProperty("title", "content1")
+                .setProperty("body", defaultPersona.getKeyTag())
+                .nextPersisted();
+
+        final Contentlet notDefaultPersonaContentlet = new ContentletDataGen(contentGenericType.id())
+                .languageId(1)
+                .folder(folder)
+                .host(site)
+                .setProperty("title", "content1")
+                .setProperty("body", notDefaultPersona.getKeyTag())
+                .nextPersisted();
+
+        ContentletDataGen.publish(page);
+        ContentletDataGen.publish(defaultPersonaContentlet);
+        ContentletDataGen.publish(notDefaultPersonaContentlet);
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(defaultPersonaContentlet)
+                .setInstanceID("1")
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(notDefaultPersonaContentlet)
+                .setPersona(notDefaultPersona)
+                .setInstanceID("1")
+                .nextPersisted();
+
+
+        //request page ENG version
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(
+                        new MockHttpRequest("localhost", "/").request()).request()
+            ).request();
+
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+
+        final String htmlWithDefaultPersona = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue(htmlWithDefaultPersona.contains("dot:persona"));
+
+        final Visitor visitor = new Visitor();
+        visitor.setPersona(notDefaultPersona);
+        mockRequest.getSession().setAttribute(WebKeys.VISITOR, visitor);
+
+        final String htmlWithNoDefaultPersona = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue(htmlWithNoDefaultPersona.contains(notDefaultPersona.getKeyTag()));
     }
 
     private static class TestContainerUUID{
