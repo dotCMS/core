@@ -11,7 +11,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
-import io.vavr.Tuple2;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
