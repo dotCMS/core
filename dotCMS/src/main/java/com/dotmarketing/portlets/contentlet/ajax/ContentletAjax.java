@@ -39,6 +39,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -1240,7 +1241,14 @@ public class ContentletAjax {
 					if (hasLiveVersion) {
 						searchResult.put("hasLiveVersion", "true");
 						searchResult.put("allowUnpublishOfLiveVersion", "true");
-						searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
+
+						Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
+								.getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+
+						if(cvi.isPresent()) {
+							searchResult.put("inodeOfLiveVersion",
+									cvi.get().getLiveInode());
+						}
 					}
 				}
 
@@ -2492,8 +2500,12 @@ public class ContentletAjax {
 		ret.put("lockedIdent", contentletInode );
 		try{
 			conAPI.lock(c, currentUser, false);
+			Optional<Date> lockedOn = APILocator.getVersionableAPI().getLockedOn(c);
 
-			ret.put("lockedOn", UtilMethods.capitalize(DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(c), currentUser.getLocale()) ));
+			if(lockedOn.isPresent()) {
+				ret.put("lockedOn", UtilMethods
+						.capitalize(DateUtil.prettyDateSince(lockedOn.get(), currentUser.getLocale())));
+			}
 			ret.put("lockedBy", currentUser.getFullName() );
 
 		}
