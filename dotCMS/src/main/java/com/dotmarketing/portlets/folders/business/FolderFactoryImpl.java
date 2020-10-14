@@ -1214,36 +1214,35 @@ public class FolderFactoryImpl extends FolderFactory {
     }
 
 
-
-
 	@Override
 	protected void save(Folder folderInode) throws DotDataException {
-		validateFolderName(folderInode);
-
-		HibernateUtil.getSession().clear();
-		HibernateUtil.saveOrUpdate(folderInode);
+	    save(folderInode, folderInode.getInode());
 	}
 
 	@Override
-	protected void save(Folder folderInode, String existingId) throws DotDataException {
+	protected void save(Folder folderInode, final String id) throws DotDataException {
+	    if(id==null) {
+	        throw new DotRuntimeException("Folder needs an id");
+	    }
 		validateFolderName(folderInode);
 
-		if(existingId==null){
-			Folder folderToSave = folderInode;
-			if(UtilMethods.isSet(folderInode.getInode())) {
-				folderToSave = (Folder) new HibernateUtil(Folder.class).load(folderInode.getInode());
-				try{
-					BeanUtils.copyProperties(folderToSave, folderInode);
-				}
-				catch (Exception e) {
-					throw new DotDataException(e.getMessage(), e);
-				}
-			}
-			HibernateUtil.saveOrUpdate(folderToSave);
-			folderCache.removeFolder(folderToSave, APILocator.getIdentifierAPI().find(folderToSave.getIdentifier()));
+		Folder oldFolder = (Folder) new HibernateUtil(Folder.class).load(folderInode.getInode());
+		if(oldFolder!=null && oldFolder.getInode()!=null){
+
+		try{
+			BeanUtils.copyProperties(oldFolder, folderInode);
+            HibernateUtil.saveOrUpdate(oldFolder);
+            folderCache.removeFolder(oldFolder, APILocator.getIdentifierAPI().find(oldFolder.getIdentifier()));
+			
+		}
+		catch (Exception e) {
+			throw new DotDataException(e.getMessage(), e);
+		}
+			
+
 		}else{
-			folderInode.setInode(existingId);
-			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
+			folderInode.setInode(id);
+			HibernateUtil.saveWithPrimaryKey(folderInode, id);
 		}
 	}
 

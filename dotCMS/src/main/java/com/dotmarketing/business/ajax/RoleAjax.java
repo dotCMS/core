@@ -865,16 +865,16 @@ public class RoleAjax {
 				Folder folder = APILocator.getFolderAPI().find(permissionableId, APILocator.getUserAPI().getSystemUser(), false);
 				if(folder == null)
 					continue;
-				taskMap.put("folder", folder.getMap());
+				taskMap.put("folder", new HashMap(folder.getMap()));
 				host = hostAPI.findParentHost(folder,APILocator.getUserAPI().getSystemUser(), false);
-				taskMap.put("host", host.getMap());
+				taskMap.put("host", new HashMap(host.getMap()));
 			} else {
-				taskMap.put("host", host.getMap());
+				taskMap.put("host", new HashMap(host.getMap()));
 			}
 			Role role = roleAPI.loadRoleById(roleId);
 			if(role == null)
 				continue;
-			taskMap.put("role", role.toMap());
+			taskMap.put("role", new HashMap(role.toMap()));
 			scheduled.add(taskMap);
 		}
 		return scheduled;

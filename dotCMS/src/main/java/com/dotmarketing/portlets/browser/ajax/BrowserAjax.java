@@ -158,7 +158,7 @@ public class BrowserAjax {
         	continue;
 
         	//Obtain maps from hosts to be returned by ajax
-            Map<String,Object> hostMap = (Map<String,Object>)host.getMap();
+            Map<String,Object> hostMap = new HashMap(host.getMap());
             if (activeHostId.equalsIgnoreCase(host.getIdentifier())|| hosts.size()==1 )  {
                 hostMap.put("open", true);
                 List<Map> children = getFoldersTree (host, roles);

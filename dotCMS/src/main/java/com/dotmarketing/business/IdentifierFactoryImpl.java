@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.id.IdentityProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -22,7 +23,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -264,7 +264,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected Identifier createNewIdentifier(Versionable versionable, Folder folder) throws DotDataException {
-	    return createNewIdentifier(versionable,folder,UUIDGenerator.generateUuid());
+	    
+	    String id = new IdentityProvider(versionable, folder).idHash;
+	    return createNewIdentifier(versionable,folder,id);
 	}
 
 	@Override
@@ -272,7 +274,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		final User systemUser = APILocator.getUserAPI().getSystemUser();
 		final Identifier identifier = new Identifier();
 
-		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
+		identifier.setId(existingId!=null?existingId:new IdentityProvider(versionable, folder).idHash);
 
 		final Identifier parentId = APILocator.getIdentifierAPI().find(folder);
 		if(versionable instanceof Folder) {
@@ -340,7 +342,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected Identifier createNewIdentifier ( Versionable versionable, Host site ) throws DotDataException {
-	    return createNewIdentifier(versionable,site,UUIDGenerator.generateUuid());
+	    return createNewIdentifier(versionable,site,new IdentityProvider(versionable, site).idHash);
 	}
 
 	@Override
@@ -349,7 +351,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         if (existingId !=  null) {
 			identifier.setId(existingId);
 		}else {
-			identifier.setId(UUIDGenerator.generateUuid());
+			identifier.setId(new IdentityProvider(versionable, site).idHash);
 		}
 
         if ( versionable instanceof Folder ) {
@@ -409,6 +411,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected boolean isIdentifier(String identifierInode) {
+	    if(!UtilMethods.isSet(identifierInode)) {
+	        return false;
+	    }
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select count(1) as count from identifier where id = ?");
 		dc.addParam(identifierInode);
@@ -442,44 +447,41 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected Identifier saveIdentifier(final Identifier id) throws DotDataException {
-		String query;
-		if (id != null) {
-			if (UtilMethods.isSet(id.getId())) {
 
-				if (isIdentifier(id.getId())) {
-					query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=? where id=?";
-				} else{
-					query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
-				}
-			} else {
-				id.setId(UUIDGenerator.generateUuid());
-				query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
-			}
-
-			DotConnect dc = new DotConnect();
-			dc.setSQL(query);
-
-			dc.addParam(id.getParentPath());
-			dc.addParam(id.getAssetName());
-			dc.addParam(id.getHostId());
-			dc.addParam(id.getAssetType());
-			dc.addParam(id.getSysPublishDate());
-			dc.addParam(id.getSysExpireDate());
-			dc.addParam(id.getId());
-
-			try{
-				dc.loadResult();
-			}catch(DotDataException e){
-				Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
-				throw new DotDataException(e);
-			}
-
-
-			ic.removeFromCacheByIdentifier(id.getId());
-			ic.removeFromCacheByURI(id.getHostId(), id.getURI());
-			return id;
+		if (id == null) {
+		    return null;
 		}
-		return null;
+
+
+		String query = (isIdentifier(id.getId())) 
+                ?  "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=? where id=?"
+	            :  "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
+
+
+		DotConnect dc = new DotConnect();
+		dc.setSQL(query);
+
+		dc.addParam(id.getParentPath());
+		dc.addParam(id.getAssetName());
+		dc.addParam(id.getHostId());
+		dc.addParam(id.getAssetType());
+		dc.addParam(id.getSysPublishDate());
+		dc.addParam(id.getSysExpireDate());
+		dc.addParam(id.getId());
+
+		try{
+			dc.loadResult();
+		}catch(DotDataException e){
+			Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
+			throw new DotDataException(e);
+		}
+
+
+		ic.removeFromCacheByIdentifier(id.getId());
+		ic.removeFromCacheByURI(id.getHostId(), id.getURI());
+		return id;
+		
+
 	}
 
     @Override

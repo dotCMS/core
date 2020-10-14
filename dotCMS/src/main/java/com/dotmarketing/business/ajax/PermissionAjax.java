@@ -345,90 +345,81 @@ public class PermissionAjax {
 	@CloseDBIfOpened
 	private Permissionable retrievePermissionable (String assetId, Long language, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		
-		HostAPI hostAPI = APILocator.getHostAPI();
-		Permissionable perm = null;
 
-		//Determining the type
-		try{
-			//Host?
-			perm = hostAPI.find(assetId, user, respectFrontendRoles);
+		Permissionable perm = APILocator.getHostAPI().find(assetId, user, respectFrontendRoles);
+
+		if(perm!=null) {
+		    return perm;
 		}
-		catch(Exception e){
 
+        perm = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(assetId);
+        if (perm != null) {
+            return perm;
+        }
+
+        perm = APILocator.getFolderAPI().find(assetId, user, respectFrontendRoles);
+        if (perm != null) {
+            return perm;
+        }
+
+        
+
+
+		DotConnect dc = new DotConnect();
+		ArrayList results = new ArrayList();
+		String assetType ="";
+		dc.setSQL("select asset_type from identifier where id =?");
+		dc.addParam(assetId);
+		ArrayList assetResult = dc.loadResults();
+		
+		if(assetResult.size()>0){
+            // It could be:
+            //
+            // 1. folder
+            // 2. contentlet
+            // 3. htmlpage
+            // 4. template
+            // 5. links
+            // 6. containers: table has different name: dot_containers
+            assetType = (String) ((Map)assetResult.get(0)).get("asset_type");
 		}
 		
-		if(perm == null) {
-			//Content?
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			
-			try {
-				if(language == null || language <= 0){
-					language=APILocator.getLanguageAPI().getDefaultLanguage().getId();
-				}
-				perm = contAPI.findContentletByIdentifier(assetId, false, language, user, respectFrontendRoles);
-			} catch (DotContentletStateException e) {
-
-			}
-		}
-
-		if(perm == null) {
-
-			DotConnect dc = new DotConnect();
-			ArrayList results = new ArrayList();
-			String assetType ="";
-			dc.setSQL("Select asset_type from identifier where id =?");
+		if(UtilMethods.isSet(assetType)){
+			dc.setSQL("select i.inode, type from inode i," +
+                Inode.Type.valueOf(assetType.toUpperCase()).getTableName() +
+                " a where i.inode = a.inode and a.identifier = ?");
 			dc.addParam(assetId);
-			ArrayList assetResult = dc.loadResults();
-			
-			if(assetResult.size()>0){
-                // It could be:
-                //
-                // 1. folder
-                // 2. contentlet
-                // 3. htmlpage
-                // 4. template
-                // 5. links
-                // 6. containers: table has different name: dot_containers
-                assetType = (String) ((Map)assetResult.get(0)).get("asset_type");
-			}
-			
-			if(UtilMethods.isSet(assetType)){
-				dc.setSQL("select i.inode, type from inode i," +
-                    Inode.Type.valueOf(assetType.toUpperCase()).getTableName() +
-                    " a where i.inode = a.inode and a.identifier = ?");
-				dc.addParam(assetId);
-				results = dc.loadResults();
-			}
-			
-			if(results.size() > 0) {
-				String type =  (String) ((Map)results.get(0)).get("type");
-				String inode = (String) ((Map)results.get(0)).get("inode");
-				perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
-			}
+			results = dc.loadResults();
 		}
 		
+		if(results.size() > 0) {
+			String type =  (String) ((Map)results.get(0)).get("type");
+			String inode = (String) ((Map)results.get(0)).get("inode");
+			return InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
+		}
+
 		if(perm == null){
-			try {
-				perm = APILocator.getContentTypeAPI(user).find(assetId);
-			} catch (NotFoundInDbException e) {
-				// Do nothing as "perm" is left as null
-				// Code above is trying to lookup a Content-Type by using an id
-				// that might not correspond to a Content-Type (assetId)
-			}
+		    perm = APILocator.getContentTypeAPI(user).find(assetId);
 		}
+        if (perm != null) {
+            return perm;
+        }
 
-		if ( perm == null ) {
-			try {
-				// Now trying with categories
-				perm = APILocator.getCategoryAPI().find(assetId, user, respectFrontendRoles);
-			} catch (NotFoundInDbException e) {
-				// Do nothing
-			}
-		}
 
-		if(perm == null || !UtilMethods.isSet(perm.getPermissionId())) {
-			perm = InodeFactory.getInode(assetId, Inode.class);
+		try {
+			// Now trying with categories
+			perm = APILocator.getCategoryAPI().find(assetId, user, respectFrontendRoles);
+		} catch (NotFoundInDbException e) {
+			// Do nothing
 		}
+        if (perm != null) {
+            return perm;
+        }
+
+
+
+		perm = InodeFactory.getInode(assetId, Inode.class);
+		
 		
 		return perm;
 	}

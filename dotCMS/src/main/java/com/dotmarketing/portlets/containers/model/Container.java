@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
@@ -80,6 +81,7 @@ public class Container extends WebAsset implements Serializable {
 	 * <p>Since 3.0, containers can have multiple structures related. To get the code for a particular Structure related
 	 * to this container then use {@link ContainerStructure#getCode()}
 	 */
+	@JsonIgnore
 	@Deprecated
 	public String getCode() {
 		return code;
@@ -125,6 +127,7 @@ public class Container extends WebAsset implements Serializable {
 	 *
 	 * @return int
 	 */
+	
 	public int getMaxContentlets() {
 		return maxContentlets;
 	}
@@ -144,6 +147,7 @@ public class Container extends WebAsset implements Serializable {
 	 *
 	 * @return String
 	 */
+	@JsonIgnore
 	public String getSortContentletsBy() {
 		return sortContentletsBy;
 	}
@@ -163,6 +167,7 @@ public class Container extends WebAsset implements Serializable {
 	 *
 	 * @return boolean
 	 */
+	@JsonIgnore
 	public boolean isUseDiv() {
 		return useDiv;
 	}
@@ -173,6 +178,7 @@ public class Container extends WebAsset implements Serializable {
 	 * @param useDiv
 	 *            The useDiv to set
 	 */
+	@JsonIgnore
 	public void setUseDiv(boolean useDiv) {
 		this.useDiv = useDiv;
 	}
@@ -239,6 +245,7 @@ public class Container extends WebAsset implements Serializable {
 	 *
 	 * @return boolean
 	 */
+	@JsonIgnore
 	public boolean getStaticify() {
 		return staticify;
 	}
@@ -252,7 +259,7 @@ public class Container extends WebAsset implements Serializable {
 	public void setStaticify(boolean staticify) {
 		this.staticify = staticify;
 	}
-
+	@JsonIgnore
 	public String getLuceneQuery() {
 		return luceneQuery;
 	}
@@ -278,6 +285,7 @@ public class Container extends WebAsset implements Serializable {
 		this.notes = notes;
 	}
 
+	@JsonIgnore
 	@Override
 	public List<PermissionSummary> acceptedPermissions() {
 		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
@@ -287,7 +295,8 @@ public class Container extends WebAsset implements Serializable {
 		accepted.add(new PermissionSummary("edit-permissions", "edit-permissions-permission-description", PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 		return accepted;
 	}
-
+	
+	@JsonIgnore
 	public Permissionable getParentPermissionable() throws DotDataException {
 
 		try {

@@ -10,7 +10,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
+import io.vavr.control.Try;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +30,7 @@ public class FileAssetContainer extends Container {
     private transient final Contentlet contentlet = new Contentlet();
 
     private long languageId;
+    @JsonIgnore
     private Host host;
     private String path;
 
@@ -138,8 +139,15 @@ public class FileAssetContainer extends Container {
     public void setHost(final Host host) {
         this.host = host;
     }
-
+    
+    @JsonIgnore
     public Host getHost() {
         return host;
+    }
+    
+    
+    public String getHostname() {
+        return Try.of(()-> getHost().getHostname()).getOrElse("ukn");
+        
     }
 }

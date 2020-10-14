@@ -51,8 +51,19 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
     private Date modDate;
 
+    private String parentFolderId;
+    
+    
+    
+	public String getParentFolderId() {
+        return parentFolderId;
+    }
 
-	public Folder() {
+    public void setParentFolderId(String parentFolderId) {
+        this.parentFolderId = parentFolderId;
+    }
+
+    public Folder() {
     	this.setType("folder");
     	modDate = new Date();
     }
@@ -62,7 +73,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	 * @return String
 	 */
 	public String getInode() {
-		return inode;
+		return UtilMethods.isSet(inode) ? inode : null;
 	}
 
 	/**
@@ -98,6 +109,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	 */
 	public void setInode(String inode) {
 		this.inode = inode;
+		this.identifier=inode;
 	}
 
 	/**
@@ -178,6 +190,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	}
 	public void setIdentifier(String identifier) {
 	   this.identifier = identifier;
+	   this.inode = identifier;
 	   setHostId(this.hostId);
 	}
 

@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
 
 /**
@@ -240,6 +241,7 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 	 * @throws DotDataException 
 	 * @throws DotStateException 
 	 */
+	@JsonIgnore
 	public Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException {
 		
 		Map<String, Object> map = super.getMap();

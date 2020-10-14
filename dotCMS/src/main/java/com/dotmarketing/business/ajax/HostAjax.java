@@ -148,7 +148,7 @@ public class HostAjax {
 					Logger.error(HostAjax.class, e.getMessage(), e);
 				}
 
-				Map<String, Object> hostMap = host.getMap();
+				Map<String, Object> hostMap = new HashMap(host.getMap());
 				hostMap.put("userPermissions", permissionAPI.getPermissionIdsFromUser(host, user));
 				hostMap.put("hostInSetup", hostInSetup);
 				hostMap.put("archived", host.isArchived());
@@ -296,8 +296,5 @@ public class HostAjax {
 		return QuartzUtils.getTaskProgress("setup-host-" + hostId, "setup-host-group");
 	}
 
-	public Map<String, Object> fetchByIdentity(String id) throws DotDataException, DotSecurityException {
-		Host host = hostAPI.find(id, userWebAPI.getSystemUser(), false);
-		return host.getMap();
-	}
+
 }

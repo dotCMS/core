@@ -600,7 +600,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
-		save( folder, null,  user,  respectFrontEndPermissions);
+		save( folder, folder.getInode(),  user,  respectFrontEndPermissions);
 
 	}
 

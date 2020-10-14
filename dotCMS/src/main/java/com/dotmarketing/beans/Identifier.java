@@ -62,45 +62,16 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	}
 
 	public String getId() {
-		if (id != null) {
-			if (id.contains("-")) {
-				return id;
-			}else {
-				if(id.equals(Host.SYSTEM_HOST)){
-					return id;
-				}
-				try {
-					long oldId = Long.valueOf(id);
-					return Long.valueOf(oldId).toString();
-				} catch (Exception e) {
-					return "";
-				}
-			}
-		} else
-			return "";
+		return UtilMethods.isSet(id) ? id : null;
 	}
 	
 	public boolean exists(){
-	   return !("".equals(getId()));
+	   return UtilMethods.isSet(id);
 	}
 	
 
 	public void setId(String id) {
-		if(id == null||id == "")
-			this.id = null;
-		else if (id.contains("-")) {
-			UUID uuid = UUID.fromString(id);
-			this.id = uuid.toString();
-		}else if(!id.equals(Host.SYSTEM_HOST)){
-			try {
-				long oldId = Long.parseLong(id);
-				this.id = Long.valueOf(oldId).toString();
-			} catch (Exception e) {
-				this.id = "";
-			}
-		}else if(id.equals(Host.SYSTEM_HOST)){
-			this.id = id;
-		}
+	    this.id = UtilMethods.isEmpty(id) ? null : id;
 	}
 
 	public void setInode(String inode) {
