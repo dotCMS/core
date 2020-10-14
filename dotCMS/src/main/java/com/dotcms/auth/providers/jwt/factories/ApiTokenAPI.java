@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -20,6 +21,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureException;
 import io.vavr.control.Try;
 
 import java.util.*;
@@ -473,4 +478,21 @@ public class ApiTokenAPI {
                 || APILocator.getPortletAPI().hasUserAdminRights(user))
                 .getOrElse(false);
     }
+
+    /**
+     * Return true if the token was correctly constructed
+     * @param token
+     * @return
+     */
+    public  boolean isWellFormedToken(final String token){
+        try {
+            Jwts.parser().parse(token);
+            return true;
+        } catch (MalformedJwtException e){
+            return false;
+        } catch(SignatureException | ExpiredJwtException | IllegalArgumentException e){
+            return true;
+        }
+    }
+
 }

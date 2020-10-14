@@ -23,7 +23,6 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -34,7 +33,6 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
-@Ignore
 @RunWith(DataProviderRunner.class)
 public class ESReadOnlyMonitorTest {
 

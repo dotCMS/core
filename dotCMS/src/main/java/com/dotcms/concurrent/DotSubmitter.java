@@ -66,6 +66,18 @@ public interface DotSubmitter extends Executor, Serializable {
     public int getActiveCount();
 
     /**
+     * Gets the pool size configured
+     * @return int
+     */
+    public  int getPoolSize();
+
+    /**
+     * Gets the Max pool size configured
+     * @return int
+     */
+    public  int getMaxPoolSize();
+
+    /**
      * Initiates an orderly shutdown in which previously submitted
      * tasks are executed, but no new tasks will be accepted.
      * Invocation has no additional effect if already shut down.

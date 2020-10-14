@@ -22,7 +22,6 @@ import org.quartz.SchedulerException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -90,39 +89,7 @@ public class IntegrityDataGenerationJobTest extends IntegrationTestBase {
         assertStatus(IntegrityResource.ProcessStatus.FINISHED.toString());
     }
 
-    /**
-     * Method to test: IntegrityDataGenerationJob.interrupt() which is run when job is attempted to be interrupted.
-     * Given Scenario: Given an integrity data generation is triggered and running for a provided endpoint and request id.
-     * ExpectedResult: to have a status file with the CANCELLED status.
-     *
-     */
-    @Test
-    public void test_interrupt() throws Exception {
-        integrityDataGenerationJob = new IntegrityDataGenerationJob() {
-            @Override
-            public void run(JobExecutionContext jobContext) {
-                try {
-                    Thread.sleep(4000);
-                } catch (InterruptedException e) {}
-                super.run(jobContext);
-            }
-        };
-
-        runJob(Sneaky.sneaked(() -> integrityDataGenerationJob.run(getJobContext())));
-        interruptJob(Sneaky.sneaked(() -> integrityDataGenerationJob.interrupt()));
-        assertStatus(
-                IntegrityResource.ProcessStatus.CANCELLED.name(),
-                IntegrityResource.ProcessStatus.FINISHED.name());
-    }
-
     private void runJob(Runnable runnable) {
-        runnable.run();
-    }
-
-    private void interruptJob(Runnable runnable) throws SchedulerException {
-        IntegrityDataGenerationJob.getJobScheduler().interrupt(
-                IntegrityDataGenerationJob.JOB_NAME,
-                IntegrityDataGenerationJob.JOB_GROUP);
         runnable.run();
     }
 
@@ -135,7 +102,7 @@ public class IntegrityDataGenerationJobTest extends IntegrationTestBase {
 
     private JobDetail getJobDetail(PublishingEndPoint endpoint, String requestId) {
         JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put(IntegrityUtil.REQUESTER_ENDPOINT, endpoint);
+        jobDataMap.put(IntegrityUtil.REQUESTER_KEY, endpoint.getId());
         jobDataMap.put(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID, requestId);
 
         final JobDetail jobDetail = new JobDetail(
@@ -157,12 +124,4 @@ public class IntegrityDataGenerationJobTest extends IntegrationTestBase {
         assertEquals(status, properties.getProperty(IntegrityUtil.INTEGRITY_DATA_STATUS));
     }
 
-    private void assertStatus(String... statuses) throws IOException {
-        Properties properties = new Properties();
-        properties.load(new FileInputStream(IntegrityUtil.getIntegrityDataFilePath(
-                endpoint.getId(),
-                IntegrityUtil.INTEGRITY_DATA_STATUS_FILENAME)));
-        assertTrue(Arrays.stream(statuses).anyMatch(status ->
-                status.equals(properties.getProperty(IntegrityUtil.INTEGRITY_DATA_STATUS))));
-    }
 }

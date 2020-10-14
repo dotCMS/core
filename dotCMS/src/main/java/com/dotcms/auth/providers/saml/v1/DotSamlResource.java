@@ -33,6 +33,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -246,7 +248,7 @@ public class DotSamlResource implements Serializable {
 	@Path( "/metadata/{idpConfigId}" )
 	@JSONP
 	@NoCache
-	@Produces( { MediaType.APPLICATION_JSON, "application/javascript" } )
+	@Produces( { MediaType.APPLICATION_XML, "application/xml" } )
 	public void metadata( @PathParam( "idpConfigId" ) final String idpConfigId,
 						  @Context final HttpServletRequest httpServletRequest,
 						  @Context final HttpServletResponse httpServletResponse ) throws IOException {
@@ -267,6 +269,7 @@ public class DotSamlResource implements Serializable {
 				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
 					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
+					httpServletResponse.setContentType("application/xml");
 					this.samlAuthenticationService.renderMetadataXML(httpServletResponse.getWriter(), identityProviderConfiguration);
 					return;
 				}
@@ -285,10 +288,11 @@ public class DotSamlResource implements Serializable {
 	@POST
 	@Path("/logout/{idpConfigId}")
 	@NoCache
+	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
 	// Login configuration by id
-	public void logout(@PathParam("idpConfigId") final String idpConfigId,
+	public Response logoutPost(@PathParam("idpConfigId") final String idpConfigId,
 					   @Context final HttpServletRequest httpServletRequest,
-					   @Context final HttpServletResponse httpServletResponse) throws IOException {
+					   @Context final HttpServletResponse httpServletResponse) throws IOException, URISyntaxException {
 
 		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
@@ -298,13 +302,48 @@ public class DotSamlResource implements Serializable {
 				// If idpConfig is null, means this site does not need SAML processing
 				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
-					Logger.debug(this, () -> "Processing saml logout request for idpConfig id: " + idpConfigId);
+					Logger.debug(this, () -> "Processing saml logout post request for idpConfig id: " + idpConfigId);
 					final String logoutPath = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
-							()->buildBaseUrlFromRequest(httpServletRequest) + "/");
+							()-> "/dotAdmin/#/public/logout");
 
-					httpServletResponse.sendRedirect(logoutPath);
-					return;
+					return Response.temporaryRedirect(new URI(logoutPath)).build();
+				}
+			} finally {
+				if (null != identityProviderConfiguration) {
+					identityProviderConfiguration.destroy();
+				}
+			}
+		}
+
+		final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
+		Logger.debug(this, () -> message);
+		throw new DoesNotExistException(message);
+	}
+
+	@GET
+	@Path("/logout/{idpConfigId}")
+	@NoCache
+	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
+	// Login configuration by id
+	public Response logoutGet(@PathParam("idpConfigId") final String idpConfigId,
+					   @Context final HttpServletRequest httpServletRequest,
+					   @Context final HttpServletResponse httpServletResponse) throws IOException, URISyntaxException {
+
+		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
+
+			final IdentityProviderConfiguration identityProviderConfiguration =
+					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
+			try {
+				// If idpConfig is null, means this site does not need SAML processing
+				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
+
+					Logger.debug(this, () -> "Processing saml logout get request for idpConfig id: " + idpConfigId);
+					final String logoutPath = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
+							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
+							()-> this.buildBaseUrlFromRequest(httpServletRequest));
+
+					return Response.temporaryRedirect(new URI(logoutPath)).build();
 				}
 			} finally {
 				if (null != identityProviderConfiguration) {
@@ -324,7 +363,7 @@ public class DotSamlResource implements Serializable {
 	private String buildBaseUrlFromRequest(final HttpServletRequest httpServletRequest) {
 
 		final String uri = httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":"
-				+ httpServletRequest.getServerPort();
+				+ httpServletRequest.getServerPort() + "/dotAdmin/show-logout";
 
 		return uri;
 	}
