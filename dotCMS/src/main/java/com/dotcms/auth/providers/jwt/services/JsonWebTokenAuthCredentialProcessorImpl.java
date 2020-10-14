@@ -7,6 +7,7 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -62,7 +63,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
             }
 
             try {
-
+                Logger.info(JsonWebTokenAuthCredentialProcessorImpl.class, String.format("Token from remote IP: %s", jsonWebToken.trim()));
                 final Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jsonWebToken.trim(), ipAddress);
 
                 if (rejectIfNotApiToken && token.isPresent() && !(token.get() instanceof ApiToken)) {
@@ -123,7 +124,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
-
+        Logger.info(JsonWebTokenAuthCredentialProcessorImpl.class, String.format("Authentication header: %s", authentication));
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
         final User user = jwToken.isPresent()  && jwToken.get().getActiveUser().isPresent() ?
                 jwToken.get().getActiveUser().get() : null;
