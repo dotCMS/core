@@ -53,12 +53,12 @@ public class MaintenanceResource implements Serializable {
      * @return
      */
     @DELETE
-    @Path("/shutdown")
+    @Path("/_shutdown")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteCustomPortlet(@Context final HttpServletRequest request,
+    public final Response shutdown(@Context final HttpServletRequest request,
                     @Context final HttpServletResponse response) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)

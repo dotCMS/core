@@ -295,7 +295,7 @@ function doShutdownDotcms(){
         return;
     }
 
-    fetch('/api/v1/maintenance/shutdown', {method:'DELETE'} )
+    fetch('/api/v1/maintenance/_shutdown', {method:'DELETE'} )
     .then(response => response.json())
     .then(()=>alert('shutdown started'));
 
