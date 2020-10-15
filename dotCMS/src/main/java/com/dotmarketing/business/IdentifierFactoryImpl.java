@@ -10,7 +10,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -32,6 +31,7 @@ import java.io.StringWriter;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -338,8 +338,18 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		identifier.setHostId(site.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
 
-        final Inode inode = InodeFactory.getInode(versionable.getInode(), Inode.class);
-        identifier.setCreateDate(inode.getIDate());
+        final Inode inode;
+        try {
+            if (versionable.getInode() != null) {
+                inode = InodeUtils.getInode(versionable.getInode());
+                identifier.setCreateDate(inode.getIDate());
+            } else {
+                identifier.setCreateDate(new Date());
+            }
+        } catch (DotSecurityException e) {
+            throw new DotStateException(e.getMessage(), e);
+        }
+
 
 		saveIdentifier(identifier);
 
@@ -406,8 +416,17 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         }
         identifier.setHostId( site != null ? site.getIdentifier() : null );
 
-        final Inode inode = InodeFactory.getInode(versionable.getInode(), Inode.class);
-        identifier.setCreateDate(inode.getIDate());
+        final Inode inode;
+        try {
+            if (versionable.getInode() != null) {
+                inode = InodeUtils.getInode(versionable.getInode());
+                identifier.setCreateDate(inode.getIDate());
+            } else {
+                identifier.setCreateDate(new Date());
+            }
+        } catch (DotSecurityException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
 
         saveIdentifier( identifier );
 
