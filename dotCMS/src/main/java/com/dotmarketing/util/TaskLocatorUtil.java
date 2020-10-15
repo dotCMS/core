@@ -288,6 +288,7 @@ public class TaskLocatorUtil {
     	.add(Task05390MakeRoomForLongerJobDetail.class)
 		.add(Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables.class)
         .add(Task201013AddNewColumnsToIdentifierTable.class)
+        .add(Task201014UpdateColumnsValuesInIdentifierTable.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
