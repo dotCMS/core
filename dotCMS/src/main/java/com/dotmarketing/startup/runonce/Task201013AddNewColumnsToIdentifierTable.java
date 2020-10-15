@@ -25,14 +25,17 @@ public class Task201013AddNewColumnsToIdentifierTable extends AbstractJDBCStartu
     public String getPostgresScript() {
         return "alter table identifier add owner varchar(255);" +
                 "alter table identifier add create_date timestamp;" +
-                "alter table identifier add asset_subtype varchar(255);";
+                "alter table identifier add asset_subtype varchar(255);" +
+                "create index idx_identifier_asset_subtype on identifier (asset_subtype);";
+
     }
 
     @Override
     public String getMySQLScript() {
         return "alter table identifier add owner varchar(255);" +
                 "alter table identifier add create_date datetime;" +
-                "alter table identifier add asset_subtype varchar(255);";
+                "alter table identifier add asset_subtype varchar(255);" +
+                "create index idx_identifier_asset_subtype on identifier (asset_subtype);";
 
     }
 
@@ -40,14 +43,16 @@ public class Task201013AddNewColumnsToIdentifierTable extends AbstractJDBCStartu
     public String getOracleScript() {
         return "alter table identifier add owner varchar2(255);" +
                 "alter table identifier add create_date date;" +
-                "alter table identifier add asset_subtype varchar2(255);";
+                "alter table identifier add asset_subtype varchar2(255);" +
+                "create index idx_identifier_asset_subtype on identifier (asset_subtype);";
     }
 
     @Override
     public String getMSSQLScript() {
         return  "alter table identifier add owner NVARCHAR(255);" +
                 "alter table identifier add create_date datetime;" +
-                "alter table identifier add asset_subtype NVARCHAR(255);";
+                "alter table identifier add asset_subtype NVARCHAR(255);" +
+                "create index idx_identifier_asset_subtype on identifier (asset_subtype);";
     }
 
     @Override
