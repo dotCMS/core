@@ -1708,7 +1708,7 @@
 											"formdata": []
 										},
 										"url": {
-											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey=123&enabled=on",
+											"raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey={{token}}&enabled=on",
 											"host": [
 												"{{serverURL}}"
 											],
@@ -1745,45 +1745,12 @@
 												},
 												{
 													"key": "authKey",
-													"value": "123"
+													"value": "{{token}}"
 												},
 												{
 													"key": "enabled",
 													"value": "on"
 												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "logout",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"id": "263e210e-6629-4e7f-bceb-c52f504e6f2c",
-												"exec": [
-													"pm.test(\"Status code is 200\", function () {",
-													"    pm.response.to.have.status(200);",
-													"});"
-												],
-												"type": "text/javascript"
-											}
-										}
-									],
-									"request": {
-										"method": "GET",
-										"header": [],
-										"url": {
-											"raw": "{{serverURL}}/api/v1/logout",
-											"host": [
-												"{{serverURL}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"logout"
 											]
 										}
 									},
