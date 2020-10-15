@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
@@ -18,8 +19,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -177,7 +184,9 @@ public class ContainerStructureFinderStrategyResolver {
 
                 return Collections.emptyList();
             }
+            // todo: probably a good idea to include into the cache
 
+            final Set<String> contentTypesIncludedSet = new HashSet<>();
             final ImmutableList.Builder<ContainerStructure> builder =
                     new ImmutableList.Builder<>();
             final List<FileAsset> assets =
@@ -198,11 +207,12 @@ public class ContainerStructureFinderStrategyResolver {
                                     new ContainerStructure();
 
                             containerStructure.setContainerId(container.getIdentifier());
-                            containerStructure.setContainerInode(asset.getInode());
+                            containerStructure.setContainerInode(container.getInode());
                             containerStructure.setId(asset.getIdentifier());
                             containerStructure.setCode(wrapIntoDotParseDirective(asset));
                             containerStructure.setStructureId(contentType.get().id());
                             builder.add(containerStructure);
+                            contentTypesIncludedSet.add(velocityVarName);
                         }
                     } else {
 
@@ -214,7 +224,70 @@ public class ContainerStructureFinderStrategyResolver {
                 }
             }
 
+            this.processDefaultContainerLayout (FileAssetContainer.class.cast(container),
+                    builder, contentTypesIncludedSet);
+
+            // todo: add to cache
+
             return builder.build();
+        }
+
+        /*
+         * If the  fileAssetContainer has an "useDefaultLayout" will recovery all the non-already included
+         * content types and add them as a container structures with the default_container_layout.vtl as a view
+         * @param cast
+         * @param builder
+         * @param contentTypesIncludedSet
+         */
+        private void processDefaultContainerLayout(final FileAssetContainer fileAssetContainer,
+                                                   final ImmutableList.Builder<ContainerStructure> builder,
+                                                   final Set<String> contentTypesIncludedSet) {
+
+            final Map<String, Object> metaDataMap = fileAssetContainer.getMetaDataMap();
+            if (UtilMethods.isSet(metaDataMap) && metaDataMap.containsKey("useDefaultLayout")
+                                    && null != metaDataMap.get("useDefaultLayout")
+                                    && this.isValidFileAsset(fileAssetContainer.getDefaultContainerLayoutAsset())) {
+
+                final String useDefaultLayout = metaDataMap.get("useDefaultLayout").toString().trim();
+                final String code = this.wrapIntoDotParseDirective(fileAssetContainer.getDefaultContainerLayoutAsset());
+
+                if (StringPool.STAR.equals(useDefaultLayout)) {
+
+                    final List<ContentType> contentTypes =
+                            Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
+                                    .findAll()).getOrElse(Collections.emptyList());
+                    for (final ContentType contentType : contentTypes) {
+
+                        if (!contentTypesIncludedSet.contains(contentType.variable().trim())) {
+
+                            this.addContainerStructure(builder, fileAssetContainer, code, contentType);
+                        }
+                    }
+                } else {
+
+                    for (final String contentTypeVariable : useDefaultLayout.split(StringPool.COMMA)) {
+
+                        if (!contentTypesIncludedSet.contains(contentTypeVariable.trim())) {
+
+                            final Optional<ContentType> contentType = this.findContentTypeByVelocityVarName(contentTypeVariable.trim());
+                            contentType.ifPresent(ct -> this.addContainerStructure(builder, fileAssetContainer, code, ct));
+                        }
+                    }
+                }
+            }
+        }
+
+        private void addContainerStructure (final ImmutableList.Builder<ContainerStructure> builder,
+                                            final FileAssetContainer fileAssetContainer,
+                                            final String code, final ContentType contentType) {
+
+            final ContainerStructure containerStructure = new ContainerStructure();
+            containerStructure.setContainerId(fileAssetContainer.getIdentifier());
+            containerStructure.setContainerInode(fileAssetContainer.getInode());
+            containerStructure.setId(UUIDUtil.uuid());
+            containerStructure.setCode(code);
+            containerStructure.setStructureId(contentType.id());
+            builder.add(containerStructure);
         }
 
         private boolean isValidFileAsset(final FileAsset asset) {
