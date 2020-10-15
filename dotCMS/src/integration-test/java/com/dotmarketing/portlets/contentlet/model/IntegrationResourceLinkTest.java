@@ -15,7 +15,6 @@ import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuilder;
@@ -89,7 +88,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         final Host host = APILocator.systemHost();
         final String mimeType = "text/plain";
         final boolean isSecure = false;
-        final File file = FileUtil.createTemporalFile("comments-list", "txt", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile("comments-list", "txt", "This is a test temporal file");
         final String htmlFileName = file.getName();
         final User adminUser = TestUserUtils.getAdminUser();
 
@@ -139,7 +138,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
 
         final Host host = APILocator.systemHost();
         final boolean isSecure = false;
-        final File file = FileUtil.createTemporalFile("comments-list", ".vtl", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile("comments-list", ".vtl", "This is a test temporal file");
         final String htmlFileName = file.getName();
 
         final User limitedUser = mockLimitedUser();
@@ -179,7 +178,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
 
         final Host host = APILocator.systemHost();
         final boolean isSecure = false;
-        final File file = FileUtil.createTemporalFile("comments-list", "txt", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile("comments-list", "txt", "This is a test temporal file");
         final User adminUser = mockLimitedUser();
 
         final Tuple2<Field, ContentType> fieldDotTextAssetContentType = this.createDotAssetContentType(host,

@@ -1,12 +1,8 @@
 package com.dotmarketing.util;
 
 import com.dotcms.util.CloseUtils;
-import com.dotmarketing.business.APILocator;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
-import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.BufferedInputStream;
@@ -39,21 +35,42 @@ public class FileUtil {
 	 * @return File
 	 * @throws IOException
 	 */
-	public static File createTemporalFile (final String prefix) throws IOException {
-
-		return createTemporalFile(prefix, null);
+	public static File createTemporaryFile(final String prefix) throws IOException {
+		return createTemporaryFile(prefix, null);
 	}
 
 	/**
-	 * Creates a temporal file with unique name
+	 * Creates a temporary file with unique name
 	 * @param prefix String name
 	 * @param extension String optional extension, if null "tmp" will be use
 	 * @return File
 	 * @throws IOException
 	 */
-	public static File createTemporalFile (final String prefix, final String extension) throws IOException {
+	public static File createTemporaryFile(final String prefix, final String extension) throws IOException {
+		return createTemporaryFile(prefix, extension, false);
+	}
 
-		return File.createTempFile(prefix + System.currentTimeMillis(), UtilMethods.isSet(extension)?extension:"tmp");
+	/**
+	 * Creates a temporary file with unique name
+	 * @param prefix String name
+	 * @param extension String optional extension, if null "tmp" will be use
+	 * @param useDotGeneratedPath the file will be written under dotGeneratedPath
+	 * @return File
+	 * @throws IOException
+	 */
+	public static File createTemporaryFile(final String prefix, final String extension,
+			final boolean useDotGeneratedPath) throws IOException {
+		if (useDotGeneratedPath) {
+			final String dotGeneratedPath = ConfigUtils.getDotGeneratedPath();
+			final File dotGeneratedDir = Paths.get(dotGeneratedPath).normalize().toFile();
+			if (!dotGeneratedDir.exists()) {
+				dotGeneratedDir.mkdir();
+			}
+			return File.createTempFile(prefix + System.currentTimeMillis(),
+					UtilMethods.isSet(extension) ? extension : "tmp", dotGeneratedDir);
+		}
+		return File.createTempFile(prefix + System.currentTimeMillis(),
+				UtilMethods.isSet(extension) ? extension : "tmp");
 	}
 
 	/**
@@ -66,9 +83,9 @@ public class FileUtil {
 	 * @return File
 	 * @throws IOException
 	 */
-	public static File createTemporalFile (final String prefix, final String extension, final String initialContent) throws IOException {
+	public static File createTemporaryFile(final String prefix, final String extension, final String initialContent) throws IOException {
 
-		final File file = createTemporalFile(prefix, extension);
+		final File file = createTemporaryFile(prefix, extension);
 		try (final FileWriter fileWriter = new FileWriter(file)) {
 
 			fileWriter.write(initialContent);
@@ -281,39 +298,6 @@ public class FileUtil {
 		return sha256Builder.buildUnixHash();
 	} // sha256toUnixHash.
 
-	/**
-	 * Given an absolute path this will figure out if it exists under the real assets and return the relative piece
-	 * @param file
-	 * @return
-	 */
-	@VisibleForTesting
-	static Optional<String> getRealAssetsPathRelativePiece(final File file,
-			final Supplier<String> realAssetsRootPathSupplier) {
-		final String absolutePathLC = file.getAbsolutePath().toLowerCase();
-		final String realAssetsRootPath = realAssetsRootPathSupplier.get();
-		if (absolutePathLC.startsWith(realAssetsRootPath.toLowerCase())) {
-			try {
-				return Optional
-						.of(file.getAbsolutePath().substring(realAssetsRootPath.length() - 1));
-			} catch (StringIndexOutOfBoundsException e) {
-				Logger.error(FileUtil.class, String.format(
-						"Error extracting realAsset Path from absolute path `%s` , `%s` ",
-						file.getAbsolutePath(), realAssetsRootPath), e);
-			}
-		}
-		return Optional.empty();
-	}
-
-	/**
-	 * Default realAssets path is provided here
-	 * @param file
-	 * @return
-	 */
-	public static Optional <String> getRealAssetsPathRelativePiece(final File file) {
-		final String realAssetsRootPath = APILocator.getFileAssetAPI().getRealAssetsRootPath()
-				.toLowerCase();
-		return getRealAssetsPathRelativePiece(file, ()->realAssetsRootPath);
-	}
 }
 
 final class PNGFileNameFilter implements FilenameFilter {

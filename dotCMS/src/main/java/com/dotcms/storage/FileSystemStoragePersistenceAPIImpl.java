@@ -32,6 +32,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     private static final String DEFAULT_ROOT = "root";
     private static final String THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED = "The bucketName: `%s`, does not have any files mapped";
+    private static final String STORAGE_POOL = "StoragePool";
 
     private final Map<String, File> groups = new ConcurrentHashMap<>();
 
@@ -166,7 +167,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     public Object pushFile(final String groupName,
             final String path,
             final File file,
-            final Map<String, Object> extraMeta) {
+            final Map<String, Serializable> extraMeta) {
 
         if (!this.existsGroup(groupName)) {
 
@@ -209,7 +210,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public Object pushObject(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate,
-            final Serializable object, final Map<String, Object> extraMeta) {
+            final Serializable object, final Map<String, Serializable> extraMeta) {
 
         if (!this.existsGroup(groupName)) {
 
@@ -235,8 +236,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     outputStream.flush();
                 }
             } catch (IOException e) {
-
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
                 throw new DotRuntimeException(e);
             }
         } else {
@@ -269,8 +269,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      */
     @Override
     public Future<Object> pushFileAsync(final String groupName, final String path,
-            final File file, final Map<String, Object> extraMeta) {
-        return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
+            final File file, final Map<String, Serializable> extraMeta) {
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 () -> this.pushFile(groupName, path, file, extraMeta)
         );
     }
@@ -287,9 +287,9 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public Future<Object> pushObjectAsync(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate, final Serializable object,
-            final Map<String, Object> extraMeta) {
+            final Map<String, Serializable> extraMeta) {
 
-        return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 () -> this.pushObject(groupName, path, writerDelegate, object, extraMeta)
         );
     }
@@ -389,7 +389,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public Future<File> pullFileAsync(final String groupName, final String path) {
 
-        return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 () -> this.pullFile(groupName, path)
         );
     }
@@ -405,7 +405,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     public Future<Object> pullObjectAsync(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) {
 
-        return DotConcurrentFactory.getInstance().getSubmitter("StoragePool").submit(
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 () -> this.pullObject(groupName, path, readerDelegate)
         );
     }

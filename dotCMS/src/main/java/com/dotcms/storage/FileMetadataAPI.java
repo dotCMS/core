@@ -1,9 +1,11 @@
 package com.dotcms.storage;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,7 +14,7 @@ import java.util.Set;
  * is being done by the {@link FileStorageAPI}
  * @author jsanca
  */
-public interface ContentletMetadataAPI {
+public interface FileMetadataAPI {
 
     /**
      * Returns the full and basic metadata for the binaries passed in the parameters.
@@ -25,7 +27,8 @@ public interface ContentletMetadataAPI {
      * @param fullBinaryFieldNameSet  {@link Set} fields to generate full metadata
      * @return ContentletMetadata
      */
-    ContentletMetadata  generateContentletMetadata (Contentlet contentlet, Set<String> basicBinaryFieldNameSet, Set<String> fullBinaryFieldNameSet) throws IOException;
+    ContentletMetadata  generateContentletMetadata (Contentlet contentlet, Set<String> basicBinaryFieldNameSet, Set<String> fullBinaryFieldNameSet)
+            throws IOException, DotDataException;
 
     /**
      * This generation use an strategy to make the choice of which binary fields will generates the full or basic metadata.
@@ -33,7 +36,8 @@ public interface ContentletMetadataAPI {
      * @param contentlet {@link Contentlet}
      * @return ContentletMetadata
      */
-    ContentletMetadata  generateContentletMetadata (Contentlet contentlet) throws IOException;
+    ContentletMetadata  generateContentletMetadata (Contentlet contentlet)
+            throws IOException, DotDataException;
 
     /**
      * Retrieves the metadata for the contentlet
@@ -41,7 +45,7 @@ public interface ContentletMetadataAPI {
      * @param field       {@link Field}
      * @return Map
      */
-    Map<String, Object> getMetadata(Contentlet contentlet, Field field);
+    Map<String, Serializable> getMetadata(Contentlet contentlet, Field field) throws DotDataException;
 
 
     /**
@@ -50,7 +54,8 @@ public interface ContentletMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return Map
      */
-    Map<String, Object> getMetadata(Contentlet contentlet, String fieldVariableName);
+    Map<String, Serializable> getMetadata(Contentlet contentlet, String fieldVariableName)
+            throws DotDataException;
 
     /**
      * Retrieves the metadata for the contentlet
@@ -58,5 +63,6 @@ public interface ContentletMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return Map
      */
-    Map<String, Object> getMetadataNoCache(Contentlet contentlet, String fieldVariableName);
+    Map<String, Serializable> getMetadataNoCache(Contentlet contentlet, String fieldVariableName)
+            throws DotDataException;
 }

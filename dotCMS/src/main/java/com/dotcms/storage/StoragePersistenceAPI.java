@@ -1,5 +1,6 @@
 package com.dotcms.storage;
 
+import com.dotmarketing.exception.DotDataException;
 import java.io.File;
 import java.io.Serializable;
 import java.util.List;
@@ -23,7 +24,7 @@ public interface StoragePersistenceAPI {
      * @param groupName {@link String} group name
      * @return boolean
      */
-    boolean existsGroup(final String groupName);
+    boolean existsGroup(final String groupName) throws DotDataException;
 
     /**
      * Returns true if the object on the path exists
@@ -31,14 +32,14 @@ public interface StoragePersistenceAPI {
      * @param objectPath {@link String}
      * @return boolean
      */
-    boolean existsObject(String groupName, String objectPath);
+    boolean existsObject(String groupName, String objectPath) throws DotDataException;
 
     /**
      * Creates the group, returns true if ok
      * @param groupName {@link String} group name
      * @return boolean, true if ok
      */
-    boolean createGroup(final String groupName);
+    boolean createGroup(final String groupName) throws DotDataException;
 
     /**
      * Creates the group, returns true if ok
@@ -46,14 +47,15 @@ public interface StoragePersistenceAPI {
      * @param extraOptions {@link Map} depending on the implementation it might need extra options or not.
      * @return boolean, true if ok
      */
-    boolean createGroup(final String groupName, final Map<String, Object> extraOptions);
+    boolean createGroup(final String groupName, final Map<String, Object> extraOptions)
+            throws DotDataException;
 
     /**
      * Deletes the group
      * @param groupName {@link String} group name
      * @return int number of storages deleted
      */
-    int deleteGroup(final String groupName);
+    int deleteGroup(final String groupName) throws DotDataException;
 
     /**
      * Deletes the object path on the group
@@ -61,13 +63,13 @@ public interface StoragePersistenceAPI {
      * @param path   {   @link String} object path
      * @return boolean true if deletes was ok.
      */
-    boolean deleteObject(String groupName, String path);
+    boolean deleteObject(String groupName, String path) throws DotDataException;
 
     /**
      * List the groups, the returns a list of object since the return would depend on the implementation.
      * @return List
      */
-    List<String> listGroups();
+    List<String> listGroups() throws DotDataException;
 
     /**
      * Push a file to the storage, it will block until the operation is done
@@ -77,7 +79,8 @@ public interface StoragePersistenceAPI {
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
-    Object pushFile(final String groupName, final String path, final File file, final Map<String, Object> extraMeta);
+    Object pushFile(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta)
+            throws DotDataException;
 
     /**
      * Push an object to the storage, uses a delegate to write the actual object to their own outputstream, it will block until the operation is done
@@ -88,7 +91,8 @@ public interface StoragePersistenceAPI {
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
-    Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate, final Serializable object, final Map<String, Object> extraMeta);
+    Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate, final Serializable object, final Map<String, Serializable> extraMeta)
+            throws DotDataException;
 
     /**
      * Push a file to the storage, it will block until the operation is done
@@ -98,7 +102,7 @@ public interface StoragePersistenceAPI {
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
-    Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Object> extraMeta);
+    Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta);
 
     /**
      * Push a stream to the storage, it will block until the operation is done
@@ -109,7 +113,7 @@ public interface StoragePersistenceAPI {
      * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
      * @return Object, returns an object since the result will depend
      */
-    Future<Object> pushObjectAsync(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate, final Serializable object, final Map<String, Object> extraMeta);
+    Future<Object> pushObjectAsync(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate, final Serializable object, final Map<String, Serializable> extraMeta);
 
     /**
      * Returns a local with the path contains on the storage, keep in mind that depending on the implementation it could be the actual file
@@ -119,7 +123,7 @@ public interface StoragePersistenceAPI {
      * @param path {@link String}
      * @return File
      */
-    File pullFile (final String groupName, final String path);
+    File pullFile (final String groupName, final String path) throws DotDataException;
 
     /**
      * Pull a stream from the storage and read as an object
@@ -128,7 +132,8 @@ public interface StoragePersistenceAPI {
      * @param path {@link String} path to pull the file
      * @param readerDelegate {@link ObjectReaderDelegate} to reads the object
      */
-    Object pullObject (final String groupName, final String path, final ObjectReaderDelegate readerDelegate);
+    Object pullObject (final String groupName, final String path, final ObjectReaderDelegate readerDelegate)
+            throws DotDataException;
 
     /**
      * Returns a local with the path contains on the storage, keep in mind that depending on the implementation it could be the actual file

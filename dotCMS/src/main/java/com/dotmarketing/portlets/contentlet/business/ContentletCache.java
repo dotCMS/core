@@ -5,6 +5,7 @@ import com.dotmarketing.business.Cachable;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.google.common.collect.ImmutableMap;
 
+import java.io.Serializable;
 import java.util.Map;
 
 //This interface should have default package access
@@ -33,14 +34,14 @@ public abstract class ContentletCache implements Cachable {
      * @param key {@link String}
      * @param metadataMap {@link Map}
      */
-    public abstract void addMetadataMap(String key, Map<String, Object> metadataMap);
+    public abstract void addMetadataMap(String key, Map<String, Serializable> metadataMap);
 
     /**
      * Gets the metadata as a map
      * @param key {@link String}
      * @return Map
      */
-    public abstract Map<String, Object> getMetadataMap(String key);
+    public abstract Map<String, Serializable> getMetadataMap(String key);
 
 	public abstract void addMetadata(String key, Contentlet content);
 	

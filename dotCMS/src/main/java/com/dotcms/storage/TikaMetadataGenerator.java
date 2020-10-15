@@ -3,9 +3,14 @@ package com.dotcms.storage;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
 import java.io.File;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Tika based metadata generator.
@@ -19,14 +24,19 @@ class TikaMetadataGenerator implements MetadataGenerator {
      * @return
      */
     @Override
-    public Map<String, Object> generate(final File binary, final long maxLength) {
+    public Map<String, Serializable> generate(final File binary, final long maxLength) {
         try {
             final TikaUtils tikaUtils = new TikaUtils();
-            return tikaUtils.getForcedMetaDataMap(binary,(int) maxLength);
-        } catch (DotDataException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            final Map<String, Object> metaDataMap = tikaUtils
+                    .getForcedMetaDataMap(binary, (int) maxLength);
+            return metaDataMap.entrySet().stream()
+                    .filter(entry -> entry.getValue() instanceof Serializable).
+                            collect(Collectors.toMap(Entry::getKey,
+                                    e -> (Serializable) e.getValue()));
+        } catch (DotDataException e) {
+            Logger.error(TikaMetadataGenerator.class, e.getMessage(), e);
         }
-        return Collections.emptyMap();
+        return ImmutableMap.of();
     }
 }

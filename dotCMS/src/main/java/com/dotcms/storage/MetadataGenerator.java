@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -15,5 +16,5 @@ public interface MetadataGenerator {
      * @param maxLength  {@link Long} max length to parse the content
      * @return Map
      */
-    Map<String, Object> generate(File binary, long maxLength);
+    Map<String, Serializable> generate(File binary, long maxLength);
 }

@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -35,7 +36,7 @@ public class ContentletCacheImpl extends ContentletCache {
 	private String metadataGroup = "FileAssetMetadataCache";
 	private String translatedQueryGroup = "TranslatedQueryCache";
 	// region's name for the cache
-	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup,translatedQueryGroup};
+	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup, translatedQueryGroup};
 
 	public ContentletCacheImpl() {
 		cache = CacheLocator.getCacheAdministrator();
@@ -61,21 +62,16 @@ public class ContentletCacheImpl extends ContentletCache {
 		}
 	}
 
-	public void addMetadataMap(final String key, final Map<String, Object> metadataMap) {
-
-		cache.put(META_DATA_MAP_KEY + key, UtilMethods.isSet(metadataMap)?
+	@Override
+	public void addMetadataMap(final String key, final Map<String, Serializable> metadataMap) {
+		cache.put(key, UtilMethods.isSet(metadataMap)?
 				metadataMap:EMPTY_METADATA_MAP, metadataGroup);
 	}
 
-	public  Map<String, Object> getMetadataMap(final String key) {
-
-		Map<String, Object>  metadata = null;
-		try {
-			metadata=(Map<String, Object> )cache.get(META_DATA_MAP_KEY + key, metadataGroup);
-		} catch (DotCacheException e) {
-			Logger.debug(this, "Cache Entry not found", e);
-		}
-		return metadata;
+	@Override
+	@SuppressWarnings("unchecked")
+	public Map<String, Serializable> getMetadataMap(final String key) {
+        return (Map<String, Serializable>)cache.getNoThrow(key, metadataGroup);
 	}
 
 	@Override

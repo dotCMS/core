@@ -31,7 +31,7 @@ import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
-import com.dotcms.storage.ContentletMetadataAPITest;
+import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
@@ -57,8 +57,6 @@ import com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsoluteTe
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
-import com.dotmarketing.startup.runonce.*;
-import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
@@ -334,7 +332,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderFactoryImplTest.class,
         IntegrityDataGenerationJobTest.class,
         StoragePersistenceAPITest.class,
-        ContentletMetadataAPITest.class
+        FileMetadataAPITest.class
 })
 public class MainSuite {
 

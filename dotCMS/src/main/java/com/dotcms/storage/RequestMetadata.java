@@ -1,5 +1,7 @@
 package com.dotcms.storage;
 
+import com.dotmarketing.util.UtilMethods;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,14 +32,13 @@ public class RequestMetadata {
      * In case the metadata is retrieved from the storage instead of the cache,
      * you can wrap the metadata recovery from the storage in order to add, mod or remove values
      */
-    private final Function<Map<String, Object>, Map<String, Object>> wrapMetadataMapForCache;
+    private final Function<Map<String, Serializable>, Map<String, Serializable>> wrapMetadataMapForCache;
 
     /**
      * Builder based constructor
      * @param builder
      */
     private RequestMetadata(final Builder builder) {
-
         this.cache                   = builder.cache;
         this.cacheKeySupplier        = builder.cacheKeySupplier;
         this.storageKey              = builder.storageKey;
@@ -60,7 +61,7 @@ public class RequestMetadata {
         return cacheKeySupplier;
     }
 
-    public Function<Map<String, Object>, Map<String, Object>> getWrapMetadataMapForCache() {
+    public Function<Map<String, Serializable>, Map<String, Serializable>> getWrapMetadataMapForCache() {
         return wrapMetadataMapForCache;
     }
 
@@ -88,7 +89,7 @@ public class RequestMetadata {
          * In case the metadata is retrieved from the storage instead of the cache,
          * you can wrap the metadata recovery from the storage in order to add, mod or remove values
          */
-        private Function<Map<String, Object>, Map<String, Object>> wrapMetadataMapForCache = map-> map;
+        private Function<Map<String, Serializable>, Map<String, Serializable>> wrapMetadataMapForCache = map-> map;
 
         public Builder cache(final boolean cache) {
 
@@ -109,7 +110,7 @@ public class RequestMetadata {
             return this;
         }
 
-        public Builder wrapMetadataMapForCache(final Function<Map<String, Object>, Map<String, Object>> wrapMetadataMapForCache) {
+        public Builder wrapMetadataMapForCache(final Function<Map<String, Serializable>, Map<String, Serializable>> wrapMetadataMapForCache) {
 
             this.wrapMetadataMapForCache = wrapMetadataMapForCache;
             return this;

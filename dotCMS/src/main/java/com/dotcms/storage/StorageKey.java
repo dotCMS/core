@@ -1,12 +1,14 @@
 package com.dotcms.storage;
 
+import java.io.Serializable;
+
 /**
  * Encapsulates a storage key, it has the key (for instance the path)
  * the group (for instance the bucket, folder, space, etc)
  * Storage {@link StorageType}
  * @author jsanca
  */
-public class StorageKey {
+public class StorageKey implements Serializable {
 
     //Key components
     private final String path;

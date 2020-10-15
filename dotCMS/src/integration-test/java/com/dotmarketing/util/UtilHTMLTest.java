@@ -220,7 +220,7 @@ public class UtilHTMLTest {
         final Contentlet contentlet = mock(Contentlet.class);
         final ContentType type      = mock(ContentType.class);
         final BaseContentType any   = BaseContentType.DOTASSET;
-        File txtFile                = FileUtil.createTemporalFile("testtxt", ".txt");
+        File txtFile                = FileUtil.createTemporaryFile("testtxt", ".txt");
         when(contentlet.getContentType()).thenReturn(type);
         when(contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR)).thenReturn(txtFile);
         when(type.baseType()).thenReturn(any);

@@ -1,5 +1,6 @@
 package com.dotcms.storage;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 
@@ -15,5 +16,5 @@ public interface ObjectWriterDelegate {
      * @param stream {@link OutputStream}
      * @param object {@link Serializable}
      */
-    void write(final OutputStream stream, Serializable object);
+    void write(final OutputStream stream, Serializable object) throws IOException;
 }

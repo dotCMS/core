@@ -67,7 +67,6 @@ public class DotConnect {
 
     private static Map<Class, StatementObjectSetter> statementSetterHandlerMap =
             map(DotTimezonedTimestamp.class, DotConnect::setTimestampWithTimezone);
-    private int fetchSize = -1;
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
@@ -606,11 +605,6 @@ public class DotConnect {
                 }
 
                 // statement.setMaxRows(maxRows);
-                if (this.fetchSize > 0) {
-
-                    statement.setFetchSize(this.fetchSize);
-                }
-
                 Logger.debug(this, "SQL = " + statement.toString());
                 for (int i = 0; i < paramList.size(); i++) {
                     Object param = paramList.get(i);
@@ -1257,14 +1251,4 @@ public class DotConnect {
         }
     }
 
-    /**
-     *  Number of rows to return, if zero is being ignore.
-     *  for instance, if using a forward cursor to fetch heavy rows, you can set to 1 (it will be slower but memory resources will be happy)
-     *  The behaviour will depend on the driver
-     * */
-    public DotConnect setFetchSize(final int fetchSize) {
-
-        this.fetchSize = fetchSize;
-        return this;
-    }
 }

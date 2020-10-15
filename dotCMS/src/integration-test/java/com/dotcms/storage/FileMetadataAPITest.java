@@ -1,6 +1,11 @@
 package com.dotcms.storage;
 
-import static com.dotcms.datagen.TestDataUtils.*;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_3;
+import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
+import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
+import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -9,10 +14,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
@@ -23,6 +28,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.io.FilenameUtils;
@@ -31,10 +37,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
-public class ContentletMetadataAPITest {
+public class FileMetadataAPITest {
 
-    public static final String FILE_ASSET = "fileAsset";
-    private static ContentletMetadataAPI contentletMetadataAPI;
+    private static final String FILE_ASSET = "fileAsset";
+    private static FileMetadataAPI contentletMetadataAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -43,13 +49,14 @@ public class ContentletMetadataAPITest {
     }
 
     /**
+     * This test evaluates both basic vs full MD
      * Given scenarios: We're testing metadata api against different types of asset-files
      * Expected Results: we should get full and basic md for every type. Basic metadata must be included within the fm
      * @throws IOException
      */
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
-    public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws IOException {
+    public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws IOException, DotDataException {
 
         final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         try {
@@ -133,7 +140,7 @@ public class ContentletMetadataAPITest {
      * @param metaData
      * @param testFile
      */
-    private void validateFull(final Map<String, Object> metaData, final TestFile testFile){
+    private void validateFull(final Map<String, Serializable> metaData, final TestFile testFile){
         assertTrue(metaData.containsKey("content"));
         assertTrue(metaData.containsKey("contentType"));
         assertTrue(metaData.containsKey("fileSize"));
@@ -149,7 +156,7 @@ public class ContentletMetadataAPITest {
      * validate basic layout expected in the basic md for File-Asset
      * @param metaData
      */
-    private void validateBasic(final Map<String, Object> metaData){
+    private void validateBasic(final Map<String, Serializable> metaData){
         basicMetadataFields.forEach(key -> {
             assertTrue(metaData.containsKey(key));
         });
@@ -162,7 +169,7 @@ public class ContentletMetadataAPITest {
      * But nothing else if there are additional values we fail!!
      * @param metaData
      */
-    private void validateBasicStrict(final Map<String, Object> metaData){
+    private void validateBasicStrict(final Map<String, Serializable> metaData){
         validateBasic(metaData);
         assertEquals("we're expecting exactly 5 entries.",5,metaData.size());
     }
@@ -188,7 +195,7 @@ public class ContentletMetadataAPITest {
      */
     @Test
     @UseDataProvider("getStorageType")
-    public void Test_Generate_Metadata_From_ContentType_With_Multiple_Binary_Fields(final StorageType storageType) throws IOException {
+    public void Test_Generate_Metadata_From_ContentType_With_Multiple_Binary_Fields(final StorageType storageType) throws IOException, DotDataException {
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         try {
@@ -202,27 +209,27 @@ public class ContentletMetadataAPITest {
                     .generateContentletMetadata(multipleBinariesContent);
             assertNotNull(multiBinaryMetadata);
 
-            final Map<String, Map<String, Object>> fullMetadataMap = multiBinaryMetadata
+            final Map<String, Map<String, Serializable>> fullMetadataMap = multiBinaryMetadata
                     .getFullMetadataMap();
             assertNotNull(fullMetadataMap);
 
-            final Map<String, Map<String, Object>> basicMetadataMap = multiBinaryMetadata
+            final Map<String, Map<String, Serializable>> basicMetadataMap = multiBinaryMetadata
                     .getBasicMetadataMap();
             assertNotNull(basicMetadataMap);
 
             //the filed is set as the first one according to the sortOrder prop. This is the only that has to have full metadata
-            final Map<String, Object> fileAsset2FullMeta = fullMetadataMap.get(FILE_ASSET_2);
+            final Map<String, Serializable> fileAsset2FullMeta = fullMetadataMap.get(FILE_ASSET_2);
             assertNotNull(fileAsset2FullMeta);
 
             //These are all the non-null binaries
-            final Map<String, Object> fileAsset1BasicMeta = basicMetadataMap.get(FILE_ASSET_1);
+            final Map<String, Serializable> fileAsset1BasicMeta = basicMetadataMap.get(FILE_ASSET_1);
             assertNotNull(fileAsset1BasicMeta);
 
-            final Map<String, Object> fileAsset2BasicMeta = basicMetadataMap.get(FILE_ASSET_2);
+            final Map<String, Serializable> fileAsset2BasicMeta = basicMetadataMap.get(FILE_ASSET_2);
             assertNotNull(fileAsset2BasicMeta);
 
             //the filed does exist but it was not set
-            final Map<String, Object> fileAsset3BasicMeta = basicMetadataMap.get(FILE_ASSET_3);
+            final Map<String, Serializable> fileAsset3BasicMeta = basicMetadataMap.get(FILE_ASSET_3);
             assertNull(fileAsset3BasicMeta);
         }finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
@@ -230,7 +237,7 @@ public class ContentletMetadataAPITest {
     }
 
     /**
-     * Method to test: {@link ContentletMetadataAPIImpl#findBinaryFields(Contentlet)}
+     * Method to test: {@link FileMetadataAPIImpl#findBinaryFields(Contentlet)}
      * Given scenario: We have an instance of a content-type that has different fields of type bin
      * Expected Results: After calling findBinaryFields I should get a tuple with one file
      * candidate for the full MD generation and the rest in the second component of the tuple
@@ -240,7 +247,7 @@ public class ContentletMetadataAPITest {
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         final Contentlet multipleBinariesContent = getMultipleBinariesContent(true, langId, null);
 
-        final ContentletMetadataAPIImpl impl = (ContentletMetadataAPIImpl) contentletMetadataAPI;
+        final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) contentletMetadataAPI;
         final Tuple2<Set<String>, Set<String>> binaryFields = impl
                 .findBinaryFields(multipleBinariesContent);
 
@@ -258,7 +265,7 @@ public class ContentletMetadataAPITest {
     }
 
     /**
-     *  Method to test: {@link ContentletMetadataAPIImpl#getMetadataNoCache(Contentlet, String)}
+     *  Method to test: {@link FileMetadataAPIImpl#getMetadataNoCache(Contentlet, String)}
      *  Given scenario: We create a new piece of content then we call getMetadataNoCache. Then we call it again after calling generateContentletMetadata
      *  Expected Result: Until generateContentletMetadata gets called no metadata should be returned
      * @param storageType
@@ -266,7 +273,7 @@ public class ContentletMetadataAPITest {
      */
     @Test
     @UseDataProvider("getStorageType")
-    public void Test_Get_Metadata_No_Cache(final StorageType storageType) throws IOException {
+    public void Test_Get_Metadata_No_Cache(final StorageType storageType) throws IOException, DotDataException {
         final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         try {
             Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
@@ -279,10 +286,10 @@ public class ContentletMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Object> fileAssetMD = contentletMetadataAPI
+            Map<String, Serializable> fileAssetMD = contentletMetadataAPI
                     .getMetadataNoCache(fileAssetContent, fileAssetField);
             //Expect no metadata it hasn't been generated
-            assertTrue(fileAssetMD.isEmpty());
+            assertNull(fileAssetMD);
 
             final ContentletMetadata metadata = contentletMetadataAPI
                     .generateContentletMetadata(fileAssetContent);
@@ -293,7 +300,7 @@ public class ContentletMetadataAPITest {
             assertFalse(fileAssetMD.isEmpty());
 
             //This might seem a little unnecessary but by doing this we verify the fields in the resulting map are the ones allowed to be preset in the metadata generation
-            final ContentletMetadataAPIImpl impl = (ContentletMetadataAPIImpl) contentletMetadataAPI;
+            final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) contentletMetadataAPI;
 
             final Map<String, Field> fieldMap = fileAssetContent.getContentType().fieldMap();
 
@@ -310,7 +317,7 @@ public class ContentletMetadataAPITest {
     }
 
     /**
-     *  Method to test: {@link ContentletMetadataAPIImpl#getMetadata(Contentlet, String)}
+     *  Method to test: {@link FileMetadataAPIImpl#getMetadata(Contentlet, String)}
      *  Given scenario: We create a new piece of content then we call getMetadata. Then we call it again after calling generateContentletMetadata
      *  Expected Result: Until generateContentletMetadata gets called no metadata should be returned
      * @param storageType
@@ -318,7 +325,7 @@ public class ContentletMetadataAPITest {
      */
     @Test
     @UseDataProvider("getStorageType")
-    public void Test_GetMetadata(final StorageType storageType) throws IOException {
+    public void Test_GetMetadata(final StorageType storageType) throws IOException, DotDataException {
         final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         try {
             Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
@@ -331,7 +338,7 @@ public class ContentletMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Object> fileAssetMD = contentletMetadataAPI
+            Map<String, Serializable> fileAssetMD = contentletMetadataAPI
                     .getMetadata(fileAssetContent, fileAssetField);
             //Expect no metadata it has not been generated
             assertNull(fileAssetMD);
@@ -340,13 +347,11 @@ public class ContentletMetadataAPITest {
                     .generateContentletMetadata(fileAssetContent);
             assertNotNull(metadata);
 
-            final Map<String,Object> metadataMap = contentletMetadataAPI
+            final Map<String,Serializable> metadataMap = contentletMetadataAPI
                     .getMetadata(fileAssetContent,fileAssetField);
             assertNotNull(metadataMap);
 
-            assertNotNull(metadataMap.get("author"));
-            assertNotNull(metadataMap.get("content"));
-            assertNotNull(metadataMap.get("fileSize"));
+            assertNotNull(metadataMap.get("contentType"));
             assertNotNull(metadataMap.get("modDate"));
             assertNotNull(metadataMap.get("path"));
             assertNotNull(metadataMap.get("sha256"));

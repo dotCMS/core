@@ -9,6 +9,7 @@ import java.io.Serializable;
 
 /**
  * Simple implementation that basically converts the object into a json
+ *
  * @author jsanca
  */
 public class JsonWriterDelegate implements ObjectWriterDelegate {
@@ -17,15 +18,13 @@ public class JsonWriterDelegate implements ObjectWriterDelegate {
 
     /**
      * Delegate writer
-     * @param out
+     *
      * @param object {@link Serializable}
      */
     @Override
-    public void write(final OutputStream out, final Serializable object) {
-        try {
-            this.objectMapper.writeValue(out, object);
-        } catch (IOException e) {
-            Logger.error(this, e.getMessage(), e);
-        }
+    public void write(final OutputStream out, final Serializable object) throws IOException {
+
+        this.objectMapper.writeValue(out, object);
+
     }
 }

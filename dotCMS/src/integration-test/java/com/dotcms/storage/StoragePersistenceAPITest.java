@@ -12,12 +12,19 @@ import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.storage.StoragePersistenceProvider.INSTANCE;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.util.Encryptor;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.security.NoSuchAlgorithmException;
+import java.util.Random;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,6 +39,8 @@ public class StoragePersistenceAPITest {
     private static final String TEST_IMAGE_JPG = TestFile.JPG.getFilePath();
     private static final String TEST_IMAGE_PNG = TestFile.PNG.getFilePath();
     private static final String TEST_TEXT_PATH = TestFile.TEXT.getFilePath();
+
+    private static final int LARGE_FILE_SIZE = 1024 * 8;
 
     private static final StoragePersistenceProvider persistenceProvider = INSTANCE.get();
 
@@ -78,27 +87,35 @@ public class StoragePersistenceAPITest {
      */
     @Test
     @UseDataProvider("getMixedStorageTestCases")
-    public void Test_DBStorage_Push_File_Then_Recover_Then_Remove_Group(final TestCase testCase) {
+    public void Test_DBStorage_Push_File_Then_Recover_Then_Remove_Group(final TestCase testCase)
+            throws DotDataException {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
         final String groupName = testCase.groupName;
-        assertFalse(storage.existsGroup(groupName));
-        assertTrue(storage.createGroup(groupName));
-        assertTrue(storage.listGroups().contains(groupName));
         final String path = testCase.path;
-        final File pushFile = testCase.file;
-        final Object resultObject = storage.pushFile(groupName, path, pushFile, ImmutableMap.of());
-        assertNotNull(resultObject);
-        assertTrue(storage.existsGroup(groupName));
-        final File pullFile = storage.pullFile(groupName, path);
-        assertTrue(pullFile.exists());
-        assertTrue(pullFile.canRead());
-        assertTrue(pullFile.canWrite());
-        assertNotSame(pushFile, pullFile);
-        assertEquals(pullFile.length(), pushFile.length());
-        final int count = storage.deleteGroup(groupName);
-        assertEquals(1, count);
-        assertFalse(storage.existsGroup(groupName));
-        assertFalse(storage.existsObject(groupName, path));
+
+        try {
+            assertFalse(storage.existsGroup(groupName));
+            assertTrue(storage.createGroup(groupName));
+            assertTrue(storage.listGroups().contains(groupName));
+
+            final File pushFile = testCase.file;
+            final Object resultObject = storage
+                    .pushFile(groupName, path, pushFile, ImmutableMap.of());
+            assertNotNull(resultObject);
+            assertTrue(storage.existsGroup(groupName));
+            final File pullFile = storage.pullFile(groupName, path);
+            assertTrue(pullFile.exists());
+            assertTrue(pullFile.canRead());
+            assertTrue(pullFile.canWrite());
+            assertNotSame(pushFile, pullFile);
+            assertEquals(pullFile.length(), pushFile.length());
+        } finally {
+            final int count = storage.deleteGroup(groupName);
+            assertEquals(1, count);
+            assertFalse(storage.existsGroup(groupName));
+            assertFalse(storage.existsObject(groupName, path));
+        }
+
     }
 
 
@@ -136,7 +153,7 @@ public class StoragePersistenceAPITest {
      */
     @Test
     @UseDataProvider("getGroupNameTestCases")
-    public void Test_Attempt_Create_Dupe_Group(final TestCase testCase) {
+    public void Test_Attempt_Create_Dupe_Group(final TestCase testCase) throws DotDataException {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
         final String groupName = testCase.groupName;
         assertFalse(storage.existsGroup(groupName));
@@ -161,7 +178,8 @@ public class StoragePersistenceAPITest {
      */
     @Test
     @UseDataProvider("getDupeBinaryTestCases")
-    public void Test_Attempt_Push_Same_Binary_Twice(final TestCase testCase) {
+    public void Test_Attempt_Push_Same_Binary_Twice(final TestCase testCase)
+            throws DotDataException {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
         storage.deleteObject(testCase.groupName, testCase.path);
         assertTrue(storage.createGroup(testCase.groupName));
@@ -203,7 +221,7 @@ public class StoragePersistenceAPITest {
      */
     @Test
     @UseDataProvider("getRandomTestCases")
-    public void Test_Pull_File_Different_Casing(final TestCase testCase) {
+    public void Test_Pull_File_Different_Casing(final TestCase testCase) throws DotDataException {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
         if(!storage.existsGroup(testCase.groupName)){
            assertTrue(storage.createGroup(testCase.groupName));
@@ -224,12 +242,62 @@ public class StoragePersistenceAPITest {
     public static Object[] getRandomTestCases() throws Exception{
         final String path = "any-path";
         final String groupName = RandomStringUtils.randomAlphanumeric(10);
-        File temp = File.createTempFile("tempfile", ".txt");
+        final File temp = File.createTempFile("tempfile", ".txt");
         return new Object[]{
                 new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
                 new TestCase(StorageType.DB, groupName, path, temp)
         };
     }
+
+    /**
+     * Given scenario:
+     * Expected Results:
+     * @param testCase
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    @Test
+    @UseDataProvider("getLargeFileTestCases")
+    public void Test_Push_Large_File(final TestCase testCase)
+            throws IOException, NoSuchAlgorithmException, DotDataException {
+
+        final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
+        if (!storage.existsGroup(testCase.groupName)) {
+            assertTrue(storage.createGroup(testCase.groupName));
+        }
+        storage.pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
+
+        final File pullFile = storage.pullFile(testCase.groupName, testCase.path);
+        assertEquals(testCase.file.length(), pullFile.length());
+
+        assertEquals(testCase.file.length(), LARGE_FILE_SIZE);
+
+        assertEquals(Encryptor.Hashing.sha256().append(Files.readAllBytes(testCase.file.toPath())).buildUnixHash(),
+                     Encryptor.Hashing.sha256().append(Files.readAllBytes(pullFile.toPath())).buildUnixHash());
+
+    }
+
+    private static final Random random = new Random();
+
+    @DataProvider
+    public static Object[] getLargeFileTestCases() throws Exception{
+        final String path = "fixed-large-file-path";
+        final String groupName = RandomStringUtils.randomAlphanumeric(10);
+
+        final File temp = File.createTempFile("largeFile", ".bin");
+
+        try (FileOutputStream output = new FileOutputStream(temp, true)) {
+            final byte[] data = new byte[LARGE_FILE_SIZE];
+            random.nextBytes(data);
+            output.write(data);
+        }
+
+        return new Object[]{
+                new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
+                new TestCase(StorageType.DB, groupName, path, temp)
+        };
+    }
+
 
     /**
      * Test Data DTO

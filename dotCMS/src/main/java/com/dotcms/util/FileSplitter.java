@@ -66,7 +66,7 @@ public class FileSplitter implements Iterable<File>, AutoCloseable, Closeable {
 
     private static File createTempSubFile (final String originalFatFileName, final int chunkIndex) {
 
-        return Try.of(()->FileUtil.createTemporalFile( // todo: use a pattern from config
+        return Try.of(()->FileUtil.createTemporaryFile( // todo: use a pattern from config
                 originalFatFileName + StringPool.DASH + chunkIndex, ".bin")).getOrElseThrow(DotRuntimeException::new);  // get a pattern from config
     }
 
