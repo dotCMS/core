@@ -40,7 +40,7 @@ public class StoragePersistenceAPITest {
     private static final String TEST_IMAGE_PNG = TestFile.PNG.getFilePath();
     private static final String TEST_TEXT_PATH = TestFile.TEXT.getFilePath();
 
-    private static final int LARGE_FILE_SIZE = 1024 * 8;
+    private static final int LARGE_FILE_SIZE = 1024 * 1024 * 4;
 
     private static final StoragePersistenceProvider persistenceProvider = INSTANCE.get();
 
