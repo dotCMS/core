@@ -1739,7 +1739,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue(htmlWithDefaultPersona.contains("dot:persona"));
+        assertTrue(htmlWithDefaultPersona.contains("dot:persona"));
 
         final Visitor visitor = new Visitor();
         visitor.setPersona(notDefaultPersona);
@@ -1752,7 +1752,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue(htmlWithNoDefaultPersona.contains(notDefaultPersona.getKeyTag()));
+        assertTrue(htmlWithNoDefaultPersona.contains(notDefaultPersona.getKeyTag()));
     }
 
     private static class TestContainerUUID{

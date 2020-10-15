@@ -511,8 +511,11 @@ public class PageRenderUtil implements Serializable {
         return hasPersonalizations ? currentPersonaTag : MultiTree.DOT_PERSONALIZATION_DEFAULT;
     }
 
+    /**
+     * Util class to sort the {@link Contentlet} by {@link Persona} and {@link Container}
+     */
     private static class ContainerUUIDPersona {
-        Map<String, List<String>> containerUuidPersona     = Maps.newHashMap();
+        Map<String, List<String>> contents = Maps.newHashMap();
 
         public void add(
                 final Container container,
@@ -524,7 +527,7 @@ public class PageRenderUtil implements Serializable {
         }
 
         private List<String> get(Container container, String uniqueUUIDForRender, PersonalizedContentlet personalizedContentlet) {
-            return containerUuidPersona
+            return contents
                     .computeIfAbsent(
                             getKey(container, uniqueUUIDForRender, personalizedContentlet),
                             k -> Lists.newArrayList()
@@ -542,8 +545,8 @@ public class PageRenderUtil implements Serializable {
             return get(container, uniqueUUIDForRender, personalizedContentlet).size();
         }
 
-        public Iterable<? extends Map.Entry<String, List<String>>> entrySet() {
-            return containerUuidPersona.entrySet();
+        public Set<? extends Map.Entry<String, List<String>>> entrySet() {
+            return contents.entrySet();
         }
     }
 }
