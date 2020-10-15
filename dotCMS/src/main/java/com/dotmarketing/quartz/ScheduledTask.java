@@ -38,7 +38,8 @@ public abstract class ScheduledTask implements Serializable {
     private boolean sequentialScheduled = false;
 
     private Map<String, Object> properties;
-    
+
+	@Deprecated
 	public ScheduledTask(String jobName, String jobGroup, String jobDescription, String javaClass, boolean isVolatile, String triggerName, String triggerGroup,
 			Date startDate, Date endDate, int misfireInstruction, int priority, boolean sequentialScheduled, Map<String, Object> properties) {
 		super();
@@ -175,10 +176,12 @@ public abstract class ScheduledTask implements Serializable {
 		return triggerGroup;
 	}
 
+	@Deprecated
 	public void setSequentialScheduled(boolean sequentialScheduled) {
 		this.sequentialScheduled = sequentialScheduled;
 	}
 
+    @Deprecated
 	public boolean isSequentialScheduled() {
 		return sequentialScheduled;
 	}

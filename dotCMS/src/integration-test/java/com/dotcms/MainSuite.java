@@ -2,7 +2,6 @@ package com.dotcms;
 
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
-import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
@@ -15,6 +14,7 @@ import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
+import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.PublisherFilterImplTest;
@@ -33,6 +33,7 @@ import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
+import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -54,6 +55,8 @@ import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
 import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
 import com.dotmarketing.startup.runonce.Task05370AddAppsPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsoluteTest;
+import com.dotmarketing.startup.runonce.Task05390MakeRoomForLongerJobDetailTest;
+import com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -286,6 +289,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
         AppsResourceTest.class,
+        AppsCacheImplTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
@@ -299,7 +303,6 @@ import org.junit.runners.Suite.SuiteClasses;
         HTMLDiffUtilTest.class,
         HashBuilderTest.class,
         ElasticsearchUtilTest.class,
-        ESReadOnlyMonitorTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
@@ -328,11 +331,14 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
         DotStatefulJobTest.class,
-        FolderFactoryImplTest.class,
-        FolderFactoryImplTest.class,
         IntegrityDataGenerationJobTest.class,
+        BundleAPITest.class,
+        Task05390MakeRoomForLongerJobDetailTest.class,
+        IntegrityDataGenerationJobTest.class,
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         StoragePersistenceAPITest.class,
         FileMetadataAPITest.class
+
 })
 public class MainSuite {
 

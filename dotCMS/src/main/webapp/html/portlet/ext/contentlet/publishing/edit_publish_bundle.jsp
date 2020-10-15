@@ -97,9 +97,19 @@
                     <%= LanguageUtil.get(pageContext, "id") %>:
                 </td>
                 <td style="white-space: nowrap;" >
-                    <div  class='click-me'><%=bundle.getId() %></div>
+                    <div style="padding-left:5px;padding-bottom:10px;"><%if(bundle.bundleTgzExists()){%><a href="/api/bundle/_download/<%=bundle.getId()%>" target="_blank"><%} %>
+                    <%=bundle.getId() %></a></div> 
+                    <div  style="padding-left:5px;padding-bottom:10px;">
+                        <%if(bundle.bundleTgzExists()){%>
+
+                                (<%= LanguageUtil.get(pageContext, "Download") %>)
+                             </a>
+                        <%} %>
+                    </div>
                 </td>
             </tr>
+
+            
 			<tr style="height:30px">
 				<td align="right">
 					<%= LanguageUtil.get(pageContext, "publisher_dialog_bundle_name") %>:

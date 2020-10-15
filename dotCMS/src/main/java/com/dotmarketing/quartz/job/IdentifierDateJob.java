@@ -1,25 +1,9 @@
-/**
- * 
- */
 package com.dotmarketing.quartz.job;
-
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
-import com.dotcms.notifications.bean.NotificationType;
-import com.dotcms.util.I18NMessage;
-import org.quartz.Job;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -38,6 +22,18 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 
 /**
  * @author Oscar Arrieta
@@ -106,11 +102,11 @@ public class IdentifierDateJob implements Job {
 					CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletSearch.getIdentifier());
 					//Clears Contentlet Cache for each language and version
 					for(Language lan : APILocator.getLanguageAPI().getLanguages()) {
-						ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), lan.getId()) ;
-						if(versionInfo!=null && UtilMethods.isSet(versionInfo.getIdentifier())) {
-							CacheLocator.getContentletCache().remove(versionInfo.getWorkingInode());
-							if(UtilMethods.isSet(versionInfo.getLiveInode())) {
-								CacheLocator.getContentletCache().remove(versionInfo.getLiveInode());
+						Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), lan.getId()) ;
+						if(versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getIdentifier())) {
+							CacheLocator.getContentletCache().remove(versionInfo.get().getWorkingInode());
+							if(UtilMethods.isSet(versionInfo.get().getLiveInode())) {
+								CacheLocator.getContentletCache().remove(versionInfo.get().getLiveInode());
 
 							}
 						}
@@ -178,7 +174,7 @@ public class IdentifierDateJob implements Job {
 		SimpleTrigger trigger = new SimpleTrigger("IdentifierDateTrigger-" + randomID, "identifier_data_triggers",  new Date(startTime));
 		
 		try {
-			Scheduler sched = QuartzUtils.getSequentialScheduler();
+			Scheduler sched = QuartzUtils.getScheduler();
 			sched.scheduleJob(jd, trigger);
 		} catch (SchedulerException e) {
 			Logger.error(IdentifierDateJob.class, "Error scheduling the Identifier Date Job", e);

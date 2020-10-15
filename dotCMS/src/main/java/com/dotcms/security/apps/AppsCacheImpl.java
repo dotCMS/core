@@ -4,7 +4,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Map;
@@ -98,8 +97,9 @@ public class AppsCacheImpl extends AppsCache {
         if(descriptorsByKey!=null) {
             return descriptorsByKey;
         }
-        if(null==supplier) {
-            return ImmutableMap.of();
+
+        if(null == supplier) {
+            return null;
         }
 
         synchronized (AppsCacheImpl.class) {
@@ -184,7 +184,7 @@ public class AppsCacheImpl extends AppsCache {
         }
         
         if (null == supplier) {
-            return new char[0];
+            return null;
         }
         
         // try again
