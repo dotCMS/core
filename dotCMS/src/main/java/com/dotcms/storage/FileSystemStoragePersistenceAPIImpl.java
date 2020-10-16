@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -72,7 +73,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @return
      */
     @Override
-    public boolean existsGroup(final String groupName) {
+    public boolean existsGroup(final String groupName) throws DotDataException{
         final String groupNameLC = groupName.toLowerCase();
         return this.groups.containsKey(groupNameLC) && this.groups.get(groupNameLC).exists();
     }
@@ -84,7 +85,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @return
      */
     @Override
-    public boolean existsObject(final String groupName, final String objectPath) {
+    public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
         return this.existsGroup(groupNameLC) && new File(this.groups.get(groupNameLC), objectPath)
                 .exists();
@@ -96,7 +97,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @return
      */
     @Override
-    public boolean createGroup(final String groupName) {
+    public boolean createGroup(final String groupName) throws DotDataException {
         return this.createGroup(groupName, ImmutableMap.of());
     }
 
@@ -107,7 +108,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @return
      */
     @Override
-    public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) {
+    public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
         final File rootGroup = this.groups.get(getRootGroupKey());
         final File destBucketFile = new File(rootGroup, groupNameLC);
@@ -124,7 +125,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @return
      */
     @Override
-    public int deleteGroup(final String groupName) {
+    public int deleteGroup(final String groupName) throws DotDataException {
         final File rootGroup = this.groups.get(getRootGroupKey());
         final File destBucketFile = new File(rootGroup, groupName.toLowerCase());
         if (!rootGroup.equals(destBucketFile)) {
@@ -141,7 +142,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @param path   {   @link String} object path
      * @return
      */
-    public boolean deleteObject(final String groupName, final String path) {
+    public boolean deleteObject(final String groupName, final String path) throws DotDataException {
         return new File(this.groups.get(groupName.toLowerCase()), path.toLowerCase()).delete();
     }
 
@@ -150,7 +151,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @return
      */
     @Override
-    public List<String> listGroups() {
+    public List<String> listGroups() throws DotDataException {
 
         return new ImmutableList.Builder<String>().addAll(this.groups.keySet()).build();
     }
@@ -167,7 +168,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     public Object pushFile(final String groupName,
             final String path,
             final File file,
-            final Map<String, Serializable> extraMeta) {
+            final Map<String, Serializable> extraMeta) throws DotDataException{
 
         if (!this.existsGroup(groupName)) {
 
@@ -186,7 +187,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             } catch (IOException e) {
 
                 Logger.error(this, e.getMessage(), e);
-                throw new DotRuntimeException(e);
+                throw new DotDataException(e.getMessage(), e);
             }
         } else {
 
@@ -210,7 +211,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public Object pushObject(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate,
-            final Serializable object, final Map<String, Serializable> extraMeta) {
+            final Serializable object, final Map<String, Serializable> extraMeta) throws DotDataException {
 
         if (!this.existsGroup(groupName)) {
 
@@ -237,7 +238,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 }
             } catch (IOException e) {
                 Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
-                throw new DotRuntimeException(e);
+                throw new  DotDataException(e.getMessage(),e);
             }
         } else {
 
@@ -301,7 +302,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @return
      */
     @Override
-    public File pullFile(final String groupName, final String path) {
+    public File pullFile(final String groupName, final String path) throws DotDataException {
 
         if (!this.existsGroup(groupName)) {
 
@@ -333,7 +334,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      */
     @Override
     public Object pullObject(final String groupName, final String path,
-            final ObjectReaderDelegate readerDelegate) {
+            final ObjectReaderDelegate readerDelegate) throws DotDataException {
 
         Object object;
         if (!this.existsGroup(groupName)) {
