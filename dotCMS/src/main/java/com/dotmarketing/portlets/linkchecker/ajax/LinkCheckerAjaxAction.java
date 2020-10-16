@@ -120,7 +120,7 @@ public class LinkCheckerAjaxAction extends AjaxAction {
             
             Trigger trigger=new SimpleTrigger("linkCheckerTrigger-"+randomID, "group20", new Date());
             
-            Scheduler sched = QuartzUtils.getStandardScheduler();
+            Scheduler sched = QuartzUtils.getScheduler();
             sched.scheduleJob(jd, trigger);
         } catch (SchedulerException e) {
             throw new ServletException(e);

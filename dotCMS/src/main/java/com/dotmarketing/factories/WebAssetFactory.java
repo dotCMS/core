@@ -66,6 +66,7 @@ import java.util.Map;
 
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import java.util.Optional;
 
 /**
  *
@@ -333,9 +334,8 @@ public class WebAssetFactory {
 		}
 
 		// if it is locked then we compare lockedBy with userId from the user that wants to edit the asset
-		String currUserId=APILocator.getVersionableAPI().getLockedBy(currWebAsset);
-
-		return currUserId.equals(userId);
+		Optional<String> lockedByOptional = APILocator.getVersionableAPI().getLockedBy(currWebAsset);
+		return lockedByOptional.map(lockedBy -> lockedBy.equals(userId)).orElse(false);
 	}
 
 	public static WebAsset getBackAssetVersion(WebAsset versionWebAsset) throws Exception {

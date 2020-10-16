@@ -21,7 +21,7 @@ import static com.dotcms.util.CollectionsUtils.map;
  * - htmlpages_ir
  * - fileassets_ir
  */
-public class Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables implements StartupTask {
+public class Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables implements StartupTask {
     @Override
     public boolean forceRun() {
         return true;

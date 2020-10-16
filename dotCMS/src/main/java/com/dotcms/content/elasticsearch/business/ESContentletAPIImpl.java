@@ -386,15 +386,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         try {
-            ContentletVersionInfo clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
-            if(clvi ==null){
-                throw new DotContentletStateException("No contentlet found for given identifier");
+            Optional<ContentletVersionInfo> clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+            String liveInode = null;
+            String workingInode = null;
+
+            if(clvi.isPresent()) {
+                liveInode = clvi.get().getLiveInode();
+                workingInode = clvi.get().getWorkingInode();
             }
-            if(live){
-                return find(clvi.getLiveInode(), user, respectFrontendRoles);
-            }
-            else{
-                return find(clvi.getWorkingInode(), user, respectFrontendRoles);
+
+            if (live) {
+                return find(liveInode, user, respectFrontendRoles);
+            } else {
+                return find(workingInode, user, respectFrontendRoles);
             }
         }catch (DotSecurityException se) {
             throw se;
@@ -417,38 +421,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try {
 
             // try the user language
-            ContentletVersionInfo contentletVersionInfo =
+            Optional<ContentletVersionInfo> contentletVersionInfo =
                     APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLanguage);
 
             // try the fallback if does not exists
-            if (tryLanguage != defaultLanguageId && (contentletVersionInfo == null || (live && contentletVersionInfo.getLiveInode() == null))) {
+            if (tryLanguage != defaultLanguageId && (!contentletVersionInfo.isPresent()
+                    || (live && contentletVersionInfo.get().getLiveInode() == null))) {
                 fallback              = true;  // using the fallback
                 contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLanguageId);
             }
 
-            if (contentletVersionInfo == null) {
-
+            if (!contentletVersionInfo.isPresent()) {
                 return Optional.empty();
             }
 
             final Contentlet contentlet =  live?
-                    this.find(contentletVersionInfo.getLiveInode(), user, respectFrontendRoles) :
-                    this.find(contentletVersionInfo.getWorkingInode(), user, respectFrontendRoles);
+                    this.find(contentletVersionInfo.get().getLiveInode(), user, respectFrontendRoles) :
+                    this.find(contentletVersionInfo.get().getWorkingInode(), user, respectFrontendRoles);
 
             if (null == contentlet) {
-
                 return Optional.empty();
             }
 
             // if we are using the fallback, and it is not allowed, return empty
             if (fallback && tryLanguage != defaultLanguageId && !contentlet.getContentType().languageFallback()) {
-
                 return Optional.empty();
             }
 
             return Optional.of(contentlet);
         } catch (Exception e) {
-
             throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:" + live, e);
         }
     }
@@ -2701,13 +2702,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentlets.add(contentlet);
         contentFactory.deleteVersion(contentlet);
 
-        ContentletVersionInfo cinfo=APILocator.getVersionableAPI().getContentletVersionInfo(
+        Optional<ContentletVersionInfo> cinfo=APILocator.getVersionableAPI().getContentletVersionInfo(
                 contentlet.getIdentifier(), contentlet.getLanguageId());
 
-        if(cinfo.getWorkingInode().equals(contentlet.getInode()) ||
-                (InodeUtils.isSet(cinfo.getLiveInode()) && cinfo.getLiveInode().equals(contentlet.getInode())))
+        if(cinfo.isPresent() && (cinfo.get().getWorkingInode().equals(contentlet.getInode()) ||
+                (InodeUtils.isSet(cinfo.get().getLiveInode())
+                        && cinfo.get().getLiveInode().equals(contentlet.getInode())))) {
             // we remove from index if it is the working or live version
             indexAPI.removeContentFromIndex(contentlet);
+        }
 
         CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
@@ -4953,10 +4956,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                         // we take all inodes associated with that identifier
                         // remove them from cache and then reindex them
-                        final HibernateUtil hu = new HibernateUtil(ContentletVersionInfo.class);
-                        hu.setQuery("from "+ContentletVersionInfo.class.getCanonicalName()+" where identifier=?");
-                        hu.setParam(ident.getId());
-                        final List<ContentletVersionInfo> list = hu.list();
+                        final List<ContentletVersionInfo> list = APILocator.getVersionableAPI()
+                                .findContentletVersionInfos(ident.getId());
+
                         final List<String> inodes = new ArrayList<>();
                         for(final ContentletVersionInfo cvi : list) {
                             inodes.add(cvi.getWorkingInode());
@@ -8074,16 +8076,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     +" does not have Edit Permissions to lock content: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
         }
 
-        String lockedBy = null;
+        Optional<String> lockedBy = Optional.empty();
         try {
-
             lockedBy = APILocator.getVersionableAPI().getLockedBy(contentlet);
         } catch(Exception e) {
 
         }
 
-        if(lockedBy != null && !user.getUserId().equals(lockedBy)){
-
+        if(lockedBy.isPresent() && !user.getUserId().equals(lockedBy.get())){
             throw new DotLockException(CANT_GET_LOCK_ON_CONTENT);
         }
 
