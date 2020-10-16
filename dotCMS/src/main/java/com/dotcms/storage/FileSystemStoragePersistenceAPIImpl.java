@@ -181,7 +181,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
             try {
 
-                final File destBucketFile = new File(groupFile, path.toLowerCase());
+                final File destBucketFile = new File(groupFile, path);
                 FileUtils.copyFile(file, destBucketFile);
             } catch (IOException e) {
 
