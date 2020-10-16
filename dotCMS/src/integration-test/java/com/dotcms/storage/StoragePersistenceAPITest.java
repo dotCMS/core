@@ -87,7 +87,7 @@ public class StoragePersistenceAPITest {
      */
     @Test
     @UseDataProvider("getMixedStorageTestCases")
-    public void Test_DBStorage_Push_File_Then_Recover_Then_Remove_Group(final TestCase testCase)
+    public void Test_Storage_Push_File_Then_Recover_Then_Remove_Group(final TestCase testCase)
             throws DotDataException {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
         final String groupName = testCase.groupName;

@@ -181,7 +181,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
             try {
 
-                final File destBucketFile = new File(groupFile, path);
+                final File destBucketFile = new File(groupFile, path.toLowerCase());
                 FileUtils.copyFile(file, destBucketFile);
             } catch (IOException e) {
 
@@ -224,7 +224,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
             try {
 
-                final File destBucketFile = new File(groupFile, path);
+                final File destBucketFile = new File(groupFile, path.toLowerCase());
                 final String compressor = Config
                         .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
                 this.prepareParent(destBucketFile);
@@ -308,25 +308,17 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             throw new IllegalArgumentException(String.format(
                     THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
         }
-
         final File clientFile;
-
         final File bucketFile = this.groups.get(groupName.toLowerCase());
-
         if (bucketFile.canRead()) {
-
-            final File destBucketFile = new File(bucketFile, path);
-
+            final File destBucketFile = new File(bucketFile, path.toLowerCase());
             if (destBucketFile.exists()) {
-
                 clientFile = destBucketFile;
             } else {
-
-                throw new IllegalArgumentException("The file: " + path + ", does not exists.");
+                throw new IllegalArgumentException("The group: " + destBucketFile + ", does not exists.");
             }
         } else {
-
-            throw new IllegalArgumentException("The bucket: " + groupName + " could not read");
+            throw new IllegalArgumentException("The bucket: " + groupName + " could not be read");
         }
 
         return clientFile;
@@ -354,7 +346,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
         if (groupDir.canRead()) {
 
-            final File file = new File(groupDir, path);
+            final File file = new File(groupDir, path.toLowerCase());
 
             if (file.exists()) {
 
