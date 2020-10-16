@@ -1,20 +1,16 @@
 package com.dotmarketing.cms.urlmap;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static org.jgroups.util.Util.assertEquals;
-import static org.jgroups.util.Util.assertFalse;
+import static org.jgroups.util.Util.*;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -213,11 +209,6 @@ public class URLMapAPIImplTest {
 
 
     }
-    
-    
-    
-    
-    
     
     
     /**
@@ -667,5 +658,44 @@ public class URLMapAPIImplTest {
 
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri) {
         return getUrlMapContext(systemUser, host, uri, PageMode.PREVIEW_MODE);
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists but the field to Map is a
+     * {@link com.dotcms.contenttype.model.field.DataTypes#INTEGER}
+     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
+     */
+    @Test
+    public void shouldReturnContentletWhenTheContentExistsAndUseAIntegerFIeld()
+            throws DotDataException, DotSecurityException {
+        final String newsPatternPrefix =
+                "integer" + TEST_PATTERN + System.currentTimeMillis() + "/";
+
+
+        final Field field = new FieldDataGen().dataType(DataTypes.INTEGER).next();
+        final String urlMapper = newsPatternPrefix  + "{" + field.variable() + "}";
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(field)
+                .detailPage(detailPage1.getIdentifier())
+                .urlMapPattern(urlMapper)
+                .nextPersisted();
+
+        final Contentlet newsTestContent = new ContentletDataGen(contentType.id())
+                .setProperty(field.variable(), 2)
+                .languageId(1)
+                .host(host)
+                .nextPersisted();
+
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent.getStringProperty(field.variable()));
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        assertTrue(urlMapInfoOptional.isPresent());
+        final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent.getLongProperty(field.variable()),
+                urlMapInfo.getContentlet().getLongProperty(field.variable()));
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
     }
 }

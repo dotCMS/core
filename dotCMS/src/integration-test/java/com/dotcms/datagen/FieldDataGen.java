@@ -1,6 +1,7 @@
 package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.TextField;
@@ -26,6 +27,7 @@ public class FieldDataGen extends AbstractDataGen<Field> {
     private boolean unique = Boolean.FALSE;
     private String contentTypeId;
     private String relationType;
+    private DataTypes dataType;
 
     @SuppressWarnings("unused")
     public FieldDataGen name(final String name) {
@@ -142,6 +144,7 @@ public class FieldDataGen extends AbstractDataGen<Field> {
                 .searchable(searchable)
                 .unique(unique)
                 .relationType(relationType)
+                .dataType(dataType)
                 .build();
     }
 
@@ -177,4 +180,8 @@ public class FieldDataGen extends AbstractDataGen<Field> {
         }
     }
 
+    public FieldDataGen dataType(final DataTypes dataType) {
+        this.dataType = dataType;
+        return this;
+    }
 }
