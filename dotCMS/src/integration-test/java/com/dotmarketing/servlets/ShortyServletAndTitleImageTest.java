@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
 
+import java.util.Optional;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -161,16 +162,22 @@ public class ShortyServletAndTitleImageTest {
         
         // if titleImage is passed in, return the first image or binary that is an image
         // in this case an image field
-        ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getStringProperty(image2.variable()), contentlet.getLanguageId());
+        Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getStringProperty(image2.variable()),
+                        contentlet.getLanguageId());
+
+        assertTrue(cvi.isPresent());
 
         // the path to the WORKING image will be returned (live = false)
         path = servlet.inodePath(contentlet, Contentlet.TITLE_IMAGE_KEY, false);
-        assertTrue("the path to the WORKING image will be to the realted",path.contains("/" + cvi.getWorkingInode()));
+        assertTrue("the path to the WORKING image will be to the realted",
+                path.contains("/" + cvi.get().getWorkingInode()));
         assertTrue(path.contains("/fileAsset"));
         
         // the path to the LIVE image will be returned (live = true)
         path = servlet.inodePath(contentlet, Contentlet.TITLE_IMAGE_KEY, true);
-        assertTrue("the path to the LIVE image will be to the realted",path.contains("/" + cvi.getLiveInode()));
+        assertTrue("the path to the LIVE image will be to the realted",
+                path.contains("/" + cvi.get().getLiveInode()));
         assertTrue(path.contains("/fileAsset"));
 
 

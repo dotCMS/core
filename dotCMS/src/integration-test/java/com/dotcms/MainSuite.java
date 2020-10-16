@@ -2,7 +2,6 @@ package com.dotcms;
 
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
-import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitorTest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
@@ -293,7 +292,6 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
         ElasticsearchUtilTest.class,
-        ESReadOnlyMonitorTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,

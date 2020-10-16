@@ -54,10 +54,12 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
     public PaginatedArrayList<TemplateView> getItems(final User user, final String filter, final int limit, final int offset,
                                                   final String orderby, final OrderDirection direction,
                                                   final Map<String, Object> extraParams) {
-        String hostId = null;
+        String hostId   = null;
+        boolean archive = false;
 
         if (extraParams != null) {
-            hostId = (String) extraParams.get(HOST_PARAMETER_ID);
+            hostId  = (String) extraParams.get(HOST_PARAMETER_ID);
+            archive = (boolean)extraParams.getOrDefault("archive", false);
         }
 
         final Map<String, Object> params = map("title", filter);
@@ -71,7 +73,7 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
         try {
             final PaginatedArrayList<Template> allTemplates =
-                    (PaginatedArrayList<Template>) templateAPI.findTemplates(user, false, params, hostId,
+                    (PaginatedArrayList<Template>) templateAPI.findTemplates(user, archive, params, hostId,
                     null, null, null, offset, limit, orderByDirection);
 
             if (UtilMethods.isSet(hostId)) {
