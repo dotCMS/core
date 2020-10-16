@@ -1,5 +1,6 @@
 package com.dotmarketing.startup;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.sql.Connection;
 import java.util.Date;
 import java.util.Map;
@@ -12,6 +13,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TaskLocatorUtil;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StartupTasksExecutor {
 
@@ -149,9 +152,22 @@ public class StartupTasksExecutor {
 
         
     }
-    
-    
-    
+
+    /**
+     * Returns the id part of a task name
+     * @param taskName
+     * @return
+     */
+    @VisibleForTesting
+    String getTaskId(final String taskName){
+        final Pattern pattern = Pattern.compile("[0-9]+");
+        final Matcher matcher = pattern.matcher(taskName);
+
+        if (matcher.find()){
+            return matcher.group();
+        }
+        return "-1";
+    }
     
     
     public void executeUpgrades() throws DotDataException {
@@ -169,7 +185,7 @@ public class StartupTasksExecutor {
         for (Class<?> c : TaskLocatorUtil.getStartupRunOnceTaskClasses()) {
             name = c.getCanonicalName();
             name = name.substring(name.lastIndexOf(".") + 1);
-            String id = name.substring(4, 9);
+            String id = getTaskId(name);
             try {
                 int taskId = Integer.parseInt(id);
                 if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
