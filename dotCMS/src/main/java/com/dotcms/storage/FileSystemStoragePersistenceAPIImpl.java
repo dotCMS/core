@@ -224,7 +224,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
             try {
 
-                final File destBucketFile = new File(groupFile, path.toLowerCase());
+                final File destBucketFile = new File(groupFile, path);
                 final String compressor = Config
                         .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
                 this.prepareParent(destBucketFile);
