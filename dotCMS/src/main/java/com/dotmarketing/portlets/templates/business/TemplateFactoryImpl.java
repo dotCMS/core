@@ -8,7 +8,6 @@ import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -79,13 +78,6 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				UtilMethods.isSet(query) ? Collections.singletonMap("title", query.toLowerCase())
 						: null, hostId, null, null, null, offset, limit, "title");
 	}
-
-	//Solo tiene uso en el API y el API no tiene usos, borrarlo??
-//	public void delete(final Template template) throws DotDataException {
-//		templateCache.remove(template.getInode());
-//		HibernateUtil.delete(template);
-//
-//	}
 
 	public void save(final Template template) throws DotDataException {
 		save(template, UUIDGenerator.generateUuid());

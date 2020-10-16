@@ -1,13 +1,11 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -24,90 +22,90 @@ import java.util.Map;
 public interface TemplateAPI {
 
 	/**
-	 *
-	 * Retrieves all non-archived templates assigned to the given host
-	 *
+	 * Retrieves all non-archived templates assigned to the given host. It uses DB directly.
+	 * @param parentHost host where the template lives.
+	 * @return list of templates that lives in the host
+	 * @throws DotDataException
 	 */
-	List<Template> findTemplatesAssignedTo(Host parentHost) throws DotDataException;
+	List<Template> findTemplatesAssignedTo(final Host parentHost) throws DotDataException;
 
 	/**
-	 *
-	 * Retrieves all templates assigned to the given host
-	 * @param includeArchived if true it also retrieves all archived templates
-	 *
+	 * Retrieves all templates assigned to the given host. It uses DB directly.
+	 * @param parentHost host where the template lives.
+	 * @param includeArchived boolean if true archived templates will be included
+	 * @return list of templates that lives in the host
+	 * @throws DotDataException
 	 */
-	List<Template> findTemplatesAssignedTo(Host parentHost, boolean includeArchived) throws DotDataException;
+	List<Template> findTemplatesAssignedTo(final Host parentHost, final boolean includeArchived) throws DotDataException;
 
 	/**
-	 * Retrieves a paginated list of templates the given user can read. Return working templates.  This method uses DB
-	 *
-	 * @param user
-	 * @param hostName
+	 * Retrieves a paginated list of templates the given user can read. Return working templates and non-archived. Order them by title
+	 * This method uses DB directly
+	 * @param user user to make the search
+	 * @param hostId host id where the templates lives
 	 * @param query
-	 * @param searchHost
-	 * @param hostId
+	 * @param searchHost is not used
 	 * @param offset
 	 * @param limit
-	 * @return
+	 * @return list of templates
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	List<Template> findTemplatesUserCanUse(User user, String hostId,  String query, boolean searchHost, int offset, int limit) throws DotDataException, DotSecurityException;
+	List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost, final int offset, final int limit) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves the working version of a template given its identifier
-	 * @param id
-	 * @param user
+	 * @param id identifier of the template
+	 * @param user user to make the search
 	 * @param respectFrontendRoles
-	 * @return
+	 * @return working template
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	Template findWorkingTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Template findWorkingTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 * Retrieves the live version of a template given its identifier
-	 * @param id
-	 * @param user
+	 * @param id identifier of the template
+	 * @param user user to make the search
 	 * @param respectFrontendRoles
-	 * @return
+	 * @return live template
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	Template findLiveTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
+	Template findLiveTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Copies a template to another host.
 	 *
-	 * @param template
-	 * @param destination
+	 * @param template template to copy
+	 * @param destination where to copy
 	 * @param forceOverwrite
 	 * @param copySourceContainers
-	 * @param user
+	 * @param user user to make the request
 	 * @param respectFrontendRoles
-	 * @return Template
+	 * @return copy of the template
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	Template copy(Template template, Host destination, boolean forceOverwrite, boolean copySourceContainers, User user, boolean respectFrontendRoles)
+	Template copy(final Template template, final Host destination, final boolean forceOverwrite, final boolean copySourceContainers, final User user, final boolean respectFrontendRoles)
 		throws DotDataException, DotSecurityException;
 
 	/**
 	 *
 	 * Copies a template to another host. This method does not copy containers inside instead it remaps the containers based on the containerMappings given.
 	 *
-	 * @param sourceTemplate
-	 * @param destinationHost
+	 * @param sourceTemplate template to copy
+	 * @param destinationHost where to copy
 	 * @param forceOverwrite
 	 * @param containerMappings
-	 * @param user
+	 * @param user user to make the request
 	 * @param respectFrontendRoles
-	 * @return
+	 * @return copied template
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	Template copy(Template sourceTemplate, Host destinationHost, boolean forceOverwrite, List<ContainerRemapTuple> containerMappings, User user,
-			boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Template copy(final Template sourceTemplate, final Host destinationHost, final boolean forceOverwrite, final List<ContainerRemapTuple> containerMappings, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Return the list of container identifiers used in a template body.
@@ -123,14 +121,14 @@ public interface TemplateAPI {
 	 */
 	List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	public List<ContainerUUID> getContainersUUID(TemplateLayout layout);
+	List<ContainerUUID> getContainersUUID(TemplateLayout layout);
 
 	/**
 	 * Gets the {@link ContainerUUID} from a draw template body
 	 * @param drawTemplateBody {@link String}
 	 * @return List of ContainerUUID, empty if nothing
 	 */
-	public List<ContainerUUID> getContainersUUIDFromDrawTemplateBody(String drawTemplateBody);
+	List<ContainerUUID> getContainersUUIDFromDrawTemplateBody(String drawTemplateBody);
 
 	/**
 	 * Retrieves the template associated to a host
@@ -151,7 +149,7 @@ public interface TemplateAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Publish a template if has the appropiate permissions
@@ -206,7 +204,7 @@ public interface TemplateAPI {
 	 * @throws DotSecurityException
 	 * @throws Exception
 	 */
-	public boolean deleteTemplate(Template template, User user, boolean respectFrontendRoles);
+	boolean deleteTemplate(Template template, User user, boolean respectFrontendRoles);
 
 	/**
 	 * Delete the specified template
@@ -220,7 +218,7 @@ public interface TemplateAPI {
 	 * @throws Exception
 	 */
 	@Deprecated
-	public boolean delete(Template template, User user, boolean respectFrontendRoles) throws DotSecurityException, Exception;
+	boolean delete(Template template, User user, boolean respectFrontendRoles) throws DotSecurityException, Exception;
 
     /**
      * Retrieves a paginated list of templates the user can use
@@ -238,7 +236,7 @@ public interface TemplateAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-	public List<Template> findTemplates(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
+	List<Template> findTemplates(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
 
 	/**
@@ -250,7 +248,7 @@ public interface TemplateAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Check if there are Contentlet Pages using this Template
@@ -261,9 +259,18 @@ public interface TemplateAPI {
 	 */
 	Map<String, String> checkPageDependencies(Template template, User user, boolean respectFrontendRoles);
 
-	public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
+	int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 
-    public Template find(String inode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
+	/**
+	 * Finds a template by its inode.
+	 * @param inode inode of the template
+	 * @param user user to make the search
+	 * @param respectFrontEndRoles
+	 * @return Template, if not exists null
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+    Template find(final String inode, final User user, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Makes a copy of sourceTemplate and returns the new one
@@ -273,7 +280,7 @@ public interface TemplateAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-    public Template copy(Template sourceTemplate, User user)throws DotDataException, DotSecurityException ;
+    Template copy(Template sourceTemplate, User user)throws DotDataException, DotSecurityException ;
     
 	/**
 	 *
@@ -282,7 +289,7 @@ public interface TemplateAPI {
 	 * @param theme
 	 *
 	 */
-    public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException;
+    void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException;
     
     /**
 	 * Method will replace user references of the given userId in templates
@@ -293,6 +300,6 @@ public interface TemplateAPI {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */
-	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+	void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
 	
 }
