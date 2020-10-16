@@ -28,47 +28,41 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TemplateFactoryImpl implements TemplateFactory {
-	static TemplateCache templateCache = CacheLocator.getTemplateCache();
+	private static TemplateCache templateCache = CacheLocator.getTemplateCache();
+	private static TemplateSQL templateSQL = TemplateSQL.getInstance();
 
-	private final String templatesUnderHostSQL =
-		"select template.*, template_1_.*  from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
-		"identifier template_identifier, " + Type.TEMPLATE.getVersionTableName() + " vi where " +
-		"template_identifier.host_inode = ? and template_identifier.id = template.identifier and " +
-		"template.inode = template_1_.inode and vi.identifier=template.identifier and " +
-		"template.inode=vi.working_inode ";
-
-	private final String templateWithNameSQL =
-		"select template.*, template_1_.* from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
-		"identifier template_identifier, " + Type.TEMPLATE.getVersionTableName() + " vi where " +
-		"template_identifier.host_inode = ? and template_identifier.id = template.identifier and " +
-		"vi.identifier=template_identifier.id and template.title = ? and " +
-		"template.inode = template_1_.inode and " +
-		"template.inode=vi.working_inode ";
-
-	
 	@SuppressWarnings("unchecked")
 
-	public Template find(String inode) throws DotStateException, DotDataException {
+	public Template find(final String inode) throws DotStateException, DotDataException {
 		
 		Template template = templateCache.get(inode);
 
 		if(template==null){
-			HibernateUtil hu = new HibernateUtil(Template.class);
-			template = (Template) hu.load(inode);
+			final List<Map<String, Object>> results = new DotConnect()
+					.setSQL(templateSQL.FIND_BY_INODE)
+					.addParam(inode)
+					.loadObjectResults();
+			if (results.isEmpty()) {
+				Logger.debug(this, "Template with inode: " + inode + " not found");
+				return null;
+			}
+			template = (Template) TransformerLocator.createTemplateTransformer(results).findFirst();
 
-			if(template != null && template.getInode() != null)
+			if(template != null && template.getInode() != null) {
 				templateCache.add(inode, template);
+			}
 		}
 
 		return template;
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<Template> findTemplatesAssignedTo(Host parentHost, final boolean includeArchived)
+	public List<Template> findTemplatesAssignedTo(final Host parentHost, final boolean includeArchived)
 			throws DotDataException {
 		final DotConnect dc = new DotConnect();
-		final String query = !includeArchived ? templatesUnderHostSQL + " and vi.deleted = "
-				+ DbConnectionFactory.getDBFalse() : templatesUnderHostSQL;
+		final String query = !includeArchived ?
+				templateSQL.FIND_TEMPLATES_BY_HOST_INODE + " and vi.deleted = "
+				+ DbConnectionFactory.getDBFalse() : templateSQL.FIND_TEMPLATES_BY_HOST_INODE;
 		dc.setSQL(query);
 		dc.addParam(parentHost.getIdentifier());
 
@@ -80,30 +74,26 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 
 	@SuppressWarnings("unchecked")
-	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost ,int offset, int limit) throws DotDataException, DotSecurityException {
+	public List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost , final int offset, final int limit) throws DotDataException, DotSecurityException {
 		return findTemplates(user, false,
 				UtilMethods.isSet(query) ? Collections.singletonMap("title", query.toLowerCase())
 						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
-	public void delete(Template template) throws DotDataException {
-		templateCache.remove(template.getInode());
-		HibernateUtil.delete(template);
-		
-	}
+	//Solo tiene uso en el API y el API no tiene usos, borrarlo??
+//	public void delete(final Template template) throws DotDataException {
+//		templateCache.remove(template.getInode());
+//		HibernateUtil.delete(template);
+//
+//	}
 
-	public void save(Template template) throws DotDataException {
-
-
-		
+	public void save(final Template template) throws DotDataException {
 		save(template, UUIDGenerator.generateUuid());
-		
-
 	}
 	
-	public void save(Template template, String existingId) throws DotDataException {
+	public void save(final Template template, final String inode) throws DotDataException {
         if(!UtilMethods.isSet(template.getIdentifier())){
-            throw new DotStateException("Cannot save a tempalte without an Identifier");
+            throw new DotStateException("Cannot save a template without an Identifier");
         }
 
 		if (UtilMethods.isSet(template.getTitle()) && !template.isAnonymous()) {
@@ -116,16 +106,51 @@ public class TemplateFactoryImpl implements TemplateFactory {
             template.setDrawedBody((String)null);
             template.setDrawed(false);
         }
-        
-        
-        
-        
-        
-        HibernateUtil.saveWithPrimaryKey(template, existingId);
+
+        if(!UtilMethods.isSet(template.getInode())) {
+			template.setInode(UUIDGenerator.generateUuid());
+		}
+
+        insertInodeInDB(template);
+        insertTemplateInDB(template);
+
         templateCache.add(template.getInode(), template);
         new TemplateLoader().invalidate(template);
 
     }
+
+	private void insertInodeInDB(final Template template) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.INSERT_INODE);
+		dc.addParam(template.getInode());
+		dc.addParam(template.getiDate());
+		dc.addParam(template.getOwner());
+		dc.loadResult();
+	}
+
+	private void insertTemplateInDB(final Template template) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.INSERT_TEMPLATE);
+		dc.addParam(template.getInode());
+		dc.addParam(template.isShowOnMenu());
+		dc.addParam(template.getTitle());
+		dc.addParam(template.getModDate());
+		dc.addParam(template.getModUser());
+		dc.addParam(template.getSortOrder());
+		dc.addParam(template.getFriendlyName());
+		dc.addParam(template.getBody());
+		dc.addParam(template.getHeader());
+		dc.addParam(template.getFooter());
+		dc.addParam(template.getImage());
+		dc.addParam(template.getIdentifier());
+		dc.addParam(template.isDrawed());
+		dc.addParam(template.getDrawedBody());
+		dc.addParam(template.getCountAddContainer());
+		dc.addParam(template.getCountContainers());
+		dc.addParam(template.getHeadCode());
+		dc.addParam(template.getTheme());
+		dc.loadResult();
+	}
 
 	public void deleteFromCache(final Template template) throws DotDataException {
 		templateCache.remove(template.getInode());
@@ -136,7 +161,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@SuppressWarnings("unchecked")
 	public Template findWorkingTemplateByName(String name, Host host) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateWithNameSQL);
+		dc.setSQL(templateSQL.FIND_WORKING_TEMPLATE_BY_HOST_INODE_AND_TITLE);
 		dc.addParam(host.getIdentifier());
 		dc.addParam(name);
 		try{
@@ -522,13 +547,49 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	 * @param theme
 	 *
 	 */
-   public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
-	   Template templateToUpdate = find(templateInode);
+   public void updateThemeWithoutVersioning(final String templateInode, final String theme) throws DotDataException{
+	   final Template templateToUpdate = find(templateInode);
 	   templateToUpdate.setTheme(theme);
-       HibernateUtil.saveOrUpdate(templateToUpdate);
+
+	   updateInodeInDB(templateToUpdate);
+	   updateTemplateInDB(templateToUpdate);
+
        templateCache.add(templateToUpdate.getInode(), templateToUpdate);
        new TemplateLoader().invalidate(templateToUpdate);
    }
+
+	private void updateInodeInDB(final Template template) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.UPDATE_INODE);
+		dc.addParam(template.getiDate());
+		dc.addParam(template.getOwner());
+		dc.addParam(template.getInode());
+		dc.loadResult();
+	}
+
+	private void updateTemplateInDB(final Template template) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.UPDATE_TEMPLATE);
+		dc.addParam(template.isShowOnMenu());
+		dc.addParam(template.getTitle());
+		dc.addParam(template.getModDate());
+		dc.addParam(template.getModUser());
+		dc.addParam(template.getSortOrder());
+		dc.addParam(template.getFriendlyName());
+		dc.addParam(template.getBody());
+		dc.addParam(template.getHeader());
+		dc.addParam(template.getFooter());
+		dc.addParam(template.getImage());
+		dc.addParam(template.getIdentifier());
+		dc.addParam(template.isDrawed());
+		dc.addParam(template.getDrawedBody());
+		dc.addParam(template.getCountAddContainer());
+		dc.addParam(template.getCountContainers());
+		dc.addParam(template.getHeadCode());
+		dc.addParam(template.getTheme());
+		dc.addParam(template.getInode());
+		dc.loadResult();
+	}
 
    /**
 	 * Method will replace user references of the given userId in templates

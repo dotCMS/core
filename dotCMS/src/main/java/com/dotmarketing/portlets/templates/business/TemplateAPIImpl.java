@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
@@ -10,7 +9,6 @@ import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -18,8 +16,6 @@ import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
-import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -27,7 +23,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
@@ -36,12 +31,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 
@@ -72,10 +65,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostId, query, searchHost, offset, limit);
 	}
 
-	@WrapInTransaction
-	public void delete(Template template) throws DotDataException {
-		FactoryLocator.getTemplateFactory().delete(template);
-	}
+	//TODO: does not have any uses, not visible from API, delete??
+//	@WrapInTransaction
+//	public void delete(Template template) throws DotDataException {
+//		FactoryLocator.getTemplateFactory().delete(template);
+//	}
 
 	@WrapInTransaction
 	@Override
@@ -282,11 +276,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	    }
 
-
-
 	    if(UtilMethods.isSet(template.getInode())) {
     	    try {
-    	        Template existing=(Template) HibernateUtil.load(Template.class, template.getInode());
+    	        final Template existing= templateFactory.find(template.getInode());
     	        existingInode = existing==null || !UtilMethods.isSet(existing.getInode());
     	    }
     	    catch(Exception ex) {
@@ -294,7 +286,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     	    }
 	    }
 
-	    Template oldTemplate = !existingId && UtilMethods.isSet(template.getIdentifier())
+	    final Template oldTemplate = !existingId && UtilMethods.isSet(template.getIdentifier())
 				?findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles)
 						:null;
 

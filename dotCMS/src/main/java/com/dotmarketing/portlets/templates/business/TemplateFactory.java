@@ -19,7 +19,7 @@ public interface TemplateFactory {
 		
 	List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost, int offset, int limit) throws DotDataException, DotSecurityException ;
 
-	void delete(Template template) throws DotDataException;
+//	void delete(Template template) throws DotDataException;
 	
 	/**
 	 * Save template into a persistent repository.
@@ -28,7 +28,7 @@ public interface TemplateFactory {
 	 * @throws DotDataException
 	 */
 	void save(Template template) throws DotDataException;
-	void save(Template template, String existingId)throws DotDataException;
+	void save(Template template, String inode)throws DotDataException;
 	
 	/**
 	 * Delete template from cache.

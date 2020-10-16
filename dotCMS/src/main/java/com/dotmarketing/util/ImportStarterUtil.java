@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import java.io.File;
 import java.io.IOException;
@@ -141,7 +142,6 @@ public class ImportStarterUtil {
      * all current data. This method cannot currently be run in a transaction. For performance reasons
      * with DB drivers and connections it closes the session every so often.
      *
-     * @param out - A print writer for output.
      * @throws IOException
      * @throws Exception
      */
@@ -441,8 +441,6 @@ public class ImportStarterUtil {
      * This method takes an XML file and will try to import it via XStream and Hibernate.
      *
      * @param f - File to be parsed and imported.
-     * @param out - Printwriter to write responses to Reponse Printwriter so this method can write to
-     *        screen.
      */
     private void doXMLFileImport(File f) throws Exception {
         doXMLFileImport(f, null);
@@ -455,8 +453,6 @@ public class ImportStarterUtil {
      * This method takes an XML file and will try to import it via XStream and Hibernate.
      *
      * @param f - File to be parsed and imported.
-     * @param out - Printwriter to write responses to Reponse Printwriter so this method can write to
-     *        screen.
      * @param filter
      * @throws DotDataException
      * @throws HibernateException
@@ -673,7 +669,7 @@ public class ImportStarterUtil {
 
             else {
                 String id;
-                if (_importClass.equals(Relationship.class)) {
+                if (_importClass.equals(Relationship.class) || _importClass.equals(Template.class)) {
                     id = "inode";
                 } else if(_importClass.equals(ContentletVersionInfo.class)) {
                     id = "identifier";
@@ -729,7 +725,10 @@ public class ImportStarterUtil {
                                 } else if (obj instanceof ContentletVersionInfo) {
                                     ContentletVersionInfo cvi = (ContentletVersionInfo) obj;
                                     APILocator.getVersionableAPI().saveContentletVersionInfo(cvi);
-                                } else {
+                                } else if (obj instanceof Template) {
+                                    final Template template = Template.class.cast(obj);
+                                    FactoryLocator.getTemplateFactory().save(template, template.getInode());
+                                } else{
 
                                     Logger.debug(this, "Saving the object: " + obj.getClass() + ", with the id: " + prop);
                                     HibernateUtil.saveWithPrimaryKey(obj, prop);
@@ -899,7 +898,6 @@ public class ImportStarterUtil {
 
     /**
      *
-     * @param zipFile
      * @return
      */
     public boolean validateZipFile() {
@@ -955,7 +953,6 @@ public class ImportStarterUtil {
     /**
      *
      * @param contentlet
-     * @param out
      */
     private void changeDateForSQLServer(com.dotmarketing.portlets.contentlet.business.Contentlet contentlet) {
         if (!validateDate(contentlet.getDate1())) {

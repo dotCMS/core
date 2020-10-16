@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -655,4 +656,25 @@ public class TemplateAPITest extends IntegrationTestBase {
             }
         }
     }
+
+    @Test
+    public void test_find_success() throws Exception{
+        final String title = "testFindTemplate_" + System.currentTimeMillis();
+        final Template template = new TemplateDataGen().title(title).nextPersisted();
+
+        //Remove template cache so it's has to search in the DB
+        CacheLocator.getTemplateCache().clearCache();
+
+        final Template templateFound = templateAPI.find(template.getInode(),user,false);
+
+        assertEquals(title,templateFound.getTitle());
+
+    }
+
+    @Test
+    public void test_find_inode_not_exist_return_NotFoundInDBException() throws Exception{
+       final Template templateFound = templateAPI.find(UUIDGenerator.generateUuid(),user,false);
+       assertNull(templateFound);
+    }
+
 }

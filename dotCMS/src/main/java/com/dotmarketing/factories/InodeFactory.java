@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
@@ -900,6 +901,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		
 		
@@ -926,6 +930,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		return getInodesOfClass(c, 0, 0);
 	}
@@ -939,6 +946,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		try {
@@ -974,6 +984,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1004,6 +1017,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		try {
@@ -1044,6 +1060,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1073,6 +1092,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		try {
@@ -1105,6 +1127,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1134,6 +1159,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		Object obj ;
 		try {
@@ -1158,6 +1186,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		try {
@@ -1208,6 +1239,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
@@ -1245,6 +1279,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		try {
@@ -1284,6 +1321,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
@@ -1321,6 +1361,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		try 
@@ -1369,6 +1412,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
@@ -1409,6 +1455,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		try {
@@ -1490,6 +1539,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		java.util.List children = getChildrenClass(parent, c);
@@ -1587,6 +1639,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
@@ -1641,6 +1696,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
@@ -1690,6 +1748,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 
 		orderby = SQLUtil.sanitizeSortBy(orderby);
@@ -1731,6 +1792,9 @@ public class InodeFactory {
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
+		}
 		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
@@ -1765,6 +1829,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		try {
@@ -1805,6 +1872,9 @@ public class InodeFactory {
 		}
 		if(c.equals(Relationship.class)){
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+		}
+		if(c.equals(Template.class)){
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
 		
 		if (inodes == null || inodes.length == 0)
