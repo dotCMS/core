@@ -185,6 +185,7 @@ public class ContainerStructureFinderStrategyResolver {
                 return Collections.emptyList();
             }
             // todo: probably a good idea to include into the cache
+            //List<ContainerStructure> containerStructures = CacheLocator.getContentTypeCache().getContainerStructures(container.getIdentifier(), container.getInode());
 
             final Set<String> contentTypesIncludedSet = new HashSet<>();
             final ImmutableList.Builder<ContainerStructure> builder =
