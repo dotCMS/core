@@ -350,11 +350,11 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
         }
 
-        final File bucketFile = this.groups.get(groupName.toLowerCase());
+        final File groupDir = this.groups.get(groupName.toLowerCase());
 
-        if (bucketFile.canRead()) {
+        if (groupDir.canRead()) {
 
-            final File file = new File(bucketFile, path.toLowerCase());
+            final File file = new File(groupDir, path);
 
             if (file.exists()) {
 

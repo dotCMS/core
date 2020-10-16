@@ -150,7 +150,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 }
             }
             //basic meta data should override any previous value that might have exist already.
-            //TODO: We should probably generate full metadata and then from there store in cache the values then add the basic metadata on top of the full-md
             metadataMap.putAll(this.generateBasicMetaData(binary, metaDataKeyFilter));
         } catch (Exception e) {
 
