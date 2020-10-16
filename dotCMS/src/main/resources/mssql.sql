@@ -1258,7 +1258,7 @@ create table users_to_delete (
    primary key (id)
 );
 create table identifier (
-   id NVARCHAR(36) not null,
+   id NVARCHAR(750) not null,
    parent_path NVARCHAR(255) null,
    asset_name NVARCHAR(255) null,
    host_inode NVARCHAR(36) null,

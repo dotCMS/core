@@ -287,6 +287,7 @@ public class TaskLocatorUtil {
     	.add(Task05380ChangeContainerPathToAbsolute.class)
     	.add(Task05390MakeRoomForLongerJobDetail.class)
 		.add(Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables.class)
+        .add(Task201016UpdatePrimaryKeyLengthIdentifierTable.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
