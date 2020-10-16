@@ -3,7 +3,6 @@ package com.dotmarketing.startup;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.Connection;
 import java.util.Date;
-import java.util.Map;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -32,6 +31,7 @@ public class StartupTasksExecutor {
 	private final String SELECT = "SELECT max(db_version) AS test FROM db_version";
 	private final String INSERT = "INSERT INTO db_version (db_version,date_update) VALUES (?,?)";
 
+	private static final Pattern TASK_ID_PATTERN = Pattern.compile("[0-9]+");
 
 	final boolean firstTimeStart;
 	
@@ -160,8 +160,7 @@ public class StartupTasksExecutor {
      */
     @VisibleForTesting
     String getTaskId(final String taskName){
-        final Pattern pattern = Pattern.compile("[0-9]+");
-        final Matcher matcher = pattern.matcher(taskName);
+        final Matcher matcher = TASK_ID_PATTERN.matcher(taskName);
 
         if (matcher.find()){
             return matcher.group();
