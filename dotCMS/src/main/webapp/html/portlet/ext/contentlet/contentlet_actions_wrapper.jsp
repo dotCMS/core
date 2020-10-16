@@ -34,11 +34,23 @@ String userLocked =null;
 String lockedSince = null;
 boolean contentEditable = false;
 if (isLocked) {
-	String lockedUserId =  APILocator.getVersionableAPI().getLockedBy(contentlet);
-	contentEditable = user.getUserId().equals(lockedUserId);
-	
-	userLocked = APILocator.getUserAPI().loadUserById(lockedUserId, APILocator.getUserAPI().getSystemUser(), true).getFullName();
-	lockedSince = UtilMethods.capitalize(DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale()));
+	Optional<String> lockedUserId =  APILocator.getVersionableAPI().getLockedBy(contentlet);
+
+	if(lockedUserId.isPresent()) {
+		contentEditable = user.getUserId().equals(lockedUserId.get());
+
+		userLocked = APILocator.getUserAPI()
+				.loadUserById(lockedUserId.get(), APILocator.getUserAPI().getSystemUser(), true)
+				.getFullName();
+
+		Optional<Date> lockedSinceOpt = APILocator.getVersionableAPI().getLockedOn(contentlet);
+
+		if(lockedSinceOpt.isPresent()) {
+			lockedSince = UtilMethods.capitalize(
+					DateUtil.prettyDateSince(lockedSinceOpt.get(),
+							user.getLocale()));
+		}
+	}
 }
 
 
