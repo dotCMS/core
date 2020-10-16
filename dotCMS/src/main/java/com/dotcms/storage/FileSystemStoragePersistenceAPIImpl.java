@@ -315,7 +315,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
         if (bucketFile.canRead()) {
 
-            final File destBucketFile = new File(bucketFile, path.toLowerCase());
+            final File destBucketFile = new File(bucketFile, path);
 
             if (destBucketFile.exists()) {
 
