@@ -87,7 +87,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
-        return this.existsGroup(groupNameLC) && new File(this.groups.get(groupNameLC), objectPath)
+        return this.existsGroup(groupNameLC) && new File(this.groups.get(groupNameLC), objectPath.toLowerCase())
                 .exists();
     }
 
