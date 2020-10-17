@@ -70,8 +70,6 @@ import org.junit.runners.Suite.SuiteClasses;
 //@RunWith(Suite.class)
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        StoragePersistenceAPITest.class,
-        FileMetadataAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
         com.liferay.portal.ejb.UserUtilTest.class,
@@ -337,7 +335,9 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
         IntegrityDataGenerationJobTest.class,
-        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
+        StoragePersistenceAPITest.class,
+        FileMetadataAPITest.class
 })
 public class MainSuite {
 
