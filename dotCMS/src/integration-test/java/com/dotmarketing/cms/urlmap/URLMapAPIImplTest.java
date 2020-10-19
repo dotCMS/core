@@ -702,7 +702,7 @@ public class URLMapAPIImplTest {
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
      * Given Scenario: Process a URL Map url when both the Content Type and Content exists but the field to Map is a
-     * {@link com.dotcms.contenttype.model.field.DataTypes#INTEGER}
+     * {@link com.dotcms.contenttype.model.field.DataTypes#FLOAT}
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
      */
     @Test
