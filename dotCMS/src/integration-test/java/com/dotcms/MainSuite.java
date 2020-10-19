@@ -59,6 +59,8 @@ import com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsoluteTe
 import com.dotmarketing.startup.runonce.Task05390MakeRoomForLongerJobDetailTest;
 import com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest;
 import com.dotmarketing.startup.runonce.Task201008LoadAppsSecretsTest;
+import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
+import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -344,8 +346,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201008LoadAppsSecretsTest.class,
         StoragePersistenceAPITest.class,
         FileMetadataAPITest.class,
-        StartupTasksExecutorTest.class
-
+        StartupTasksExecutorTest.class,
+        Task201013AddNewColumnsToIdentifierTableTest.class,
+        Task201014UpdateColumnsValuesInIdentifierTableTest.class
 })
 public class MainSuite {
 

@@ -1034,6 +1034,9 @@ create table identifier (
    syspublish_date date,
    sysexpire_date date,
    full_path_lc as ( CASE WHEN parent_path = 'System folder' THEN '/' ELSE  lower(concat(parent_path, asset_name)) END),
+   owner varchar2(255),
+   create_date date,
+   asset_subtype varchar2(255),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -1564,6 +1567,7 @@ alter table analytic_summary_visits add constraint fk9eac9733b7b46300 foreign ke
 create index idx_preference_1 on user_preferences (preference);
 create index idx_identifier_pub on identifier (syspublish_date);
 create index idx_identifier_exp on identifier (sysexpire_date);
+create index idx_identifier_asset_subtype on identifier (asset_subtype);
 create index idx_user_clickstream11 on clickstream (host_id);
 create index idx_user_clickstream12 on clickstream (last_page_id);
 create index idx_user_clickstream15 on clickstream (browser_name);
