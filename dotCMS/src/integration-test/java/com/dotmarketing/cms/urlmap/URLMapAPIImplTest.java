@@ -718,7 +718,7 @@ public class URLMapAPIImplTest {
                 .field(field)
                 .detailPage(detailPage1.getIdentifier())
                 .urlMapPattern(urlMapper)
-
+                .nextPersisted();
         final Contentlet newsTestContent = new ContentletDataGen(contentType.id())
                 .setProperty(field.variable(), 2f)
                 .languageId(1)
