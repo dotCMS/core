@@ -21,6 +21,9 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import java.io.Serializable;
+import java.util.Map;
+
 /**
  * @author Jason Tesser
  * @since 1.6
@@ -33,7 +36,7 @@ public class ContentletCacheImpl extends ContentletCache {
 	private String metadataGroup = "FileAssetMetadataCache";
 	private String translatedQueryGroup = "TranslatedQueryCache";
 	// region's name for the cache
-	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup,translatedQueryGroup};
+	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup, translatedQueryGroup};
 
 	public ContentletCacheImpl() {
 		cache = CacheLocator.getCacheAdministrator();
@@ -57,6 +60,18 @@ public class ContentletCacheImpl extends ContentletCache {
 		}else{
 			return (TranslatedQuery)o;
 		}
+	}
+
+	@Override
+	public void addMetadataMap(final String key, final Map<String, Serializable> metadataMap) {
+		cache.put(key, UtilMethods.isSet(metadataMap)?
+				metadataMap:EMPTY_METADATA_MAP, metadataGroup);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Map<String, Serializable> getMetadataMap(final String key) {
+        return (Map<String, Serializable>)cache.getNoThrow(key, metadataGroup);
 	}
 
 	@Override

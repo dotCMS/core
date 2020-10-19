@@ -2541,3 +2541,37 @@ create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
 -- Case sensitive unique asset-name,parent_path for a given host
 CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);
+
+CREATE TABLE  storage_group (
+    group_name varchar(255)  NOT NULL,
+    mod_date  TIMESTAMP  DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (group_name)
+);
+
+CREATE TABLE storage (
+    path       varchar(255) NOT NULL,
+    group_name varchar(255) NOT NULL,
+    hash       varchar(64) NOT NULL,
+    metadata   NCLOB NOT NULL,
+    mod_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (path, group_name),
+    FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
+);
+
+CREATE INDEX idx_storage_hash ON storage (hash);
+
+CREATE TABLE storage_data (
+    hash_id  varchar(64) NOT NULL,
+    data     BLOB NOT NULL,
+    mod_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ,
+    PRIMARY KEY (hash_id)
+);
+
+CREATE TABLE storage_x_data (
+    storage_hash varchar(64) NOT NULL,
+    data_hash    varchar(64) NOT NULL,
+    data_order   INTEGER  NOT NULL,
+    mod_date     TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (storage_hash, data_hash),
+    FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
+);

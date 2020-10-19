@@ -31,12 +31,13 @@ import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.storage.FileMetadataAPITest;
+import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
-import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
@@ -47,10 +48,19 @@ import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
-import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
-import com.dotmarketing.startup.runonce.*;
+import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
+import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
+import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
+import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
+import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
+import com.dotmarketing.startup.runonce.Task05370AddAppsPortletToLayoutTest;
+import com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsoluteTest;
+import com.dotmarketing.startup.runonce.Task05390MakeRoomForLongerJobDetailTest;
+import com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest;
 import com.dotmarketing.util.ConfigTest;
+import com.dotmarketing.util.HashBuilderTest;
+import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
@@ -292,6 +302,7 @@ import org.junit.runners.Suite.SuiteClasses;
         SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
+        HashBuilderTest.class,
         ElasticsearchUtilTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
@@ -308,7 +319,6 @@ import org.junit.runners.Suite.SuiteClasses;
         DotParseTest.class,
         TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,
-        HostAPITest.class,
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
@@ -322,10 +332,13 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
         DotStatefulJobTest.class,
+        IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
         IntegrityDataGenerationJobTest.class,
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
+        StoragePersistenceAPITest.class,
+        FileMetadataAPITest.class,
         StartupTasksExecutorTest.class
 })
 public class MainSuite {
