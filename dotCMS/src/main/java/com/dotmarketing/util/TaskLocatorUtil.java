@@ -287,6 +287,9 @@ public class TaskLocatorUtil {
     	.add(Task05380ChangeContainerPathToAbsolute.class)
     	.add(Task05390MakeRoomForLongerJobDetail.class)
 		.add(Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables.class)
+		//New task date-based naming convention starts here
+		.add(Task201008LoadAppsSecrets.class)
+
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

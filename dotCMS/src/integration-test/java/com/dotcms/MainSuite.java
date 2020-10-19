@@ -58,6 +58,7 @@ import com.dotmarketing.startup.runonce.Task05370AddAppsPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsoluteTest;
 import com.dotmarketing.startup.runonce.Task05390MakeRoomForLongerJobDetailTest;
 import com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest;
+import com.dotmarketing.startup.runonce.Task201008LoadAppsSecretsTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -69,6 +70,9 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 //@RunWith(Suite.class)
+
+
+
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
@@ -337,9 +341,11 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05390MakeRoomForLongerJobDetailTest.class,
         IntegrityDataGenerationJobTest.class,
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
+        Task201008LoadAppsSecretsTest.class,
         StoragePersistenceAPITest.class,
         FileMetadataAPITest.class,
         StartupTasksExecutorTest.class
+
 })
 public class MainSuite {
 
