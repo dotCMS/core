@@ -11,7 +11,7 @@ import {
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs/internal/Subject';
+import { Subject } from 'rxjs';
 import { MenuItem } from 'primeng/api';
 
 /**

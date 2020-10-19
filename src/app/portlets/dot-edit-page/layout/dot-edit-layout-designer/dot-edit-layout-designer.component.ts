@@ -1,6 +1,6 @@
 import { DotLayoutColumn } from './../../shared/models/dot-layout-column.model';
 import { DotLayoutRow } from './../../shared/models/dot-layout-row.model';
-import { Subject } from 'rxjs/internal/Subject';
+import { Subject } from 'rxjs';
 import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 import { DotPageRenderState } from './../../shared/models/dot-rendered-page-state.model';
 import { DotAlertConfirmService } from './../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';

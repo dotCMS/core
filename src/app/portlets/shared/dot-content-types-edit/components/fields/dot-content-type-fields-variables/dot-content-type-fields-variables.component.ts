@@ -3,7 +3,7 @@ import { DotFieldVariablesService } from './services/dot-field-variables.service
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotFieldVariable } from './models/dot-field-variable.interface';
 import { take, takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs/internal/Subject';
+import { Subject } from 'rxjs';
 import { DotCMSContentTypeField } from 'dotcms-models';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { HttpErrorResponse } from '@angular/common/http';

@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, OnInit, Output } from '@angu
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { FieldDragDropService } from '../fields/service';
-import { take } from 'rxjs/internal/operators/take';
+import { take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotCMSContentType } from 'dotcms-models';
