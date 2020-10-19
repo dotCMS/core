@@ -61,6 +61,7 @@ import com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInInt
 import com.dotmarketing.startup.runonce.Task201008LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
+import com.dotmarketing.startup.runonce.Task201016UpdatePrimaryKeyLengthIdentifierTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -348,7 +349,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FileMetadataAPITest.class,
         StartupTasksExecutorTest.class,
         Task201013AddNewColumnsToIdentifierTableTest.class,
-        Task201014UpdateColumnsValuesInIdentifierTableTest.class
+        Task201014UpdateColumnsValuesInIdentifierTableTest.class,
+        Task201016UpdatePrimaryKeyLengthIdentifierTableTest.class
 })
 public class MainSuite {
 
