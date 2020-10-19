@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 
 $iframe-margin: $basic-padding * 3;
 

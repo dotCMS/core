@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 
 :host {
     border: 1px solid $gray-lighter;

@@ -1,9 +1,23 @@
-@import "variables";
+@use "variables" as *;
 @import "forms";
 @import "mixins";
 @import "typography";
 @import "dotcms-theme/utils/theme-variables"; /* temporary */
 @import "dotcms-theme/theme"; /* prime-ng */
+
+// CSS VARIABLEs
+:root {
+    --text-color: #000001;
+    --color-background: #3a3847;
+    --color-main: #c336e5;
+    --color-main_mod: #d369ec;
+    --color-main_rgb: 195, 54, 229;
+    --color-sec: #54428e;
+    --color-sec_rgb: 84, 66, 142;
+    --color-white: #fff;
+    --color-white_rgb: 255, 255, 255;
+    --empty-message: '';
+}
 
 /*
     FONT AWESOME
@@ -65,7 +79,7 @@ html,
 body {
     color: $black;
     font-family: $body-text;
-    font-size: $body-font-size-base;
+    font-size: 14px;
     height: 100%;
     margin: 0;
     padding: 0;

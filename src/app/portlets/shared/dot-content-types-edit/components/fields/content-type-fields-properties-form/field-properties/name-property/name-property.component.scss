@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 
 .form__field-variable {
     font-size: $label-font-size;

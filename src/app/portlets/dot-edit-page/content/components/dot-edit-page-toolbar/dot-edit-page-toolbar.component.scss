@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 
 .edit-page-toolbar__cancel {
     margin-right: $basic-padding;

@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 
 .loader__overlay {
     background: rgba($white, 0.7);

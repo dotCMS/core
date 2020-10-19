@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 
 :host {
     .dot-secondary-toolbar__main,

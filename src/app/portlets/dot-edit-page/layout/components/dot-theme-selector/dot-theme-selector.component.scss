@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 @import "dotcms-theme/utils/theme-variables";
 
 $theme-item-dimension: 240px;

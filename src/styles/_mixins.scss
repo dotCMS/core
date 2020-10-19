@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 
 @mixin md-icon {
     -webkit-font-feature-settings: "liga";

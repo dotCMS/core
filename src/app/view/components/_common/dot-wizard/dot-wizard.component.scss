@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 
 .dot-wizard__step {
     width: $form-width;

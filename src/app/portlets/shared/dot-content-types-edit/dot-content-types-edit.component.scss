@@ -1,4 +1,4 @@
-@import "variables";
+@use "variables" as *;
 @import "mixins";
 
 ::ng-deep .basetype-content.p-dialog .p-dialog-content .p-autocomplete-panel {

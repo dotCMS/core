@@ -1,12 +1,5 @@
 @use "variables" as *;
 
-* { box-sizing: border-box; }
-
-:root {
-  font-size: 14px;
-  font-family: $body-text;
-}
-
 .p-component {
     font-family: $body-text;
   font-size: $font-size-medium;
