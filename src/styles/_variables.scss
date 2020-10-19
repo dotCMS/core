@@ -16,15 +16,18 @@ $brand-secondary: var(--color-sec);
 $brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
 $bg-color-primary: rgba($brand-primary_rgb, 0.12);
+
 $highlight-bg: rgba($brand-secondary_rgb, 0.12);
 $highlight-text-color: $brand-primary;
+$highlight-border-color: rgba($brand-secondary_rgb, 0.12);
+
 $focus-bg: rgba($brand-secondary_rgb, 0.12);
 $focus-text-color: $black;
 $focus-text-primary-color: $brand-primary;
+
 $hover-text-primary-color: $brand-primary;
 $hover-bg: rgba($brand-secondary_rgb, 0.12);
 $hover-text-color: $black;
-$highlight-border-color: rgba($brand-secondary_rgb, 0.12);
 $hover-border-color: $brand-primary;
 
 // TODO: Search replace font-size: $spacing-4 (font-size: 1.25rem)

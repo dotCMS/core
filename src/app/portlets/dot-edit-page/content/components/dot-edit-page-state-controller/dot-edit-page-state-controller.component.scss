@@ -5,23 +5,23 @@
     display: flex;
     align-items: center;
     height: 100%;
+
+    ::ng-deep {
+        .p-button-tabbed {
+            box-shadow: none;
+            height: 100%;
+            margin-right: $spacing-4;
+        }
+
+        .p-selectbutton {
+            height: 100%;
+            display: flex;
+        }
+    }
 }
 
 dot-edit-page-lock-info {
     margin-left: $basic-padding;
-}
-
-p-selectButton {
-    margin-right: $basic-padding * 3;
-
-    ::ng-deep .p-selectbutton {
-        background: none;
-        height: auto;
-
-        .p-button {
-            height: auto;
-        }
-    }
 }
 
 p-inputSwitch {

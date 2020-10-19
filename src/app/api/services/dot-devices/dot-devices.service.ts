@@ -22,6 +22,7 @@ export class DotDevicesService {
         return this.coreWebService
             .requestView({
                 url: [
+                    'api',
                     'content',
                     'respectFrontendRoles/false',
                     'render/false',
