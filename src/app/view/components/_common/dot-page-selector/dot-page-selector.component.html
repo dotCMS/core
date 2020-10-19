@@ -1,17 +1,15 @@
-<span dotMdInputtext [label]="label" *ngIf="floatingLabel; else placeholded">
-    <p-autoComplete
-        appendTo="body"
-        (completeMethod)="search($event)"
-        (keydown.enter)="onKeyEnter($event)"
-        (keydown.tab)="$event.preventDefault()"
-        (onClear)="onClear($event)"
-        (onSelect)="onSelect($event)"
-        [inputStyle]="{'width': '100%', 'padding': '0'}"
-        [minLength]="2"
-        [style]="style"
-        field="label"
-        [ngModel]="val"
-        [suggestions]="results.data">
+<span class="p-float-label" *ngIf="floatingLabel; else placeholded">
+            <p-autoComplete
+                appendTo="body"
+                (completeMethod)="search($event)"
+                (keydown.enter)="onKeyEnter($event)"
+                (keydown.tab)="$event.preventDefault()"
+                (onClear)="onClear($event)"
+                (onSelect)="onSelect($event)"
+                [minLength]="2"
+                field="label"
+                [ngModel]="val"
+                [suggestions]="results.data">
             <ng-template let-item pTemplate="item" >
                 <div class='dot-page-selector__item'>
                     <span *ngIf="results.type === 'site'">{{ item.label }}</span>
@@ -20,8 +18,9 @@
                 </div>
             </ng-template>
     </p-autoComplete>
+    <label>{{ label }}</label>
 </span>
-<div *ngIf="message" class="ui-messages-error" [textContent]="message"></div>
+<small *ngIf="message" class="p-invalid" [textContent]="message" ></small>
 
 <ng-template #placeholded>
     <p-autoComplete
@@ -31,9 +30,7 @@
         (keydown.tab)="$event.preventDefault()"
         (onClear)="onClear($event)"
         (onSelect)="onSelect($event)"
-        [inputStyle]="{'width': '100%', 'padding': '0'}"
         [minLength]="3"
-        [style]="style"
         field="label"
         [ngModel]="val"
         [suggestions]="results.data">

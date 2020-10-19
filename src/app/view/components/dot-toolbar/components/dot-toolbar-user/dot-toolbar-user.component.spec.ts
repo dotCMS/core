@@ -28,7 +28,6 @@ import { DotMenuService } from '@services/dot-menu.service';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { ButtonModule } from 'primeng/button';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -95,7 +94,6 @@ describe('DotToolbarUserComponent', () => {
                 DotIconModule,
                 SearchableDropDownModule,
                 RouterTestingModule,
-                MdInputTextModule,
                 ButtonModule,
                 DotPipesModule,
                 FormsModule,

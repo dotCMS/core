@@ -39,7 +39,6 @@ import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotContentTypeFieldsVariablesModule } from '@portlets/shared/dot-content-types-edit/components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
@@ -139,7 +138,6 @@ import { TabViewModule } from 'primeng/tabview';
         FormsModule,
         IFrameModule,
         InputTextModule,
-        MdInputTextModule,
         MultiSelectModule,
         OverlayPanelModule,
         RadioButtonModule,

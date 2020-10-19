@@ -18,7 +18,6 @@ import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
 import { SharedModule } from './shared/shared.module';
 
 import { DotDirectivesModule } from './shared/dot-directives.module';
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { MonacoEditorModule } from 'ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
@@ -39,7 +38,6 @@ import { MarkdownModule } from 'ngx-markdown';
         HttpClientModule,
         ReactiveFormsModule,
         AppRoutingModule,
-        MdInputTextModule,
         DotDirectivesModule,
         DotPipesModule,
         SharedModule.forRoot(),

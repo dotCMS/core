@@ -1,4 +1,4 @@
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement, Input, HostBinding, Output, EventEmitter } from '@angular/core';
@@ -122,7 +122,6 @@ describe('DotEditLayoutGridComponent', () => {
                 DotContainerSelectorModule,
                 BrowserAnimationsModule,
                 DotIconButtonTooltipModule,
-                MdInputTextModule,
                 DotAutofocusModule
             ],
             providers: [

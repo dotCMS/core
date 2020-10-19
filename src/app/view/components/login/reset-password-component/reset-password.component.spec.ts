@@ -14,7 +14,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 
 describe('ResetPasswordComponent', () => {
@@ -35,7 +34,6 @@ describe('ResetPasswordComponent', () => {
                 ReactiveFormsModule,
                 ButtonModule,
                 InputTextModule,
-                MdInputTextModule,
                 DotFieldValidationMessageModule,
                 RouterTestingModule
             ],

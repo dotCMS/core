@@ -2,6 +2,10 @@
 @import "mixins";
 
 :host {
+
+    position: relative;
+    display: block;
+
     ::ng-deep {
         .p-autocomplete-panel {
             width: auto !important;

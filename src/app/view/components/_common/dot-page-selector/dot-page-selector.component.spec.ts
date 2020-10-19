@@ -9,7 +9,6 @@ import { DotPageSelectorService } from './service/dot-page-selector.service';
 import { FormGroup, FormBuilder } from '@angular/forms';
 import { AutoComplete } from 'primeng/autocomplete';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import {
     DotPageSelectorResults,
     DotPageSeletorItem
@@ -121,7 +120,7 @@ const messageServiceMock = new MockDotMessageService({
 const config = host => {
     return {
         declarations: [host, DotPageSelectorComponent],
-        imports: [DotDirectivesModule, MdInputTextModule, DotFieldHelperModule],
+        imports: [DotDirectivesModule, DotFieldHelperModule],
         providers: [
             { provide: DotPageSelectorService, useClass: MockDotPageSelectorService },
             { provide: LoginService, useClass: LoginServiceMock },
@@ -211,10 +210,6 @@ describe('DotPageSelectorComponent', () => {
         expect(dotPageSelectorService.search).toHaveBeenCalledWith('demo');
     });
 
-    it('should pass attrs to autocomplete component', () => {
-        expect(autocompleteComp.style).toEqual({ width: '100%' });
-    });
-
     it('should display error when no results in pages', () => {
         spyOn(dotPageSelectorService, 'search').and.returnValue(
             observableOf({
@@ -288,7 +283,7 @@ describe('DotPageSelectorComponent', () => {
         });
 
         it('should set floating label directive', () => {
-            const span: DebugElement = de.query(By.css('[dotMdInputtext]'));
+            const span: DebugElement = de.query(By.css('.p-float-label'));
             expect(span.componentInstance.label).toBe('Hello World');
             expect(span).toBeTruthy();
         });

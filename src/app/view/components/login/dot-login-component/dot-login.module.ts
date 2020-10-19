@@ -6,7 +6,6 @@ import { DotLoadingIndicatorModule } from '../../_common/iframe/dot-loading-indi
 import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
 import { SharedModule } from '@shared/shared.module';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { ButtonModule } from 'primeng/button';
@@ -32,7 +31,6 @@ const routes: Routes = [
         InputTextModule,
         SharedModule,
         DotLoadingIndicatorModule,
-        MdInputTextModule,
         DotDirectivesModule,
         ReactiveFormsModule,
         DotFieldValidationMessageModule,

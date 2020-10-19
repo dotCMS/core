@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMyAccountComponent } from './dot-my-account.component';
 import {
@@ -61,7 +60,6 @@ describe('DotMyAccountComponent', () => {
                 declarations: [DotMyAccountComponent],
                 imports: [
                     PasswordModule,
-                    MdInputTextModule,
                     InputTextModule,
                     FormsModule,
                     DotDialogModule,

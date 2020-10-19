@@ -8,9 +8,7 @@ import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -48,8 +46,6 @@ describe('DotLoginComponent', () => {
                 ButtonModule,
                 CheckboxModule,
                 DropdownModule,
-                MdInputTextModule,
-                MdInputTextModule,
                 DotLoadingIndicatorModule,
                 DotFieldValidationMessageModule,
                 RouterTestingModule

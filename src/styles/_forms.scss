@@ -44,6 +44,7 @@
 }
 
 .form__group--helper {
+    position: relative;
     input[pinputtext] {
         padding-right: $basic-padding * 4;
     }

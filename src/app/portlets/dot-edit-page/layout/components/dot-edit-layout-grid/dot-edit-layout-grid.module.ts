@@ -7,7 +7,6 @@ import { NgGridModule } from 'dot-layout-grid';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ButtonModule } from 'primeng/button';
@@ -27,7 +26,6 @@ import { InputTextModule } from 'primeng/inputtext';
         ReactiveFormsModule,
         DotIconButtonTooltipModule,
         DotAutofocusModule,
-        MdInputTextModule,
         DotPipesModule
     ],
     exports: [DotEditLayoutGridComponent],
