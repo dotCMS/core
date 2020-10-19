@@ -222,7 +222,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             final String variableName = fieldMatches.get(counter);
             final Field field = fieldMap.get(variableName);
 
-            if (field.dataType().equals(DataTypes.INTEGER)){
+            if (field.dataType().equals(DataTypes.INTEGER) || field.dataType().equals(DataTypes.FLOAT)){
                 query.append(variableName);
             } else {
                 query.append(variableName).append("_dotRaw");

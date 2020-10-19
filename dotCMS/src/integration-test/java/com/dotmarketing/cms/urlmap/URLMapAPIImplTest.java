@@ -698,4 +698,42 @@ public class URLMapAPIImplTest {
                 urlMapInfo.getContentlet().getLongProperty(field.variable()));
         assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
     }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists but the field to Map is a
+     * {@link com.dotcms.contenttype.model.field.DataTypes#INTEGER}
+     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
+     */
+    @Test
+    public void shouldReturnContentletWhenTheContentExistsAndUseAFloatField()
+            throws DotDataException, DotSecurityException {
+        final String newsPatternPrefix =
+                "float" + TEST_PATTERN + System.currentTimeMillis() + "/";
+
+
+        final Field field = new FieldDataGen().dataType(DataTypes.FLOAT).next();
+        final String urlMapper = newsPatternPrefix  + "{" + field.variable() + "}";
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(field)
+                .detailPage(detailPage1.getIdentifier())
+                .urlMapPattern(urlMapper)
+
+        final Contentlet newsTestContent = new ContentletDataGen(contentType.id())
+                .setProperty(field.variable(), 2f)
+                .languageId(1)
+                .host(host)
+                .nextPersisted();
+
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent.getFloatProperty(field.variable()));
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        assertTrue(urlMapInfoOptional.isPresent());
+        final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent.getLongProperty(field.variable()),
+                urlMapInfo.getContentlet().getLongProperty(field.variable()));
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
 }
