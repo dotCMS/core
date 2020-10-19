@@ -23,6 +23,7 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.Optional;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -134,10 +135,11 @@ public class CheckinContentActionletTest {
             checkinContentActionlet.executeAction(workflowProcessor, params);
             assertTrue(testCase.hasWritePermission || !locked);
 
-            final ContentletVersionInfo info = APILocator.getVersionableAPI().
+            final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().
                     getContentletVersionInfo(testCase.contentlet.getIdentifier(), testCase.contentlet.getLanguageId());
 
-            assertNull(info.getLockedBy());
+            assertTrue(info.isPresent());
+            assertNull(info.get().getLockedBy());
         } catch (WorkflowActionFailureException e) {
             if (ExceptionUtil.causedBy(e, DotLockException.class)) {
                 assertTrue(!testCase.hasWritePermission && testCase.contentlet.isLocked());

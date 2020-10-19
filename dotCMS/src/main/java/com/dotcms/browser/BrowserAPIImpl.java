@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.mutable.MutableInt;
 
@@ -380,8 +381,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && contentlet.isLocked()) {
 
-                final String lockedUserId = APILocator.getVersionableAPI().getLockedBy(contentlet);
-                contentEditable = user.getUserId().equals(lockedUserId);
+                final Optional<String> lockedUserId = APILocator.getVersionableAPI().getLockedBy(contentlet);
+                contentEditable = lockedUserId.isPresent() && user.getUserId().equals(lockedUserId.get());
             } else {
 
                 contentEditable = false;

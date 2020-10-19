@@ -72,6 +72,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -630,13 +631,19 @@ public class BrowserAjax {
 		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
-		    ContentletVersionInfo vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
+		    Optional<ContentletVersionInfo> vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 
-			if(vinfo==null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+			if(!vinfo.isPresent() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
 				languageId = languageAPI.getDefaultLanguage().getId();
 				vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 			}
-		    boolean live = respectFrontendRoles || vinfo.getLiveInode()!=null;
+
+			if(!vinfo.isPresent()) {
+				throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
+						+ ident.getId() + ". Lang: " + languageId);
+			}
+
+		    boolean live = respectFrontendRoles || vinfo.get().getLiveInode()!=null;
 			Contentlet cont = contentletAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
 			if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
     			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
