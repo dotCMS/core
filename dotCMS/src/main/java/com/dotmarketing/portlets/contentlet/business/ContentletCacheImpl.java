@@ -20,6 +20,12 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.gson.GsonBuilder;
+
+import java.util.Map;
+
+import java.io.Serializable;
+import java.util.Map;
 
 /**
  * @author Jason Tesser
@@ -33,7 +39,7 @@ public class ContentletCacheImpl extends ContentletCache {
 	private String metadataGroup = "FileAssetMetadataCache";
 	private String translatedQueryGroup = "TranslatedQueryCache";
 	// region's name for the cache
-	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup,translatedQueryGroup};
+	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup, translatedQueryGroup};
 
 	public ContentletCacheImpl() {
 		cache = CacheLocator.getCacheAdministrator();
@@ -60,6 +66,18 @@ public class ContentletCacheImpl extends ContentletCache {
 	}
 
 	@Override
+	public void addMetadataMap(final String key, final Map<String, Serializable> metadataMap) {
+		cache.put(key, UtilMethods.isSet(metadataMap)?
+				metadataMap:EMPTY_METADATA_MAP, metadataGroup);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Map<String, Serializable> getMetadataMap(final String key) {
+        return (Map<String, Serializable>)cache.getNoThrow(key, metadataGroup);
+	}
+
+	@Override
 	public void addMetadata(String key, String metadata) {
 		key = metadataGroup + key;
 		if(!UtilMethods.isSet(metadata))
@@ -78,7 +96,9 @@ public class ContentletCacheImpl extends ContentletCache {
 		if(st!=null && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
 			Field f=st.getFieldVar(FileAssetAPI.META_DATA_FIELD);
 			if(f!=null && UtilMethods.isSet(f.getInode())) {
-				String metadata=(String)content.get(FileAssetAPI.META_DATA_FIELD);
+				final String metadata = content.get(FileAssetAPI.META_DATA_FIELD) instanceof Map?
+						new GsonBuilder().disableHtmlEscaping().create().toJson(content.get(FileAssetAPI.META_DATA_FIELD)):
+						(String)content.get(FileAssetAPI.META_DATA_FIELD);
 				addMetadata(key, metadata);
 				content.setStringProperty(FileAssetAPI.META_DATA_FIELD, ContentletCache.CACHED_METADATA);
 			}
