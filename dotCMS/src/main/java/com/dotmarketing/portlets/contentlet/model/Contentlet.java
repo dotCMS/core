@@ -1179,7 +1179,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public java.io.File getBinary(String velocityVarName)throws IOException {
-		File f = (File) map.get(velocityVarName);
+		final Object obj = map.get(velocityVarName);
+		if (obj == null) {
+			return null;
+		}
+
+		File f = obj instanceof File ? (File) map.get(velocityVarName) : new File((String) obj);
 		if((f==null || !f.exists()) ){
 			f=null;
 			map.remove(velocityVarName);
