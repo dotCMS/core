@@ -16,7 +16,7 @@ import { LoginServiceMock } from '@tests/login-service.mock';
 import { mockDotPersona } from '@tests/dot-persona.mock';
 import { of as observableOf, throwError } from 'rxjs';
 import { NgControl } from '@angular/forms';
-import { FileUploadModule } from 'primeng/primeng';
+import { FileUploadModule } from 'primeng/fileupload';
 import { SiteServiceMock } from '@tests/site-service.mock';
 import { mockResponseView } from '@tests/response-view.mock';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
@@ -66,6 +66,11 @@ describe('DotAddPersonaDialogComponent', () => {
         component = fixture.componentInstance;
         fixture.detectChanges();
         dotDialog = fixture.debugElement.query(By.css('dot-dialog'));
+    });
+
+    afterEach(() => {
+        component.visible = false;
+        fixture.detectChanges();
     });
 
     it('should not be visible by default', () => {

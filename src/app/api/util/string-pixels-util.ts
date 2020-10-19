@@ -1,4 +1,6 @@
 import * as _ from 'lodash';
+import { Injectable } from "@angular/core";
+@Injectable()
 export class StringPixels {
     private static readonly characterSize = 7;
     private static readonly arrowDropdownComponentSize = 32;

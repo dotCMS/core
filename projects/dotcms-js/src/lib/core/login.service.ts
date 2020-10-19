@@ -2,7 +2,6 @@
  * Created by oswaldogallango on 7/11/16.
  */
 import { CoreWebService } from './core-web.service';
-import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 import { Observable, Subject, of } from 'rxjs';
 import { Router } from '@angular/router';
@@ -96,7 +95,6 @@ export class LoginService {
     public loadAuth(): Observable<Auth> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: this.urls.getAuth
             })
             .pipe(
@@ -121,7 +119,7 @@ export class LoginService {
 
         return this.coreWebService.requestView({
             body: body,
-            method: RequestMethod.Post,
+            method: 'POST',
             url: this.urls.changePassword
         });
     }
@@ -137,7 +135,7 @@ export class LoginService {
 
         return this.coreWebService.requestView({
             body: { messagesKey: i18nKeys, language: this.lang, country: this.country },
-            method: RequestMethod.Post,
+            method: 'POST',
             url: this.urls.serverInfo
         });
     }
@@ -156,7 +154,7 @@ export class LoginService {
                     password: userData.password,
                     userId: userData.user.userId
                 },
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: this.urls.loginAs
             })
             .pipe(
@@ -203,7 +201,7 @@ export class LoginService {
                     country: this.country,
                     backEndLogin: backEndLogin
                 },
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: this.urls.userAuth
             })
             .pipe(
@@ -216,7 +214,7 @@ export class LoginService {
 
                     this.setAuth(auth);
                     this.coreWebService
-                        .subscribeTo(HttpCode.UNAUTHORIZED)
+                        .subscribeToHttpError(HttpCode.UNAUTHORIZED)
                         .subscribe(() => this.logOutUser().subscribe(() => {}));
                     return response.entity;
                 })
@@ -230,7 +228,7 @@ export class LoginService {
     public logoutAs(): Observable<any> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Put,
+                method: 'PUT',
                 url: `${this.urls.logoutAs}`
             })
             .pipe(
@@ -252,7 +250,6 @@ export class LoginService {
     public logOutUser(): Observable<any> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: this.urls.logout
             })
             .pipe(
@@ -285,7 +282,7 @@ export class LoginService {
     public recoverPassword(login: string): Observable<any> {
         return this.coreWebService.requestView({
             body: { userId: login },
-            method: RequestMethod.Post,
+            method: 'POST',
             url: this.urls.recoverPassword
         });
     }
@@ -352,7 +349,6 @@ export class LoginService {
     // private loadLoginAsUsersList(includeNUsers: boolean, filter: string): Observable<any> {
     //     return this.coreWebService
     //         .requestView({
-    //             method: RequestMethod.Get,
     //             url: `${this.urls
     //                 .loginAsUserList}?includeUsersCount=${includeNUsers}&filter=${filter}`
     //         })

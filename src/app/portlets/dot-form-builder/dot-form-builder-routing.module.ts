@@ -17,7 +17,7 @@ const routes: Routes = [
     },
     {
         loadChildren:
-            '@portlets/shared/dot-content-types-edit/dot-content-types-edit.module#DotContentTypesEditModule',
+            () => import('@portlets/shared/dot-content-types-edit/dot-content-types-edit.module').then(m => m.DotContentTypesEditModule),
         path: 'create',
         resolve: {
             contentType: DotContentTypeEditResolver
@@ -29,7 +29,7 @@ const routes: Routes = [
     },
     {
         loadChildren:
-            '@portlets/shared/dot-content-types-edit/dot-content-types-edit.module#DotContentTypesEditModule',
+            () => import('@portlets/shared/dot-content-types-edit/dot-content-types-edit.module').then(m => m.DotContentTypesEditModule),
         path: 'edit/:id',
         resolve: {
             contentType: DotContentTypeEditResolver

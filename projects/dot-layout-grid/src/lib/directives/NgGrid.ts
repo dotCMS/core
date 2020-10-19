@@ -1,17 +1,4 @@
-import {
-    Directive,
-    ElementRef,
-    Renderer,
-    EventEmitter,
-    ComponentFactoryResolver,
-    ComponentRef,
-    KeyValueDiffer,
-    KeyValueDiffers,
-    OnInit,
-    OnDestroy,
-    DoCheck,
-    Output
-} from '@angular/core';
+import { Directive, ElementRef, EventEmitter, ComponentFactoryResolver, ComponentRef, KeyValueDiffer, KeyValueDiffers, OnInit, OnDestroy, DoCheck, Output, Renderer2 } from '@angular/core';
 import { Observable, Subscription, fromEvent as observableFromEvent } from 'rxjs';
 
 import { NgGridPlaceholder } from '../components/NgGridPlaceholder';
@@ -180,7 +167,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     constructor(
         private _differs: KeyValueDiffers,
         private _ngEl: ElementRef,
-        private _renderer: Renderer,
+        private _renderer: Renderer2,
         private componentFactoryResolver: ComponentFactoryResolver
     ) {
         this._defineListeners();
@@ -188,9 +175,9 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
 
     // 	Public methods
     public ngOnInit(): void {
-        this._renderer.setElementClass(this._ngEl.nativeElement, 'grid', true);
+        this._renderer.addClass(this._ngEl.nativeElement, 'grid');
         if (this.autoStyle)
-            this._renderer.setElementStyle(this._ngEl.nativeElement, 'position', 'relative');
+            this._renderer.setStyle(this._ngEl.nativeElement, 'position', 'relative');
         this.setConfig(this._config);
     }
 
@@ -792,11 +779,11 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     }
 
     private _zoomOut(): void {
-        this._renderer.setElementStyle(this._ngEl.nativeElement, 'transform', 'scale(0.5, 0.5)');
+        this._renderer.setStyle(this._ngEl.nativeElement, 'transform', 'scale(0.5, 0.5)');
     }
 
     private _resetZoom(): void {
-        this._renderer.setElementStyle(this._ngEl.nativeElement, 'transform', '');
+        this._renderer.setStyle(this._ngEl.nativeElement, 'transform', '');
     }
 
     private _drag(e: any): void {
@@ -1538,13 +1525,9 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
             this._curMaxRow = maxRow;
         }
 
-        this._renderer.setElementStyle(this._ngEl.nativeElement, 'width', '100%'); // (maxCol * (this.colWidth + this.marginLeft + this.marginRight))+'px');
+        this._renderer.setStyle(this._ngEl.nativeElement, 'width', '100%'); // (maxCol * (this.colWidth + this.marginLeft + this.marginRight))+'px');
         if (!this._elementBasedDynamicRowHeight) {
-            this._renderer.setElementStyle(
-                this._ngEl.nativeElement,
-                'height',
-                maxRow * (this.rowHeight + this.marginTop + this.marginBottom) + 'px'
-            );
+            this._renderer.setStyle(this._ngEl.nativeElement, 'height', maxRow * (this.rowHeight + this.marginTop + this.marginBottom) + 'px');
         }
     }
 

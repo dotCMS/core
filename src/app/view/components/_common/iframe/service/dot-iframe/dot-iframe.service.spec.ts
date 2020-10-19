@@ -4,7 +4,7 @@ import { async, TestBed } from '@angular/core/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 
 @Injectable()
 export class DotRouterServiceMock {

@@ -1,12 +1,12 @@
-@import "mixins";
 @import "variables";
+@import "mixins";
 
 :host {
     display: block;
 
     ::ng-deep {
-        .ui-multiselect,
-        searchable-dropdown .ui-button {
+        .p-multiselect,
+        searchable-dropdown .p-button {
             width: 100%;
         }
     }

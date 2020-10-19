@@ -4,7 +4,7 @@ import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { InputSwitchModule } from 'primeng/primeng';
+import { InputSwitchModule } from 'primeng/inputswitch';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { mockKeyValue } from '../dot-key-value-ng.component.spec';
@@ -61,75 +61,74 @@ describe('DotKeyValueTableInputRowComponent', () => {
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
         hostComponent.variablesList = mockKeyValue;
         hostComponent.autoFocus = true;
-
     });
 
     describe('Without Hidden Fields', () => {
-        it('should load the component', () => {
+        it('should load the component', async () => {
             hostComponentfixture.detectChanges();
             const inputs = de.queryAll(By.css('input'));
             const btns = de.queryAll(By.css('button'));
             de.query(By.css('.field-value-input')).triggerEventHandler('focus', {});
-            hostComponentfixture.whenStable().then(() => {
-                expect(inputs[0].nativeElement.placeholder).toContain('Enter Key');
-                expect(inputs[1].nativeElement.placeholder).toContain('Enter Value');
-                expect(btns[0].nativeElement.innerText).toContain('CANCEL');
-                expect(btns[1].nativeElement.innerText).toContain('SAVE');
-                expect(comp.saveDisabled).toBe(true);
-            });
+
+            await hostComponentfixture.whenStable();
+
+            expect(inputs[0].nativeElement.placeholder).toContain('Enter Key');
+            expect(inputs[1].nativeElement.placeholder).toContain('Enter Value');
+            expect(btns[0].nativeElement.innerText).toContain('CANCEL');
+            expect(btns[1].nativeElement.innerText).toContain('SAVE');
+            expect(comp.saveDisabled).toBe(true);
         });
 
-        it('should focus on "Key" input when loaded', () => {
+        it('should focus on "Key" input when loaded', async () => {
             spyOn(comp.keyCell.nativeElement, 'focus');
+
             hostComponentfixture.detectChanges();
-            hostComponentfixture.whenStable().then(() => {
-                expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(1);
-            });
+            hostComponentfixture.whenStable();
+            await expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(1);
         });
 
-        it('should not focus on "Key" input when loaded', () => {
+        it('should not focus on "Key" input when loaded', async () => {
             hostComponent.autoFocus = false;
             spyOn(comp.keyCell.nativeElement, 'focus');
             hostComponentfixture.detectChanges();
-            hostComponentfixture.whenStable().then(() => {
-                expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(0);
-            });
+            await hostComponentfixture.whenStable();
+            expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(0);
         });
 
-        it('should focus on "Value" field, if entered valid "Key"', () => {
+        it('should focus on "Value" field, if entered valid "Key"', async () => {
             spyOn(comp.valueCell.nativeElement, 'focus');
             comp.variable = { key: 'test', value: '' };
             hostComponentfixture.detectChanges();
             de.query(By.css('.field-key-input')).nativeElement.dispatchEvent(
                 new KeyboardEvent('keydown', { key: 'Enter' })
             );
-            hostComponentfixture.whenStable().then(() => {
-                expect(comp.valueCell.nativeElement.focus).toHaveBeenCalledTimes(1);
-            });
+
+            await hostComponentfixture.whenStable();
+            expect(comp.valueCell.nativeElement.focus).toHaveBeenCalledTimes(1);
         });
 
-        it('should focus on "Key" field, if entered invalid "Key"', () => {
+        it('should focus on "Key" field, if entered invalid "Key"', async () => {
             spyOn(comp.keyCell.nativeElement, 'focus');
             comp.variable = { key: '', value: '' };
             hostComponentfixture.detectChanges();
             de.query(By.css('.field-key-input')).nativeElement.dispatchEvent(
                 new KeyboardEvent('keydown', { key: 'Enter' })
             );
-            hostComponentfixture.whenStable().then(() => {
-                expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(2);
-            });
+
+            await hostComponentfixture.whenStable();
+            expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(2);
         });
 
-        it('should emit cancel event when press "Escape"', () => {
+        it('should emit cancel event when press "Escape"', async () => {
             comp.variable = mockKeyValue[0];
             hostComponentfixture.detectChanges();
             hostComponentfixture.detectChanges();
             de.query(By.css('.field-value-input')).nativeElement.dispatchEvent(
                 new KeyboardEvent('keydown', { key: 'Escape' })
             );
-            hostComponentfixture.whenStable().then(() => {
-                expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
-            });
+
+            await hostComponentfixture.whenStable();
+            expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
         });
 
         it('should disabled save button when new variable key added is duplicated', () => {
@@ -150,33 +149,34 @@ describe('DotKeyValueTableInputRowComponent', () => {
             expect(dotMessageDisplayService.push).toHaveBeenCalled();
         });
 
-        it('should emit save event when button clicked', () => {
+        it('should emit save event when button clicked', async () => {
             comp.variable = { key: 'Key1', value: 'Value1' };
             spyOn(comp.save, 'emit');
             spyOn(comp.keyCell.nativeElement, 'focus');
+
             hostComponentfixture.detectChanges();
-            hostComponentfixture.whenStable().then(() => {
-                de.query(
-                    By.css('.dot-key-value-table-input-row__variables-actions-edit-save')
-                ).triggerEventHandler('click', {});
-                expect(comp.keyCell.nativeElement.focus).toHaveBeenCalled();
-                expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
-                expect(comp.save.emit).toHaveBeenCalledWith({ key: 'Key1', value: 'Value1' });
-            });
+            await hostComponentfixture.whenStable();
+
+            de.query(
+                By.css('.dot-key-value-table-input-row__variables-actions-edit-save')
+            ).triggerEventHandler('click', {});
+            expect(comp.keyCell.nativeElement.focus).toHaveBeenCalled();
+            expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
+            expect(comp.save.emit).toHaveBeenCalledWith({ key: 'Key1', value: 'Value1' });
         });
 
-        it('should emit cancel event when button clicked', () => {
+        it('should emit cancel event when button clicked', async () => {
             comp.variable = { key: 'Key1', value: 'Value1' };
             spyOn(comp.save, 'emit');
             spyOn(comp.keyCell.nativeElement, 'focus');
             hostComponentfixture.detectChanges();
-            hostComponentfixture.whenStable().then(() => {
-                de.query(
-                    By.css('.dot-key-value-table-input-row__variables-actions-edit-cancel')
-                ).triggerEventHandler('click', { stopPropagation: () => {} });
-                expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
-                expect(comp.keyCell.nativeElement.focus).toHaveBeenCalled();
-            });
+            await hostComponentfixture.whenStable();
+
+            de.query(
+                By.css('.dot-key-value-table-input-row__variables-actions-edit-cancel')
+            ).triggerEventHandler('click', { stopPropagation: () => {} });
+            expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
+            expect(comp.keyCell.nativeElement.focus).toHaveBeenCalled();
         });
     });
 
@@ -185,25 +185,23 @@ describe('DotKeyValueTableInputRowComponent', () => {
             hostComponent.showHiddenField = true;
         });
 
-        it('should load the component with switch button', () => {
+        it('should load the component with switch button', async () => {
             hostComponentfixture.detectChanges();
             const switchButton = de.query(By.css('p-inputSwitch'));
-            hostComponentfixture.whenStable().then(() => {
-                expect(comp.saveDisabled).toBe(true);
-                expect(switchButton).toBeTruthy();
-            });
+            await hostComponentfixture.whenStable();
+            expect(comp.saveDisabled).toBe(true);
+            expect(switchButton).toBeTruthy();
         });
 
-        it('should switch to hidden mode when clicked on the hidden switch button', () => {
+        it('should switch to hidden mode when clicked on the hidden switch button', async () => {
             comp.variable = { key: 'TestKey', hidden: true, value: 'TestValue' };
             hostComponentfixture.detectChanges();
             const valueInput = de.query(By.css('.field-value-input'));
             const switchButton = de.query(By.css('p-inputSwitch')).nativeElement;
             switchButton.dispatchEvent(new Event('click'));
             hostComponentfixture.detectChanges();
-            hostComponentfixture.whenStable().then(() => {
-                expect(valueInput.nativeElement.type).toBe('password');
-            });
+            await hostComponentfixture.whenStable();
+            expect(valueInput.nativeElement.type).toBe('password');
         });
     });
 });

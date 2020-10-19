@@ -72,7 +72,7 @@ describe('NotLicensedComponent', () => {
         );
         expect(links[1].nativeElement.href).toEqual('https://dotcms.com/contact-us/');
         expect(links[2].nativeElement.innerText).toEqual(
-            messageServiceMock.get('request.a.trial.license').toUpperCase()
+            messageServiceMock.get('request.a.trial.license')
         );
         expect(links[2].nativeElement.href).toEqual(
             'https://dotcms.com/licensing/request-a-license-3/index'

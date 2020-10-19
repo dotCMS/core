@@ -2,7 +2,6 @@ import { CoreWebService } from './core-web.service';
 import { Injectable } from '@angular/core';
 import { LoginService } from './login.service';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { DotRouterService } from './dot-router.service';
 import { Subject } from 'rxjs';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -127,7 +126,6 @@ export class RoutingService {
     private loadMenus(): void {
         this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: this.urlMenus
             })
             .subscribe(

@@ -1,16 +1,35 @@
 import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { SelectButtonModule, InputTextareaModule } from 'primeng/primeng';
+import { Component, DebugElement, forwardRef, Input } from '@angular/core';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotTextareaContentComponent } from './dot-textarea-content.component';
-import { AceEditorModule } from 'ng2-ace-editor';
-import { TinymceModule } from 'angular2-tinymce';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 
 function cleanOptionText(option) {
     return option.replace(/\r?\n|\r/g, '');
+}
+
+@Component({
+    selector: 'ngx-monaco-editor',
+    template: '<div>CODE EDITOR</div>',
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MonacoEditorMock)
+        }
+    ]
+})
+class MonacoEditorMock {
+    @Input() options: any;
+
+    writeValue() {}
+
+    registerOnChange() {}
+
+    registerOnTouched() {}
 }
 
 describe('DotTextareaContentComponent', () => {
@@ -18,22 +37,18 @@ describe('DotTextareaContentComponent', () => {
     let fixture: ComponentFixture<DotTextareaContentComponent>;
     let de: DebugElement;
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            declarations: [DotTextareaContentComponent],
-            imports: [
-                AceEditorModule,
-                SelectButtonModule,
-                InputTextareaModule,
-                TinymceModule.withConfig({}),
-                FormsModule
-            ]
-        }).compileComponents();
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [DotTextareaContentComponent, MonacoEditorMock],
+                imports: [SelectButtonModule, InputTextareaModule, FormsModule]
+            }).compileComponents();
 
-        fixture = TestBed.createComponent(DotTextareaContentComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
-    }));
+            fixture = TestBed.createComponent(DotTextareaContentComponent);
+            component = fixture.componentInstance;
+            de = fixture.debugElement;
+        })
+    );
 
     it('should show a select mode buttons by default', () => {
         fixture.detectChanges();
@@ -41,16 +56,18 @@ describe('DotTextareaContentComponent', () => {
         expect(selectField).not.toBeFalsy();
     });
 
-    it('should have options: plain, code and wysiwyg in the select mode buttons by default', () => {
+    it('should have options: plain, and code in the select mode buttons by default', () => {
         fixture.detectChanges();
         const selectFieldWrapper = de.query(
-            By.css('.textarea-content__select-field .ui-selectbutton')
+            By.css('.textarea-content__select-field .p-selectbutton')
         );
 
-        selectFieldWrapper.children.forEach((option) => {
-            const optionText = cleanOptionText(option.nativeElement.textContent);
-            expect(['Plain', 'Code', 'WYSIWYG'].indexOf(optionText)).toBeGreaterThan(-1);
-        });
+        console.log();
+
+        expect(selectFieldWrapper.componentInstance.options).toEqual([
+            { label: 'Plain', value: 'plain' },
+            { label: 'Code', value: 'code' }
+        ]);
     });
 
     it('should hide select mode buttons when only one option to show is passed', () => {
@@ -60,22 +77,15 @@ describe('DotTextareaContentComponent', () => {
         expect(selectField == null).toBe(true, 'hide buttons');
     });
 
-    it('should have option \'Plain\' selected by default', async(() => {
+    it("should have option 'Plain' selected by default", async () => {
         fixture.detectChanges();
-        /*
-                We need to to async and whenStable here because the ngModel in the PrimeNg component
-            */
-        fixture.whenStable().then(() => {
-            fixture.detectChanges();
-            const selectedOption = de.query(
-                By.css('.textarea-content__select-field .ui-state-active')
-            );
-            const defaultOptionText = cleanOptionText(selectedOption.nativeElement.textContent);
-            expect(defaultOptionText).toBe('Plain');
-        });
-    }));
+        await fixture.whenStable();
+        const selectButton = de.query(By.css('.textarea-content__select-field'));
+        console.log(selectButton.componentInstance.value);
+        expect(selectButton.componentInstance.value).toBe('plain');
+    });
 
-    it('should show \'Plain\' field by default', () => {
+    it("should show 'Plain' field by default", () => {
         fixture.detectChanges();
         const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
         expect(plainFieldTexarea).toBeTruthy('show plain field');
@@ -86,31 +96,13 @@ describe('DotTextareaContentComponent', () => {
         */
         const codeFieldTexarea = de.query(By.css('.textarea-content__code-field'));
         expect(codeFieldTexarea == null).toBe(true, 'hide code field');
-
-        const wysiwygFieldTexarea = de.query(By.css('.textarea-content__wysiwyg-field'));
-        expect(wysiwygFieldTexarea == null).toBe(true, 'hide wysiwyg field');
-    });
-
-    it('should show only options we passed in the select mode butons', () => {
-        component.show = ['wysiwyg', 'plain'];
-        fixture.detectChanges();
-        const selectFieldWrapper = de.query(
-            By.css('.textarea-content__select-field .ui-selectbutton')
-        );
-        selectFieldWrapper.children.forEach((option) => {
-            const optionText = cleanOptionText(option.nativeElement.textContent);
-            expect(['Plain', 'WYSIWYG'].indexOf(optionText)).toBeGreaterThan(
-                -1,
-                `${optionText} exist`
-            );
-        });
     });
 
     it('should show only the valid options we passed in the select mode butons', () => {
         component.show = ['code', 'plain', 'sadf', 'hello', 'world'];
         fixture.detectChanges();
         const selectFieldWrapper = de.query(
-            By.css('.textarea-content__select-field .ui-selectbutton')
+            By.css('.textarea-content__select-field .p-selectbutton')
         );
         selectFieldWrapper.children.forEach((option) => {
             const optionText = cleanOptionText(option.nativeElement.textContent);
@@ -121,46 +113,32 @@ describe('DotTextareaContentComponent', () => {
         });
     });
 
-    it('should show by default the first mode we passed', async(() => {
-        component.show = ['wysiwyg', 'plain'];
-        fixture.detectChanges();
-        fixture.whenStable().then(() => {
-            const wysiwygFieldTexarea = de.query(By.css('.textarea-content__wysiwyg-field'));
-            expect(wysiwygFieldTexarea).toBeTruthy('show wysiwyg field');
-
-            /*
-                We should be using .toBeFalsey() but there is a bug with this method:
-                https://github.com/angular/angular/issues/14235
-            */
-            const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
-            expect(plainFieldTexarea == null).toBe(true, 'hide plain field');
-            const codeFieldTexarea = de.query(By.css('.textarea-content__code-field'));
-            expect(codeFieldTexarea == null).toBe(true, 'hide code field');
-        });
-    }));
-
-    it('should set width', () => {
+    it('should set width', async () => {
         component.width = '50%';
         fixture.detectChanges();
+        await fixture.whenStable();
         const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
         expect(plainFieldTexarea.nativeElement.style.width).toBe('50%', 'plain width setted');
 
         component.selected = 'code';
         fixture.detectChanges();
+        await fixture.whenStable();
         const codeFieldTexarea = de.query(By.css('.textarea-content__code-field'));
         expect(codeFieldTexarea.nativeElement.style.width).toBe('50%', 'code width setted');
 
         // TODO: We need to find a way to set the width to the wysiwyg
     });
 
-    it('should set height', () => {
+    it('should set height', async () => {
         component.height = '50%';
         fixture.detectChanges();
+        await fixture.whenStable();
         const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
         expect(plainFieldTexarea.nativeElement.style.height).toBe('50%', 'plain height setted');
 
         component.selected = 'code';
         fixture.detectChanges();
+        await fixture.whenStable();
         const codeFieldTexarea = de.query(By.css('.textarea-content__code-field'));
         expect(codeFieldTexarea.nativeElement.style.height).toBe('50%', 'code height setted');
 
@@ -171,8 +149,8 @@ describe('DotTextareaContentComponent', () => {
         component.show = ['code'];
         fixture.detectChanges();
 
-        expect(component.ace._mode).toBe('text', 'set mode default');
-        expect(component.ace._options).toEqual({}, 'set options default');
+        // expect(component.ace._mode).toBe('text', 'set mode default');
+        // expect(component.ace._options).toEqual({}, 'set options default');
     });
 
     it('should set mode and options in the code editor', () => {
@@ -185,8 +163,8 @@ describe('DotTextareaContentComponent', () => {
         };
         fixture.detectChanges();
 
-        expect(component.ace._mode).toBe('javascript', 'set mode correctly');
-        expect(component.ace._options).toEqual({ cursorStyle: 'ace' }, 'set options correctly');
+        // expect(component.ace._mode).toBe('javascript', 'set mode correctly');
+        // expect(component.ace._options).toEqual({ cursorStyle: 'ace' }, 'set options correctly');
     });
 
     it('should add new line character', () => {
@@ -212,34 +190,28 @@ describe('DotTextareaContentComponent', () => {
         expect(component.value).toEqual(value);
     });
 
-    it('should not propagate enter keyboard event', () => {
+    it('should not propagate enter keyboard event', async () => {
         const spy = jasmine.createSpy('stopPropagation');
-
-        component.show = ['wysiwyg', 'plain', 'code'];
-        fixture.detectChanges();
-
-        const tinymce = de.query(By.css('app-tinymce'));
-        tinymce.triggerEventHandler('keydown.enter', {
-            stopPropagation: spy
-        });
-
+        component.show = ['plain', 'code'];
         component.selected = 'plain';
-        fixture.detectChanges();
 
-        const textarea = de.query(By.css('textarea'));
+        fixture.detectChanges();
+        await fixture.whenStable();
+
+        const textarea = de.query(By.css('.textarea-content__plain-field'));
         textarea.triggerEventHandler('keydown.enter', {
             stopPropagation: spy
         });
 
         component.selected = 'code';
         fixture.detectChanges();
+        await fixture.whenStable();
 
-        const ace = de.query(By.css('ace-editor'));
-        ace.triggerEventHandler('keydown.enter', {
+        const monaco = de.query(By.css('ngx-monaco-editor'));
+        monaco.triggerEventHandler('keydown.enter', {
             stopPropagation: spy
         });
 
-        expect(spy).toHaveBeenCalledTimes(3);
-
+        expect(spy).toHaveBeenCalledTimes(2);
     });
 });

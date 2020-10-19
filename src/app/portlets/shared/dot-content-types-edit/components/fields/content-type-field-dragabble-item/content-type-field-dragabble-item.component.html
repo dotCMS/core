@@ -5,9 +5,7 @@
             <span class="field__name">{{ field.name }}</span>
             <ng-container *ngIf="field.variable">
                 <span class="field__variable">
-                    <dot-copy-button
-                        [copy]="field.variable"
-                        [label]="'(' + field.variable + ')'">
+                    <dot-copy-button [copy]="field.variable" [label]="'(' + field.variable + ')'">
                     </dot-copy-button>
                 </span>
             </ng-container>
@@ -18,8 +16,8 @@
 
 <div class="field__actions">
     <dot-icon-button-tooltip
-        *ngIf="!field.fixed"
         tiny
+        *ngIf="!field.fixed"
         class="field__actions-delete"
         icon="delete"
         [tooltipText]="'contenttypes.action.delete' | dm"

@@ -2,7 +2,7 @@ import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs'
 
 import { reduce, mergeMap, catchError, map, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { RequestMethod, Response } from '@angular/http';
+import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ApiRoot } from 'dotcms-js';
 import { ConditionGroupModel, IConditionGroup } from './Rule';
@@ -16,7 +16,6 @@ export class ConditionGroupService {
     }
     private _typeName = 'Condition Group';
 
-    private _apiRoot: ApiRoot;
     private _baseUrl: string;
 
     private _error: Subject<string> = new Subject<string>();
@@ -26,8 +25,7 @@ export class ConditionGroupService {
         private coreWebService: CoreWebService,
         private loggerService: LoggerService
     ) {
-        this._apiRoot = apiRoot;
-        this._baseUrl = apiRoot.baseUrl + 'api/v1/sites/' + apiRoot.siteId + '/ruleengine/rules';
+        this._baseUrl = '/api/v1/sites/' + apiRoot.siteId + '/ruleengine/rules';
     }
 
     static toJson(conditionGroup: ConditionGroupModel): any {
@@ -48,20 +46,17 @@ export class ConditionGroupService {
     }
 
     makeRequest(path: string): Observable<any> {
-        const opts = this._apiRoot.getDefaultRequestOptions();
         return this.coreWebService
             .request({
-                method: RequestMethod.Get,
                 url: path,
-                ...opts
             })
             .pipe(
-                map((res: Response) => {
+                map((res: HttpResponse<any>) => {
                     const json = res;
                     this.loggerService.info('ConditionGroupService', 'makeRequest-Response', json);
                     return json;
                 }),
-                catchError((err: any, source: Observable<any>) => {
+                catchError((err: any, _source: Observable<any>) => {
                     if (err && err.status === HttpCode.NOT_FOUND) {
                         this.loggerService.error(
                             'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
@@ -121,18 +116,16 @@ export class ConditionGroupService {
                         and should provide the info needed to make the user aware of the fix`);
         }
         const json = ConditionGroupService.toJson(model);
-        const opts = this._apiRoot.getDefaultRequestOptions();
         const path = this._getPath(ruleId);
 
         const add = this.coreWebService
             .request({
-                method: RequestMethod.Post,
-                body: JSON.stringify(json),
+                method: 'POST',
+                body: json,
                 url: path,
-                ...opts
             })
             .pipe(
-                map((res: Response) => {
+                map((res: HttpResponse<any>) => {
                     const json: any = res;
                     model.key = json.id;
                     return model;
@@ -154,13 +147,11 @@ export class ConditionGroupService {
             this.createConditionGroup(ruleId, model);
         } else {
             const json = ConditionGroupService.toJson(model);
-            const opts = this._apiRoot.getDefaultRequestOptions();
             const save = this.coreWebService
                 .request({
-                    method: RequestMethod.Put,
-                    body: JSON.stringify(json),
+                    method: 'PUT',
+                    body: json,
                     url: this._getPath(ruleId, model.key),
-                    ...opts
                 })
                 .pipe(
                     tap(() => {
@@ -172,12 +163,10 @@ export class ConditionGroupService {
     }
 
     remove(ruleId: string, model: ConditionGroupModel): Observable<ConditionGroupModel> {
-        const opts = this._apiRoot.getDefaultRequestOptions();
         const remove = this.coreWebService
             .request({
-                method: RequestMethod.Delete,
+                method: 'DELETE',
                 url: this._getPath(ruleId, model.key),
-                ...opts
             })
             .pipe(
                 tap(() => {

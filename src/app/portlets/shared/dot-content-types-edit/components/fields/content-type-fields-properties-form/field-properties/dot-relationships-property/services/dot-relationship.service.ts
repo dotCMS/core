@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { pluck, take, } from 'rxjs/operators';
 import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 
@@ -25,7 +24,6 @@ export class DotRelationshipService {
     loadCardinalities(): Observable<DotRelationshipCardinality[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: 'v1/relationships/cardinalities'
             })
             .pipe(

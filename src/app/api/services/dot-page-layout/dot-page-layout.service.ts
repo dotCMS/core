@@ -1,4 +1,3 @@
-import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs';
@@ -30,7 +29,7 @@ export class DotPageLayoutService {
         return this.coreWebService
             .requestView({
                 body: dotLayout,
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: `v1/page/${pageIdentifier}/layout`
             })
             .pipe(

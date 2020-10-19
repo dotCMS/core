@@ -1,0 +1,25 @@
+@use "variables" as *;
+
+.p-toolbar {
+    display: flex;
+    padding: 0 $basic-padding * 2;
+
+    &.p-corner-all {
+        border-radius: 0;
+    }
+}
+
+.p-toolbar-group-left,
+.p-toolbar-group-right {
+    align-items: center;
+    display: flex;
+    flex: 1;
+}
+
+.p-toolbar-group-left {
+    justify-content: flex-start;
+}
+
+.p-toolbar-group-right {
+    justify-content: flex-end;
+}

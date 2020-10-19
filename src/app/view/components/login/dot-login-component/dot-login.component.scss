@@ -1,6 +1,6 @@
 @import "variables";
 @import "mixins";
-@import "../styles/primeng-theme/utils/theme-variables";
+@import "dotcms-theme/utils/theme-variables";
 
 :host {
     @include login-container;

@@ -29,8 +29,8 @@ export class DotPersonaSelectorComponent implements OnInit {
 
     @Output() delete: EventEmitter<DotPersona> = new EventEmitter();
 
-    @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
-    @ViewChild('personaDialog') personaDialog: DotAddPersonaDialogComponent;
+    @ViewChild('searchableDropdown', { static: true }) searchableDropdown: SearchableDropdownComponent;
+    @ViewChild('personaDialog', { static: true }) personaDialog: DotAddPersonaDialogComponent;
 
     addAction: (item: DotPersona) => void;
     canDespersonalize = false;

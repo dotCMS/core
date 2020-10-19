@@ -1,5 +1,5 @@
 import { NamePropertyComponent } from './index';
-import { ComponentFixture, async, TestBed } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -29,7 +29,7 @@ describe('NamePropertyComponent', () => {
         'Default-Value': 'Default-Value'
     });
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         TestBed.configureTestingModule({
             declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
             imports: [DotCopyButtonModule, ReactiveFormsModule, DotPipesModule],

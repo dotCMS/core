@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { Observable } from 'rxjs';
 import { DotTag } from '@models/dot-tag';
-import { RequestMethod } from '@angular/http';
 import { map, pluck } from 'rxjs/operators';
 
 /**
@@ -22,7 +21,6 @@ export class DotTagsService {
     getSuggestions(name?: string): Observable<DotTag[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: `v1/tags${name ? `?name=${name}` : ''}`
             })
             .pipe(

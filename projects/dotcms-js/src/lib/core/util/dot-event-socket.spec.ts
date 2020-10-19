@@ -6,7 +6,6 @@ import { DotEventsSocketURL } from './models/dot-event-socket-url';
 import { ConfigParams, DotcmsConfigService } from '../dotcms-config.service';
 import { CoreWebService } from '../core-web.service';
 import { Server } from 'mock-socket';
-import { RequestMethod } from '@angular/http';
 import { DotEventMessage } from './models/dot-event-message';
 import { ReflectiveInjector, Injectable } from '@angular/core';
 
@@ -104,7 +103,6 @@ describe('DotEventsSocket', () => {
     describe('LongPolling', () => {
 
         const requestOpts = {
-            method: RequestMethod.Get,
             url: 'http://localhost/testing',
             params: {}
         };

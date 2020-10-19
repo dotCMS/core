@@ -1,4 +1,4 @@
-import { TestBed, async, ComponentFixture } from '@angular/core/testing';
+import { TestBed, waitForAsync, ComponentFixture } from '@angular/core/testing';
 import { DotFieldValidationMessageComponent } from './dot-field-validation-message';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
@@ -9,7 +9,7 @@ describe('FieldValidationComponent', () => {
     let fixture: ComponentFixture<DotFieldValidationMessageComponent>;
     let component: DotFieldValidationMessageComponent;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         TestBed.configureTestingModule({
             declarations: [DotFieldValidationMessageComponent]
         }).compileComponents();
@@ -24,7 +24,7 @@ describe('FieldValidationComponent', () => {
         const fakeInput: any = {};
         component.field = fakeInput;
         fixture.detectChanges();
-        de = fixture.debugElement.query(By.css('div'));
+        de = fixture.debugElement.query(By.css('small'));
         expect(de).toBeNull();
     });
 
@@ -33,7 +33,7 @@ describe('FieldValidationComponent', () => {
         fakeInput.valid = true;
         component.field = fakeInput;
         fixture.detectChanges();
-        de = fixture.debugElement.query(By.css('div'));
+        de = fixture.debugElement.query(By.css('small'));
         expect(de).toBeNull();
     });
 
@@ -45,9 +45,9 @@ describe('FieldValidationComponent', () => {
         component.field = fakeInput;
         component.message = 'Error message';
         fixture.detectChanges();
-        de = fixture.debugElement.query(By.css('div'));
+        de = fixture.debugElement.query(By.css('small'));
         el = de.nativeElement;
         expect(el).toBeDefined();
-        expect(el.textContent).toBe('Error message');
+        expect(el.textContent).toContain('Error message');
     });
 });

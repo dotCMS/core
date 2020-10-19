@@ -2,12 +2,12 @@ import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { map, take, catchError } from 'rxjs/operators';
 
-import { SelectItemGroup, SelectItem } from 'primeng/primeng';
 
 import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
 import { DotCMSWorkflowAction, DotCMSWorkflow } from 'dotcms-models';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { SelectItem, SelectItemGroup } from 'primeng/api';
 
 @Injectable()
 export class DotWorkflowsActionsSelectorFieldService {

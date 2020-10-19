@@ -1,7 +1,7 @@
 import { map, pluck, catchError } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Jsonp } from '@angular/http';
 import { Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 interface DotProfile {
     displayName: string;
@@ -27,7 +27,7 @@ interface DotProfile {
  */
 @Injectable()
 export class DotGravatarService {
-    constructor(private jsonp: Jsonp) {}
+    constructor(private http: HttpClient) {}
 
     /**
      * Load the avatar url from a hash
@@ -37,8 +37,7 @@ export class DotGravatarService {
      * @memberof DotGravatarService
      */
     getPhoto(hash: string): Observable<string> {
-        return this.jsonp
-            .get(`//www.gravatar.com/${hash}.json?callback=JSONP_CALLBACK`)
+        return this.http.jsonp(`//www.gravatar.com/${hash}.json?`, 'JSONP_CALLBACK')
             .pipe(
                 pluck('_body'),
                 pluck('entry'),

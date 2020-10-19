@@ -4,7 +4,6 @@ import {from as observableFrom,  Subject } from 'rxjs';
 import {mergeMap, reduce, map, tap} from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
 import { Injectable } from '@angular/core';
-import { RequestMethod } from '@angular/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 
 import { ApiRoot } from 'dotcms-js';
@@ -13,6 +12,7 @@ import { CoreWebService } from 'dotcms-js';
 import { SiteService } from 'dotcms-js';
 import { CwError } from 'dotcms-js';
 import { I18nService } from './system/locale/I18n';
+import { HttpResponse } from '@angular/common/http';
 
 export const RULE_CREATE = 'RULE_CREATE';
 export const RULE_DELETE = 'RULE_DELETE';
@@ -277,8 +277,8 @@ export class RuleService {
   ) {
     this._rulesEndpointUrl = `/ruleengine/rules`;
     this._actionsEndpointUrl = `/ruleengine/actions`;
-    this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`;
-    this._ruleActionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/actionlets`;
+    this._conditionTypesEndpointUrl = `/api/v1/system/ruleengine/conditionlets`;
+    this._ruleActionTypesEndpointUrl = `/api/v1/system/ruleengine/actionlets`;
 
     this._preCacheCommonResources(_resources);
     this.loadActionTypes().subscribe(
@@ -363,12 +363,12 @@ export class RuleService {
     return this.coreWebService
       .request({
         body: RuleService.fromClientRuleTransformFn(body),
-        method: RequestMethod.Post,
-        url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}${this._rulesEndpointUrl}`
+        method: 'POST',
+        url: `/api/v1/sites/${siteId}${this._rulesEndpointUrl}`
       }).pipe(
-      map((result: RuleModel) => {
+      map((result: HttpResponse<any>) => {
         body.key = result['id']; // @todo:ggranum type the POST result correctly.
-        return Object.assign({}, DEFAULT_RULE, body, result);
+        return <RuleModel | CwError><unknown>Object.assign({}, DEFAULT_RULE, body, result);
       }));
   }
 
@@ -376,10 +376,10 @@ export class RuleService {
     const siteId = this.loadRulesSiteId();
     return this.coreWebService
       .request({
-        method: RequestMethod.Delete,
-        url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}${this._rulesEndpointUrl}/${ruleId}`
+        method: 'DELETE',
+        url: `/api/v1/sites/${siteId}${this._rulesEndpointUrl}/${ruleId}`
       }).pipe(
-      map(result => {
+      map(_result => {
         return { success: true };
       }));
   }
@@ -404,11 +404,10 @@ export class RuleService {
     const siteId = this.loadRulesSiteId();
     return this.coreWebService
       .request({
-        method: RequestMethod.Get,
-        url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}${this._rulesEndpointUrl}/${id}`
+        url: `/api/v1/sites/${siteId}${this._rulesEndpointUrl}/${id}`
       }).pipe(
       map(result => {
-        return Object.assign({ key: id }, DEFAULT_RULE, result);
+        return <RuleModel | CwError><unknown>Object.assign({ key: id }, DEFAULT_RULE, result);
       }));
   }
 
@@ -421,8 +420,8 @@ export class RuleService {
       result = this.coreWebService
         .request({
           body: RuleService.fromClientRuleTransformFn(rule),
-          method: RequestMethod.Put,
-          url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}${this._rulesEndpointUrl}/${id}`
+          method: 'PUT',
+          url: `/api/v1/sites/${siteId}${this._rulesEndpointUrl}/${id}`
         }).pipe(
         map(res => {
           const r = Object.assign({}, DEFAULT_RULE, res);
@@ -436,7 +435,6 @@ export class RuleService {
   getConditionTypes(): Observable<ServerSideTypeModel[]> {
     return this.coreWebService
       .request({
-        method: RequestMethod.Get,
         url: this._conditionTypesEndpointUrl
       }).pipe(
       map(this.fromServerServersideTypesTransformFn));
@@ -445,7 +443,6 @@ export class RuleService {
   getRuleActionTypes(): Observable<ServerSideTypeModel[]> {
     return this.coreWebService
       .request({
-        method: RequestMethod.Get,
         url: this._ruleActionTypesEndpointUrl
       }).pipe(
       map(this.fromServerServersideTypesTransformFn));
@@ -454,7 +451,6 @@ export class RuleService {
   _doLoadRuleActionTypes(): Observable<ServerSideTypeModel[]> {
     return this.coreWebService
       .request({
-        method: RequestMethod.Get,
         url: this._ruleActionTypesEndpointUrl
       }).pipe(
       map(this.fromServerServersideTypesTransformFn));
@@ -463,7 +459,6 @@ export class RuleService {
   _doLoadConditionTypes(): Observable<ServerSideTypeModel[]> {
     return this.coreWebService
       .request({
-        method: RequestMethod.Get,
         url: this._conditionTypesEndpointUrl
       }).pipe(
       map(this.fromServerServersideTypesTransformFn));
@@ -479,16 +474,15 @@ export class RuleService {
   }
 
   private _preCacheCommonResources(resources: I18nService): void {
-    resources.get('api.sites.ruleengine').subscribe(rsrc => {});
-    resources.get('api.ruleengine.system').subscribe(rsrc => {});
-    resources.get('api.system.ruleengine').subscribe(rsrc => {});
+    resources.get('api.sites.ruleengine').subscribe(_rsrc => {});
+    resources.get('api.ruleengine.system').subscribe(_rsrc => {});
+    resources.get('api.system.ruleengine').subscribe(_rsrc => {});
   }
 
   private sendLoadRulesRequest(siteId: string): void {
     this.coreWebService
       .request({
-        method: RequestMethod.Get,
-        url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}/ruleengine/rules`
+        url: `/api/v1/sites/${siteId}/ruleengine/rules`
       })
       .subscribe(
         ruleMap => {

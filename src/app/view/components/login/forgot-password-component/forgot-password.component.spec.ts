@@ -7,7 +7,7 @@ import { LoginServiceMock } from '@tests/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/primeng';
+import { InputTextModule } from 'primeng/inputtext';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { of } from 'rxjs';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
@@ -23,6 +23,7 @@ describe('ForgotPasswordComponent', () => {
     let de: DebugElement;
     let dotRouterService: DotRouterService;
     let loginService: LoginService;
+    let requestPasswordButton;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -52,12 +53,12 @@ describe('ForgotPasswordComponent', () => {
         spyOn(loginService, 'recoverPassword').and.returnValue(of({}));
 
         fixture.detectChanges();
-        this.requestPasswordButton = de.query(By.css('button[type="submit"]'));
+        requestPasswordButton = de.query(By.css('button[type="submit"]'));
     });
 
     it('should load form labels correctly', () => {
         const header: DebugElement = de.query(By.css('h3'));
-        const inputLabel: DebugElement = de.query(By.css('span[dotmdinputtext] label'));
+        const inputLabel: DebugElement = de.query(By.css('span.p-float-label label'));
         const cancelButton: DebugElement = de.query(By.css('button'));
         const submitButton: DebugElement = de.query(By.css('button[type="submit"]'));
 
@@ -68,7 +69,7 @@ describe('ForgotPasswordComponent', () => {
     });
 
     it('should keep recover password button disabled until the form is valid', () => {
-        expect(this.requestPasswordButton.nativeElement.disabled).toBe(true);
+        expect(requestPasswordButton.nativeElement.disabled).toBe(true);
     });
 
     it('should do the request password correctly and redirect to login', () => {
@@ -76,8 +77,8 @@ describe('ForgotPasswordComponent', () => {
         spyOn(window, 'confirm').and.returnValue(true);
         fixture.detectChanges();
 
-        expect(this.requestPasswordButton.nativeElement.disabled).toBeFalsy();
-        this.requestPasswordButton.triggerEventHandler('click', {});
+        expect(requestPasswordButton.nativeElement.disabled).toBeFalsy();
+        requestPasswordButton.triggerEventHandler('click', {});
 
         expect(loginService.recoverPassword).toHaveBeenCalledWith('test');
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
@@ -92,7 +93,7 @@ describe('ForgotPasswordComponent', () => {
         component.forgotPasswordForm.get('login').markAsDirty();
         fixture.detectChanges();
 
-        const errorMessages = de.queryAll(By.css('.ui-messages-error'));
+        const errorMessages = de.queryAll(By.css('.error-message'));
         expect(errorMessages.length).toBe(1);
     });
 
@@ -104,7 +105,7 @@ describe('ForgotPasswordComponent', () => {
     });
 
     it('should call goToLogin when cancel button is clicked', () => {
-        const cancelButton = de.query(By.css('button[secondary]'));
+        const cancelButton = de.query(By.css('.p-button-secondary'));
         cancelButton.triggerEventHandler('click', {});
 
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith(undefined);

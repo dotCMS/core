@@ -1,5 +1,5 @@
 import { CategoriesPropertyComponent } from './categories-property.component';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Injectable, Input, Output, EventEmitter, Component } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
@@ -68,7 +68,7 @@ describe('CategoriesPropertyComponent', () => {
     });
     let paginatorService: PaginatorService;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 CategoriesPropertyComponent,

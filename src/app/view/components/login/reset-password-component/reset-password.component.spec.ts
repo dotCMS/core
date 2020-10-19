@@ -7,7 +7,7 @@ import { LoginServiceMock } from '@tests/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/primeng';
+import { InputTextModule } from 'primeng/inputtext';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -24,6 +24,7 @@ describe('ResetPasswordComponent', () => {
     let loginService: LoginService;
     let activatedRoute: ActivatedRoute;
     let dotRouterService: DotRouterService;
+    let changePasswordButton;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -55,12 +56,12 @@ describe('ResetPasswordComponent', () => {
         spyOn(loginService, 'changePassword').and.callThrough();
         fixture.detectChanges();
 
-        this.changePasswordButton = de.query(By.css('button[type="submit"]'));
+        changePasswordButton = de.query(By.css('button[type="submit"]'));
     });
 
     it('should load form labels correctly', () => {
         const header: DebugElement = de.query(By.css('h3'));
-        const inputs: DebugElement[] = de.queryAll(By.css('span[dotmdinputtext] label'));
+        const inputs: DebugElement[] = de.queryAll(By.css('span.p-float-label label'));
         const button: DebugElement = de.query(By.css('button'));
 
         expect(header.nativeElement.innerHTML).toEqual('Password Reset');
@@ -70,7 +71,7 @@ describe('ResetPasswordComponent', () => {
     });
 
     it('should keep change password button disabled until the form is valid', () => {
-        expect(this.changePasswordButton.nativeElement.disabled).toBe(true);
+        expect(changePasswordButton.nativeElement.disabled).toBe(true);
     });
 
     it('should display message if passwords do not match', () => {
@@ -78,7 +79,7 @@ describe('ResetPasswordComponent', () => {
             password: 'test',
             confirmPassword: 'test2'
         });
-        this.changePasswordButton.triggerEventHandler('click', {});
+        changePasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
         const errorMessage = de.queryAll(By.css('.error-message'));
 
@@ -91,7 +92,7 @@ describe('ResetPasswordComponent', () => {
             password: 'test',
             confirmPassword: 'test'
         });
-        this.changePasswordButton.triggerEventHandler('click', {});
+        changePasswordButton.triggerEventHandler('click', {});
         expect(loginService.changePassword).toHaveBeenCalledWith('test', 'test@test.com');
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
             queryParams: {
@@ -105,7 +106,7 @@ describe('ResetPasswordComponent', () => {
         component.resetPasswordForm.get('confirmPassword').markAsDirty();
         fixture.detectChanges();
 
-        const errorMessages = de.queryAll(By.css('.ui-messages-error'));
+        const errorMessages = de.queryAll(By.css('.p-invalid'));
         expect(errorMessages.length).toBe(2);
     });
 });

@@ -59,7 +59,7 @@ export class AreaPickerDialogComponent implements OnChanges {
     ngOnChanges(change): void {
         if (!this.hidden && this.map == null) {
             this.mapsService.mapsApi$.subscribe(
-                x => {},
+                _x => {},
                 () => {},
                 () => {
                     if (this.mapsService.apiReady) {
@@ -142,12 +142,12 @@ export class AreaPickerDialogComponent implements OnChanges {
         }
     }
 
-    onOkAction(event): void {
+    onOkAction(_event): void {
         this._prevCircle = this.circle;
         this.circleUpdate.emit(this.circle);
     }
 
-    onCancelAction(event): void {
+    onCancelAction(_event): void {
         this.circle = this._prevCircle;
         this.cancel.emit(false);
     }

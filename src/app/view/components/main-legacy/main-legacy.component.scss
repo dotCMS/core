@@ -1,6 +1,6 @@
-@import "mixins";
-@import "../../../../styles/primeng-theme/utils/_mixins.scss";
 @import "variables";
+@import "mixins";
+@import "dotcms-theme/utils/_mixins.scss";
 
 .layout {
     display: flex;

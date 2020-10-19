@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
@@ -6,7 +6,6 @@ import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angul
 import { DotMenuService } from '../dot-menu.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { environment } from '../../../../environments/environment';
 
 /**
  * Route Guard that checks if a User have access to the specified Menu portlet.
@@ -20,18 +19,14 @@ export class MenuGuardService implements CanActivate {
     ) {}
 
     canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-        return !environment.production && state.url === '/pl'
-            ? observableOf(true)
-            : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
+        return this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
     }
 
     canActivateChild(
         _route: ActivatedRouteSnapshot,
         state: RouterStateSnapshot
     ): Observable<boolean> {
-        return !environment.production && state.url === '/pl'
-            ? observableOf(true)
-            : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
+        return this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
     }
 
     /**

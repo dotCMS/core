@@ -6,7 +6,7 @@ import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { Observable, of } from 'rxjs';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 const cardinalities: DotRelationshipCardinality[] = [
@@ -57,7 +57,7 @@ describe('DotCardinalitySelectorComponent', () => {
         'contenttypes.field.properties.relationship.cardinality.placeholder': 'Select Cardinality',
     });
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotCardinalitySelectorComponent,

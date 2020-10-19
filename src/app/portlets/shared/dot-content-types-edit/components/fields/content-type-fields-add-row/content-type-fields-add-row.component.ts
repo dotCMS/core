@@ -8,12 +8,11 @@ import {
     ViewChild,
     ElementRef
 } from '@angular/core';
-import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
-import { MenuItem } from 'primeng/primeng';
+import { MenuItem } from 'primeng/api';
 
 /**
  * Display select columns row
@@ -46,12 +45,10 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
 
     constructor(
         private dotEventsService: DotEventsService,
-        private hotkeysService: HotkeysService,
         private dotMessageService: DotMessageService
     ) {}
 
     ngOnInit(): void {
-        this.setKeyboardEvent('ctrl+a', this.setColumnSelect.bind(this));
         this.loadActions();
         this.dotEventsService
             .listen('add-row')
@@ -62,7 +59,6 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     }
 
     ngOnDestroy(): void {
-        this.removeHotKeys();
         this.destroy$.next(true);
         this.destroy$.complete();
     }
@@ -106,7 +102,6 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      */
     setColumnSelect(): void {
         this.rowState = 'select';
-        this.bindKeyboardEvents();
         // Transitions over focus event doesn't work, It needs a setTimeout
         // with time over the CSS transition 200 ms
         setTimeout(() => {
@@ -130,22 +125,6 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      */
     removeFocus(elem: any): void {
         elem.blur();
-    }
-
-    /**
-     * Set keyboard event receiving key and function as param
-     * @param (string | string[]) key
-     * @param any keyEvent
-     * @returns *
-     * @memberof ContentTypeFieldsAddRowComponent
-     */
-    setKeyboardEvent(key: string | string[], keyEvent): any {
-        this.hotkeysService.add(
-            new Hotkey(key, (_event: KeyboardEvent): boolean => {
-                keyEvent();
-                return false;
-            })
-        );
     }
 
     /**
@@ -174,13 +153,6 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
         return this.colContainerElem.nativeElement.children[this.selectedColumnIndex];
     }
 
-    private bindKeyboardEvents(): void {
-        this.setKeyboardEvent('left', this.leftKeyboardEvent.bind(this));
-        this.setKeyboardEvent('right', this.rightKeyboardEvent.bind(this));
-        this.setKeyboardEvent('esc', this.resetState.bind(this));
-        this.setKeyboardEvent('enter', this.emitColumnNumber.bind(this));
-    }
-
     private loadActions(): void {
         this.actions = [
             {
@@ -202,38 +174,9 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
         return this.columns[this.selectedColumnIndex];
     }
 
-    private getMaxIndex(): number {
-        return this.columns.length - 1;
-    }
-
-    private leftKeyboardEvent(): any {
-        this.selectedColumnIndex = this.selectedColumnIndex - 1;
-
-        if (this.selectedColumnIndex < 0) {
-            this.selectedColumnIndex = this.getMaxIndex();
-        }
-
-        this.setFocus(this.getElementSelected());
-    }
-
-    private rightKeyboardEvent(): any {
-        this.selectedColumnIndex = this.selectedColumnIndex + 1;
-
-        if (this.selectedColumnIndex > this.getMaxIndex()) {
-            this.selectedColumnIndex = 0;
-        }
-
-        this.setFocus(this.getElementSelected());
-    }
-
     private resetState(): any {
         this.removeFocus(this.getElementSelected());
         this.selectedColumnIndex = 0;
         this.rowState = 'add';
-        this.removeHotKeys();
-    }
-
-    private removeHotKeys(): void {
-        this.hotkeysService.remove(this.hotkeysService.get(['left', 'right', 'enter', 'esc']));
     }
 }

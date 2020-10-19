@@ -2,8 +2,6 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
-import { DialogModule, TooltipModule, ButtonModule, CheckboxModule } from 'primeng/primeng';
-
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
@@ -26,6 +24,10 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { CheckboxModule } from 'primeng/checkbox';
+import { TooltipModule } from 'primeng/tooltip';
 
 const routes: Routes = [
     {

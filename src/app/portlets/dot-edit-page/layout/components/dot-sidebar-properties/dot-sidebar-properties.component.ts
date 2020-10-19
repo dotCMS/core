@@ -18,7 +18,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 })
 export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccessor {
     value: DotLayoutSideBar;
-    @ViewChild('overlay') overlay: any;
+    @ViewChild('overlay', { static: true }) overlay: any;
     @Output() change: EventEmitter<String> = new EventEmitter();
 
     constructor(private dotEventsService: DotEventsService) {}

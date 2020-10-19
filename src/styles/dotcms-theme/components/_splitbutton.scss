@@ -1,0 +1,44 @@
+
+@use "variables" as *;
+
+.p-splitbutton > .p-button:disabled {
+  border-color: rgba(0,0,0, 0.01);
+}
+
+.p-splitbutton.p-button-secondary > .p-splitbutton-menubutton:not(:disabled)  {
+  border-right: 1px solid $brand-secondary;
+}
+
+.p-splitbutton.p-button-secondary > .p-splitbutton-menubutton:not(:disabled):hover  {
+  border-right: 1px solid $brand-primary;
+}
+
+.p-splitbutton-menubutton.p-button {
+  min-width: unset;
+}
+
+.p-splitbutton.p-button-secondary > .p-splitbutton-defaultbutton:enabled:active, 
+.p-splitbutton.p-button-secondary > .p-splitbutton-defaultbutton:enabled:focus {
+   border-left: 1px solid $brand-primary;
+   border-bottom: 1px solid $brand-primary;
+   border-top: 1px solid $brand-primary;
+   color: $brand-primary; // ok
+   border-right: none;
+}
+
+.p-splitbutton.p-button-secondary > .p-splitbutton-menubutton:enabled:active, 
+.p-splitbutton.p-button-secondary > .p-splitbutton-menubutton:enabled:focus {
+   border-left: 1px solid $brand-primary;
+   border-bottom: 1px solid $brand-primary;
+   border-top: 1px solid $brand-primary;
+   border-right: 1px solid $brand-primary;
+   color: $brand-primary; // ok
+}
+
+.p-splitbutton > .p-splitbutton-menubutton {
+  padding: 0 $spacing-3;
+}
+
+.p-splitbutton > .p-splitbutton-menubutton:disabled {
+  border-left: 1px solid $gray-light;
+}

@@ -1,5 +1,5 @@
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
@@ -60,7 +60,7 @@ describe('DotRelationshipsPropertyComponent', () => {
         'contenttypes.field.properties.relationships.edit.error.required': 'Edit validation error'
     });
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotRelationshipsPropertyComponent,

@@ -8,7 +8,7 @@ import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
 import { mockDotThemes } from '../../../../../test/dot-themes.mock';
-import { DataGridModule } from 'primeng/primeng';
+import { DataViewModule } from 'primeng/dataview';
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
 import { mockSites, SiteServiceMock } from '../../../../../test/site-service.mock';
 import { SiteService } from 'dotcms-js';
@@ -36,7 +36,7 @@ describe('DotThemeSelectorComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotThemeSelectorComponent],
             imports: [
-                DataGridModule,
+                DataViewModule,
                 DotSiteSelectorModule,
                 BrowserAnimationsModule,
                 DotDialogModule,

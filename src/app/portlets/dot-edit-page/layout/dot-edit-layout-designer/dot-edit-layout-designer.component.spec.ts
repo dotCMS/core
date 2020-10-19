@@ -2,7 +2,6 @@ import { of as observableOf } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DebugElement } from '@angular/core/src/debug/debug_node';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
 import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
@@ -14,7 +13,7 @@ import { PaginatorService } from '@services/paginator';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { FormsModule, FormGroup } from '@angular/forms';
-import { Component, Input, EventEmitter, Output } from '@angular/core';
+import { Component, Input, EventEmitter, Output, DebugElement } from '@angular/core';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { mockDotRenderedPage, mockDotTemplate } from '../../../../test/dot-page-render.mock';
@@ -24,7 +23,7 @@ import { DotEditPageInfoModule } from '../../components/dot-edit-page-info/dot-e
 import { mockDotThemes } from '../../../../test/dot-themes.mock';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { DotThemesServiceMock } from '../../../../test/dot-themes-service.mock';
-import { TooltipModule } from 'primeng/primeng';
+import { TooltipModule } from 'primeng/tooltip';
 import * as _ from 'lodash';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
 import { DotTheme } from '@portlets/dot-edit-page/shared/models/dot-theme.model';
@@ -34,6 +33,9 @@ import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-ico
 import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
+
+import cleanUpDialog from '@tests/clean-up-dialog';
+
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',
@@ -135,10 +137,10 @@ describe('DotEditLayoutDesignerComponent', () => {
     describe('edit layout', () => {
         beforeEach(() => {
             component.pageState = new DotPageRenderState(
-                mockUser,
+                mockUser(),
                 new DotPageRender({
-                    ...mockDotRenderedPage,
-                    template: { ...mockDotTemplate, theme: '123' },
+                    ...mockDotRenderedPage(),
+                    template: { ...mockDotTemplate(), theme: '123' },
                     canCreateTemplate: false
                 })
             );
@@ -255,13 +257,13 @@ describe('DotEditLayoutDesignerComponent', () => {
                 title: null,
                 themeId: '123',
                 layout: {
-                    body: mockDotRenderedPage.layout.body,
-                    header: mockDotRenderedPage.layout.header,
-                    footer: mockDotRenderedPage.layout.footer,
+                    body: mockDotRenderedPage().layout.body,
+                    header: mockDotRenderedPage().layout.header,
+                    footer: mockDotRenderedPage().layout.footer,
                     sidebar: {
-                        location: mockDotRenderedPage.layout.sidebar.location,
-                        containers: mockDotRenderedPage.layout.sidebar.containers,
-                        width: mockDotRenderedPage.layout.sidebar.width
+                        location: mockDotRenderedPage().layout.sidebar.location,
+                        containers: mockDotRenderedPage().layout.sidebar.containers,
+                        width: mockDotRenderedPage().layout.sidebar.width
                     }
                 }
             });
@@ -270,9 +272,9 @@ describe('DotEditLayoutDesignerComponent', () => {
         describe('can save as template', () => {
             beforeEach(() => {
                 component.pageState = new DotPageRenderState(
-                    mockUser,
+                    mockUser(),
                     new DotPageRender({
-                        ...mockDotRenderedPage,
+                        ...mockDotRenderedPage(),
                         template: null,
                         canCreateTemplate: true
                     })
@@ -323,10 +325,10 @@ describe('DotEditLayoutDesignerComponent', () => {
         let themeButton;
         beforeEach(() => {
             component.pageState = new DotPageRenderState(
-                mockUser,
+                mockUser(),
                 new DotPageRender({
-                    ...mockDotRenderedPage,
-                    template: { ...mockDotTemplate, theme: '123' },
+                    ...mockDotRenderedPage(),
+                    template: { ...mockDotTemplate(), theme: '123' },
                     canCreateTemplate: false
                 })
             );
@@ -379,8 +381,8 @@ describe('DotEditLayoutDesignerComponent', () => {
     describe('edit template', () => {
         beforeEach(() => {
             component.pageState = new DotPageRenderState(
-                mockUser,
-                new DotPageRender(mockDotRenderedPage)
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage())
             );
             component.editTemplate = true;
             fixture.detectChanges();
@@ -393,22 +395,22 @@ describe('DotEditLayoutDesignerComponent', () => {
 
             expect(aditionalOptions).toBeTruthy();
             expect(aditionalOptions.componentInstance.inode).toEqual(
-                mockDotRenderedPage.template.inode
+                mockDotRenderedPage().template.inode
             );
         });
 
         it('should set form model correctly', () => {
             expect(component.form.value).toEqual({
-                title: mockDotRenderedPage.template.title,
+                title: mockDotRenderedPage().template.title,
                 themeId: '',
                 layout: {
-                    body: mockDotRenderedPage.layout.body,
-                    header: mockDotRenderedPage.layout.header,
-                    footer: mockDotRenderedPage.layout.footer,
+                    body: mockDotRenderedPage().layout.body,
+                    header: mockDotRenderedPage().layout.header,
+                    footer: mockDotRenderedPage().layout.footer,
                     sidebar: {
-                        location: mockDotRenderedPage.layout.sidebar.location,
-                        containers: mockDotRenderedPage.layout.sidebar.containers,
-                        width: mockDotRenderedPage.layout.sidebar.width
+                        location: mockDotRenderedPage().layout.sidebar.location,
+                        containers: mockDotRenderedPage().layout.sidebar.containers,
+                        width: mockDotRenderedPage().layout.sidebar.width
                     }
                 }
             });
@@ -418,8 +420,8 @@ describe('DotEditLayoutDesignerComponent', () => {
     describe('containers model', () => {
         beforeEach(() => {
             component.pageState = new DotPageRenderState(
-                mockUser,
-                new DotPageRender(mockDotRenderedPage)
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage())
             );
         });
 
@@ -445,8 +447,8 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         beforeEach(() => {
             component.pageState = new DotPageRenderState(
-                mockUser,
-                new DotPageRender(mockDotRenderedPage)
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage())
             );
             fixture.detectChanges();
             saveButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-save'));
@@ -493,11 +495,11 @@ describe('DotEditLayoutDesignerComponent', () => {
         describe('should show', () => {
             beforeEach(() => {
                 component.pageState = new DotPageRenderState(
-                    mockUser,
+                    mockUser(),
                     new DotPageRender({
-                        ...mockDotRenderedPage,
+                        ...mockDotRenderedPage(),
                         template: {
-                            ...mockDotRenderedPage.template,
+                            ...mockDotRenderedPage().template,
                             anonymous: false
                         }
                     })
@@ -526,11 +528,11 @@ describe('DotEditLayoutDesignerComponent', () => {
         describe('not show', () => {
             it("when user can't edit the template and set layout mode", () => {
                 component.pageState = new DotPageRenderState(
-                    mockUser,
+                    mockUser(),
                     new DotPageRender({
-                        ...mockDotRenderedPage,
+                        ...mockDotRenderedPage(),
                         template: {
-                            ...mockDotRenderedPage.template,
+                            ...mockDotRenderedPage().template,
                             canEdit: false
                         }
                     })
@@ -543,11 +545,11 @@ describe('DotEditLayoutDesignerComponent', () => {
 
             it('when page have a layout and set layout mode', () => {
                 component.pageState = new DotPageRenderState(
-                    mockUser,
+                    mockUser(),
                     new DotPageRender({
-                        ...mockDotRenderedPage,
+                        ...mockDotRenderedPage(),
                         template: {
-                            ...mockDotRenderedPage.template,
+                            ...mockDotRenderedPage().template,
                             anonymous: true
                         }
                     })
@@ -559,11 +561,11 @@ describe('DotEditLayoutDesignerComponent', () => {
 
             it('when editTemplate is false by default', () => {
                 component.pageState = new DotPageRenderState(
-                    mockUser,
+                    mockUser(),
                     new DotPageRender({
-                        ...mockDotRenderedPage,
+                        ...mockDotRenderedPage(),
                         template: {
-                            ...mockDotRenderedPage.template,
+                            ...mockDotRenderedPage().template,
                             canEdit: true
                         }
                     })
@@ -579,10 +581,10 @@ describe('DotEditLayoutDesignerComponent', () => {
     describe('edit layout No sidebars', () => {
         beforeEach(() => {
             component.pageState = new DotPageRenderState(
-                mockUser,
+                mockUser(),
                 new DotPageRender({
-                    ...mockDotRenderedPage,
-                    template: { ...mockDotTemplate, theme: '123' },
+                    ...mockDotRenderedPage(),
+                    template: { ...mockDotTemplate(), theme: '123' },
                     canCreateTemplate: false
                 })
             );
@@ -595,9 +597,9 @@ describe('DotEditLayoutDesignerComponent', () => {
                 title: null,
                 themeId: '123',
                 layout: {
-                    body: mockDotRenderedPage.layout.body,
-                    header: mockDotRenderedPage.layout.header,
-                    footer: mockDotRenderedPage.layout.footer,
+                    body: mockDotRenderedPage().layout.body,
+                    header: mockDotRenderedPage().layout.header,
+                    footer: mockDotRenderedPage().layout.footer,
                     sidebar: {
                         location: '',
                         containers: [],
@@ -609,9 +611,6 @@ describe('DotEditLayoutDesignerComponent', () => {
     });
 
     afterEach(() => {
-        // Removes dirty DOM after tests have finished
-        if (fixture.nativeElement && 'remove' in fixture.nativeElement) {
-            (fixture.nativeElement as HTMLElement).remove();
-        }
+        cleanUpDialog(fixture);
     });
 });

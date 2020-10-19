@@ -1,4 +1,4 @@
-import { Component, Input, ElementRef } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 /**
  * The DotIconButtonComponent is a round button which
@@ -21,21 +21,5 @@ export class DotIconButtonComponent {
     @Input()
     size: number;
 
-    element: ElementRef;
-
-    constructor(elm: ElementRef) {
-        this.element = elm;
-    }
-
-    /**
-     * Emits the click of the button
-     *
-     * @param any $event
-     * @memberof DotIconButtonComponent
-     */
-    buttonOnClick($event): void {
-        if (this.element.nativeElement.attributes.disabled) {
-            $event.stopPropagation();
-        }
-    }
+    constructor() {}
 }

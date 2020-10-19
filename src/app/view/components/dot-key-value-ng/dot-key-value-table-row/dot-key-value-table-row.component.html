@@ -49,17 +49,14 @@
         <ng-template [ngIf]="showEditMenu" [ngIfElse]="formButtons">
             <button
                 pButton
-                secondary
-                tiny
-                class="dot-key-value-table-row__variables-actions-edit-cancel"
+                class="dot-key-value-table-row__variables-actions-edit-cancel p-button-secondary p-button-sm"
                 [label]="'Cancel' | dm"
                 (click)="onCancel($event)"
             ></button>
             <button
                 #saveButton
                 pButton
-                tiny
-                class="dot-key-value-table-row__variables-actions-edit-save"
+                class="dot-key-value-table-row__variables-actions-edit-save p-button-sm"
                 [label]="'Save' | dm"
                 [disabled]="saveDisabled"
                 (click)="saveVariable()"

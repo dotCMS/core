@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { pluck } from 'rxjs/operators';
 
 export interface DotCMSPersonalizedItem {
@@ -28,7 +27,7 @@ export class DotPersonalizeService {
     personalized(pageId: string, personaTag: string): Observable<DotCMSPersonalizedItem[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: `/api/v1/personalization/pagepersonas`,
                 body: {
                     pageId,
@@ -49,7 +48,7 @@ export class DotPersonalizeService {
     despersonalized(pageId: string, personaTag: string): Observable<string> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Delete,
+                method: 'DELETE',
                 url: `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}`
             })
             .pipe(pluck('entity'));

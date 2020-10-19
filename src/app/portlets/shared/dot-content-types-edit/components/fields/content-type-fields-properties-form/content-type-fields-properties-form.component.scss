@@ -7,11 +7,15 @@
 
 ::ng-deep .form__group {
     .md-inputtext,
-    .ui-inputtext {
+    .p-inputtext {
         width: 100%;
     }
 }
 
 .content-type-fields__properties-form {
     margin: $basic-padding * 4;
+}
+
+.p-field:nth-last-child(1n) {
+    margin-bottom: $spacing-7;
 }

@@ -1,7 +1,12 @@
-import { Component, Input, OnInit, forwardRef, ViewChild } from '@angular/core';
+import {
+    Component,
+    Input,
+    OnInit,
+    forwardRef,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { SelectItem } from 'primeng/primeng';
-import { AceEditorComponent } from 'ng2-ace-editor';
+import { SelectItem } from 'primeng/api';
 
 @Component({
     selector: 'dot-textarea-content',
@@ -13,12 +18,10 @@ import { AceEditorComponent } from 'ng2-ace-editor';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentComponent)
         }
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
-    @ViewChild('ace')
-    ace: AceEditorComponent;
-
     @Input()
     code: any = {
         mode: 'text',
@@ -40,11 +43,21 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     selectOptions: SelectItem[] = [];
     selected: string;
     styles: any;
+    editorOptions = {
+        theme: 'vs-light',
+        minimap: {
+            enabled: false
+        },
+        cursorBlinking: 'solid',
+        lineDecorationsWidth: 1,
+        overviewRulerBorder: false,
+        mouseWheelZoom: false,
+
+    };
 
     private DEFAULT_OPTIONS: SelectItem[] = [
         { label: 'Plain', value: 'plain' },
         { label: 'Code', value: 'code' },
-        { label: 'WYSIWYG', value: 'wysiwyg' }
     ];
 
     constructor() {}
@@ -70,7 +83,6 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         };
     }
 
-
     /**
      * Prevent enter to propagate
      *
@@ -92,16 +104,9 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @param any value
      * @memberof DotTextareaContentComponent
      */
-    onModelChange(value) {
+    onModelChange(value: string) {
         this.value = value;
-        this.propagateChange(
-            value
-                ? value
-                      .replace(/\r/g, '')
-                      .split('\n')
-                      .join('\r\n')
-                : value
-        );
+        this.propagateChange(value ? value.replace(/\r/g, '').split('\n').join('\r\n') : value);
     }
 
     /**

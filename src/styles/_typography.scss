@@ -1,6 +1,3 @@
-@import "mixins";
-@import "variables";
-
 h1,
 h2,
 h3,
@@ -11,23 +8,23 @@ h5 {
 }
 
 h1 {
-    font-size: rem-cal(60px);
+    font-size: 4.28rem;
     letter-spacing: -0.5px;
 }
 
 h2 {
-    font-size: rem-cal(48px);
+    font-size: 3.43rem;
 }
 
 h3 {
-    font-size: rem-cal(34px);
+    font-size: 2.43rem;
     letter-spacing: 0.25px;
 }
 
 h4 {
-    font-size: rem-cal(24px);
+    font-size: 1.71rem;
 }
 
 h5 {
-    font-size: rem-cal(20px);
+    font-size: 1.43rem;
 }

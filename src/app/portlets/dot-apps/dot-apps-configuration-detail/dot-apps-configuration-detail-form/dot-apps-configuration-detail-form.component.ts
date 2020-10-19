@@ -25,8 +25,8 @@ const getFieldValueFn = {
     styleUrls: ['./dot-apps-configuration-detail-form.component.scss']
 })
 export class DotAppsConfigurationDetailFormComponent implements OnInit {
-    @ViewChild('form') public form: NgForm;
-    @ViewChild('formContainer') public formContainer: ElementRef;
+    @ViewChild('form', { static: true }) public form: NgForm;
+    @ViewChild('formContainer', { static: true }) public formContainer: ElementRef;
 
     @Input() formFields: DotAppsSecrets[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();

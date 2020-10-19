@@ -1,4 +1,4 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DOTTestBed } from '@tests/dot-test-bed';
@@ -8,7 +8,7 @@ import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { By } from '@angular/platform-browser';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
-import { TooltipModule } from 'primeng/primeng';
+import { TooltipModule } from 'primeng/tooltip';
 
 const messages = {
     'apps.key': 'Key',
@@ -45,8 +45,8 @@ describe('DotAppsConfigurationItemComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             DOTTestBed.configureTestingModule({
                 imports: [
                     CommonModule,

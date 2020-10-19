@@ -4,7 +4,6 @@ import { DebugElement, Component, Input } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { MenuModule, Menu, ConfirmationService } from 'primeng/primeng';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -35,13 +34,15 @@ import { PushPublishService } from '@services/push-publish/push-publish.service'
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { Menu, MenuModule } from 'primeng/menu';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -124,14 +125,14 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
         component = fixture.componentInstance;
         component.page = {
-            ...mockDotPage,
+            ...mockDotPage(),
             ...{ workingInode: 'cc2cdf9c-a20d-4862-9454-2a76c1132123' }
         };
 
         workflowActionDebugEl = de.query(By.css('dot-edit-page-workflows-actions'));
         workflowActionComponent = workflowActionDebugEl.componentInstance;
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
-        button = workflowActionDebugEl.query(By.css('button'));
+        button = workflowActionDebugEl.query(By.css('dot-icon-button'));
 
         dotWorkflowActionsFireService = workflowActionDebugEl.injector.get(
             DotWorkflowActionsFireService
@@ -140,14 +141,14 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         spyOn(dotWorkflowActionsFireService, 'fireTo').and.returnValue(of(dotcmsContentletMock));
     });
 
-    describe('button', () => {
+    describe('dot-icon-button', () => {
         describe('enabled', () => {
             beforeEach(() => {
                 spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(
                     of(mockWorkflowsActions)
                 );
                 component.page = {
-                    ...mockDotPage,
+                    ...mockDotPage(),
                     ...{
                         workingInode: 'cc2cdf9c-a20d-4862-9454-2a76c1132123',
                         lockedOn: new Date(1517330117295)
@@ -162,9 +163,8 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
             it('should have right attr in button', () => {
                 const attr = button.attributes;
-                expect(attr.icon).toEqual('fa fa-ellipsis-v');
-                expect(attr.pButton).toBeDefined();
-                expect(attr.secondary).toBeDefined();
+                expect(attr.icon).toEqual('more_vert');
+                expect(attr.float).toBeDefined();
             });
 
             it('should get workflow actions when page changes"', () => {
@@ -181,13 +181,13 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                 let thirdButton;
 
                 beforeEach(() => {
-                    const mainButton: DebugElement = de.query(By.css('button'));
+                    const mainButton: DebugElement = de.query(By.css('dot-icon-button'));
                     mainButton.triggerEventHandler('click', {
                         currentTarget: mainButton.nativeElement
                     });
                     fixture.detectChanges();
 
-                    splitButtons = de.queryAll(By.css('.ui-menuitem-link'));
+                    splitButtons = de.queryAll(By.css('.p-menuitem-link'));
                     firstButton = splitButtons[0].nativeElement;
                     secondButton = splitButtons[1].nativeElement;
                     thirdButton = splitButtons[2].nativeElement;
@@ -310,7 +310,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
             });
 
             it('should be disabled', () => {
-                expect(button.nativeElement.disabled).toBe(true);
+                expect(button.attributes.disabled).toBe('true');
             });
         });
     });

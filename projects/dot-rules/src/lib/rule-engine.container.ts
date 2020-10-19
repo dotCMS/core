@@ -16,7 +16,6 @@ import { ServerSideFieldModel, ServerSideTypeModel } from './services/ServerSide
 import { ConditionService } from './services/Condition';
 import { ActionService } from './services/Action';
 import { ConditionGroupService } from './services/ConditionGroup';
-import { I18nService } from './services/system/locale/I18n';
 import { CwError } from 'dotcms-js';
 import { BundleService, IPublishEnvironment } from './services/bundle-service';
 import { ActivatedRoute, Params } from '@angular/router';
@@ -83,8 +82,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
   selector: 'cw-rule-engine-container',
   styleUrls: [
     './styles/rule-engine.scss',
-    './styles/angular-material.layouts.scss',
-    './semantic/assets/semantic.css'
+    './styles/angular-material.layouts.scss'
   ],
   template: `
     <cw-rule-engine
@@ -138,7 +136,6 @@ export class RuleEngineContainer implements OnDestroy {
     private _ruleActionService: ActionService,
     private _conditionGroupService: ConditionGroupService,
     private _conditionService: ConditionService,
-    private _resources: I18nService,
     public bundleService: BundleService,
     private route: ActivatedRoute,
     private loggerService: LoggerService,
@@ -213,7 +210,7 @@ export class RuleEngineContainer implements OnDestroy {
     rule._deleting = true;
     this.state.deleting = true;
     if (rule.isPersisted()) {
-      this._ruleService.deleteRule(rule.key).subscribe(result => {
+      this._ruleService.deleteRule(rule.key).subscribe(_result => {
         this.state.deleting = false;
         const rules = this.rules.filter(arrayRule => arrayRule.key !== rule.key);
         this.rules$.emit(rules);
@@ -345,7 +342,7 @@ export class RuleEngineContainer implements OnDestroy {
     const rule = event.payload.rule;
     const ruleAction = event.payload.ruleAction;
     if (ruleAction.isPersisted()) {
-      this._ruleActionService.remove(rule.key, ruleAction).subscribe(result => {
+      this._ruleActionService.remove(rule.key, ruleAction).subscribe(_result => {
         rule._ruleActions = rule._ruleActions.filter(aryAction => {
           return aryAction.key !== ruleAction.key;
         });
@@ -467,7 +464,7 @@ export class RuleEngineContainer implements OnDestroy {
     const group = event.payload.conditionGroup;
     const condition = event.payload.condition;
     if (condition.isPersisted()) {
-      this._conditionService.remove(condition).subscribe(result => {
+      this._conditionService.remove(condition).subscribe(_result => {
         group._conditions = group._conditions.filter(aryCondition => {
           return aryCondition.key !== condition.key;
         });
@@ -517,7 +514,7 @@ export class RuleEngineContainer implements OnDestroy {
     if (disable && rule.enabled) {
       rule.enabled = false;
     }
-    this._conditionGroupService.updateConditionGroup(rule.key, group).subscribe(result => {});
+    this._conditionGroupService.updateConditionGroup(rule.key, group).subscribe(_result => {});
   }
 
   patchRule(rule: RuleModel, disable = true): void {
@@ -561,7 +558,7 @@ export class RuleEngineContainer implements OnDestroy {
     if (ruleAction.isValid()) {
       if (!ruleAction.isPersisted()) {
         this._ruleActionService.createRuleAction(rule.key, ruleAction).subscribe(
-          result => {
+          _ => {
             this.ruleUpdated(rule);
           },
           (e: CwError) => {
@@ -571,7 +568,7 @@ export class RuleEngineContainer implements OnDestroy {
         );
       } else {
         this._ruleActionService.updateRuleAction(rule.key, ruleAction).subscribe(
-          result => {
+          _result => {
             this.ruleUpdated(rule);
           },
           (e: any) => {
@@ -593,7 +590,7 @@ export class RuleEngineContainer implements OnDestroy {
       if (condition.isValid()) {
         if (condition.isPersisted()) {
           this._conditionService.save(group.key, condition).subscribe(
-            result => {
+            _result => {
               this.ruleUpdated(rule);
             },
             (e: any) => {
@@ -603,7 +600,7 @@ export class RuleEngineContainer implements OnDestroy {
           );
         } else {
           if (!group.isPersisted()) {
-            this._conditionGroupService.createConditionGroup(rule.key, group).subscribe(foo => {
+            this._conditionGroupService.createConditionGroup(rule.key, group).subscribe(_foo => {
               this._conditionService.add(group.key, condition).subscribe(
                 () => {
                   group.conditions[condition.key] = true;
@@ -641,13 +638,6 @@ export class RuleEngineContainer implements OnDestroy {
 
   prioritySortFn(a: any, b: any): number {
     return a.priority - b.priority;
-  }
-
-  // tslint:disable-next-line:no-unused-variable
-  private preCacheCommonResources(resources: I18nService): void {
-    resources.get('api.sites.ruleengine').subscribe(rsrc => {});
-    resources.get('api.ruleengine.system').subscribe(rsrc => {});
-    resources.get('api.system.ruleengine').subscribe(rsrc => {});
   }
 
   private initRules(): void {

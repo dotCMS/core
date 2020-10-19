@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
@@ -22,7 +22,7 @@ describe('DotLargeMessageDisplayComponent', () => {
     let dialog: DebugElement;
     let dotcmsEventsServiceMock;
 
-    beforeEach(async(() =>
+    beforeEach(waitForAsync( () =>
         TestBed.configureTestingModule({
             imports: [DotDialogModule],
             declarations: [DotLargeMessageDisplayComponent, TestHostComponent],

@@ -39,7 +39,7 @@ interface DotAddClass {
     ]
 })
 export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlValueAccessor {
-    @ViewChild(NgGrid) ngGrid: NgGrid;
+    @ViewChild(NgGrid, { static: true }) ngGrid: NgGrid;
 
     form: FormGroup;
     value: DotLayoutBody;

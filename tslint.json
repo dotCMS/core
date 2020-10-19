@@ -3,10 +3,13 @@
     "rules": {
         "no-output-on-prefix": [false],
         "cyclomatic-complexity": [true, 3],
+        "deprecation": {
+            "severity": "warning"
+        },
         "directive-selector": [true, "attribute", "dot", "camelCase"],
         "component-selector": [true, "element", "dot", "kebab-case"],
         "max-classes-per-file": false,
-        "use-view-encapsulation": false,
+        "use-component-view-encapsulation": false,
         "whitespace": [true, "check-branch", "check-operator", "check-separator", "check-type"],
         "quotemark": [true, "single", "jsx-double"],
         "member-ordering": [

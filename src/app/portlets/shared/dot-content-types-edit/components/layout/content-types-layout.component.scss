@@ -1,17 +1,17 @@
-@import "mixins";
 @import "variables";
-@import "primeng-theme/utils/theme-variables";
+@import "mixins";
+@import "dotcms-theme/utils/theme-variables";
 
 $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-main-height);
 
 :host {
     ::ng-deep {
-        .ui-tabview-nav {
+        .p-tabview-nav {
             position: relative;
             z-index: 1;
         }
 
-        > p-tabview > .ui-tabview > .ui-tabview-nav {
+        > p-tabview > .p-tabview > .p-tabview-nav {
             background-color: $gray-bg;
         }
 
@@ -20,7 +20,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
                 border-bottom: solid 1px $gray-light;
                 height: 48px;
 
-                .ui-splitbutton {
+                .p-splitbutton {
                     display: flex;
                     justify-content: space-between;
                     height: 48px;
@@ -29,14 +29,14 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
                     cursor: pointer;
                     border-radius: 0;
 
-                    .ui-button-text-icon-left span {
+                    .p-button-text-icon-left span {
                         color: $gray;
                         left: $basic-padding * 2;
                         font-size: $font-size-x-large;
                         font-weight: normal;
                     }
 
-                    .ui-button-text-icon-left .ui-button-text {
+                    .p-button-text-icon-left .p-button-text {
                         padding-left: 50px;
                         text-transform: none;
                         font-size: $font-size-medium;
@@ -46,7 +46,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
                     button {
                         height: 48px;
 
-                        &.ui-corner-right {
+                        &.p-corner-right {
                             margin: 0 $basic-padding * 2 0 0;
 
                             span {
@@ -60,8 +60,8 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
             p-splitbutton:hover {
                 background-color: $gray-bg;
 
-                .ui-button.ui-button-icon-only span.pi-caret-down,
-                .ui-button-text-icon-left span.ui-button-icon-left {
+                .p-button.p-button-icon-only span.pi-caret-down,
+                .p-button-text-icon-left span.p-button-icon-left {
                     color: $black;
                 }
             }

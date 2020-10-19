@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotUnlicensedPorletComponent } from '.';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -12,7 +12,7 @@ describe('DotUnlicensedPorletComponent', () => {
     let fixture: ComponentFixture<DotUnlicensedPorletComponent>;
     let de: DebugElement;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const messageServiceMock = new MockDotMessageService({
             'request.a.trial.license': 'Request'
         });

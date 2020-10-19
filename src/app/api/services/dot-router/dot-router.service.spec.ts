@@ -2,7 +2,8 @@ import { DotRouterService } from './dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { LoginService } from 'dotcms-js';
 import { Router, ActivatedRoute } from '@angular/router';
-import { TestBed } from '@angular/core/testing';
+import { waitForAsync, TestBed } from '@angular/core/testing';
+
 
 class RouterMock {
     url = '/c/test';
@@ -38,7 +39,7 @@ describe('DotRouterService', () => {
     let service: DotRouterService;
     let router: Router;
 
-    beforeEach(() => {
+    beforeEach(waitForAsync(() => {
         const testbed = TestBed.configureTestingModule({
             providers: [
                 DotRouterService,
@@ -60,10 +61,10 @@ describe('DotRouterService', () => {
 
         service = testbed.get(DotRouterService);
         router = testbed.get(Router);
-    });
+    }));
 
     it('should get queryParams from Router', () => {
-        spyOn(router, 'getCurrentNavigation').and.returnValue({
+        spyOn<any>(router, 'getCurrentNavigation').and.returnValue({
             finalUrl: {
                 queryParams: {
                     hola: 'mundo'

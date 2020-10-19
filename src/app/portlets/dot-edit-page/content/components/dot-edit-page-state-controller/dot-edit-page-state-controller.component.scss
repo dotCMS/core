@@ -14,11 +14,11 @@ dot-edit-page-lock-info {
 p-selectButton {
     margin-right: $basic-padding * 3;
 
-    ::ng-deep .ui-selectbutton {
+    ::ng-deep .p-selectbutton {
         background: none;
         height: auto;
 
-        .ui-button {
+        .p-button {
             height: auto;
         }
     }
@@ -26,40 +26,40 @@ p-selectButton {
 
 p-inputSwitch {
     ::ng-deep {
-        .ui-inputswitch-slider:after {
+        .p-inputswitch-slider:after {
             @include md-icon;
             color: $brand-primary;
             content: "lock_open";
             font-size: 13px;
-            left: 4px;
+            left: 3px;
             position: absolute;
             text-rendering: auto;
-            top: 5px;
+            top: 0;
             transition: transform $basic-speed ease-in, color $basic-speed ease-in;
         }
 
-        .ui-inputswitch-checked .ui-inputswitch-slider:after {
+        .p-inputswitch-checked .p-inputswitch-slider:after {
             color: $white;
             content: "lock";
             transform: translateX(1.65em);
         }
 
-        .ui-state-disabled .ui-inputswitch-slider:after {
+        .p-state-disabled .p-inputswitch-slider:after {
             color: $white;
         }
 
-        .ui-tooltip {
+        .p-tooltip {
             display: none !important;
         }
     }
 
-    &.warn ::ng-deep .ui-inputswitch-slider:after {
+    &.warn ::ng-deep .p-inputswitch-slider:after {
         color: $orange;
     }
 }
 
 @media only screen and (max-width: $screen-device-container-max) {
-    p-inputSwitch ::ng-deep .ui-tooltip {
+    p-inputSwitch ::ng-deep .p-tooltip {
         display: inline-block !important;
     }
 

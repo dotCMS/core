@@ -1,5 +1,5 @@
-<div [formGroup]="group">
-    <label class="form__label">{{ 'categories' | dm }}</label>
+<div [formGroup]="group" class="p-field">
+    <label class="form__label">{{ 'categories' | dm }} *</label>
     <dot-searchable-dropdown #searchableDropdown
         [data]="categoriesCurrentPage"
         [formControlName]="property.name"
@@ -10,7 +10,7 @@
         (pageChange)="handlePageChange($event)"
         labelPropertyName="categoryName"
         placeholder="{{ placeholder }}">
-    </dot-searchable-dropdown>*
+    </dot-searchable-dropdown>
 
     <dot-field-validation-message
         [field]="group.controls[property.name]"

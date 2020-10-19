@@ -1,12 +1,13 @@
-@import "mixins";
 @import "variables";
-@import "primeng-theme/utils/theme-variables";
+@import "mixins";
+@import "dotcms-theme/utils/theme-variables";
 
 :host {
     color: $white;
     text-decoration: none;
     display: block;
     height: 100%;
+    line-height: 1.5;
 }
 
 dot-nav-item {

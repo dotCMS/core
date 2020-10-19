@@ -78,6 +78,6 @@ describe('DotLayoutPropertiesItemComponent', () => {
         hostComponentfixture.detectChanges();
 
         expect(comp.value).toEqual(true);
-        expect(component.writeValue).toHaveBeenCalledWith({ header: true });
+        expect<any>(component.writeValue).toHaveBeenCalledWith({ header: true });
     });
 });

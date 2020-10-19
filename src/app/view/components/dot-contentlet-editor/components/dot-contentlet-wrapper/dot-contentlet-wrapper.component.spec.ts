@@ -3,7 +3,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
-import { async, ComponentFixture } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 
 import { LoginService } from 'dotcms-js';
 
@@ -33,7 +33,7 @@ describe('DotContentletWrapperComponent', () => {
     let dotAlertConfirmService: DotAlertConfirmService;
     let dotRouterService: DotRouterService;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotContentletWrapperComponent],
             providers: [
@@ -160,7 +160,7 @@ describe('DotContentletWrapperComponent', () => {
                         }
                     });
 
-                    expect(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
+                    expect<any>(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
                         accept: jasmine.any(Function),
                         reject: jasmine.any(Function),
                         header: 'Header',
@@ -190,7 +190,7 @@ describe('DotContentletWrapperComponent', () => {
                         close: () => {}
                     });
 
-                    expect(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
+                    expect<any>(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
                         accept: jasmine.any(Function),
                         reject: jasmine.any(Function),
                         header: 'Header',

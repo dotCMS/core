@@ -6,9 +6,9 @@ import {
     OnChanges,
     ViewChild,
     ElementRef,
-    OnInit
+    OnInit, SimpleChanges
 } from '@angular/core';
-import { LazyLoadEvent } from 'primeng/primeng';
+import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
@@ -36,8 +36,8 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
 
     @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
 
-    @ViewChild('gf') globalSearch: ElementRef;
-    @ViewChild('dataTable') dataTable: Table;
+    @ViewChild('gf', { static: true }) globalSearch: ElementRef;
+    @ViewChild('dataTable', { static: true }) dataTable: Table;
 
     readonly DATE_FORMAT = 'date';
 
@@ -54,7 +54,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
         this.paginatorService.url = this.url;
     }
 
-    ngOnChanges(changes): void {
+    ngOnChanges(changes: SimpleChanges): void {
         if (changes.url && changes.url.currentValue) {
             this.paginatorService.url = changes.url.currentValue;
         }

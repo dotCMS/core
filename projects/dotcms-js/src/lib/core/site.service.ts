@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from './core-web.service';
 import { Observable, Subject, of, merge } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { pluck, map, take } from 'rxjs/operators';
 import { LoginService, Auth } from './login.service';
 import { LoggerService } from './logger.service';
@@ -121,7 +120,7 @@ export class SiteService {
     switchToDefaultSite(): Observable<Site> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Put,
+                method: 'PUT',
                 url: 'v1/site/switch'
             })
             .pipe(pluck('entity'));
@@ -137,8 +136,7 @@ export class SiteService {
     getSiteById(id: string): Observable<Site> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
-                url: `content/render/false/query/+contentType:host%20+identifier:${id}`
+                url: `/api/content/render/false/query/+contentType:host%20+identifier:${id}`
             })
             .pipe(pluck('contentlets'), map((sites: Site[]) => sites[0]));
     }
@@ -152,7 +150,7 @@ export class SiteService {
         this.loggerService.debug('Applying a Site Switch', site.identifier);
         this.coreWebService
             .requestView({
-                method: RequestMethod.Put,
+                method: 'PUT',
                 url: `${this.urls.switchSiteUrl}/${site.identifier}`
             })
             .subscribe();
@@ -173,7 +171,6 @@ export class SiteService {
     private requestCurrentSite(): Observable<Site> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: this.urls.currentSiteUrl
             })
             .pipe(pluck('entity'));

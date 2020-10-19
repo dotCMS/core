@@ -25,7 +25,7 @@
             'dot-apps-configuration__description__show-more': showMore
         }"
     >
-        <ngx-md>{{ app.description }}</ngx-md>
+        <markdown>{{ app.description }}</markdown>
         <a
             class="dot-apps-configuration__description__link_show-more"
             *ngIf="app.description.length > 270"

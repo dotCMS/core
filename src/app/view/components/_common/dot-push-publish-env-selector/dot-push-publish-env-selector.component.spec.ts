@@ -125,7 +125,7 @@ describe('PushPublishEnvSelectorComponent', () => {
         ]);
         hostComponentfixture.detectChanges();
 
-        expect(component.writeValue).toHaveBeenCalledWith('');
+        expect<any>(component.writeValue).toHaveBeenCalledWith('');
         expect(comp.selectedEnvironmentIds).toEqual(['12345ab', '6789bc']);
     });
 

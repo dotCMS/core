@@ -40,8 +40,7 @@
 }
 
 .form__group--validation {
-    min-height: 79px;
-    margin: 6px 0 0;
+    min-height: 60px;
 }
 
 .form__group--helper {
@@ -54,11 +53,11 @@
     }
 }
 
+.p-field-hint,
 .form__group-hint {
     color: $gray;
     display: block;
     font-size: $font-size-small;
-    padding-bottom: $basic-padding;
 }
 
 .form__label {

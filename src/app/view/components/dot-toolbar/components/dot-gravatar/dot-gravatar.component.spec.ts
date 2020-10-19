@@ -1,4 +1,4 @@
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { Component, Input, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { DotGravatarComponent } from './dot-gravatar.component';
@@ -35,7 +35,7 @@ describe('DotGravatarComponent', () => {
     let avatarComponent: DebugElement;
     let dotGravatarService: DotGravatarService;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [HostTestComponent, DotGravatarComponent],
             imports: [DotAvatarModule, CommonModule],

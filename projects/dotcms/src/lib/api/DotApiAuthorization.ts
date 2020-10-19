@@ -27,11 +27,11 @@ export class DotApiAuthorization {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
+            body: {
                 user: user,
                 password: password,
                 expirationDays: expirationDays || 10
-            })
+            }
         }).then(async (res: Response) => {
             const data = await res.json();
 

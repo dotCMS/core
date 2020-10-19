@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DotMessageDisplayComponent } from './dot-message-display.component';
-import { ComponentFixture, async, TestBed } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { By } from '@angular/platform-browser';
@@ -30,8 +30,8 @@ describe('DotMessageDisplayComponent', () => {
     const dotMessageDisplayServiceMock: DotMessageDisplayServiceMock = new DotMessageDisplayServiceMock();
     let fixture: ComponentFixture<DotMessageDisplayComponent>;
 
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             TestBed.configureTestingModule({
                 imports: [ToastModule, DotIconModule, DotIconButtonModule, BrowserAnimationsModule],
                 declarations: [DotMessageDisplayComponent],

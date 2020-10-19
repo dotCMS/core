@@ -18,7 +18,7 @@ import { DotMenu } from '@models/navigation';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { skip } from 'rxjs/operators';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
-import { TooltipModule } from 'primeng/primeng';
+import { TooltipModule } from 'primeng/tooltip';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 
 class FakeNavigationService {
@@ -205,7 +205,7 @@ describe('DotNavigationComponent', () => {
             });
 
             it('should not have scroll', () => {
-                expect(fixture.debugElement.styles).toEqual({ 'overflow-y': '' });
+                expect(fixture.debugElement.styles.cssText).toEqual('');
             });
         });
 
@@ -238,7 +238,7 @@ describe('DotNavigationComponent', () => {
             });
 
             it('should have scroll', () => {
-                expect(fixture.debugElement.styles).toEqual({ 'overflow-y': 'scroll' });
+                expect(fixture.debugElement.styles.cssText).toEqual('overflow-y: scroll;');
             });
         });
     });

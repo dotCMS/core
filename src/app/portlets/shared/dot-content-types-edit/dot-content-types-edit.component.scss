@@ -1,7 +1,7 @@
-@import "mixins";
 @import "variables";
+@import "mixins";
 
-::ng-deep .basetype-content.ui-dialog .ui-dialog-content .ui-autocomplete-panel {
+::ng-deep .basetype-content.p-dialog .p-dialog-content .p-autocomplete-panel {
     bottom: 36px !important;
     top: auto !important;
 }

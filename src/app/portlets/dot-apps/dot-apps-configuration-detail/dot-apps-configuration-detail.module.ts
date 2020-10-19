@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/primeng';
+import { ButtonModule } from 'primeng/button';
 
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';

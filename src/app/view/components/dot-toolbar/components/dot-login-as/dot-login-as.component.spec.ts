@@ -5,7 +5,7 @@ import {
 } from 'rxjs';
 import { mockUser, LoginServiceMock } from '../../../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Component, Input, forwardRef, Output, EventEmitter } from '@angular/core';
 import { DotLoginAsComponent } from './dot-login-as.component';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
@@ -15,7 +15,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { LoginService, User } from 'dotcms-js';
 import { PaginatorService } from '@services/paginator';
 import { ActivatedRoute } from '@angular/router';
-import { InputTextModule } from 'primeng/primeng';
+import { InputTextModule } from 'primeng/inputtext';
 import { ReactiveFormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
@@ -110,62 +110,59 @@ describe('DotLoginAsComponent', () => {
         }
     ];
 
-    beforeEach(async(() => {
-        const messageServiceMock = new MockDotMessageService({
-            Change: 'Change',
-            cancel: 'cancel',
-            'login-as': 'login-as',
-            'loginas.select.loginas.user': 'loginas.select.loginas.user',
-            password: 'password',
-            'loginas.error.wrong-credentials': 'wrong password'
-        });
+    beforeEach(
+        waitForAsync(() => {
+            const messageServiceMock = new MockDotMessageService({
+                Change: 'Change',
+                cancel: 'cancel',
+                'login-as': 'login-as',
+                'loginas.select.loginas.user': 'loginas.select.loginas.user',
+                password: 'password',
+                'loginas.error.wrong-credentials': 'wrong password'
+            });
 
-        DOTTestBed.configureTestingModule({
-            declarations: [DotLoginAsComponent, DotSearchableDropdownMockComponent],
-            imports: [
-                ...SEARCHABLE_NGFACES_MODULES,
-                BrowserAnimationsModule,
-                InputTextModule,
-                ReactiveFormsModule,
-                DotDialogModule,
-                RouterTestingModule
-            ],
-            providers: [
-                {
-                    provide: LOCATION_TOKEN,
-                    useValue: {
-                        reload() {}
-                    }
-                },
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: LoginService, useClass: LoginServiceMock },
-                {
-                    provide: ActivatedRoute,
-                    useValue: { params: observableFrom([{ id: '1234' }]) }
-                },
-                DotNavigationService,
-                DotMenuService,
-                PaginatorService
-            ]
-        });
+            DOTTestBed.configureTestingModule({
+                declarations: [DotLoginAsComponent, DotSearchableDropdownMockComponent],
+                imports: [
+                    ...SEARCHABLE_NGFACES_MODULES,
+                    BrowserAnimationsModule,
+                    InputTextModule,
+                    ReactiveFormsModule,
+                    DotDialogModule,
+                    RouterTestingModule
+                ],
+                providers: [
+                    {
+                        provide: LOCATION_TOKEN,
+                        useValue: {
+                            reload() {}
+                        }
+                    },
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: LoginService, useClass: LoginServiceMock },
+                    {
+                        provide: ActivatedRoute,
+                        useValue: { params: observableFrom([{ id: '1234' }]) }
+                    },
+                    DotNavigationService,
+                    DotMenuService,
+                    PaginatorService
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(DotLoginAsComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
+            fixture = DOTTestBed.createComponent(DotLoginAsComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
 
-        locationService = de.injector.get(LOCATION_TOKEN);
-        paginatorService = de.injector.get(PaginatorService);
-        loginService = de.injector.get(LoginService);
-        dotEventsService = de.injector.get(DotEventsService);
-        dotNavigationService = de.injector.get(DotNavigationService);
+            locationService = de.injector.get(LOCATION_TOKEN);
+            paginatorService = de.injector.get(PaginatorService);
+            loginService = de.injector.get(LoginService);
+            dotEventsService = de.injector.get(DotEventsService);
+            dotNavigationService = de.injector.get(DotNavigationService);
 
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([...users]));
-    }));
-
-    afterAll(() => {
-        comp.visible = false;
-        fixture.detectChanges();
-    });
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([...users]));
+        })
+    );
 
     it('should load the first page', () => {
         fixture.detectChanges();
@@ -208,7 +205,7 @@ describe('DotLoginAsComponent', () => {
         comp.visible = true;
         fixture.detectChanges();
 
-        comp.form.get('loginAsUser').setValue(mockUser);
+        comp.form.get('loginAsUser').setValue(mockUser());
         comp.dialogActions.accept.action();
 
         expect(loginService.loginAs).toHaveBeenCalledTimes(1);
@@ -220,7 +217,7 @@ describe('DotLoginAsComponent', () => {
         comp.needPassword = true;
         fixture.detectChanges();
 
-        comp.form.get('loginAsUser').setValue(mockUser);
+        comp.form.get('loginAsUser').setValue(mockUser());
         comp.form.get('password').setValue('password');
         fixture.detectChanges();
 
@@ -232,7 +229,7 @@ describe('DotLoginAsComponent', () => {
         expect(passwordInputElem.nativeElement.focus).toHaveBeenCalled();
     });
 
-    it('should reload the page on login as', () => {
+    it('should reload the page on login as', async () => {
         spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
             new Promise((resolve) => {
                 resolve(true);
@@ -244,21 +241,19 @@ describe('DotLoginAsComponent', () => {
         comp.visible = true;
         fixture.detectChanges();
 
-        comp.form.get('loginAsUser').setValue(mockUser);
+        comp.form.get('loginAsUser').setValue(mockUser());
         fixture.detectChanges();
 
         comp.dialogActions.accept.action();
 
-        fixture.whenStable().then(() => {
-            expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
-            expect(locationService.reload).toHaveBeenCalledTimes(1);
-        });
+        await fixture.whenStable();
+
+        expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
+        expect(locationService.reload).toHaveBeenCalledTimes(1);
     });
 
     it('should show error message', () => {
-        spyOn(loginService, 'loginAs').and.returnValue(
-            observableThrowError({ })
-        );
+        spyOn(loginService, 'loginAs').and.returnValue(observableThrowError({}));
 
         comp.visible = true;
         comp.needPassword = true;

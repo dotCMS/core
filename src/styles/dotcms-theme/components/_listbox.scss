@@ -1,0 +1,59 @@
+
+@use "variables" as *;
+
+.p-listbox {
+  background: $white;
+  color: $black;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+}
+.p-listbox .p-listbox-header {
+  padding: $spacing-2;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  color: $black;
+  background: $white;
+  margin: 0;
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+}
+.p-listbox .p-listbox-header .p-listbox-filter {
+  padding-right: $spacing-6;
+}
+.p-listbox .p-listbox-header .p-listbox-filter-icon {
+  right: $spacing-2;
+  color: $black;
+}
+.p-listbox .p-listbox-header .p-checkbox {
+  margin-right: $spacing-1;
+}
+.p-listbox .p-listbox-list {
+  padding: 0;
+}
+.p-listbox .p-listbox-list .p-listbox-item {
+  margin: 0;
+  padding: $spacing-2 $spacing-2;
+  border: 0 none;
+  color: $black;
+  transition: none;
+  border-radius: 0;
+}
+.p-listbox .p-listbox-list .p-listbox-item.p-highlight {
+  color:  $highlight-text-color;
+  background: $highlight-bg;
+}
+.p-listbox .p-listbox-list .p-listbox-item:focus {
+  outline: 0 none;
+  outline-offset: 0;
+  box-shadow: none;
+}
+.p-listbox .p-listbox-list .p-listbox-item .p-checkbox {
+  margin-right: $spacing-1;
+}
+.p-listbox:not(.p-disabled) .p-listbox-item:not(.p-highlight):not(.p-disabled):hover {
+  color: $hover-text-color;
+  background: $hover-bg;  
+}
+
+.p-listbox-item .p-ink {
+  background-color: $highlight-bg;
+}

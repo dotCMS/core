@@ -14,9 +14,7 @@ import { LoggerService } from 'dotcms-js';
     selector: 'rule-condition',
     template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-condition cw-entry">
   <div class="cw-btn-group cw-condition-toggle">
-    <button class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
-      {{ condition.operator }}
-    </button>
+    <button pButton class="p-button-secondary" aria-label="Swap And/Or" (click)="toggleOperator()" [label]="condition.operator" *ngIf="index !== 0"></button>
   </div>
 
   <cw-input-dropdown
@@ -47,8 +45,7 @@ import { LoggerService } from 'dotcms-js';
 </div>
 <div class="cw-btn-group cw-delete-btn">
   <div class="ui basic icon buttons">
-    <button class="ui button" aria-label="Delete Condition" (click)="onDeleteConditionClicked()" [disabled]="!condition.isPersisted()">
-      <i class="trash icon"></i>
+    <button pButton type="button" icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text"  aria-label="Delete Condition" (click)="onDeleteConditionClicked()" [disabled]="!condition.isPersisted()">
     </button>
   </div>
 </div>

@@ -13,7 +13,7 @@ import { DotDropdownComponent } from '@components/_common/dot-dropdown-component
     templateUrl: 'dot-toolbar-notifications.component.html'
 })
 export class DotToolbarNotificationsComponent implements OnInit {
-    @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
+    @ViewChild(DotDropdownComponent, { static: true }) dropdown: DotDropdownComponent;
     existsMoreToLoad = false;
     notifications: INotification[] = [];
     notificationsUnreadCount = 0;

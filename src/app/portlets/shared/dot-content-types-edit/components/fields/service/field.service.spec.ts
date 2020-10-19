@@ -1,9 +1,9 @@
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { FieldService } from '.';
 import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fields';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 import { DotCMSContentTypeField } from 'dotcms-models';
 
@@ -16,7 +16,6 @@ export const mockFieldType: FieldType = {
 };
 
 describe('FieldService', () => {
-    let injector: TestBed;
     let fieldService: FieldService;
     let httpMock: HttpTestingController;
 
@@ -25,9 +24,8 @@ describe('FieldService', () => {
             imports: [HttpClientTestingModule],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, FieldService]
         });
-        injector = getTestBed();
-        fieldService = injector.get(FieldService);
-        httpMock = injector.get(HttpTestingController);
+        fieldService = TestBed.inject(FieldService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should load field types', () => {
@@ -44,9 +42,11 @@ describe('FieldService', () => {
         req.flush({ entity: mockResponse });
     });
 
+    let mockData;
+
     describe('Save Fields', () => {
         it('should save field', () => {
-            this.mockData = [
+            mockData = [
                 {
                     divider: {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
@@ -61,19 +61,19 @@ describe('FieldService', () => {
             ];
 
             const contentTypeId = '1';
-            fieldService.saveFields(contentTypeId, this.mockData).subscribe((res: any) => {
-                expect(res).toEqual(this.mockData);
+            fieldService.saveFields(contentTypeId, mockData).subscribe((res: any) => {
+                expect(res).toEqual(mockData);
             });
 
             const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields/move`);
             expect(req.request.method).toBe('PUT');
-            req.flush({ entity: this.mockData });
+            req.flush({ entity: mockData });
         });
     });
 
     describe('Delete Fields', () => {
         it('should delete field', () => {
-            this.mockData = [
+            mockData = [
                 {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
                     name: 'Hello World',
@@ -86,13 +86,13 @@ describe('FieldService', () => {
             ];
 
             const contentTypeId = '1';
-            fieldService.deleteFields(contentTypeId, this.mockData).subscribe((res: any) => {
-                expect(res).toEqual({ deletedIds: ['1', '2'], fields: this.mockData });
+            fieldService.deleteFields(contentTypeId, mockData).subscribe((res: any) => {
+                expect(res).toEqual({ deletedIds: ['1', '2'], fields: mockData });
             });
 
             const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields`);
             expect(req.request.method).toBe('DELETE');
-            req.flush({ entity: { deletedIds: ['1', '2'], fields: this.mockData } });
+            req.flush({ entity: { deletedIds: ['1', '2'], fields: mockData } });
         });
     });
 

@@ -1,6 +1,5 @@
-import { Response } from '@angular/http';
 import { HttpCode } from './http-code';
-import { HttpRequest, HttpErrorResponse } from '@angular/common/http';
+import { HttpRequest, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 
 export const NETWORK_CONNECTION_ERROR = 1;
 export const UNKNOWN_RESPONSE_ERROR = 2;
@@ -20,14 +19,14 @@ export class CwError {
 }
 
 export interface ResponseError {
-    response: Response;
+    response: HttpResponse<any>;
     msg: string;
 }
 
-export function isSuccess(resp: Response): boolean {
+export function isSuccess(resp: HttpResponse<any>): boolean {
     return resp.status > 199 && resp.status < 300;
 }
 
-export function hasContent(resp: Response): boolean {
+export function hasContent(resp: HttpResponse<any>): boolean {
     return isSuccess(resp) && resp.status !== HttpCode.NO_CONTENT;
 }

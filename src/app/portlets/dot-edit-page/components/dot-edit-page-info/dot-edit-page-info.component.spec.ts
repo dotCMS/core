@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
@@ -27,8 +27,8 @@ describe('DotEditPageInfoComponent', () => {
     let de: DebugElement;
     let siteService: SiteService;
 
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [DotEditPageInfoComponent],
                 imports: [DotApiLinkModule, DotCopyButtonModule, DotPipesModule],
@@ -66,8 +66,8 @@ describe('DotEditPageInfoComponent', () => {
                 name: 'demo.dotcms.com'
             });
             component.pageState = new DotPageRenderState(
-                mockUser,
-                JSON.parse(JSON.stringify(mockDotRenderedPage))
+                mockUser(),
+                mockDotRenderedPage()
             );
             fixture.detectChanges();
         });

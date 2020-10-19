@@ -33,7 +33,7 @@ describe('AppComponent', () => {
         notLicensedService = de.injector.get(NotLicensedService);
         dotMessageService = de.injector.get(DotMessageService);
 
-        spyOn(dotCmsConfigService, 'getConfig').and.returnValue(
+        spyOn<any>(dotCmsConfigService, 'getConfig').and.returnValue(
             of({
                 colors: {
                     primary: '#123',

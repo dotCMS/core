@@ -1,6 +1,6 @@
 import { DotCMSContentType } from 'dotcms-models';
 import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import {
     DebugElement,
     Component,
@@ -149,8 +149,8 @@ describe('DotNewRelationshipsComponent', () => {
         'contenttypes.field.properties.relationships.label': 'Relationship'
     });
 
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             DOTTestBed.configureTestingModule({
                 declarations: [
                     HostTestComponent,

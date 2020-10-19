@@ -1,4 +1,4 @@
-import { async, ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { DotWizardComponent } from './dot-wizard.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -72,7 +72,7 @@ describe('DotWizardComponent', () => {
     let formsContainer: DebugElement;
 
     beforeEach(
-        async(() => {
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [DotWizardComponent, FormOneComponent, FormTwoComponent],
                 imports: [DotDialogModule, CommonModule, DotContainerReferenceModule],
@@ -92,24 +92,22 @@ describe('DotWizardComponent', () => {
     );
 
     describe('multiple steps', () => {
-        beforeEach(
-            fakeAsync(() => {
-                fixture = TestBed.createComponent(DotWizardComponent);
-                component = fixture.componentInstance;
-                fixture.detectChanges();
-                dotWizardService = fixture.debugElement.injector.get(DotWizardService);
-                dotWizardService.open(wizardInput);
-                fixture.detectChanges();
-                stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-                tick(201); // interval time to focus first element.
-                fixture.detectChanges();
-                acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
-                closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
-                form1 = fixture.debugElement.query(By.css('dot-form-one')).componentInstance;
-                form2 = fixture.debugElement.query(By.css('dot-form-two')).componentInstance;
-                formsContainer = fixture.debugElement.query(By.css('.dot-wizard__container'));
-            })
-        );
+        beforeEach(fakeAsync(() => {
+            fixture = TestBed.createComponent(DotWizardComponent);
+            component = fixture.componentInstance;
+            fixture.detectChanges();
+            dotWizardService = fixture.debugElement.injector.get(DotWizardService);
+            dotWizardService.open(wizardInput);
+            fixture.detectChanges();
+            stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
+            tick(201); // interval time to focus first element.
+            fixture.detectChanges();
+            acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
+            closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
+            form1 = fixture.debugElement.query(By.css('dot-form-one')).componentInstance;
+            form2 = fixture.debugElement.query(By.css('dot-form-two')).componentInstance;
+            formsContainer = fixture.debugElement.query(By.css('.dot-wizard__container'));
+        }));
 
         it('should set dialog params', () => {
             const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
@@ -215,6 +213,7 @@ describe('DotWizardComponent', () => {
             fixture.detectChanges();
             expect(formsContainer.nativeElement.style['transform']).toEqual('translateX(-400px)');
         });
+
         it('should update transform property on previous', () => {
             form1.valid.emit(true);
             form2.valid.emit(true);
@@ -226,20 +225,18 @@ describe('DotWizardComponent', () => {
     });
 
     describe('single step', () => {
-        beforeEach(
-            fakeAsync(() => {
-                fixture = TestBed.createComponent(DotWizardComponent);
-                component = fixture.componentInstance;
-                fixture.detectChanges();
-                dotWizardService = fixture.debugElement.injector.get(DotWizardService);
-                dotWizardService.open({ steps: [wizardInput.steps[0]], title: '' });
-                fixture.detectChanges();
-                stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-                tick(201); // interval time to focus first element.
-                fixture.detectChanges();
-                closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
-            })
-        );
+        beforeEach(fakeAsync(() => {
+            fixture = TestBed.createComponent(DotWizardComponent);
+            component = fixture.componentInstance;
+            fixture.detectChanges();
+            dotWizardService = fixture.debugElement.injector.get(DotWizardService);
+            dotWizardService.open({ steps: [wizardInput.steps[0]], title: '' });
+            fixture.detectChanges();
+            stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
+            tick(201); // interval time to focus first element.
+            fixture.detectChanges();
+            closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
+        }));
 
         it('should set cancel button correctly', () => {
             const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))

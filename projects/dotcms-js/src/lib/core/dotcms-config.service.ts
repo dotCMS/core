@@ -1,5 +1,4 @@
 import { CoreWebService } from './core-web.service';
-import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { pluck, filter } from 'rxjs/operators';
@@ -19,8 +18,14 @@ const DOTCMS_PAGINATOR_ROWS = 'dotcms.paginator.rows';
 const DOTCMS_PAGINATOR_LINKS = 'dotcms.paginator.links';
 const EMAIL_REGEX = 'emailRegex';
 
+export interface DotUiColors {
+    primary: string;
+    secondary: string;
+    background: string;
+}
+
 export interface ConfigParams {
-    colors: { [key: string]: string };
+    colors: DotUiColors;
     emailRegex: string;
     license: object;
     menu: Menu[];
@@ -59,7 +64,6 @@ export class DotcmsConfigService {
 
         this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: this.configUrl
             })
             .pipe(pluck('entity'))

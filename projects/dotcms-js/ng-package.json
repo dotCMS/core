@@ -1,8 +1,8 @@
 {
-  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
-  "dest": "../../dist-lib/dotcms-js",
-  "deleteDestPath": false,
-  "lib": {
-    "entryFile": "src/public_api.ts"
-  }
+    "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+    "dest": "../../dist-lib/dotcms-js",
+    "deleteDestPath": false,
+    "lib": {
+        "entryFile": "src/public_api.ts"
+    }
 }

@@ -6,7 +6,7 @@ import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { By } from '@angular/platform-browser';
 import { mockDotPersona } from '@tests/dot-persona.mock';
-import { TooltipModule } from 'primeng/primeng';
+import { TooltipModule } from 'primeng/tooltip';
 import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';

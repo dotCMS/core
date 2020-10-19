@@ -7,7 +7,7 @@ import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { PaginatorService } from '@services/paginator';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
@@ -114,7 +114,7 @@ describe('DotEditRelationshipsComponent', () => {
         'contenttypes.field.properties.relationship.existing.placeholder': 'Select Relationship',
     });
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotEditRelationshipsComponent,

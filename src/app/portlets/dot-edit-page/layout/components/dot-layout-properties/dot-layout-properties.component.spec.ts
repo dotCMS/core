@@ -1,12 +1,13 @@
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
-import { OverlayPanelModule, ButtonModule } from 'primeng/primeng';
 import { DotLayoutSidebarModule } from './dot-layout-property-sidebar/dot-layout-property-sidebar.module';
 import { DotLayoutPropertiesItemModule } from './dot-layout-properties-item/dot-layout-properties-item.module';
 import { DotLayoutPropertiesComponent } from './dot-layout-properties.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
     selector: 'dot-test-host-component',

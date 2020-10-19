@@ -3,8 +3,8 @@ import { CONTAINER_SOURCE } from '@shared/models/container/dot-container.model';
 import { DotLayoutGridBox } from './dot-layout-grid-box.model';
 
 describe('DotLayoutGridRow', () => {
-
     let dotLayoutGrid: DotLayoutGrid;
+
     const gridBoxes: DotLayoutGridBox[] = [
         {
             containers: [
@@ -94,7 +94,7 @@ describe('DotLayoutGridRow', () => {
     const rowClasses: string[] = ['test_column_class_1', 'test_column_class_2'];
 
     beforeEach(() => {
-        dotLayoutGrid = new DotLayoutGrid(gridBoxes, rowClasses);
+        dotLayoutGrid = new DotLayoutGrid([ ...gridBoxes ], [ ...rowClasses ]);
     });
 
     it('should get default box config object', () => {
@@ -173,7 +173,7 @@ describe('DotLayoutGridRow', () => {
         expect(dotLayoutGrid.getAllRowClass()).toEqual(rowClasses);
     });
 
-    it('should get all row class', () => {
+    it('should get row class 1', () => {
         expect(dotLayoutGrid.getRowClass(1)).toEqual('test_column_class_2');
     });
 

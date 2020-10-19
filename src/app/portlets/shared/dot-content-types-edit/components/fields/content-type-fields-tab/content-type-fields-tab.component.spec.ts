@@ -1,4 +1,4 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DebugElement, Component} from '@angular/core';
 import { ContentTypeFieldsTabComponent } from '.';
@@ -48,7 +48,7 @@ describe('ContentTypeFieldsTabComponent', () => {
         'contenttypes.action.cancel': 'cancel text'
     });
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsTabComponent,

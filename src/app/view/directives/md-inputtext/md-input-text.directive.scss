@@ -1,3 +1,5 @@
+@import "dotcms-theme/utils/theme-variables";
+
 .md-inputtext {
     display: inline-block;
     position: relative;
@@ -17,7 +19,7 @@
     p-autocomplete {
         width: 100%;
 
-        &.ui-inputwrapper-filled,
+        &.p-inputwrapper-filled,
         &:focus {
             & ~ label {
                 top: 0;
@@ -26,8 +28,8 @@
             }
         }
 
-        &.ui-state-filled,
-        &.ui-inputwrapper-focus,
+        &.p-state-filled,
+        &.p-inputwrapper-focus,
         &:focus {
             & ~ label {
                 top: 0;

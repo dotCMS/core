@@ -1,7 +1,7 @@
 import { throwError as observableThrowError, of as observableOf } from 'rxjs';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotContentTypeEditResolver } from './dot-content-types-edit-resolver.service';
-import { async } from '@angular/core/testing';
+import { waitForAsync } from '@angular/core/testing';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotCrudService } from '@services/dot-crud';
 import { LoginService } from 'dotcms-js';
@@ -28,7 +28,7 @@ describe('DotContentTypeEditResolver', () => {
     let dotRouterService: DotRouterService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
                 DotContentTypeEditResolver,
@@ -72,7 +72,7 @@ describe('DotContentTypeEditResolver', () => {
     it('should redirect to content-types if content type it\'s not found', () => {
         activatedRouteSnapshotMock.paramMap.get = () => 'invalid-id';
 
-        spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(
+        spyOn<any>(dotHttpErrorManagerService, 'handle').and.returnValue(
             observableOf({
                 redirected: false
             })
@@ -98,7 +98,7 @@ describe('DotContentTypeEditResolver', () => {
     it('should get and return null and go to home', () => {
         activatedRouteSnapshotMock.paramMap.get = () => '123';
 
-        spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(
+        spyOn<any>(dotHttpErrorManagerService, 'handle').and.returnValue(
             observableOf({
                 redirected: false
             })

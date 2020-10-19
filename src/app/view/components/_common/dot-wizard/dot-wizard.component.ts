@@ -5,7 +5,9 @@ import {
     OnInit,
     QueryList,
     ViewChild,
-    ViewChildren
+    ViewChildren,
+    OnDestroy,
+    ComponentRef
 } from '@angular/core';
 import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
 import {
@@ -14,10 +16,8 @@ import {
     DotDialogComponent
 } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { ComponentRef } from '@angular/core/src/linker/component_factory';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
@@ -35,7 +35,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
     @Input() data: DotWizardInput;
     @ViewChildren(DotContainerReferenceDirective)
     formHosts: QueryList<DotContainerReferenceDirective>;
-    @ViewChild('dialog') dialog: DotDialogComponent;
+    @ViewChild('dialog', { static: true }) dialog: DotDialogComponent;
 
     private currentStep = 0;
     private componentsHost: DotContainerReferenceDirective[];

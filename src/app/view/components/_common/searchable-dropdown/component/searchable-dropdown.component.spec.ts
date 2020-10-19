@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async, fakeAsync, tick, TestBed } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
@@ -84,7 +84,7 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const messageServiceMock = new MockDotMessageService({
             search: 'Search'
         });
@@ -177,7 +177,7 @@ describe('SearchableDropdownComponent', () => {
         hostFixture.detectChanges();
 
         const dataviewDataEl = de.query(
-            By.css('p-dataview .ui-dataview-content .searchable-dropdown__data-list-item')
+            By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
         );
         expect(dataviewDataEl.nativeElement.textContent).toEqual('site-0');
     });
@@ -187,8 +187,8 @@ describe('SearchableDropdownComponent', () => {
         hostFixture.componentInstance.cssClass = 'testClass';
         hostFixture.componentInstance.optionsWidth = '650';
         hostFixture.detectChanges();
-        const overlay = de.query(By.css('.ui-overlaypanel'));
-        const pdataview = de.query(By.css('.ui-dataview')).componentInstance;
+        const overlay = de.query(By.css('.p-overlaypanel'));
+        const pdataview = de.query(By.css('.p-dataview')).componentInstance;
         tick(100);
         expect(comp.cssClass).toContain('searchable-dropdown paginator');
         expect(overlay.componentInstance.styleClass).toBe('testClass');
@@ -222,7 +222,7 @@ describe('SearchableDropdownComponent', () => {
         hostFixture.detectChanges();
 
         const dataviewDataEl = de.query(
-            By.css('p-dataview .ui-dataview-content .searchable-dropdown__data-list-item')
+            By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
         );
         expect(dataviewDataEl.nativeElement.textContent).toEqual('site-0 - demo.dotcms.com');
     });
@@ -391,7 +391,7 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const messageServiceMock = new MockDotMessageService({
             search: 'Search'
         });

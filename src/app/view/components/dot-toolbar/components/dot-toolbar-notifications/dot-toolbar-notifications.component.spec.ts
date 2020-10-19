@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async, TestBed } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
 import { INotification } from '@shared/models/notifications';
@@ -85,7 +85,7 @@ describe('DotToolbarNotificationsComponent', () => {
         'notifications_load_more': 'More'
     });
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         TestBed.configureTestingModule({
             declarations: [
                 DotToolbarNotificationsComponent,

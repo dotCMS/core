@@ -77,8 +77,7 @@ describe('DotApiForm', () => {
 
         dotApiForm = new DotApiForm(dotApiContentType, config);
 
-        dotApiForm.get().then((result) => {
-            console.log(result);
+        dotApiForm.get().then((_result) => {
             done();
         });
     });

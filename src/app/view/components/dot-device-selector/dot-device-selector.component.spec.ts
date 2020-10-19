@@ -89,8 +89,8 @@ describe('DotDeviceSelectorComponent', () => {
 
         pDropDown.triggerEventHandler('onChange', { value: mockDotDevices });
 
-        expect(component.change).toHaveBeenCalledWith(mockDotDevices);
-        expect(component.selected.emit).toHaveBeenCalledWith(mockDotDevices);
+        expect<any>(component.change).toHaveBeenCalledWith(mockDotDevices);
+        expect<any>(component.selected.emit).toHaveBeenCalledWith(mockDotDevices);
     });
 
     it('should add Default Device as first position', () => {

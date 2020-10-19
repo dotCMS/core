@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, Renderer } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2 } from '@angular/core';
 import { NgGrid } from '../directives/NgGrid';
 import { NgGridItemPosition, NgGridItemSize } from '../interfaces/INgGrid';
 
@@ -12,16 +12,16 @@ export class NgGridPlaceholder implements OnInit {
     private _ngGrid: NgGrid;
     private _cascadeMode: string;
 
-    constructor(private _ngEl: ElementRef, private _renderer: Renderer) {}
+    constructor(private _ngEl: ElementRef, private _renderer: Renderer2) {}
 
     public registerGrid(ngGrid: NgGrid) {
         this._ngGrid = ngGrid;
     }
 
     public ngOnInit(): void {
-        this._renderer.setElementClass(this._ngEl.nativeElement, 'grid-placeholder', true);
+        this._renderer.addClass(this._ngEl.nativeElement, 'grid-placeholder');
         if (this._ngGrid.autoStyle) {
-            this._renderer.setElementStyle(this._ngEl.nativeElement, 'position', 'absolute');
+            this._renderer.setStyle(this._ngEl.nativeElement, 'position', 'absolute');
         }
     }
 
@@ -41,30 +41,30 @@ export class NgGridPlaceholder implements OnInit {
             case 'up':
             case 'left':
             default:
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'left', '0px');
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'top', '0px');
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'right', null);
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'bottom', null);
+                this._renderer.setStyle(this._ngEl.nativeElement, 'left', '0px');
+                this._renderer.setStyle(this._ngEl.nativeElement, 'top', '0px');
+                this._renderer.removeStyle(this._ngEl.nativeElement, 'right');
+                this._renderer.removeStyle(this._ngEl.nativeElement, 'bottom');
                 break;
             case 'right':
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'right', '0px');
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'top', '0px');
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'left', null);
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'bottom', null);
+                this._renderer.setStyle(this._ngEl.nativeElement, 'right', '0px');
+                this._renderer.setStyle(this._ngEl.nativeElement, 'top', '0px');
+                this._renderer.removeStyle(this._ngEl.nativeElement, 'left');
+                this._renderer.removeStyle(this._ngEl.nativeElement, 'bottom');
                 break;
             case 'down':
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'left', '0px');
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'bottom', '0px');
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'right', null);
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'top', null);
+                this._renderer.setStyle(this._ngEl.nativeElement, 'left', '0px');
+                this._renderer.setStyle(this._ngEl.nativeElement, 'bottom', '0px');
+                this._renderer.removeStyle(this._ngEl.nativeElement, 'right');
+                this._renderer.removeStyle(this._ngEl.nativeElement, 'top');
                 break;
         }
     }
 
     // 	Private methods
     private _setDimensions(w: number, h: number): void {
-        this._renderer.setElementStyle(this._ngEl.nativeElement, 'width', w + 'px');
-        this._renderer.setElementStyle(this._ngEl.nativeElement, 'height', h + 'px');
+        this._renderer.setStyle(this._ngEl.nativeElement, 'width', w + 'px');
+        this._renderer.setStyle(this._ngEl.nativeElement, 'height', h + 'px');
     }
 
     private _setPosition(x: number, y: number): void {
@@ -72,25 +72,13 @@ export class NgGridPlaceholder implements OnInit {
             case 'up':
             case 'left':
             default:
-                this._renderer.setElementStyle(
-                    this._ngEl.nativeElement,
-                    'transform',
-                    'translate(' + x + 'px, ' + y + 'px)'
-                );
+                this._renderer.setStyle(this._ngEl.nativeElement, 'transform', 'translate(' + x + 'px, ' + y + 'px)');
                 break;
             case 'right':
-                this._renderer.setElementStyle(
-                    this._ngEl.nativeElement,
-                    'transform',
-                    'translate(' + -x + 'px, ' + y + 'px)'
-                );
+                this._renderer.setStyle(this._ngEl.nativeElement, 'transform', 'translate(' + -x + 'px, ' + y + 'px)');
                 break;
             case 'down':
-                this._renderer.setElementStyle(
-                    this._ngEl.nativeElement,
-                    'transform',
-                    'translate(' + x + 'px, ' + -y + 'px)'
-                );
+                this._renderer.setStyle(this._ngEl.nativeElement, 'transform', 'translate(' + x + 'px, ' + -y + 'px)');
                 break;
         }
     }

@@ -1,8 +1,7 @@
 import { DataTypePropertyComponent } from '.';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { async } from '@angular/core/testing';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FormGroup, FormControl } from '@angular/forms';
@@ -24,7 +23,9 @@ describe('DataTypePropertyComponent', () => {
         'contenttypes.field.properties.data_type.values.system': 'System-Field'
     });
 
-    beforeEach(async(() => {
+    let group;
+
+    beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DataTypePropertyComponent],
             imports: [],
@@ -34,11 +35,11 @@ describe('DataTypePropertyComponent', () => {
         fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
         comp = fixture.componentInstance;
 
-        this.group = new FormGroup({
+        group = new FormGroup({
             name: new FormControl('')
         });
 
-        comp.group = this.group;
+        comp.group = group;
         comp.property = {
             field: {
                 ...dotcmsContentTypeFieldBasicMock,
@@ -55,7 +56,7 @@ describe('DataTypePropertyComponent', () => {
         const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
 
         expect(divForm).not.toBeNull();
-        expect(this.group).toEqual(divForm.componentInstance.group);
+        expect(group).toEqual(divForm.componentInstance.group);
     });
 
     it('should have 4 values for Radio Field', () => {

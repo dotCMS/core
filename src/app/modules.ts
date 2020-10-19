@@ -8,28 +8,8 @@ import { SearchableDropDownModule } from './view/components/_common/searchable-d
 import { IFrameModule } from './view/components/_common/iframe';
 
 
-import {
-    AutoCompleteModule,
-    BreadcrumbModule,
-    ButtonModule,
-    CalendarModule,
-    CheckboxModule,
-    ConfirmDialogModule,
-    DataTableModule,
-    DialogModule,
-    DropdownModule,
-    InputTextModule,
-    InputTextareaModule,
-    MultiSelectModule,
-    PasswordModule,
-    RadioButtonModule,
-    SelectButtonModule,
-    SharedModule,
-    SplitButtonModule,
-    TabViewModule,
-    ToolbarModule,
-    TreeTableModule
-} from 'primeng/primeng';
+import { TableModule } from 'primeng/table';
+
 import { DotIconModule } from './view/components/_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from './view/components/_common/dot-icon-button/dot-icon-button.module';
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
@@ -41,6 +21,26 @@ import { DotToolbarModule } from '@components/dot-toolbar/dot-toolbar.module';
 import { DotPushPublishDialogModule } from '@components/_common/dot-push-publish-dialog';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
+
+import { AutoCompleteModule } from 'primeng/autocomplete';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { ButtonModule } from 'primeng/button';
+import { CalendarModule } from 'primeng/calendar';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { PasswordModule } from 'primeng/password';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { SharedModule } from 'primeng/api';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { TabViewModule } from 'primeng/tabview';
+import { ToolbarModule } from 'primeng/toolbar';
+import { TreeTableModule } from 'primeng/treetable';
 
 export const CUSTOM_MODULES = [
     DotToolbarModule,
@@ -70,7 +70,7 @@ export const NGFACES_MODULES = [
     CalendarModule,
     CheckboxModule,
     ConfirmDialogModule,
-    DataTableModule,
+    TableModule,
     DialogModule,
     DropdownModule,
     InputTextModule,

@@ -103,7 +103,7 @@ export class ServersideCondition {
         required: 'Required'
     };
 
-    constructor(fb: FormBuilder, resources: I18nService, private loggerService: LoggerService) {
+    constructor(_fb: FormBuilder, resources: I18nService, private loggerService: LoggerService) {
         this._resources = resources;
         this._inputs = [];
     }
@@ -120,17 +120,6 @@ export class ServersideCondition {
 
     private static isComparisonParameter(input): boolean {
         return input && input.name === 'comparison';
-    }
-
-    // tslint:disable-next-line:no-unused-variable
-    private static getSelectedOption(input, value): any {
-        let opt = null;
-        const optAry = input.options.filter(e => e.value === value);
-
-        if (optAry && optAry.length === 1) {
-            opt = optAry[0];
-        }
-        return opt;
     }
 
     ngOnChanges(change): void {
@@ -197,7 +186,7 @@ export class ServersideCondition {
         }
     }
 
-    setParameterValue(name: string, value: any, valid: boolean, isBlur = false): void {
+    setParameterValue(name: string, value: any, _valid: boolean, _isBlur = false): void {
         this.parameterValueChange.emit({ name, value });
         if (name === 'comparison') {
             this.applyRhsCount(value);
@@ -236,9 +225,7 @@ export class ServersideCondition {
         };
     }
 
-    private getDateTimeInput(param, paramDef, i18nBaseKey: string): any {
-        // tslint:disable-next-line:no-unused-variable
-        const rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key;
+    private getDateTimeInput(param, paramDef, _i18nBaseKey: string): any {
         return {
             control: ServerSideFieldModel.createNgControl(this.componentInstance, param.key),
             name: param.key,

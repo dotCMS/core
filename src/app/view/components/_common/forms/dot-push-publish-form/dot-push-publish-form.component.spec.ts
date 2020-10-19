@@ -6,14 +6,6 @@ import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import {
-    CalendarModule,
-    ConfirmationService,
-    Dropdown,
-    DropdownModule,
-    SelectButton,
-    SelectButtonModule
-} from 'primeng/primeng';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -23,7 +15,7 @@ import {
     DotPushPublishFiltersService
 } from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
 import { CoreWebService, LoginService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -32,10 +24,13 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { By } from '@angular/platform-browser';
 import { DotPushPublishDialogData } from 'dotcms-models';
-import { SelectItem } from 'primeng/api';
+import { ConfirmationService, SelectItem } from 'primeng/api';
 import { PushPublishEnvSelectorComponent } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
+import { CalendarModule } from 'primeng/calendar';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.push_publish.action.push': 'Push',
@@ -191,7 +186,7 @@ describe('DotPushPublishFormComponent', () => {
     describe('Push Action scenarios', () => {
         beforeEach(() => {
             selectActionButtons = fixture.debugElement.queryAll(
-                By.css('p-selectButton .ui-button')
+                By.css('p-selectButton .p-button')
             );
         });
 
@@ -272,7 +267,7 @@ describe('DotPushPublishFormComponent', () => {
     });
 
     it('should show error messages', () => {
-        selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectButton .ui-button'));
+        selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectButton .p-button'));
         selectActionButtons[2].triggerEventHandler('click', {});
         pushPublishForm.form.get('environment').setValue(null);
         pushPublishForm.form.get('environment').markAsDirty();
@@ -281,11 +276,11 @@ describe('DotPushPublishFormComponent', () => {
         pushPublishForm.form.get('expireDate').setValue(null);
         pushPublishForm.form.get('expireDate').markAsDirty();
         fixture.detectChanges();
-        const errorMessages = fixture.debugElement.queryAll(By.css('.ui-messages-error'));
+        const errorMessages = fixture.debugElement.queryAll(By.css('.p-invalid'));
 
         expect(errorMessages[0].nativeElement.innerText).toEqual('Publish Date is required');
         expect(errorMessages[1].nativeElement.innerText).toEqual('Expire Date is required');
-        expect(errorMessages[2].nativeElement.innerText).toEqual(
+        expect(errorMessages[2].nativeElement.innerText).toContain(
             'Must add at least one Environment'
         );
     });

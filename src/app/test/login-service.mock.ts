@@ -1,13 +1,15 @@
 import { of as observableOf, Observable, Subject } from 'rxjs';
-import { User, Auth } from 'dotcms-js';
+import { Auth } from 'dotcms-js';
 
-export const mockUser: User = {
-    emailAddress: 'admin@dotcms.com',
-    firstName: 'Admin',
-    lastName: 'Admin',
-    loggedInDate: 123456789,
-    userId: '123',
-    languageId: 'en_US'
+export const mockUser = () => {
+    return {
+        emailAddress: 'admin@dotcms.com',
+        firstName: 'Admin',
+        lastName: 'Admin',
+        loggedInDate: 123456789,
+        userId: '123',
+        languageId: 'en_US'
+    }
 };
 
 export const mockLoginFormResponse = {
@@ -68,8 +70,8 @@ const mockUserWithRedirect = {
 };
 
 export const mockAuth: Auth = {
-    loginAsUser: mockUser,
-    user: mockUser
+    loginAsUser: mockUser(),
+    user: mockUser()
 };
 
 export class  LoginServiceMock {
@@ -98,7 +100,7 @@ export class  LoginServiceMock {
         return observableOf({});
     }
 
-    loginUser(): Observable<User> {
+    loginUser(): Observable<any> {
         return observableOf(mockUserWithRedirect);
     }
 

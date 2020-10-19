@@ -1,6 +1,5 @@
 import { pluck, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { RequestMethod } from '@angular/http';
 import { CoreWebService } from 'dotcms-js';
 import { DotLocalstorageService } from '@services/dot-localstorage/dot-localstorage.service';
 import { FormatDateService } from '@services/format-date-service';
@@ -80,7 +79,6 @@ export class DotMessageService {
     private getAll(lang: string): void {
         this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: this.geti18nURL(lang)
             })
             .pipe(take(1), pluck('entity'))

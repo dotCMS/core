@@ -3,7 +3,7 @@ import { DotWorkflowTaskDetailService } from './dot-workflow-task-detail.service
 import { DotMenuService } from '@services/dot-menu.service';
 import { TestBed } from '@angular/core/testing';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('DotWorkflowTaskDetailService', () => {

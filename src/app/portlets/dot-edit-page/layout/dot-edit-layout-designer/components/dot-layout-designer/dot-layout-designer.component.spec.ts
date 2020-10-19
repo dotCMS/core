@@ -4,7 +4,7 @@ import { DotEditLayoutService } from './../../../../shared/services/dot-edit-lay
 import { DotEditLayoutGridModule } from './../../../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
 import { DotActionButtonModule } from './../../../../../../view/components/_common/dot-action-button/dot-action-button.module';
 import { mockDotRenderedPage } from '../../../../../../test/dot-page-render.mock';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
@@ -22,7 +22,7 @@ describe('DotLayoutDesignerComponent', () => {
     let component: DotLayoutDesignerComponent;
     let fixture: ComponentFixture<DotLayoutDesignerComponent>;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const messageServiceMock = new MockDotMessageService({
             'editpage.layout.designer.header': 'HEADER',
             'editpage.layout.designer.footer': 'FOOTER'
@@ -57,7 +57,7 @@ describe('DotLayoutDesignerComponent', () => {
     describe('default', () => {
         beforeEach(() => {
             component.group = new FormBuilder().group({
-                ...mockDotRenderedPage.layout,
+                ...mockDotRenderedPage().layout,
                 sidebar: new FormBuilder().group({
                     location: '',
                     containers: [],
@@ -111,7 +111,7 @@ describe('DotLayoutDesignerComponent', () => {
                 component.group = new FormBuilder().group({
                     header: true,
                     footer: true,
-                    body: mockDotRenderedPage.layout.body,
+                    body: mockDotRenderedPage().layout.body,
                     sidebar: {
                         location: '',
                         containers: [],
@@ -152,7 +152,7 @@ describe('DotLayoutDesignerComponent', () => {
             describe('sidebar size and position', () => {
                 beforeEach(() => {
                     component.group = new FormBuilder().group({
-                        ...mockDotRenderedPage.layout,
+                        ...mockDotRenderedPage().layout,
                         sidebar: {
                             location: 'left',
                             containers: [],

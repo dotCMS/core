@@ -1,5 +1,5 @@
-@import "mixins";
 @import "variables";
+@import "mixins";
 
 :host {
     display: block;
@@ -28,7 +28,7 @@
     }
 }
 
-$box-header-height: 48px;
+$box-header-height: 56px;
 $box-height: 206px;
 
 .grid {
@@ -50,8 +50,11 @@ $box-height: 206px;
 }
 
 .box__actions {
-    margin: $basic-padding;
+    align-items: center;
+    display: flex;
     height: $box-header-height;
+    position: absolute;
+    right: $spacing-1;
 }
 
 .box__add-row-class-button {

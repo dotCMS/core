@@ -1,5 +1,6 @@
-@import "mixins";
 @import "variables";
+@import "mixins";
+
 $notification-icon-size: 16px;
 
 :host {
@@ -21,7 +22,7 @@ a {
 }
 
 .notification-item__content {
-    margin-left: rem-cal($notification-icon-size + $basic-padding);
+    margin-left: 1.71rem;
 }
 
 .notification-item__close {
@@ -33,13 +34,13 @@ a {
     width: $notification-icon-size;
     z-index: 1;
 
-    &.ui-state-hover {
+    &.p-state-hover {
         background: none;
     }
 }
 
 .notification-item__icon {
-    font-size: rem-cal(18px);
+    font-size: $font-size-large;
     left: 0;
     position: absolute;
     top: 1rem;
@@ -47,7 +48,7 @@ a {
 }
 
 .notification-item__title {
-    font-size: rem-cal($body-font-size-base);
+    font-size: $body-font-size-base;
 }
 
 .notification-item__title,

@@ -1,4 +1,4 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
@@ -25,7 +25,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         'contenttypes.field.atributes.listed': 'Show on list'
     });
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypesFieldDragabbleItemComponent],
             imports: [DotIconButtonTooltipModule, DotIconModule, DotCopyButtonModule],

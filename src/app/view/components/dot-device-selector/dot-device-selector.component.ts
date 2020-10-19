@@ -24,6 +24,7 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     @HostBinding('class.disabled') disabled: boolean;
 
     options: DotDevice[] = [];
+    placeholder = '';
 
     constructor(
         private dotDevicesService: DotDevicesService,
@@ -67,9 +68,15 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
                 (devices: DotDevice[]) => {
                     this.options = devices;
                     this.disabled = this.options.length < 2;
+
+                    if (this.disabled) {
+                        this.placeholder = 'No devices'
+
+                    }
                 },
                 () => {
                     this.disabled = true;
+                    this.placeholder = 'No devices'
                 }
             );
     }

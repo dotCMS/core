@@ -1,4 +1,4 @@
-@import "primeng-theme/utils/theme-variables";
+@import "dotcms-theme/utils/theme-variables";
 
 $action-button-height: 48px;
 
@@ -31,8 +31,8 @@ $action-button-height: 48px;
             }
 
             [class^="ui-button-icon"],
-            .ui-button-text,
-            .ui-c,
+            .p-button-text,
+            .p-c,
             i {
                 color: $white;
             }
@@ -46,7 +46,7 @@ $action-button-height: 48px;
     flex-direction: column;
     width: $action-button-height;
 
-    .ui-button.ui-button-icon-only.action-button--selected {
+    .p-button.p-button-icon-only.action-button--selected {
         background: rgba($black, $button-hover-background-opacity);
     }
 }

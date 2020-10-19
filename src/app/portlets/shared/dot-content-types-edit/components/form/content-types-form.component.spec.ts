@@ -1,7 +1,7 @@
 import { of as observableOf, Observable } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Injectable, Component, Input, forwardRef } from '@angular/core';
 import {
     ReactiveFormsModule,
@@ -10,14 +10,6 @@ import {
     NG_VALUE_ACCESSOR
 } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
-
-import {
-    DropdownModule,
-    OverlayPanelModule,
-    ButtonModule,
-    InputTextModule,
-    TabViewModule
-} from 'primeng/primeng';
 
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { LoginServiceMock } from '@tests/login-service.mock';
@@ -51,6 +43,11 @@ import {
 import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ButtonModule } from 'primeng/button';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { TabViewModule } from 'primeng/tabview';
 
 @Component({
     selector: 'dot-site-selector-field',
@@ -120,7 +117,7 @@ describe('ContentTypesFormComponent', () => {
         }
     ];
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.form.field.detail.page': 'Detail Page',
             'contenttypes.form.field.expire.date.field': 'Expire Date Field',

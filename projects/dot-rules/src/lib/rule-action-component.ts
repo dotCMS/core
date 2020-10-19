@@ -1,6 +1,5 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 
-import { I18nService } from './services/system/locale/I18n';
 import { ServerSideTypeModel } from './services/ServerSideFieldModel';
 import {
     RULE_RULE_ACTION_UPDATE_TYPE,
@@ -36,12 +35,9 @@ import { LoggerService } from 'dotcms-js';
             <div class="cw-btn-group cw-delete-btn">
                 <div class="ui basic icon buttons">
                     <button
-                        class="ui button"
-                        aria-label="Delete Action"
+                        pButton type="button" icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text"
                         (click)="onDeleteRuleActionClicked()"
-                        [disabled]="!action.isPersisted()"
-                    >
-                        <i class="trash icon"></i>
+                        [disabled]="!action.isPersisted()">
                     </button>
                 </div>
             </div>
@@ -61,7 +57,7 @@ export class RuleActionComponent implements OnInit {
 
     typeDropdown: any;
 
-    constructor(private _resources: I18nService, private loggerService: LoggerService) {}
+    constructor(private loggerService: LoggerService) {}
 
     ngOnChanges(change): void {
         if (change.action) {

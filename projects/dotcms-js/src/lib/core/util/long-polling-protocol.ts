@@ -1,7 +1,6 @@
 import { Protocol } from './protocol';
 import { LoggerService } from '../logger.service';
 import { CoreWebService } from '../core-web.service';
-import { RequestMethod } from '@angular/http';
 import { pluck, take } from 'rxjs/operators';
 
 export class LongPollingProtocol extends Protocol {
@@ -45,7 +44,6 @@ export class LongPollingProtocol extends Protocol {
 
         this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: this.url,
                 params: lastCallBack ? {lastCallBack: lastCallBack} : {}
             })

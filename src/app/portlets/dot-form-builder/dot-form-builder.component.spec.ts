@@ -1,72 +1,77 @@
-import { async, ComponentFixture } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { DebugElement } from '@angular/core';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, DebugElement, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
 
-import { LoginService, DotPushPublishDialogService } from 'dotcms-js';
 import { of } from 'rxjs';
 
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotContentTypesListingModule } from '@portlets/shared/dot-content-types-listing';
 import { DotFormBuilderComponent } from './dot-form-builder.component';
-import { DotUnlicensedPorletModule } from '@portlets/shared/dot-unlicensed-porlet';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { ActivatedRoute } from '@angular/router';
 
-let routeDatamock = {
-    unlicensed: {
-        title: 'Title',
-        description: 'Description',
-        links: [
-            {
-                text: 'text',
-                link: 'link'
-            }
-        ]
-    }
-};
-class ActivatedRouteMock {
-    get data() {
-        return of(routeDatamock);
-    }
+@Component({
+    selector: 'dot-unlicensed-porlet',
+    template: ''
+})
+export class DotUnlicensedPorletComponentMock {
+    @Input() data;
+
+    constructor() {}
+}
+@Component({
+    selector: 'dot-content-types',
+    template: ''
+})
+export class DotContentTypesPortletComponentMock {
+    constructor() {}
 }
 
 describe('DotFormBuilderComponent', () => {
     let fixture: ComponentFixture<DotFormBuilderComponent>;
     let de: DebugElement;
+    let router: ActivatedRoute;
 
     beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotFormBuilderComponent],
-                imports: [
-                    DotContentTypesListingModule,
-                    DotUnlicensedPorletModule,
-                    RouterTestingModule,
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [
+                    DotFormBuilderComponent,
+                    DotUnlicensedPorletComponentMock,
+                    DotContentTypesPortletComponentMock
                 ],
                 providers: [
                     {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    {
                         provide: ActivatedRoute,
-                        useClass: ActivatedRouteMock
-                    },
-                    PushPublishService,
-                    DotPushPublishDialogService
+                        useValue: {
+                            get data() {
+                                return '';
+                            }
+                        }
+                    }
                 ]
             });
         })
     );
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotFormBuilderComponent);
+        fixture = TestBed.createComponent(DotFormBuilderComponent);
         de = fixture.debugElement;
+        router = TestBed.inject(ActivatedRoute);
     });
 
     it('should show unlicense portlet', () => {
+        spyOnProperty(router, 'data').and.returnValue(
+            of({
+                unlicensed: {
+                    title: 'Title',
+                    description: 'Description',
+                    links: [
+                        {
+                            text: 'text',
+                            link: 'link'
+                        }
+                    ]
+                }
+            })
+        );
         fixture.detectChanges();
         const unlicensed = de.query(By.css('dot-unlicensed-porlet'));
         const contentTypes = de.query(By.css('dot-content-types'));
@@ -84,7 +89,11 @@ describe('DotFormBuilderComponent', () => {
     });
 
     it('should show dot-content-types', () => {
-        routeDatamock = { unlicensed: null };
+        spyOnProperty(router, 'data').and.returnValue(
+            of({
+                unlicensed: null
+            })
+        );
         fixture.detectChanges();
         const unlicensed = de.query(By.css('dot-unlicensed-porlet'));
         const contentTypes = de.query(By.css('dot-content-types'));

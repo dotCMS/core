@@ -84,7 +84,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     it('should delete a variable from the server', () => {
         const variableToDelete = mockFieldVariables[0];
-        spyOn(dotFieldVariableService, 'delete').and.returnValue(of([]));
+        spyOn<any>(dotFieldVariableService, 'delete').and.returnValue(of([]));
         const deletedCollection = mockFieldVariables.filter(
             (item: DotFieldVariable) => variableToDelete.key !== item.key
         );

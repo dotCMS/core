@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { map, pluck } from 'rxjs/operators';
 import { DotRole } from '@models/dot-role/dot-role.model';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -24,7 +23,6 @@ export class DotRolesService {
     get(roleId: string, roleHierarchy: boolean): Observable<DotRole[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: `/api/v1/roles/${roleId}/rolehierarchyanduserroles?roleHierarchyForAssign=${roleHierarchy}`
             })
             .pipe(

@@ -1,5 +1,5 @@
-@import "mixins";
 @import "variables";
+@import "mixins";
 
 :host {
     display: flex;
@@ -78,7 +78,7 @@
     flex-grow: 1;
     flex-direction: column;
 
-    &::ng-deep .action-button--no-label .ui-button.ui-button-icon-only {
+    &::ng-deep .action-button--no-label .p-button.p-button-icon-only {
         height: $field-height;
         width: $field-height;
         font-size: $font-size-small;

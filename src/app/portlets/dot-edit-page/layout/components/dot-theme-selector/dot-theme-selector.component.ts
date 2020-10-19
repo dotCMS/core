@@ -12,11 +12,12 @@ import {
 } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotTheme } from '../../../shared/models/dot-theme.model';
-import { DataGrid, LazyLoadEvent } from 'primeng/primeng';
 
 import { Site, SiteService } from 'dotcms-js';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { PaginatorService } from '@services/paginator';
+import { DataView } from 'primeng/dataview';
+import { LazyLoadEvent } from 'primeng/api';
 
 /**
  * The DotThemeSelectorComponent is modal that
@@ -41,11 +42,11 @@ export class DotThemeSelectorComponent implements OnInit {
     @Output()
     close = new EventEmitter<boolean>();
 
-    @ViewChild('searchInput')
+    @ViewChild('searchInput', { static: true })
     searchInput: ElementRef;
 
-    @ViewChild('dataGrid')
-    datagrid: DataGrid;
+    @ViewChild('dataView', { static: true })
+    dataView: DataView;
 
     current: DotTheme;
     visible = true;
@@ -92,7 +93,7 @@ export class DotThemeSelectorComponent implements OnInit {
      */
     paginate($event: LazyLoadEvent): void {
         this.themes = this.paginatorService.getWithOffset($event.first);
-        this.datagrid.first = $event.first;
+        this.dataView.first = $event.first;
     }
 
     /**

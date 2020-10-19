@@ -1,6 +1,5 @@
 import { pluck, map, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { RequestMethod } from '@angular/http';
 import { CoreWebService } from 'dotcms-js';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
 
@@ -111,7 +110,6 @@ export class DotLicenseService {
     private getLicense(): Observable<any> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: this.licenseURL
             })
             .pipe(pluck('entity', 'config', 'license'));

@@ -17,7 +17,7 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     styleUrls: ['./dot-nav-item.component.scss']
 })
 export class DotNavItemComponent {
-    @ViewChild('subnav') subnav: DotSubNavComponent;
+    @ViewChild('subnav', { static: true }) subnav: DotSubNavComponent;
 
     @Input() data: DotMenu;
 

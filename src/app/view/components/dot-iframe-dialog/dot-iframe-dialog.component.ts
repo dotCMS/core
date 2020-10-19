@@ -17,7 +17,7 @@ import { filter } from 'rxjs/operators';
     styleUrls: ['./dot-iframe-dialog.component.scss']
 })
 export class DotIframeDialogComponent implements OnChanges, OnInit {
-    @ViewChild('dialog')
+    @ViewChild('dialog', { static: true })
     dotDialog: DotDialogComponent;
 
     @Input()

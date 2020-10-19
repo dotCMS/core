@@ -3,15 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
 
-import {
-    ButtonModule,
-    CheckboxModule,
-    InputTextModule,
-    DialogModule,
-    ToolbarModule,
-    TooltipModule
-} from 'primeng/primeng';
-
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotEditLayoutDesignerComponent } from '../dot-edit-layout-designer/dot-edit-layout-designer.component';
 import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
@@ -30,6 +21,13 @@ import { DotGlobalMessageModule } from '@components/_common/dot-global-message/d
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 @NgModule({
     declarations: [DotEditLayoutDesignerComponent, DotLayoutDesignerComponent],

@@ -33,7 +33,7 @@ export class ModalDialogComponent {
 
   constructor() { }
 
-  onCancel(e): void {
+  onCancel(_e): void {
     this.cancel.emit(true);
   }
 

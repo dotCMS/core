@@ -22,7 +22,7 @@
         background-color: $white;
 
         ::ng-deep {
-            .ui-widget-content {
+            .p-widget-content {
                 background-color: $white;
             }
             .avatar__img {
@@ -38,7 +38,7 @@
         .avatar__img {
             filter: grayscale(1);
         }
-        .ui-widget-content {
+        .p-widget-content {
             background-color: $gray-bg;
         }
         .dot-apps-card__name {
@@ -90,11 +90,11 @@ dot-avatar {
     margin-right: $basic-padding * 3;
 }
 
-::ng-deep .ui-card-body {
+::ng-deep .p-card-body {
     color: $gray;
     padding: 0;
 
-    .ui-card-content > p {
+    .p-card-content > p {
         height: 60px;
         font-size: $font-size-large;
         line-height: 1.5rem;

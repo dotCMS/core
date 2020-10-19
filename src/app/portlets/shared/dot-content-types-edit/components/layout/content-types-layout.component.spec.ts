@@ -1,8 +1,7 @@
-import { of as observableOf, Observable, of } from 'rxjs';
+import { of, Observable } from 'rxjs';
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable, Output, EventEmitter } from '@angular/core';
-import { MenuItem, TabViewModule, SplitButtonModule } from 'primeng/primeng';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
@@ -19,8 +18,11 @@ import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { TabViewModule } from 'primeng/tabview';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { MenuItem } from 'primeng/api';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -62,7 +64,7 @@ class TestContentTypesRelationshipListingComponent {}
 @Injectable()
 export class MockDotMenuService {
     getDotMenuId(): Observable<string> {
-        return observableOf('1234');
+        return of('1234');
     }
 }
 
@@ -123,7 +125,7 @@ describe('ContentTypesLayoutComponent', () => {
                 { provide: FieldDragDropService, useClass: FieldDragDropServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotCurrentUserService,
-                DotEventsService,
+                DotEventsService
             ]
         });
 
@@ -143,8 +145,8 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should not have a Permissions tab', () => {
-        this.pTabPanel = de.query(By.css('.content-type__permissions'));
-        expect(this.pTabPanel).toBeFalsy();
+        let pTabPanel = de.query(By.css('.content-type__permissions'));
+        expect(pTabPanel).toBeFalsy();
     });
 
     it('should set the field and row bag options', () => {
@@ -208,32 +210,31 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Fields', () => {
+            let pTabPanel;
             beforeEach(() => {
-                this.pTabPanel = de.query(By.css('.content-type__properties'));
-                this.pTabPanel.componentInstance.selected = true;
+                pTabPanel = de.query(By.css('.content-type__properties'));
+                pTabPanel.componentInstance.selected = true;
             });
 
             it('should have a field panel', () => {
-                expect(this.pTabPanel).not.toBeNull();
-                expect(this.pTabPanel.componentInstance.header).toBe('Fields Header Tab');
+                expect(pTabPanel).not.toBeNull();
+                expect(pTabPanel.componentInstance.header).toBe('Fields Header Tab');
             });
 
             it('should have a content-type__fields-main', () => {
-                const contentTypeFieldsMain = this.pTabPanel.query(
-                    By.css('.content-type__fields-main')
-                );
+                const contentTypeFieldsMain = pTabPanel.query(By.css('.content-type__fields-main'));
                 expect(contentTypeFieldsMain).not.toBeNull();
             });
 
             it('should have a content-type__fields-sidebar', () => {
-                const contentTypeFieldsSideBar = this.pTabPanel.query(
+                const contentTypeFieldsSideBar = pTabPanel.query(
                     By.css('.content-type__fields-sidebar')
                 );
                 expect(contentTypeFieldsSideBar).not.toBeNull();
             });
 
             it('should have a field types list with the correct params', () => {
-                const contentTypesFieldsList = this.pTabPanel.query(
+                const contentTypesFieldsList = pTabPanel.query(
                     By.css('dot-content-types-fields-list')
                 );
                 expect(contentTypesFieldsList).not.toBeNull();
@@ -242,12 +243,10 @@ describe('ContentTypesLayoutComponent', () => {
 
             // Hiding the rows list for 5.0
             xit('should have a field row list', () => {
-                const layoutTitle = this.pTabPanel.queryAll(
+                const layoutTitle = pTabPanel.queryAll(
                     By.css('.content-type__fields-sidebar-title')
                 )[1];
-                const fieldRowList = this.pTabPanel.query(
-                    By.css('dot-content-type-fields-row-list')
-                );
+                const fieldRowList = pTabPanel.query(By.css('dot-content-type-fields-row-list'));
 
                 expect(layoutTitle.nativeElement.textContent).toBe('Layout Title');
                 expect(fieldRowList).not.toBeNull();
@@ -258,7 +257,7 @@ describe('ContentTypesLayoutComponent', () => {
                 let dotEventsService: DotEventsService;
 
                 beforeEach(() => {
-                    splitButton = this.pTabPanel.query(
+                    splitButton = pTabPanel.query(
                         By.css('.content-type__fields-sidebar p-splitButton')
                     );
                     dotEventsService = fixture.debugElement.injector.get(DotEventsService);
@@ -291,17 +290,18 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Permission', () => {
+            let pTabPanel;
             beforeEach(() => {
-                this.pTabPanel = de.query(By.css('.content-type__permissions'));
-                this.pTabPanel.componentInstance.selected = true;
+                pTabPanel = de.query(By.css('.content-type__permissions'));
+                pTabPanel.componentInstance.selected = true;
 
                 fixture.detectChanges();
-                iframe = this.pTabPanel.query(By.css('dot-iframe'));
+                iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a permission panel', () => {
-                expect(this.pTabPanel).not.toBeNull();
-                expect(this.pTabPanel.componentInstance.header).toBe('Permissions Tab');
+                expect(pTabPanel).not.toBeNull();
+                expect(pTabPanel.componentInstance.header).toBe('Permissions Tab');
             });
 
             it('should have a iframe', () => {
@@ -316,17 +316,18 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Push History', () => {
+            let pTabPanel;
             beforeEach(() => {
-                this.pTabPanel = de.query(By.css('.content-type__push_history'));
-                this.pTabPanel.componentInstance.selected = true;
+                pTabPanel = de.query(By.css('.content-type__push_history'));
+                pTabPanel.componentInstance.selected = true;
 
                 fixture.detectChanges();
-                iframe = this.pTabPanel.query(By.css('dot-iframe'));
+                iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a permission panel', () => {
-                expect(this.pTabPanel).not.toBeNull();
-                expect(this.pTabPanel.componentInstance.header).toBe('Push History');
+                expect(pTabPanel).not.toBeNull();
+                expect(pTabPanel.componentInstance.header).toBe('Push History');
             });
 
             it('should have a iframe', () => {
@@ -341,20 +342,21 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Relationship', () => {
+            let pTabPanel;
             beforeEach(() => {
-                this.pTabPanel = de.query(By.css('.content-type__relationships'));
-                this.pTabPanel.componentInstance.selected = true;
+                pTabPanel = de.query(By.css('.content-type__relationships'));
+                pTabPanel.componentInstance.selected = true;
 
                 fixture.detectChanges();
-                iframe = this.pTabPanel.query(By.css('dot-iframe'));
+                iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a Relationship tab', () => {
-                expect(this.pTabPanel).toBeDefined();
+                expect(pTabPanel).toBeDefined();
             });
 
             it('should have a right header', () => {
-                expect(this.pTabPanel.componentInstance.header).toBe('Relationship');
+                expect(pTabPanel.componentInstance.header).toBe('Relationship');
             });
 
             it('should have a iframe', () => {

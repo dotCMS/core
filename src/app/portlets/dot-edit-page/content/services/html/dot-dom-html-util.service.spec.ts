@@ -1,12 +1,11 @@
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
-import { async } from '@angular/core/testing';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 
 describe('DotDOMHtmlUtilService', () => {
     let dotDOMHtmlUtilService: DotDOMHtmlUtilService;
 
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             TestBed.configureTestingModule({
                 providers: [DotDOMHtmlUtilService],
                 imports: []

@@ -137,7 +137,7 @@ describe('DotAutocompleteTagsComponent', () => {
                     spyOn(autoComplete, 'hide').and.callThrough();
                     autoComplete.onKeyup(newEnterEvent);
 
-                    expect(component.checkForTag).toHaveBeenCalledWith(newEnterEvent);
+                    expect<any>(component.checkForTag).toHaveBeenCalledWith(newEnterEvent);
                     expect(component.value[0].label).toEqual('newTag');
                     expect(newEnterEvent.currentTarget.value).toBeNull();
                     expect(component.propagateChange).toHaveBeenCalledWith(

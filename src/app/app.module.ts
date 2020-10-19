@@ -1,7 +1,7 @@
+import { CommonModule } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { JsonpModule } from '@angular/http';
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 
@@ -17,10 +17,11 @@ import { ENV_PROVIDERS } from './providers';
 import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
 import { SharedModule } from './shared/shared.module';
 
-import { HotkeyModule } from 'angular2-hotkeys';
 import { DotDirectivesModule } from './shared/dot-directives.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { MonacoEditorModule } from 'ngx-monaco-editor';
+import { MarkdownModule } from 'ngx-markdown';
 
 /**
  * `AppModule` is the main entry point into Angular2's bootstraping process
@@ -31,18 +32,19 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
     imports: [
         ...CUSTOM_MODULES,
         ...NGFACES_MODULES,
+        CommonModule,
         BrowserAnimationsModule,
         BrowserModule,
         FormsModule,
         HttpClientModule,
-        JsonpModule,
         ReactiveFormsModule,
-        SharedModule.forRoot(),
         AppRoutingModule,
         MdInputTextModule,
         DotDirectivesModule,
         DotPipesModule,
-        HotkeyModule.forRoot()
+        SharedModule.forRoot(),
+        MonacoEditorModule.forRoot(),
+        MarkdownModule.forRoot()
     ],
     providers: [ENV_PROVIDERS],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]

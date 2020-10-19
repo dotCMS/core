@@ -2,7 +2,7 @@ import { DotWorkflowActionsFireService } from './dot-workflow-actions-fire.servi
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotActionBulkRequestOptions } from '@shared/models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
 import { DotActionBulkResult } from '@shared/models/dot-action-bulk-result/dot-action-bulk-result.model';
 

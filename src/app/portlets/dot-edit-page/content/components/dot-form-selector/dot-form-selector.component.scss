@@ -1,5 +1,5 @@
-@import "mixins";
 @import "variables";
+@import "mixins";
 
 :host {
     dot-dialog ::ng-deep {
@@ -7,15 +7,15 @@
             text-align: left;
         }
 
-        .dialog .ui-dialog {
+        .dialog .p-dialog {
             width: 800px;
 
-            .ui-dialog-content {
+            .p-dialog-content {
                 height: 665px !important;
             }
         }
 
-        .ui-paginator-bottom {
+        .p-paginator-bottom {
             @include paginator-bottom-absolute;
         }
     }

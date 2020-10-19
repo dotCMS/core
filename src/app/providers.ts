@@ -1,7 +1,6 @@
 import { AccountService } from '@services/account-service';
 import { AuthGuardService } from '@services/guards/auth-guard.service';
 import { ColorUtil } from './api/util/ColorUtil';
-import { ConfirmationService } from 'primeng/primeng';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { ContentletGuardService } from '@services/guards/contentlet-guard.service';
 import { DotCrudService } from '@services/dot-crud/dot-crud.service';
@@ -32,6 +31,7 @@ import { DotPushPublishDialogService } from 'dotcms-js';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { ConfirmationService } from 'primeng/api';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 

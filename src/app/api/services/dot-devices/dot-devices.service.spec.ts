@@ -3,7 +3,7 @@ import { DotDevice } from '@models/dot-device/dot-device.model';
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { mockDotDevices } from '@tests/dot-device.mock';
 
 describe('DotDevicesService', () => {

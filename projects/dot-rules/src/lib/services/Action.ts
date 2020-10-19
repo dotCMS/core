@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiRoot } from 'dotcms-js';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
-import { RequestMethod, Response } from '@angular/http';
+import { HttpResponse } from '@angular/common/http';
 import { CoreWebService } from 'dotcms-js';
 import { ActionModel } from './Rule';
 import {
@@ -18,14 +18,11 @@ import {
 import { LoggerService } from 'dotcms-js';
 import { HttpCode } from 'dotcms-js';
 
-// tslint:disable-next-line:no-unused-variable
-const noop = (...arg: any[]) => {};
 
 @Injectable()
 export class ActionService {
     private _typeName = 'Action';
 
-    private _apiRoot: ApiRoot;
     private _actionsEndpointUrl: string;
 
     private _error: Subject<string> = new Subject<string>();
@@ -56,24 +53,20 @@ export class ActionService {
         private coreWebService: CoreWebService,
         private loggerService: LoggerService
     ) {
-        this._apiRoot = apiRoot;
-        this._actionsEndpointUrl = `${apiRoot.baseUrl}api/v1/sites/${apiRoot.siteId}/ruleengine/actions/`;
+        this._actionsEndpointUrl = `/api/v1/sites/${apiRoot.siteId}/ruleengine/actions/`;
     }
 
     makeRequest(childPath?: string): Observable<any> {
-        const opts = this._apiRoot.getDefaultRequestOptions();
         let path = this._actionsEndpointUrl;
         if (childPath) {
             path = `${path}${childPath}`;
         }
         return this.coreWebService
             .request({
-                method: RequestMethod.Get,
                 url: path,
-                ...opts
             })
             .pipe(
-                catchError((err: any, source: Observable<any>) => {
+                catchError((err: any, _source: Observable<any>) => {
                     if (err && err.status === HttpCode.NOT_FOUND) {
                         this.loggerService.error(
                             'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
@@ -119,7 +112,7 @@ export class ActionService {
     }
 
     get(
-        ruleKey: string,
+        _ruleKey: string,
         key: string,
         ruleActionTypes?: { [key: string]: ServerSideTypeModel }
     ): Observable<ActionModel> {
@@ -140,18 +133,16 @@ and should provide the info needed to make the user aware of the fix.`);
         }
         const json = ActionService.toJson(model);
         json.owningRule = ruleId;
-        const opts = this._apiRoot.getDefaultRequestOptions();
         const path = this._getPath(ruleId);
 
         const add = this.coreWebService
             .request({
-                method: RequestMethod.Post,
-                body: JSON.stringify(json),
+                method: 'POST',
+                body: json,
                 url: path,
-                ...opts
             })
             .pipe(
-                map((res: Response) => {
+                map((res: HttpResponse<any>) => {
                     const json: any = res;
                     model.key = json.id;
                     return model;
@@ -171,16 +162,14 @@ and should provide the info needed to make the user aware of the fix.`);
         } else {
             const json = ActionService.toJson(model);
             json.owningRule = ruleId;
-            const opts = this._apiRoot.getDefaultRequestOptions();
             const save = this.coreWebService
                 .request({
-                    method: RequestMethod.Put,
-                    body: JSON.stringify(json),
+                    method: 'PUT',
+                    body: json,
                     url: this._getPath(ruleId, model.key),
-                    ...opts
                 })
                 .pipe(
-                    map((_res: Response) => {
+                    map((_res: HttpResponse<any>) => {
                         return model;
                     })
                 );
@@ -189,22 +178,20 @@ and should provide the info needed to make the user aware of the fix.`);
     }
 
     remove(ruleId, model: ActionModel): Observable<ActionModel> {
-        const opts = this._apiRoot.getDefaultRequestOptions();
         const remove = this.coreWebService
             .request({
-                method: RequestMethod.Delete,
+                method: 'DELETE',
                 url: this._getPath(ruleId, model.key),
-                ...opts
             })
             .pipe(
-                map((_res: Response) => {
+                map((_res: HttpResponse<any>) => {
                     return model;
                 })
             );
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
 
-    private _getPath(ruleKey: string, key?: string): string {
+    private _getPath(_ruleKey: string, key?: string): string {
         let p = this._actionsEndpointUrl;
         if (key) {
             p = p + key;
@@ -213,12 +200,14 @@ and should provide the info needed to make the user aware of the fix.`);
     }
 
     private _catchRequestError(
-        operation
-    ): (response: Response, original: Observable<any>) => Observable<any> {
-        return (response: Response): Observable<any> => {
+        _operation
+    ): (response: HttpResponse<any>, original: Observable<any>) => Observable<any> {
+        return (response: HttpResponse<any>): Observable<any> => {
+
+
             if (response) {
                 if (response.status === HttpCode.SERVER_ERROR) {
-                    if (response.text() && response.text().indexOf('ECONNREFUSED') >= 0) {
+                    if (response.body && response.body.indexOf('ECONNREFUSED') >= 0) {
                         throw new CwError(
                             NETWORK_CONNECTION_ERROR,
                             CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR]
@@ -244,7 +233,7 @@ and should provide the info needed to make the user aware of the fix.`);
                     );
 
                     this._error.next(
-                        response.json().error.replace('dotcms.api.error.forbidden: ', '')
+                        response.body.error.replace('dotcms.api.error.forbidden: ', '')
                     );
 
                     throw new CwError(

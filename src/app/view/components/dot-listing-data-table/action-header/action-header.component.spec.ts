@@ -2,7 +2,7 @@ import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-co
 import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 import { ActionHeaderComponent } from './action-header.component';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -15,7 +15,7 @@ xdescribe('ActionHeaderComponent', () => {
     let fixture: ComponentFixture<ActionHeaderComponent>;
     let de: DebugElement;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const messageServiceMock = new MockDotMessageService({
             selected: 'selected'
         });
@@ -114,7 +114,7 @@ xdescribe('ActionHeaderComponent', () => {
 
         fixture.detectChanges();
 
-        const splitButtons = de.query(By.all()).nativeElement.querySelectorAll('.ui-menuitem-link');
+        const splitButtons = de.query(By.all()).nativeElement.querySelectorAll('.p-menuitem-link');
         const primaryButton = splitButtons[0];
         const secondaryButton = splitButtons[1];
 

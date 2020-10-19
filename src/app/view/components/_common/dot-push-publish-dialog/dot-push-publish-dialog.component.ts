@@ -1,5 +1,4 @@
-import { Component, Output, EventEmitter } from '@angular/core';
-import { OnInit, OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
+import { Component, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPushPublishDialogService } from 'dotcms-js';

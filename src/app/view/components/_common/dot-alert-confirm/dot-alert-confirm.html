@@ -1,9 +1,14 @@
-<p-confirmDialog #cd *ngIf="dotAlertConfirmService.confirmModel" [closable]="false" width="400">
+<p-confirmDialog
+    #cd
+    *ngIf="dotAlertConfirmService.confirmModel"
+    [closable]="false"
+    [style]="{width: '400px'}"
+>
     <p-footer>
         <button
             type="button"
             pButton
-            secondary
+            class="p-button-secondary"
             tabindex="-1"
             [label]="dotAlertConfirmService.confirmModel.footerLabel.reject"
             (click)="onClickConfirm('reject')"
@@ -23,10 +28,9 @@
     [closable]="false"
     [draggable]="false"
     [header]="dotAlertConfirmService.alertModel.header"
-    [responsive]="true"
     [visible]="true"
     modal="modal"
-    width="400"
+    [style]="{width: '400px'}"
 >
     <div [innerHTML]="dotAlertConfirmService.alertModel.message"></div>
     <p-footer>
@@ -34,7 +38,7 @@
             *ngIf="dotAlertConfirmService.alertModel.footerLabel.reject"
             type="button"
             pButton
-            secondary
+            class="p-button-secondary"
             (click)="dotAlertConfirmService.alertReject($event)"
             [label]="dotAlertConfirmService.alertModel.footerLabel.reject"
         ></button>

@@ -1,5 +1,5 @@
 @import "variables";
-@import "primeng-theme/utils/theme-variables";
+@import "dotcms-theme/utils/theme-variables";
 
 $theme-item-dimension: 240px;
 
@@ -7,7 +7,7 @@ $theme-item-dimension: 240px;
     dot-site-selector {
         margin-left: 12px;
 
-        dot-searchable-dropdown .ui-button,
+        dot-searchable-dropdown .p-button,
         .site-selector__title {
             font-size: $font-size-large;
             min-width: 200px;
@@ -25,20 +25,20 @@ $theme-item-dimension: 240px;
         }
     }
 
-    .ui-datagrid-content {
-        .ui-g {
+    .p-datagrid-content {
+        .p-g {
             margin: 0;
         }
     }
 
-    .ui-datagrid-content .ui-widget-content.ui-g-12 {
+    .p-datagrid-content .p-widget-content.p-g-12 {
         text-align: center;
         font-size: $font-size-large;
         margin-top: $basic-padding * 5;
     }
 
     .paginator .dot-theme-container {
-        .ui-datagrid {
+        .p-datagrid {
             padding-bottom: 56px;
             position: relative;
         }

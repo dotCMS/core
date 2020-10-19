@@ -42,17 +42,9 @@ import {
 import { ServerSideTypeModel } from './services/ServerSideFieldModel';
 import { IPublishEnvironment } from './services/bundle-service';
 import { LoggerService } from 'dotcms-js';
+import { MenuItem } from 'primeng/api';
 
 const I8N_BASE = 'api.sites.ruleengine';
-// tslint:disable-next-line:no-unused-variable
-const rsrc = {
-    fireOn: {
-        EVERY_PAGE: 'Every Page',
-        EVERY_REQUEST: 'Every Request',
-        ONCE_PER_VISIT: 'Once per visit',
-        ONCE_PER_VISITOR: 'Once per visitor'
-    }
-};
 
 @Component({
     changeDetection: ChangeDetectionStrategy.Default,
@@ -61,12 +53,12 @@ const rsrc = {
   <cw-add-to-bundle-dialog-container
       [assetId]="rule.key"
       [hidden]="!showAddToBundleDialog"
-      (close)="showAddToBundleDialog = false; showMoreMenu = false"></cw-add-to-bundle-dialog-container>
+      (close)="showAddToBundleDialog = false;"></cw-add-to-bundle-dialog-container>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled"
     [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
-      <i flex="none" class="caret icon cw-rule-caret large" [class.right]="!rule._expanded" [class.down]="rule._expanded" aria-hidden="true"></i>
+      <i class="cw-header-info-arrow pi" [class.pi-angle-right]="!rule._expanded" [class.pi-angle-down]="rule._expanded" aria-hidden="true"></i>
       <div flex="70" layout="column">
           <input  pInputText
                   class="cw-rule-name-input"
@@ -95,23 +87,14 @@ const rsrc = {
       <p-inputSwitch [(ngModel)]="rule.enabled" (onChange)="setRuleEnabledState($event)" [ngModelOptions]="{standalone: true}" ></p-inputSwitch>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
-          <button class="ui button cw-delete-rule" aria-label="More Actions" (click)="showMoreMenu = !showMoreMenu; $event.stopPropagation()">
-            <i class="ellipsis vertical icon"></i>
-          </button>
-          <button class="ui button cw-add-group" arial-label="Add Group"
-            (click)="onCreateConditionGroupClicked(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
-
-            <i class="plus icon" aria-hidden="true"></i>
-          </button>
+            <span class="p-buttonset">
+                <button pButton class="p-button-secondary" icon="pi pi-ellipsis-v" (click)="ruleOptions.toggle($event); $event.stopPropagation()"></button>
+                <button pButton class="p-button-secondary" icon="pi pi-plus" arial-label="Add Group"
+                        (click)="onCreateConditionGroupClicked(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
+                </button>
+            </span>
+          <p-menu #ruleOptions appendTo="body" popup="true" [model]="ruleActionOptions"></p-menu>
         </div>
-      </div>
-      <div class="ui vertical menu" *ngIf="showMoreMenu">
-        <a class="item" *ngIf="(rule._id || rule.key) &&  !apiRoot.hideRulePushOptions"
-          (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
-
-        <a class="item" *ngIf="environmentStores.length > 0 && (rule._id || rule.key) &&  !apiRoot.hideRulePushOptions"
-          (click)="openPushPublishDialog.emit(rule.key); $event.stopPropagation()">Push Publish</a>
-        <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
   </div>
@@ -142,9 +125,8 @@ const rsrc = {
               (deleteRuleAction)="onDeleteRuleAction($event)"></rule-action>
           <div class="cw-btn-group cw-add-btn">
             <div class="ui basic icon buttons" *ngIf="i === (ruleActions.length - 1)">
-              <button class="cw-button-add-item ui button" arial-label="Add Action"
+              <button pButton type="button" icon="pi pi-plus" class="p-button-rounded p-button-success p-button-text" arial-label="Add Action"
                 (click)="onCreateRuleAction();" [disabled]="!ruleAction.isPersisted()">
-                <i class="plus icon" aria-hidden="true"></i>
               </button>
             </div>
           </div>
@@ -196,12 +178,11 @@ class RuleComponent {
     formModel: FormGroup;
     fireOn: any;
     // tslint:disable-next-line:no-unused-variable
-    showMoreMenu = false;
-    // tslint:disable-next-line:no-unused-variable
     showAddToBundleDialog = false;
     hideFireOn: boolean;
     actionTypePlaceholder = '';
     conditionTypePlaceholder = '';
+    ruleActionOptions: MenuItem[];
 
     private _updateEnabledStateDelay: EventEmitter<{
         type: string;
@@ -253,6 +234,24 @@ class RuleComponent {
             .get('api.sites.ruleengine.rules.inputs.condition.type.placeholder')
             .subscribe(label => {
                 this.conditionTypePlaceholder = label;
+            });
+
+        this.resources
+            .get('api.sites.ruleengine.rules.inputs.add_to_bundle.label')
+            .subscribe(addToBundleLabel => {
+                this.resources
+                    .get('api.sites.ruleengine.rules.inputs.deleteRule.label')
+                    .subscribe(deleteRuleLabel => {
+                        this.ruleActionOptions = [
+                            {   label: addToBundleLabel,
+                                visible: !this.apiRoot.hideRulePushOptions,
+                                command: () => { this.showAddToBundleDialog = true; }
+                            },
+                            {   label: deleteRuleLabel,
+                                visible: !this.apiRoot.hideRulePushOptions,
+                                command: (event) => {this.deleteRuleClicked(event.originalEvent); }
+                            }];
+                    });
             });
     }
 
@@ -428,7 +427,6 @@ class RuleComponent {
     }
 
     deleteRuleClicked(event: any): void {
-        event.stopPropagation();
         let noWarn = this._user.suppressAlerts || (event.altKey && event.shiftKey);
         if (!noWarn) {
             noWarn = this.ruleActions.length === 1 && !this.ruleActions[0].isPersisted();

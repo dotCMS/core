@@ -1,4 +1,4 @@
-import { SelectItem } from "primeng/primeng";
+import { SelectItem } from "primeng/api";
 
 export interface DotApps {
     allowExtraParams: boolean;

@@ -1,5 +1,4 @@
 import { of as observableOf, Observable } from 'rxjs';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { FieldPropertyService } from './field-properties.service';
 import {
     CategoriesPropertyComponent,
@@ -10,6 +9,7 @@ import { FieldService } from './field.service';
 import { Validators } from '@angular/forms';
 import { validateDateDefaultValue } from './validators';
 import { FieldType } from '..';
+import { TestBed } from '@angular/core/testing';
 
 class TestFieldService {
     loadFieldTypes(): Observable<FieldType[]> {
@@ -25,101 +25,100 @@ class TestFieldService {
     }
 }
 
+let fieldPropertiesService;
+
 describe('FieldPropertyService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([
-            FieldPropertyService,
-            { provide: FieldService, useClass: TestFieldService }
-        ]);
+        TestBed.configureTestingModule({
+            providers: [FieldPropertyService, { provide: FieldService, useClass: TestFieldService }]
+        });
 
-        this.fieldPropertiesService = this.injector.get(FieldPropertyService);
+        fieldPropertiesService = TestBed.inject(FieldPropertyService);
     });
 
     it('should return true if the property has a component linked', () => {
-        expect(true).toEqual(this.fieldPropertiesService.existsComponent('categories'));
-        expect(true).toEqual(this.fieldPropertiesService.existsComponent('dataType'));
-        expect(true).toEqual(this.fieldPropertiesService.existsComponent('defaultValue'));
+        expect(true).toEqual(fieldPropertiesService.existsComponent('categories'));
+        expect(true).toEqual(fieldPropertiesService.existsComponent('dataType'));
+        expect(true).toEqual(fieldPropertiesService.existsComponent('defaultValue'));
 
-        expect(false).toEqual(this.fieldPropertiesService.existsComponent('property'));
+        expect(false).toEqual(fieldPropertiesService.existsComponent('property'));
     });
 
     it('should return the right component', () => {
         expect(CategoriesPropertyComponent).toEqual(
-            this.fieldPropertiesService.getComponent('categories')
+            fieldPropertiesService.getComponent('categories')
         );
-        expect(DataTypePropertyComponent).toEqual(
-            this.fieldPropertiesService.getComponent('dataType')
-        );
+        expect(DataTypePropertyComponent).toEqual(fieldPropertiesService.getComponent('dataType'));
         expect(DefaultValuePropertyComponent).toEqual(
-            this.fieldPropertiesService.getComponent('defaultValue')
+            fieldPropertiesService.getComponent('defaultValue')
         );
 
-        expect(this.fieldPropertiesService.getComponent('property')).toBeNull();
+        expect(fieldPropertiesService.getComponent('property')).toBeNull();
     });
 
     it('should return the right default value', () => {
         expect('').toEqual(
-            this.fieldPropertiesService.getDefaultValue(
+            fieldPropertiesService.getDefaultValue(
                 'categories',
                 'com.dotcms.contenttype.model.field.ImmutableRadioField'
             )
         );
         expect('TEXT').toEqual(
-            this.fieldPropertiesService.getDefaultValue(
+            fieldPropertiesService.getDefaultValue(
                 'dataType',
                 'com.dotcms.contenttype.model.field.ImmutableRadioField'
             )
         );
         expect('').toEqual(
-            this.fieldPropertiesService.getDefaultValue(
+            fieldPropertiesService.getDefaultValue(
                 'defaultValue',
                 'com.dotcms.contenttype.model.field.ImmutableRadioField'
             )
         );
 
-        expect(this.fieldPropertiesService.getDefaultValue('property')).toBeNull();
+        expect(fieldPropertiesService.getDefaultValue('property')).toBeNull();
     });
 
     it('should return the right order', () => {
-        expect(2).toEqual(this.fieldPropertiesService.getOrder('categories'));
-        expect(1).toEqual(this.fieldPropertiesService.getOrder('dataType'));
-        expect(4).toEqual(this.fieldPropertiesService.getOrder('defaultValue'));
+        expect(2).toEqual(fieldPropertiesService.getOrder('categories'));
+        expect(1).toEqual(fieldPropertiesService.getOrder('dataType'));
+        expect(4).toEqual(fieldPropertiesService.getOrder('defaultValue'));
 
-        expect(this.fieldPropertiesService.getOrder('property')).toBeNull();
+        expect(fieldPropertiesService.getOrder('property')).toBeNull();
     });
 
     it('shoukd return the right set of validations', () => {
-        let validations = this.fieldPropertiesService.getValidations('categories');
+        let validations = fieldPropertiesService.getValidations('categories');
         expect(1).toBe(validations.length);
         expect(Validators.required).toBe(validations[0]);
 
-        expect(0).toBe(this.fieldPropertiesService.getValidations('dataType').length);
+        expect(0).toBe(fieldPropertiesService.getValidations('dataType').length);
 
-        validations = this.fieldPropertiesService.getValidations('defaultValue');
+        validations = fieldPropertiesService.getValidations('defaultValue');
         expect(1).toBe(validations.length);
         expect(validateDateDefaultValue).toBe(validations[0]);
 
-        expect(0).toBe(this.fieldPropertiesService.getValidations('property').length);
+        expect(0).toBe(fieldPropertiesService.getValidations('property').length);
     });
 
     it('should return if the property is editable in EditMode', () => {
-        expect(this.fieldPropertiesService.isDisabledInEditMode('categories')).toBeUndefined();
-        expect(true).toEqual(this.fieldPropertiesService.isDisabledInEditMode('dataType'));
-        expect(this.fieldPropertiesService.isDisabledInEditMode('defaultValue')).toBeUndefined();
+        expect(fieldPropertiesService.isDisabledInEditMode('categories')).toBeUndefined();
+        expect(true).toEqual(fieldPropertiesService.isDisabledInEditMode('dataType'));
+        expect(fieldPropertiesService.isDisabledInEditMode('defaultValue')).toBeUndefined();
 
-        expect(this.fieldPropertiesService.isDisabledInEditMode('property')).toBeNull();
+        expect(fieldPropertiesService.isDisabledInEditMode('property')).toBeNull();
     });
 
     it('should return if the property is editable when field is fixed', () => {
-        expect(true).toEqual(this.fieldPropertiesService.isDisabledInFixed('name'));
-        expect(this.fieldPropertiesService.isDisabledInFixed('dataType')).toBeUndefined();
+        expect(true).toEqual(fieldPropertiesService.isDisabledInFixed('name'));
+        expect(fieldPropertiesService.isDisabledInFixed('dataType')).toBeUndefined();
     });
 
     it('should return the right proeprties for a Field Class', () => {
         expect(['property1', 'property2', 'property3']).toEqual(
-            this.fieldPropertiesService.getProperties('fieldClass')
+            fieldPropertiesService.getProperties('fieldClass')
         );
-        expect(this.fieldPropertiesService.getProperties('fieldClass2')).toBeUndefined();
+        expect(fieldPropertiesService.getProperties('fieldClass2')).toBeUndefined();
     });
 
     it('should return the Field Type Object for a Field Class', () => {
@@ -129,7 +128,7 @@ describe('FieldPropertyService', () => {
             id: '1',
             label: 'label',
             properties: ['property1', 'property2', 'property3']
-        }).toEqual(this.fieldPropertiesService.getFieldType('fieldClass'));
-        expect(this.fieldPropertiesService.getFieldType('fieldClass2')).toBeUndefined();
+        }).toEqual(fieldPropertiesService.getFieldType('fieldClass'));
+        expect(fieldPropertiesService.getFieldType('fieldClass2')).toBeUndefined();
     });
 });

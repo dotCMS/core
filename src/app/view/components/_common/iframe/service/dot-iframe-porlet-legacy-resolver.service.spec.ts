@@ -1,7 +1,7 @@
 import { LoginService } from 'dotcms-js';
 import { LoginServiceMock, mockUser } from './../../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
-import { async } from '@angular/core/testing';
+import { waitForAsync } from '@angular/core/testing';
 import { mockDotRenderedPage } from '../../../../../test/dot-page-render.mock';
 import { of } from 'rxjs';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
@@ -27,7 +27,7 @@ describe('DotIframePorletLegacyResolver', () => {
     let resolver: DotIframePortletLegacyResolver;
     let dotLicenseService: DotLicenseService;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
                 DotPageStateService,
@@ -59,7 +59,7 @@ describe('DotIframePorletLegacyResolver', () => {
     }));
 
     it('should return if user can access url to be rendered with current license', () => {
-        const mock = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
+        const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
         dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
         spyOn(dotLicenseService, 'canAccessEnterprisePortlet').and.returnValue(of(true));
 

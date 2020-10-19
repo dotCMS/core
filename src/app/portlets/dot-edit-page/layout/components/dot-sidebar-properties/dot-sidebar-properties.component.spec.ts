@@ -4,7 +4,7 @@ import { MockDotMessageService } from '../../../../../test/dot-message-service.m
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
 import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.component';
-import { OverlayPanelModule } from 'primeng/primeng';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DebugElement } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';

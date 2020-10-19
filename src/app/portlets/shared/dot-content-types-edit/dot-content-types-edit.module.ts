@@ -1,17 +1,4 @@
 import {
-    ButtonModule,
-    TabViewModule,
-    SplitButtonModule,
-    DropdownModule,
-    InputTextModule,
-    CheckboxModule,
-    RadioButtonModule,
-    ConfirmDialogModule,
-    DialogModule,
-    OverlayPanelModule,
-    MultiSelectModule
-} from 'primeng/primeng';
-import {
     CheckboxPropertyComponent,
     NamePropertyComponent,
     CategoriesPropertyComponent,
@@ -73,6 +60,17 @@ import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service'
 import { FormatDateService } from '@services/format-date-service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { TabViewModule } from 'primeng/tabview';
 
 @NgModule({
     declarations: [

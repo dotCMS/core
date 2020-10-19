@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { InputTextModule } from 'primeng/primeng';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DotAppsListComponent } from './dot-apps-list.component';
 import { DotAppsCardModule } from './dot-apps-card/dot-apps-card.module';

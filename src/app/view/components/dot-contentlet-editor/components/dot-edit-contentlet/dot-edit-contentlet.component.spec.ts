@@ -1,6 +1,6 @@
 import { of as observableOf } from 'rxjs';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
@@ -22,7 +22,7 @@ describe('DotEditContentletComponent', () => {
     let dotEditContentletWrapperComponent: DotContentletWrapperComponent;
     let dotContentletEditorService: DotContentletEditorService;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotEditContentletComponent, DotContentletWrapperComponent],
             providers: [

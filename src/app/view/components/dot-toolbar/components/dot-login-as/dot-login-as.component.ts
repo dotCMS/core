@@ -38,7 +38,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     @ViewChild('password')
     passwordElem: ElementRef;
 
-    @ViewChild('formEl')
+    @ViewChild('formEl', { static: true })
     formEl: HTMLFormElement;
 
     form: FormGroup;

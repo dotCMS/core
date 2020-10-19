@@ -2,7 +2,6 @@ import { pluck, catchError, take, map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotApps, DotAppsSaveData } from '@models/dot-apps/dot-apps.model';
-import { RequestMethod } from '@angular/http';
 import { CoreWebService } from 'dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -31,7 +30,6 @@ export class DotAppsService {
         const url = filter ? `${appsUrl}?filter=${filter}` : appsUrl;
         return this.coreWebService
             .requestView<DotApps[]>({
-                method: RequestMethod.Get,
                 url
             })
             .pipe(
@@ -54,7 +52,6 @@ export class DotAppsService {
     getConfigurationList(appKey: string): Observable<DotApps> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: `${appsUrl}/${appKey}`
             })
             .pipe(
@@ -78,7 +75,6 @@ export class DotAppsService {
     getConfiguration(appKey: string, id: string): Observable<DotApps> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: `${appsUrl}/${appKey}/${id}`
             })
             .pipe(
@@ -106,7 +102,7 @@ export class DotAppsService {
                 body: {
                     ...params
                 },
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: `${appsUrl}/${appKey}/${id}`
             })
             .pipe(
@@ -130,7 +126,7 @@ export class DotAppsService {
     deleteConfiguration(appKey: string, hostId: string): Observable<string> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Delete,
+                method: 'DELETE',
                 url: `${appsUrl}/${appKey}/${hostId}`
             })
             .pipe(
@@ -153,7 +149,7 @@ export class DotAppsService {
     deleteAllConfigurations(appKey: string): Observable<string> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Delete,
+                method: 'DELETE',
                 url: `${appsUrl}/${appKey}`
             })
             .pipe(

@@ -4,88 +4,154 @@
     [actions]="dialogActions"
     (hide)="close.emit()"
 >
+    <div
+        class="error-message"
+        [innerHTML]="message"
+        *ngIf="message"
+        id="dot-my-account-general-error-message"
+    ></div>
 
-    <div class="error-message" [innerHTML]="message" *ngIf="message" id="dot-my-account-general-error-message"></div>
-
-    <form #myAccountForm="ngForm" class="my-account">
-        <div class="form__group">
-            <span dotMdInputtext label="{{ 'First-Name' | dm }}">
-                <input pInputText id="dot-my-account-first-name-input"
+    <form #myAccountForm="ngForm" class="my-account p-fluid">
+        <div class="p-field">
+            <span class="p-float-label">
+                <input
+                    pInputText
+                    id="dot-my-account-first-name-input"
                     #firstNameInput="ngModel"
                     name="givenName"
                     [(ngModel)]="accountUser.givenName"
-                    (keyup)="message=''"
-                    required/>
+                    (keyup)="message = ''"
+                    required
+                />
+                <label for="dot-my-account-first-name-input">{{ 'First-Name' | dm }}</label>
             </span>
+            <p
+                class="error-message"
+                id="dot-my-account-first-name-error-message"
+                [hidden]="firstNameInput.valid || firstNameInput.pristine"
+            >
+                {{ getRequiredMessage('First-Name' | dm) }}
+            </p>
         </div>
-        <p class="error-message" id="dot-my-account-first-name-error-message" [hidden]="firstNameInput.valid || firstNameInput.pristine">{{ getRequiredMessage('First-Name' | dm) }}</p>
-        <div class="form__group">
-            <span dotMdInputtext label="{{ 'Last-Name' | dm }}">
-                <input pInputText id="dot-my-account-last-name-input"
+
+        <div class="p-field">
+            <span class="p-float-label">
+                <input
+                    pInputText
+                    id="dot-my-account-last-name-input"
                     #lastNameInput="ngModel"
                     name="surname"
                     [(ngModel)]="accountUser.surname"
-                    (keyup)="message=''"
-                    required/>
+                    (keyup)="message = ''"
+                    required
+                />
+                <label for="dot-my-account-first-name-input">{{ 'Last-Name' | dm }}</label>
             </span>
+            <p
+                class="error-message"
+                id="dot-my-account-last-name-error-message"
+                [hidden]="lastNameInput.valid || lastNameInput.pristine"
+            >
+                {{ getRequiredMessage('Last-Name' | dm) }}
+            </p>
         </div>
-        <p class="error-message" id="dot-my-account-last-name-error-message" [hidden]="lastNameInput.valid || lastNameInput.pristine">{{ getRequiredMessage('Last-Name' | dm) }}</p>
-        <div class="form__group">
-            <span dotMdInputtext label="{{ 'email-address' | dm }}">
-                <input pInputText id="dot-my-account-email-input"
+
+        <div class="p-field">
+            <span class="p-float-label">
+                <input
+                    pInputText
+                    id="dot-my-account-email-input"
                     #emailInput="ngModel"
                     name="email"
                     [(ngModel)]="accountUser.email"
                     type="email"
                     required
-                    (keyup)="message=''"
-                    [pattern]="emailRegex"/>
+                    (keyup)="message = ''"
+                    [pattern]="emailRegex"
+                />
+                <label for="dot-my-account-email-input">{{ 'email-address' | dm }}</label>
             </span>
+            <div class="error-message" [hidden]="emailInput.valid || emailInput.pristine">
+                <p
+                    *ngIf="emailInput.errors && emailInput.errors.required"
+                    id="dot-my-account-email-required-error-message"
+                >
+                    {{ getRequiredMessage('email-address' | dm) }}
+                </p>
+                <p
+                    *ngIf="emailInput.errors && emailInput.errors.pattern"
+                    id="dot-my-account-email-invalid-error-message"
+                >
+                    {{ stringFormat.formatMessage('errors.email' | dm, 'email-address' | dm) }}
+                </p>
+            </div>
         </div>
-        <div class="error-message" [hidden]="emailInput.valid || emailInput.pristine">
-            <p *ngIf="emailInput.errors && emailInput.errors.required" id="dot-my-account-email-required-error-message">{{ getRequiredMessage('email-address' | dm) }}</p>
-            <p *ngIf="emailInput.errors && emailInput.errors.pattern" id="dot-my-account-email-invalid-error-message">{{ stringFormat.formatMessage('errors.email' | dm, 'email-address' | dm) }}</p>
-        </div>
-        <div class="form__group">
-            <span dotMdInputtext label="{{ 'current-password' | dm }}">
-                <input pPassword id="dot-my-account-current-password-input"
+
+        <div class="p-field">
+            <span class="p-float-label">
+                <input
+                    pPassword
+                    id="dot-my-account-current-password-input"
                     #currentPasswordInput="ngModel"
                     name="password"
                     [feedback]="false"
                     [(ngModel)]="accountUser.currentPassword"
                     type="password"
-                    (keyup)="message=''"
-                    required/>
+                    (keyup)="message = ''"
+                    required
+                />
+                <label for="dot-my-account-current-password-input">{{
+                    'current-password' | dm
+                }}</label>
             </span>
         </div>
-        <div class="form__group">
-            <p-checkbox (onChange)="toggleChangePasswordOption()" binary="true"
-                         id="dot-my-account-change-password-option" label="{{ 'change-password' | dm }}">
+        <div class="p-field">
+            <p-checkbox
+                (onChange)="toggleChangePasswordOption()"
+                binary="true"
+                id="dot-my-account-change-password-option"
+                label="{{ 'change-password' | dm }}"
+            >
             </p-checkbox>
         </div>
-        <div class="form__group">
-            <span dotMdInputtext label="{{ 'new-password' | dm }}">
-                <input pPassword id="dot-my-account-new-password-input"
+        <div class="p-field">
+            <span class="p-float-label">
+                <input
+                    pPassword
+                    id="dot-my-account-new-password-input"
                     #passwordInput="ngModel"
                     name="newPassword"
                     [(ngModel)]="accountUser.newPassword"
                     (keyup)="checkPasswords()"
                     type="password"
-                    [disabled]="!changePasswordOption"/>
+                    [disabled]="!changePasswordOption"
+                />
+                <label for="">{{ 'new-password' | dm }}</label>
             </span>
         </div>
-        <div class="form__group">
-            <span dotMdInputtext label="{{ 're-enter-new-password' | dm }}">
-                <input pPassword id="dot-my-account-confirm-new-password-input"
+        <div class="p-field">
+            <span class="p-float-label">
+                <input
+                    pPassword
+                    id="dot-my-account-confirm-new-password-input"
                     #confirmPasswordInput="ngModel"
                     name="confirmPassword"
                     [(ngModel)]="passwordConfirm"
                     (keyup)="checkPasswords()"
                     [feedback]="false"
                     type="password"
-                    [disabled]="!changePasswordOption"/>
+                    [disabled]="!changePasswordOption"
+                />
+                <label for="dot-my-account-confirm-new-password-input">{{
+                    're-enter-new-password' | dm
+                }}</label>
             </span>
+            <p
+                class="error-message"
+                [hidden]="!(passwordInput.dirty && confirmPasswordInput.dirty) || passwordMatch"
+            >
+                {{ 'error.forgot.password.passwords.dont.match' | dm }}
+            </p>
         </div>
-        <p class="error-message" [hidden]="!(passwordInput.dirty && confirmPasswordInput.dirty) || passwordMatch">{{ 'error.forgot.password.passwords.dont.match' | dm }}</p>
     </form>
 </dot-dialog>

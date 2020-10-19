@@ -3,7 +3,6 @@ import { StringUtils } from '../string-utils.service';
 import { LoggerService } from '../logger.service';
 import { LongPollingProtocol } from './long-polling-protocol';
 import { CoreWebService } from '../core-web.service';
-import { RequestMethod } from '@angular/http';
 import { Observable, of, throwError } from 'rxjs';
 import { ResponseView } from './response-view';
 
@@ -35,7 +34,6 @@ describe('LongPollingProtocol', () => {
 
     it('should connect', () => {
         const requestOpts = {
-            method: RequestMethod.Get,
             url: url,
             params: {}
         };
@@ -56,7 +54,6 @@ describe('LongPollingProtocol', () => {
 
     it('should trigger message', (done) => {
         const requestOpts = {
-            method: RequestMethod.Get,
             url: url,
             params: {}
         };
@@ -90,7 +87,6 @@ describe('LongPollingProtocol', () => {
 
             if (countRequest === 2) {
                 expect(opts).toEqual({
-                    method: RequestMethod.Get,
                     url: url,
                     params: {
                         lastCallBack: 2
@@ -126,7 +122,6 @@ describe('LongPollingProtocol', () => {
     it('should reconnect after a message', () => {
         let firstMessage = true;
         const requestOpts = {
-            method: RequestMethod.Get,
             url: url,
             params: {}
         };

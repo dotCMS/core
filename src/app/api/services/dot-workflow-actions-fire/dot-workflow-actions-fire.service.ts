@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { pluck, take } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js';
 import { DotCMSContentlet } from 'dotcms-models';
@@ -39,7 +38,7 @@ export class DotWorkflowActionsFireService {
         return this.coreWebService
             .requestView({
                 body: data,
-                method: RequestMethod.Put,
+                method: 'PUT',
                 url: `v1/workflow/actions/${actionId}/fire?inode=${inode}`
             })
             .pipe(pluck('entity'));
@@ -56,7 +55,7 @@ export class DotWorkflowActionsFireService {
         return this.coreWebService
             .requestView({
                 body: data,
-                method: RequestMethod.Put,
+                method: 'PUT',
                 url: `/api/v1/workflow/contentlet/actions/bulk/fire`
             })
             .pipe(pluck('entity'));
@@ -114,7 +113,7 @@ export class DotWorkflowActionsFireService {
     private request<T>({ contentType, data, action }: DotActionRequestOptions): Observable<T> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Put,
+                method: 'PUT',
                 url: `v1/workflow/actions/default/fire/${action}`,
                 body: { contentlet: { contentType: contentType, ...data } }
             })

@@ -4,20 +4,6 @@ import { FormControl } from '@angular/forms';
 import { LoggerService } from 'dotcms-js';
 import { GCircle } from '../../models/gcircle.model';
 
-interface Param<T> {
-    key: string;
-    priority?: number;
-    value: T;
-}
-
-interface VisitorsLocationParams {
-    comparison: Param<string>;
-    latitude: Param<number>;
-    longitude: Param<number>;
-    radius: Param<number>;
-    preferredDisplayUnits: Param<string>;
-}
-
 const UNITS = {
     km: {
         km: len => len,
@@ -35,8 +21,7 @@ const UNITS = {
         mi: len => len
     }
 };
-// tslint:disable-next-line:no-unused-variable
-const I8N_BASE = 'api.sites.ruleengine';
+
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DecimalPipe],
@@ -68,8 +53,9 @@ const I8N_BASE = 'api.sites.ruleengine';
       />
   </div>
   <div flex layout="column" class="cw-input cw-last">
-    <button class="ui button cw-button-add" aria-label="Show Map" (click)="toggleMap()">
-      <i class="plus icon" aria-hidden="true"></i>Show Map
+    <button pButton
+            class="p-button-secondary" icon="pi pi-plus"
+            label="Show Map" aria-label="Show Map" (click)="toggleMap()">
     </button>
   </div>
 </div>

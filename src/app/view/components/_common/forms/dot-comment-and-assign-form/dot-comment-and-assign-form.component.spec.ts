@@ -7,7 +7,7 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { FormatDateService } from '@services/format-date-service';
 import { Component, DebugElement, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';

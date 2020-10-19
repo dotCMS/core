@@ -1,0 +1,68 @@
+@use "variables" as *;
+@import "dotcms-theme/extends/inputtext.extends";
+.p-inputtext {
+  @extend #p-inputtext-extend;
+}
+
+.p-inputtext.p-inputtext-sm {
+    font-size: $font-size-small;
+    padding: $spacing-1 $spacing-2;
+}
+.p-inputtext.p-inputtext-lg {
+  font-size: $font-size-x-large;
+  padding: 0.9375rem 0.9375rem;
+}
+
+.p-input-icon-left > i:first-of-type {
+  left: $spacing-2;
+  color: $black;
+}
+
+.p-input-icon-left > .p-inputtext {
+  padding-left: 2.5rem;
+}
+
+.p-input-icon-right > i:last-of-type {
+  right: $spacing-2;
+  color: $black;
+}
+
+.p-input-icon-right > .p-inputtext {
+  padding-right: 2.5rem;
+}
+
+::-webkit-input-placeholder {
+  color: $gray;
+}
+
+:-moz-placeholder {
+  color: $black;
+}
+
+::-moz-placeholder {
+  color: $black;
+}
+
+:-ms-input-placeholder {
+  color: $black;
+}
+
+.p-input-filled .p-inputtext {
+  background-color: #f5f5f5;
+}
+.p-input-filled .p-inputtext:enabled:hover {
+  background-color: #ececec;
+}
+.p-input-filled .p-inputtext:enabled:focus {
+  background-color: #dcdcdc;
+}
+
+.p-inputtext-sm .p-inputtext {
+  font-size: 0.875rem;
+  padding: 0.65625rem 0.65625rem;
+}
+
+.p-inputtext-lg .p-inputtext {
+  font-size: $font-size-x-large;
+  padding: 0.9375rem 0.9375rem;
+}

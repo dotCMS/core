@@ -21,7 +21,7 @@ import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-di
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { TestBed } from '@angular/core/testing';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '../../../test/core-web.service.mock';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
 import { FormatDateService } from '@services/format-date-service';
@@ -172,7 +172,7 @@ describe('DotCustomEventHandlerService', () => {
     it('should set colors in the ui', () => {
         spyOn(dotUiColorsService, 'setColors');
         const fakeHtmlEl = { hello: 'html' };
-        spyOn(document, 'querySelector').and.returnValue(fakeHtmlEl);
+        spyOn<any>(document, 'querySelector').and.returnValue(fakeHtmlEl);
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -188,7 +188,7 @@ describe('DotCustomEventHandlerService', () => {
                 }
             })
         );
-        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl, {
+        expect<any>(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl, {
             primary: '#fff',
             secondary: '#000',
             background: '#ccc'
@@ -213,7 +213,7 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
 
-        expect(dotPushPublishDialogService.open).toHaveBeenCalledWith(dataMock);
+        expect<any>(dotPushPublishDialogService.open).toHaveBeenCalledWith(dataMock);
     });
 
     it('should notify to open download bundle dialog', () => {
@@ -239,6 +239,6 @@ describe('DotCustomEventHandlerService', () => {
                 }
             })
         );
-        expect(dotWorkflowEventHandlerService.open).toHaveBeenCalledWith('testData');
+        expect<any>(dotWorkflowEventHandlerService.open).toHaveBeenCalledWith('testData');
     });
 });

@@ -3,7 +3,6 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotDevice } from '@models/dot-device/dot-device.model';
 import { CoreWebService } from 'dotcms-js';
-import { RequestMethod } from '@angular/http';
 
 /**
  * Provide util methods to get the Devices & dimensions.
@@ -22,7 +21,6 @@ export class DotDevicesService {
     get(): Observable<DotDevice[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: [
                     'content',
                     'respectFrontendRoles/false',

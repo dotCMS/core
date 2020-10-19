@@ -1,6 +1,6 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotCrumbtrailComponent } from './dot-crumbtrail.component';
-import { BreadcrumbModule } from 'primeng/primeng';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { DotCrumbtrailService, DotCrumb } from './service/dot-crumbtrail.service';
 import { Injectable, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -24,7 +24,7 @@ describe('DotCrumbtrailComponent', () => {
     let de: DebugElement;
     const dotCrumbtrailService: MockDotCrumbtrailService = new MockDotCrumbtrailService();
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         TestBed.configureTestingModule({
             declarations: [DotCrumbtrailComponent],
             imports: [BreadcrumbModule],

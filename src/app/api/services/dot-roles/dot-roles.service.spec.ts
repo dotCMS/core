@@ -4,7 +4,7 @@ import { TestBed, getTestBed } from '@angular/core/testing';
 import { CoreWebService } from 'dotcms-js';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 
 const mockRoles: DotRole[] = [

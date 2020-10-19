@@ -7,10 +7,11 @@ import {
     SimpleChanges,
     EventEmitter,
     Output,
-    HostListener
+    HostListener,
+    OnChanges
 } from '@angular/core';
-import { MenuItem, Menu } from 'primeng/primeng';
-import { OnChanges } from '@angular/core/src/metadata/lifecycle_hooks';
+import { Menu } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
 
 /**
  * The ActionButtonComponent is a configurable button with

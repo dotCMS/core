@@ -1,35 +1,39 @@
-<form [formGroup]="form" class="content-type__form" id="content-type-form" novalidate>
-    <div class="form__group">
-        <span dotMdInputtext [label]="nameFieldLabel">
+<form [formGroup]="form" class="content-type__form p-fluid" id="content-type-form" novalidate>
+    <div class="p-field form__group--validation">
+        <span class="p-float-label">
             <input
                 pInputText
                 type="text"
                 id="content-type-form-name"
                 name="name"
                 formControlName="name"
-                tabindex="1"
+                [tabindex]="1"
                 #name
                 dotAutofocus
             />
+            <label for="content-type-form-name">{{ nameFieldLabel }}</label>
         </span>
         <dot-field-validation-message
-            [message]="'dot.common.message.field.required' | dm : [nameFieldLabel]"
+            [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
             [field]="form.get('name')"
         ></dot-field-validation-message>
     </div>
-    <div class="form__group">
-        <span dotMdInputtext [label]="'contenttypes.form.label.description' | dm">
+    <div class="p-field">
+        <span class="p-float-label">
             <input
                 pInputText
                 type="text"
                 id="content-type-form-description"
                 name="description"
                 formControlName="description"
-                tabindex="2"
+                [tabindex]="2"
             />
+            <label for="content-type-form-description">{{
+                'contenttypes.form.label.description' | dm
+            }}</label>
         </span>
     </div>
-    <div class="form__group">
+    <div class="p-field">
         <label for="content-type-form-host" class="form__label">{{
             'contenttypes.form.field.host_folder.label' | dm
         }}</label>
@@ -37,10 +41,10 @@
             id="content-type-form-host"
             formControlName="host"
             [system]="true"
-            tabindex="3"
+            [tabindex]="3"
         ></dot-site-selector-field>
     </div>
-    <div class="form__group">
+    <div class="p-field">
         <label for="content-type-form-workflow" class="form__label">{{
             'contenttypes.form.label.workflow' | dm
         }}</label>
@@ -49,7 +53,7 @@
             formControlName="workflows"
         ></dot-workflows-selector-field>
     </div>
-    <div class="form__group" formGroupName="systemActionMappings">
+    <div class="p-field" formGroupName="systemActionMappings">
         <label for="content-type-form-workflow" class="form__label">{{
             'contenttypes.form.label.workflow.actions' | dm
         }}</label>
@@ -62,12 +66,10 @@
         id="field-workflow-hint"
         class="form__group-hint"
         *ngIf="form.get('workflows').disabled"
-        >{{
-            'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm
-        }}</span
+        >{{ 'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm }}</span
     >
-    <div class="form__group">
-        <div class="ui-g-6">
+    <div class="p-formgrid p-grid">
+        <div class="p-field p-col">
             <label for="content-type-form-publish-date-field" class="form__label">{{
                 'contenttypes.form.label.publish.date.field' | dm
             }}</label>
@@ -79,10 +81,10 @@
                 formControlName="publishDateVar"
                 (onChange)="handleDateVarChange($event, 'publishDateVar')"
                 [style]="{ 'min-width': '90px' }"
-                tabindex="5"
+                [tabindex]="5"
             ></p-dropdown>
         </div>
-        <div class="ui-g-6">
+        <div class="p-field p-col">
             <label for="content-type-form-expire-date-field" class="form__label">{{
                 'contenttypes.form.field.expire.date.field' | dm
             }}</label>
@@ -94,36 +96,43 @@
                 formControlName="expireDateVar"
                 (onChange)="handleDateVarChange($event, 'expireDateVar')"
                 [style]="{ 'min-width': '90px' }"
-                tabindex="6"
+                [tabindex]="6"
             ></p-dropdown>
         </div>
     </div>
-    <span class="form__group-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{
-        'contenttypes.form.message.no.date.fields.defined' | dm
-    }}</span>
-    <div class="form__group" *ngIf="form.get('detailPage')">
+
+    <div class="p-field">
+        <small class="p-field-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{
+            'contenttypes.form.message.no.date.fields.defined' | dm
+        }}</small>
+    </div>
+
+    <div class="p-field" *ngIf="form.get('detailPage')">
         <dot-page-selector
             id="content-type-form-detail-page"
             formControlName="detailPage"
             [floatingLabel]="true"
-            tabindex="7"
+            [tabindex]="7"
             [style]="{ width: '100%' }"
             [label]="'contenttypes.form.field.detail.page' | dm"
         ></dot-page-selector>
     </div>
-    <div class="form__group form__group--helper" *ngIf="form.get('urlMapPattern')">
+    <div class="p-field form__group--helper" *ngIf="form.get('urlMapPattern')">
         <dot-field-helper
             [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"
         ></dot-field-helper>
-        <span dotMdInputtext [label]="'contenttypes.form.label.URL.pattern' | dm">
+        <span class="p-float-label">
             <input
                 pInputText
                 type="text"
                 id="content-type-form-url-map-pattern"
                 name="urlMapPattern"
                 formControlName="urlMapPattern"
-                tabindex="8"
+                [tabindex]="8"
             />
+            <label for="content-type-form-url-map-pattern">{{
+                'contenttypes.form.label.URL.pattern' | dm
+            }}</label>
         </span>
     </div>
 </form>

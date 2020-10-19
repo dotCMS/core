@@ -1,12 +1,12 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
-import { async } from '@angular/core/testing';
+import { waitForAsync } from '@angular/core/testing';
 
 import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
 
 import { DotWorkflowService } from './../../../../api/services/dot-workflow/dot-workflow.service';
-import { MultiSelect } from 'primeng/primeng';
+import { MultiSelect } from 'primeng/multiselect';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FormGroup, FormBuilder } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -23,7 +23,9 @@ const messageServiceMock = new MockDotMessageService({
     selector: 'dot-fake-form',
     template: `
         <form [formGroup]="form">
-            <dot-workflows-selector-field formControlName="workflows"></dot-workflows-selector-field>
+            <dot-workflows-selector-field
+                formControlName="workflows"
+            ></dot-workflows-selector-field>
             {{ form.value | json }}
         </form>
     `
@@ -51,7 +53,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
 
     describe('basic', () => {
         beforeEach(
-            async(() => {
+            waitForAsync(() => {
                 DOTTestBed.configureTestingModule({
                     declarations: [DotWorkflowsSelectorFieldComponent],
                     providers: [
@@ -104,23 +106,27 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
 
             describe('show options', () => {
                 beforeEach(() => {
-                    de.query(By.css('.ui-multiselect')).triggerEventHandler('click', {});
+                    de.query(By.css('.p-multiselect')).triggerEventHandler('click', {
+                        target: {
+                            isSameNode: () => false
+                        }
+                    });
                     fixture.detectChanges();
                 });
 
                 it('should fill the workflows options', () => {
                     const itemsLabels = de
-                        .queryAll(By.css('.ui-multiselect-items .workflow__label'))
-                        .map(item => item.nativeElement.innerText);
-                    expect(itemsLabels).toEqual(mockWorkflows.map(workflow => workflow.name));
+                        .queryAll(By.css('.p-multiselect-items .workflow__label'))
+                        .map((item) => item.nativeElement.innerText);
+                    expect(itemsLabels).toEqual(mockWorkflows.map((workflow) => workflow.name));
                 });
 
                 it('should have archived item and message', () => {
                     const archivedItems = de.queryAll(By.css('.workflow__archive-label'));
-                    expect(archivedItems.length).toBe(1);
+                    expect(archivedItems.length).toBe(1, 'archivedItems');
                     expect(archivedItems[0].nativeElement.innerText).toBe(mockWorkflows[1].name);
                     const archivedMessage = de.queryAll(By.css('.workflow__archive-message'));
-                    expect(archivedMessage.length).toBe(1);
+                    expect(archivedMessage.length).toBe(1, 'archivedMessage');
                     expect(archivedMessage[0].nativeElement.innerText).toBe('(Archivado)');
                 });
             });
@@ -133,7 +139,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
         let innerMultiselect: DebugElement;
 
         beforeEach(
-            async(() => {
+            waitForAsync(() => {
                 DOTTestBed.configureTestingModule({
                     declarations: [FakeFormComponent, DotWorkflowsSelectorFieldComponent],
                     providers: [

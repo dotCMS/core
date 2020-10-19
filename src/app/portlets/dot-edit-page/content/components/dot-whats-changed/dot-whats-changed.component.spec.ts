@@ -1,5 +1,5 @@
 /* tslint:disable:no-unused-variable */
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement, Input, Component } from '@angular/core';
 
@@ -32,7 +32,7 @@ describe('DotWhatsChangedComponent', () => {
     let de: DebugElement;
     let dotIframe: IframeComponent;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         TestBed.configureTestingModule({
             declarations: [DotWhatsChangedComponent, TestDotIframeComponent, TestHostComponent],
             providers: [

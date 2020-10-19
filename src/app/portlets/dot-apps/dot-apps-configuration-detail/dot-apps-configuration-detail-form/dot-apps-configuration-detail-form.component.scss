@@ -40,7 +40,7 @@
     }
 
     ::ng-deep {
-        p-dropdown .ui-dropdown {
+        p-dropdown .p-dropdown {
             min-width: 200px;
             margin-bottom: $basic-padding;
         }
@@ -55,7 +55,7 @@
             content: "* ";
         }
 
-        ngx-md p {
+        markdown p {
             margin: 0;
         }
     }

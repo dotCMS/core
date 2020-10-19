@@ -1,0 +1,29 @@
+@use "variables" as *;
+
+#p-inputtext-extend {
+    font-family: $body-text;
+    font-size: $font-size-medium;
+    color: $black;
+    background: $white;
+    padding: $spacing-2 $spacing-2;
+    border: 1px solid rgba(0, 0, 0, 0.38);
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
+        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+    appearance: none;
+    border-radius: 2px;
+
+    &:enabled {
+        &:hover {
+            border-color: $brand-primary;
+        }
+
+        &:focus {
+            outline: 0 none;
+            outline-offset: 0;
+            box-shadow: none;
+            border-color: $brand-primary;
+            box-shadow: inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary,
+                inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary;
+        }
+    }
+}

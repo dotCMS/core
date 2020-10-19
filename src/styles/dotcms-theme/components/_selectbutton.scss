@@ -1,0 +1,62 @@
+@use "variables" as *;
+
+.p-selectbutton .p-button {
+    background: $white;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    color: $gray;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+    text-transform: uppercase;
+}
+
+.p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover {
+    border-color: rgba(0, 0, 0, 0.12);
+    color: $gray-dark;
+}
+
+// .p-selectbutton .p-button.p-highlight {
+//     background: $highlight-bg;
+//     color: $gray-dark;
+// }
+
+.p-selectbutton .p-button.p-highlight .p-button-icon-left,
+.p-selectbutton .p-button.p-highlight .p-button-icon-right {
+    color: $gray;
+}
+
+.p-selectbutton .p-button.p-highlight:hover {
+    background: $highlight-bg;
+    border-color: $highlight-border-color;
+    color: $hover-text-color;
+}
+
+.p-selectbutton .p-button.p-highlight:hover .p-button-icon-left,
+.p-selectbutton .p-button.p-highlight:hover .p-button-icon-right {
+    color: $hover-text-color;
+}
+
+.p-selectbutton .p-button:focus {
+    background: $focus-bg;
+    border-color: $highlight-border-color;
+}
+
+.p-selectbutton .p-button:focus.p-highlight {
+    background: $focus-bg;
+    border-color: $highlight-border-color;
+}
+
+.p-button-tabbed {
+    box-shadow: 0px 1px 0px 0px $gray-light;
+    display: inline-block;
+
+    .p-button {
+        border-radius: 0;
+        padding: $spacing-3 $spacing-5;
+        border: none;
+
+        &:focus.p-highlight, &.p-highlight {
+            background: $highlight-bg;
+            color: $gray-dark;
+            box-shadow: 0px -4px 0px 0px $brand-primary inset;
+        }
+    }
+}

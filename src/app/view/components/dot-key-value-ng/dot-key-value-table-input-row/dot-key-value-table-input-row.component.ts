@@ -19,9 +19,9 @@ import { DotKeyValueUtil } from '../util/dot-key-value-util';
     templateUrl: './dot-key-value-table-input-row.component.html'
 })
 export class DotKeyValueTableInputRowComponent implements OnInit {
-    @ViewChild('saveButton') saveButton: ElementRef;
-    @ViewChild('keyCell') keyCell: ElementRef;
-    @ViewChild('valueCell') valueCell: ElementRef;
+    @ViewChild('saveButton', { static: true }) saveButton: ElementRef;
+    @ViewChild('keyCell', { static: true }) keyCell: ElementRef;
+    @ViewChild('valueCell', { static: true }) valueCell: ElementRef;
 
     @Input() autoFocus = true;
     @Input() showHiddenField: boolean;

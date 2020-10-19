@@ -1,12 +1,14 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CardModule, TooltipModule } from 'primeng/primeng';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { NgxMdModule } from 'ngx-md';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { CardModule } from 'primeng/card';
+import { TooltipModule } from 'primeng/tooltip';
+import { MarkdownModule } from 'ngx-markdown';
 
 @NgModule({
     imports: [
@@ -14,7 +16,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         CardModule,
         DotAvatarModule,
         DotIconModule,
-        NgxMdModule,
+        MarkdownModule.forChild(),
         TooltipModule,
         DotPipesModule
     ],

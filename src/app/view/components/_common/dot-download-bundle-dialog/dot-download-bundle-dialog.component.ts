@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
 import { SelectItem } from 'primeng/api';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import {
@@ -7,9 +9,7 @@ import {
 } from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
 import { Observable, of, Subject } from 'rxjs';
 import { catchError, map, take, takeUntil } from 'rxjs/operators';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { getDownloadLink } from '@shared/dot-utils';
 

@@ -1,34 +1,27 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "../../out-tsc/lib",
-    "target": "es2015",
-    "module": "es2015",
-    "moduleResolution": "node",
-    "declaration": true,
-    "sourceMap": true,
-    "inlineSources": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "importHelpers": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "types": [],
-    "lib": [
-      "dom",
-      "es2015"
-    ]
-  },
-  "angularCompilerOptions": {
-    "annotateForClosureCompiler": true,
-    "skipTemplateCodegen": true,
-    "strictMetadataEmit": true,
-    "fullTemplateTypeCheck": true,
-    "strictInjectionParameters": true,
-    "enableResourceInlining": true
-  },
-  "exclude": [
-    "src/test.ts",
-    "**/*.spec.ts"
-  ]
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "../../out-tsc/lib",
+        "target": "es2015",
+        "module": "es2015",
+        "moduleResolution": "node",
+        "declaration": true,
+        "sourceMap": true,
+        "inlineSources": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "importHelpers": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "types": [],
+        "lib": ["dom", "es2015"]
+    },
+    "angularCompilerOptions": {
+        "skipTemplateCodegen": true,
+        "strictMetadataEmit": true,
+        "fullTemplateTypeCheck": true,
+        "strictInjectionParameters": true,
+        "enableResourceInlining": true
+    },
+    "exclude": ["src/test.ts", "**/*.spec.ts"]
 }

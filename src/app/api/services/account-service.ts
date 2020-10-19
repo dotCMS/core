@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 import { CoreWebService, ResponseView } from 'dotcms-js';
 
@@ -10,7 +9,7 @@ export class AccountService {
     public updateUser(user: AccountUser): Observable<ResponseView> {
         return this.coreWebService.requestView({
             body: user,
-            method: RequestMethod.Put,
+            method: 'PUT',
             url: 'v1/users/current'
         });
     }

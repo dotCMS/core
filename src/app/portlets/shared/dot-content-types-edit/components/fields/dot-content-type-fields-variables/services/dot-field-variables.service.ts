@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CoreWebService } from 'dotcms-js';
-import { RequestMethod } from '@angular/http';
 import { pluck } from 'rxjs/operators';
 import { DotFieldVariable } from '../models/dot-field-variable.interface';
 import { DotCMSContentTypeField } from 'dotcms-models';
@@ -22,7 +21,6 @@ export class DotFieldVariablesService {
     load(field: DotCMSContentTypeField): Observable<DotFieldVariable[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`
             })
             .pipe(pluck('entity'));
@@ -45,7 +43,7 @@ export class DotFieldVariablesService {
                     'clazz': 'com.dotcms.contenttype.model.field.FieldVariable',
                     'fieldId': field.id
                 },
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`
             })
             .pipe(pluck('entity'));
@@ -62,7 +60,7 @@ export class DotFieldVariablesService {
     delete(field: DotCMSContentTypeField, variable: DotFieldVariable): Observable<DotFieldVariable> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Delete,
+                method: 'DELETE',
                 url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables/id/${variable.id}`
             })
             .pipe(pluck('entity'));

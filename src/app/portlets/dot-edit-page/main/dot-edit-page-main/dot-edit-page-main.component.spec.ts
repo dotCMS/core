@@ -2,7 +2,7 @@ import { of as observableOf, Subject } from 'rxjs';
 import { mockUser } from './../../../../test/login-service.mock';
 import { mockDotRenderedPage } from '../../../../test/dot-page-render.mock';
 import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
@@ -35,7 +35,7 @@ import {
     StringUtils,
     UserModel
 } from 'dotcms-js';
-import { CoreWebServiceMock } from '../../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '../../../../test/core-web.service.mock';
 import { FormatDateService } from '@services/format-date-service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
@@ -65,7 +65,7 @@ class MockDotPageStateService {
     state$ = new Subject();
     get(): void {}
     reload(): void {
-        this.reload$.next(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)));
+        this.reload$.next(new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage())));
     }
 }
 
@@ -93,12 +93,12 @@ describe('DotEditPageMainComponent', () => {
     });
 
     const mockDotRenderedPageState: DotPageRenderState = new DotPageRenderState(
-        mockUser,
-        new DotPageRender(mockDotRenderedPage)
+        mockUser(),
+        new DotPageRender(mockDotRenderedPage())
     );
 
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             TestBed.configureTestingModule({
                 imports: [
                     RouterTestingModule.withRoutes([
@@ -203,7 +203,7 @@ describe('DotEditPageMainComponent', () => {
 
         component.pageState$.subscribe(res => {
             expect(res).toEqual(
-                new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage))
+                new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()))
             );
         });
 
@@ -211,7 +211,7 @@ describe('DotEditPageMainComponent', () => {
         expect(dotPageStateService.get).toHaveBeenCalledWith({
             url: '/about-us/index',
             viewAs: {
-                language: mockDotRenderedPage.page.languageId
+                language: mockDotRenderedPage().page.languageId
             }
         });
     });
@@ -237,7 +237,7 @@ describe('DotEditPageMainComponent', () => {
             dotContentletEditorService.close$.next(true);
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/about-us/index2',
-                language_id: mockDotRenderedPage.page.languageId.toString()
+                language_id: mockDotRenderedPage().page.languageId.toString()
             });
         });
 
@@ -257,7 +257,7 @@ describe('DotEditPageMainComponent', () => {
                     name: 'random'
                 }
             });
-            expect(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
+            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
                 detail: {
                     name: 'random'
                 }

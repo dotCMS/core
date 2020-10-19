@@ -6,7 +6,7 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
 import { mockResponseView } from '../../../test/response-view.mock';
 import { TestBed, getTestBed } from '@angular/core/testing';
-import { ConfirmationService } from 'primeng/primeng';
+import { ConfirmationService } from 'primeng/api';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 

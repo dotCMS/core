@@ -16,15 +16,15 @@ export class DataTypePropertyComponent implements OnInit {
 
     ngOnInit(): void {
         this.radioInputs = DATA_TYPE_PROPERTY_INFO[this.property.field.clazz];
-    }
 
-    isEmpty(obj) {
-        for (const prop in obj) {
-            if (obj.hasOwnProperty(prop)) {
-                return false;
-            }
-        }
-
-        return Object.keys(obj).length;
+        /**
+         * Workaround because of this bug: https://github.com/primefaces/primeng/issues/9162#issuecomment-686370453
+         */
+        const control = this.group.get(this.property.name);
+        control.valueChanges.subscribe((value: string) => {
+            control.setValue(value, {
+                emitEvent: false
+            });
+        });
     }
 }

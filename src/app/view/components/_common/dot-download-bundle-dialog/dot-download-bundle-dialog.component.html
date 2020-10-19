@@ -8,27 +8,26 @@
         [formGroup]="form"
         *ngIf="showDialog"
         (ngSubmit)="handleSubmit()"
-        (keyup.enter)="handleSubmit()">
-        <div class="form__group">
-            <label class="form__label"
-            >{{ 'download.bundle.i.want' | dm }}:
-            </label>
-            <p-selectButton [options]="downloadOptions"
-                            formControlName="downloadOptionSelected">
+        (keyup.enter)="handleSubmit()"
+        class="p-fluid"
+    >
+        <div class="p-field">
+            <label class="form__label">{{ 'download.bundle.i.want' | dm }}: </label>
+            <p-selectButton
+                class="p-button-tabbed"
+                [options]="downloadOptions"
+                formControlName="downloadOptionSelected"
+            >
             </p-selectButton>
         </div>
-        <div class="form__group">
-            <label class="form__label"
-            >{{ 'download.bundle.filter' | dm }}:
-            </label>
+        <div class="p-field">
+            <label class="form__label">{{ 'download.bundle.filter' | dm }}: </label>
             <p-dropdown
-                [style]="{ width: '100%' }"
                 [options]="filterOptions"
                 formControlName="filterKey"
                 appendTo="body"
             ></p-dropdown>
         </div>
     </form>
-    <span *ngIf="errorMessage" class="download-bundle__error">{{errorMessage}}</span>
+    <span *ngIf="errorMessage" class="download-bundle__error">{{ errorMessage }}</span>
 </dot-dialog>
-

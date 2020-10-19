@@ -1,22 +1,55 @@
+// CSS VARIABLEs
+:root {
+    --text-color: #000001;
+    --color-main: #c336e5;
+    --color-main-text: #ffffff;
+    --color-main_mod: #d36cec;
+    --color-main_rgb: 195, 54, 229;
+    --color-sec: #6f5fa3;
+    --color-sec_rgb: 111, 95, 163;
+    --color-background: #28283e;
+}
+
 // COLORS
 $black: #0a0725;
+$orange: #f3762a;
+$white: #ffffff;
+$red: #cb3927;
+$green: #29c175;
 $gray-dark: #524e5c;
 $gray: #7e7a86;
 $gray-light: #b3b1b8;
 $gray-lighter: #e2e2e2;
 $gray-bg: #f1f3f4;
-
 $brand-primary: var(--color-main);
 $brand-primary_mod: var(--color-main_mod);
 $brand-primary_rgb: var(--color-main_rgb);
 $brand-secondary: var(--color-sec);
 $brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
+$bg-color-primary: rgba($brand-primary_rgb, 0.12);
+$highlight-bg: rgba($brand-secondary_rgb, 0.12);
+$highlight-text-color: $brand-primary;
+$focus-bg: rgba($brand-secondary_rgb, 0.12);
+$focus-text-color: $black;
+$focus-text-primary-color: $brand-primary;
+$hover-text-primary-color: $brand-primary;
+$hover-bg: rgba($brand-secondary_rgb, 0.12);
+$hover-text-color: $black;
+$highlight-border-color: rgba($brand-secondary_rgb, 0.12);
+$hover-border-color: $brand-primary;
 
-$orange: #f3762a;
-$white: #fff;
-$red: #cb3927;
-$green: #29c175;
+// TODO: Search replace font-size: $spacing-4 (font-size: 1.25rem)
+
+// Spacing
+$spacing-0: 0;
+$spacing-1: 0.5rem;
+$spacing-2: 0.75rem;
+$spacing-3: 1rem;
+$spacing-4: 1.5rem;
+$spacing-5: 2rem;
+$spacing-6: 2.5rem;
+$spacing-7: 3rem;
 
 $error: #d0021b;
 $warn: $orange;
@@ -33,12 +66,13 @@ $icon-button-size: 32px;
 $line-height: 1.5em;
 
 // TYPOGRAPHY
-$font-size-xx-large: 24px;
-$font-size-x-large: 18px;
-$font-size-large: 16px;
-$font-size-medium: 14px;
-$font-size-small: 12px;
-$font-size-x-small: 10px;
+$font-size-xxx-large: 3rem;
+$font-size-xx-large: 1.75rem;
+$font-size-x-large: 1.5rem;
+$font-size-large: 1.25rem;
+$font-size-medium: 1rem;
+$font-size-small: 0.85rem;
+$font-size-x-small: 0.75rem;
 $font-weight-semi-bold: 500;
 
 $code-text: "Menlo", "Monaco", "Consolas";
@@ -83,16 +117,16 @@ $screen-lg-min: $screen-lg;
 $screen-xl-min: $screen-xl;
 
 // Breakpoints max
-$screen-xs-max: ($screen-sm-min - 1);
-$screen-sm-max: ($screen-md-min - 1);
-$screen-md-max: ($screen-lg-min - 1);
-$screen-lg-max: ($screen-xl-min - 1);
+$screen-xs-max: $screen-sm-min - 1;
+$screen-sm-max: $screen-md-min - 1;
+$screen-md-max: $screen-lg-min - 1;
+$screen-lg-max: $screen-xl-min - 1;
 $screen-device-container-max: 1545px;
 
 // .container size
-$container-md: (680px + $gutter-width);
-$container-lg: (975px + $gutter-width);
-$container-xl: (1381px + $gutter-width);
+$container-md: 680px + $gutter-width;
+$container-lg: 975px + $gutter-width;
+$container-xl: 1381px + $gutter-width;
 
 // MATERIAL DESIGN
 $md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);

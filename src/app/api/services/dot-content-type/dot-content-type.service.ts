@@ -2,7 +2,6 @@ import { toArray, defaultIfEmpty, map, pluck, flatMap, filter, take } from 'rxjs
 import { CoreWebService } from 'dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { StructureTypeView, ContentTypeView } from '@models/contentlet';
 import { DotCMSContentType } from 'dotcms-models';
 
@@ -18,7 +17,6 @@ export class DotContentTypeService {
     getContentType(idOrVar: string): Observable<DotCMSContentType> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: `v1/contenttype/id/${idOrVar}`
             })
             .pipe(
@@ -36,7 +34,6 @@ export class DotContentTypeService {
     getContentTypes(): Observable<StructureTypeView[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: 'v1/contenttype/basetypes'
             })
             .pipe(pluck('entity'));

@@ -4,6 +4,9 @@
     "scripts": {
         "doc": "typedoc src/lib --options typedoc.json"
     },
+    "dependencies": {
+        "tslib": "^2.0.0"
+    },
     "peerDependencies": {
         "node-fetch": "^2.3.0",
         "dotcms-models": "0.0.8"

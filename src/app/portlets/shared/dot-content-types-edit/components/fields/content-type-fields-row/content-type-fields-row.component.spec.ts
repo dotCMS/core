@@ -1,4 +1,4 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { ContentTypeFieldsRowComponent } from '.';
@@ -80,7 +80,7 @@ describe('ContentTypeFieldsRowComponent', () => {
         'dot.common.dialog.reject': 'No'
     });
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsRowComponent,

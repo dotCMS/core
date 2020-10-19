@@ -8,7 +8,7 @@ import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module'
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
-import { TooltipModule } from 'primeng/primeng';
+import { TooltipModule } from 'primeng/tooltip';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 
 @NgModule({

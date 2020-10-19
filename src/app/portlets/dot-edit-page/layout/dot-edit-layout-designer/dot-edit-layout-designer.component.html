@@ -32,20 +32,17 @@
             ></p-checkbox>
             <button
                 pButton
-                secondary
-                tiny
                 type="button"
                 (click)="onCancel()"
                 label="{{ 'dot.common.cancel' | dm }}"
-                class="dot-edit-layout__toolbar-action-cancel"
+                class="dot-edit-layout__toolbar-action-cancel p-button-secondary p-button-sm"
             ></button>
             <button
                 pButton
-                tiny
                 type="submit"
                 [disabled]="!isModelUpdated || !form.valid"
                 label="{{ 'editpage.layout.toolbar.action.save' | dm }}"
-                class="dot-edit-layout__toolbar-save"
+                class="dot-edit-layout__toolbar-save p-button-sm"
             ></button>
             <dot-template-addtional-actions-menu
                 *ngIf="!isLayout()"
@@ -65,10 +62,8 @@
             >
                 <button
                     pButton
-                    tiny
-                    link
                     type="button"
-                    class="dot-edit-layout__toolbar-action-themes"
+                    class="dot-edit-layout__toolbar-action-themes p-button-text p-button-sm"
                     icon="fa fa-paint-brush"
                     label="{{'editpage.layout.theme.button.label' | dm }}"
                     (click)="themeDialogVisibility = !themeDialogVisibility"
@@ -79,10 +74,8 @@
         <ng-template #noPermission>
             <button
                 pButton
-                tiny
-                link
                 type="button"
-                class="dot-edit-layout__toolbar-action-themes"
+                class="dot-edit-layout__toolbar-action-themes p-button-text p-button-sm"
                 icon="fa fa-paint-brush"
                 label="{{ currentTheme?.name || 'Themes' }}"
                 (click)="themeDialogVisibility = !themeDialogVisibility"

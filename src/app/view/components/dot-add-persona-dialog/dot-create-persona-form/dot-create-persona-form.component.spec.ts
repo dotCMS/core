@@ -6,7 +6,7 @@ import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { mockSites, SiteServiceMock } from '@tests/site-service.mock';
 import { By } from '@angular/platform-browser';
-import { FileUploadModule } from 'primeng/primeng';
+import { FileUploadModule } from 'primeng/fileupload';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';

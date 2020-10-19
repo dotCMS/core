@@ -14,7 +14,7 @@ import { Observable, Subject } from 'rxjs';
 import { take, takeUntil, filter } from 'rxjs/operators';
 
 import * as _ from 'lodash';
-import { SelectItem } from 'primeng/primeng';
+import { SelectItem } from 'primeng/api';
 
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
@@ -44,7 +44,7 @@ import { FieldUtil } from '../fields/util/field-util';
     templateUrl: 'content-types-form.component.html'
 })
 export class ContentTypesFormComponent implements OnInit, OnDestroy {
-    @ViewChild('name') name: ElementRef;
+    @ViewChild('name', { static: true }) name: ElementRef;
 
     @Input() data: DotCMSContentType;
 

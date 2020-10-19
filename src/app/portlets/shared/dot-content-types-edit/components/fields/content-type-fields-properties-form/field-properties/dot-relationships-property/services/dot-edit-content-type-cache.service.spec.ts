@@ -1,4 +1,3 @@
-import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { DotEditContentTypeCacheService } from './dot-edit-content-type-cache.service';
 import { DotCMSContentType } from 'dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
@@ -14,24 +13,19 @@ const contentTypeMock: DotCMSContentType = {
     id: '1',
     variable: 'banner',
     owner: 'user',
-    system: true,
+    system: true
 };
 
 describe('DotEditContentTypeCacheService', () => {
-
-    let dotEditContentTypeCacheService: DotEditContentTypeCacheService;
+    let service: DotEditContentTypeCacheService;
 
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([
-            DotEditContentTypeCacheService
-        ]);
-
-        dotEditContentTypeCacheService = this.injector.get(DotEditContentTypeCacheService);
+        service = new DotEditContentTypeCacheService();
     });
 
     it('it should set a content type into cache', () => {
-        dotEditContentTypeCacheService.set(contentTypeMock);
-        expect(dotEditContentTypeCacheService.get()).not.toBe(contentTypeMock);
-        expect(dotEditContentTypeCacheService.get()).toEqual(contentTypeMock);
+        service.set(contentTypeMock);
+        expect(service.get()).not.toBe(contentTypeMock);
+        expect(service.get()).toEqual(contentTypeMock);
     });
 });

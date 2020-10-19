@@ -1,5 +1,5 @@
-import { DebugElement } from '@angular/core/src/debug/debug_node';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { DebugElement } from '@angular/core';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DotAvatarComponent } from './dot-avatar.component';
 import { CommonModule } from '@angular/common';
@@ -30,16 +30,18 @@ describe('DotAvatarComponent', () => {
     let fixture: ComponentFixture<HostTestComponent>;
     let de: DebugElement;
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            declarations: [HostTestComponent, DotAvatarComponent],
-            imports: [CommonModule]
-        }).compileComponents();
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [HostTestComponent, DotAvatarComponent],
+                imports: [CommonModule]
+            }).compileComponents();
 
-        fixture = TestBed.createComponent(HostTestComponent);
-        de = fixture.debugElement;
-        component = fixture.debugElement.query(By.css('dot-avatar')).componentInstance;
-    }));
+            fixture = TestBed.createComponent(HostTestComponent);
+            de = fixture.debugElement;
+            component = fixture.debugElement.query(By.css('dot-avatar')).componentInstance;
+        })
+    );
 
     it('should not have a image nor dot when url is null', () => {
         fixture.detectChanges();
@@ -109,13 +111,6 @@ describe('DotAvatarComponent', () => {
 
     describe('size', () => {
         describe('default value', () => {
-            const defaultStyles = {
-                'font-size': '24px',
-                height: '32px',
-                'line-height': '32px',
-                width: '32px'
-            };
-
             it('should have default value size', () => {
                 fixture.detectChanges();
                 expect(component.size).toBe(32);
@@ -125,25 +120,22 @@ describe('DotAvatarComponent', () => {
                 fixture.componentInstance.url = 'test';
                 fixture.detectChanges();
 
-                expect(de.query(By.css('img')).styles).toEqual(defaultStyles);
+                expect(de.query(By.css('img')).styles.cssText).toEqual(
+                    'font-size: 24px; height: 32px; line-height: 32px; width: 32px;'
+                );
             });
 
             it('should set the right styles to avatar__placeholder', () => {
                 fixture.componentInstance.label = 'Test';
                 fixture.detectChanges();
 
-                expect(de.query(By.css('.avatar__placeholder')).styles).toEqual(defaultStyles);
+                expect(de.query(By.css('.avatar__placeholder')).styles.cssText).toEqual(
+                    'font-size: 24px; height: 32px; line-height: 32px; width: 32px;'
+                );
             });
         });
 
         describe('set size', () => {
-            const styles = {
-                'font-size': '15px',
-                height: '20px',
-                'line-height': '20px',
-                width: '20px'
-            };
-
             beforeEach(() => {
                 fixture.componentInstance.size = 20;
             });
@@ -152,14 +144,18 @@ describe('DotAvatarComponent', () => {
                 fixture.componentInstance.url = 'test';
                 fixture.detectChanges();
 
-                expect(de.query(By.css('img')).styles).toEqual(styles);
+                expect(de.query(By.css('img')).styles.cssText).toEqual(
+                    'font-size: 15px; height: 20px; line-height: 20px; width: 20px;'
+                );
             });
 
             it('should set the right styles to avatar__placeholder', () => {
                 fixture.componentInstance.label = 'Test';
                 fixture.detectChanges();
 
-                expect(de.query(By.css('.avatar__placeholder')).styles).toEqual(styles);
+                expect(de.query(By.css('.avatar__placeholder')).styles.cssText).toEqual(
+                    'font-size: 15px; height: 20px; line-height: 20px; width: 20px;'
+                );
             });
         });
     });

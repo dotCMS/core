@@ -2,8 +2,7 @@ import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { Observable } from 'rxjs';
 import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
-import { RequestMethod } from '@angular/http';
-import { pluck, take } from 'rxjs/operators';
+import { map, pluck, take } from 'rxjs/operators';
 
 @Injectable()
 export class DotCurrentUserService {
@@ -20,9 +19,8 @@ export class DotCurrentUserService {
      */
     getCurrentUser(): Observable<DotCurrentUser> {
         return this.coreWebService.request({
-            method: RequestMethod.Get,
             url: this.currentUsersUrl
-        });
+        }).pipe(map((res: any) => <DotCurrentUser>res));
     }
 
     /**
@@ -34,7 +32,6 @@ export class DotCurrentUserService {
     hasAccessToPortlet(portletid: string): Observable<boolean> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: this.porletAccessUrl.replace('{0}', portletid)
             })
             .pipe(take(1), pluck('entity', 'response'));

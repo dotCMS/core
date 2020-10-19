@@ -28,7 +28,7 @@ interface AccountUserForm extends AccountUser {
     templateUrl: 'dot-my-account.component.html'
 })
 export class DotMyAccountComponent implements OnInit, OnDestroy {
-    @ViewChild('myAccountForm') form: NgForm;
+    @ViewChild('myAccountForm', { static: true }) form: NgForm;
 
     @Output() close = new EventEmitter<any>();
 

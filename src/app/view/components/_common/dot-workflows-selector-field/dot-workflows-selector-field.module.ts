@@ -1,4 +1,4 @@
-import { MultiSelectModule } from 'primeng/primeng';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';

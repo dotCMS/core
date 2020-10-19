@@ -1,5 +1,5 @@
 import { of as observableOf } from 'rxjs';
-import { async, TestBed } from '@angular/core/testing';
+import { waitForAsync, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
@@ -18,7 +18,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
     let dotAppsConfigurationDetailResolver: DotAppsConfigurationDetailResolver;
 
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const testbed = TestBed.configureTestingModule({
             providers: [
                 DotAppsConfigurationDetailResolver,
@@ -57,7 +57,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
         activatedRouteSnapshotMock.paramMap.get = (param: string) => {
             return param === 'appKey' ? queryParams.appKey : queryParams.id;
         };
-        spyOn(dotAppsServices, 'getConfiguration').and.returnValue(observableOf(response));
+        spyOn<any>(dotAppsServices, 'getConfiguration').and.returnValue(observableOf(response));
 
         dotAppsConfigurationDetailResolver
             .resolve(activatedRouteSnapshotMock)

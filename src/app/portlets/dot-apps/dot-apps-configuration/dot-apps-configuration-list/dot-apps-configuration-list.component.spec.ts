@@ -1,4 +1,4 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DOTTestBed } from '@tests/dot-test-bed';
@@ -9,7 +9,7 @@ import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/do
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list.component';
 
 const messages = {
-    'apps.configurations.show.more': 'Show More'
+    'apps.configurations.show.more': 'SHOW MORE'
 };
 
 const sites = [
@@ -32,7 +32,7 @@ describe('DotAppsConfigurationListComponent', () => {
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(
-        async(() => {
+        waitForAsync(() => {
             DOTTestBed.configureTestingModule({
                 imports: [
                     CommonModule,
@@ -66,7 +66,7 @@ describe('DotAppsConfigurationListComponent', () => {
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-configuration-list__show-more'))
                     .nativeElement.outerText
-            ).toBe(messageServiceMock.get('apps.configurations.show.more').toUpperCase());
+            ).toBe(messageServiceMock.get('apps.configurations.show.more'));
         });
 
         it('should emit action for edit --> Site Item', () => {

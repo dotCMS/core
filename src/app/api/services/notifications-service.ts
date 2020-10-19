@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
-import { RequestMethod } from '@angular/http';
 import { Observable } from 'rxjs';
 
 @Injectable()
@@ -18,14 +17,12 @@ export class NotificationsService {
 
     getLastNotifications(): Observable<any> {
         return this.coreWebService.request({
-            method: RequestMethod.Get,
             url: this.urls.getLastNotificationsUrl
         });
     }
 
     getAllNotifications(): Observable<any> {
         return this.coreWebService.request({
-            method: RequestMethod.Get,
             url: this.urls.getNotificationsUrl
         });
     }
@@ -33,14 +30,14 @@ export class NotificationsService {
     dismissNotifications(items: Object): Observable<any> {
         return this.coreWebService.request({
             body: items,
-            method: RequestMethod.Put,
+            method: 'PUT',
             url: this.urls.dismissNotificationsUrl
         });
     }
 
     markAllAsRead(): Observable<any> {
         return this.coreWebService.request({
-            method: RequestMethod.Put,
+            method: 'PUT',
             url: this.urls.markAsReadNotificationsUrl
         });
     }

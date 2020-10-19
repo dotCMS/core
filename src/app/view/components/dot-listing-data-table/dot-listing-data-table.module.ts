@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { FormatDateService } from '@services/format-date-service';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 import { NgModule } from '@angular/core';
-import { DataTableModule, InputTextModule } from 'primeng/primeng';
+import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { ActionMenuButtonModule } from '../_common/action-menu-button/action-menu-button.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
@@ -19,7 +19,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
     imports: [
         ActionHeaderModule,
         CommonModule,
-        DataTableModule,
         TableModule,
         FormsModule,
         InputTextModule,

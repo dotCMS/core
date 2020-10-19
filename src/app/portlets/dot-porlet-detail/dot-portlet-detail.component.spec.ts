@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
@@ -29,7 +29,7 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { CoreWebServiceMock } from '../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '../../test/core-web.service.mock';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { FormatDateService } from '@services/format-date-service';
@@ -49,8 +49,8 @@ describe('DotPortletDetailComponent', () => {
     let de: DebugElement;
     let router: ActivatedRoute;
 
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             TestBed.configureTestingModule({
                 providers: [
                     DotMenuService,

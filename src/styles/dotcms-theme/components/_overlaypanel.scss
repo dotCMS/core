@@ -1,0 +1,52 @@
+@use "variables" as *;
+
+.p-overlaypanel {
+    background: $white;
+    color: $black;
+    border: 0 none;
+    border-radius: 4px;
+    box-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12);
+}
+
+.p-overlaypanel .p-overlaypanel-content {
+    padding: $spacing-2;
+}
+
+.p-overlaypanel .p-overlaypanel-close {
+    background: $brand-primary;
+    color: $white;
+    width: $spacing-5;
+    height: $spacing-5;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    border-radius: 50%;
+    position: absolute;
+    top: -$spacing-3;
+    right: -$spacing-3;
+}
+
+.p-overlaypanel .p-overlaypanel-close:enabled:hover {
+    background: $hover-bg;
+    color: $white;
+}
+
+.p-overlaypanel:after {
+    border: solid transparent;
+    border-color: rgba(255, 255, 255, 0);
+}
+
+.p-overlaypanel:before {
+    border: solid transparent;
+    border-color: rgba(255, 255, 255, 0);
+}
+
+.p-overlaypanel.p-overlaypanel-flipped:after {
+    border-top-color: $white;
+}
+
+.p-overlaypanel.p-overlaypanel-flipped:before {
+    border-top-color: $white;
+}
+
+.p-overlaypanel .p-overlaypanel-content {
+    padding: $spacing-4;
+}

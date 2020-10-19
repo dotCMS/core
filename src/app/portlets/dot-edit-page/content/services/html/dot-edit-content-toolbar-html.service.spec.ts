@@ -48,16 +48,16 @@ describe('DotEditContentToolbarHtmlService', () => {
         let addButtonEl: Element;
         let menuItems: NodeListOf<Element>;
 
-        describe('default', () => {
-            beforeEach(() => {
-                testDoc = document.implementation.createDocument(
-                    'http://www.w3.org/1999/xhtml',
-                    'html',
-                    null
-                );
-                dummyContainer = testDoc.createElement('div');
-            });
+        beforeEach(() => {
+            testDoc = document.implementation.createDocument(
+                'http://www.w3.org/1999/xhtml',
+                'html',
+                null
+            );
+            dummyContainer = testDoc.createElement('div');
+        });
 
+        describe('default', () => {
             describe('button', () => {
                 beforeEach(() => {
                     dummyContainer.innerHTML = `
@@ -93,7 +93,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     htmlElement.appendChild(dummyContainer);
                     dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
-                    const menuItemsLabels = Array.from(menuItems).map(item =>
+                    const menuItemsLabels = Array.from(menuItems).map((item) =>
                         item.textContent.replace(/\s/g, '')
                     );
 
@@ -108,7 +108,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     htmlElement.appendChild(dummyContainer);
                     dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
-                    const menuItemsLabels = Array.from(menuItems).map(item =>
+                    const menuItemsLabels = Array.from(menuItems).map((item) =>
                         item.textContent.replace(/\s/g, '')
                     );
 
@@ -123,7 +123,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     htmlElement.appendChild(dummyContainer);
                     dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
-                    const menuItemsLabels = Array.from(menuItems).map(item =>
+                    const menuItemsLabels = Array.from(menuItems).map((item) =>
                         item.textContent.replace(/\s/g, '')
                     );
 
@@ -180,8 +180,8 @@ describe('DotEditContentToolbarHtmlService', () => {
                     });
 
                     it('should create container toolbar', () => {
-                        containerEl = <HTMLElement>testDoc.querySelector(
-                            '[data-dot-object="container"]'
+                        containerEl = <HTMLElement>(
+                            testDoc.querySelector('[data-dot-object="container"]')
                         );
                         containerEl.innerHTML = `
                         <div data-dot-object="contentlet">

@@ -1,7 +1,9 @@
-@import "styles/variables";
-@import "styles/mixins";
-@import "styles/forms";
-@import "styles/typography";
+@import "variables";
+@import "forms";
+@import "mixins";
+@import "typography";
+@import "dotcms-theme/utils/theme-variables"; /* temporary */
+@import "dotcms-theme/theme"; /* prime-ng */
 
 /*
     FONT AWESOME
@@ -9,20 +11,20 @@
 */
 @import "../node_modules/font-awesome/css/font-awesome.css";
 
-// PRIME NG
-@import "../node_modules/primeicons/primeicons.css";
-@import "../node_modules/primeng/resources/primeng.css";
-@import "styles/primeng-theme/base";
 
 // MATERIAL DESIGN ICONS
 @import url("https://fonts.googleapis.com/icon?family=Material+Icons");
 
 // DIRECTIVES
-@import "app/view/directives/ripple/ripple-effect.directive.scss";
-@import "app/view/directives/md-inputtext/md-input-text.directive.scss";
+// @import "app/view/directives/ripple/ripple-effect.directive.scss";
+// @import "app/view/directives/md-inputtext/md-input-text.directive.scss";
 
 // // GOOGLE FONTS
 @import url("https://fonts.googleapis.com/css?family=Roboto:400,500,700");
+
+// PRIMEFLEX
+// @import '../node_modules/primeflex/src/_variables.scss';
+// @import '../node_modules/primeflex/src/_grid.scss';
 
 //DRAGULA
 /* in-flight clone */
@@ -65,7 +67,6 @@ body {
     font-family: $body-text;
     font-size: $body-font-size-base;
     height: 100%;
-    line-height: $line-height;
     margin: 0;
     padding: 0;
 }
@@ -79,11 +80,6 @@ body {
     background-position: top center;
     background-repeat: no-repeat;
     background-size: cover;
-}
-
-code {
-    background: $gray-bg;
-    padding: 2px;
 }
 
 p {

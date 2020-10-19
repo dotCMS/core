@@ -2,7 +2,7 @@ import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { async } from '@angular/core/testing';
+import { waitForAsync } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { DotFormResolver, DotUnlicensedPortlet } from './dot-form-resolver.service';
 import { ActivatedRouteSnapshot } from '@angular/router';
@@ -22,7 +22,7 @@ describe('DotFormResolver', () => {
     let dotLicenseService: DotLicenseService;
     let service: DotFormResolver;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
                 DotFormResolver,

@@ -1,5 +1,5 @@
-@import "primeng-theme/utils/theme-variables";
-@import "primeng-theme/utils/mixins";
+@import "dotcms-theme/utils/theme-variables";
+@import "dotcms-theme/utils/mixins";
 @import "mixins";
 
 
@@ -74,16 +74,16 @@
             &:hover ::ng-deep i {
                 color: $brand-primary;
             }
-            
+
             ::ng-deep i {
                 font-size: $md-icon-size-big;
             }
         }
 
-        &[disabled] {
+        &[disabled="true"] {
             button {
                 border-color: $field-disabled-bgcolor;
-    
+
                 ::ng-deep i {
                     color: $field-disabled-bgcolor;
                 }
@@ -91,12 +91,15 @@
         }
     }
 
-    &[square] button { 
+    &[square] button {
         border-radius: $border-radius;
     }
 
-    &[disabled] {
+    &[disabled="true"] {
+        pointer-events: none;
+
         button {
+            pointer-events: none;
             background-color: transparent;
 
             &:hover {

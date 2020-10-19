@@ -1,8 +1,6 @@
-@import "mixins";
 @import "variables";
-@import "primeng-theme/utils/theme-variables";
-
-$dialog-padding: $basic-padding * 4;
+@import "mixins";
+@import "dotcms-theme/utils/theme-variables";
 
 :host {
     display: none;
@@ -31,7 +29,7 @@ $dialog-padding: $basic-padding * 4;
     top: 5vh;
     transform: translate(-50%, 0);
 
-    &.paginator ::ng-deep .ui-datatable{
+    &.paginator ::ng-deep .p-datatable{
         padding-bottom: $basic-padding * 7;
     }
 }
@@ -41,7 +39,7 @@ $dialog-padding: $basic-padding * 4;
     flex-grow: 1;
     overflow-x: hidden;
     overflow-y: auto;
-    padding: 0 $dialog-padding 0;
+    padding: 0.25rem $dialog-padding 0;
 
     &::-webkit-scrollbar {
         width: $basic-padding;

@@ -1,4 +1,4 @@
-<div [formGroup]="group">
+<div [formGroup]="group" class="p-field">
     <dot-field-helper *ngIf="helpText && isValidHelperClass()" [message]="helpText"></dot-field-helper>
     <label class="form__label">{{ 'contenttypes.field.properties.value.label' | dm }}*</label>
     <dot-textarea-content #value [formControlName]="property.name" [show]="['code']" height="90px"></dot-textarea-content>

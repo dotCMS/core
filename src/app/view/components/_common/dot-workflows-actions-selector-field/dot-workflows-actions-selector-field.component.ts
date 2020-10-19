@@ -10,10 +10,11 @@ import {
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { SelectItemGroup, SelectItem, Dropdown } from 'primeng/primeng';
 
 import { DotCMSWorkflowAction, DotCMSWorkflow } from 'dotcms-models';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
+import { SelectItem, SelectItemGroup } from 'primeng/api';
+import { Dropdown } from 'primeng/dropdown';
 
 interface DropdownEvent {
     originalEvent: MouseEvent;

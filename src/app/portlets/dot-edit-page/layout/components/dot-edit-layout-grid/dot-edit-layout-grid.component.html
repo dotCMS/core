@@ -48,9 +48,9 @@
     [(visible)]="addClassDialogShow"
     [width]="400"
 >
-    <form *ngIf="addClassDialogShow" [formGroup]="form" novalidate>
-        <div class="form__group">
-            <span dotMdInputtext [label]="'editpage.layout.css.class.names' | dm">
+    <form *ngIf="addClassDialogShow" [formGroup]="form" novalidate class="p-fluid">
+        <div class="p-field">
+            <span class="p-float-label">
                 <input
                     class="box__add-class-text"
                     dotAutofocus
@@ -58,6 +58,7 @@
                     pInputText
                     type="text"
                 />
+                <label>{{'editpage.layout.css.class.names' | dm}}</label>
             </span>
         </div>
     </form>

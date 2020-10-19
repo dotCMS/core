@@ -1,14 +1,14 @@
-@import "mixins";
 @import "variables";
+@import "mixins";
 
 :host {
     display: flex;
     flex-grow: 1;
     flex-direction: column;
 
-    ::ng-deep .ui-tabview {
-        margin-left: -$basic-padding * 4;
-        margin-right: -$basic-padding * 4;
+    ::ng-deep .p-tabview {
+        margin-left: -$spacing-6;
+        margin-right: -$spacing-6;
     }
 
     dot-content-type-fields-row {

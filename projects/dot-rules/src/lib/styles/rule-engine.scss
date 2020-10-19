@@ -79,6 +79,7 @@ $finder-s-input: '.ui.input input';
         padding: $basic-padding * 2 $basic-padding * 3;
         flex-grow: 1;
         background-color: $foreground-tertiary;
+        overflow: scroll;
     }
 
     .cw-message {
@@ -376,6 +377,12 @@ $finder-s-input: '.ui.input input';
             padding-left: 6em;
         }
 
+    }
+
+    .cw-header-info-arrow {
+        font-size: 16px;
+        font-weight: bold;
+        padding: .5em;
     }
 
     .cw-condition-group-separator, .cw-action-separator {

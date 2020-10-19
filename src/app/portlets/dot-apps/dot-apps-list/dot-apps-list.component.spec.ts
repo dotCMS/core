@@ -1,23 +1,20 @@
-import { of } from 'rxjs';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ActivatedRoute } from '@angular/router';
-import { DotAppsListComponent } from './dot-apps-list.component';
-import { InputTextModule } from 'primeng/primeng';
-import { DotAppsListResolver } from './dot-apps-list-resolver.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotAppsCardModule } from './dot-apps-card/dot-apps-card.module';
 import { By } from '@angular/platform-browser';
-import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
-import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { of } from 'rxjs';
+
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
+import { DotAppsListComponent } from './dot-apps-list.component';
+import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { MockDotNotLicensedComponent } from '@tests/dot-not-licensed.component.mock';
 
 export class AppsServicesMock {
     get() {}
@@ -59,7 +56,7 @@ describe('DotAppsListComponent', () => {
     let component: DotAppsListComponent;
     let fixture: ComponentFixture<DotAppsListComponent>;
     let routerService: DotRouterService;
-    let dotAppsService: DotAppsService;
+    let route: ActivatedRoute;
 
     const messageServiceMock = new MockDotMessageService({
         'apps.search.placeholder': 'Search'
@@ -67,21 +64,13 @@ describe('DotAppsListComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [
-                RouterTestingModule.withRoutes([
-                    {
-                        component: DotAppsListComponent,
-                        path: ''
-                    }
-                ]),
-                DotAppsCardModule,
-                InputTextModule,
-                NotLicensedModule,
-                DotPipesModule
+            declarations: [
+                DotAppsListComponent,
+                DotAppsCardComponent,
+                MockDotNotLicensedComponent,
+                DotMessagePipe
             ],
-            declarations: [DotAppsListComponent],
             providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: ActivatedRoute,
@@ -92,20 +81,24 @@ describe('DotAppsListComponent', () => {
                     useClass: MockDotRouterService
                 },
                 { provide: DotAppsService, useClass: AppsServicesMock },
-                DotAppsListResolver,
-                DotLicenseService
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                }
             ]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotAppsListComponent);
         component = fixture.debugElement.componentInstance;
-        routerService = TestBed.get(DotRouterService);
-        dotAppsService = TestBed.get(DotAppsService);
+        routerService = TestBed.inject(DotRouterService);
+        route = TestBed.inject(ActivatedRoute);
     });
 
     describe('With access to portlet', () => {
         beforeEach(() => {
-            spyOn(dotAppsService, 'get').and.returnValue(of(appsResponse));
+            spyOnProperty(route, 'data').and.returnValue(
+                of({ dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true } })
+            );
             fixture.detectChanges();
         });
 

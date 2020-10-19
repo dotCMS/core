@@ -1,15 +1,24 @@
 @import "variables";
-@import "primeng-theme/utils/theme-variables";
-@import "primeng-theme/utils/extends";
+@import "dotcms-theme/utils/theme-variables";
+@import "dotcms-theme/utils/extends";
 
 :host {
     display: flex;
     align-items: center;
 
     &::ng-deep {
-        .ui-dropdown {
-            box-shadow: none;
+        .p-dropdown {
+            border: 0;
+            background: none;
             width: 120px !important;
+        }
+
+        .p-dropdown-sm .p-dropdown .p-dropdown-label {
+            padding-left: 0;
+        }
+
+        .p-dropdown:not(.p-disabled).p-focus {
+            box-shadow: none;
         }
     }
 
@@ -22,7 +31,7 @@
 
     @media only screen and (max-width: $screen-device-container-max) {
         ::ng-deep {
-            p-dropdown .ui-dropdown {
+            p-dropdown .p-dropdown {
                 width: 10px !important;
 
                 label {

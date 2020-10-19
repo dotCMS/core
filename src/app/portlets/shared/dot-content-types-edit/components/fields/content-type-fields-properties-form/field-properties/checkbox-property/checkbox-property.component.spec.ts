@@ -1,7 +1,6 @@
 import { CheckboxPropertyComponent } from '.';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { async } from '@angular/core/testing';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
@@ -20,7 +19,7 @@ describe('CheckboxPropertyComponent', () => {
         'contenttypes.field.properties.unique.label': 'unique'
     });
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [CheckboxPropertyComponent],
             imports: [],

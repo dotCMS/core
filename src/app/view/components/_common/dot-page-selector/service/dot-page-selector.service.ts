@@ -1,7 +1,6 @@
 import { map, pluck, flatMap, toArray, switchMap, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { Site, CoreWebService } from 'dotcms-js';
 import {
     DotPageSeletorItem,
@@ -58,7 +57,7 @@ export class DotPageSelectorService {
                 body: this.getRequestBodyQuery(
                     `${PAGE_BASE_TYPE_QUERY} +identifier:*${identifier}*`
                 ),
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: 'es/search'
             })
             .pipe(
@@ -122,7 +121,6 @@ export class DotPageSelectorService {
     private getPages(path: string): Observable<DotPageSelectorResults> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: `v1/page/search?path=${path}&onlyLiveSites=true&live=false`
             })
             .pipe(
@@ -165,7 +163,7 @@ export class DotPageSelectorService {
         return this.coreWebService
             .requestView({
                 body: param ? this.getRequestBodyQuery(query) : this.getRequestBodyQuery(query, MAX_RESULTS_SIZE),
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: 'es/search'
             })
             .pipe(

@@ -1,9 +1,9 @@
-<button pButton
-    secondary
+<dot-icon-button
+    icon="more_vert"
     (click)="menu.toggle($event)"
-    icon="fa fa-ellipsis-v"
-    [disabled]="!actionsAvailable">
-</button>
+    float
+    [attr.disabled]="!actionsAvailable"
+>
+</dot-icon-button>
 
 <p-menu [model]="actions | async" #menu popup="popup" appendTo="body"></p-menu>
-

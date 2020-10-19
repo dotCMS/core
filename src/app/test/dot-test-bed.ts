@@ -17,7 +17,7 @@ import {
     DotEventsSocket,
     DotPushPublishDialogService
 } from 'dotcms-js';
-import { ConfirmationService } from 'primeng/primeng';
+import { ConfirmationService } from 'primeng/api';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NGFACES_MODULES } from '../modules';
 import { CommonModule } from '@angular/common';
@@ -30,7 +30,7 @@ import { DotRouterService } from '../api/services/dot-router/dot-router.service'
 import { DotLicenseService } from '../api/services/dot-license/dot-license.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';

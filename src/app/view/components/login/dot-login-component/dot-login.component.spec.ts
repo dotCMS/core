@@ -8,13 +8,7 @@ import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import {
-    Checkbox,
-    CheckboxModule,
-    Dropdown,
-    DropdownModule,
-    InputTextModule
-} from 'primeng/primeng';
+
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
@@ -24,6 +18,9 @@ import { DotLoginPageStateService } from '@components/login/shared/services/dot-
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { Checkbox, CheckboxModule } from 'primeng/checkbox';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { of } from 'rxjs';
 
 describe('DotLoginComponent', () => {
     let component: DotLoginComponent;
@@ -52,7 +49,7 @@ describe('DotLoginComponent', () => {
                 CheckboxModule,
                 DropdownModule,
                 MdInputTextModule,
-                InputTextModule,
+                MdInputTextModule,
                 DotLoadingIndicatorModule,
                 DotFieldValidationMessageModule,
                 RouterTestingModule
@@ -73,18 +70,22 @@ describe('DotLoginComponent', () => {
         dotRouterService = de.injector.get(DotRouterService);
         loginPageStateService = de.injector.get(DotLoginPageStateService);
         dotMessageService = de.injector.get(DotMessageService);
+
         spyOn(dotMessageService, 'init');
+        spyOn(dotMessageService, 'setRelativeDateMessages').and.callFake(() => {});
         fixture.detectChanges();
+
         signInButton = de.query(By.css('button[pButton]'));
     });
 
     it('should load form labels correctly', () => {
         const header: DebugElement = de.query(By.css('h3'));
-        const inputLabels: DebugElement[] = de.queryAll(By.css('span[dotmdinputtext] label'));
+        const inputLabels: DebugElement[] = de.queryAll(By.css('label'));
         const recoverPasswordLink: DebugElement = de.query(By.css('a[actionlink]'));
         const rememberMe: DebugElement = de.query(By.css('p-checkbox label'));
         const submitButton: DebugElement = de.query(By.css('.login__button'));
         const productInformation: DebugElement[] = de.queryAll(By.css('.login__footer span'));
+
         expect(header.nativeElement.innerHTML).toEqual('Welcome!');
         expect(inputLabels[0].nativeElement.innerHTML).toEqual('Email Address');
         expect(inputLabels[1].nativeElement.innerHTML).toEqual('Password');
@@ -132,15 +133,21 @@ describe('DotLoginComponent', () => {
 
     it('should make a login request correctly and redirect after login', () => {
         component.loginForm.setValue(credentials);
-        spyOn(loginService, 'loginUser').and.callThrough();
-        spyOn(dotMessageService, 'setRelativeDateMessages');
+        spyOn<any>(loginService, 'loginUser').and.returnValue(
+            of({
+                ...mockUser(),
+                editModeUrl: 'redirect/to'
+            })
+        );
         fixture.detectChanges();
 
         expect(signInButton.nativeElement.disabled).toBeFalsy();
         signInButton.triggerEventHandler('click', {});
         expect(loginService.loginUser).toHaveBeenCalledWith(credentials);
         expect(dotRouterService.goToMain).toHaveBeenCalledWith('redirect/to');
-        expect(dotMessageService.setRelativeDateMessages).toHaveBeenCalledWith(mockUser.languageId);
+        expect(dotMessageService.setRelativeDateMessages).toHaveBeenCalledWith(
+            mockUser().languageId
+        );
     });
 
     it('should disable fields while waiting login response', () => {
@@ -171,7 +178,7 @@ describe('DotLoginComponent', () => {
 
         fixture.detectChanges();
 
-        const erroresMessages = de.queryAll(By.css('.ui-messages-error'));
+        const erroresMessages = de.queryAll(By.css('.p-invalid'));
         expect(erroresMessages.length).toBe(2);
     });
 

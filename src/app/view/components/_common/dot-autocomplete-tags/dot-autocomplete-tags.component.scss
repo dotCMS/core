@@ -1,5 +1,5 @@
-@import "variables";
-@import "primeng-theme/utils/extends";
+@use "variables" as *;
+@import "dotcms-theme/extends/inputtext.extends";
 
 :host {
     min-height: $basic-padding * 12;
@@ -10,8 +10,8 @@
         font-size: $font-size-small;
         text-transform: uppercase;
         position: absolute;
-        top: 12px;
-        right: 0;
+        top: 15px;
+        right: $basic-padding;
         color: $gray;
         display: flex;
         align-items: baseline;
@@ -29,82 +29,73 @@
             width: 100%;
         }
 
-        .ui-autocomplete {
+        .p-autocomplete {
             display: flex;
+
+            &.p-autocomplete-multiple {
+                .p-autocomplete-multiple-container {
+                    position: absolute;
+                    top: $basic-padding * 5;
+                    left: 0;
+                    right: $basic-padding * 4;
+                    overflow: visible;
+                    height: 0;
+                    padding: 0;
+                    width: 100%;
+                    border: 0;
+                    box-shadow: none;
+                    display: block;
+
+                    .p-autocomplete-input-token {
+                        display: flex;
+                        left: 0;
+                        position: absolute;
+                        right: 0;
+                        top: -$basic-padding * 5;
+
+                        input {
+                            width: 100%;
+                            text-overflow: ellipsis;
+                            @extend #p-inputtext-extend;
+                        }
+                    }
+                }
+
+                .p-autocomplete-token {
+                    border-radius: $border-radius;
+                    border: solid 1px $gray-light;
+                    margin: $basic-padding $basic-padding 0 0;
+                    padding: $basic-padding / 2 $basic-padding;
+                    max-width: 100%;
+                    background: none;
+                    color: $black;
+
+                    span {
+                        display: block;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+
+                    span:last-child {
+                        margin-right: $basic-padding;
+                    }
+                }
+            }
         }
 
-        .ui-autocomplete-multiple-container {
-            position: absolute;
-            top: $basic-padding * 5;
-            left: 0;
-            right: $basic-padding * 4;
-            overflow: visible;
-            height: 0;
-            padding: 0;
-            width: 100%;
-        }
-
-        .ui-autocomplete-dropdown {
+        .p-autocomplete-dropdown {
             margin-left: auto;
             width: $basic-padding * 2;
             border: 0;
 
-            .ui-button-icon-left {
+            .p-button-icon-left {
                 right: 0;
                 left: auto;
                 width: 12px;
             }
         }
 
-        .ui-autocomplete-input-token {
-            display: flex;
-            height: $field-height;
-            left: 0;
-            position: absolute;
-            right: 0;
-            top: -$basic-padding * 5;
-            padding: $basic-padding / 2 0;
-
-            input {
-                @extend #inputtext-normal-border;
-                width: 100%;
-                text-overflow: ellipsis;
-                padding: 0 $basic-padding * 10 0 0;
-
-                &:hover {
-                    @extend #inputtext-hover-border;
-                }
-
-                &:focus,
-                &:active {
-                    @extend #inputtext-active-border;
-                }
-
-                &:disabled {
-                    @extend #inputtext-disabled-border;
-                }
-            }
-        }
-
-        .ui-autocomplete-token {
-            border-radius: $border-radius;
-            border: solid 1px $gray-light;
-            margin: $basic-padding $basic-padding 0 0;
-            padding: $basic-padding / 2 $basic-padding;
-            max-width: 100%;
-
-            span {
-                display: block;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            span:last-child {
-                margin-right: $basic-padding * 2;
-            }
-        }
-
-        .ui-autocomplete-loader {
+        .p-autocomplete-loader {
             display: none;
         }
     }

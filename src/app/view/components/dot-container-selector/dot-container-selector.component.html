@@ -13,7 +13,7 @@
 </dot-searchable-dropdown>
 <ul class="container-selector__list">
     <li *ngFor="let dotContainerColumnBox of data; let i = index" class="container-selector__list-item">
-        <button pButton icon="fa fa-trash" type="button" (click)="removeContainerItem(i)"></button>
-        <span>{{ dotContainerColumnBox.container?.name }} ({{ dotContainerColumnBox.container?.parentPermissionable.hostname }})</span>
+        <dot-icon-button  icon="delete" (click)="removeContainerItem(i)"></dot-icon-button>
+        <span class="container-selector__list-item-text">{{ dotContainerColumnBox.container?.name }} ({{ dotContainerColumnBox.container?.parentPermissionable.hostname }})</span>
     </li>
 </ul>

@@ -75,7 +75,7 @@ describe('DotEditLayoutSidebarComponent', () => {
     });
 
     it('should call the write value and transform the containers data', () => {
-        const mockResponse = mockDotContainers;
+        const mockResponse = mockDotContainers();
 
         hostComponentfixture.componentInstance.form = new FormGroup({
             sidebar: new FormControl({
@@ -106,11 +106,11 @@ describe('DotEditLayoutSidebarComponent', () => {
         const transformedValue = {
             containers: [
                 {
-                    identifier: mockDotContainers[0].container.identifier,
+                    identifier: mockDotContainers()[0].container.identifier,
                     uuid: undefined
                 },
                 {
-                    identifier: mockDotContainers[1].container.path,
+                    identifier: mockDotContainers()[1].container.path,
                     uuid: undefined
                 }
             ],
@@ -119,8 +119,8 @@ describe('DotEditLayoutSidebarComponent', () => {
         };
         spyOn(component, 'updateAndPropagate').and.callThrough();
         spyOn(component, 'propagateChange');
-        containerSelector.triggerEventHandler('change', mockDotContainers);
-        component.updateAndPropagate(mockDotContainers);
+        containerSelector.triggerEventHandler('change', mockDotContainers());
+        component.updateAndPropagate(mockDotContainers());
         expect(component.updateAndPropagate).toHaveBeenCalled();
         expect(component.propagateChange).toHaveBeenCalledWith(transformedValue);
     });

@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Injectable, Component, Input } from '@angular/core';
 import { DotToolbarComponent } from './dot-toolbar.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -83,7 +83,7 @@ describe('DotToolbarComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     const siteMock = mockSites[0];
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotToolbarComponent,
@@ -128,7 +128,7 @@ describe('DotToolbarComponent', () => {
         fixture.detectChanges();
         siteSelector.triggerEventHandler('change', { value: siteMock });
         expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
-        expect(comp.siteChange).toHaveBeenCalledWith({ value: siteMock });
+        expect<any>(comp.siteChange).toHaveBeenCalledWith({ value: siteMock });
     });
 
     it(`should go to site-browser when site change on edit page url`, () => {
@@ -141,7 +141,7 @@ describe('DotToolbarComponent', () => {
         siteSelector.triggerEventHandler('change', { value: siteMock });
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-        expect(comp.siteChange).toHaveBeenCalledWith({ value: siteMock });
+        expect<any>(comp.siteChange).toHaveBeenCalledWith({ value: siteMock });
     });
 
     it('should toggle menu and update icon on click', () => {

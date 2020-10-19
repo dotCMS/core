@@ -24,7 +24,7 @@ import {
     StringUtils,
     BrowserUtil
 } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('ContainerSelectorComponent', () => {
@@ -99,7 +99,7 @@ describe('ContainerSelectorComponent', () => {
         ];
     });
 
-    it('should show the hots name and container name', () => {
+    it('should show the hots name and container name', async () => {
         comp.data = [
             {
                 container: containers[0],
@@ -108,9 +108,10 @@ describe('ContainerSelectorComponent', () => {
         ];
 
         fixture.detectChanges();
+        await fixture.whenStable();
 
-        const dataItem = de.query(By.css('.container-selector__list-item span'));
-        expect(dataItem.nativeElement.textContent).toEqual('Container 1 (demo.dotcms.com)');
+        const dataItem = de.query(By.css('.container-selector__list-item-text'));
+        expect(dataItem.nativeNode.textContent).toEqual('Container 1 (demo.dotcms.com)');
     });
 
     it('should change Page', fakeAsync(() => {

@@ -1,5 +1,5 @@
 import { of as observableOf, Observable } from 'rxjs';
-import { async, ComponentFixture } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement, Component, Injectable } from '@angular/core';
 
@@ -7,7 +7,7 @@ import { DotPageSelectorComponent } from './dot-page-selector.component';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotPageSelectorService } from './service/dot-page-selector.service';
 import { FormGroup, FormBuilder } from '@angular/forms';
-import { AutoComplete } from 'primeng/primeng';
+import { AutoComplete } from 'primeng/autocomplete';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import {
@@ -143,13 +143,13 @@ describe('DotPageSelectorComponent', () => {
     const searchHostObj = { originalEvent: { target: { value: '//' } }, query: '//' };
     const specialSearchObj = { originalEvent: { target: { value: 'd#emo$%' } }, query: 'd#emo$%' };
 
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             DOTTestBed.configureTestingModule(config(FakeFormComponent));
         })
     );
 
-    beforeEach(() => {
+    beforeEach(async () => {
         hostFixture = DOTTestBed.createComponent(FakeFormComponent);
         hostDe = hostFixture.debugElement;
         de = hostDe.query(By.css('dot-page-selector'));
@@ -160,6 +160,7 @@ describe('DotPageSelectorComponent', () => {
         spyOn(component, 'writeValue').and.callThrough();
 
         hostFixture.detectChanges();
+        await hostFixture.whenStable();
         autocomplete = de.query(By.css('p-autoComplete'));
         autocompleteComp = autocomplete.componentInstance;
     });
@@ -197,7 +198,7 @@ describe('DotPageSelectorComponent', () => {
 
     it('should set current host on selection', () => {
         component.results = mockDotSiteSelectorResults;
-        spyOn(dotPageSelectorService, 'setCurrentHost').and.returnValue(observableOf(null));
+        spyOn<any>(dotPageSelectorService, 'setCurrentHost').and.returnValue(observableOf(null));
         autocomplete.triggerEventHandler('onSelect', mockDotSiteSelectorResults.data[0]);
         expect(dotPageSelectorService.setCurrentHost).toHaveBeenCalledWith(
             mockDotSiteSelectorResults.data[0].payload

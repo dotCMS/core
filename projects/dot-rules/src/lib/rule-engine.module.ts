@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { HttpModule } from '@angular/http';
+import { HttpClientModule } from '@angular/common/http'
 
 
 import { ActionService } from './services/Action';
@@ -13,12 +13,12 @@ import { ConditionComponent } from './rule-condition-component';
 import { ConditionGroupComponent } from './rule-condition-group-component';
 import { ConditionGroupService } from './services/ConditionGroup';
 import { ConditionService } from './services/Condition';
-import { Dropdown } from './semantic/modules/dropdown/dropdown';
+import { Dropdown } from './components/dropdown/dropdown';
 import { GoogleMapService } from './services/GoogleMapService';
 import { I18nService } from './services/system/locale/I18n';
-import { InputDate } from './semantic/elements/input-date/input-date';
+import { InputDate } from './components/input-date/input-date';
 import { ModalDialogComponent } from './modal-dialog/dialog-component';
-import { RestDropdown } from './semantic/modules/restdropdown/RestDropdown';
+import { RestDropdown } from './components/restdropdown/RestDropdown';
 import { RuleActionComponent } from './rule-action-component';
 import { RuleComponent } from './rule-component';
 import { RuleEngineComponent } from './rule-engine';
@@ -38,16 +38,25 @@ import {
     UserModel,
     BrowserUtil
 } from 'dotcms-js';
-import {
-  DropdownModule, MultiSelectModule, InputTextModule, InputSwitchModule,
-  AutoCompleteModule, ButtonModule, DialogModule, MessagesModule, MessageModule, CalendarModule
-} from 'primeng/primeng';
+
 
 import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/dot-autocomplete-tags.module';
 import { AppRulesComponent } from './app.component';
 import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.module';
 import { RuleViewService } from './services/dot-view-rule-service';
 import { DotUnlicenseModule } from './components/dot-unlicense/dot-unlicense.module';
+
+import { AutoCompleteModule } from 'primeng/autocomplete';
+import { ButtonModule } from 'primeng/button';
+import { CalendarModule } from 'primeng/calendar';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputSwitchModule } from 'primeng/inputswitch';
+import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
+import { MessagesModule } from 'primeng/messages';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { MenuModule } from 'primeng/menu';
 
 
 @NgModule({
@@ -66,9 +75,10 @@ import { DotUnlicenseModule } from './components/dot-unlicense/dot-unlicense.mod
         MessageModule,
         CalendarModule,
         DotAutocompleteTagsModule,
-        HttpModule,
+        HttpClientModule,
         DotAutofocusModule,
-        DotUnlicenseModule
+        DotUnlicenseModule,
+        MenuModule
     ],
     declarations: [
         AddToBundleDialogComponent,

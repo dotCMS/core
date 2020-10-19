@@ -35,7 +35,7 @@ import { DotPushPublishDialogService } from 'dotcms-js';
     templateUrl: 'dot-content-types.component.html'
 })
 export class DotContentTypesPortletComponent implements OnInit {
-    @ViewChild('listing') listing: DotListingDataTableComponent;
+    @ViewChild('listing', { static: true }) listing: DotListingDataTableComponent;
     filterBy: string;
     public contentTypeColumns: DataTableColumn[];
     public item: any;

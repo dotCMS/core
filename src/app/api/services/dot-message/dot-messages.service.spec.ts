@@ -1,12 +1,12 @@
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { CoreWebService } from 'dotcms-js';
 import { of } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { FormatDateService } from '@services/format-date-service';
 import { DotLocalstorageService } from '@services/dot-localstorage/dot-localstorage.service';
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+
 
 describe('DotMessageService', () => {
     let dotMessageService: DotMessageService;
@@ -66,7 +66,7 @@ describe('DotMessageService', () => {
         formatDateService = injector.get(FormatDateService);
         dotLocalstorageService = injector.get(DotLocalstorageService);
 
-        spyOn(coreWebService, 'requestView').and.returnValue(
+        spyOn<any>(coreWebService, 'requestView').and.returnValue(
             of({
                 entity: messages
             })
@@ -80,7 +80,6 @@ describe('DotMessageService', () => {
             dotMessageService.init(true);
             expect(dotLocalstorageService.getItem).not.toHaveBeenCalled();
             expect(coreWebService.requestView).toHaveBeenCalledWith({
-                method: RequestMethod.Get,
                 url: '/api/v2/languages/default/keys'
             });
             expect(dotLocalstorageService.setItem).toHaveBeenCalledWith(
@@ -95,7 +94,6 @@ describe('DotMessageService', () => {
             dotMessageService.init(false);
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(coreWebService.requestView).toHaveBeenCalledWith({
-                method: RequestMethod.Get,
                 url: '/api/v2/languages/default/keys'
             });
             expect(dotLocalstorageService.setItem).toHaveBeenCalledWith(
@@ -107,7 +105,6 @@ describe('DotMessageService', () => {
         it('should call languages endpoint with passed language', () => {
             dotMessageService.init(true, 'en_US');
             expect(coreWebService.requestView).toHaveBeenCalledWith({
-                method: RequestMethod.Get,
                 url: '/api/v2/languages/en_US/keys'
             });
         });

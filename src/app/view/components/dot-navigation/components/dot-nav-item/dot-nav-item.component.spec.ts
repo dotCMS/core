@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement } from '@angular/core';
 
@@ -10,7 +10,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { dotMenuMock } from '../../services/dot-navigation.service.spec';
 import { DotMenu } from '@models/navigation';
-import { TooltipModule } from 'primeng/primeng';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -33,18 +33,20 @@ describe('DotNavItemComponent', () => {
     let navItem: DebugElement;
     let subNav: DebugElement;
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
-            imports: [
-                DotNavIconModule,
-                DotIconModule,
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                TooltipModule
-            ]
-        }).compileComponents();
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
+                imports: [
+                    DotNavIconModule,
+                    DotIconModule,
+                    RouterTestingModule,
+                    BrowserAnimationsModule,
+                    TooltipModule
+                ]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixtureHost = TestBed.createComponent(TestHostComponent);
@@ -87,7 +89,7 @@ describe('DotNavItemComponent', () => {
     });
 
     describe('dot-sub-nav', () => {
-        it('should set position correctly if there is not enough space at the bottom', () => {
+        it('should set position correctly if there is not enough space at the bottom', async () => {
             deHost.componentInstance.collapsed = true;
 
             subNav.nativeElement.style.position = 'absolute';
@@ -98,13 +100,13 @@ describe('DotNavItemComponent', () => {
             navItem.triggerEventHandler('mouseenter', {});
             fixtureHost.detectChanges();
 
-            fixtureHost.whenStable().then(() => {
-                expect(subNav.styles).not.toEqual({});
-                spyOnProperty(window, 'innerHeight').and.returnValue(1760);
-                navItem.triggerEventHandler('mouseenter', {});
-                fixtureHost.detectChanges();
-                expect(subNav.styles).toBeDefined();
-            });
+            await fixtureHost.whenStable();
+
+            expect(subNav.styles).not.toEqual({});
+            spyOnProperty(window, 'innerHeight').and.returnValue(1760);
+            navItem.triggerEventHandler('mouseenter', {});
+            fixtureHost.detectChanges();
+            expect(subNav.styles).toBeDefined();
         });
 
         it('should set position correctly if there is enough space at the bottom', () => {
@@ -120,19 +122,16 @@ describe('DotNavItemComponent', () => {
             navItem.triggerEventHandler('mouseenter', {});
             fixtureHost.detectChanges();
 
-            expect(subNav.styles).toEqual({
-                bottom: '0',
-                top: 'auto'
-            });
+            expect(subNav.styles.cssText).toEqual(
+                'height: 0px; overflow: hidden; position: absolute; top: auto; bottom: 0px;'
+            );
         });
 
         it('should reset menu position when mouseleave', () => {
             component.collapsed = true;
             de.triggerEventHandler('mouseleave', {});
             fixtureHost.detectChanges();
-            expect(subNav.styles).toEqual({
-                overflow: 'hidden'
-            });
+            expect(subNav.styles.cssText).toEqual('height: 0px; overflow: hidden;');
         });
 
         it('should set data correctly', () => {

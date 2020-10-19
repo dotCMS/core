@@ -21,16 +21,16 @@ const dotEditPage: Routes = [
             },
             {
                 loadChildren:
-                    '@portlets/dot-edit-page/content/dot-edit-content.module#DotEditContentModule',
+                    () => import('@portlets/dot-edit-page/content/dot-edit-content.module').then(m => m.DotEditContentModule),
                 path: 'content'
             },
             {
                 loadChildren:
-                    '@portlets/dot-edit-page/layout/dot-edit-layout.module#DotEditLayoutModule',
+                    () => import('@portlets/dot-edit-page/layout/dot-edit-layout.module').then(m => m.DotEditLayoutModule),
                 path: 'layout'
             },
             {
-                loadChildren: '@portlets/dot-rules/dot-rules.module#DotRulesModule',
+                loadChildren: () => import('@portlets/dot-rules/dot-rules.module').then(m => m.DotRulesModule),
                 path: 'rules/:pageId'
             }
         ]

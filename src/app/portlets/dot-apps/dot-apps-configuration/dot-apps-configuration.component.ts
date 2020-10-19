@@ -7,7 +7,7 @@ import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-import { LazyLoadEvent } from 'primeng/primeng';
+import { LazyLoadEvent } from 'primeng/api';
 import { PaginatorService } from '@services/paginator';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
@@ -17,7 +17,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
     styleUrls: ['./dot-apps-configuration.component.scss']
 })
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
-    @ViewChild('searchInput') searchInput: ElementRef;
+    @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
     apps: DotApps;
 
     hideLoadDataButton: boolean;

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { NotLicensedService } from '@services/not-licensed-service';
-import { DotcmsConfigService } from 'dotcms-js';
-import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+import { DotcmsConfigService, DotUiColors } from 'dotcms-js';
+import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { take, pluck } from 'rxjs/operators';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 

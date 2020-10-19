@@ -2,7 +2,6 @@ import { pluck, switchMap, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { DotCMSWorkflow } from 'dotcms-models';
 
 /**
@@ -23,7 +22,6 @@ export class DotWorkflowService {
     get(): Observable<DotCMSWorkflow[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: 'v1/workflow/schemes'
             })
             .pipe(pluck('entity'));

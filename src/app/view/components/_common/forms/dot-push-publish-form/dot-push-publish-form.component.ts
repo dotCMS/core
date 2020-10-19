@@ -5,7 +5,8 @@ import {
     Input,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    OnDestroy
 } from '@angular/core';
 import {
     DotPushPublishFilter,
@@ -17,7 +18,6 @@ import { Observable, of, Subject } from 'rxjs';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 import { SelectItem } from 'primeng/api';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
@@ -42,7 +42,7 @@ export class DotPushPublishFormComponent
     @Output() value = new EventEmitter<DotPushPublishData>();
     @Output() valid = new EventEmitter<boolean>();
 
-    @ViewChild('customCode') customCodeContainer: ElementRef;
+    @ViewChild('customCode', { static: true }) customCodeContainer: ElementRef;
 
     private defaultFilterKey: string;
     private _filterOptions: SelectItem[] = null;

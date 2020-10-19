@@ -1,7 +1,7 @@
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from 'dotcms-js';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotContentletLockerService } from './dot-contentlet-locker.service';
 
 describe('DotContentletLockerService', () => {
@@ -28,7 +28,7 @@ describe('DotContentletLockerService', () => {
             expect(lockInfo).toEqual({ message: 'locked' });
         });
 
-        const req = httpMock.expectOne(`content/lock/inode/${inode}`);
+        const req = httpMock.expectOne(`/api/content/lock/inode/${inode}`);
         expect(req.request.method).toBe('PUT');
         req.flush({
             message: 'locked'
@@ -41,7 +41,7 @@ describe('DotContentletLockerService', () => {
             expect(lockInfo).toEqual({ message: 'locked' });
         });
 
-        const req = httpMock.expectOne(`content/unlock/inode/${inode}`);
+        const req = httpMock.expectOne(`/api/content/unlock/inode/${inode}`);
         expect(req.request.method).toBe('PUT');
         req.flush({
             message: 'locked'

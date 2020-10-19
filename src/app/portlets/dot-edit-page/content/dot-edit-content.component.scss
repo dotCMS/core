@@ -1,5 +1,5 @@
-@import "mixins";
 @import "variables";
+@import "mixins";
 
 :host {
     background-color: $gray-bg;
@@ -57,7 +57,7 @@ dot-whats-changed,
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
         padding: 0 10px;
-        
+
         &:before {
             content: "";
             display: block;
@@ -99,9 +99,9 @@ dot-whats-changed,
 }
 
 /*
-    When the primeng dialog components resize it adds .ui-unselectable-text to the <body>, we beed to disable
+    When the primeng dialog components resize it adds .p-unselectable-text to the <body>, we beed to disable
     pointer events in the iframe during the resize of the dialog otherwise resize breaks.
 */
-::ng-deep .ui-unselectable-text .dot-edit__contentlet-iframe {
+::ng-deep .p-unselectable-text .dot-edit__contentlet-iframe {
     pointer-events: none;
 }

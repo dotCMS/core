@@ -12,9 +12,6 @@
                  [disabled]="disabled"
                  inputStyleClass="ui-inputtext "
                  appendTo="body">
-        <ng-template let-tag pTemplate="selectedItem">
-            <span>{{tag.label}}</span>
-        </ng-template>
 </p-autoComplete>
 <span class="autocomplete-helper" *ngIf="inputReference?.value?.trim()">
     {{ 'dot.common.press' | dm }}<dot-icon name="subdirectory_arrow_left" size="12"></dot-icon>

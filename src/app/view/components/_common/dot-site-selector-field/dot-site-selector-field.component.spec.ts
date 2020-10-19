@@ -4,7 +4,7 @@ import { DebugElement, Component, Input } from '@angular/core';
 import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.component';
 import { SiteService } from 'dotcms-js';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormGroup, FormBuilder } from '@angular/forms';
 
 @Component({
@@ -52,7 +52,7 @@ describe('SiteSelectorFieldComponent', () => {
     let de: DebugElement;
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         siteServiceMock.setFakeCurrentSite();
 
         DOTTestBed.configureTestingModule({

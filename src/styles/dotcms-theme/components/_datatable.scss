@@ -1,0 +1,268 @@
+@use "variables" as *;
+
+.p-datatable .p-paginator-top {
+    border-width: 0 0 1px 0;
+    border-radius: 0;
+}
+
+.p-datatable .p-paginator-bottom {
+    border-width: 0 0 1px 0;
+    border-radius: 0;
+}
+
+.p-datatable .p-datatable-header {
+    background: $white;
+    color: $black;
+    border: 1px solid #e4e4e4;
+    border-width: 0 0 1px 0;
+    padding: $spacing-2 $spacing-2;
+    font-weight: 500;
+}
+
+.p-datatable .p-datatable-footer {
+    background: $white;
+    color: $black;
+    border: 1px solid #e4e4e4;
+    border-width: 0 0 1px 0;
+    padding: $spacing-2 $spacing-2;
+    font-weight: 500;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+    text-align: left;
+    padding: $spacing-2 $spacing-2;
+    border: 1px solid #e4e4e4;
+    border-width: 0 0 1px 0;
+    font-weight: 500;
+    color: $black;
+    background: $white;
+    transition: none;
+}
+
+.p-datatable .p-datatable-tfoot > tr > td {
+    text-align: left;
+    padding: $spacing-2 $spacing-2;
+    border: 1px solid #e4e4e4;
+    border-width: 0 0 1px 0;
+    font-weight: 500;
+    color: $black;
+    background: $white;
+}
+
+.p-datatable .p-sortable-column {
+    outline-color: transparent;
+}
+
+.p-datatable .p-sortable-column .p-sortable-column-icon {
+    color: $black;
+    margin-left: $spacing-1;
+}
+
+.p-datatable .p-sortable-column .p-sortable-column-badge {
+    border-radius: 50%;
+    height: 1.143rem;
+    min-width: 1.143rem;
+    line-height: 1.143rem;
+    color: $brand-primary;
+    background: $highlight-bg;
+    margin-left: $spacing-1;
+}
+
+.p-datatable .p-sortable-column:not(.p-highlight):hover {
+    background: $hover-bg;
+    color: $hover-text-color;
+}
+
+.p-datatable .p-sortable-column:not(.p-highlight):hover .p-sortable-column-icon {
+    color: $gray;
+}
+
+.p-datatable .p-sortable-column.p-highlight {
+    background: $white;
+    color: $black;
+}
+
+.p-datatable .p-sortable-column.p-highlight .p-sortable-column-icon {
+    color: $black;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+    background: $white;
+    color: $black;
+    transition: none;
+    outline-color: transparent;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+    text-align: left;
+    border: 1px solid #e4e4e4;
+    border-width: 0 0 1px 0;
+    padding: $spacing-2 $spacing-2;
+}
+
+.p-datatable .p-datatable-tbody > tr > td .p-row-toggler,
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-init,
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-save,
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-cancel {
+    width: $spacing-5;
+    height: $spacing-5;
+    color: $black;
+    border: 0 none;
+    background: transparent;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.p-datatable .p-datatable-tbody > tr > td .p-row-toggler:enabled:hover,
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-init:enabled:hover,
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-save:enabled:hover,
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-cancel:enabled:hover {
+    color: $hover-text-color;
+    border-color: transparent;
+    background: $hover-bg;
+}
+
+.p-datatable .p-datatable-tbody > tr > td .p-row-toggler:focus,
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-init:focus,
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-save:focus,
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-cancel:focus {
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: none;
+}
+
+.p-datatable .p-datatable-tbody > tr > td .p-row-editor-save {
+    margin-right: $spacing-1;
+}
+
+.p-datatable .p-datatable-tbody > tr.p-highlight {
+    background: $highlight-bg;
+    color: $highlight-text-color;
+}
+
+.p-datatable .p-datatable-tbody > tr.p-datatable-dragpoint-top > td {
+    box-shadow: inset 0 2px 0 0 rgba($brand-secondary_rgb, 0.12);
+}
+
+.p-datatable .p-datatable-tbody > tr.p-datatable-dragpoint-bottom > td {
+    box-shadow: inset 0 -2px 0 0 rgba($brand-secondary_rgb, 0.12);
+}
+
+.p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
+    background: $hover-bg;
+    color: $hover-text-color;
+}
+
+.p-datatable .p-column-resizer-helper {
+    background: $brand-primary;
+}
+
+.p-datatable .p-datatable-scrollable-header,
+.p-datatable .p-datatable-scrollable-footer {
+    background: $white;
+}
+
+.p-datatable .p-datatable-loading-icon {
+    font-size: $font-size-xxx-large;
+}
+
+.p-datatable.p-datatable-gridlines .p-datatable-header {
+    border-width: 1px 1px 0 1px;
+}
+
+.p-datatable.p-datatable-gridlines .p-datatable-footer {
+    border-width: 0 1px 1px 1px;
+}
+
+.p-datatable.p-datatable-gridlines .p-paginator-top {
+    border-width: 0 1px 0 1px;
+}
+
+.p-datatable.p-datatable-gridlines .p-paginator-bottom {
+    border-width: 0 1px 1px 1px;
+}
+
+.p-datatable.p-datatable-gridlines .p-datatable-thead > tr > th {
+    border-width: 1px 1px 1px 1px;
+}
+
+.p-datatable.p-datatable-gridlines .p-datatable-tbody > tr > td {
+    border-width: 1px;
+}
+
+.p-datatable.p-datatable-gridlines .p-datatable-tfoot > tr > td {
+    border-width: 1px;
+}
+
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even).p-highlight {
+    background: rgba($brand-secondary_rgb, 0.12);
+    color: $highlight-text-color;
+}
+
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even).p-highlight .p-row-toggler {
+    color: $highlight-text-color;
+}
+
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even).p-highlight .p-row-toggler:hover {
+    color: $hover-text-color;
+}
+
+.p-datatable.p-datatable-sm .p-datatable-header {
+    padding: 0.375rem 0.375rem;
+}
+
+.p-datatable.p-datatable-sm .p-datatable-thead > tr > th {
+    padding: 0.375rem 0.375rem;
+}
+
+.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
+    padding: 0.375rem 0.375rem;
+}
+
+.p-datatable.p-datatable-sm .p-datatable-tfoot > tr > td {
+    padding: 0.375rem 0.375rem;
+}
+
+.p-datatable.p-datatable-sm .p-datatable-footer {
+    padding: 0.375rem 0.375rem;
+}
+
+.p-datatable.p-datatable-lg .p-datatable-header {
+    padding: 0.9375rem 0.9375rem;
+}
+
+.p-datatable.p-datatable-lg .p-datatable-thead > tr > th {
+    padding: 0.9375rem 0.9375rem;
+}
+
+.p-datatable.p-datatable-lg .p-datatable-tbody > tr > td {
+    padding: 0.9375rem 0.9375rem;
+}
+
+.p-datatable.p-datatable-lg .p-datatable-tfoot > tr > td {
+    padding: 0.9375rem 0.9375rem;
+}
+
+.p-datatable.p-datatable-lg .p-datatable-footer {
+    padding: 0.9375rem 0.9375rem;
+}
+
+.p-datatable .p-sortable-column {
+    outline: 0 none;
+}
+
+.p-datatable .p-sortable-column:focus {
+    background-color: $focus-bg;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+    outline: 0 none;
+}
+
+.p-datatable .p-datatable-tbody > tr:not(.p-highlight):focus {
+    background-color: $focus-bg;
+}

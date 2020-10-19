@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
@@ -21,7 +21,7 @@ describe('DotCreateContentletComponent', () => {
     let dotContentletEditorService: DotContentletEditorService;
     let component: DotCreateContentletComponent;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotCreateContentletComponent, DotContentletWrapperComponent],
             providers: [

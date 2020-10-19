@@ -2,7 +2,6 @@ import { pluck } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 
 /**
  * Provides util listing methods
@@ -25,7 +24,7 @@ export class DotCrudService {
         return this.coreWebService
             .requestView({
                 body: data,
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: `${baseUrl}`
             })
             .pipe(pluck('entity'));
@@ -43,7 +42,7 @@ export class DotCrudService {
         return this.coreWebService
             .requestView({
                 body: data,
-                method: RequestMethod.Put,
+                method: 'PUT',
                 url: `${baseUrl}`
             })
             .pipe(pluck('entity'));
@@ -60,7 +59,6 @@ export class DotCrudService {
     getDataById(baseUrl: string, id: string): Observable<any> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: `${baseUrl}/id/${id}`
             })
             .pipe(pluck('entity'));
@@ -77,7 +75,7 @@ export class DotCrudService {
     delete(baseUrl: string, id: string): Observable<any> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Delete,
+                method: 'DELETE',
                 url: `${baseUrl}/${id}`
             })
             .pipe(pluck('entity'));

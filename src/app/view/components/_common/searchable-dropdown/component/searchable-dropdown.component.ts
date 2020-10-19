@@ -18,8 +18,9 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { fromEvent } from 'rxjs';
-import { OverlayPanel, PrimeTemplate } from 'primeng/primeng';
 import * as _ from 'lodash';
+import { OverlayPanel } from 'primeng/overlaypanel';
+import { PrimeTemplate } from 'primeng/api';
 
 /**
  * Dropdown with pagination and global search
@@ -97,10 +98,10 @@ export class SearchableDropdownComponent
     @Output()
     show: EventEmitter<any> = new EventEmitter();
 
-    @ViewChild('searchInput')
+    @ViewChild('searchInput', { static: true })
     searchInput: ElementRef;
 
-    @ViewChild('searchPanel')
+    @ViewChild('searchPanel', { static: true })
     searchPanelRef: OverlayPanel;
 
     @ViewChild('button')
@@ -137,6 +138,7 @@ export class SearchableDropdownComponent
     }
 
     ngAfterContentInit() {
+        this.totalRecords = this.totalRecords || this.data.length;
         this.templates.forEach((item: PrimeTemplate) => {
             if (item.getType() === 'listItem') {
                 this.externalItemListTemplate = item.template;

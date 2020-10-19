@@ -1,10 +1,10 @@
-import { TestBed, async } from '@angular/core/testing';
+import { TestBed, waitForAsync, async } from '@angular/core/testing';
 
 import { AppRulesComponent } from './app.component';
 
 describe('AppRulesComponent', () => {
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [AppRulesComponent]
             }).compileComponents();

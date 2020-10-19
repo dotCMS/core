@@ -7,7 +7,7 @@ import {
     Component
 } from '@angular/core';
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
-import { ComponentFixture, async, TestBed } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { FormBuilder, FormGroup, ValidationErrors, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FieldPropertyService } from '../service';
@@ -123,7 +123,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
           });
     };
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync( () => {
         TestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsPropertiesFormComponent,

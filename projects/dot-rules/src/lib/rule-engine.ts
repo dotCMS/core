@@ -142,7 +142,7 @@ export class RuleEngineComponent implements OnDestroy {
         private ruleViewService: RuleViewService,
         private dotPushPublishDialogService: DotPushPublishDialogService) {
         this.resources = resources;
-        resources.get(I8N_BASE).subscribe(rsrc => {});
+        resources.get(I8N_BASE).subscribe(_rsrc => {});
         this.filterText = '';
         this.rules = [];
         this._rsrcCache = {};

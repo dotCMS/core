@@ -2,10 +2,10 @@ import { of as observableOf, Observable, Subject } from 'rxjs';
 
 import { map, mergeMap } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Headers, RequestMethod } from '@angular/http';
 
 import { ApiRoot } from 'dotcms-js';
 import { CoreWebService } from 'dotcms-js';
+import { HttpResponse } from '@angular/common/http';
 
 export interface IUser {
     givenName?: string;
@@ -33,7 +33,6 @@ export class BundleService {
     private _addToBundleUrl: string;
     private _pushEnvironementsUrl: string;
     private _pushRuleUrl: string;
-    private _bundlesAry: IBundle[] = [];
     private _environmentsAry: IPublishEnvironment[] = [];
 
     static fromServerBundleTransformFn(data): IBundle[] {
@@ -47,24 +46,24 @@ export class BundleService {
     }
 
     constructor(public _apiRoot: ApiRoot, private coreWebService: CoreWebService) {
-        this._bundleStoreUrl = `${this._apiRoot.baseUrl}api/bundle/getunsendbundles/userid`;
-        this._loggedUserUrl = `${this._apiRoot.baseUrl}api/v1/users/current/`;
-        this._addToBundleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;
-        this._pushEnvironementsUrl = `${this._apiRoot.baseUrl}api/environment/loadenvironments/roleId`;
-        this._pushRuleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
+        this._bundleStoreUrl = `/api/bundle/getunsendbundles/userid`;
+        this._loggedUserUrl = `/api/v1/users/current/`;
+        this._addToBundleUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;
+        this._pushEnvironementsUrl = `/api/environment/loadenvironments/roleId`;
+        this._pushRuleUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
     }
 
     getLoggedUser(): Observable<IUser> {
-        return this.coreWebService.request({
-            method: RequestMethod.Get,
-            url: this._loggedUserUrl
-        });
+        return this.coreWebService
+            .request({
+                url: this._loggedUserUrl
+            })
+            .pipe(map((res: HttpResponse<any>) => <IUser>res));
     }
 
     loadBundleStores(): void {
         const obs = this._doLoadBundleStores().pipe(
             map((bundles: IBundle[]) => {
-                this._bundlesAry = bundles;
                 return bundles;
             })
         );
@@ -76,7 +75,6 @@ export class BundleService {
             mergeMap((user: IUser) => {
                 return this.coreWebService
                     .request({
-                        method: RequestMethod.Get,
                         url: `${this._bundleStoreUrl}/${user.userId}`
                     })
                     .pipe(map(BundleService.fromServerBundleTransformFn));
@@ -104,7 +102,6 @@ export class BundleService {
             mergeMap((user: IUser) => {
                 return this.coreWebService
                     .request({
-                        method: RequestMethod.Get,
                         url: `${this._pushEnvironementsUrl}/${user.roleId}/?name=0`
                     })
                     .pipe(map(BundleService.fromServerEnvironmentTransformFn));
@@ -116,28 +113,28 @@ export class BundleService {
         ruleId: string,
         bundle: IBundle
     ): Observable<{ errorMessages: string[]; total: number; errors: number }> {
-        const headers = new Headers();
-        headers.set('Content-Type', 'application/x-www-form-urlencoded');
         return this.coreWebService.request({
             body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
-            headers,
-            method: RequestMethod.Post,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            method: 'POST',
             url: this._addToBundleUrl
-        });
+        }).pipe(map((res: HttpResponse<any>) => <{ errorMessages: string[]; total: number; errors: number }><unknown>res));
     }
 
     pushPublishRule(
         ruleId: string,
         environmentId: string
     ): Observable<{ errorMessages: string[]; total: number; bundleId: string; errors: number }> {
-        const headers = new Headers();
-        headers.set('Content-Type', 'application/x-www-form-urlencoded');
         return this.coreWebService.request({
             body: this.getPublishRuleData(ruleId, environmentId),
-            headers,
-            method: RequestMethod.Post,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            method: 'POST',
             url: this._pushRuleUrl
-        });
+        }).pipe(map((res: HttpResponse<any>) => <{ errorMessages: string[]; total: number; bundleId: string; errors: number }><unknown>res));
     }
 
     private getFormattedDate(date: Date): string {

@@ -1,4 +1,4 @@
-<div class="form__group relationship__type" *ngIf="!editing">
+<div class="p-field relationship__type" *ngIf="!editing">
     <p-radioButton
         [label]="'contenttypes.field.properties.relationship.new.label' | dm"
         [value]="STATUS_NEW"
@@ -28,7 +28,7 @@
     </dot-new-relationships>
 
     <ng-template #existing>
-        <div class="form__group">
+        <div class="p-field">
             <label for="" class="form__label">Relationship</label>
             <dot-edit-relationships class="relationships__existing" (change)="handleChange($event)">
             </dot-edit-relationships>

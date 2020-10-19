@@ -1,19 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
-import { DebugElement } from '@angular/core';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { mockDotPersona } from '@tests/dot-persona.mock';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { ButtonModule } from 'primeng/button';
+import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { mockDotPersona } from '@tests/dot-persona.mock';
 
 describe('DotPersonaSelectorOptionComponent', () => {
     let component: DotPersonaSelectorOptionComponent;
     let fixture: ComponentFixture<DotPersonaSelectorOptionComponent>;
     let de: DebugElement;
+
     const messageServiceMock = new MockDotMessageService({
         'modes.persona.personalized': 'Personalized'
     });
@@ -41,6 +43,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
             fixture.detectChanges();
         });
 
+
         it('should have dot-avatar with right properties', () => {
             const avatar: DebugElement = de.query(By.css('dot-avatar'));
             expect(avatar.componentInstance.label).toBe(mockDotPersona.name);
@@ -51,9 +54,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
         it('should have personalized button with right properties', () => {
             const btnElement: DebugElement = de.query(By.css('button'));
-            expect(btnElement.nativeElement.innerText.indexOf('Personalized'.toUpperCase())).toBe(
-                0
-            );
+            expect(btnElement.nativeElement.innerText).toBe('PERSONALIZED');
             expect(btnElement.attributes.icon).toBe('fa fa-times');
             expect(btnElement.attributes.iconPos).toBe('right');
         });

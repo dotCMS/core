@@ -1,7 +1,4 @@
-<div [formGroup]="group">
+<div [formGroup]="group" class="p-field">
     <label class="form__label">{{ 'contenttypes.field.properties.hint.label' | dm }}</label>
-    <input
-        pInputText
-        type="text"
-        [formControlName]="property.name">
+    <input pInputText type="text" [formControlName]="property.name" />
 </div>

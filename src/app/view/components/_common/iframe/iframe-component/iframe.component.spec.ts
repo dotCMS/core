@@ -1,12 +1,12 @@
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { DotLoadingIndicatorService } from './../dot-loading-indicator/dot-loading-indicator.service';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeComponent } from './iframe.component';
-import { DotcmsEventsService, LoggerService, StringUtils } from 'dotcms-js';
+import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from 'dotcms-js';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
@@ -15,6 +15,7 @@ import { TestBed } from '@angular/core/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { LoginServiceMock } from '@tests/login-service.mock';
 
 const fakeHtmlEl = {
     hello: 'html'
@@ -38,22 +39,25 @@ describe('IframeComponent', () => {
 
     dotcmsEventsService = new DotcmsEventsServiceMock();
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
-            imports: [RouterTestingModule, DotOverlayMaskModule, DotPipesModule],
-            providers: [
-                DotLoadingIndicatorService,
-                IframeOverlayService,
-                DotIframeService,
-                { provide: DotcmsEventsService, useValue: dotcmsEventsService },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                LoggerService,
-                StringUtils
-            ]
-        });
-    });
+   beforeEach(
+          waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
+                imports: [RouterTestingModule, DotOverlayMaskModule, DotPipesModule],
+                providers: [
+                    DotLoadingIndicatorService,
+                    IframeOverlayService,
+                    DotIframeService,
+                    { provide: LoginService, useClass: LoginServiceMock },
+                    { provide: DotcmsEventsService, useValue: dotcmsEventsService },
+                    { provide: DotRouterService, useClass: MockDotRouterService },
+                    { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                    LoggerService,
+                    StringUtils
+                ]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(IframeComponent);
@@ -117,7 +121,7 @@ describe('IframeComponent', () => {
     });
 
     it('should bind src to the iframe', () => {
-        expect(iframeEl.properties.src).toContain('');
+        expect(iframeEl.properties.srcdoc).toBe('');
     });
 
     it('should reload iframe', () => {
@@ -172,7 +176,7 @@ describe('IframeComponent', () => {
 
         dotIframeService.reloadColors();
 
-        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
+        expect<any>(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
     });
 
     describe('bind iframe events', () => {
@@ -226,7 +230,7 @@ describe('IframeComponent', () => {
                 }
             });
 
-            expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
+            expect<any>(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
         });
     });
 

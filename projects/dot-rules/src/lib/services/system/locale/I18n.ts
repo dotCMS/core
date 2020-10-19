@@ -2,13 +2,13 @@ import { defer as observableDefer, Observer } from 'rxjs';
 
 import { catchError, map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { RequestMethod } from '@angular/http';
 import { Observable } from 'rxjs';
 
 import { ApiRoot } from 'dotcms-js';
 import { Verify } from '../../validation/Verify';
 import { LoggerService } from 'dotcms-js';
 import { CoreWebService, HttpCode } from 'dotcms-js';
+import { HttpResponse } from '@angular/common/http';
 
 export class TreeNode {
     [key: string]: TreeNode | any;
@@ -103,17 +103,14 @@ export class I18nService {
         private loggerService: LoggerService
     ) {
         this._apiRoot = apiRoot;
-        this._baseUrl = apiRoot.baseUrl + 'api/v1/system/i18n';
+        this._baseUrl = '/api/v1/system/i18n';
         this.root = new TreeNode(null, 'root');
     }
 
-    makeRequest(url): Observable<Response> {
-        const opts = this._apiRoot.getDefaultRequestOptions();
+    makeRequest(url): Observable<HttpResponse<any>> {
         return this.coreWebService
             .request({
-                method: RequestMethod.Get,
                 url: this._baseUrl + '/' + url,
-                ...opts
             })
             .pipe(
                 map((res) => {

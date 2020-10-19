@@ -1,3 +1,5 @@
+import { Injectable } from "@angular/core";
+@Injectable()
 export class StringFormat {
     public formatMessage(s: string, ...args: string[]): string {
         if (s) {

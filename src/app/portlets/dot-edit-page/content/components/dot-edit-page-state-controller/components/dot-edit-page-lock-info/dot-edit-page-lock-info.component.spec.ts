@@ -1,4 +1,4 @@
-import { async, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
@@ -21,18 +21,20 @@ describe('DotEditPageLockInfoComponent', () => {
     let fixture: ComponentFixture<DotEditPageLockInfoComponent>;
     let de: DebugElement;
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [DotPipesModule],
-            declarations: [DotEditPageLockInfoComponent],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ],
-        }).compileComponents();
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [DotPipesModule],
+                declarations: [DotEditPageLockInfoComponent],
+                providers: [
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    }
+                ]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditPageLockInfoComponent);
@@ -42,19 +44,14 @@ describe('DotEditPageLockInfoComponent', () => {
 
     describe('default', () => {
         beforeEach(() => {
-            component.pageState = new DotPageRenderState(
-                mockUser,
-                JSON.parse(
-                    JSON.stringify({
-                        ...mockDotRenderedPage,
-                        page: {
-                            ...mockDotRenderedPage.page,
-                            canEdit: true,
-                            lockedBy: '123'
-                        }
-                    })
-                )
-            );
+            component.pageState = new DotPageRenderState(mockUser(), {
+                ...mockDotRenderedPage(),
+                page: {
+                    ...mockDotRenderedPage().page,
+                    canEdit: true,
+                    lockedBy: '123'
+                }
+            });
             fixture.detectChanges();
         });
 
@@ -71,19 +68,14 @@ describe('DotEditPageLockInfoComponent', () => {
             let lockedMessage: DebugElement;
 
             beforeEach(() => {
-                component.pageState = new DotPageRenderState(
-                    mockUser,
-                    JSON.parse(
-                        JSON.stringify({
-                            ...mockDotRenderedPage,
-                            page: {
-                                ...mockDotRenderedPage.page,
-                                canEdit: true,
-                                lockedBy: 'another-user'
-                            }
-                        })
-                    )
-                );
+                component.pageState = new DotPageRenderState(mockUser(), {
+                    ...mockDotRenderedPage(),
+                    page: {
+                        ...mockDotRenderedPage().page,
+                        canEdit: true,
+                        lockedBy: 'another-user'
+                    }
+                });
                 fixture.detectChanges();
                 lockedMessage = de.query(By.css('.page-info__locked-by-message'));
             });
@@ -94,38 +86,30 @@ describe('DotEditPageLockInfoComponent', () => {
                 );
             });
 
-            it(
-                'should blink',
-                fakeAsync(() => {
-                    spyOn(lockedMessage.nativeElement.classList, 'add');
-                    spyOn(lockedMessage.nativeElement.classList, 'remove');
-                    component.blinkLockMessage();
+            it('should blink', fakeAsync(() => {
+                spyOn(lockedMessage.nativeElement.classList, 'add');
+                spyOn(lockedMessage.nativeElement.classList, 'remove');
+                component.blinkLockMessage();
 
-                    expect(lockedMessage.nativeElement.classList.add).toHaveBeenCalledWith(
-                        'page-info__locked-by-message--blink'
-                    );
-                    tick(500);
-                    expect(lockedMessage.nativeElement.classList.remove).toHaveBeenCalledWith(
-                        'page-info__locked-by-message--blink'
-                    );
-                })
-            );
+                expect(lockedMessage.nativeElement.classList.add).toHaveBeenCalledWith(
+                    'page-info__locked-by-message--blink'
+                );
+                tick(500);
+                expect(lockedMessage.nativeElement.classList.remove).toHaveBeenCalledWith(
+                    'page-info__locked-by-message--blink'
+                );
+            }));
         });
 
         describe('permissions', () => {
             beforeEach(() => {
-                component.pageState = new DotPageRenderState(
-                    mockUser,
-                    JSON.parse(
-                        JSON.stringify({
-                            ...mockDotRenderedPage,
-                            page: {
-                                ...mockDotRenderedPage.page,
-                                canEdit: false
-                            }
-                        })
-                    )
-                );
+                component.pageState = new DotPageRenderState(mockUser(), {
+                    ...mockDotRenderedPage(),
+                    page: {
+                        ...mockDotRenderedPage().page,
+                        canEdit: false
+                    }
+                });
                 fixture.detectChanges();
             });
 

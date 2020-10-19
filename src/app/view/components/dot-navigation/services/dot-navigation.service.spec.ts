@@ -1,4 +1,4 @@
-import { async } from '@angular/core/testing';
+import { waitForAsync } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Router, NavigationEnd } from '@angular/router';
 
@@ -119,7 +119,7 @@ export const dotMenuMock1 = () => {
     };
 };
 
-const baseMockUser = {
+const basemockUser = {
     emailAddress: 'admin@dotcms.com',
     firstName: 'Admin',
     lastName: 'Admin',
@@ -128,7 +128,7 @@ const baseMockUser = {
 };
 const baseMockAuth: Auth = {
     loginAsUser: null,
-    user: baseMockUser
+    user: basemockUser
 };
 
 describe('DotNavigationService', () => {
@@ -140,8 +140,8 @@ describe('DotNavigationService', () => {
     let loginService: LoginServiceMock;
     let router;
 
-    beforeEach(
-        async(() => {
+   beforeEach(
+          waitForAsync(() => {
             const testbed = DOTTestBed.configureTestingModule({
                 providers: [
                     DotNavigationService,

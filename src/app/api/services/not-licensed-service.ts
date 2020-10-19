@@ -8,7 +8,7 @@ export class NotLicensedService {
 
     public init(): void {
         this.coreWebService
-            .subscribeTo(HttpCode.FORBIDDEN)
+            .subscribeToHttpError(HttpCode.FORBIDDEN)
             .subscribe(() => this.router.goToNotLicensed());
     }
 }

@@ -1,4 +1,4 @@
-import { ButtonModule } from 'primeng/primeng';
+import { ButtonModule } from 'primeng/button';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -6,6 +6,7 @@ import { DotContainerSelectorComponent } from './dot-container-selector.componen
 import { NgModule } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 @NgModule({
     declarations: [DotContainerSelectorComponent],
@@ -15,7 +16,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         FormsModule,
         ButtonModule,
         SearchableDropDownModule,
-        DotPipesModule
+        DotPipesModule,
+        DotIconButtonModule
     ],
     providers: [PaginatorService]
 })

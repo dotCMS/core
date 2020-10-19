@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
-import {
-    CheckboxModule,
-    InputTextareaModule,
-    InputTextModule,
-    TooltipModule,
-    DropdownModule
-} from 'primeng/primeng';
+
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
-import { NgxMdModule } from 'ngx-md';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
+import { MarkdownModule, MarkdownService } from 'ngx-markdown';
+import { DebugElement } from '@angular/core';
 
 const secrets = [
     {
@@ -75,9 +75,6 @@ const formState = {
 };
 
 describe('DotAppsConfigurationDetailFormComponent', () => {
-    let component: DotAppsConfigurationDetailFormComponent;
-    let fixture: ComponentFixture<DotAppsConfigurationDetailFormComponent>;
-
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [
@@ -88,53 +85,62 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                 DotIconModule,
                 InputTextareaModule,
                 InputTextModule,
-                NgxMdModule,
+                MarkdownModule,
                 ReactiveFormsModule,
                 TooltipModule
             ],
             declarations: [DotAppsConfigurationDetailFormComponent],
-            providers: []
+            providers: [
+                {
+                    provide: MarkdownService,
+                    useValue: {
+                        compile(text) {
+                            return text;
+                        },
+
+                        highlight() {}
+                    }
+                }
+            ]
         });
     });
 
-    beforeEach(() => {
-        fixture = TestBed.createComponent(DotAppsConfigurationDetailFormComponent);
-        component = fixture.debugElement.componentInstance;
-        component.formFields = secrets;
-    });
-
     describe('Without warnings', () => {
+        let component: DotAppsConfigurationDetailFormComponent;
+        let fixture: ComponentFixture<DotAppsConfigurationDetailFormComponent>;
+        let de: DebugElement;
+
         beforeEach(() => {
+            fixture = TestBed.createComponent(DotAppsConfigurationDetailFormComponent);
+            de = fixture.debugElement;
+            component = de.componentInstance;
+            component.formFields = secrets;
             spyOn(component.data, 'emit');
             spyOn(component.valid, 'emit');
             fixture.detectChanges();
         });
 
         it('should load form components', () => {
-            expect(
-                fixture.debugElement.queryAll(By.css('.dot-apps-configuration-detail__form-row'))
-                    .length
-            ).toBe(secrets.length);
+            expect(de.queryAll(By.css('.dot-apps-configuration-detail__form-row')).length).toBe(
+                secrets.length
+            );
         });
 
         it('should not have warning icon', () => {
-            expect(fixture.debugElement.query(By.css('dot-icon'))).toBeFalsy();
+            expect(de.query(By.css('dot-icon'))).toBeFalsy();
         });
 
-        it('should focus on first input when loaded', () => {
+        it('should focus on first input when loaded', async () => {
             const focusField = component.formContainer.nativeElement.querySelector('#name');
             spyOn(focusField, 'focus');
             fixture.detectChanges();
-            fixture.whenStable().then(() => {
-                expect(focusField.focus).toHaveBeenCalledTimes(1);
-            });
+            await fixture.whenStable();
+            expect(focusField.focus).toHaveBeenCalledTimes(1);
         });
 
         it('should load Label, Textarea & Hint with right attributes', () => {
-            const row = fixture.debugElement.queryAll(
-                By.css('.dot-apps-configuration-detail__form-row')
-            )[0];
-            expect(row.query(By.css('ngx-md'))).toBeTruthy();
+            const row = de.queryAll(By.css('.dot-apps-configuration-detail__form-row'))[0];
+            expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[0].label);
             expect(
                 row.query(By.css('label')).nativeElement.classList.contains('form__label')
@@ -155,10 +161,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load Checkbox & Hint with right attributes', () => {
-            const row = fixture.debugElement.queryAll(
-                By.css('.dot-apps-configuration-detail__form-row')
-            )[2];
-            expect(row.query(By.css('ngx-md'))).toBeTruthy();
+            const row = de.queryAll(By.css('.dot-apps-configuration-detail__form-row'))[2];
+            expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('p-checkbox')).nativeElement.attributes.id.value).toBe(
                 secrets[2].name
             );
@@ -170,10 +174,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load Label, Select & Hint with right attributes', () => {
-            const row = fixture.debugElement.queryAll(
-                By.css('.dot-apps-configuration-detail__form-row')
-            )[3];
-            expect(row.query(By.css('ngx-md'))).toBeTruthy();
+            const row = de.queryAll(By.css('.dot-apps-configuration-detail__form-row'))[3];
+            expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[3].label);
             expect(
                 row.query(By.css('label')).nativeElement.classList.contains('form__label')
@@ -213,15 +215,28 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     });
 
     describe('With warnings', () => {
+        let component: DotAppsConfigurationDetailFormComponent;
+        let fixture: ComponentFixture<DotAppsConfigurationDetailFormComponent>;
+        let de: DebugElement;
+
         beforeEach(() => {
-            component.formFields[0].warnings = ['error A'];
-            component.formFields[1].warnings = ['error B'];
-            component.formFields[2].warnings = ['error C'];
+            fixture = TestBed.createComponent(DotAppsConfigurationDetailFormComponent);
+            de = fixture.debugElement;
+            component = de.componentInstance;
+            component.formFields = secrets.map((item, i) => {
+                if (i < 3) {
+                    return {
+                        ...item,
+                        warnings: [`error ${i}`]
+                    };
+                }
+                return item;
+            });
             fixture.detectChanges();
         });
 
         it('should have warning icons', () => {
-            const warningIcons = fixture.debugElement.queryAll(By.css('dot-icon'));
+            const warningIcons = de.queryAll(By.css('dot-icon'));
             expect(warningIcons[0].attributes['name']).toBe('warning');
             expect(warningIcons[0].attributes['size']).toBe('18');
             expect(warningIcons[0].attributes['ng-reflect-text']).toBe(

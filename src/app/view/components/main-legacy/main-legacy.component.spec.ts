@@ -27,7 +27,7 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
 import { FormatDateService } from '@services/format-date-service';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { ConfirmationService } from 'primeng/api';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -178,7 +178,7 @@ describe('MainLegacyComponent', () => {
             spyOn(dotCustomEventHandlerService, 'handle');
             createContentlet.triggerEventHandler('custom', { data: 'test' });
 
-            expect(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({ data: 'test' });
+            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({ data: 'test' });
         });
     });
 });

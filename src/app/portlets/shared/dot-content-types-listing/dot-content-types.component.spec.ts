@@ -16,7 +16,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { Injectable } from '@angular/core';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { SelectItem } from 'primeng/primeng';
+import { SelectItem } from 'primeng/api';
 import { ResponseView, HttpCode, DotPushPublishDialogService } from 'dotcms-js';
 import {
     DotHttpErrorHandled,
@@ -370,7 +370,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         fixture.detectChanges();
 
-        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(forbiddenError);
+        expect<any>(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(forbiddenError);
     });
 
     it('should show remove option', () => {

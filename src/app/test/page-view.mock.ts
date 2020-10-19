@@ -8,10 +8,10 @@ import {
 } from './dot-page-render.mock';
 
 export const fakePageView: DotPageView = {
-    containers: mockDotContainers,
-    page: mockDotPage,
-    layout: mockDotLayout,
-    template: mockDotTemplate,
+    containers: mockDotContainers(),
+    page: mockDotPage(),
+    layout: mockDotLayout(),
+    template: mockDotTemplate(),
     canEditTemplate: true
 };
 

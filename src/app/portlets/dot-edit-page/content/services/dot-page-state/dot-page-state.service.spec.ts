@@ -15,9 +15,9 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { ConfirmationService } from 'primeng/primeng';
+import { ConfirmationService } from 'primeng/api';
 import { FormatDateService } from '@services/format-date-service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotDevice } from '@shared/models/dot-device/dot-device.model';
@@ -26,7 +26,7 @@ import { PageModelChangeEventType } from '../dot-edit-content-html/models';
 import { mockDotPersona } from '@tests/dot-persona.mock';
 
 const getDotPageRenderStateMock = () => {
-    return new DotPageRenderState(mockUser, mockDotRenderedPage);
+    return new DotPageRenderState(mockUser(), mockDotRenderedPage());
 };
 
 describe('DotPageStateService', () => {
@@ -69,7 +69,7 @@ describe('DotPageStateService', () => {
         loginService = injector.get(LoginService);
 
         dotPageRenderServiceGetSpy = spyOn(dotPageRenderService, 'get').and.returnValue(
-            of(mockDotRenderedPage)
+            of(mockDotRenderedPage())
         );
 
         dotHttpErrorManagerServiceHandle = spyOn(
@@ -383,8 +383,8 @@ describe('DotPageStateService', () => {
             });
 
             it('should trigger haceContent as false', () => {
-                const renderedPage = new DotPageRenderState(mockUser, {
-                    ...mockDotRenderedPage,
+                const renderedPage = new DotPageRenderState(mockUser(), {
+                    ...mockDotRenderedPage(),
                     ...{
                         numberContents: 0
                     }
@@ -408,11 +408,11 @@ describe('DotPageStateService', () => {
 
         describe('selected persona is not default', () => {
             it('should trigger haveContent as false', () => {
-                const renderedPage = new DotPageRenderState(mockUser, {
-                    ...mockDotRenderedPage,
+                const renderedPage = new DotPageRenderState(mockUser(), {
+                    ...mockDotRenderedPage(),
                     ...{
                         viewAs: {
-                            ...mockDotRenderedPage.viewAs,
+                            ...mockDotRenderedPage().viewAs,
                             persona: mockDotPersona
                         }
                     }
@@ -433,11 +433,11 @@ describe('DotPageStateService', () => {
             });
 
             it('should trigger haceContent as true', () => {
-                const renderedPage = new DotPageRenderState(mockUser, {
-                    ...mockDotRenderedPage,
+                const renderedPage = new DotPageRenderState(mockUser(), {
+                    ...mockDotRenderedPage(),
                     ...{
                         viewAs: {
-                            ...mockDotRenderedPage.viewAs,
+                            ...mockDotRenderedPage().viewAs,
                             persona: mockDotPersona
                         }
                     },

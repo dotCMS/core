@@ -1,5 +1,5 @@
 import { ValuesPropertyComponent } from './index';
-import { ComponentFixture, async, TestBed } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -9,6 +9,7 @@ import { DotTextareaContentModule } from '@components/_common/dot-textarea-conte
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { MonacoEditorModule } from 'ngx-monaco-editor';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -28,10 +29,16 @@ describe('ValuesPropertyComponent', () => {
     });
 
     beforeEach(
-        async(() => {
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [TestFieldValidationMessageComponent, ValuesPropertyComponent],
-                imports: [DotTextareaContentModule, DotFieldHelperModule, ReactiveFormsModule, DotPipesModule],
+                imports: [
+                    DotTextareaContentModule,
+                    DotFieldHelperModule,
+                    ReactiveFormsModule,
+                    DotPipesModule,
+                    MonacoEditorModule.forRoot()
+                ],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             }).compileComponents();
 

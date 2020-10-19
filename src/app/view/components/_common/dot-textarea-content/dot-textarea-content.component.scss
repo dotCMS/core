@@ -1,11 +1,11 @@
 @import "variables";
 @import "mixins";
 
-:host ::ng-deep .ui-selectbutton {
+:host ::ng-deep .p-selectbutton {
     box-shadow: none;
     border-bottom: 0;
 
-    .ui-button {
+    .p-button {
         &:first-child {
             border-bottom-left-radius: 0;
         }

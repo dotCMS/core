@@ -1,11 +1,6 @@
 import { Injectable } from '@angular/core';
 import { TinyColor } from '@ctrl/tinycolor';
-
-export interface DotUiColors {
-    primary: string;
-    secondary: string;
-    background: string;
-}
+import { DotUiColors } from 'dotcms-js';
 
 @Injectable()
 export class DotUiColorsService {

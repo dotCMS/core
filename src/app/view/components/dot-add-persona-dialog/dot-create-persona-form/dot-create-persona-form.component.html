@@ -1,6 +1,8 @@
-<form [formGroup]="form" >
-    <div class="form__group">
-        <label for="content-type-form-host" class="form__label">{{'modes.persona.host' | dm}}</label>
+<form [formGroup]="form" class="p-fluid">
+    <div class="p-field">
+        <label for="content-type-form-host" class="form__label">{{
+            'modes.persona.host' | dm
+        }}</label>
         <dot-site-selector-field
             id="content-type-form-host"
             formControlName="hostFolder"
@@ -8,41 +10,63 @@
         ></dot-site-selector-field>
     </div>
 
-    <div class="form__group">
-        <label for="persona-name" class="form__label">{{'modes.persona.name' | dm}}</label>
-        <input id="persona-name" dotAutofocus type="text" (keyup)="setKeyTag()" formControlName="name" name="name" pInputText />
+    <div class="p-field">
+        <label for="persona-name" class="form__label">{{ 'modes.persona.name' | dm }}</label>
+        <input
+            id="persona-name"
+            dotAutofocus
+            type="text"
+            (keyup)="setKeyTag()"
+            formControlName="name"
+            name="name"
+            pInputText
+        />
         <dot-field-validation-message
             [message]="'modes.persona.name.error.required' | dm"
-            [field]="form.get('name')">
+            [field]="form.get('name')"
+        >
         </dot-field-validation-message>
     </div>
 
-    <div class="form__group">
-        <label for="persona-keyTag" class="form__label">{{'modes.persona.key.tag' | dm}}</label>
+    <div class="p-field">
+        <label for="persona-keyTag" class="form__label">{{ 'modes.persona.key.tag' | dm }}</label>
         <input id="persona-keyTag" type="text" formControlName="keyTag" name="keyTag" pInputText />
     </div>
 
-    <div class="form__group">
-        <label for="persona-image" class="form__label">{{'modes.persona.upload.file' | dm}}</label>
-        <p-fileUpload  *ngIf="!tempUploadedFile"
-                       id="persona-image"
-                       [chooseLabel]="'dot.common.choose' | dm"
-                       url="/api/v1/temp"
-                       accept="image/*,.webp"
-                       (onUpload)="onFileUpload($event)"
-                       (onBeforeUpload)="isValid.emit(false)"
-                       auto="true"
-                       mode="basic">
+    <div class="p-field">
+        <label for="persona-image" class="form__label">{{
+            'modes.persona.upload.file' | dm
+        }}</label>
+        <p-fileUpload
+            *ngIf="!tempUploadedFile"
+            id="persona-image"
+            [chooseLabel]="'dot.common.choose' | dm"
+            url="/api/v1/temp"
+            accept="image/*,.webp"
+            (onUpload)="onFileUpload($event)"
+            (onBeforeUpload)="isValid.emit(false)"
+            auto="true"
+            mode="basic"
+        >
         </p-fileUpload>
-        <div class="form__file-detail" *ngIf="tempUploadedFile" >
-            <img [src]="tempUploadedFile.thumbnailUrl">
-            <span>{{tempUploadedFile.fileName}}</span>
-            <button tiny pButton secondary [label]="'dot.common.remove' | dm" (click)="removeImage()"></button>
+        <div class="form__file-detail" *ngIf="tempUploadedFile">
+            <img [src]="tempUploadedFile.thumbnailUrl" />
+            <span>{{ tempUploadedFile.fileName }}</span>
+            <button
+                pButton
+                class="p-button-secondary p-button-sm"
+                [label]="'dot.common.remove' | dm"
+                (click)="removeImage()"
+            ></button>
         </div>
     </div>
-    <div class="form__group">
-        <label for="persona-other-tags" class="form__label">{{'modes.persona.other.tags' | dm}}</label>
-        <dot-autocomplete-tags id="persona-other-tags" formControlName="tags"
+    <div class="p-field">
+        <label for="persona-other-tags" class="form__label">{{
+            'modes.persona.other.tags' | dm
+        }}</label>
+        <dot-autocomplete-tags
+            id="persona-other-tags"
+            formControlName="tags"
             [placeholder]="'modes.persona.select.tags.placeholder' | dm"
         ></dot-autocomplete-tags>
     </div>

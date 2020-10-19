@@ -32,7 +32,7 @@ import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-tes
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { CoreWebServiceMock } from '../../../../../projects/dotcms-js/src/lib/core/core-web.service.mock';
+import { CoreWebServiceMock } from '../../../test/core-web.service.mock';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import {DotWizardService} from '@services/dot-wizard/dot-wizard.service';
@@ -188,6 +188,6 @@ describe('DotWorkflowTaskComponent', () => {
                 }
             }
         });
-        expect(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
+        expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
     });
 });

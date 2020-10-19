@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { pluck } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { RequestMethod } from '@angular/http';
 import { DotCMSWorkflowAction, DotCMSWorkflow } from 'dotcms-models';
 
 @Injectable()
@@ -19,7 +18,7 @@ export class DotWorkflowsActionsService {
     getByWorkflows(workflows: DotCMSWorkflow[] = []): Observable<DotCMSWorkflowAction[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Post,
+                method: 'POST',
                 url: '/api/v1/workflow/schemes/actions/NEW',
                 body: {
                     schemes: workflows.map(this.getWorkFlowId)
@@ -38,7 +37,6 @@ export class DotWorkflowsActionsService {
     getByInode(inode: string): Observable<DotCMSWorkflowAction[]> {
         return this.coreWebService
             .requestView({
-                method: RequestMethod.Get,
                 url: `v1/workflow/contentlet/${inode}/actions`
             })
             .pipe(pluck('entity'));
