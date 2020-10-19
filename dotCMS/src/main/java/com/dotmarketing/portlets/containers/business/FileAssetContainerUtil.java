@@ -67,7 +67,7 @@ public class FileAssetContainerUtil {
     static final String PRE_LOOP                 = "preloop.vtl";
     static final String POST_LOOP                = "postloop.vtl";
     static final String CONTAINER_META_INFO      = "container.vtl";
-    static final String DEFAULT_CONTAINER_LAYOUT = "default_container_layout.vtl";
+    static final String DEFAULT_CONTAINER_LAYOUT = "default_container.vtl";
 
 
     private static class SingletonHolder {

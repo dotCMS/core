@@ -16,6 +16,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolver;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentletCheckinListener;
@@ -36,6 +37,7 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
 
         APILocator.getLocalSystemEventsAPI().subscribe(new ContentTypeAndFieldsModsListeners());
+        APILocator.getLocalSystemEventsAPI().subscribe(ContainerStructureFinderStrategyResolver.getInstance());
 
         this.initApplicationContainerFolderListener();
 

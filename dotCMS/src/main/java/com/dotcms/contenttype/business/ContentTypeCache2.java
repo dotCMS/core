@@ -31,4 +31,9 @@ public interface ContentTypeCache2 extends Cachable {
 	void add(ContentType type);
 
     ContentType byVarOrInode(String varOrInode);
+
+	/**
+	 * Cleans the containers/structures
+	 */
+	void clearContainerStructures();
 }

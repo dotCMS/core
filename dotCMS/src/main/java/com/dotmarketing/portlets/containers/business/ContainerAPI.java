@@ -32,9 +32,11 @@ import java.util.function.Supplier;
  */
 public interface ContainerAPI {
 
+	String CODE					= FileAssetContainerUtil.CODE;
 	String PRE_LOOP             = FileAssetContainerUtil.PRE_LOOP;
 	String POST_LOOP            = FileAssetContainerUtil.POST_LOOP;
 	String CONTAINER_META_INFO  = FileAssetContainerUtil.CONTAINER_META_INFO;
+	String DEFAULT_CONTAINER_LAYOUT = FileAssetContainerUtil.DEFAULT_CONTAINER_LAYOUT;
 
 	/**
 	 * Copies container to the specified host

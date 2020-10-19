@@ -135,6 +135,12 @@ public class FileAssetContainerUtilTest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * Method to test: {@link FileAssetContainerUtil#fromAssets(Host, Folder, List, boolean, boolean)}
+     * Given Scenario: Creates a container with a default layout
+     * ExpectedResult: Expected result that the result should contains the default container layout
+     * @throws Exception
+     */
     @Test
     public void test_fromAssets_default_layout() throws Exception {
 
@@ -150,7 +156,7 @@ public class FileAssetContainerUtilTest extends ContentletBaseTest {
                         "$dotJSON.put(\"title\", \"Test VTL and Valid and Invalid Content Types\")\n" +
                         "$dotJSON.put(\"max_contentlets\", 25)\n" +
                         "$dotJSON.put(\"useDefaultLayout\",\"*\")", containerFolder, fileAssetContentType),
-                this.createFileAsset("default_container_layout", ".vtl", "$title", containerFolder, fileAssetContentType));
+                this.createFileAsset("default_container", ".vtl", "$title", containerFolder, fileAssetContentType));
         final boolean showLive            = false;
         final boolean includeHostOnPath   = false;
 
@@ -161,7 +167,7 @@ public class FileAssetContainerUtilTest extends ContentletBaseTest {
         Assert.assertTrue(container instanceof FileAssetContainer);
         Assert.assertEquals(1   , FileAssetContainer.class.cast(container).getContainerStructuresAssets().size());
         Assert.assertNotNull(FileAssetContainer.class.cast(container).getDefaultContainerLayoutAsset());
-        Assert.assertEquals("default_container_layout.vtl",FileAssetContainer.class.cast(container).getDefaultContainerLayoutAsset().getFileName());
+        Assert.assertEquals("default_container.vtl",FileAssetContainer.class.cast(container).getDefaultContainerLayoutAsset().getFileName());
     }
 
     private FileAsset createFileAsset (final String fileName1,

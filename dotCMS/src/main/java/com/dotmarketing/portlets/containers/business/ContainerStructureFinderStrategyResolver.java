@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.containers.business;
 
+import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
+import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.system.event.local.model.Subscriber;
+import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -97,6 +101,18 @@ public class ContainerStructureFinderStrategyResolver {
         }
     }
 
+    @Subscriber()
+    public void onSaveContentType (final ContentTypeSavedEvent contentTypeSavedEvent) {
+
+        CacheLocator.getContentTypeCache().clearContainerStructures();
+    }
+
+    @Subscriber()
+    public void onSaveContentType (final ContentTypeDeletedEvent contentTypeDeletedEvent) {
+
+        CacheLocator.getContentTypeCache().clearContainerStructures();
+    }
+
     /**
      * Get a strategy if applies
      * @param container
@@ -170,6 +186,7 @@ public class ContainerStructureFinderStrategyResolver {
     @VisibleForTesting
     class PathContainerStructureFinderStrategyImpl implements ContainerStructureFinderStrategy {
 
+        private static final String USE_DEFAULT_LAYOUT = "useDefaultLayout";
         private final String FILE_EXTENSION = ".vtl";
 
         @Override
@@ -184,53 +201,58 @@ public class ContainerStructureFinderStrategyResolver {
 
                 return Collections.emptyList();
             }
-            // todo: probably a good idea to include into the cache
-            //List<ContainerStructure> containerStructures = CacheLocator.getContentTypeCache().getContainerStructures(container.getIdentifier(), container.getInode());
 
-            final Set<String> contentTypesIncludedSet = new HashSet<>();
-            final ImmutableList.Builder<ContainerStructure> builder =
-                    new ImmutableList.Builder<>();
-            final List<FileAsset> assets =
-                    FileAssetContainer.class.cast(container).getContainerStructuresAssets();
+            final ContentTypeCache contentTypeCache = CacheLocator.getContentTypeCache();
+            List<ContainerStructure> containerStructures = contentTypeCache
+                    .getContainerStructures(container.getIdentifier(), container.getInode());
+            if(containerStructures == null) {
 
-            for (final FileAsset asset: assets) {
+                final Set<String> contentTypesIncludedSet = new HashSet<>();
+                final ImmutableList.Builder<ContainerStructure> builder =
+                        new ImmutableList.Builder<>();
+                final List<FileAsset> assets =
+                        FileAssetContainer.class.cast(container).getContainerStructuresAssets();
 
-                if (this.isValidFileAsset(asset)) {
+                for (final FileAsset asset : assets) {
 
-                    final String velocityVarName = this.getVelocityVarName(asset);
-                    if (UtilMethods.isSet(velocityVarName)) {
+                    if (this.isValidFileAsset(asset)) {
 
-                        final Optional<ContentType> contentType =
-                                this.findContentTypeByVelocityVarName(velocityVarName);
-                        if (contentType.isPresent()) {
+                        final String velocityVarName = this.getVelocityVarName(asset);
+                        if (UtilMethods.isSet(velocityVarName)) {
 
-                            final ContainerStructure containerStructure =
-                                    new ContainerStructure();
+                            final Optional<ContentType> contentType =
+                                    this.findContentTypeByVelocityVarName(velocityVarName);
+                            if (contentType.isPresent()) {
 
-                            containerStructure.setContainerId(container.getIdentifier());
-                            containerStructure.setContainerInode(container.getInode());
-                            containerStructure.setId(asset.getIdentifier());
-                            containerStructure.setCode(wrapIntoDotParseDirective(asset));
-                            containerStructure.setStructureId(contentType.get().id());
-                            builder.add(containerStructure);
-                            contentTypesIncludedSet.add(velocityVarName);
+                                final ContainerStructure containerStructure =
+                                        new ContainerStructure();
+
+                                containerStructure.setContainerId(container.getIdentifier());
+                                containerStructure.setContainerInode(container.getInode());
+                                containerStructure.setId(asset.getIdentifier());
+                                containerStructure.setCode(wrapIntoDotParseDirective(asset));
+                                containerStructure.setStructureId(contentType.get().id());
+                                builder.add(containerStructure);
+                                contentTypesIncludedSet.add(velocityVarName);
+                            }
+                        } else {
+
+                            Logger.debug(this, "Could find a velocity var for the asset: " + asset);
                         }
                     } else {
 
-                        Logger.debug(this, "Could find a velocity var for the asset: " + asset);
+                        Logger.debug(this, "The asset: " + asset + ", does not exists or can not read");
                     }
-                }else {
-
-                    Logger.debug(this, "The asset: " + asset + ", does not exists or can not read");
                 }
+
+                this.processDefaultContainerLayout(FileAssetContainer.class.cast(container),
+                        builder, contentTypesIncludedSet);
+
+                containerStructures = builder.build();
+                contentTypeCache.addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
             }
 
-            this.processDefaultContainerLayout (FileAssetContainer.class.cast(container),
-                    builder, contentTypesIncludedSet);
-
-            // todo: add to cache
-
-            return builder.build();
+            return containerStructures;
         }
 
         /*
@@ -245,11 +267,11 @@ public class ContainerStructureFinderStrategyResolver {
                                                    final Set<String> contentTypesIncludedSet) {
 
             final Map<String, Object> metaDataMap = fileAssetContainer.getMetaDataMap();
-            if (UtilMethods.isSet(metaDataMap) && metaDataMap.containsKey("useDefaultLayout")
-                                    && null != metaDataMap.get("useDefaultLayout")
+            if (UtilMethods.isSet(metaDataMap) && metaDataMap.containsKey(USE_DEFAULT_LAYOUT)
+                                    && null != metaDataMap.get(USE_DEFAULT_LAYOUT)
                                     && this.isValidFileAsset(fileAssetContainer.getDefaultContainerLayoutAsset())) {
 
-                final String useDefaultLayout = metaDataMap.get("useDefaultLayout").toString().trim();
+                final String useDefaultLayout = metaDataMap.get(USE_DEFAULT_LAYOUT).toString().trim();
                 final String code = this.wrapIntoDotParseDirective(fileAssetContainer.getDefaultContainerLayoutAsset());
 
                 if (StringPool.STAR.equals(useDefaultLayout)) {
