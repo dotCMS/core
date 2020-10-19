@@ -419,7 +419,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		assertTrue(fields.stream().anyMatch(field -> field.variable().equals(DotAssetContentType.ASSET_FIELD_VAR)));
 		assertTrue(fields.stream().anyMatch(field -> field.variable().equals(DotAssetContentType.TAGS_FIELD_VAR)));
 
-		final File file = FileUtil.createTemporalFile("bin");
+		final File file = FileUtil.createTemporaryFile("bin");
 		final String content = "This is a test temporal file";
 		try (final FileWriter fileWriter = new FileWriter(file)) {
 
