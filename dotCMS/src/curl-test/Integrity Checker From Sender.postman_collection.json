@@ -1534,7 +1534,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 94571365,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+											"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 1,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -1851,42 +1851,42 @@
 	],
 	"variable": [
 		{
-			"id": "1e9c897a-f62d-427c-b5db-f405b701a098",
+			"id": "2215624d-dc9d-4059-9d77-5bec7cdbd750",
 			"key": "endpointName",
 			"value": "endpoint-522"
 		},
 		{
-			"id": "8f23f638-db0d-4b8e-8589-be26b3182d3b",
+			"id": "14ba5dc1-4a07-48d6-ac8c-c14fde8c72cd",
 			"key": "environmentName",
 			"value": "environment-825"
 		},
 		{
-			"id": "59f1d79a-030e-4487-9f08-97d71ca78cfa",
+			"id": "f36241b9-72d5-467d-98f6-fa2d37750e0b",
 			"key": "origin",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "db630e82-b824-4a7b-8940-c19bec7df934",
+			"id": "ae15b8e1-972e-47ff-83f4-1621b6c034e8",
 			"key": "environmentId",
 			"value": "e6ab2470-3026-4dac-98ee-29657a7e1b12"
 		},
 		{
-			"id": "f1d37d6f-afa2-47d5-b290-ca8555caa7dc",
+			"id": "4348c514-1482-4872-9755-4a31eeadaf22",
 			"key": "endpintId",
 			"value": "22b998af-f1cd-4473-85cd-dbfa251c3525"
 		},
 		{
-			"id": "5253a919-a558-4c27-a408-aaced702378d",
+			"id": "e60ae90b-f8db-4162-987d-06bfecb87b53",
 			"key": "receiverName",
 			"value": "receiverName-443"
 		},
 		{
-			"id": "f0fddc21-6eff-4e28-b6df-7be1387e72d3",
+			"id": "fb87eea1-565b-4046-a206-bd6485f40ba9",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk4NDQxNGYwNi0xM2U5LTQ3MzMtOTE1NC05MTUwNGJiOGU0NTIiLCJ4bW9kIjoxNjAzMTM4MDE2MDAwLCJuYmYiOjE2MDMxMzgwMTYsImlzcyI6ImUxYjUwYzhmMDQiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2MDMxMzgwMTcsImlhdCI6MTYwMzEzODAxNiwianRpIjoiMmNiZGYxMzEtMzBmMS00Mjk2LTlhYWYtYTkxZmM5MTg3ZDgwIn0.yXVh1ThaFnRu4U5Qo2A5BN8dGc6-uDNN01sLjSQ68_Y"
 		},
 		{
-			"id": "ea123afe-adbb-47b0-a020-b5efc6347380",
+			"id": "b8d56318-62a9-4829-bbd3-e9b22d9531d1",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
 		}
