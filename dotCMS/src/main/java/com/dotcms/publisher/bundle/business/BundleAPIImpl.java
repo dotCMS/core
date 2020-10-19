@@ -25,6 +25,10 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushUtils;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.GenerateBundlePublisher;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.UserAPI;
@@ -339,7 +343,7 @@ public class BundleAPIImpl implements BundleAPI {
 											final Function<T, String> bundleToIdentifierConverter)    // convert T to bundle id
 			throws IOException {
 
-		final File tempFile       = FileUtil.createTemporalFile("bundle-ids");
+		final File tempFile       = FileUtil.createTemporaryFile("bundle-ids");
 		final int limit           = 100;
 		int offset                = 0;
 		List<T> sentBundles       = bundleFinder.apply(limit, offset);
@@ -391,4 +395,44 @@ public class BundleAPIImpl implements BundleAPI {
 
 	}
 
+	/**
+	 * This takes a Bundle, generates the folder/file structure and returns the resulting directory
+	 * as a File handle. It will not delete the bundle directory if it already existed.
+	 * @param bundle - Bundle to generate
+	 * @return
+	 */
+    @CloseDBIfOpened
+    private File generateBundleDirectory(final Bundle bundle) {
+
+        final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);
+        pushPublisherConfig.setPublishers(Arrays.asList(GenerateBundlePublisher.class));
+        try {
+            APILocator.getPublisherAPI().publish(pushPublisherConfig);
+        }
+        catch(final Exception e) {
+        	Logger.error(this,e.getMessage(),e);
+            throw new DotRuntimeException(e);
+        }
+        return BundlerUtil.getBundleRoot( pushPublisherConfig );
+
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public File generateTarGzipBundleFile(final Bundle bundle) {
+        final File bundleRoot = generateBundleDirectory(bundle);
+        final File bundleFile = new File(  ConfigUtils.getBundlePath()  + File.separator + bundle.getId() + ".tar.gz" );
+        bundleFile.delete();
+        try {
+            final File tmpFile= PushUtils.tarGzipDirectory( bundleRoot );
+            tmpFile.renameTo(bundleFile);
+            return bundleFile;
+        }
+        catch(final Exception e) {
+			Logger.error(this,e.getMessage(),e);
+            throw new DotRuntimeException(e);
+        }
+    }
+	
+	
 }

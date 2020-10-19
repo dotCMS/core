@@ -82,7 +82,7 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
     private static Optional<Map<String, Object>> getTriggerJobDetail(final String jobName,
             final String groupName) {
         final JobDetail jobDetail = Try
-                .of(() -> QuartzUtils.getSequentialScheduler().getJobDetail(jobName, groupName))
+                .of(() -> QuartzUtils.getScheduler().getJobDetail(jobName, groupName))
                 .getOrNull();
         if (null == jobDetail) {
             return Optional.empty();
@@ -164,7 +164,7 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
                     groupName, description,
                     jobClass.getCanonicalName(), false,
                     nextTriggerName, triggerGroup, new Date(), null,
-                    SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, true, jobProperties,
+                    SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, jobProperties,
                     cronString);
             task.setDurability(true); //must be durable to preserve the detail across triggers.
 
