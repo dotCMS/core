@@ -232,7 +232,7 @@ public class ReindexThread {
       }
       while (STATE == ThreadState.PAUSED) {
         ThreadUtils.sleep(SLEEP);
-        Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused", 60000);
+        Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused", 300000);
         if(cache.get().get(REINDEX_THREAD_PAUSED)==null) {
             unpause();
         }
