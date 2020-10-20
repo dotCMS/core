@@ -1,5 +1,5 @@
 @use "variables" as *;
-$icon-size: $basic-padding * 3;
+$icon-size: 24px;
 
 .content-types-fields-list {
     margin: 0;
@@ -11,19 +11,19 @@ $icon-size: $basic-padding * 3;
     align-items: center;
     cursor: move;
     display: flex;
-    line-height: $basic-padding * 4;
-    padding: $basic-padding $basic-padding * 2;
+    line-height: $spacing-5;
+    padding: $spacing-1 $spacing-3;
     touch-action: none;
     transition: background-color $basic-speed;
 
     dot-icon {
         color: $gray;
-        margin-right: $basic-padding * 2;
+        margin-right: $spacing-3;
         transition: color $basic-speed;
     }
 
     &:hover {
-        background-color: $gray-bg;
+        background-color: $hover-bg;
 
         dot-icon {
             color: $body-font-color;
@@ -31,6 +31,6 @@ $icon-size: $basic-padding * 3;
     }
 
     &:nth-child(2) {
-        border-bottom: solid 1px $gray-light;
+        border-bottom: solid 1px $gray-lighter;
     }
 }

@@ -1,5 +1,7 @@
 @use "variables" as *;
 
+$datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
+
 .p-datatable .p-paginator-top {
     border-width: 0 0 1px 0;
     border-radius: 0;
@@ -29,14 +31,23 @@
 }
 
 .p-datatable .p-datatable-thead > tr > th {
-    text-align: left;
-    padding: $spacing-2 $spacing-2;
+    background: $white;
     border: 1px solid #e4e4e4;
     border-width: 0 0 1px 0;
+    color: $gray;
+    font-size: $font-size-small;
     font-weight: 500;
-    color: $black;
-    background: $white;
+    padding: $spacing-2 $spacing-2;
+    text-align: left;
     transition: none;
+
+    &:first-child {
+        padding-left: $spacing-5;
+    }
+
+    &:last-child {
+        padding-right: $spacing-5;
+    }
 }
 
 .p-datatable .p-datatable-tfoot > tr > td {
@@ -54,7 +65,7 @@
 }
 
 .p-datatable .p-sortable-column .p-sortable-column-icon {
-    color: $black;
+    color: $gray;
     margin-left: $spacing-1;
 }
 
@@ -69,12 +80,12 @@
 }
 
 .p-datatable .p-sortable-column:not(.p-highlight):hover {
-    background: $hover-bg;
+    background: $datatable-bg-hover;
     color: $hover-text-color;
 }
 
 .p-datatable .p-sortable-column:not(.p-highlight):hover .p-sortable-column-icon {
-    color: $gray;
+    color: $black;
 }
 
 .p-datatable .p-sortable-column.p-highlight {
@@ -97,7 +108,15 @@
     text-align: left;
     border: 1px solid #e4e4e4;
     border-width: 0 0 1px 0;
-    padding: $spacing-2 $spacing-2;
+    padding: $spacing-1 $spacing-2;
+
+    &:first-child {
+        padding-left: $spacing-5;
+    }
+
+    &:last-child {
+        padding-right: $spacing-5;
+    }
 }
 
 .p-datatable .p-datatable-tbody > tr > td .p-row-toggler,
@@ -117,9 +136,8 @@
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-init:enabled:hover,
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-save:enabled:hover,
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-cancel:enabled:hover {
-    color: $hover-text-color;
     border-color: transparent;
-    background: $hover-bg;
+    background: $datatable-bg-hover;
 }
 
 .p-datatable .p-datatable-tbody > tr > td .p-row-toggler:focus,
@@ -141,15 +159,15 @@
 }
 
 .p-datatable .p-datatable-tbody > tr.p-datatable-dragpoint-top > td {
-    box-shadow: inset 0 2px 0 0 rgba($brand-secondary_rgb, 0.12);
+    box-shadow: inset 0 2px 0 0 $datatable-bg-hover;
 }
 
 .p-datatable .p-datatable-tbody > tr.p-datatable-dragpoint-bottom > td {
-    box-shadow: inset 0 -2px 0 0 rgba($brand-secondary_rgb, 0.12);
+    box-shadow: inset 0 -2px 0 0 $datatable-bg-hover;
 }
 
 .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
-    background: $hover-bg;
+    background: $datatable-bg-hover;
     color: $hover-text-color;
 }
 
@@ -164,6 +182,7 @@
 
 .p-datatable .p-datatable-loading-icon {
     font-size: $font-size-xxx-large;
+    color: $brand-secondary;
 }
 
 .p-datatable.p-datatable-gridlines .p-datatable-header {
@@ -199,15 +218,21 @@
 }
 
 .p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even).p-highlight {
-    background: rgba($brand-secondary_rgb, 0.12);
+    background: $datatable-bg-hover;
     color: $highlight-text-color;
 }
 
-.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even).p-highlight .p-row-toggler {
+.p-datatable.p-datatable-striped
+    .p-datatable-tbody
+    > tr:nth-child(even).p-highlight
+    .p-row-toggler {
     color: $highlight-text-color;
 }
 
-.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even).p-highlight .p-row-toggler:hover {
+.p-datatable.p-datatable-striped
+    .p-datatable-tbody
+    > tr:nth-child(even).p-highlight
+    .p-row-toggler:hover {
     color: $hover-text-color;
 }
 
@@ -256,7 +281,7 @@
 }
 
 .p-datatable .p-sortable-column:focus {
-    background-color: $focus-bg;
+    background-color: $datatable-bg-hover;
 }
 
 .p-datatable .p-datatable-tbody > tr {
@@ -264,5 +289,5 @@
 }
 
 .p-datatable .p-datatable-tbody > tr:not(.p-highlight):focus {
-    background-color: $focus-bg;
+    background-color: $datatable-bg-hover;
 }

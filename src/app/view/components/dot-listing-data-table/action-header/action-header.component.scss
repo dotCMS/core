@@ -5,11 +5,11 @@
 }
 
 .action-header {
-    align-items: flex-start;
     display: flex;
-    height: 85px;
-    position: relative;
-    z-index: 1;
+    align-content: center;
+    flex-direction: row-reverse;
+    align-items: center;
+    padding: $spacing-3 $spacing-5;
 
     &.selected {
         .action-header__primary-button {
@@ -31,26 +31,13 @@
 
 .action-header__container {
     flex: 1;
-    height: 61px;
     overflow: hidden;
-}
-
-.action-header__primary-button {
-    opacity: 1;
-    position: absolute;
-    right: $basic-padding * 3;
-    top: $basic-padding;
-    transform: translateY(0);
-    transition: background-color 100ms, transform 0.2s ease, opacity 0.2s ease;
-    z-index: 1;
 }
 
 .action-header__global-search {
     align-items: center;
     background: $white;
     display: flex;
-    height: 60px;
-    padding-left: $basic-padding * 3;
     transform: translateY(0px);
     transition: transform 0.2s ease;
 
@@ -64,7 +51,6 @@
     background: $brand-primary;
     color: $white;
     display: flex;
-    height: 60px;
     transform: translateY(0px);
     transition: transform 0.2s ease, visibility 0.2s ease;
     visibility: hidden;

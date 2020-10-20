@@ -88,7 +88,7 @@ describe('ValuesPropertyComponent', () => {
     it('should have value component with the right options', () => {
         fixture.detectChanges();
         expect(comp.value.show).toEqual(['code']);
-        expect(comp.value.height).toBe('90px');
+        expect(comp.value.height).toBe('15.7rem');
     });
 
     it('should show dot-helper for required clazz', () => {

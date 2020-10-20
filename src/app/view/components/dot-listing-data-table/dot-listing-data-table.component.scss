@@ -40,20 +40,22 @@
                 padding-top: 0;
             }
         }
-
-        .listing-datatable__column-icon {
-            display: flex;
-            align-items: center;
-
-            dot-icon {
-                margin-right: 8px;
-            }
-        }
-
-        dot-action-header {
-            background: $white;
-        }
     }
+}
+
+.listing-datatable__column-icon {
+    display: flex;
+    align-items: center;
+
+    dot-icon {
+        margin-right: $spacing-1;
+    }
+}
+
+dot-action-header {
+    background: $white;
+    position: relative;
+    z-index: 1;
 }
 
 p-dataTable {

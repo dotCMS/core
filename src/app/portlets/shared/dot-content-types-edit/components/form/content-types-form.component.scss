@@ -1,4 +1,5 @@
 @use "variables" as *;
+@use "dotcms-theme/utils/theme-variables" as *;
 @import "mixins";
 
 :host {
@@ -13,5 +14,5 @@
 }
 
 .content-type__form {
-    width: 380px;
+    width: 522px;
 }

@@ -2,18 +2,8 @@
 
 ::ng-deep .p-breadcrumb {
     ul li {
-        &:first-child {
-            font-size: $font-size-x-large;
-        }
-
-        &.p-breadcrumb-chevron:nth-child(2) {
-            border-right: solid 1px $gray-light;
-            height: 20px;
-            margin: 0 $basic-padding;
-
-            &:before {
-                display: none;
-            }
+        &:last-child a {
+            pointer-events: none;
         }
     }
 }

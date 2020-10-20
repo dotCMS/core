@@ -73,7 +73,7 @@ describe('DotPageSelectorService', () => {
             });
         });
 
-        const req = httpMock.expectOne('es/search');
+        const req = httpMock.expectOne('/api/es/search');
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(query);
         req.flush({ contentlets: [mockDotPageSelectorResults.data[0].payload] });
@@ -103,7 +103,7 @@ describe('DotPageSelectorService', () => {
             expect(res).toEqual(mockDotSiteSelectorResults);
         });
 
-        const req = httpMock.expectOne(`es/search`);
+        const req = httpMock.expectOne(`/api/es/search`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(hostQuery);
         req.flush({ contentlets: [mockDotSiteSelectorResults.data[0].payload] });
@@ -114,7 +114,7 @@ describe('DotPageSelectorService', () => {
             expect(res).toEqual(mockEmptyHostDotSiteSelectorResults);
         });
 
-        const req = httpMock.expectOne(`es/search`);
+        const req = httpMock.expectOne(`/api/es/search`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(emptyHostQuery);
         req.flush({ contentlets: [mockDotSiteSelectorResults.data[0].payload] });
@@ -125,7 +125,7 @@ describe('DotPageSelectorService', () => {
             expect(res).toEqual(mockDotPageSelectorResults);
         });
 
-        const req = httpMock.expectOne(`es/search`);
+        const req = httpMock.expectOne(`/api/es/search`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(hostSpecificQuery);
         req.flush({ contentlets: [mockDotSiteSelectorResults.data[0].payload] });
@@ -146,7 +146,7 @@ describe('DotPageSelectorService', () => {
             });
         });
 
-        const req = httpMock.expectOne(`es/search`);
+        const req = httpMock.expectOne(`/api/es/search`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(hostSpecificQuery);
         req.flush({ contentlets: [] });
@@ -161,7 +161,7 @@ describe('DotPageSelectorService', () => {
             });
         });
 
-        const req = httpMock.expectOne(`es/search`);
+        const req = httpMock.expectOne(`/api/es/search`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(hostQuery);
         req.flush({ contentlets: [] });

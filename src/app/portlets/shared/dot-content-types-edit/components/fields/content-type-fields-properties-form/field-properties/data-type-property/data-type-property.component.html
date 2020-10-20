@@ -1,13 +1,15 @@
 <div [formGroup]="group" *ngIf="radioInputs" class="p-field">
     <label class="form__label">{{ 'contenttypes.field.properties.data_type.label' | dm }}</label>
 
-    <div *ngFor="let radio of radioInputs" class="p-field-radiobutton">
-        <p-radioButton
-            [label]="radio.text | dm"
-            name="dataType"
-            [value]="radio.value"
-            [formControlName]="property.name"
-        >
-        </p-radioButton>
+    <div class="p-formgroup-inline">
+        <div *ngFor="let radio of radioInputs" class="p-field-radiobutton">
+            <p-radioButton
+                [label]="radio.text | dm"
+                name="dataType"
+                [value]="radio.value"
+                [formControlName]="property.name"
+            >
+            </p-radioButton>
+        </div>
     </div>
 </div>

@@ -58,7 +58,7 @@ export class DotPageSelectorService {
                     `${PAGE_BASE_TYPE_QUERY} +identifier:*${identifier}*`
                 ),
                 method: 'POST',
-                url: 'es/search'
+                url: '/api/es/search'
             })
             .pipe(
                 pluck('contentlets'),
@@ -164,7 +164,7 @@ export class DotPageSelectorService {
             .requestView({
                 body: param ? this.getRequestBodyQuery(query) : this.getRequestBodyQuery(query, MAX_RESULTS_SIZE),
                 method: 'POST',
-                url: 'es/search'
+                url: '/api/es/search'
             })
             .pipe(
                 pluck('contentlets'),

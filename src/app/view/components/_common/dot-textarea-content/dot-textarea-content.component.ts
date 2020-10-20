@@ -49,9 +49,9 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
             enabled: false
         },
         cursorBlinking: 'solid',
-        lineDecorationsWidth: 1,
         overviewRulerBorder: false,
         mouseWheelZoom: false,
+        LineNumbersType: 'on'
 
     };
 
@@ -79,7 +79,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
 
         this.styles = {
             width: this.width || '100%',
-            height: this.height || '300px'
+            height: this.height || '21.42rem'
         };
     }
 

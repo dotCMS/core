@@ -8,7 +8,7 @@
 }
 
 .p-component-overlay {
-  background-color: rgba(0, 0, 0, 0.32);
+  background-color: rgba($brand-secondary_rgb, 0.12);
   transition-duration: 0.2s;
 }
 
@@ -49,4 +49,11 @@
 
 .p-field > label {
     font-size: $font-size-small;
+}
+
+.p-formgroup-inline {
+    .p-field-radiobutton,
+    .p-field-checkbox {
+        margin-bottom: 0;
+    }
 }
