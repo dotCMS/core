@@ -1,6 +1,7 @@
 package com.dotcms.security.apps;
 
 import static com.dotcms.security.apps.AppsCache.CACHE_404;
+import static com.dotcms.security.apps.AppsUtil.digest;
 
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.auth.providers.jwt.factories.SigningKeyFactory;
@@ -10,8 +11,6 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -19,7 +18,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.language.LanguageException;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -30,7 +29,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
@@ -38,13 +36,8 @@ import java.security.KeyStore.SecretKeyEntry;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -59,8 +52,9 @@ import org.apache.commons.lang.time.FastDateFormat;
  * @see <a href=https://stackoverflow.com/questions/6243446/how-to-store-a-simple-key-string-inside-java-keystore>https://stackoverflow.com/questions/6243446/how-to-store-a-simple-key-string-inside-java-keystore</a>
  * @see <a href=https://medium.com/@danojadias/aes-256bit-encryption-decryption-and-storing-in-the-database-using-java-2ada3f2a0b14>https://medium.com/@danojadias/aes-256bit-encryption-decryption-and-storing-in-the-database-using-java-2ada3f2a0b14</a>
  * @see <a href=https://neilmadden.blog/2017/11/17/java-keystores-the-gory-details/>https://neilmadden.blog/2017/11/17/java-keystores-the-gory-details</a>
+ * This class does not offer any caching for that purpose you need to consume this class through {@link SecretCachedKeyStoreImpl}
  */
-public class SecretsStoreKeyStoreImpl implements SecretsStore {
+public class SecretsKeyStoreHelper {
 
     static final String SECRETS_KEYSTORE_PASSWORD_KEY = "SECRETS_KEYSTORE_PASSWORD_KEY";
     private static final String SECRETS_STORE_FILE = "dotSecretsStore.p12";
@@ -70,37 +64,34 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     private static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
     private static final String APPS_KEY_PROVIDER_CLASS = "APPS_KEY_PROVIDER_CLASS";
     private final String secretsKeyStorePath;
-    private final AppsCache cache;
+    private final List<StoreCreatedListener> storeCreatedListeners;
+    private final Supplier<char[]> passwordSupplier;
 
-    private static String getSecretStorePath() {
+    @VisibleForTesting
+    public static String getSecretStorePath() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + File.separator + "server" + File.separator + "secrets" + File.separator + SECRETS_STORE_FILE;
         final String dirPath = Config.getStringProperty(SECRETS_KEYSTORE_FILE_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();
     }
 
-    @VisibleForTesting
-    SecretsStoreKeyStoreImpl(final String secretsKeyStorePath, final AppsCache cache) {
+    private SecretsKeyStoreHelper(final String secretsKeyStorePath,
+            final Supplier<char[]> passwordSupplier,
+            final List<StoreCreatedListener> storeCreatedListeners) {
         this.secretsKeyStorePath = secretsKeyStorePath;
-        this.cache = cache;
+        this.passwordSupplier = passwordSupplier;
+        this.storeCreatedListeners = storeCreatedListeners;
     }
 
-    SecretsStoreKeyStoreImpl() {
-        this(getSecretStorePath(), CacheLocator.getAppsCache());
+
+    SecretsKeyStoreHelper( final Supplier<char[]> passwordSupplier, final List<StoreCreatedListener> storeCreatedListeners) {
+        this(getSecretStorePath(), passwordSupplier, storeCreatedListeners);
     }
 
-    /**
-     * returns the password to the store - it can be set as a config variable (which can read from an
-     * environment or system property) or will default to the SHA-256 digest of the clusterId
-     * 
-     * @return
-     */
-    @VisibleForTesting
-    private char[] loadStorePassword() {
-        return getFromCache(SECRETS_KEYSTORE_PASSWORD_KEY,
-                () -> Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY, digest(ClusterFactory.getClusterSalt()))
-                                .toCharArray());
-
+   public SecretsKeyStoreHelper() {
+       this(getSecretStorePath(),() -> Config
+               .getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY,
+                       digest(ClusterFactory.getClusterSalt())).toCharArray(), ImmutableList.of());
     }
 
     /**
@@ -114,9 +105,12 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         if (!secretStoreFile.exists()) {
             try {
                 final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
-                keyStore.load(null, loadStorePassword());
-                flushCache();
+                keyStore.load(null, passwordSupplier.get());
                 saveSecretsStore(keyStore);
+                //broadcast
+                for(final StoreCreatedListener listener: this.storeCreatedListeners){
+                    listener.onStoreCreated();
+                }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "unable to create secrets store " + SECRETS_STORE_FILE + ": " + e);
                 throw new DotRuntimeException(e);
@@ -138,8 +132,8 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             while (tryCount <= maxLoadTries) {
                 final File secretStoreFile = createStoreIfNeeded();
                 try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
-                    keyStore.load(inputStream, loadStorePassword());
-                    Logger.info(SecretsStoreKeyStoreImpl.class,
+                    keyStore.load(inputStream, passwordSupplier.get());
+                    Logger.info(SecretsKeyStoreHelper.class,
                             String.format("KeyStore loaded successfully after `%d` tries.", tryCount));
                     break;
                 } catch (IOException gse) {
@@ -173,7 +167,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
 
         secretStoreFileTmp.getParentFile().mkdirs();
         try (OutputStream fos = Files.newOutputStream(secretStoreFileTmp.toPath())) {
-            keyStore.store(fos, loadStorePassword());
+            keyStore.store(fos, passwordSupplier.get());
             FileUtil.copyFile(secretStoreFileTmp, secretStoreFile);
             secretStoreFileTmp.delete();
         } catch (Exception e) {
@@ -184,20 +178,6 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     }
 
     /**
-     * Verifies if the key exists in the store
-     * @param variableKey
-     * @return
-     */
-    public boolean containsKey(final String variableKey){
-        try {
-            return getKeysFromCache().contains(variableKey);
-        } catch (Exception e) {
-            Logger.debug(this,e.getMessage());
-            throw new DotRuntimeException(e);
-        }
-    }
-
-    /**
      * secret values are stored encryped in cache for 30 seconds and are decrypted when requested. If
      * value is not in cache, it will be read from the keystore
      * 
@@ -205,13 +185,9 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @return
      * @throws Exception
      */
-    public Optional<char[]> getValue(final String variableKey) {
-
-        final char[] fromCache = getFromCache(variableKey,
-                () -> loadValueFromStore(variableKey));
-
-        return Arrays.equals(fromCache, CACHE_404) ? Optional.empty() : Optional.ofNullable(decrypt(fromCache));
-
+    public char[] getValue(final String variableKey) {
+        final char[] fromStore = loadValueFromStore(variableKey);
+        return fromStore == null ? CACHE_404 : fromStore;
     }
 
     /**
@@ -224,41 +200,36 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         try {
            final KeyStore keyStore = getSecretsStore();
             if (keyStore.containsAlias(variableKey)) {
-                final PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
+                final PasswordProtection keyStorePP = new PasswordProtection(passwordSupplier.get());
                 final SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
                 final SecretKeyEntry secretKeyEntry = (SecretKeyEntry) keyStore.getEntry(variableKey, keyStorePP);
                 return ((PBEKeySpec) factory.getKeySpec(secretKeyEntry.getSecretKey(), PBEKeySpec.class)).getPassword();
             } else {
-                return CACHE_404;
+                return null;
             }
 
         } catch (Exception e) {
-            Logger.error(SecretsStoreKeyStoreImpl.class,e);
+            Logger.error(SecretsKeyStoreHelper.class,e);
             throw new DotRuntimeException(e);
         }
-    }
-
-    /**
-     * Lists all keys.
-     * Keys will be loaded from cache if available otherwise they will be loaded from disk
-     * @return
-     */
-    @Override
-    public Set<String> listKeys() {
-        return Sneaky.sneak(this::getKeysFromCache);
     }
 
     /**
      * Use this to destroy the secrets repo
      * @return
      */
-    @Override
-    public synchronized boolean deleteAll(){
+    
+    public synchronized void destroy(){
         final File secretStoreFile = new File(secretsKeyStorePath);
         secretStoreFile.delete();
-        flushCache();
-        return true;
+    }
 
+    /**
+     * Number of secrets stored
+     * @return
+     */
+    public int size(){
+       return Sneaky.sneaked(() -> getSecretsStore().size()).get();
     }
 
 
@@ -274,35 +245,33 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @throws KeyStoreException
      * @throws Exception
      */
-    @Override
-    public boolean saveValue(final String variableKey, final char[] variableValue) {
+
+    public char [] saveValue(final String variableKey, final char[] variableValue) {
         try {
             final SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
             final KeyStore keyStore = getSecretsStore();
             final char [] encryptedVal = encrypt(variableValue);
             final SecretKey generatedSecret = factory.generateSecret(new PBEKeySpec(encryptedVal));
-            final PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
+            final PasswordProtection keyStorePP = new PasswordProtection(passwordSupplier.get());
             keyStore.setEntry(variableKey, new KeyStore.SecretKeyEntry(generatedSecret), keyStorePP);
             saveSecretsStore(keyStore);
-            putInCache(variableKey, encryptedVal);
+            return encryptedVal;
         } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to save secret from " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
         }
-        return true;
     }
 
     /**
      * deletes a value from the store.
      */
-    @Override
-    public void deleteValue(final String secretKey) {
+
+    void deleteValue(final String secretKey) {
         try {
             final KeyStore keyStore = getSecretsStore();
             keyStore.deleteEntry(secretKey);
             saveSecretsStore(keyStore);
-            flushCache(secretKey);
-        } catch (KeyStoreException | DotCacheException e) {
+        } catch (KeyStoreException  e) {
             Logger.warn(this.getClass(), "Unable to delete secret from  " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
         }
@@ -316,6 +285,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         final String providerClassName = getCustomKeyProvider();
         if(UtilMethods.isSet(providerClassName)){
             try {
+                @SuppressWarnings("unchecked")
                 final SigningKeyFactory customKeyProvider = ((Class<SigningKeyFactory>) Class
                         .forName(providerClassName)).newInstance();
                 return customKeyProvider.getKey();
@@ -341,18 +311,8 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @return
      */
     @VisibleForTesting
-    protected char[] encrypt(final char[] val) {
+    char[] encrypt(final char[] val) {
         return Sneaky.sneak(() -> AppsUtil.encrypt(key(), val));
-    }
-
-    /**
-     * decryption function
-     * @param val
-     * @return
-     */
-    @VisibleForTesting
-    protected String digest(final String val) {
-        return Sneaky.sneak(() -> AppsUtil.digest(val));
     }
 
     /**
@@ -361,7 +321,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @return
      */
     @VisibleForTesting
-    protected char[] decrypt(final String encryptedString) {
+    char[] decrypt(final String encryptedString) {
         if (encryptedString == null || encryptedString.length() == 0) {
             return null;
         }
@@ -374,7 +334,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @return
      */
     @VisibleForTesting
-    protected char[] decrypt(final char[] encryptedString) {
+    char[] decrypt(final char[] encryptedString) {
         if (encryptedString == null || encryptedString.length == 0) {
             return null;
         }
@@ -382,81 +342,12 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     }
 
     /**
-     * Short hand accessor to get values from cache impl
-     * @param key
-     * @param defaultValue
-     * @return
-     */
-    private char[] getFromCache(final String key, final Supplier<char[]> defaultValue) {
-       return cache.getFromCache(key, defaultValue);
-    }
-
-    /**
-     * Short hand accessor to put values in cache impl
-     * @param key
-     * @param val
-     * @throws DotCacheException
-     */
-    private void putInCache(final String key, final char[] val)
-            throws DotCacheException {
-        cache.putSecret(key, val);
-        putInCache(key);
-    }
-
-    /**
-     * Short hand accessor to get values from cache impl
-     * @param key
-     * @throws DotCacheException
-     */
-    private void putInCache(final String key) throws DotCacheException{
-         final Set <String> keys = getKeysFromCache();
-         keys.add(key);
-         cache.putKeys(keys);
-    }
-
-    /**
-     * short hand accessor to get values from cache impl and provided a list of keys
-     * @return
-     * @throws DotCacheException
-     */
-    private Set<String> getKeysFromCache()
-            throws DotCacheException {
-        return cache.getKeysFromCache(() -> {
-            final KeyStore keyStore = getSecretsStore();
-            try {
-                final Set<String> keySet = ConcurrentHashMap.newKeySet();
-                keySet.addAll(Collections.list(keyStore.aliases()));
-                return keySet;
-            } catch (KeyStoreException e) {
-                Logger.warn(SecretsStoreKeyStoreImpl.class, "Error building keystore keys cache. ", e);
-                throw new DotRuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * short hand accessor to clear cache.
-     */
-    void flushCache() {
-        cache.flushSecret();
-    }
-
-    /**
-     * short hand accessor to clear cache.
-     * @param key
-     * @throws DotCacheException
-     */
-    private void flushCache(final String key) throws DotCacheException {
-        cache.flushSecret(key);
-    }
-
-    /**
      * {@inheritDoc}
      */
-    public void backupAndRemoveKeyStore() throws IOException {
+    void backupAndRemoveKeyStore() throws IOException {
         final File secretStoreFile = new File(secretsKeyStorePath);
         if (!secretStoreFile.exists()) {
-            Logger.warn(SecretsStoreKeyStoreImpl.class, String.format("KeyStore file `%s` does NOT exist therefore it can not be backed-up. ",secretsKeyStorePath));
+            Logger.warn(SecretsKeyStoreHelper.class, String.format("KeyStore file `%s` does NOT exist therefore it can not be backed-up. ",secretsKeyStorePath));
             return;
         }
         final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
@@ -465,7 +356,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         Files.copy(secretStoreFile.toPath(), secretStoreFileBak.toPath());
         secretStoreFile.delete();
 
-        Logger.info(SecretsStoreKeyStoreImpl.class, ()->String.format("KeyStore `%s` has been removed a backup has been created.", secretsKeyStorePath));
+        Logger.info(SecretsKeyStoreHelper.class, ()->String.format("KeyStore `%s` has been removed a backup has been created.", secretsKeyStorePath));
     }
 
     /**
@@ -494,11 +385,18 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      * @throws IOException
      */
     private boolean handleStorageLoadException(final IOException gse) throws DotDataException, IOException {
-        Logger.warn(SecretsStoreKeyStoreImpl.class,
+        Logger.warn(SecretsKeyStoreHelper.class,
                 "Failed to recover secrets from key/store. The keyStore will be backup and then removed. A new empty store will be generated.",
                 gse);
         backupAndRemoveKeyStore();
         sendFailureNotification();
         return true;
+    }
+
+    @FunctionalInterface
+    public interface StoreCreatedListener {
+
+        void onStoreCreated();
+
     }
 }
