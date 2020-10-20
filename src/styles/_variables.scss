@@ -17,6 +17,10 @@ $brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
 $bg-color-primary: rgba($brand-primary_rgb, 0.12);
 
+$input-border-hover: $brand-primary;
+$input-border-focus: $brand-primary;
+$input-inset-shadow: inset 0 0 0 1px $input-border-focus, inset 0 0 0 1px $input-border-focus, inset 0 0 0 1px $input-border-focus, inset 0 0 0 1px $input-border-focus;
+
 $highlight-bg: rgba($brand-secondary_rgb, 0.12);
 $highlight-text-color: $brand-primary;
 $highlight-border-color: rgba($brand-secondary_rgb, 0.12);

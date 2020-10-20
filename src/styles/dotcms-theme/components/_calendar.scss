@@ -46,8 +46,8 @@
 }
 
 .p-calendar-w-btn:not(.p-disabled).p-inputwrapper-focus {
-    border-color: $brand-primary;
-    box-shadow: inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary;
+    border-color: $input-border-focus;
+    box-shadow: $input-inset-shadow;
 }
 
 .p-datepicker {

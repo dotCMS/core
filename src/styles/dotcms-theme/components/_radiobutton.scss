@@ -15,10 +15,6 @@
     transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
 }
 
-.p-radiobutton .p-radiobutton-box:not(.p-disabled):not(.p-highlight):hover {
-    border-color: $black;
-}
-
 .p-radiobutton .p-radiobutton-box:not(.p-disabled).p-focus {
     outline: 0 none;
     outline-offset: 0;
@@ -51,10 +47,6 @@
 .p-radiobutton {
     border-radius: 50%;
     transition: box-shadow 0.2s;
-}
-
-.p-radiobutton .p-radiobutton-box:not(.p-disabled):not(.p-highlight):hover {
-    border: 2px solid $gray;
 }
 
 .p-radiobutton .p-radiobutton-box:not(.p-disabled).p-focus {
