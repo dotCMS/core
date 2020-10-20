@@ -18,6 +18,11 @@
                         "outputPath": "dist",
                         "polyfills": "src/polyfills.ts",
                         "tsConfig": "src/tsconfig.app.json",
+                        "allowedCommonJsDependencies": [
+                            "lodash",
+                            "dragula",
+                            "md5"
+                        ],
                         "stylePreprocessorOptions": {
                             "includePaths": [
                                 "src/styles"

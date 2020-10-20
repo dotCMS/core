@@ -16,7 +16,7 @@
     --color-sec_rgb: 84, 66, 142;
     --color-white: #fff;
     --color-white_rgb: 255, 255, 255;
-    --empty-message: '';
+    --empty-message: "";
 }
 
 /*
@@ -25,20 +25,11 @@
 */
 @import "../node_modules/font-awesome/css/font-awesome.css";
 
-
 // MATERIAL DESIGN ICONS
-@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+@import url("https://fonts.googleapis.com/icon?family=Material+Icons&display=swap");
 
-// DIRECTIVES
-// @import "app/view/directives/ripple/ripple-effect.directive.scss";
-// @import "app/view/directives/md-inputtext/md-input-text.directive.scss";
-
-// // GOOGLE FONTS
-@import url("https://fonts.googleapis.com/css?family=Roboto:400,500,700");
-
-// PRIMEFLEX
-// @import '../node_modules/primeflex/src/_variables.scss';
-// @import '../node_modules/primeflex/src/_grid.scss';
+// GOOGLE FONTS
+@import url("https://fonts.googleapis.com/css2?family=Roboto:400,500,700&display=swap");
 
 //DRAGULA
 /* in-flight clone */
