@@ -23,6 +23,7 @@
     }
 
     &.disabled {
+        display: none;
         &::ng-deep dot-icon i,
         label {
             color: $field-disabled-color;

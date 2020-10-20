@@ -70,13 +70,12 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
                     this.disabled = this.options.length < 2;
 
                     if (this.disabled) {
-                        this.placeholder = 'No devices'
-
+                        this.placeholder = 'No devices';
                     }
                 },
                 () => {
                     this.disabled = true;
-                    this.placeholder = 'No devices'
+                    this.placeholder = 'No devices';
                 }
             );
     }

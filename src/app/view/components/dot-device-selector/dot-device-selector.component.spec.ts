@@ -121,17 +121,16 @@ describe('DotDeviceSelectorComponent', () => {
     });
 
     describe('disabled', () => {
-        it('should disabled dropdown when just have just one device', () => {
+        beforeEach(() => {
             spyOn(dotDeviceService, 'get').and.returnValue(of([]));
             fixtureHost.detectChanges();
-
+        });
+        it('should disabled dropdown when just have just one device', () => {
             const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
             expect(pDropDown.componentInstance.disabled).toBe(true);
         });
 
         it('should add class to the host when disabled', () => {
-            spyOn(dotDeviceService, 'get').and.returnValue(of([]));
-            fixtureHost.detectChanges();
             expect(de.nativeElement.classList.contains('disabled')).toBe(true);
         });
     });
