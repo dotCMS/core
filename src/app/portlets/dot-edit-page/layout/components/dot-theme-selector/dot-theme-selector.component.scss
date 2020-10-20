@@ -5,7 +5,7 @@ $theme-item-dimension: 240px;
 
 :host ::ng-deep {
     dot-site-selector {
-        margin-left: 12px;
+        margin-left: $spacing-2;
 
         dot-searchable-dropdown .p-button,
         .site-selector__title {
@@ -15,8 +15,8 @@ $theme-item-dimension: 240px;
     }
 
     .dialog__content {
-        min-width: 1096px;
-        padding: 17px $basic-padding + 12 $dialog-padding;
+        min-width: 1080px;
+        padding: $spacing-3 $spacing-4 $dialog-padding;
     }
 
     @media (max-width: 1100px) {
@@ -25,20 +25,26 @@ $theme-item-dimension: 240px;
         }
     }
 
-    .p-datagrid-content {
+    .p-dataview-emptymessage {
+        text-align: center;
+        padding-top: $spacing-7 * 2;
+    }
+
+    .p-dataview-content {
+        min-height: $theme-item-dimension * 2;
         .p-g {
             margin: 0;
         }
     }
 
-    .p-datagrid-content .p-widget-content.p-g-12 {
+    .p-dataview-content .p-widget-content.p-g-12 {
         text-align: center;
         font-size: $font-size-large;
-        margin-top: $basic-padding * 5;
+        margin-top: $spacing-7;
     }
 
     .paginator .dot-theme-container {
-        .p-datagrid {
+        .p-dataView {
             padding-bottom: 56px;
             position: relative;
         }
@@ -46,17 +52,24 @@ $theme-item-dimension: 240px;
 }
 
 .dot-theme-container {
-    margin-top: $basic-padding;
+    margin-top: $spacing-1;
 }
 
 .dot-theme-search-box {
     display: inline-block;
     width: 200px;
-    margin-left: $basic-padding * 3;
+    margin-left: $spacing-4;
     position: relative;
 
     input {
         font-size: $font-size-large;
+    }
+
+    dot-icon {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: 0px;
     }
 }
 
@@ -68,8 +81,8 @@ $theme-item-dimension: 240px;
     display: flex;
     flex-direction: column;
     height: $theme-item-dimension;
-    margin: $basic-padding * 3 $basic-padding * 3 / 2 0;
-    padding: $basic-padding * 3 $basic-padding * 2;
+    margin: $spacing-3 $spacing-1 0;
+    padding: $spacing-4 $spacing-3;
     transition: background-color $field-animation-speed ease-in;
     width: $theme-item-dimension;
 
