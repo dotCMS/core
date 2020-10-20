@@ -6,13 +6,6 @@
     width: 100%;
     display: flex;
     justify-content: center;
-
-    ::ng-deep {
-        .error-message {
-            min-height: $line-height;
-            @include truncate-text;
-        }
-    }
 }
 
 .login {

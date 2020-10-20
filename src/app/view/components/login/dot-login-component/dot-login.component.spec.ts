@@ -174,14 +174,14 @@ describe('DotLoginComponent', () => {
 
         fixture.detectChanges();
 
-        const erroresMessages = de.queryAll(By.css('.p-invalid'));
+        const erroresMessages = de.queryAll(By.css('.p-field .p-invalid'));
         expect(erroresMessages.length).toBe(2);
     });
 
     it('should show messages', () => {
         component.message = 'Authentication failed. Please try again.';
         fixture.detectChanges();
-        const messageElemement = de.query(By.css('.error-message'));
+        const messageElemement = de.query(By.css('.p-invalid'));
         expect(messageElemement).not.toBeNull();
     });
 });

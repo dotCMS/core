@@ -17,20 +17,19 @@
 
         <h3 class="login__title">{{ loginInfo.i18nMessagesMap['welcome-login'] }}</h3>
 
-        <div class="error-message" [innerHTML]="message"></div>
+        <p class="p-invalid" [innerHTML]="message"></p>
         <div class="p-field form__group--validation">
-            <span class="p-float-label">
-                <input
-                    type="text"
-                    id="inputtext"
-                    pInputText
-                    type="text"
-                    dotAutofocus
-                    formControlName="login"
-                    autocomplete="username"
-                />
-                <label for="inputtext">{{ loginInfo.i18nMessagesMap['emailAddressLabel'] }}</label>
-            </span>
+            <label for="inputtext">{{ loginInfo.i18nMessagesMap['emailAddressLabel'] }}</label>
+
+            <input
+                type="text"
+                id="inputtext"
+                pInputText
+                type="text"
+                dotAutofocus
+                formControlName="login"
+                autocomplete="username"
+            />
 
             <dot-field-validation-message
                 [message]="
@@ -44,15 +43,14 @@
             </dot-field-validation-message>
         </div>
         <div class="p-field form__group--validation">
-            <span class="p-float-label">
-                <input
-                    pInputText
-                    type="password"
-                    formControlName="password"
-                    autocomplete="current-password"
-                />
-                <label for="inputtext">{{ loginInfo.i18nMessagesMap['password'] }}</label>
-            </span>
+            <label for="inputtext">{{ loginInfo.i18nMessagesMap['password'] }}</label>
+
+            <input
+                pInputText
+                type="password"
+                formControlName="password"
+                autocomplete="current-password"
+            />
 
             <dot-field-validation-message
                 [message]="
