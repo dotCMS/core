@@ -21,7 +21,7 @@ public class FileUtilTest {
     @Test
     public void test_uncompress_outputstream()  throws Exception {
 
-        final File file = com.dotmarketing.util.FileUtil.createTemporalFile("nocompre_");
+        final File file = com.dotmarketing.util.FileUtil.createTemporaryFile("nocompre_");
         final OutputStream out = FileUtil.createOutputStream(file);
 
         final String  string = "testuncompress";
@@ -40,7 +40,7 @@ public class FileUtilTest {
     @Test
     public void test_compress_gzip_outputstream()  throws Exception {
 
-        final File file = com.dotmarketing.util.FileUtil.createTemporalFile("gzip");
+        final File file = com.dotmarketing.util.FileUtil.createTemporaryFile("gzip");
         final OutputStream out = FileUtil.createOutputStream(file, "gzip");
 
         final String  string = "testcompress";
@@ -59,7 +59,7 @@ public class FileUtilTest {
     @Test
     public void test_compress_gzip_enum_outputstream()  throws Exception {
 
-        final File file = com.dotmarketing.util.FileUtil.createTemporalFile("egzip");
+        final File file = com.dotmarketing.util.FileUtil.createTemporaryFile("egzip");
         final OutputStream out = FileUtil.createOutputStream(file.toPath(), FileUtil.StreamCompressorType.GZIP);
 
         final String  string = "testcompress";
@@ -78,7 +78,7 @@ public class FileUtilTest {
     @Test
     public void test_compress_bzip2_outputstream()  throws Exception {
 
-        final File file = com.dotmarketing.util.FileUtil.createTemporalFile("bzip2");
+        final File file = com.dotmarketing.util.FileUtil.createTemporaryFile("bzip2");
         final OutputStream out = FileUtil.createOutputStream(file, "bzip2");
 
         final String  string = "testcompress";
@@ -97,7 +97,7 @@ public class FileUtilTest {
     @Test
     public void test_compress_bzip2_enum_outputstream()  throws Exception {
 
-        final File file = com.dotmarketing.util.FileUtil.createTemporalFile("ebzip2");
+        final File file = com.dotmarketing.util.FileUtil.createTemporaryFile("ebzip2");
         final OutputStream out = FileUtil.createOutputStream(file.toPath(), FileUtil.StreamCompressorType.BZIP2);
 
         final String  string = "testcompress";
