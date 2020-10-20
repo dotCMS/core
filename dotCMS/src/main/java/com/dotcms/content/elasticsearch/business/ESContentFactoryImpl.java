@@ -990,7 +990,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final DotConnect dotConnect = new DotConnect();
         final StringBuilder select = new StringBuilder();
         select.append("select contentlet.*, inode.owner "
-                + "from contentlet, contentlet_version_info as contentletvi, inode "
+                + "from contentlet, contentlet_version_info, inode "
                 + "where structure_inode = '")
                 .append(structureInode).append("' " );
 
@@ -1011,8 +1011,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        select.append(" and contentletvi.identifier=contentlet.identifier "
-                + " and contentletvi.working_inode=contentlet.inode "
+        select.append(" and contentlet_version_info.identifier=contentlet.identifier "
+                + " and contentlet_version_info.working_inode=contentlet.inode "
                 + " and contentlet.inode = inode.inode");
         dotConnect.setSQL(select.toString());
 
