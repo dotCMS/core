@@ -118,9 +118,7 @@ public class ReindexThread {
     private final static AtomicBoolean rebuildBulkIndexer=new AtomicBoolean(false);
 
     public static void rebuildBulkIndexer() {
-      Logger.warn(ReindexThread.class, "------------------------");
-      Logger.warn(ReindexThread.class, "ReindexThread BulkProcessor needs to be Rebuilt");
-      Logger.warn(ReindexThread.class, "------------------------");
+      Logger.warn(ReindexThread.class, "--- ReindexThread BulkProcessor needs to be Rebuilt");
       ReindexThread.rebuildBulkIndexer.set(true);
     }
 
@@ -147,9 +145,8 @@ public class ReindexThread {
 
 
     private final Runnable ReindexThreadRunnable = () -> {
-        Logger.info(this.getClass(), "------------------------");
-        Logger.info(this.getClass(), "Reindex Thread is starting, background indexing will begin");
-        Logger.info(this.getClass(), "------------------------");
+        Logger.info(this.getClass(), "---  ReindexThread is starting, background indexing will begin");
+
 
         while (STATE != ThreadState.STOPPED) {
             try {
@@ -158,9 +155,8 @@ public class ReindexThread {
                 Logger.error(this.getClass(), e.getMessage(), e);
             }
         }
-        Logger.warn(this.getClass(), "------------------------");
-        Logger.warn(this.getClass(), "Reindex Thread is stopping, background indexing will not take place");
-        Logger.warn(this.getClass(), "------------------------");
+        Logger.warn(this.getClass(), "---  ReindexThread is stopping, background indexing will not take place");
+
     };
 
     @VisibleForTesting
@@ -236,7 +232,7 @@ public class ReindexThread {
       }
       while (STATE == ThreadState.PAUSED) {
         ThreadUtils.sleep(SLEEP);
-        Logger.infoEvery(ReindexThread.class, "ReindexThread Paused", 60000);
+        Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused", 60000);
         if(cache.get().get(REINDEX_THREAD_PAUSED)==null) {
             unpause();
         }
@@ -250,10 +246,7 @@ public class ReindexThread {
         bulk = indexAPI.appendBulkRequest(bulk, workingRecords.values());
 
         contentletsIndexed += bulk.numberOfActions();
-        Logger.info(this.getClass(), "-----------");
-        Logger.info(this.getClass(), "Total Indexed        : " + contentletsIndexed);
-        Logger.info(this.getClass(), "ReindexEntries found : " + workingRecords.size());
-        Logger.info(this.getClass(), "BulkRequests created : " + bulk.numberOfActions());
+        Logger.info(this.getClass(), "---  ReindexThread total/todo/bulk: " + contentletsIndexed + "/" + workingRecords.size() + "/"  + bulk.numberOfActions());
         indexAPI.putToIndex(bulk, new BulkActionListener(workingRecords));
     }
 
@@ -311,13 +304,13 @@ public class ReindexThread {
     }
 
     public static void pause() {
-        Logger.debug(ReindexThread.class, "ReindexThread - Paused");
+        Logger.debug(ReindexThread.class, "--- ReindexThread - Paused");
         cache.get().put(REINDEX_THREAD_PAUSED, REINDEX_THREAD_PAUSED);
         getInstance().state(ThreadState.PAUSED);
     }
 
     public static void unpause() {
-        Logger.infoEvery(ReindexThread.class, "ReindexThread Running", 60000);
+        Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
         cache.get().remove(REINDEX_THREAD_PAUSED);
         getInstance().state(ThreadState.RUNNING);
     }
