@@ -127,25 +127,29 @@ public class FieldDataGen extends AbstractDataGen<Field> {
     @Override
     public Field next() {
 
-        return FieldBuilder
-                .builder(type)
-                .name(name)
-                .contentTypeId(contentTypeId)
-                .required(required)
-                .variable(velocityVarName)
-                .sortOrder(sortOrder)
-                .values(values)
-                .hint(hint)
-                .defaultValue(defaultValue)
-                .indexed(indexed)
-                .listed(listed)
-                .fixed(fixed)
-                .readOnly(readOnly)
-                .searchable(searchable)
-                .unique(unique)
-                .relationType(relationType)
-                .dataType(dataType)
-                .build();
+        final FieldBuilder fieldBuilder = FieldBuilder
+            .builder(type)
+            .name(name)
+            .contentTypeId(contentTypeId)
+            .required(required)
+            .variable(velocityVarName)
+            .sortOrder(sortOrder)
+            .values(values)
+            .hint(hint)
+            .defaultValue(defaultValue)
+            .indexed(indexed)
+            .listed(listed)
+            .fixed(fixed)
+            .readOnly(readOnly)
+            .searchable(searchable)
+            .unique(unique)
+            .relationType(relationType);
+
+        if (dataType != null) {
+            fieldBuilder.dataType(dataType);
+        }
+
+        return fieldBuilder.build();
     }
 
     @WrapInTransaction
