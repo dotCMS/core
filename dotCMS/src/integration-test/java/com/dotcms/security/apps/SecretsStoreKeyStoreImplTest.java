@@ -1,6 +1,6 @@
 package com.dotcms.security.apps;
 
-import static com.dotcms.security.apps.SecretsStoreKeyStoreImpl.SECRETS_KEYSTORE_PASSWORD_KEY;
+import static com.dotcms.security.apps.SecretsKeyStoreHelper.SECRETS_KEYSTORE_PASSWORD_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -10,8 +10,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.commons.lang.RandomStringUtils;
@@ -208,9 +206,9 @@ public class SecretsStoreKeyStoreImplTest {
     @Test
     public void Test_Encryption() {
         final String uuid = UUIDGenerator.generateUuid();
-        final SecretsStore secretsStore = SecretsStore.INSTANCE.get();
-        final char[] encrypted = ((SecretsStoreKeyStoreImpl) secretsStore).encrypt(uuid.toCharArray());
-        assertEquals(uuid,new String(((SecretsStoreKeyStoreImpl) secretsStore).decrypt(encrypted)));
+        SecretsKeyStoreHelper secretsStore = new SecretsKeyStoreHelper();
+        final char[] encrypted = secretsStore.encrypt(uuid.toCharArray());
+        assertEquals(uuid,new String((secretsStore).decrypt(encrypted)));
 
     }
 
@@ -225,8 +223,7 @@ public class SecretsStoreKeyStoreImplTest {
     public void Test_Recovery_On_Load_Failure() {
         final String password = Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY);
         try {
-            final SecretsStoreKeyStoreImpl secretsStore = (SecretsStoreKeyStoreImpl) SecretsStore.INSTANCE
-                    .get();
+            final SecretCachedKeyStoreImpl secretsStore = (SecretCachedKeyStoreImpl) SecretsStore.INSTANCE.get();
             final String anyKey = "anyKey-" + System.currentTimeMillis();
             final String anyValue = "anyValue";
             // Save something to ensure there's a file in use.

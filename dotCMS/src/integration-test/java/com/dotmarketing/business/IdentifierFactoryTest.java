@@ -29,13 +29,16 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang.time.DateUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -404,7 +407,7 @@ public class IdentifierFactoryTest {
 
     @Test
     public void testCreateNewFolderIdentifierForFolder()
-            throws DotSecurityException, DotDataException {
+            throws DotDataException {
 
         Folder newFolder, parentFolder;
         Identifier identifier;
@@ -414,6 +417,7 @@ public class IdentifierFactoryTest {
         identifier = null;
 
         newFolder.setName("TestingFolder" + System.currentTimeMillis());
+        newFolder.setOwner(systemUser.getUserId());
 
         try {
             //Creates new identifier
@@ -426,6 +430,14 @@ public class IdentifierFactoryTest {
             assertEquals(parentFolder.getPath(), identifier.getParentPath());
             assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
             assertEquals(newFolder.getName(), identifier.getAssetName());
+
+            assertNotNull(identifier.getOwner());
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertNull(identifier.getAssetSubType());
         } finally {
             if (identifier != null) {
                 //Deletes the created identifier
@@ -455,6 +467,7 @@ public class IdentifierFactoryTest {
         newContentlet.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, parentFolder.getInode());
         newContentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName + DOT_TXT);
         newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName + DOT_TXT);
+        newContentlet.setModUser(systemUser.getUserId());
 
         try {
             //Creates new identifier
@@ -469,6 +482,16 @@ public class IdentifierFactoryTest {
             assertEquals(
                     newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD),
                     identifier.getAssetName());
+
+            assertTrue(UtilMethods.isSet(identifier.getOwner()));
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertTrue(UtilMethods.isSet(identifier.getAssetSubType()));
+            assertEquals(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME,
+                    identifier.getAssetSubType());
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -491,6 +514,7 @@ public class IdentifierFactoryTest {
         pageName = "tempPage" + System.currentTimeMillis();
         parentFolder = new FolderDataGen().nextPersisted();
 
+        newContentlet.setModUser(systemUser.getUserId());
         newContentlet.setContentTypeId(contentTypeAPI.find(
                         HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME).inode());
         newContentlet.setStringProperty(HTMLPageAssetAPI.URL_FIELD, pageName);
@@ -506,6 +530,16 @@ public class IdentifierFactoryTest {
             assertEquals(parentFolder.getPath(), identifier.getParentPath());
             assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
             assertEquals(pageName, identifier.getAssetName());
+
+            assertTrue(UtilMethods.isSet(identifier.getOwner()));
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertTrue(UtilMethods.isSet(identifier.getAssetSubType()));
+            assertEquals(HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME,
+                    identifier.getAssetSubType());
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -524,6 +558,7 @@ public class IdentifierFactoryTest {
 
         identifier = null;
         newWebAsset = new Template();
+        newWebAsset.setOwner(systemUser.getUserId());
         parentFolder = new FolderDataGen().nextPersisted();
 
         try {
@@ -539,6 +574,13 @@ public class IdentifierFactoryTest {
             assertNotNull(identifier.getURI());
             assertNotNull(identifier.getAssetType());
 
+            assertTrue(UtilMethods.isSet(identifier.getOwner()));
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertFalse(UtilMethods.isSet(identifier.getAssetSubType()));
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -559,6 +601,7 @@ public class IdentifierFactoryTest {
         newWebAsset = new Link();
         parentFolder = new FolderDataGen().nextPersisted();
         newWebAsset.setInode(UUIDGenerator.generateUuid());
+        newWebAsset.setOwner(systemUser.getUserId());
 
         try {
             //Creates new identifier
@@ -573,6 +616,14 @@ public class IdentifierFactoryTest {
             assertNotNull(identifier.getURI());
             assertNotNull(identifier.getAssetType());
 
+            assertTrue(UtilMethods.isSet(identifier.getOwner()));
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertFalse(UtilMethods.isSet(identifier.getAssetSubType()));
+
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -582,8 +633,7 @@ public class IdentifierFactoryTest {
     }
 
     @Test
-    public void testCreateNewFolderIdentifierForHost()
-            throws DotSecurityException, DotDataException {
+    public void testCreateNewFolderIdentifierForHost() throws DotDataException {
 
         Folder newFolder;
         Identifier identifier;
@@ -592,7 +642,7 @@ public class IdentifierFactoryTest {
         identifier = null;
 
         newFolder.setName("TestingFolder" + System.currentTimeMillis());
-
+        newFolder.setOwner(systemUser.getUserId());
         try {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newFolder, defaultHost);
@@ -603,6 +653,14 @@ public class IdentifierFactoryTest {
             assertFalse(newFolder.getVersionId().isEmpty());
             assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
             assertEquals(newFolder.getName(), identifier.getAssetName());
+
+            assertNotNull(identifier.getOwner());
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertNull(identifier.getAssetSubType());
         } finally {
             if (identifier != null) {
                 //Deletes the created identifier
@@ -625,6 +683,7 @@ public class IdentifierFactoryTest {
         fileName = TEMP_FILE + System.currentTimeMillis();
         tempFile = File.createTempFile(fileName, TXT);
 
+        newContentlet.setModUser(systemUser.getUserId());
         newContentlet.setContentTypeId(contentTypeAPI.find(FileAssetAPI.BINARY_FIELD).inode());
         newContentlet.setBinary(FileAssetAPI.BINARY_FIELD, tempFile);
         newContentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName + DOT_TXT);
@@ -642,6 +701,16 @@ public class IdentifierFactoryTest {
             assertEquals(
                     newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD),
                     identifier.getAssetName());
+
+            assertTrue(UtilMethods.isSet(identifier.getOwner()));
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertTrue(UtilMethods.isSet(identifier.getAssetSubType()));
+            assertEquals(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME,
+                    identifier.getAssetSubType());
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -662,6 +731,7 @@ public class IdentifierFactoryTest {
         newContentlet = new HTMLPageAsset();
         pageName = TEMP_FILE + System.currentTimeMillis();
 
+        newContentlet.setModUser(systemUser.getUserId());
         newContentlet.setContentTypeId(contentTypeAPI.find(
                         HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME).inode());
         newContentlet.setStringProperty(HTMLPageAssetAPI.URL_FIELD, pageName);
@@ -676,6 +746,18 @@ public class IdentifierFactoryTest {
             assertFalse(newContentlet.getVersionId().isEmpty());
             assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
             assertEquals(pageName, identifier.getAssetName());
+
+            assertTrue(UtilMethods.isSet(identifier.getOwner()));
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertTrue(UtilMethods.isSet(identifier.getAssetSubType()));
+            assertEquals(HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME,
+                    identifier.getAssetSubType());
+
+
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -693,6 +775,7 @@ public class IdentifierFactoryTest {
 
         identifier = null;
         newContentlet = new Host();
+        newContentlet.setModUser(systemUser.getUserId());
         newContentlet.setInode(UUIDGenerator.generateUuid());
 
         try {
@@ -705,6 +788,14 @@ public class IdentifierFactoryTest {
             assertFalse(newContentlet.getVersionId().isEmpty());
             assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
 
+            assertTrue(UtilMethods.isSet(identifier.getOwner()));
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertTrue(UtilMethods.isSet(identifier.getAssetSubType()));
+            assertEquals(Host.HOST_VELOCITY_VAR_NAME, identifier.getAssetSubType());
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -751,6 +842,53 @@ public class IdentifierFactoryTest {
 
         assertNull(assetType);
 
+    }
+
+    /**
+     * Method to Test: {@link IdentifierFactory#saveIdentifier(Identifier)}
+     * When: An existing identifier is modified
+     * Should: Update the fields in database accordingly
+     * @throws DotDataException
+     */
+    @Test
+    public void testUpdateIdentifier() throws DotDataException {
+        Folder newFolder;
+        Identifier identifier;
+
+        newFolder = new Folder();
+        identifier = null;
+
+        newFolder.setName("TestingFolder" + System.currentTimeMillis());
+        newFolder.setOwner(systemUser.getUserId());
+        try {
+            //Creates new identifier
+            identifier = factory.createNewIdentifier(newFolder, defaultHost);
+
+            assertTrue(UtilMethods.isSet(identifier.getId()));
+            assertEquals(newFolder.getName(), identifier.getAssetName());
+
+            identifier.setAssetName("new asset name");
+
+            final String objectId = identifier.getId();
+
+            identifier = factory.saveIdentifier(identifier);
+
+            assertEquals(objectId, identifier.getId());
+            assertEquals("new asset name", identifier.getAssetName());
+
+            assertNotNull(identifier.getOwner());
+            assertEquals(systemUser.getUserId(), identifier.getOwner());
+
+            assertTrue(UtilMethods.isSet(identifier.getCreateDate()));
+            assertTrue(DateUtils.isSameDay(new Date(), identifier.getCreateDate()));
+
+            assertNull(identifier.getAssetSubType());
+        } finally {
+            if (identifier != null) {
+                //Deletes the created identifier
+                deleteIdentifier(identifier);
+            }
+        }
     }
 
     private void deleteIdentifier(final Identifier identifier) throws DotDataException {

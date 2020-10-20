@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.SelectField;
@@ -39,6 +40,8 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
 import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,11 +50,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Jonathan Gamba 2019-04-16
  */
 public class TestDataUtils {
+
+    public static final String FILE_ASSET_1 = "fileAsset1";
+    public static final String FILE_ASSET_2 = "fileAsset2";
+    public static final String FILE_ASSET_3 = "fileAsset3";
 
     public static ContentType getBlogLikeContentType() {
         return getBlogLikeContentType("Blog" + System.currentTimeMillis());
@@ -936,28 +945,43 @@ public class TestDataUtils {
     }
 
     public static Contentlet getFileAssetContent(Boolean persist, long languageId) {
-
-        try {
-            Folder folder = new FolderDataGen().nextPersisted();
-
-            //Test file
-            final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
-            return createFileAsset(testImagePath, folder, languageId, persist);
-        } catch (Exception e) {
-            throw new DotRuntimeException(e);
-        }
+        return getFileAssetContent(persist, languageId, TestFile.JPG);
     }
 
     public static Contentlet getFileAssetSVGContent(Boolean persist, long languageId) {
+        return getFileAssetContent(persist, languageId, TestFile.SVG);
+    }
+
+    public static Contentlet getFileAssetContent(final Boolean persist, final long languageId, final TestFile testFile) {
 
         try {
             final Folder folder = new FolderDataGen().nextPersisted();
 
             //Test file
-            final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image.svg";
-            return createFileAsset(testImagePath, folder, languageId, persist);
+            final String testFilePath = testFile.filePath;
+            return createFileAsset(testFilePath, folder, languageId, persist);
         } catch (Exception e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    public enum TestFile {
+
+        JPG("com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg"),
+        GIF("com/dotmarketing/portlets/contentlet/business/test_files/test.gif"),
+        PNG("com/dotmarketing/portlets/contentlet/business/test_files/test_image2.png"),
+        SVG("com/dotmarketing/portlets/contentlet/business/test_files/test_image.svg"),
+        TEXT("com/dotmarketing/portlets/contentlet/business/test_files/test.txt"),
+        PDF("com/dotmarketing/portlets/contentlet/business/test_files/test.pdf");
+
+        private final String filePath;
+
+        TestFile(final String filePath) {
+            this.filePath = filePath;
+        }
+
+        public String getFilePath() {
+            return filePath;
         }
     }
 
@@ -1773,4 +1797,183 @@ public class TestDataUtils {
                         newsContentType.id(), host, sysPublishDate);
     }
 
+    public static ContentType getMultipleBinariesContentType() {
+        return getMultipleBinariesContentType("MultipleBinaries" + System.currentTimeMillis(), APILocator.systemHost(),null);
+    }
+
+    /**
+     * This will give you a CT that has 3 non-required binaries.
+     * The default metadata generated gets removed.
+     * @param contentTypeName
+     * @param site
+     * @param workflowIds
+     * @return
+     */
+    @WrapInTransaction
+    public static ContentType getMultipleBinariesContentType(final String contentTypeName,
+            final Host site,
+            final Set<String> workflowIds) {
+
+        ContentType contentType = null;
+        try {
+            try {
+                contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (contentType == null) {
+
+                final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                if (null != site) {
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("Site or Folder")
+                                    .velocityVarName("hostfolder")
+                                    .sortOrder(1)
+                                    .required(Boolean.TRUE)
+                                    .type(HostFolderField.class)
+                                    .next()
+                    );
+                }
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Title")
+                                .velocityVarName("title")
+                                .sortOrder(2)
+                                .type(TextField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name(FILE_ASSET_1)
+                                .velocityVarName(FILE_ASSET_1)
+                                .sortOrder(3)
+                                //The only way we can guarantee a field won't be indexed is by setting all these to false
+                                .indexed(false).searchable(false).listed(false).unique(false)
+                                .type(BinaryField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name(FILE_ASSET_2)
+                                .velocityVarName(FILE_ASSET_2)
+                                .sortOrder(4)
+                                .indexed(true)
+                                .type(BinaryField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name(FILE_ASSET_3)
+                                .velocityVarName(FILE_ASSET_3)
+                                .sortOrder(5)
+                                .indexed(true)
+                                .type(BinaryField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("image1")
+                                .velocityVarName("image1")
+                                .sortOrder(5)
+                                .indexed(false)
+                                .type(ImageField.class)
+                                .next()
+                );
+
+
+                final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .workflowId(workflowIds)
+                        .fields(fields);
+
+                if (null != site) {
+                    contentTypeDataGen.host(site);
+                }
+
+                contentType = contentTypeDataGen.nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return contentType;
+    }
+
+    public static Contentlet getMultipleBinariesContent(Boolean persist, long languageId,
+            String contentTypeId) {
+
+        if (null == contentTypeId) {
+            contentTypeId = getMultipleBinariesContentType().id();
+        }
+
+        final Contentlet fileAssetJpgContent = TestDataUtils
+                .getFileAssetContent(true, languageId, TestFile.JPG);
+
+        try {
+
+           final ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                    .languageId(languageId)
+                    .setProperty("title", "blah")
+                    .setProperty(FILE_ASSET_1, nextBinaryFile(TestFile.JPG))
+                    .setProperty(FILE_ASSET_2, nextBinaryFile(TestFile.PNG))
+                    .setProperty("image1", fileAssetJpgContent.getIdentifier());
+
+            if (persist) {
+                final Contentlet persisted = contentletDataGen.nextPersisted();
+
+                final File fileAsset1 = (File) persisted.get(FILE_ASSET_1);
+                removeAnyMetadata(fileAsset1);
+                final File fileAsset2 = (File) persisted.get(FILE_ASSET_2);
+                removeAnyMetadata(fileAsset2);
+
+                return persisted;
+            } else {
+                return contentletDataGen.next();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    /**
+     * This will use one of the internal test-files to generate a temp copy
+     * @param testFile
+     * @return
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    public static File nextBinaryFile(final TestFile testFile) throws IOException, URISyntaxException {
+        final String testImagePath = testFile.filePath;
+        final String ext = UtilMethods.getFileExtension(testImagePath);
+        final File originalTestImage = new File(
+                ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
+        final File testImage = new File(Files.createTempDir(),
+                "test_binary" + System.currentTimeMillis() + "." + ext);
+        FileUtil.copyFile(originalTestImage, testImage);
+        return testImage;
+    }
+
+    /**
+     * Test data's generated with medata. This removes it.
+     * For the new Api to be able to generate new
+     * @param binary
+     */
+    public static void removeAnyMetadata(final File binary){
+        final File immediateParent = new File(binary.getParent());
+        //delete any previously generated json
+        final File[] files = new File(immediateParent.getParent()).listFiles();
+        if(null != files){
+            final List<File> jsonFiles = Stream.of(files).filter(file -> file.getName().endsWith("json"))
+                    .collect(Collectors.toList());
+            jsonFiles.forEach(file -> file.delete());
+        }
+    }
 }
