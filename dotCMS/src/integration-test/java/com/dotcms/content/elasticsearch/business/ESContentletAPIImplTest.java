@@ -53,6 +53,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.util.Optional;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -392,12 +393,13 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     private void checkLock(final User user, final Contentlet contentletSaved) throws DotDataException {
-        final ContentletVersionInfo info = APILocator.getVersionableAPI().
+        final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().
                 getContentletVersionInfo(contentletSaved.getIdentifier(), contentletSaved.getLanguageId());
 
-        assertNotNull(info.getLockedBy());
-        assertNotNull(info.getLockedOn());
-        assertEquals(user.getUserId(), info.getLockedBy());
+        assertTrue(info.isPresent());
+        assertNotNull(info.get().getLockedBy());
+        assertNotNull(info.get().getLockedOn());
+        assertEquals(user.getUserId(), info.get().getLockedBy());
     }
 
     /**

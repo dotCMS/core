@@ -1030,7 +1030,7 @@ create table users_to_delete (
    primary key (id)
 );
 create table identifier (
-   id varchar(36) not null,
+   id varchar(750) not null,
    parent_path varchar(255),
    asset_name varchar(255),
    host_inode varchar(36),
@@ -1038,6 +1038,9 @@ create table identifier (
    syspublish_date datetime,
    sysexpire_date datetime,
    full_path_lc varchar(510) as ( IF(parent_path = 'System folder', '/', lower(concat(parent_path, asset_name)) )),
+   owner varchar(255),
+   create_date datetime,
+   asset_subtype varchar(255),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -1569,6 +1572,7 @@ alter table analytic_summary_visits add index fk9eac9733b7b46300 (summary_period
 create index idx_preference_1 on user_preferences (preference);
 create index idx_identifier_pub on identifier (syspublish_date);
 create index idx_identifier_exp on identifier (sysexpire_date);
+create index idx_identifier_asset_subtype on identifier (asset_subtype);
 create index idx_user_clickstream11 on clickstream (host_id);
 create index idx_user_clickstream12 on clickstream (last_page_id);
 create index idx_user_clickstream15 on clickstream (browser_name);
@@ -2328,3 +2332,37 @@ CREATE TABLE api_token_issued(
 create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
 CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);
+
+create table storage_group (
+    group_name varchar(255)  not null,
+    mod_date   TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
+    PRIMARY KEY (group_name)
+);
+
+create table storage (
+    path       varchar(255) not null,
+    group_name varchar(255) not null,
+    hash       varchar(64) not null,
+    metadata   text not null,
+    mod_date   TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
+    PRIMARY KEY (path, group_name),
+    FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
+);
+
+CREATE INDEX idx_storage_hash ON storage (hash);
+
+create table storage_data (
+    hash_id  varchar(64) not null,
+    data     MEDIUMBLOB not null,
+    mod_date TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
+    PRIMARY KEY (hash_id)
+);
+
+create table storage_x_data (
+    storage_hash varchar(64) not null,
+    data_hash    varchar(64) not null,
+    data_order   integer  not null,
+    mod_date     TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
+    PRIMARY KEY (storage_hash, data_hash),
+    FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
+);

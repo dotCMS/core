@@ -444,7 +444,7 @@ public class AppsResource {
     @Path("/export")
     @JSONP
     @NoCache
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response exportSecrets(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
@@ -482,7 +482,7 @@ public class AppsResource {
     @Path("/import")
     @JSONP
     @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response importSecrets(
             @Context final HttpServletRequest request,
