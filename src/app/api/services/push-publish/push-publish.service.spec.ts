@@ -87,7 +87,7 @@ describe('PushPublishService', () => {
         const req = httpMock.expectOne(() => true);
         expect(
             req.request.url.indexOf(
-                'DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish'
+                '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish'
             )
         ).toBeGreaterThan(-1);
         expect(req.request.method).toBe('POST');
