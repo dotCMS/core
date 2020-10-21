@@ -1,5 +1,8 @@
 package com.dotmarketing.startup.runonce;
 
+import static com.dotcms.security.apps.AppsUtil.APPS_IMPORT_EXPORT_DEFAULT_PASSWORD;
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
@@ -18,6 +21,7 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.Config;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.File;
@@ -68,7 +72,8 @@ public class Task201008LoadAppsSecretsTest {
         return api.createAppDescriptor(file, admin);
     }
 
-    private Path createSecretsAndExportThem(final AppDescriptor descriptor, final Key key, final Set<Host> sites)
+    private Path createSecretsAndExportThem(final AppDescriptor descriptor, final Key key,
+            final Set<Host> sites)
             throws IOException, DotDataException, DotSecurityException, AlreadyExistException {
 
         final AppsAPI api = APILocator.getAppsAPI();
@@ -90,6 +95,11 @@ public class Task201008LoadAppsSecretsTest {
 
     }
 
+    /**
+     * Given scenario: Happy path scenario We generate a file then we remove the secret store and we
+     * run the import task Expected Result: No exceptions are expected. We expect the secret store
+     * to have been regenerated then we verify the new secret exist.
+     */
     @Test
     public void Test_UpgradeTask()
             throws DotDataException, DotSecurityException, AlreadyExistException, IOException {
@@ -97,26 +107,32 @@ public class Task201008LoadAppsSecretsTest {
         final AppDescriptor descriptor = genAppDescriptor();
         destroySecretsStore();
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(null));
-        final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site)).toFile();
+        final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site))
+                .toFile();
 
         final Path serverDir = AppDescriptorHelper.getServerDirectory();
 
         final File fileToImport = new File(serverDir.toString(), "dotSecrets-import.xxx");
         //Task will match any file matching this name followed by any extension
-            exportFile.renameTo(fileToImport);
-            destroySecretsStore();
+        exportFile.renameTo(fileToImport);
+        destroySecretsStore();
 
-            final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
-            Assert.assertTrue(task.forceRun());
-            task.executeUpgrade();
-            Assert.assertEquals(1, task.getImportCount());
-            final AppsAPI api = APILocator.getAppsAPI();
-            final Optional<AppSecrets> secrets = api.getSecrets(descriptor.getKey(), site, admin);
-            Assert.assertTrue(secrets.isPresent());
-            //finally test file got removed.
-            Assert.assertFalse(fileToImport.exists());
+        final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
+        Assert.assertTrue(task.forceRun());
+        task.executeUpgrade();
+        Assert.assertEquals(1, task.getImportCount());
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Optional<AppSecrets> secrets = api.getSecrets(descriptor.getKey(), site, admin);
+        Assert.assertTrue(secrets.isPresent());
+        //finally test file got removed.
+        Assert.assertFalse(fileToImport.exists());
     }
 
+    /**
+     * Given scenario: We generate an export file that has a secret associated to a site. Then Site
+     * gets removed to simulate a scenario on which we import a secret for a non-exiting site on a
+     * receiver node Expected Result: The import operation must fail.
+     */
     @Test(expected = DotDataException.class)
     public void Test_UpgradeTask_Expect_Failure_Due_To_Invalid_Site()
             throws DotDataException, DotSecurityException, AlreadyExistException, IOException {
@@ -124,7 +140,8 @@ public class Task201008LoadAppsSecretsTest {
         final AppDescriptor descriptor = genAppDescriptor();
         destroySecretsStore();
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(null));
-        final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site)).toFile();
+        final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site))
+                .toFile();
 
         final HostAPI hostAPI = APILocator.getHostAPI();
         hostAPI.archive(site, admin, false);
@@ -148,6 +165,11 @@ public class Task201008LoadAppsSecretsTest {
         Assert.assertFalse(fileToImport.exists());
     }
 
+    /**
+     * Given scenario: We generate an export file that has a secret associated to an app-descriptor.
+     * Then we remove the app-descriptor and attempt a reimport Expected Result: The import must
+     * fail due to the no longer existing descriptor.
+     */
     @Test(expected = DotDataException.class)
     public void Test_UpgradeTask_Expect_Failure_Due_To_Invalid_Descriptor()
             throws DotDataException, DotSecurityException, AlreadyExistException, IOException {
@@ -155,9 +177,10 @@ public class Task201008LoadAppsSecretsTest {
         final AppDescriptor descriptor = genAppDescriptor();
         destroySecretsStore();
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(null));
-        final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site)).toFile();
+        final File exportFile = createSecretsAndExportThem(descriptor, key, ImmutableSet.of(site))
+                .toFile();
 
-        api.removeApp(descriptor.getKey(), admin,true);
+        api.removeApp(descriptor.getKey(), admin, true);
 
         final Path serverDir = AppDescriptorHelper.getServerDirectory();
 
@@ -175,6 +198,22 @@ public class Task201008LoadAppsSecretsTest {
         Assert.assertTrue(secrets.isPresent());
         //finally test file got removed.
         Assert.assertFalse(fileToImport.exists());
+    }
+
+    /**
+     * Given scenario: We remove the default password property
+     * Expected Results: The Task must not run.
+     */
+    @Test
+    public void Test_UpgradeTask_Should_Not_Run_When_No_DefaultPassword_isSet(){
+        final String stringProperty = Config.getStringProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD);
+       try{
+           Config.setProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD, BLANK);
+           final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
+           Assert.assertFalse(task.forceRun());
+       }finally {
+           Config.setProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD, stringProperty);
+       }
     }
 
 }

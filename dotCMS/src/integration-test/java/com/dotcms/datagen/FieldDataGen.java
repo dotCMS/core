@@ -8,16 +8,14 @@ import com.dotmarketing.business.APILocator;
 
 public class FieldDataGen extends AbstractDataGen<Field> {
 
-    private final long currentTime = System.currentTimeMillis();
-
-    private String name = "testFieldName" + currentTime;
+    private String name;
     private Class type = TextField.class;
     private boolean required = Boolean.FALSE;
-    private String velocityVarName = "testFieldVarname" + currentTime;
+    private String velocityVarName;
     private int sortOrder = 1;
-    private String values = "testValue" + currentTime;
-    private String hint = "testHint" + currentTime;
-    private String defaultValue = "testDefaultValue" + currentTime;
+    private String values;
+    private String hint;
+    private String defaultValue;
     private boolean indexed = Boolean.TRUE;
     private boolean listed = Boolean.FALSE;
     private boolean fixed = Boolean.FALSE;
@@ -26,10 +24,26 @@ public class FieldDataGen extends AbstractDataGen<Field> {
     private boolean unique = Boolean.FALSE;
     private String contentTypeId;
     private String relationType;
+    private String id;
+
+    public FieldDataGen() {
+
+        final long currentTime = System.currentTimeMillis();
+        name = "testFieldName" + currentTime;
+        velocityVarName = "testFieldVarname" + currentTime;
+        values = "testValue" + currentTime;
+        hint = "testHint" + currentTime;
+        defaultValue = "testDefaultValue" + currentTime;
+    }
 
     @SuppressWarnings("unused")
     public FieldDataGen name(final String name) {
         this.name = name;
+        return this;
+    }
+
+    public FieldDataGen id(final String id) {
+        this.id = id;
         return this;
     }
 
@@ -127,6 +141,7 @@ public class FieldDataGen extends AbstractDataGen<Field> {
 
         return FieldBuilder
                 .builder(type)
+                .id(id)
                 .name(name)
                 .contentTypeId(contentTypeId)
                 .required(required)
@@ -150,7 +165,7 @@ public class FieldDataGen extends AbstractDataGen<Field> {
     public Field persist(Field field) {
 
         try {
-            field = APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+            field = APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser(), false);
         } catch (Exception e) {
             throw new RuntimeException("Error persisting Field", e);
         }
