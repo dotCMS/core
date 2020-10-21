@@ -1094,7 +1094,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
       List<String> missingCons = new ArrayList<>(CollectionUtils.subtract(inodes, conMap.keySet()));
 
       final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
-          + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+          + " on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
 
       for (int init = 0; init < missingCons.size(); init += 200) {
         int end = Math.min(init + 200, missingCons.size());
