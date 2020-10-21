@@ -1,13 +1,23 @@
 package com.dotcms.rest.api.v1.apps.view;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the site and the secrets associated to it
  * Optionally The secrets can be null. In such case the view will only represent plain site info.
  */
+@JsonSerialize(using = SiteView.SiteViewSerializer.class)
 public class SiteView {
 
     private final String id;
@@ -87,5 +97,33 @@ public class SiteView {
      */
     public List<SecretView> getSecrets() {
         return secrets;
+    }
+
+
+    public static class SiteViewSerializer extends JsonSerializer<SiteView> {
+
+        static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
+                .getDefaultObjectMapper();
+
+        @Override
+        public void serialize(final SiteView siteView, final JsonGenerator jsonGenerator, final SerializerProvider serializers)
+                throws IOException {
+
+            final Map<String, Object> map = new HashMap<>();
+            map.put("id", siteView.id);
+            map.put("name", siteView.name);
+            map.put("configured", siteView.configured);
+            if(null != siteView.secrets){
+               map.put("secrets", siteView.secrets);
+            }
+            if(null != siteView.secretsWithWarnings) {
+               map.put("secretsWithWarnings", siteView.secretsWithWarnings);
+            }
+
+            ViewStack.pushSite(siteView.id, map);
+
+            final String json = mapper.writeValueAsString(map);
+            jsonGenerator.writeRawValue(json);
+        }
     }
 }
