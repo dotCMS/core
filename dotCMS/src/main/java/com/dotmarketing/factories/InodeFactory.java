@@ -1543,12 +1543,12 @@ public class InodeFactory {
 		}
 		Inode inode = (Inode) o;
 		if(inode ==null || !UtilMethods.isSet(inode.getInode())){
-			
+
 			Logger.error(Inode.class, "Empty Inode Passed in");
 			return;
 		}
-		
-		
+
+
 		if(o instanceof Permissionable){
 			try {
 				APILocator.getPermissionAPI().removePermissions((Permissionable)o);
@@ -1557,28 +1557,36 @@ public class InodeFactory {
 				return;
 			}
 		}
-		
 
-				// workaround for dbs where we can't have more than one constraint
-				// or triggers
-				DotConnect db = new DotConnect();
-				db.setSQL("delete from tree where child = ? or parent =?");
-				db.addParam(inode.getInode());
-				db.addParam(inode.getInode());
-				db.getResult();
-	
-				// workaround for dbs where we can't have more than one constraint
-				// or triggers
-				db.setSQL("delete from multi_tree where child = ? or parent1 =? or parent2 = ?");
-				db.addParam(inode.getInode());
-				db.addParam(inode.getInode());
-				db.addParam(inode.getInode());
-				db.getResult();
-            				
+
+		// workaround for dbs where we can't have more than one constraint
+		// or triggers
+		DotConnect db = new DotConnect();
+		db.setSQL("delete from tree where child = ? or parent =?");
+		db.addParam(inode.getInode());
+		db.addParam(inode.getInode());
+		db.getResult();
+
+		// workaround for dbs where we can't have more than one constraint
+		// or triggers
+		db.setSQL("delete from multi_tree where child = ? or parent1 =? or parent2 = ?");
+		db.addParam(inode.getInode());
+		db.addParam(inode.getInode());
+		db.addParam(inode.getInode());
+		db.getResult();
+
+		if(Template.class.equals(o.getClass())){
+			try {
+				FactoryLocator.getTemplateFactory().deleteTemplateByInode(Template.class.cast(o).getInode());
+			} catch (DotDataException e) {
+				Logger.warnAndDebug(Template.class,e.getMessage(),e);
+			}
+		} else {
 			HibernateUtil.delete(o);
 			db.setSQL("delete from inode where inode = ?");
 			db.addParam(inode.getInode());
 			db.getResult();
+		}
 	}
 
 	public static void deleteChildrenOfClass(Inode parent, Class c) {

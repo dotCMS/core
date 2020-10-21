@@ -545,4 +545,22 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException{
 		templateFactory.updateUserReferences(userId, replacementUserId);
 	}
+
+	@CloseDBIfOpened
+	@Override
+	public List<Template> findAllVersions(final Identifier identifier, final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+		return findAllVersions(identifier,user,respectFrontendRoles,true);
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public List<Template> findAllVersions(final Identifier identifier, final User user, final boolean respectFrontendRoles, final boolean bringOldVersions)
+			throws DotDataException, DotSecurityException {
+		final List<Template> templateAllVersions = templateFactory.findAllVersions(identifier,bringOldVersions);
+		if(!templateAllVersions.isEmpty() && !permissionAPI.doesUserHavePermission(templateAllVersions.get(0), PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
+			throw new DotSecurityException("User cannot read Contentlet So Unable to View Versions");
+		}
+		return templateAllVersions;
+	}
 }

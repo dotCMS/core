@@ -46,8 +46,14 @@
 			//versions.add(0,working);
 	}else if(InodeUtils.isSet(v.getInode())){
 		ident = APILocator.getIdentifierAPI().find(v);
-		WebAsset working = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(ident, user, false);
-		versions = WebAssetFactory.getAssetVersionsandLive(working);
+		if(ident.getAssetType().equals(Identifier.ASSET_TYPE_TEMPLATE)){
+			versions.addAll(APILocator.getTemplateAPI().findAllVersions(ident,user,false));
+
+		} else {
+			WebAsset working = (WebAsset) APILocator.getVersionableAPI()
+					.findWorkingVersion(ident, user, false);
+			versions = WebAssetFactory.getAssetVersionsandLive(working);
+		}
 	}
 
 %>

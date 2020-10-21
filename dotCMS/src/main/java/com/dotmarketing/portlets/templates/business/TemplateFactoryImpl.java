@@ -4,6 +4,7 @@ import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
@@ -103,8 +104,13 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			template.setInode(UUIDGenerator.generateUuid());
 		}
 
-        insertInodeInDB(template);
-        insertTemplateInDB(template);
+        if(!UtilMethods.isSet(find(template.getInode()))) {
+			insertInodeInDB(template);
+			insertTemplateInDB(template);
+		} else {
+        	updateInodeInDB(template);
+        	updateTemplateInDB(template);
+		}
 
         templateCache.add(template.getInode(), template);
         new TemplateLoader().invalidate(template);
@@ -620,5 +626,53 @@ public class TemplateFactoryImpl implements TemplateFactory {
            Logger.error(TemplateFactory.class,e.getMessage(),e);
            throw new DotDataException(e.getMessage(), e);
        }
+	}
+
+	public List<Template> findAllVersions(final Identifier identifier, final boolean bringOldVersions)
+			throws DotDataException {
+		if(!UtilMethods.isSet(identifier) || !UtilMethods.isSet(identifier.getId())) {
+			return new ArrayList<>();
+		}
+
+		final DotConnect dc = new DotConnect();
+		final StringBuffer query = new StringBuffer();
+
+		if(bringOldVersions) {
+			query.append("SELECT inode FROM template WHERE identifier=? order by mod_date desc");
+
+		} else {//This only brings the inode of the working and live version
+			query.append("SELECT inode FROM template t INNER JOIN template_version_info tvi "
+					+ "ON (t.inode = tvi.working_inode OR t.inode = tvi.live_inode) "
+					+ "WHERE t.identifier=? order by t.mod_date desc ");
+		}
+
+		dc.setSQL(query.toString());
+		dc.addParam(identifier.getId());
+		final List<Map<String,Object>> results=dc.loadObjectResults();
+		final List<Template> templateAllVersions = new ArrayList<>();
+		for(Map<String,Object> result : results) {
+			final Template template = find(result.get("inode").toString());
+			templateAllVersions.add(template);
+		}
+		return templateAllVersions;
+	}
+
+	public void deleteTemplateByInode(final String templateInode) throws DotDataException {
+		deleteTemplateInDB(templateInode);
+		deleteInodeInDB(templateInode);
+	}
+
+	private void deleteInodeInDB(final String inode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.DELETE_INODE);
+		dc.addParam(inode);
+		dc.loadResult();
+	}
+
+	private void deleteTemplateInDB(final String inode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.DELETE_TEMPLATE_BY_INODE);
+		dc.addParam(inode);
+		dc.loadResult();
 	}
 }

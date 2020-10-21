@@ -39,5 +39,9 @@ public class TemplateSQL {
             "mod_user = ?, sort_order = ?, friendly_name = ?, body = ?, header = ?, footer = ?, image = ?, identifier = ?, " +
             "drawed = ?, drawed_body = ?, add_container_links = ?, containers_added = ?, head_code = ?, theme = ? where inode = ?";
 
+    public static final String DELETE_INODE = "delete from inode where inode = ? and type='template'";
+
+    public static final String DELETE_TEMPLATE_BY_INODE = "delete from template where inode = ?";
+
 
 }

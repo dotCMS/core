@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -301,5 +302,31 @@ public interface TemplateAPI {
 	 * @throws DotSecurityException 
 	 */
 	void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+
+	/**
+	 * Brings all the versions of a specific template
+	 * @param identifier id of the template
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	List<Template> findAllVersions(final Identifier identifier, final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Brings the versions of a specific template, if bringOldVersions is true brings all the versions,
+	 * if is set to false, only brings the working and the live version
+	 * @param identifier id of the template
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param bringOldVersions true = all versions, false = only live and working
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	List<Template> findAllVersions(final Identifier identifier, final User user, final boolean respectFrontendRoles, final boolean bringOldVersions)
+			throws DotDataException, DotSecurityException;
 	
 }
