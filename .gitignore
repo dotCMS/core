@@ -42,3 +42,10 @@ Thumbs.db
 
 # Storybook
 documentation.json
+
+
+# projects/dotcms-field-elements
+**/dist/
+**/www/
+**/loader/
+**/.stencil/
