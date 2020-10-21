@@ -59,12 +59,12 @@ describe('ResetPasswordComponent', () => {
 
     it('should load form labels correctly', () => {
         const header: DebugElement = de.query(By.css('h3'));
-        const inputs: DebugElement[] = de.queryAll(By.css('span.p-float-label label'));
+        const labels: DebugElement[] = de.queryAll(By.css('.p-field label'));
         const button: DebugElement = de.query(By.css('button'));
 
         expect(header.nativeElement.innerHTML).toEqual('Password Reset');
-        expect(inputs[0].nativeElement.innerHTML).toContain('Enter Password');
-        expect(inputs[1].nativeElement.innerHTML).toContain('Confirm Password');
+        expect(labels[0].nativeElement.innerHTML).toContain('Enter Password');
+        expect(labels[1].nativeElement.innerHTML).toContain('Confirm Password');
         expect(button.nativeElement.innerHTML).toContain('Change Password');
     });
 

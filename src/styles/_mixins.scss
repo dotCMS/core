@@ -99,8 +99,7 @@
 
 @mixin dot-field-helper-on-input {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    top: $spacing-5;
     right: 0;
     z-index: 1;
 }

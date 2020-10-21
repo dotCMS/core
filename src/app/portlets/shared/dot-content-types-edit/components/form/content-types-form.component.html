@@ -1,37 +1,32 @@
 <form [formGroup]="form" class="content-type__form p-fluid" id="content-type-form" novalidate>
     <div class="p-field form__group--validation">
-        <span class="p-float-label">
-            <input
-                pInputText
-                type="text"
-                id="content-type-form-name"
-                name="name"
-                formControlName="name"
-                [tabindex]="1"
-                #name
-                dotAutofocus
-            />
-            <label for="content-type-form-name">{{ nameFieldLabel }}</label>
-        </span>
+        <label for="content-type-form-name">{{ nameFieldLabel }}</label>
+        <input
+            pInputText
+            type="text"
+            id="content-type-form-name"
+            name="name"
+            formControlName="name"
+            [tabindex]="1"
+            #name
+            dotAutofocus/>
         <dot-field-validation-message
             [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
             [field]="form.get('name')"
         ></dot-field-validation-message>
     </div>
     <div class="p-field">
-        <span class="p-float-label">
-            <input
-                pInputText
-                type="text"
-                id="content-type-form-description"
-                name="description"
-                formControlName="description"
-                [tabindex]="2"
-            />
-            <label for="content-type-form-description">{{
-                'contenttypes.form.label.description' | dm
+        <label for="content-type-form-description">{{
+            'contenttypes.form.label.description' | dm
             }}</label>
-        </span>
+        <input
+            pInputText
+            type="text"
+            id="content-type-form-description"
+            name="description"
+            formControlName="description"
+            [tabindex]="2"
+        />
     </div>
     <div class="p-field">
         <label for="content-type-form-host" class="form__label">{{
@@ -120,18 +115,16 @@
         <dot-field-helper
             [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"
         ></dot-field-helper>
-        <span class="p-float-label">
-            <input
-                pInputText
-                type="text"
-                id="content-type-form-url-map-pattern"
-                name="urlMapPattern"
-                formControlName="urlMapPattern"
-                [tabindex]="8"
-            />
-            <label for="content-type-form-url-map-pattern">{{
-                'contenttypes.form.label.URL.pattern' | dm
+        <label for="content-type-form-url-map-pattern">{{
+            'contenttypes.form.label.URL.pattern' | dm
             }}</label>
-        </span>
+        <input
+            pInputText
+            type="text"
+            id="content-type-form-url-map-pattern"
+            name="urlMapPattern"
+            formControlName="urlMapPattern"
+            [tabindex]="8"
+        />
     </div>
 </form>

@@ -1,15 +1,17 @@
-<span class="p-float-label" *ngIf="floatingLabel; else placeholded">
-            <p-autoComplete
-                appendTo="body"
-                (completeMethod)="search($event)"
-                (keydown.enter)="onKeyEnter($event)"
-                (keydown.tab)="$event.preventDefault()"
-                (onClear)="onClear($event)"
-                (onSelect)="onSelect($event)"
-                [minLength]="2"
-                field="label"
-                [ngModel]="val"
-                [suggestions]="results.data">
+<div class="p-field">
+    <label>{{ label }}</label>
+    <span *ngIf="floatingLabel; else placeholded">
+        <p-autoComplete
+            appendTo="body"
+            (completeMethod)="search($event)"
+            (keydown.enter)="onKeyEnter($event)"
+            (keydown.tab)="$event.preventDefault()"
+            (onClear)="onClear($event)"
+            (onSelect)="onSelect($event)"
+            [minLength]="2"
+            field="label"
+            [ngModel]="val"
+            [suggestions]="results.data">
             <ng-template let-item pTemplate="item" >
                 <div class='dot-page-selector__item'>
                     <span *ngIf="results.type === 'site'">{{ item.label }}</span>
@@ -17,10 +19,11 @@
                     <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'" >{{ item.payload.hostName }}</span>
                 </div>
             </ng-template>
-    </p-autoComplete>
-    <label>{{ label }}</label>
-</span>
-<small *ngIf="message" class="p-invalid" [textContent]="message" ></small>
+        </p-autoComplete>
+    </span>
+    <small *ngIf="message" class="p-invalid" [textContent]="message" ></small>
+    <dot-field-helper [message]="'page.selector.hint' | dm "></dot-field-helper>
+</div>
 
 <ng-template #placeholded>
     <p-autoComplete
@@ -43,4 +46,3 @@
         </ng-template>
     </p-autoComplete>
 </ng-template>
-<dot-field-helper [message]="'page.selector.hint' | dm "></dot-field-helper>

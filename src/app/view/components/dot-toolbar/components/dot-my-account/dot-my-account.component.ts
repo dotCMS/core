@@ -16,7 +16,6 @@ import { Subject } from 'rxjs';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotcmsConfigService, LoginService, User, Auth } from 'dotcms-js';
-import { StringFormat } from 'src/app/api/util/stringFormat';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 interface AccountUserForm extends AccountUser {
@@ -57,7 +56,6 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
         private accountService: AccountService,
         private dotcmsConfigService: DotcmsConfigService,
         private loginService: LoginService,
-        private stringFormat: StringFormat,
         private dotRouterService: DotRouterService
     ) {
         this.passwordMatch = false;
@@ -117,11 +115,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
         this.changePasswordOption = !this.changePasswordOption;
     }
 
-    getRequiredMessage(item): string {
-        return this.stringFormat.formatMessage(
-            this.dotMessageService.get('error.form.mandatory'),
-            item
-        );
+    getRequiredMessage(...args: string[]): string {
+        return this.dotMessageService.get('error.form.mandatory', ...args);
     }
 
     save(): void {

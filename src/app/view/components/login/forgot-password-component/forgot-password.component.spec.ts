@@ -56,7 +56,7 @@ describe('ForgotPasswordComponent', () => {
 
     it('should load form labels correctly', () => {
         const header: DebugElement = de.query(By.css('h3'));
-        const inputLabel: DebugElement = de.query(By.css('span.p-float-label label'));
+        const inputLabel: DebugElement = de.query(By.css('.p-field label'));
         const cancelButton: DebugElement = de.query(By.css('button'));
         const submitButton: DebugElement = de.query(By.css('button[type="submit"]'));
 

@@ -283,7 +283,7 @@ describe('DotPageSelectorComponent', () => {
         });
 
         it('should set floating label directive', () => {
-            const span: DebugElement = de.query(By.css('.p-float-label'));
+            const span: DebugElement = de.query(By.css('.p-field'));
             expect(span.componentInstance.label).toBe('Hello World');
             expect(span).toBeTruthy();
         });
