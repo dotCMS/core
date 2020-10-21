@@ -246,17 +246,17 @@ public class DependencyManager {
 				}
 			} else if (asset.getType().equals(PusheableAsset.FOLDER.getType())) {
 				try {
-					final Folder f = APILocator.getFolderAPI().find(asset.getAsset(), user, false);
+					final Folder folder = APILocator.getFolderAPI().find(asset.getAsset(), user, false);
 
-					if(f == null) {
+					if(folder == null) {
 						Logger.warn(
 								getClass(),
 								String.format(
 										"Folder id: %s does NOT have working or live version, not Pushed",
 										asset.getAsset() != null ? asset.getAsset() : "N/A"));
 					} else {
-						f.ifSystemFolderLog(folder -> {
-							folders.add(asset.getAsset(), folder.getModDate());
+						folder.ifNotSystemFolder(thisFolder -> {
+							folders.add(asset.getAsset(), thisFolder.getModDate());
 							foldersSet.add(asset.getAsset());
 						});
 					}
@@ -269,17 +269,17 @@ public class DependencyManager {
 				}
 			} else if (asset.getType().equals(PusheableAsset.SITE.getType())) {
 				try {
-					final Host h = APILocator.getHostAPI().find(asset.getAsset(), user, false);
+					final Host host = APILocator.getHostAPI().find(asset.getAsset(), user, false);
 
-					if (h == null) {
+					if (host == null) {
 						Logger.warn(
 								getClass(),
 								"Host id: " + (asset.getAsset() != null
 										? asset.getAsset()
 										: "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						h.ifSystemHostLog(host -> {
-							hosts.add(asset.getAsset(), host.getModDate());
+						host.ifNotSystemHost(thisHost -> {
+							hosts.add(asset.getAsset(), thisHost.getModDate());
 							hostsSet.add(asset.getAsset());
 						});
 					}
@@ -491,7 +491,7 @@ public class DependencyManager {
 
 				// Content dependencies
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
-					if (!host.ifSystemHostLog()) {
+					if (!host.ifSystemHost()) {
 						final String luceneQuery = "+conHost:" + host.getIdentifier();
 						final List<Contentlet> contentList = APILocator
 								.getContentletAPI()
@@ -521,7 +521,7 @@ public class DependencyManager {
 							.getFolderAPI()
 							.findFoldersByHost(host, user, false)
 							.stream()
-							.filter(folder -> !folder.ifSystemFolderLog())
+							.filter(folder -> !folder.ifSystemFolder())
 							.forEach(folder -> {
 								folders.addOrClean(folder.getInode(), folder.getModDate());
 								foldersSet.add(folder.getInode());
@@ -1108,7 +1108,7 @@ public class DependencyManager {
 		if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
 			APILocator
 					.getHostAPI().find(structure.getHost(), user, false)
-					.ifSystemHostLog(host -> hosts.addOrClean(structure.getHost(), host.getModDate()));
+					.ifNotSystemHost(host -> hosts.addOrClean(structure.getHost(), host.getModDate()));
 		}
 
 		// Folder Dependencies
@@ -1116,7 +1116,7 @@ public class DependencyManager {
 			APILocator
 					.getFolderAPI()
 					.find(structure.getFolder(), user, false)
-					.ifSystemFolderLog(folder -> folders.addOrClean(structure.getFolder(), folder.getModDate()));
+					.ifNotSystemFolder(folder -> folders.addOrClean(structure.getFolder(), folder.getModDate()));
 		}
 
 		// Workflows Dependencies
@@ -1196,7 +1196,7 @@ public class DependencyManager {
 				APILocator
 						.getHostAPI()
 						.find(contentlet.getHost(), user, false)
-						.ifSystemHostLog(host -> hosts.addOrClean(contentlet.getHost(), host.getModDate()));
+						.ifNotSystemHost(host -> hosts.addOrClean(contentlet.getHost(), host.getModDate()));
 			}
 
 			contentsToProcess.add(contentlet);
@@ -1227,7 +1227,7 @@ public class DependencyManager {
 				APILocator
 						.getHostAPI()
 						.find(contentletToProcess.getHost(), user, false)
-						.ifSystemHostLog(host -> hosts.addOrClean(contentletToProcess.getHost(), host.getModDate()));
+						.ifNotSystemHost(host -> hosts.addOrClean(contentletToProcess.getHost(), host.getModDate()));
 			}
 
 			contentsWithDependenciesToProcess.add(contentletToProcess);
@@ -1263,7 +1263,7 @@ public class DependencyManager {
 				APILocator
 						.getHostAPI()
 						.find(contentletWithDependenciesToProcess.getHost(), user, false)
-						.ifSystemHostLog(host -> hosts.addOrClean(
+						.ifNotSystemHost(host -> hosts.addOrClean(
 								contentletWithDependenciesToProcess.getHost(),
 								host.getModDate()));
 			}

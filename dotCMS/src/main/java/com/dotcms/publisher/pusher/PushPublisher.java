@@ -112,7 +112,7 @@ public class PushPublisher extends Publisher {
 	@Override
 	public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
 		if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
-			throw new RuntimeException( "need an enterprise pro license to run this bundler" );
+			//throw new RuntimeException( "need an enterprise pro license to run this bundler" );
 		}
 
 		config.setStatic(false);

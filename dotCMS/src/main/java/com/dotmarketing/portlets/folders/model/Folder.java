@@ -336,20 +336,20 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	}
 
 	/**
-	 * If current folder (this) is SYSTEM_FOLDER then log a message, otherwise call the provided consumer
+	 * If current folder (this) is SYSTEM_FOLDER then return true, otherwise call the provided consumer
 	 * @param elseAction code block to execute when host is not SYSTEM_FOLDER
 	 * @return true if host is SYSTEM_FOLDER, otherwise false
 	 */
-	public boolean ifSystemFolderLog(final Consumer<Folder> elseAction) {
-		return HostUtil.ifSystemLog(SYSTEM_FOLDER, this::getInode, this, elseAction);
+	public boolean ifNotSystemFolder(final Consumer<Folder> elseAction) {
+		return HostUtil.ifSystem(SYSTEM_FOLDER, this::getInode, this, elseAction);
 	}
 
 	/**
-	 * If current folder (this) is SYSTEM_FOLDER then log a message, otherwise call the provided consumer
+	 * If current folder (this) is SYSTEM_FOLDER then return true
 	 * @return true if host is SYSTEM_FOLDER, otherwise false
 	 */
-	public <T> boolean ifSystemFolderLog() {
-		return ifSystemFolderLog(null);
+	public <T> boolean ifSystemFolder() {
+		return ifNotSystemFolder(null);
 	}
 
 }

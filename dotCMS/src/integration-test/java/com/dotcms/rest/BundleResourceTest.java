@@ -12,16 +12,22 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Map;
 import javax.ws.rs.container.AsyncResponse;
@@ -40,7 +46,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
+import static com.dotcms.enterprise.publishing.remote.bundler.FolderBundler.FOLDER_EXTENSION;
+import static com.dotcms.enterprise.publishing.remote.bundler.HostBundler.HOST_EXTENSION;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -180,6 +191,58 @@ public class BundleResourceTest {
 
         bundleResource.generateBundle(getHttpRequest(),response,asyncResponse,bundleForm);
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#generateBundle(HttpServletRequest, HttpServletResponse, AsyncResponse, GenerateBundleForm)}
+     * When: Create a bundle and generate the tar.gz file of the given bundle and verifies that the bundle contents do not contains
+     * "System Host" and references "System Folder".
+     * Should: Generate the bundle without issues, 200.
+     */
+    @Test
+    public void test_generateBundle_without_SystemHost_and_SystemFolder_references() throws Exception {
+        //Create new bundle
+        final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
+
+        //Create a Filter since it's needed to generate the bundle
+        createFilter();
+
+        //Generate bundle file
+        final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+        bundle.setOperation(PushPublisherConfig.Operation.PUBLISH.ordinal());
+        final File bundleFile = APILocator.getBundleAPI().generateTarGzipBundleFile(bundle);
+
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+
+        //Call download endpoint
+        final Response responseResource = bundleResource.downloadBundle(getHttpRequest(),response,bundleId);
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+
+        assertTrue(bundleFile.exists());
+
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+        final String bundleDir = bundleFile.getAbsolutePath().substring(0, bundleFile.getAbsolutePath().indexOf(".tar.gz"));
+        recursiveFindAndRun(
+                Paths.get(bundleDir),
+                path -> {
+                    assertNotEquals((systemHost.getInode() + HOST_EXTENSION), path.toFile().getName());
+                    assertNotEquals((systemFolder.getInode() + FOLDER_EXTENSION), path.toFile().getName());
+                });
+    }
+
+    private static void recursiveFindAndRun(final Path findInPath, final Consumer<Path> action) {
+        try (DirectoryStream<Path> newDirectoryStream = Files.newDirectoryStream(findInPath)) {
+            StreamSupport
+                    .stream(newDirectoryStream.spliterator(), false)
+                    .peek(path -> {
+                        action.accept(path);
+                        if (path.toFile().isDirectory()) {
+                            recursiveFindAndRun(path, action);
+                        }
+                    })
+                    .collect(Collectors.toList());
+        } catch (IOException e) {}
     }
 
     /**

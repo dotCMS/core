@@ -193,20 +193,20 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 	}
 
 	/**
-	 * If current host (this) is SYSTEM_HOST then log a message, otherwise call the provided consumer
+	 * If current host (this) is SYSTEM_HOST then return true
 	 * @param elseAction code block to execute when host is not SYSTEM_HOST
 	 * @return true if host is SYSTEM_HOST, otherwise false
 	 */
-	public boolean ifSystemHostLog(final Consumer<Host> elseAction) {
-		return HostUtil.ifSystemLog(SYSTEM_HOST, this::getIdentifier, this, elseAction);
+	public boolean ifNotSystemHost(final Consumer<Host> elseAction) {
+		return HostUtil.ifSystem(SYSTEM_HOST, this::getIdentifier, this, elseAction);
 	}
 
 	/**
-	 * If current host (this) is SYSTEM_HOST then log a message, otherwise call the provided consumer
+	 * If current host (this) is SYSTEM_HOST then return true
 	 * @return true if host is SYSTEM_HOST, otherwise false
 	 */
-	public <T> boolean ifSystemHostLog() {
-		return ifSystemHostLog(null);
+	public boolean ifSystemHost() {
+		return ifNotSystemHost(null);
 	}
 
 }

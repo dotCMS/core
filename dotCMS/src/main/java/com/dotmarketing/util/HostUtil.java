@@ -109,7 +109,7 @@ public class HostUtil {
 	}
 
 	/**
-	 * If current target is whatever suppler returns then log a message, otherwise call the provided consumer
+	 * If current target is whatever suppler returns then return true, otherwise call the provided consumer
 	 *
 	 * @param systemLiteral system literal to compare against
 	 * @param supplier supplier returning target field
@@ -117,10 +117,10 @@ public class HostUtil {
 	 * @param elseAction code block to execute when host is not SYSTEM_HOST
 	 * @return true if host is SYSTEM_HOST, otherwise false
 	 */
-	public static <T> boolean ifSystemLog(final String systemLiteral,
-										  final Supplier<String> supplier,
-										  final T target,
-										  final Consumer<T> elseAction) {
+	public static <T> boolean ifSystem(final String systemLiteral,
+									   final Supplier<String> supplier,
+									   final T target,
+									   final Consumer<T> elseAction) {
 		final boolean result = systemLiteral.equals(supplier.get());
 		if (!result && target != null && elseAction != null) {
 			elseAction.accept(target);
