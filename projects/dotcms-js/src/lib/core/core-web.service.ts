@@ -225,9 +225,8 @@ export class CoreWebService {
         const url = this.getFixedUrl(options.url);
         let body = <T>options.body || null;
 
-        if (body) {
-            const method = <'POST' | 'PUT' | 'PATCH'>options.method;
-            return new HttpRequest<T>(method, url, body, {
+        if (options.method === 'POST' || options.method === 'PUT' || options.method === 'PATCH') {
+            return new HttpRequest<T>(options.method, url, body, {
                 headers,
                 params
             });
