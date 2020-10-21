@@ -13,6 +13,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -78,7 +79,9 @@ public class MaintenanceResource implements Serializable {
         DotConcurrentFactory.getInstance()
                 .getSubmitter()
                 .submit(
-                        () -> Runtime.getRuntime().exit(0)
+                        () -> Runtime.getRuntime().exit(0),
+                        5,
+                        TimeUnit.SECONDS
                 );
 
         return Response.ok(new ResponseEntityView("Shutdown")).build();
