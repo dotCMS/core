@@ -31,12 +31,12 @@
 
 .p-overlaypanel:after {
     border: solid transparent;
-    border-color: rgba(255, 255, 255, 0);
+    border-color: rgba($white_rgb, 0);
 }
 
 .p-overlaypanel:before {
     border: solid transparent;
-    border-color: rgba(255, 255, 255, 0);
+    border-color: rgba($white_rgb, 0);
 }
 
 .p-overlaypanel.p-overlaypanel-flipped:after {

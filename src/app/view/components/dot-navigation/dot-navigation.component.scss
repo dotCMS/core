@@ -19,7 +19,7 @@ nav {
     width: $navigation-width;
 
     .dot-nav__list-item--active {
-        background-color: rgba(var(--color-white_rgb), 0.1);
+        background-color: rgba($white_rgb, 0.1);
     }
 
     &.collapsed {

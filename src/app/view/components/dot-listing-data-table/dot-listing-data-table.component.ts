@@ -6,7 +6,8 @@ import {
     OnChanges,
     ViewChild,
     ElementRef,
-    OnInit, SimpleChanges
+    OnInit,
+    SimpleChanges
 } from '@angular/core';
 import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
@@ -16,6 +17,7 @@ import { LoggerService } from 'dotcms-js';
 import { FormatDateService } from '@services/format-date-service';
 import { PaginatorService, OrderDirection } from '@services/paginator';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
+import { take } from 'rxjs/operators';
 
 @Component({
     providers: [PaginatorService],
@@ -61,7 +63,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
 
         if (changes.columns && changes.columns.currentValue) {
             this.dateColumns = changes.columns.currentValue.filter(
-                column => column.format === this.DATE_FORMAT
+                (column) => column.format === this.DATE_FORMAT
             );
             this.loadData(0);
         }
@@ -97,7 +99,10 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
             this.paginatorService.sortOrder =
                 sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
 
-            this.paginatorService.getWithOffset(offset).subscribe(items => this.setItems(items));
+            this.paginatorService
+                .getWithOffset(offset)
+                .pipe(take(1))
+                .subscribe((items) => this.setItems(items));
         }
     }
 
@@ -108,10 +113,13 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
      */
     loadFirstPage(): void {
         this.loading = true;
-        this.paginatorService.get().subscribe(items => {
-            this.setItems(items);
-            this.dataTable.first = 1;
-        });
+        this.paginatorService
+            .get()
+            .pipe(take(1))
+            .subscribe((items) => {
+                this.setItems(items);
+                this.dataTable.first = 1;
+            });
     }
 
     /**
@@ -121,7 +129,10 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     loadCurrentPage(): void {
         this.loading = true;
         if (this.columns) {
-            this.paginatorService.getCurrentPage().subscribe(items => this.setItems(items));
+            this.paginatorService
+                .getCurrentPage()
+                .pipe(take(1))
+                .subscribe((items) => this.setItems(items));
         }
     }
 
@@ -136,8 +147,8 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
         return col.textAlign
             ? col.textAlign
             : this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number'
-              ? 'right'
-              : 'left';
+            ? 'right'
+            : 'left';
     }
 
     /**
@@ -152,9 +163,9 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     }
 
     private formatData(items: any[]): any[] {
-        return items.map(item => {
+        return items.map((item) => {
             this.dateColumns.forEach(
-                col =>
+                (col) =>
                     (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
             );
             return item;

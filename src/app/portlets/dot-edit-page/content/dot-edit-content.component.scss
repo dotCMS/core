@@ -6,6 +6,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
+    position: relative;
 }
 
 dot-whats-changed,
@@ -52,8 +53,8 @@ dot-whats-changed,
         border-radius: 10px;
         border: 2px solid #ddd;
         box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.1);
-        background: rgba(255, 255, 255, 1);
-        background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(240, 240, 240, 1) 100%);
+        background: rgba($white_rgb, 1);
+        background: linear-gradient(135deg, rgba($white_rgb, 1) 0%, rgba(240, 240, 240, 1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
         padding: 0 10px;
@@ -83,8 +84,8 @@ dot-whats-changed,
                 135deg,
                 rgba(242, 239, 242, 1) 0%,
                 rgba(242, 239, 242, 1) 9%,
-                rgba(255, 255, 255, 1) 76%,
-                rgba(255, 255, 255, 1) 100%
+                rgba($white_rgb, 1) 76%,
+                rgba($white_rgb, 1) 100%
             );
             filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f2eff2', endColorstr='#ffffff', GradientType=1);
         }

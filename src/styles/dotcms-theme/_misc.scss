@@ -8,7 +8,7 @@
 }
 
 .p-component-overlay {
-  background-color: rgba($brand-secondary_rgb, 0.12);
+  background-color: rgba(255,255,255, 0.6);
   transition-duration: 0.2s;
 }
 
@@ -41,10 +41,6 @@
 }
 .p-fluid .p-inputgroup .p-button.p-button-icon-only {
   width: $spacing-6;
-}
-
-.p-blockui.p-component-overlay {
-  background: rgba(0, 0, 0, 0.32);
 }
 
 .p-field > label {
