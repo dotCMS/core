@@ -1024,7 +1024,7 @@ create table users_to_delete (
    primary key (id)
 );
 create table identifier (
-   id varchar(750) not null,
+   id varchar(36) not null,
    parent_path varchar(255),
    asset_name varchar(255),
    host_inode varchar(36),
