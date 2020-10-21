@@ -21,8 +21,6 @@ $gray-bg: #f1f3f4;
 $white: #fff;
 $md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 
-$basic-padding: 8px;
-
 $font-size-xx-large: 24px;
 $font-size-x-large: 18px;
 $font-size-medium: 14px;
@@ -34,6 +32,9 @@ $brand-primary_mod: var(--color-main_mod);
 
 $md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 $md-shadow-3: 0 10px 24px 0 rgba(0, 0, 0, 0.2);
+
+$spacing-3: 1rem;
+$spacing-4: 1.5rem;
 
 // generic transform
 @mixin transform($transforms) {
@@ -72,11 +73,11 @@ $finder-s-input: '.ui.input input';
     display: flex;
     flex-grow: 1;
     min-height: 100%;
-    padding: $basic-padding * 3;
+    padding: $spacing-4;
 
     cw-rule-engine {
         box-shadow: $md-shadow-4;
-        padding: $basic-padding * 2 $basic-padding * 3;
+        padding: $spacing-3 $spacing-4;
         flex-grow: 1;
         background-color: $foreground-tertiary;
         overflow: scroll;
@@ -545,7 +546,7 @@ $finder-s-input: '.ui.input input';
             color: $gray-light;
             border: 7px solid;
             border-radius: 10px;
-            margin-bottom: $basic-padding * 3;
+            margin-bottom: $spacing-4;
         }
 
         h2 {
@@ -559,7 +560,7 @@ $finder-s-input: '.ui.input input';
         }
 
         button {
-            margin-top: $basic-padding * 2;
+            margin-top: $spacing-3;
         }
     }
 

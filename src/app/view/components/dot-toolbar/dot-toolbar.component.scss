@@ -24,7 +24,7 @@ p-toolbar::ng-deep {
     }
 
     .p-toolbar-group-right > * {
-        margin-left: $basic-padding * 2;
+        margin-left: $spacing-3;
     }
 }
 
@@ -43,7 +43,7 @@ dot-toolbar-notifications {
 }
 
 .toolbar__crumbtrail {
-    margin-left: $basic-padding * 3;
+    margin-left: $spacing-4;
 }
 
 .toolbar__logo {
@@ -87,7 +87,7 @@ dot-toolbar-notifications {
 
 .toolbar__sep {
     border-left: solid 1px $gray-bg;
-    margin: 0 $basic-padding 0 $basic-padding * 3 !important;
+    margin: 0 $spacing-1 0 $spacing-4 !important;
     display: block;
     height: 40px;
 }

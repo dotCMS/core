@@ -3,10 +3,10 @@
 .form__field-variable {
     font-size: $label-font-size;
     color: $label-color;
-    margin-top: $basic-padding;
+    margin-top: $spacing-1;
     display: flex;
 
     dot-copy-button {
-        margin-left: $basic-padding / 2;
+        margin-left: $spacing-1;
     }
 }

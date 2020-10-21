@@ -54,7 +54,7 @@
 }
 
 dot-avatar {
-    margin-right: $basic-padding;
+    margin-right: $spacing-1;
 }
 
 .dot-persona-selector__label-container {
@@ -69,7 +69,7 @@ dot-avatar {
     color: $gray;
     flex: 1;
     font-size: $font-size-small;
-    line-height: $basic-padding * 2;
+    line-height: $spacing-3;
 }
 
 .dot-persona-selector__label--edit {
@@ -79,8 +79,8 @@ dot-avatar {
 .dot-persona-selector__name {
     color: $black;
     font-weight: $font-weight-semi-bold;
-    line-height: $basic-padding * 2;
-    margin-right: $basic-padding * 3;
+    line-height: $spacing-3;
+    margin-right: $spacing-4;
     @include truncate-text;
 }
 

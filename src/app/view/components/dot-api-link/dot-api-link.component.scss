@@ -12,7 +12,7 @@ a {
     color: $brand-secondary;
     display: inline-flex;
     line-height: 1em;
-    padding: $basic-padding / 4 6px $basic-padding / 4 $basic-padding / 2;
+    padding: 0.25rem 6px 0.25rem $spacing-1;
     text-decoration: none;
     text-transform: uppercase;
     transition: background-color $basic-speed ease, color $basic-speed ease;
@@ -29,6 +29,6 @@ a {
 
 dot-icon {
     color: $brand-secondary;
-    margin-right: $basic-padding / 2;
+    margin-right: $spacing-1;
     transition: color $basic-speed ease;
 }

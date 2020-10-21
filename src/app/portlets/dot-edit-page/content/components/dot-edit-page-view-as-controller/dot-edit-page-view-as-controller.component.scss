@@ -4,7 +4,7 @@
     display: flex;
 
     & > * {
-        margin-left: $basic-padding * 6;
+        margin-left: 3.5rem;
 
         &:first-child {
             margin-left: 0;
@@ -23,7 +23,7 @@
         dot-language-selector,
         dot-device-selector,
         dot-persona-selector {
-            margin-left: $basic-padding * 2;
+            margin-left: $spacing-3;
 
             ::ng-deep .p-tooltip {
                 display: inline-block !important;

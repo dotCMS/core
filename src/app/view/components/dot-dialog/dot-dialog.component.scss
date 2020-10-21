@@ -30,7 +30,7 @@
     transform: translate(-50%, 0);
 
     &.paginator ::ng-deep .p-datatable{
-        padding-bottom: $basic-padding * 7;
+        padding-bottom: 3.5rem;
     }
 }
 
@@ -42,11 +42,11 @@
     padding: 0.25rem $dialog-padding 0;
 
     &::-webkit-scrollbar {
-        width: $basic-padding;
+        width: $spacing-1;
     }
 
     &::-webkit-scrollbar-thumb {
-        border-radius: $basic-padding;
+        border-radius: $spacing-1;
         background-color: $gray-light;
 
     }
@@ -65,7 +65,7 @@
     justify-content: flex-end;
 
     button {
-        margin-left: $basic-padding;
+        margin-left: $spacing-1;
     }
 }
 

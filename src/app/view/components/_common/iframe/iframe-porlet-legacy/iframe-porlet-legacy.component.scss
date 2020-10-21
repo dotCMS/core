@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-$iframe-margin: $basic-padding * 3;
+$iframe-margin: $spacing-4;
 
 :host {
     background-color: $gray-bg;

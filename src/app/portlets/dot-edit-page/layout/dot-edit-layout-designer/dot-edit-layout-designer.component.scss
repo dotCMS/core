@@ -6,15 +6,15 @@
 }
 
 dot-layout-properties {
-    margin-right: $basic-padding;
+    margin-right: $spacing-1;
 }
 
 dot-layout-designer {
     background-color: $white;
     box-shadow: $md-shadow-1;
     flex-grow: 1;
-    margin: 0 $basic-padding * 2;
-    padding: $basic-padding * 4;
+    margin: 0 $spacing-3;
+    padding: $spacing-9;
     // This canculating the space of the layout editor
     // based on the toolbars and required margin
     height: calc(100vh - 60px - 68px - 48px - 16px);
@@ -25,7 +25,7 @@ dot-layout-designer {
     display: flex;
     height: $dot-secondary-toolbar-height;
     justify-content: flex-end;
-    padding: $basic-padding * 2;
+    padding: $spacing-3;
 }
 
 .dot-edit-layout__toolbar {
@@ -37,13 +37,13 @@ dot-layout-designer {
     ::ng-deep {
         .p-toolbar {
             border-bottom: solid 1px $gray-light;
-            padding: $basic-padding * 2;
+            padding: $spacing-3;
         }
     }
 }
 
 .dot-edit-layout__toolbar-action-cancel {
-    margin-right: $basic-padding;
+    margin-right: $spacing-1;
 }
 
 .dot-edit__layout-actions-right {

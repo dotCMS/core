@@ -6,13 +6,13 @@
     display: flex;
     height: 100%;
     min-width: 1053px;
-    padding: $basic-padding * 3;
+    padding: $spacing-4;
 }
 
 .dot-apps-configuration__body {
     align-content: flex-start;
     flex-wrap: wrap;
-    padding: $basic-padding * 2;
+    padding: $spacing-3;
 }
 
 .dot-apps-configuration__action_header {
@@ -38,8 +38,8 @@
 
 .dot-apps-configuration__add-configurations-description {
     font-size: $font-size-large;
-    margin-bottom: $basic-padding * 4;
-    margin-top: $basic-padding * 3;
+    margin-bottom: $spacing-9;
+    margin-top: $spacing-4;
 }
 
 .dot-apps-configuration__container {

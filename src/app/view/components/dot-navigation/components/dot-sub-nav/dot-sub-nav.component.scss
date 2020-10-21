@@ -17,7 +17,7 @@ a {
 
 .dot-nav-sub__link {
     display: block;
-    padding: $basic-padding $basic-padding $basic-padding 56px;
+    padding: $spacing-1 $spacing-1 $spacing-1 56px;
     transition: background-color $basic-speed ease;
     width: $navigation-width;
 
@@ -39,10 +39,10 @@ a {
 
 .dot-nav-sub__collapsed {
     background-color: rgba(var(--color-white_rgb), 0.1);
-    padding: $basic-padding 0;
+    padding: $spacing-1 0;
     min-width: $navigation-width;
 
     .dot-nav-sub__link {
-        padding: $basic-padding $basic-padding * 3;
+        padding: $spacing-1 $spacing-4;
     }
 }

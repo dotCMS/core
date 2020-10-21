@@ -7,7 +7,7 @@
 
 .environment-selector__list {
     height: 140px;
-    margin: $basic-padding 0;
+    margin: $spacing-1 0;
     overflow-x: hidden;
     border: 1px solid $gray;
     padding: 0;
@@ -16,7 +16,7 @@
 .environment-selector__list-item {
     @include naked-list;
     border-top: 1px solid $gray-bg;
-    padding: $basic-padding / 2 0;
+    padding: $spacing-1 0;
 
     &:first-child {
         border-top: none;

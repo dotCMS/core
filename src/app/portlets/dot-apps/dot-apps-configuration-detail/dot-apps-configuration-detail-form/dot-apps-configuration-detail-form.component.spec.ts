@@ -121,7 +121,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load form components', () => {
-            expect(de.queryAll(By.css('.dot-apps-configuration-detail__form-row')).length).toBe(
+            expect(de.queryAll(By.css('.p-field')).length).toBe(
                 secrets.length
             );
         });
@@ -139,7 +139,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load Label, Textarea & Hint with right attributes', () => {
-            const row = de.queryAll(By.css('.dot-apps-configuration-detail__form-row'))[0];
+            const row = de.queryAll(By.css('.p-field'))[0];
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[0].label);
             expect(
@@ -155,26 +155,26 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                 'autoResize'
             );
             expect(row.query(By.css('textarea')).nativeElement.value).toBe(secrets[0].value);
-            expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
+            expect(row.query(By.css('.p-field-hint')).nativeElement.textContent).toBe(
                 secrets[0].hint
             );
         });
 
         it('should load Checkbox & Hint with right attributes', () => {
-            const row = de.queryAll(By.css('.dot-apps-configuration-detail__form-row'))[2];
+            const row = de.queryAll(By.css('.p-field'))[2];
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('p-checkbox')).nativeElement.attributes.id.value).toBe(
                 secrets[2].name
             );
             expect(row.query(By.css('p-checkbox')).componentInstance.label).toBe(secrets[2].label);
             expect(row.query(By.css('input')).nativeElement.value).toBe(secrets[2].value);
-            expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
+            expect(row.query(By.css('.p-field-hint')).nativeElement.textContent).toBe(
                 secrets[2].hint
             );
         });
 
         it('should load Label, Select & Hint with right attributes', () => {
-            const row = de.queryAll(By.css('.dot-apps-configuration-detail__form-row'))[3];
+            const row = de.queryAll(By.css('.p-field'))[3];
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[3].label);
             expect(
@@ -190,7 +190,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(row.query(By.css('p-dropdown')).componentInstance.value).toBe(
                 secrets[3].options[0].value
             );
-            expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
+            expect(row.query(By.css('.p-field-hint')).nativeElement.textContent).toBe(
                 secrets[3].hint
             );
         });

@@ -2,7 +2,7 @@
 @import "dotcms-theme/extends/inputtext.extends";
 
 :host {
-    min-height: $basic-padding * 12;
+    min-height: 6.85rem;
     display: flex;
     position: relative;
 
@@ -11,7 +11,7 @@
         text-transform: uppercase;
         position: absolute;
         top: 15px;
-        right: $basic-padding;
+        right: $spacing-1;
         color: $gray;
         display: flex;
         align-items: baseline;
@@ -19,7 +19,7 @@
         dot-icon {
             border: 1px solid;
             padding: 2px;
-            margin-left: $basic-padding / 2;
+            margin-left: $spacing-1;
             vertical-align: middle;
         }
     }
@@ -35,9 +35,9 @@
             &.p-autocomplete-multiple {
                 .p-autocomplete-multiple-container {
                     position: absolute;
-                    top: $basic-padding * 5;
+                    top: 40px;
                     left: 0;
-                    right: $basic-padding * 4;
+                    right: $spacing-9;
                     overflow: visible;
                     height: 0;
                     padding: 0;
@@ -51,7 +51,7 @@
                         left: 0;
                         position: absolute;
                         right: 0;
-                        top: -$basic-padding * 5;
+                        top: -5.5rem;
 
                         input {
                             width: 100%;
@@ -64,8 +64,8 @@
                 .p-autocomplete-token {
                     border-radius: $border-radius;
                     border: solid 1px $gray-light;
-                    margin: $basic-padding $basic-padding 0 0;
-                    padding: $basic-padding / 2 $basic-padding;
+                    margin: $spacing-1 $spacing-1 0 0;
+                    padding: $spacing-1 $spacing-1;
                     max-width: 100%;
                     background: none;
                     color: $black;
@@ -77,7 +77,7 @@
                     }
 
                     span:last-child {
-                        margin-right: $basic-padding;
+                        margin-right: $spacing-1;
                     }
                 }
             }
@@ -85,7 +85,7 @@
 
         .p-autocomplete-dropdown {
             margin-left: auto;
-            width: $basic-padding * 2;
+            width: $spacing-3;
             border: 0;
 
             .p-button-icon-left {

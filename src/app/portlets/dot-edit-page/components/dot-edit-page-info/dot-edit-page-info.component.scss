@@ -2,7 +2,7 @@
 @import "mixins";
 
 dot-api-link {
-    margin-left: $basic-padding;
+    margin-left: $spacing-1;
 }
 
 :host {
@@ -11,7 +11,7 @@ dot-api-link {
 }
 
 h2 {
-    margin: 0 $basic-padding / 2 0 0;
+    margin: 0 $spacing-1 0 0;
     align-self: center;
     color: $body-font-color;
     font-size: $font-size-xx-large;

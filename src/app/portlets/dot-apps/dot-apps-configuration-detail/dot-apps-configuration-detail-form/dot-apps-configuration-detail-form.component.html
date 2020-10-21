@@ -21,7 +21,7 @@
 <form #form="ngForm" [formGroup]="myFormGroup" class="form__group" novalidate>
     <div #formContainer class="dot-apps-configuration-detail__form">
         <div
-            class="dot-apps-configuration-detail__form-row"
+            class="p-field"
             *ngFor="let field of formFields"
             [ngSwitch]="field.type"
         >
@@ -40,7 +40,7 @@
                     [id]="field.name"
                     [formControlName]="field.name"
                 ></textarea>
-                <span class="form__group-hint"
+                <span class="p-field-hint"
                     ><markdown>{{ field.hint }}</markdown></span
                 >
             </ng-container>
@@ -58,7 +58,7 @@
                 <ng-container
                     *ngTemplateOutlet="warningIcon; context: { field: field }"
                 ></ng-container>
-                <span class="form__group-hint"
+                <span class="p-field-hint"
                     ><markdown>{{ field.hint }}</markdown></span
                 >
             </ng-container>
@@ -77,7 +77,7 @@
                     }"
                     [options]="field.options"
                 ></p-dropdown>
-                <span class="form__group-hint"
+                <span class="p-field-hint"
                     ><markdown>{{ field.hint }}</markdown></span
                 >
             </ng-container>

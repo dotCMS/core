@@ -7,7 +7,7 @@ $row-height: 70px;
     display: flex;
     flex-grow: 1;
     flex-direction: column;
-    margin-bottom: $basic-padding;
+    margin-bottom: $spacing-1;
 }
 
 .dot-add-rows__container {
@@ -36,7 +36,7 @@ $row-height: 70px;
     background-color: $white;
     display: block;
     height: 198px;
-    padding: $basic-padding * 2;
+    padding: $spacing-3;
     position: relative;
 
     .dot-add-rows-columns-list__title {
@@ -45,8 +45,8 @@ $row-height: 70px;
 
     dot-icon-button {
         position: absolute;
-        right: $basic-padding;
-        top: $basic-padding;
+        right: $spacing-1;
+        top: $spacing-1;
     }
 }
 
@@ -55,9 +55,9 @@ $row-height: 70px;
     cursor: pointer;
     display: block;
     flex-grow: 1;
-    margin-right: $basic-padding * 2;
+    margin-right: $spacing-3;
     outline: none;
-    padding: $basic-padding * 2;
+    padding: $spacing-3;
 
     &:last-child {
         border-right: none;
@@ -84,7 +84,7 @@ $row-height: 70px;
             background-color: $gray-dark;
             flex-grow: 1;
             height: 60px;
-            margin: 0 $basic-padding / 2;
+            margin: 0 $spacing-1;
 
             &:first-child {
                 margin-left: 0;

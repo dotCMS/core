@@ -23,16 +23,16 @@ dot-whats-changed,
     overflow: scroll;
     min-width: 100%;
     width: 100%;
-    padding: 0 $basic-padding * 2 $basic-padding * 2;
+    padding: 0 $spacing-3 $spacing-3;
     width: 100%;
     &.dot-edit__page-wrapper--deviced {
-        padding: $basic-padding * 4;
+        padding: $spacing-9;
     }
 }
 
 .device-info {
     align-self: center;
-    padding: $basic-padding 0;
+    padding: $spacing-1 0;
 }
 
 .dot-edit__page-wrapper:after {

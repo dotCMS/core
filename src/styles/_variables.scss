@@ -45,6 +45,8 @@ $spacing-4: 1.5rem;
 $spacing-5: 2rem;
 $spacing-6: 2.5rem;
 $spacing-7: 3rem;
+$spacing-8: 4rem;
+$spacing-9: 4.5rem;
 
 $error: #d0021b;
 $warn: $orange;
@@ -53,7 +55,6 @@ $success: $green;
 
 // Basic stuffs
 $border-radius: 2px;
-$basic-padding: 8px;
 $field-height: 36px;
 $field-tiny-height: 28px;
 $field-disabled-opacity: 0.7;
@@ -84,7 +85,6 @@ $md-icon-size-big: 24px;
 $basic-speed: 150ms;
 
 // LAYOUT
-$basic-padding: 8px;
 $toolbar-height: 60px;
 $toolbar-background: $white;
 $toolbar-color: $black;
@@ -97,7 +97,7 @@ $dot-secondary-toolbar-height: 52px;
 $dot-secondary-toolbar-main-height: 70px;
 
 // GRIDS
-$gutter-width: $basic-padding * 4;
+$gutter-width: $spacing-9;
 $gutter-border: $gutter-width / 2;
 
 $screen-sm: 40em; // 640px
@@ -118,10 +118,6 @@ $screen-md-max: $screen-lg-min - 1;
 $screen-lg-max: $screen-xl-min - 1;
 $screen-device-container-max: 1545px;
 
-// .container size
-$container-md: 680px + $gutter-width;
-$container-lg: 975px + $gutter-width;
-$container-xl: 1381px + $gutter-width;
 
 // MATERIAL DESIGN
 $md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
@@ -133,7 +129,7 @@ $md-shadow-5: 0 10px 20px 0 rgba(0, 0, 0, 0.15);
 // FORMS
 $label-color: rgba($gray-dark, 0.6);
 $label-font-size: $font-size-small;
-$form-field-spacing: $basic-padding * 2;
+$form-field-spacing: $spacing-3;
 $form-width: 400px;
 
 // CONTENT TYPES

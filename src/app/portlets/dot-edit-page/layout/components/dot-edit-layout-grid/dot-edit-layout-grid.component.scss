@@ -8,11 +8,11 @@
     ::ng-deep {
         dot-container-selector {
             height: auto;
-            margin-left: $basic-padding * 2;
-            margin-right: $basic-padding * 2;
+            margin-left: $spacing-3;
+            margin-right: $spacing-3;
 
             dot-searchable-dropdown button {
-                margin: $basic-padding 0;
+                margin: $spacing-1 0;
             }
 
             dot-searchable-dropdown button,
@@ -22,7 +22,7 @@
 
             .container-selector__list {
                 height: 140px;
-                margin-top: $basic-padding;
+                margin-top: $spacing-1;
             }
         }
     }

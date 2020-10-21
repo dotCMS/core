@@ -6,7 +6,7 @@
     cursor: move;
     display: flex;
     height: $content-type-field-height;
-    padding: $basic-padding * 2;
+    padding: $spacing-3;
     transition: box-shadow $basic-speed;
 
     &:hover {
@@ -25,7 +25,7 @@ dot-icon {
 }
 
 dot-icon {
-    margin-right: $basic-padding;
+    margin-right: $spacing-1;
 }
 
 
@@ -42,7 +42,7 @@ dot-icon {
 }
 
 .field__name {
-    margin-right: $basic-padding / 2;
+    margin-right: $spacing-1;
     @include truncate-text;
 }
 
@@ -72,9 +72,9 @@ dot-icon {
 
 .field__actions {
     flex-shrink: 0;
-    margin-left: $basic-padding;
+    margin-left: $spacing-1;
 
     & > * {
-        margin: 0 $basic-padding / 4;
+        margin: 0 0.25rem;
     }
 }

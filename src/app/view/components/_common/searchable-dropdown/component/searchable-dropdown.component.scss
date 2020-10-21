@@ -25,7 +25,7 @@
 ::ng-deep {
     .p-overlaypanel.paginator {
         .p-dataview-content {
-            margin-bottom: $basic-padding * 4;
+            margin-bottom: $spacing-9;
         }
         .p-paginator-bottom {
             @include paginator-bottom-absolute;
@@ -33,7 +33,7 @@
     }
 
     .searchable-dropdown .p-overlaypanel-content {
-        padding: $basic-padding * 2 0;
+        padding: $spacing-3 0;
     }
 }
 
@@ -50,7 +50,7 @@
             cursor: pointer;
             display: block;
             line-height: normal;
-            padding: $basic-padding $basic-padding * 2;
+            padding: $spacing-1 $spacing-3;
             transition: background-color $basic-speed ease-in;
             width: 100%;
             @include truncate-text;
@@ -81,17 +81,17 @@
 
 .searchable-dropdown__search {
     display: flex;
-    margin: 0 $basic-padding * 2;
+    margin: 0 $spacing-3;
     position: relative;
 }
 
 .searchable-dropdown__search-icon {
     color: $gray;
     position: absolute;
-    right: $basic-padding;
+    right: $spacing-1;
     top: 9px;
 }
 
 .searchable-dropdown__search-action {
-    margin-left: $basic-padding * 2;
+    margin-left: $spacing-3;
 }

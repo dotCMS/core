@@ -5,12 +5,12 @@
     opacity: 0;
     transition: $basic-speed * 2;
     border-right: solid 1px $gray-bg;
-    padding-right: $basic-padding * 3;
+    padding-right: $spacing-4;
     display: flex;
 
     dot-icon,
     dot-spinner {
-        margin-right: $basic-padding;
+        margin-right: $spacing-1;
         align-self: center;
     }
 

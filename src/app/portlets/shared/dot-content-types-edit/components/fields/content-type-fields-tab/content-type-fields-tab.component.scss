@@ -4,13 +4,13 @@
     cursor: move;
     display: flex;
     justify-content: center;
-    margin-bottom: $basic-padding * 2;
+    margin-bottom: $spacing-3;
     position: relative;
 
     dot-icon-button-tooltip {
         position: absolute;
         right: 0;
-        top: $basic-padding / 2;
+        top: $spacing-1;
     }
 
     hr {
@@ -36,11 +36,11 @@ $tab-name-height: 32px;
     height: $tab-name-height;
     line-height: $tab-name-height;
     min-width: 100px;
-    padding: 0 $basic-padding;
+    padding: 0 $spacing-1;
     text-align: center;
     text-transform: uppercase;
     z-index: 1;
-    margin-right: $basic-padding * 4;
+    margin-right: $spacing-9;
     overflow: hidden;
     word-wrap: break-word;
 

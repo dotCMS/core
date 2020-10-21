@@ -119,7 +119,7 @@
 
 @mixin paginator-bottom-absolute {
     bottom: 0;
-    padding-bottom: $basic-padding * 2;
+    padding-bottom: $spacing-3;
     position: absolute;
     width: 100%;
 }

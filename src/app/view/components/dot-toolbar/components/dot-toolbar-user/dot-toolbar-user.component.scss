@@ -14,22 +14,28 @@
 
     .toolbar-user__header {
         background: $gray-bg;
-        padding: $basic-padding $basic-padding * 2;
+        padding: $spacing-1 $spacing-3;
         display: flex;
+        align-items: center;
     }
 
     .toolbar-user__header-gravatar {
-        margin-right: $basic-padding;
+        margin-right: $spacing-1;
     }
 
     .toolbar-user__menu {
         @include naked-list();
-        margin: $basic-padding * 2;
+        margin: $spacing-3;
         white-space: nowrap;
     }
 
     .toolbar-user__user-name {
         margin: 0;
         white-space: nowrap;
+    }
+
+    .user-menu__item {
+        display: block;
+        padding: 0.25rem 0;
     }
 }

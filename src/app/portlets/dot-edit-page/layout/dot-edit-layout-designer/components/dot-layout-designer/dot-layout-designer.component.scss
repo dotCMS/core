@@ -55,11 +55,11 @@
     }
 
     &--left {
-        margin-right: $basic-padding * 2;
+        margin-right: $spacing-3;
     }
 
     &--right {
-        margin-left: $basic-padding * 4;
+        margin-left: $spacing-9;
     }
 }
 
@@ -70,7 +70,7 @@
 
 .dot-layout-designer__header,
 .dot-layout-designer__main {
-    margin-bottom: $basic-padding * 2;
+    margin-bottom: $spacing-3;
 }
 
 .dot-layout-designer__body {
@@ -87,17 +87,17 @@
 
 .dot-layout-designer__toolbar-add {
     align-self: flex-end;
-    margin-bottom: $basic-padding;
+    margin-bottom: $spacing-1;
 }
 
 .dot-layout-designer__grid-guides {
     background: repeating-linear-gradient(
         -90deg,
         transparent,
-        transparent $basic-padding,
-        $gray-bg $basic-padding,
+        transparent $spacing-1,
+        $gray-bg $spacing-1,
         $gray-bg calc(100% / 12)
     );
     flex-grow: 1;
-    margin-right: -$basic-padding;
+    margin-right: -$spacing-1;
 }

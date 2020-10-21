@@ -18,21 +18,21 @@
 }
 
 .dot-key-value-table-row td:nth-child(-n + 2) {
-    padding-right: $basic-padding * 3;
+    padding-right: $spacing-4;
 }
 
 .dot-key-value-table-row td,
 .dot-key-value-table-row__variables-actions {
     padding: 0;
-    height: $basic-padding * 8;
+    height: 4rem;
     vertical-align: middle;
 
     &:first-child {
-        padding-left: $basic-padding * 3;
+        padding-left: $spacing-4;
     }
 
     &:last-child {
-        padding-right: $basic-padding * 3;
+        padding-right: $spacing-4;
     }
 }
 
@@ -40,7 +40,7 @@
     text-align: right;
 
     & > * {
-        margin-left: $basic-padding;
+        margin-left: $spacing-1;
     }
 }
 

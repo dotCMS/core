@@ -9,7 +9,7 @@
     padding: 0;
     margin: 0;
     right: 0;
-    top: $basic-padding * 3;
+    top: $spacing-4;
     box-shadow: $md-shadow-1;
     background: $white;
     z-index: 1003;
@@ -24,7 +24,7 @@
         cursor: pointer;
         color: $black;
         display: block;
-        padding: $basic-padding;
+        padding: $spacing-1;
         text-decoration: none;
     }
 }

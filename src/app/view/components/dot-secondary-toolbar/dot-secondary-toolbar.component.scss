@@ -10,12 +10,12 @@
         background-color: $white;
         border-bottom: solid 1px $gray-light;
         display: flex;
-        padding: $basic-padding * 2;
+        padding: $spacing-3;
     }
 
     .dot-secondary-toolbar__lower {
         display: flex;
-        padding: 0 $basic-padding * 2;
+        padding: 0 $spacing-3;
         flex-wrap: wrap;
     }
 

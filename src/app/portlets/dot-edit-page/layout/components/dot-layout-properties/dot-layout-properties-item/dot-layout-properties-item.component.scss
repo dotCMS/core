@@ -4,7 +4,7 @@
     display: flex;
     cursor: pointer;
     align-content: center;
-    padding: $basic-padding $basic-padding * 2;
+    padding: $spacing-1 $spacing-3;
 
     &:hover {
         background-color: $gray-bg;
@@ -41,6 +41,6 @@
 }
 
 .property-item__label {
-    padding-left: $basic-padding;
+    padding-left: $spacing-1;
     align-self: center;
 }

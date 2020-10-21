@@ -30,6 +30,10 @@ $nav-size: 80px;
     text-transform: uppercase;
     transition: background-color $basic-speed ease-in;
 
+    dot-icon {
+        margin-bottom: $spacing-1;
+    }
+
     &:hover {
         background-color: $gray-bg;
     }

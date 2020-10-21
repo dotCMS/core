@@ -6,9 +6,9 @@ $field-bgcolor: transparent;
 $field-border-color: $gray;
 $field-border-radius: $border-radius;
 $field-border-size: 1px;
-$field-padding: $basic-padding;
+$field-padding: $spacing-1;
 $field-placeholder-color: $label-color;
-$ui-trigger-width: $basic-padding * 3;
+$ui-trigger-width: $spacing-4;
 
 // FIELDS
 $field-normal-bgcolor: $field-bgcolor;
@@ -157,8 +157,8 @@ $radio-normal-bgcolor: $white;
 $radio-normal-border: solid $field-border-size $black;
 
 // DATATABLE
-$datatable-cell-padding: 18px $basic-padding * 2; // We need to have 40px min height in the cell
-$datatable-header-cell-padding: 10px $basic-padding * 2;
+$datatable-cell-padding: 18px $spacing-3; // We need to have 40px min height in the cell
+$datatable-header-cell-padding: 10px $spacing-3;
 $datatable-cell-border: 1px solid $gray-bg;
 $datatable-highlight-row-bgcolor: $gray-bg;
 $datatable-row-color: $black;
@@ -167,8 +167,8 @@ $datatable-head-bgcolor: $gray-bg;
 $datatable-head-color: $gray;
 
 // TABLE
-$table-cell-padding: 18px $basic-padding * 2; // We need to have 40px min height in the cell
-$table-header-cell-padding: 10px $basic-padding * 2;
+$table-cell-padding: 18px $spacing-3; // We need to have 40px min height in the cell
+$table-header-cell-padding: 10px $spacing-3;
 $table-cell-border: 1px solid $gray-bg;
 $table-highlight-row-bgcolor: $gray-bg;
 $table-row-color: $black;
@@ -187,7 +187,7 @@ $paginator-page-size: 21px;
 $tabview-item-hover-bgcolor: $selectbutton-button-hover-bgcolor;
 $tabview-item-color: $gray;
 $tabview-item-selected-color: $brand-secondary;
-$tabview-item-padding: $basic-padding * 2 $basic-padding * 3 10px; // To match the 48px height
+$tabview-item-padding: $spacing-3 $spacing-4 10px; // To match the 48px height
 $tabview-item-border: 3px solid $white;
 $tabview-item-selected-border: 5px solid $brand-secondary;
 $tabview-item-disabled-color: rgba($black, 0.2);
@@ -221,6 +221,6 @@ $inputswitch-disabled-thumb-color: $gray;
 
 
 // TOAST
-$toast-padding: $basic-padding * 2;
+$toast-padding: $spacing-3;
 $toast-bgcolor: $white;
 $toast-border-radius: $border-radius;

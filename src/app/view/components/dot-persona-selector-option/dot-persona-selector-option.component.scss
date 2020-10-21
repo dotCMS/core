@@ -12,7 +12,7 @@
     }
 
     dot-avatar {
-        margin: 0 $basic-padding * 2;
+        margin: 0 $spacing-3;
     }
 
     .dot-persona-selector-option__label {
@@ -36,8 +36,8 @@
     }
 
     button {
-        margin-left: $basic-padding * 3;
-        margin-right: $basic-padding * 2;
+        margin-left: $spacing-4;
+        margin-right: $spacing-3;
     }
 
 }

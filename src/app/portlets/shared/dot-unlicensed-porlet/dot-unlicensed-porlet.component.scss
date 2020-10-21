@@ -8,8 +8,8 @@
     flex-direction: column;
     height: calc(100vh - 48px - #{$toolbar-height});
     justify-content: center;
-    margin: $basic-padding * 3;
-    padding: $basic-padding * 4;
+    margin: $spacing-4;
+    padding: $spacing-9;
 }
 
 h4 {

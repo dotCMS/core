@@ -1,11 +1,11 @@
 @use "variables" as *;
 
 .edit-page-toolbar__cancel {
-    margin-right: $basic-padding;
+    margin-right: $spacing-1;
 }
 
 .dot-edit__what-changed-button {
-    margin-left: $basic-padding * 2;
+    margin-left: $spacing-3;
 }
 
 .main-toolbar-right {

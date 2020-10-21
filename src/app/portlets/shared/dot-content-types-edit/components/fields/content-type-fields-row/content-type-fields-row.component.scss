@@ -3,8 +3,8 @@
 :host {
     border-radius: $border-radius;
     display: block;
-    margin-bottom: $basic-padding * 2;
-    padding: 0 $basic-padding * 2 $basic-padding * 2;
+    margin-bottom: $spacing-3;
+    padding: 0 $spacing-3 $spacing-3;
     position: relative;
     transition: box-shadow $basic-speed;
     background: $white;
@@ -17,14 +17,14 @@
 .row-columns {
     display: flex;
     background: $gray-bg;
-    padding: $basic-padding;
+    padding: $spacing-1;
 }
 
 .row-columns__item {
     display: flex;
     flex-direction: column;
     flex: 1;
-    margin: 0 $basic-padding / 2;
+    margin: 0 $spacing-1;
     padding-bottom: 0;
     position: relative;
 
@@ -84,7 +84,7 @@
     }
 
     dot-content-type-field-dragabble-item {
-        margin-bottom: $basic-padding;
+        margin-bottom: $spacing-1;
     }
 
 }
@@ -93,19 +93,19 @@
     opacity: 0.25;
     text-align: center;
     transition: opacity $basic-speed;
-    margin: 0 -#{$basic-padding * 2};
+    margin: 0 -#{$spacing-3};
 }
 
 .row-header__drag {
     cursor: move;
     display: block;
-    height: $basic-padding * 2;
+    height: $spacing-3;
     width: 100%;
 }
 
 .row-header__remove {
     cursor: pointer;
     position: absolute;
-    right: $basic-padding;
-    top: $basic-padding;
+    right: $spacing-1;
+    top: $spacing-1;
 }

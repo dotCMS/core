@@ -51,7 +51,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
     }
 
     dot-iframe {
-        padding: $basic-padding * 2 0;
+        padding: $spacing-3 0;
         height: calc(100vh - #{$top-height});
     }
 
@@ -67,7 +67,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
         flex-direction: column;
         flex-grow: 1;
         overflow: auto;
-        padding: $basic-padding * 2;
+        padding: $spacing-3;
     }
 
     .content-type__fields-sidebar {
@@ -91,7 +91,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
     }
 
     dot-api-link {
-        margin-left: $basic-padding * 2;
+        margin-left: $spacing-3;
     }
 
     .content-type__title {
@@ -122,10 +122,10 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
         color: $gray;
         display: flex;
         font-size: $font-size-small;
-        margin-left: $basic-padding * 3;
+        margin-left: $spacing-4;
 
         dot-copy-button {
-            margin-left: $basic-padding / 4;
+            margin-left: 0.25rem;
         }
     }
 }

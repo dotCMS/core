@@ -1,17 +1,17 @@
 @use "variables" as *;
 
 p-fileupload {
-    margin-top: $basic-padding;
+    margin-top: $spacing-1;
     display: block;
 }
 
 .form__file-detail {
-    margin-top: $basic-padding;
+    margin-top: $spacing-1;
     display: flex;
     align-items: center;
 
     span {
-        margin: 0px $basic-padding 0px $basic-padding * 2;
+        margin: 0px $spacing-1 0px $spacing-3;
     }
     img {
         border: 1px solid $gray;

@@ -5,9 +5,9 @@
     cursor: pointer;
     display: flex;
     height: 66px;
-    margin-right: $basic-padding * 2;
-    margin-top: $basic-padding * 2;
-    padding: $basic-padding 0;
+    margin-right: $spacing-3;
+    margin-top: $spacing-3;
+    padding: $spacing-1 0;
     transition: box-shadow $basic-speed ease-in;
     width: 100%;
 
@@ -18,7 +18,7 @@
     dot-icon-button,
     dot-icon {
         align-self: center;
-        margin-right: $basic-padding * 2;
+        margin-right: $spacing-3;
     }
 
     dot-icon {
@@ -29,7 +29,7 @@
 .dot-apps-configuration-list__name,
 .dot-apps-configuration-list__host-key {
     align-self: center;
-    margin-left: $basic-padding * 2;
+    margin-left: $spacing-3;
     white-space: nowrap;
 }
 

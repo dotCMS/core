@@ -17,7 +17,7 @@
 
         .p-autocomplete-input {
             // important because p-autocomplete can add inline styles.
-            padding-right: $basic-padding * 4 !important;
+            padding-right: $spacing-9 !important;
         }
     }
 
@@ -41,6 +41,6 @@
     }
 
     &-host {
-        padding-left: $basic-padding / 2;
+        padding-left: $spacing-1;
     }
 }

@@ -4,10 +4,10 @@
 .form__buttons {
     display: flex;
     justify-content: center;
-    margin-top: $basic-padding * 4;
+    margin-top: $spacing-9;
 
     button {
-        margin: 0 $basic-padding;
+        margin: 0 $spacing-1;
     }
 }
 
@@ -46,7 +46,7 @@
 .form__group--helper {
     position: relative;
     input[pinputtext] {
-        padding-right: $basic-padding * 4;
+        padding-right: $spacing-9;
     }
 
     dot-field-helper {
@@ -72,7 +72,7 @@
     border: solid 1px;
     color: $gray;
     cursor: pointer;
-    margin-left: $basic-padding * 2;
+    margin-left: $spacing-3;
     text-align: center;
     width: 15px;
 
@@ -92,7 +92,7 @@
 .form-group__two-cols {
     & > *:first-child {
         display: inline-block;
-        padding-bottom: $basic-padding;
+        padding-bottom: $spacing-1;
     }
 
     @media (min-width: $screen-md-min) {

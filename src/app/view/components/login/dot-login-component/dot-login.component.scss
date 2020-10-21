@@ -13,7 +13,7 @@
 }
 
 .login__logo {
-    margin: $basic-padding / 2 0 $basic-padding;
+    margin: $spacing-1 0 $spacing-1;
 
     img {
         width: 102px;
@@ -21,7 +21,7 @@
 }
 
 .login__title {
-    margin: $basic-padding * 8 0 $basic-padding * 3 0;
+    margin: 4rem 0 $spacing-4 0;
 }
 
 .login__password-settings {
@@ -44,5 +44,5 @@
 }
 
 .login__button {
-    margin-right: $basic-padding;
+    margin-right: $spacing-1;
 }

@@ -19,8 +19,8 @@
     flex-grow: 1;
 }
 
-.dot-apps-configuration-detail__form-row {
-    margin-bottom: $basic-padding * 3;
+.p-field {
+    margin-bottom: $spacing-4;
 
     input,
     textarea {
@@ -28,21 +28,16 @@
         width: 100%;
     }
 
-    .form__label {
-        font-size: $font-size-medium;
-        font-weight: $font-weight-semi-bold;
-    }
-
     dot-icon {
         color: $brand-primary;
-        margin-left: $basic-padding;
+        margin-left: $spacing-1;
         vertical-align: middle;
     }
 
     ::ng-deep {
         p-dropdown .p-dropdown {
             min-width: 200px;
-            margin-bottom: $basic-padding;
+            margin-bottom: $spacing-1;
         }
 
         p-checkbox label {

@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-$notification-padding: $basic-padding * 2;
+$notification-padding: $spacing-3;
 
 :host {
     position: relative;
