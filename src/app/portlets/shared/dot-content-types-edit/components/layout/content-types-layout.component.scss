@@ -23,7 +23,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
                 display: flex;
 
                 &:hover {
-                    background-color: $hover-bg;
+                    background-color: $bg-hover;
                 }
 
                 .p-splitbutton-defaultbutton,

@@ -2,14 +2,14 @@
 
 .p-multiselect {
     background: $white;
-    border: 1px solid rgba(0, 0, 0, 0.38);
+    border: 1px solid $input-border-color;
     transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
-    border-radius: 4px;
+    border-radius: $border-radius;
     min-width: 13rem;
 }
 
 .p-multiselect:not(.p-multiselect-open):hover {
-    border-color: $input-border-hover;
+    border-color: $input-border-color-hover;
 }
 
 .p-multiselect:not(.p-disabled).p-focus {
@@ -32,15 +32,15 @@
     background: transparent;
     color: $black;
     width: 2.357rem;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+    border-top-right-radius: $border-radius;
+    border-bottom-right-radius: $border-radius;
 }
 
 .p-multiselect-panel {
     background: $white;
     color: $black;
     border: 0 none;
-    border-radius: 4px;
+    border-radius: $border-radius;
     box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12);
 }
 
@@ -50,8 +50,8 @@
     color: $black;
     background: $white;
     margin: 0;
-    border-top-right-radius: 4px;
-    border-top-left-radius: 4px;
+    border-top-right-radius: $border-radius;
+    border-top-left-radius: $border-radius;
 }
 
 .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container .p-inputtext {
@@ -68,7 +68,7 @@
 }
 
 .p-multiselect.p-multiselect-open {
-    border-color: $input-border-hover;
+    border-color: $input-border-color-hover;
     box-shadow: $input-inset-shadow;
 }
 
@@ -84,9 +84,9 @@
 }
 
 .p-multiselect-panel .p-multiselect-header .p-multiselect-close:enabled:hover {
-    color: $hover-text-color;
+    color: $text-color-hover;
     border-color: transparent;
-    background: $hover-bg;
+    background: $bg-hover;
 }
 
 .p-multiselect-panel .p-multiselect-header .p-multiselect-close:focus {
@@ -110,13 +110,13 @@
 }
 
 .p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
-    color: $highlight-text-color;
-    background: $highlight-bg;
+    color: $text-color-highlight;
+    background: $bg-highlight;
 }
 
 .p-multiselect-panel .p-multiselect-items .p-multiselect-item:not(.p-highlight):not(.p-disabled):hover {
-    color: $hover-text-color;
-    background: $hover-bg;
+    color: $text-color-hover;
+    background: $bg-hover;
 }
 
 .p-multiselect-panel .p-multiselect-items .p-multiselect-item:focus {

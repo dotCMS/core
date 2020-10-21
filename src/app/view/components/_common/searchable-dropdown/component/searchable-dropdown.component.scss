@@ -1,25 +1,63 @@
 @use "variables" as *;
 
-@import "dotcms-theme/utils/theme-variables";;
+@import "dotcms-theme/utils/theme-variables";
 @import "mixins";
 
 :host {
     position: relative;
 
-    .p-button-text {
+    &.d-secondary {
+        .p-button {
+            border: none;
+
+            &:hover, &:active, &:focus {
+                border: none;
+                box-shadow: none;
+                background: $bg-hover;
+            }
+
+            &::ng-deep {
+                .p-button-label {
+                    margin-right: 0;
+                }
+            }
+        }
+    }
+
+    .p-button {
+        border: 1px solid $input-border-color;
         padding-left: $spacing-2;
         padding-right: $spacing-2;
+        border-radius: 2px;
+        background: none;
         text-align: left;
 
+        .p-fluid & {
+            width: 100%;
+        }
+
+        &:hover, &:focus, &:active {
+            border-color: $input-border-color-hover;
+            background: none;
+        }
+
+        &:focus, &:active {
+            box-shadow: $input-inset-shadow;
+        }
+
         &::ng-deep {
+            .p-button-label {
+                margin-right: 2rem;
+            }
+
             .p-button-label,
             .p-button-icon {
+                font-weight: normal;
                 color: $black;
                 text-transform: none;
             }
         }
     }
-
 }
 
 ::ng-deep {
@@ -27,6 +65,7 @@
         .p-dataview-content {
             margin-bottom: $spacing-9;
         }
+
         .p-paginator-bottom {
             @include paginator-bottom-absolute;
         }
@@ -36,7 +75,6 @@
         padding: $spacing-3 0;
     }
 }
-
 
 .searchable-dropdown__data-list ::ng-deep {
     .p-dataview {
@@ -53,6 +91,7 @@
             padding: $spacing-1 $spacing-3;
             transition: background-color $basic-speed ease-in;
             width: 100%;
+
             @include truncate-text;
 
             &.selected {

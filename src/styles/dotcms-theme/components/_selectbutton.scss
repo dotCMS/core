@@ -2,14 +2,14 @@
 
 .p-selectbutton .p-button {
     background: transparent;
-    border: 1px solid rgba(0, 0, 0, 0.12);
+    border: 1px solid $input-border-color;
     color: $gray;
     transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
     text-transform: uppercase;
 }
 
 .p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover {
-    background-color: $hover-bg;
+    background-color: $bg-hover;
     color: $gray-dark;
 }
 
@@ -19,24 +19,24 @@
 }
 
 .p-selectbutton .p-button.p-highlight:hover {
-    background: $highlight-bg;
-    border-color: $highlight-border-color;
-    color: $hover-text-color;
+    background: $bg-highlight;
+    border-color: $border-color-highlight;
+    color: $text-color-hover;
 }
 
 .p-selectbutton .p-button.p-highlight:hover .p-button-icon-left,
 .p-selectbutton .p-button.p-highlight:hover .p-button-icon-right {
-    color: $hover-text-color;
+    color: $text-color-hover;
 }
 
 .p-selectbutton .p-button:focus {
     background: $focus-bg;
-    border-color: $highlight-border-color;
+    border-color: $border-color-highlight;
 }
 
 .p-selectbutton .p-button:focus.p-highlight {
     background: $focus-bg;
-    border-color: $highlight-border-color;
+    border-color: $input-border-color;
     color: $gray-dark;
 }
 

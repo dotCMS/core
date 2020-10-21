@@ -6,7 +6,7 @@
 }
 
 .p-inputswitch .p-inputswitch-slider {
-    background: rgba(0, 0, 0, 0.38);
+    background: $input-bg-color;
     transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
     border-radius: $spacing-1;
 }
@@ -32,11 +32,11 @@
 }
 
 .p-inputswitch:not(.p-disabled):hover .p-inputswitch-slider {
-    background: rgba(0, 0, 0, 0.38);
+    background: $input-bg-color-hover;
 }
 
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
-    background: $highlight-bg;
+    background: $bg-highlight;
 }
 
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider:before {
@@ -44,7 +44,7 @@
 }
 
 .p-inputswitch.p-inputswitch-checked:not(.p-disabled):hover .p-inputswitch-slider {
-    background: $hover-bg;
+    background: $bg-hover;
 }
 
 .p-inputswitch .p-inputswitch-slider:before {

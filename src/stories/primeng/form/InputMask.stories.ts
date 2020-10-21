@@ -4,7 +4,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 export default {
-  title: 'PrimeNG/Form/InputMask',
+  title: 'PrimeNG/Form/InputText/InputMask',
   component: InputMask,
   parameters: {
     docs: {

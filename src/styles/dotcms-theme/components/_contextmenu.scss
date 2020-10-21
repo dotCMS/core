@@ -31,19 +31,19 @@
 }
 
 .p-contextmenu .p-menuitem-link:not(.p-disabled):hover {
-    background: $hover-bg;
+    background: $bg-hover;
 }
 
 .p-contextmenu .p-menuitem-link:not(.p-disabled):hover .p-menuitem-text {
-    color: $hover-text-color;
+    color: $text-color-hover;
 }
 
 .p-contextmenu .p-menuitem-link:not(.p-disabled):hover .p-menuitem-icon {
-    color: $hover-text-color;
+    color: $text-color-hover;
 }
 
 .p-contextmenu .p-menuitem-link:not(.p-disabled):hover .p-submenu-icon {
-    color: $hover-text-color;
+    color: $text-color-hover;
 }
 
 .p-contextmenu .p-menuitem-link:focus {
@@ -60,7 +60,7 @@
 }
 
 .p-contextmenu .p-menuitem.p-menuitem-active > .p-menuitem-link {
-    background: $highlight-bg;
+    background: $bg-highlight;
 }
 
 .p-contextmenu .p-menuitem.p-menuitem-active > .p-menuitem-link .p-menuitem-text {

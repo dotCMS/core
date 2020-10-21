@@ -21,12 +21,13 @@ class DotMessagePipe implements PipeTransform {
     }
 }
 
+
 export default {
     title: 'DotCMS/Searchable Dropdown',
     component: SearchableDropdownComponent,
     decorators: [
         moduleMetadata({
-            declarations: [DotMessagePipe],
+            declarations: [DotMessagePipe, SearchableDropdownComponent],
             imports: [
                 BrowserAnimationsModule,
                 ButtonModule,
@@ -37,14 +38,17 @@ export default {
                 FormsModule,
                 InputTextModule,
                 OverlayPanelModule
-            ],
-            providers: []
+            ]
         })
     ],
     args: {
         rows: 4,
         pageLinkSize: 2,
         optionsWidth: '300',
+        paginate: () => {},
+        showOverlayHandler: () => {},
+        hideOverlayHandler: () => {},
+        handleClick: () => {},
         data: [
             {
                 label: 'This is an option',
@@ -91,14 +95,43 @@ export default {
                 value: 'lastone'
             }
         ],
-        label: 'Select something',
+        placeholder: 'Select something',
         labelPropertyName: 'label'
-    },
+    }
 } as Meta;
 
-const Template: Story<SearchableDropdownComponent> = (args: SearchableDropdownComponent) => ({
+const getTemplate = (extraAttr = '') => {
+    const template = `
+        <dot-searchable-dropdown
+            ${extraAttr}
+            [rows]="rows"
+            [pageLinkSize]="pageLinkSize"
+            [data]="data"
+            [labelPropertyName]="labelPropertyName"
+            [placeholder]="placeholder"
+        >
+        </dot-searchable-dropdown>
+    `;
+    return template;
+};
+
+export const Primary: Story<SearchableDropdownComponent> = (props: SearchableDropdownComponent) => {
+    return {
+        moduleMetadata: {
+            declarations: [SearchableDropdownComponent]
+        },
+        component: SearchableDropdownComponent,
+        props,
+        template: getTemplate()
+    };
+};
+
+export const Secondary = (props: SearchableDropdownComponent) => ({
     component: SearchableDropdownComponent,
-    props: args
+    props,
+    template: getTemplate(`class="d-secondary"`)
 });
 
-export const Default = Template.bind({});
+
+
+

@@ -28,7 +28,7 @@
 .p-link {
   font-size: $font-size-medium;
   font-family: $body-text;
-  border-radius: 4px;
+  border-radius: $border-radius;
 }
 .p-link:focus {
   outline: 0 none;

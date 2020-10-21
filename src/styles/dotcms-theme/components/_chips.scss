@@ -9,7 +9,7 @@ p-chips.ng-dirty.ng-invalid > .p-chips > .p-inputtext {
 }
 
 .p-chips .p-chips-multiple-container:not(.p-disabled):hover {
-    border-color: $input-border-hover;
+    border-color: $input-border-color-hover;
 }
 
 .p-chips .p-chips-multiple-container:not(.p-disabled).p-focus {
@@ -23,9 +23,9 @@ p-chips.ng-dirty.ng-invalid > .p-chips > .p-inputtext {
 .p-chips .p-chips-multiple-container .p-chips-token {
     padding: 0.375rem $spacing-2;
     margin-right: $spacing-1;
-    background: $highlight-bg;
+    background: $bg-highlight;
     color: $brand-primary;
-    border-radius: 2px;
+    border-radius: $border-radius;
 }
 
 .p-chips .p-chips-multiple-container .p-chips-token .p-chips-token-icon {

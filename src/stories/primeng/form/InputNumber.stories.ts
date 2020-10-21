@@ -4,7 +4,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 export default {
-  title: 'PrimeNG/Form/InputNumber',
+  title: 'PrimeNG/Form/InputText/InputNumber',
   component: InputNumberModule,
   parameters: {
     docs: {

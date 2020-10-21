@@ -15,28 +15,28 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 .p-datatable .p-datatable-header {
     background: $white;
     color: $black;
-    border: 1px solid #e4e4e4;
+    border: 1px solid $table-border-color;
     border-width: 0 0 1px 0;
     padding: $spacing-2 $spacing-2;
-    font-weight: 500;
+    font-weight: $font-weight-semi-bold;
 }
 
 .p-datatable .p-datatable-footer {
     background: $white;
     color: $black;
-    border: 1px solid #e4e4e4;
+    border: 1px solid $table-border-color;
     border-width: 0 0 1px 0;
     padding: $spacing-2 $spacing-2;
-    font-weight: 500;
+    font-weight: $font-weight-semi-bold;
 }
 
 .p-datatable .p-datatable-thead > tr > th {
     background: $white;
-    border: 1px solid #e4e4e4;
+    border: 1px solid $gray-lighter;
     border-width: 0 0 1px 0;
     color: $gray;
     font-size: $font-size-small;
-    font-weight: 500;
+    font-weight: $font-weight-semi-bold;
     padding: $spacing-2 $spacing-2;
     text-align: left;
     transition: none;
@@ -53,9 +53,9 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 .p-datatable .p-datatable-tfoot > tr > td {
     text-align: left;
     padding: $spacing-2 $spacing-2;
-    border: 1px solid #e4e4e4;
+    border: 1px solid $table-border-color;
     border-width: 0 0 1px 0;
-    font-weight: 500;
+    font-weight: $font-weight-semi-bold;
     color: $black;
     background: $white;
 }
@@ -75,13 +75,13 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
     min-width: 1.143rem;
     line-height: 1.143rem;
     color: $brand-primary;
-    background: $highlight-bg;
+    background: $bg-highlight;
     margin-left: $spacing-1;
 }
 
 .p-datatable .p-sortable-column:not(.p-highlight):hover {
     background: $datatable-bg-hover;
-    color: $hover-text-color;
+    color: $text-color-hover;
 }
 
 .p-datatable .p-sortable-column:not(.p-highlight):hover .p-sortable-column-icon {
@@ -106,7 +106,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 
 .p-datatable .p-datatable-tbody > tr > td {
     text-align: left;
-    border: 1px solid #e4e4e4;
+    border: 1px solid $gray-lighter;
     border-width: 0 0 1px 0;
     padding: $spacing-1 $spacing-2;
 
@@ -136,6 +136,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-init:enabled:hover,
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-save:enabled:hover,
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-cancel:enabled:hover {
+    color: $text-color-hover;
     border-color: transparent;
     background: $datatable-bg-hover;
 }
@@ -154,8 +155,8 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 }
 
 .p-datatable .p-datatable-tbody > tr.p-highlight {
-    background: $highlight-bg;
-    color: $highlight-text-color;
+    background: $bg-highlight;
+    color: $text-color-highlight;
 }
 
 .p-datatable .p-datatable-tbody > tr.p-datatable-dragpoint-top > td {
@@ -168,7 +169,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 
 .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
     background: $datatable-bg-hover;
-    color: $hover-text-color;
+    color: $text-color-hover;
 }
 
 .p-datatable .p-column-resizer-helper {
@@ -219,21 +220,21 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 
 .p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even).p-highlight {
     background: $datatable-bg-hover;
-    color: $highlight-text-color;
+    color: $text-color-highlight;
 }
 
 .p-datatable.p-datatable-striped
     .p-datatable-tbody
     > tr:nth-child(even).p-highlight
     .p-row-toggler {
-    color: $highlight-text-color;
+    color: $text-color-highlight;
 }
 
 .p-datatable.p-datatable-striped
     .p-datatable-tbody
     > tr:nth-child(even).p-highlight
     .p-row-toggler:hover {
-    color: $hover-text-color;
+    color: $text-color-hover;
 }
 
 .p-datatable.p-datatable-sm .p-datatable-header {

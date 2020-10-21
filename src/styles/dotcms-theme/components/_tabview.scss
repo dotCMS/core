@@ -19,7 +19,7 @@
     border-color: transparent transparent transparent transparent;
     color: $black;
     padding: 1.2rem $spacing-6 1.35rem;
-    font-weight: 500;
+    font-weight: $font-weight-semi-bold;
     transition: none;
     margin: 0 0 0 0;
 }
@@ -31,9 +31,9 @@
 }
 
 .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
-    background: $hover-bg;
+    background: $bg-hover;
     border-color: transparent;
-    color: $hover-text-color;
+    color: $text-color-hover;
 }
 
 .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
@@ -55,8 +55,8 @@
 .p-tabview .p-tabview-panels {
     border: 0 none;
     color: $black;
-    border-bottom-right-radius: 4px;
-    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: $border-radius;
+    border-bottom-left-radius: $border-radius;
 }
 
 .p-tabview .p-tabview-nav {

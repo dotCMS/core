@@ -28,9 +28,9 @@
 .p-paginator .p-paginator-prev:not(.p-disabled):not(.p-highlight):hover,
 .p-paginator .p-paginator-next:not(.p-disabled):not(.p-highlight):hover,
 .p-paginator .p-paginator-last:not(.p-disabled):not(.p-highlight):hover {
-    background: $hover-bg;
+    background: $bg-hover;
     border-color: transparent;
-    color: $hover-text-color;
+    color: $text-color-hover;
 }
 
 .p-paginator .p-paginator-first {
@@ -74,12 +74,12 @@
 }
 
 .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
-    background: $highlight-bg;
-    color: $highlight-text-color;
+    background: $bg-highlight;
+    color: $text-color-highlight;
 }
 
 .p-paginator .p-paginator-pages .p-paginator-page:not(.p-highlight):hover {
     background: $gray-bg;
     border-color: transparent;
-    color: $hover-text-color;
+    color: $text-color-hover;
 }

@@ -1,3 +1,8 @@
+/*
+* Variable names convention:
+* element-property-state
+*/
+
 // COLORS
 $black: #0a0725;
 $orange: #f3762a;
@@ -17,26 +22,31 @@ $brand-primary_rgb: var(--color-main_rgb);
 $brand-secondary: var(--color-sec);
 $brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
-$bg-color-primary: rgba($brand-primary_rgb, 0.12);
 
-$input-border-hover: $brand-primary;
-$input-border-focus: $brand-primary;
-$input-inset-shadow: inset 0 0 0 1px $input-border-focus, inset 0 0 0 1px $input-border-focus, inset 0 0 0 1px $input-border-focus, inset 0 0 0 1px $input-border-focus;
+$input-border-color-hover: $brand-primary;
+$input-inset-shadow: inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary;
+$input-border-color: $gray-light;
+$input-border-color-focus: $gray-light;
+$input-bg-color: $gray-light;
+$input-bg-color-hover: $gray-light;
 
-$highlight-bg: rgba($brand-secondary_rgb, 0.12);
-$highlight-text-color: $brand-primary;
-$highlight-border-color: rgba($brand-secondary_rgb, 0.12);
+$bg-highlight: rgba($brand-secondary_rgb, 0.12);
+$text-color-highlight: $brand-primary;
+$border-color-highlight: rgba($brand-secondary_rgb, 0.12);
 
 $focus-bg: rgba($brand-secondary_rgb, 0.12);
 $focus-text-color: $black;
-$focus-text-primary-color: $brand-primary;
 
-$hover-text-primary-color: $brand-primary;
-$hover-bg: rgba($brand-secondary_rgb, 0.12);
-$hover-text-color: $black;
-$hover-border-color: $brand-primary;
+$bg-hover: rgba($brand-secondary_rgb, 0.12);
+$text-color-hover: $black;
+$border-color-hover: $brand-primary;
 
-// TODO: Search replace font-size: $spacing-4 (font-size: 1.25rem)
+$button-text-color-disabled: $gray-light;
+$button-text-color: $gray-light;
+
+// Tables
+$th-text-color: $gray-light;
+$table-border-color: $gray-light;
 
 // Spacing
 $spacing-0: 0;

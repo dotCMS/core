@@ -3,14 +3,14 @@
 .p-inputgroup-addon {
   background: $white;
   color: $black;
-  border-top: 1px solid rgba(0, 0, 0, 0.38);
-  border-left: 1px solid rgba(0, 0, 0, 0.38);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.38);
+  border-top: 1px solid $input-border-color;
+  border-left: 1px solid $input-border-color;
+  border-bottom: 1px solid $input-border-color;
   padding: $spacing-2 $spacing-2;
   min-width: 2.357rem;
 }
 .p-inputgroup-addon:last-child {
-  border-right: 1px solid rgba(0, 0, 0, 0.38);
+  border-right: 1px solid $input-border-color;
 }
 
 .p-inputgroup > .p-component,
@@ -34,23 +34,23 @@
 .p-inputgroup-addon:first-child,
 .p-inputgroup button:first-child,
 .p-inputgroup input:first-child {
-  border-top-left-radius: 2px;
-  border-bottom-left-radius: 2px;
+  border-top-left-radius: $border-radius;
+  border-bottom-left-radius: $border-radius;
 }
 
 .p-inputgroup .p-float-label:first-child input {
-  border-top-left-radius: 2px;
-  border-bottom-left-radius: 2px;
+  border-top-left-radius: $border-radius;
+  border-bottom-left-radius: $border-radius;
 }
 
 .p-inputgroup-addon:last-child,
 .p-inputgroup button:last-child,
 .p-inputgroup input:last-child {
-  border-top-right-radius: 2px;
-  border-bottom-right-radius: 2px;
+  border-top-right-radius: $border-radius;
+  border-bottom-right-radius: $border-radius;
 }
 
 .p-inputgroup .p-float-label:last-child input {
-  border-top-right-radius: 2px;
-  border-bottom-right-radius: 2px;
+  border-top-right-radius: $border-radius;
+  border-bottom-right-radius: $border-radius;
 }

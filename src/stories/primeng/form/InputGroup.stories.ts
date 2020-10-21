@@ -10,7 +10,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 export default {
-  title: 'PrimeNG/Form/InputGroup',
+  title: 'PrimeNG/Form/InputText/InputGroup',
   parameters: {
     docs: {
       description: {
