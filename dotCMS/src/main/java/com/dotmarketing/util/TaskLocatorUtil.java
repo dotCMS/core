@@ -291,7 +291,6 @@ public class TaskLocatorUtil {
 		.add(Task201008LoadAppsSecrets.class)
         .add(Task201013AddNewColumnsToIdentifierTable.class)
         .add(Task201014UpdateColumnsValuesInIdentifierTable.class)
-        .add(Task201016UpdatePrimaryKeyLengthIdentifierTable.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
