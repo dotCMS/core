@@ -16,14 +16,14 @@ import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publi
  */
 @Injectable()
 export class PushPublishService {
-    private pushEnvironementsUrl = 'api/environment/loadenvironments/roleId';
+    private pushEnvironementsUrl = '/api/environment/loadenvironments/roleId';
     private _lastEnvironmentPushed: string[];
     /*
         TODO: I had to do this because this line concat'api/' into the URL
         https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
     */
     private publishUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
-    private publishBundleURL = `DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle`;
+    private publishBundleURL = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle`;
 
     constructor(
         public _apiRoot: ApiRoot,

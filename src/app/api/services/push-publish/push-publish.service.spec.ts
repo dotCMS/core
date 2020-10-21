@@ -72,7 +72,7 @@ describe('PushPublishService', () => {
             expect(items).toEqual(response.splice(1));
         });
 
-        const req = httpMock.expectOne('api/environment/loadenvironments/roleId/1234/name=0');
+        const req = httpMock.expectOne('/api/environment/loadenvironments/roleId/1234/name=0');
         expect(req.request.method).toBe('GET');
         req.flush(response);
     });
