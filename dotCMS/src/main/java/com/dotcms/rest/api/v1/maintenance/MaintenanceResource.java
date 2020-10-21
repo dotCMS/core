@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.maintenance;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -73,7 +75,12 @@ public class MaintenanceResource implements Serializable {
             return Response.status(Status.FORBIDDEN).build();
         }
 
-        Runtime.getRuntime().exit(0);
+        DotConcurrentFactory.getInstance()
+                .getSubmitter()
+                .submit(
+                        () -> Runtime.getRuntime().exit(0)
+                );
+
         return Response.ok(new ResponseEntityView("Shutdown")).build();
 
 
