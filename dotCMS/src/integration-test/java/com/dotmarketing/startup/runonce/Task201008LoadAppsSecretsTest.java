@@ -200,6 +200,10 @@ public class Task201008LoadAppsSecretsTest {
         Assert.assertFalse(fileToImport.exists());
     }
 
+    /**
+     * Given scenario: We remove the default password property
+     * Expected Results: The Task must not run.
+     */
     @Test
     public void Test_UpgradeTask_Should_Not_Run_When_No_DefaultPassword_isSet(){
         final String stringProperty = Config.getStringProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD);
