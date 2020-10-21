@@ -9,7 +9,7 @@ import static com.dotcms.security.apps.AppsUtil.mapForValidation;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.dotcms.security.apps.AppsUtil.validateForSave;
 import static com.dotmarketing.util.UtilMethods.isSet;
-import static com.liferay.util.StringPool.*;
+import static com.liferay.util.StringPool.BLANK;
 
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppDescriptorHelper;
@@ -24,7 +24,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Config;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
