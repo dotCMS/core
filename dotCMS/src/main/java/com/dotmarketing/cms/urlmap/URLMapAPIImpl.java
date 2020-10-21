@@ -249,8 +249,14 @@ public class URLMapAPIImpl implements URLMapAPI {
         }
 
        final Contentlet finalContentlet = contentlet;
-       return Try.of(()->new DotTransformerBuilder().
-               defaultOptions().content(finalContentlet).build().hydrate().get(0)).getOrNull();
+
+        if(context.isGraphQL()) {
+            return Try.of(() -> new DotTransformerBuilder().
+                    graphQLDataFetchOptions().content(finalContentlet).build().hydrate().get(0)).getOrNull();
+        } else {
+            return Try.of(() -> new DotTransformerBuilder().
+                    defaultOptions().content(finalContentlet).build().hydrate().get(0)).getOrNull();
+        }
     }
 
     private void checkContentPermission(final UrlMapContext context, final Contentlet contentlet)
