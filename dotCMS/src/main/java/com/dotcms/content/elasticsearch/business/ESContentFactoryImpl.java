@@ -989,9 +989,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             int offset) throws DotDataException, DotStateException, DotSecurityException {
         final DotConnect dotConnect = new DotConnect();
         final StringBuilder select = new StringBuilder();
-        select.append("select contentlet.*, inode.owner "
-                + "from contentlet, contentlet_version_info as contentletvi, inode "
-                + "where structure_inode = '")
+        select.append("select contentlet.*, inode.owner ").append(
+                "from contentlet, contentlet_version_info, inode ")
+                .append("where structure_inode = '")
                 .append(structureInode).append("' " );
 
         if (maxDate != null){
@@ -1011,9 +1011,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        select.append(" and contentletvi.identifier=contentlet.identifier "
-                + " and contentletvi.working_inode=contentlet.inode "
-                + " and contentlet.inode = inode.inode");
+        select.append(" and contentlet_version_info.identifier=contentlet.identifier ")
+                .append(" and contentlet_version_info.working_inode=contentlet.inode ")
+                .append(" and contentlet.inode = inode.inode");
         dotConnect.setSQL(select.toString());
 
         if (offset > 0) {
@@ -1094,7 +1094,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
       List<String> missingCons = new ArrayList<>(CollectionUtils.subtract(inodes, conMap.keySet()));
 
       final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
-          + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+          + " on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
 
       for (int init = 0; init < missingCons.size(); init += 200) {
         int end = Math.min(init + 200, missingCons.size());
