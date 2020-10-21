@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import static com.dotcms.security.apps.AppsUtil.APPS_IMPORT_EXPORT_DEFAULT_PASSWORD;
 import static com.dotcms.security.apps.AppsUtil.generateKey;
 import static com.dotcms.security.apps.AppsUtil.importSecrets;
 import static com.dotcms.security.apps.AppsUtil.internalKey;
@@ -7,6 +8,8 @@ import static com.dotcms.security.apps.AppsUtil.loadPass;
 import static com.dotcms.security.apps.AppsUtil.mapForValidation;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.dotcms.security.apps.AppsUtil.validateForSave;
+import static com.dotmarketing.util.UtilMethods.isSet;
+import static com.liferay.util.StringPool.*;
 
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppDescriptorHelper;
@@ -19,7 +22,9 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.util.Config;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -75,7 +80,7 @@ public class Task201008LoadAppsSecrets implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        return keyStoreHelper.size() == 0;
+        return keyStoreHelper.size() == 0 && isSet(Config.getStringProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD, BLANK)) ;
     }
 
     @Override
