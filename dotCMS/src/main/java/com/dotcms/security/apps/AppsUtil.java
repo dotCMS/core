@@ -47,8 +47,8 @@ import org.apache.commons.lang3.ArrayUtils;
 
 public class AppsUtil {
 
+    public static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
-    private static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
 
 
     /**
