@@ -38,7 +38,7 @@ public class TemplatePaginatorTest {
         final int totalRecords = 10;
         final User user = mock(User.class);
         final String filter = "filter";
-        final Map<String, Object> params = map("title", filter);
+        final Map<String, Object> params = map("filter", filter);
         final String hostId = "1";
         final int offset = 5;
         final int limit = 10;
@@ -77,7 +77,7 @@ public class TemplatePaginatorTest {
         final int totalRecords = 10;
         final User user = mock(User.class);
         final String filter = "filter";
-        final Map<String, Object> params = map("title", filter);
+        final Map<String, Object> params = map("filter", filter);
         final String hostId = "1";
         final int offset = 5;
         final int limit = 10;
