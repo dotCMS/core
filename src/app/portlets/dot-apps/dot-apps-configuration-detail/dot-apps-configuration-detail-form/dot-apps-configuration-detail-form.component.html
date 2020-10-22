@@ -18,7 +18,7 @@
     >
 </ng-template>
 
-<form #form="ngForm" [formGroup]="myFormGroup" class="form__group" novalidate>
+<form #form="ngForm" [formGroup]="myFormGroup" class="p-fluid" novalidate>
     <div #formContainer class="dot-apps-configuration-detail__form">
         <div class="p-field" *ngFor="let field of formFields" [ngSwitch]="field.type">
             <ng-container *ngSwitchCase="'STRING'">

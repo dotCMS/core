@@ -20,6 +20,11 @@
 
 .dot-apps-configuration__data {
     width: 100%;
+
+    header {
+        display: flex;
+        align-items: center;
+    }
 }
 
 .dot-apps-configuration__service-name {
@@ -28,33 +33,30 @@
     display: inline-block;
     font-size: $font-size-xx-large;
     font-weight: bold;
+    margin: 0;
 }
 
 .dot-apps-configuration__service-key {
     color: $gray;
     display: inline-block;
     font-size: $font-size-large;
-    height: 24px;
     margin-left: $spacing-3;
-    vertical-align: bottom;
 }
 
 .dot-apps-configuration__configurations {
     color: $gray;
     display: block;
-    font-size: $font-size-large;
     margin-bottom: $spacing-3;
     margin-top: $spacing-1;
 }
 
 ::ng-deep {
     .dot-apps-configuration__description {
-        max-width: 900px;
+        max-width: 64.25rem;
         position: relative;
     }
 
     .dot-apps-configuration__description p {
-        font-size: $font-size-large;
         margin: 0;
         overflow: hidden;
         line-height: 1.5;

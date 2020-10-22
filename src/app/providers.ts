@@ -16,7 +16,6 @@ import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-serv
 import { FormatDateService } from '@services/format-date-service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
 import { MenuGuardService } from '@services/guards/menu-guard.service';
-import { NotLicensedService } from '@services/not-licensed-service';
 import { NotificationsService } from '@services/notifications-service';
 import { PaginatorService } from '@services/paginator';
 import { PublicAuthGuardService } from '@services/guards/public-auth-guard.service';
@@ -58,7 +57,6 @@ const PROVIDERS: any[] = [
     FormatDateService,
     IframeOverlayService,
     MenuGuardService,
-    NotLicensedService,
     NotificationsService,
     PaginatorService,
     PublicAuthGuardService,

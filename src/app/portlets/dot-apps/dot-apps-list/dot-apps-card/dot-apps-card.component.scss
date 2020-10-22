@@ -4,7 +4,6 @@
 :host {
     box-shadow: $md-shadow-2;
     display: block;
-    height: 192px;
     transition: box-shadow $basic-speed ease-in;
 
     &:hover {
@@ -68,6 +67,7 @@ dot-avatar {
     line-height: $spacing-3;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: color $basic-speed ease;
 }
 
 .dot-apps-card__label-container {
@@ -95,10 +95,9 @@ dot-avatar {
     padding: 0;
 
     .p-card-content > p {
-        height: 60px;
         line-height: 1.5rem;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin: $spacing-4 $spacing-3;
+        margin: 0 $spacing-3;
     }
 }

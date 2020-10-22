@@ -5,13 +5,15 @@
     (click)="goToApps(app.key)"
 ></dot-avatar>
 <div class="dot-apps-configuration__data">
-    <span class="dot-apps-configuration__service-name" (click)="goToApps(app.key)">
-        {{ app.name }}
-    </span>
-    <div class="dot-apps-configuration__service-key">
-        {{ 'apps.key' | dm }}
-        <dot-copy-button [copy]="app.key" [label]="app.key"></dot-copy-button>
-    </div>
+    <header>
+        <h3 class="dot-apps-configuration__service-name" (click)="goToApps(app.key)">
+            {{ app.name }}
+        </h3>
+        <div class="dot-apps-configuration__service-key">
+            {{ 'apps.key' | dm }}
+            <dot-copy-button [copy]="app.key" [label]="app.key"></dot-copy-button>
+        </div>
+    </header>
     <span class="dot-apps-configuration__configurations"
         >{{
             app.configurationsCount

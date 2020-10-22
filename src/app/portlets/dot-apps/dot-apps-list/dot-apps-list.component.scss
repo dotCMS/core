@@ -15,14 +15,14 @@
     width: 100%;
 
     input {
-        width: 440px;
+        width: 31.42rem;
     }
 }
 
 .dot-apps__body {
     display: grid;
     grid-gap: $spacing-4;
-    grid-template-columns: repeat(auto-fill, minmax(328px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(23.42rem, 1fr));
     padding: $spacing-4;
 }
 
