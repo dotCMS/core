@@ -6,3 +6,6 @@ dist-doc
 node_modules
 .angulardoc.json
 .vscode/*
+.storybook
+.cicd
+karma_html
