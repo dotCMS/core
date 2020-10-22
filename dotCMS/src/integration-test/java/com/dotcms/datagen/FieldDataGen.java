@@ -1,6 +1,7 @@
 package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.TextField;
@@ -24,6 +25,8 @@ public class FieldDataGen extends AbstractDataGen<Field> {
     private boolean unique = Boolean.FALSE;
     private String contentTypeId;
     private String relationType;
+    private DataTypes dataType;
+
     private String id;
 
     public FieldDataGen() {
@@ -139,25 +142,29 @@ public class FieldDataGen extends AbstractDataGen<Field> {
     @Override
     public Field next() {
 
-        return FieldBuilder
-                .builder(type)
-                .id(id)
-                .name(name)
-                .contentTypeId(contentTypeId)
-                .required(required)
-                .variable(velocityVarName)
-                .sortOrder(sortOrder)
-                .values(values)
-                .hint(hint)
-                .defaultValue(defaultValue)
-                .indexed(indexed)
-                .listed(listed)
-                .fixed(fixed)
-                .readOnly(readOnly)
-                .searchable(searchable)
-                .unique(unique)
-                .relationType(relationType)
-                .build();
+        final FieldBuilder fieldBuilder = FieldBuilder
+            .builder(type)
+            .name(name)
+            .contentTypeId(contentTypeId)
+            .required(required)
+            .variable(velocityVarName)
+            .sortOrder(sortOrder)
+            .values(values)
+            .hint(hint)
+            .defaultValue(defaultValue)
+            .indexed(indexed)
+            .listed(listed)
+            .fixed(fixed)
+            .readOnly(readOnly)
+            .searchable(searchable)
+            .unique(unique)
+            .relationType(relationType);
+
+        if (dataType != null) {
+            fieldBuilder.dataType(dataType);
+        }
+
+        return fieldBuilder.build();
     }
 
     @WrapInTransaction
@@ -192,4 +199,8 @@ public class FieldDataGen extends AbstractDataGen<Field> {
         }
     }
 
+    public FieldDataGen dataType(final DataTypes dataType) {
+        this.dataType = dataType;
+        return this;
+    }
 }
