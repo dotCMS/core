@@ -162,7 +162,7 @@ public class TemplateResource {
                                         @Context final HttpServletResponse httpResponse,
                                         @QueryParam(PaginationUtil.FILTER)   final String filter,
                                         @QueryParam(PaginationUtil.PAGE)     final int page,
-                                        @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                                        @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
                                         @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
                                         @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
                                         @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,

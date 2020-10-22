@@ -18,6 +18,23 @@ public class UrlMapContext {
     private final String uri;
     private final Host host;
     private final User user;
+    private final boolean graphQL;
+
+    public UrlMapContext(
+            final PageMode mode,
+            final long languageId,
+            final String uri,
+            final Host host,
+            final User user,
+            final boolean graphQL) {
+
+        this.mode = mode;
+        this.languageId = languageId;
+        this.uri = uri;
+        this.host = host;
+        this.user = user;
+        this.graphQL = graphQL;
+    }
 
     public UrlMapContext(
             final PageMode mode,
@@ -25,12 +42,7 @@ public class UrlMapContext {
             final String uri,
             final Host host,
             final User user) {
-
-        this.mode = mode;
-        this.languageId = languageId;
-        this.uri = uri;
-        this.host = host;
-        this.user = user;
+        this(mode, languageId, uri, host, user, false);
     }
 
     public PageMode getMode() {
@@ -51,6 +63,10 @@ public class UrlMapContext {
 
     public User getUser() {
         return user;
+    }
+
+    public boolean isGraphQL() {
+        return graphQL;
     }
 
     @Override

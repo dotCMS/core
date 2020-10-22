@@ -62,7 +62,7 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
             archive = (boolean)extraParams.getOrDefault("archive", false);
         }
 
-        final Map<String, Object> params = map("title", filter);
+        final Map<String, Object> params = map("filter", filter);
 
         String orderByDirection = orderby;
         if (UtilMethods.isSet(direction) && UtilMethods.isSet(orderby)) {

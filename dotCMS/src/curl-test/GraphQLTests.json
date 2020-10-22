@@ -1002,6 +1002,94 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithURLMappedContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1b2c3c10-fd58-425c-81c1-eb70471b42cd",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"urlmap-bundle.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/urlmap-bundle.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "GivenRequestByURI_PageContainsUrlMappedContentField",
 					"event": [
 						{
@@ -1020,10 +1108,13 @@
 									"    var jsonData = pm.response.json();",
 									"    var urlmappedContent = jsonData.data.page.urlContentMap;",
 									"",
-									"    // mode",
-									"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Ecotourism in Costa Rica\");",
-									"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"57ee7cd3-66fc-4f01-9b7e-11e53553c220\");",
-									"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/blog/post/ecotourism-in-costa-rica\");",
+									"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Eagles Nest Outfitters DoubleNest Hammock Patriot\");",
+									"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"46e52dc2-e72a-4641-8925-026abf2adccd\");",
+									"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+									"    pm.expect(urlmappedContent.contentType, 'FAILED:[urlmappedContent.contentType]').equal(\"Product\");",
+									"    pm.expect(urlmappedContent.productNumber, 'FAILED:[urlmappedContent.productNumber]').equal(\"9315054521506-1280000\");",
+									"",
+									"    pm.expect(urlmappedContent.image.idPath, 'FAILED:[urlmappedContent.image.idPath]').equal(\"/dA/46e52dc2e7/image/hammock-1.jpg?language_id=1\");",
 									"",
 									"});",
 									""
@@ -1070,7 +1161,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/blog/post/ecotourism-in-costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     urlContentMap {\n        title\n        identifier\n        urlMap\n        contentType\n    }\n  }\n}",
+								"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -4504,87 +4595,87 @@
 	],
 	"variable": [
 		{
-			"id": "dd31fbc5-8c36-4c8a-b13d-906a124230ca",
+			"id": "7f15aae6-2ee9-4f6c-a7b7-0816305eba7c",
 			"key": "languageId",
 			"value": 1592433023079
 		},
 		{
-			"id": "1e41caa2-ed88-4fc2-833e-b916fee9488e",
+			"id": "a5b41212-f59b-4be4-a70b-cf62175aebdc",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "f5d52420-cf17-4f6e-922b-16ba0371efe0",
+			"id": "17c2d44e-630b-4c4f-9f36-6a36adc50a71",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType53380831"
 		},
 		{
-			"id": "f957965d-2016-4f2d-a32f-446be57840f0",
+			"id": "ebdf0309-d3fa-4020-b4c5-367f4902d465",
 			"key": "contentIdentifier",
 			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
 		},
 		{
-			"id": "c1dd6d87-be5e-4639-b32d-546a1bd0b7b3",
+			"id": "eaa7fcfc-711f-4b34-b0f9-978e2e934682",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "0d164387-1836-4fa1-8759-416cef14f497",
+			"id": "e7b75eb9-7f82-4ddd-80f0-8d9711ddb7cf",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType22920449"
 		},
 		{
-			"id": "0fbbe0c1-8607-45e5-b5c4-768bfd120d7d",
+			"id": "903ae6ba-1190-4d73-94c2-d262a7ebd703",
 			"key": "imageContentIdentifier",
 			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
 		},
 		{
-			"id": "8dec6289-2ce9-40d9-837e-8ef42a9d53ad",
+			"id": "983bf56c-5197-49d7-ad68-506cce674c4e",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "1de3de59-2edd-4ce8-b615-321544b2720b",
+			"id": "49c4e94c-cc0d-49fe-8696-9a598d015fc8",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "70f058da-1ccd-4ad2-a6f0-325a3859ae68",
+			"id": "cdea5ef9-ec74-40b5-9dea-bdb227ac3421",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "be967554-b004-47d6-b013-42c7ccd54bf6",
+			"id": "3795f8c6-46fd-461a-86c8-84e89c87186c",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "3518c31f-7c8e-4cd7-b901-c75b9a562649",
+			"id": "c7dceafc-fba4-49ff-a30b-f390d7a3b81a",
 			"key": "fileContentIdentifier",
 			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
 		},
 		{
-			"id": "9f7f05a2-16c8-4e81-a2a0-fc3c6cc80d98",
+			"id": "a354eacc-3dfc-49c2-b896-04ffab029246",
 			"key": "childContentTypeVariable",
 			"value": "childType23553509"
 		},
 		{
-			"id": "9c16ca70-6f94-4894-b247-b415ecf6fc6e",
+			"id": "5fb04a1f-2447-45cf-9197-39a8826e313b",
 			"key": "parentContentTypeVariable",
 			"value": "parentType65070125"
 		},
 		{
-			"id": "8bc8816e-583b-46a1-ac63-cf5f5c113591",
+			"id": "e5147053-b11e-4061-aed3-8c4430010a5e",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "fbdd03fa-bc82-4fd8-8b3a-2059cf105119",
+			"id": "9889b710-0103-47ef-a882-0280a5d55c2c",
 			"key": "childContentIdentifier",
 			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
 		},
 		{
-			"id": "a90210cb-0915-4165-ac0e-cadc549d551d",
+			"id": "1bda3836-b4e2-45ee-91d1-b02e46c1aee2",
 			"key": "parentContentIdentifier",
 			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
 		}
