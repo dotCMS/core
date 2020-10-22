@@ -113,7 +113,7 @@ public class ContentletWebAPIImplIntegrationTest {
         final Host hostFromDataBse = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
         assertEquals(newHostname, hostFromDataBse.getHostname());
 
-        checkTemplate(oldVersionInode, user, host.getHostname(), newHostname);
+        checkTemplate(oldVersionInode, user, newHostname, host.getHostname());
         checkTemplate(liveVersionInode, user, newHostname, host.getHostname());
         checkTemplate(workingVersionInode, user, newHostname, host.getHostname());
 
